@@ -2,14 +2,16 @@
 
 This document outlines the development scope of an MVP for the Fedimint mobile app built with React Native.
 
-# Feature Epics
+# Features
 
 - [Federation Connections](#federation-connections)
 - [Wallet](#wallet)
 - [Sites](#sites)
 - [Settings](#settings)
 - [Community](#community)
-- [Backup/Recovery](#backup/recovery)
+- [Backups / Recovery](#backups--recovery)
+
+------------
 
 ## Federation Connections
 
@@ -28,7 +30,7 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 
 ### Balances
 
-- Display balances (BTC, Tether, combined)
+- Display balances (BTC, USD, combined)
 - Select a wallet to send & receive with
 
 ### Transaction History
@@ -51,7 +53,7 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 - Scan a QR Code / Paste from clipboard - Lightning invoice
   - of a invoice or address
 - Scan a QR Code / Paste from clipboard - BTC address
-- ... (Send/Receive Tether ???)
+- ... (Send/Receive USD ???)
 
 ## Sites
 
@@ -76,13 +78,13 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 - Display a list of chat groups
 - ...
 
-## Backup/Recovery
+## Backups / Recovery
 
 - ...
 
 # MVP Timeline (in progress)
 
-__*** Based on very early estimates that still need refinement__
+_*** Based on very early estimates that still need refinement_
 
 - Week 1
   - Create dev environment + splash page
