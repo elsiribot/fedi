@@ -1,8 +1,16 @@
 # Overview
 
-# Questions
+This document outlines the development scope of an MVP for the Fedimint mobile app built with React Native.
 
-# Features
+# Feature Epics
+
+- Federation Connections
+- Wallet
+  - Balances
+  - Transaction History
+  - Send & Receive
+- Sites
+- Community
 
 ## Federation Connections
 
@@ -18,6 +26,10 @@
 - Switch federations
 
 ## Wallet
+
+- Balances
+- Transaction History
+- Send & Receive
 
 ### Balances
 
@@ -52,6 +64,8 @@
 - Display a QR code
 
 ## Community
+
+- Chat
 
 ## Sites
 
