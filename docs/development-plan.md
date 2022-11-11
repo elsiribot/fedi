@@ -4,13 +4,12 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 
 # Feature Epics
 
-- Federation Connections
-- Wallet
-  - Balances
-  - Transaction History
-  - Send & Receive
-- Sites
-- Community
+- [Federation Connections](#federation-connections)
+- [Wallet](#wallet)
+- [Sites](#sites)
+- [Settings](#settings)
+- [Community](#community)
+- [Backup/Recovery](#backup/recovery)
 
 ## Federation Connections
 
@@ -22,18 +21,14 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 - View federation profile
 - Display federation connection QR + code
 - Share federation connection data
+- Switch between connected federations
 - Leave a federation
-- Switch federations
 
 ## Wallet
 
-- Balances
-- Transaction History
-- Send & Receive
-
 ### Balances
 
-- Display balances (E-cash, BTC, combined)
+- Display balances (BTC, Tether, combined)
 - Select a wallet to send & receive with
 
 ### Transaction History
@@ -56,16 +51,7 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 - Scan a QR Code / Paste from clipboard - Lightning invoice
   - of a invoice or address
 - Scan a QR Code / Paste from clipboard - BTC address
-
-## Send & Receive Tether
-
-- Scan a QR code
-- Review & confirm outgoing transaction
-- Display a QR code
-
-## Community
-
-- Chat
+- ... (Send/Receive Tether ???)
 
 ## Sites
 
@@ -84,16 +70,31 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
 - Select display language (English or Spanish)
 - Display & update username
 
-# Timeline
+## Community
+
+- Create a username (same as Settings username???)
+- Display a list of chat groups
+- ...
+
+## Backup/Recovery
+
+- ...
+
+# MVP Timeline (in progress)
+
+__*** Based on very early estimates that still need refinement__
 
 - Week 1
   - Create dev environment + splash page
   - Create issues for dev tasks / road-mapping
   - Establish code foundations
-    - UI libraries (NativeBase + RN vector icons)
-    - Navigation ()
-    - API handlers
-    - Localized strings (i18n library)
+    - UI libraries (NativeBase, RN vector icons)
+    - Navigation (react-navigation vs react-native-navigation)
+    - API handlers & State Management
+      - react-query for light caching & simplified state management
+      - integrate with rust APIs that handle data fetching
+      - standard React State (local) or React Context (global) can cover remaining gaps in state management
+    - Localized strings with a i18n library like react-i18next
   - Build feature: Federation Connections
 - Week 2
   - Build feature: Federation Connections
@@ -107,20 +108,23 @@ This document outlines the development scope of an MVP for the Fedimint mobile a
   - Build feature: Wallet > Send & Receive
   - Build feature: Settings
 - Week 6
+  - Build feature: Settings
   - Build feature: Sites
 - Week 7
   - Build feature: Sites
-  - 
+  - Build remaining features
 - Week 8
-  - 
+  - Build remaining features
 - Week 9
-  - 
+  - Build remaining features
 - Week 10
+  - Build remaining features
+  - Polish existing features
   - Distributable builds to TestFlight & Play Store with fastlane
-  - 
 - Week 11
-  - Build feature: Community
-  - 
+  - Build remaining features
+  - Polish existing features
 - Week 12
-  - 
+  - Build remaining features
+  - Polish existing features
 
