@@ -1,0 +1,11 @@
+{
+    "words": {
+        "fedimint": "Fedimint"
+    },
+    "clauses": {
+        "invalid-federation-code": "Invalid federation code"
+    },
+    "actions": {
+        "scan-qr-code": "Scan QR Code"
+    }
+}
