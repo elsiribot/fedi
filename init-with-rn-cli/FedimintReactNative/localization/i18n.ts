@@ -1,15 +1,15 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
-import EN from './locales/en.json'
-import ES from './locales/es.json'
+import commonEN from './en/common.json'
+import commonES from './es/common.json'
 
 export const resources = {
     en: {
-        translation: EN,
+        translation: commonEN,
     },
     es: {
-        translation: ES,
+        translation: commonES,
     },
 }
 
