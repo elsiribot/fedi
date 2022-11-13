@@ -8,12 +8,14 @@ import Splash from './screens/Splash'
 import Home from './screens/Home'
 import Send from './screens/Send'
 import Receive from './screens/Receive'
+import LnInvoice from './screens/LnInvoice'
 
 export type RootStackParamList = {
     Home: undefined
     Send: undefined
     Splash: undefined
     Receive: undefined
+    LnInvoice: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -44,6 +46,11 @@ const App = () => {
                     name="Receive"
                     component={Receive}
                     options={{ title: 'Receive' }}
+                />
+                <Stack.Screen
+                    name="LnInvoice"
+                    component={LnInvoice}
+                    options={{ title: 'Receive Bitcoin' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

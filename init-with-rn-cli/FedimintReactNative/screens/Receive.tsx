@@ -20,16 +20,17 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         // const newInvoice = callFedimintFfi('createinvoice', amount)
         console.log(`callFedimintFfi('createinvoice', ${amount})`)
         // setInvoice(newInvoice)
+        navigation.navigate('LnInvoice')
     }
 
     return (
         <View
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text>{`Amount`}</Text>
+            <Text>{`Enter how much you want to receive`}</Text>
             <TextInput
                 onChangeText={onChangeText}
                 value={amount}
-                placeholder="Enter an amount in sats"
+                placeholder="Amount (sats)"
                 keyboardType="numeric"
             />
             <Text>{invoice}</Text>

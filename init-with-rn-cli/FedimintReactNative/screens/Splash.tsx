@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../App'
 
 const { FedimintFfi } = NativeModules
-const { multiply } = FedimintFfi
+const { multiply } = FedimintFfi || { multiply: () => {} }
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
