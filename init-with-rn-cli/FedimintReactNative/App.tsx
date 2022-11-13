@@ -1,13 +1,14 @@
-import React from 'react'
-import { Text } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Text } from 'react-native'
+import RNFS from 'react-native-fs'
 
-import Splash from './screens/Splash'
 import Home from './screens/Home'
-import Send from './screens/Send'
 import Receive from './screens/Receive'
+import Send from './screens/Send'
+import Splash from './screens/Splash'
 
 export type RootStackParamList = {
     Home: undefined
@@ -21,9 +22,14 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const App = () => {
     const { t } = useTranslation()
 
+    const [documentsFolder, setDocumentsFolder] = useState('')
+    useEffect(() => {
+        setDocumentsFolder(RNFS.DocumentDirectoryPath) //alternative to MainBundleDirectory.
+    }, [])
+
     return (
         <NavigationContainer>
-            <Text>{t('words.fedimint')}</Text>
+            <Text>{documentsFolder}</Text>
             <Stack.Navigator>
                 <Stack.Screen
                     name="Splash"
