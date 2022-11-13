@@ -5,7 +5,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 
-import org.fedimint.slowAdd;
+import org.fedimint.init;
 
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
@@ -22,8 +22,8 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun slowAdd(a: Int, b: Int, promise: Promise) {
-        promise.resolve(slowAdd(a, b))
+    fun init(dataDir: String, promise: Promise) {
+        promise.resolve(init(dataDir))
     }
 
     companion object {

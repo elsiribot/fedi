@@ -1,14 +1,18 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Text } from 'react-native'
 import RNFS from 'react-native-fs'
 
+import { NativeModules } from 'react-native'
 import Home from './screens/Home'
 import Receive from './screens/Receive'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
+
+const {
+    FedimintFfi: { init },
+} = NativeModules
 
 export type RootStackParamList = {
     Home: undefined
@@ -22,14 +26,17 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const App = () => {
     const { t } = useTranslation()
 
-    const [documentsFolder, setDocumentsFolder] = useState('')
+    async function initialize() {
+        const invoice = await init(RNFS.DocumentDirectoryPath)
+        console.log('invoice', invoice)
+    }
+
     useEffect(() => {
-        setDocumentsFolder(RNFS.DocumentDirectoryPath) //alternative to MainBundleDirectory.
+        initialize()
     }, [])
 
     return (
         <NavigationContainer>
-            <Text>{documentsFolder}</Text>
             <Stack.Navigator>
                 <Stack.Screen
                     name="Splash"
