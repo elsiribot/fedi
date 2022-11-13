@@ -1,37 +1,53 @@
 import React from 'react'
-import { StyleSheet } from 'react-native'
+import { Text } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { useTranslation } from 'react-i18next'
 
-import HomeScreen from './screens/HomeScreen'
-import PayScreen from './screens/PayScreen'
+import Splash from './screens/Splash'
+import Home from './screens/Home'
+import Send from './screens/Send'
+import Receive from './screens/Receive'
 
 export type RootStackParamList = {
     Home: undefined
-    Pay: undefined
+    Send: undefined
+    Splash: undefined
+    Receive: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 const App = () => {
+    const { t } = useTranslation()
+
     return (
         <NavigationContainer>
+            <Text>{t('words.fedimint')}</Text>
             <Stack.Navigator>
                 <Stack.Screen
-                    name="Home"
-                    component={HomeScreen}
-                    options={{ title: 'Welcome' }}
+                    name="Splash"
+                    component={Splash}
+                    options={{ title: 'Splash' }}
                 />
                 <Stack.Screen
-                    name="Pay"
-                    component={PayScreen}
-                    options={{ title: 'Pay' }}
+                    name="Home"
+                    component={Home}
+                    options={{ title: 'Home' }}
+                />
+                <Stack.Screen
+                    name="Send"
+                    component={Send}
+                    options={{ title: 'Send' }}
+                />
+                <Stack.Screen
+                    name="Receive"
+                    component={Receive}
+                    options={{ title: 'Receive' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
     )
 }
-
-const styles = StyleSheet.create({})
 
 export default App
