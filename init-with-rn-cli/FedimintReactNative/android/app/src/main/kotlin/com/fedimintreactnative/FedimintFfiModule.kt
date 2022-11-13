@@ -5,6 +5,8 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 
+import org.fedimint.add;
+
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
 
@@ -17,6 +19,11 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun multiply(a: Double, b: Double, promise: Promise) {
         promise.resolve(a * b)
+    }
+
+    @ReactMethod
+    fun add(a: Int, b: Int, promise: Promise) {
+        promise.resolve(add(a, b))
     }
 
     companion object {
