@@ -11,7 +11,7 @@ import Send from './screens/Send'
 import Splash from './screens/Splash'
 
 const {
-    FedimintFfi: { init },
+    FedimintFfi: { init, balance, generateInvoice, payInvoice },
 } = NativeModules
 
 export type RootStackParamList = {
@@ -27,8 +27,23 @@ const App = () => {
     const { t } = useTranslation()
 
     async function initialize() {
-        const invoice = await init(RNFS.DocumentDirectoryPath)
-        console.log('invoice', invoice)
+        await init(RNFS.DocumentDirectoryPath)
+        // console.log('initialized')
+
+        // console.log('initial balance', await balance())
+
+        // console.log(generateInvoice, payInvoice)
+        // const invoice = await generateInvoice('21', 'foobar')
+        // console.log('invoice', invoice)
+
+        // try {
+        //     // await payInvoice(invoice)
+        //     console.log('paid invoice')
+        // } catch (e) {
+        //     console.log('failed to pay invoice', e)
+        // }
+
+        // console.log('end balance', await balance())
     }
 
     useEffect(() => {
