@@ -6,7 +6,7 @@ import { Button, NativeModules, Text, View } from 'react-native'
 import type { RootStackParamList } from '../App'
 
 const { FedimintFfi } = NativeModules
-const { multiply, add } = FedimintFfi
+const { multiply, slowAdd } = FedimintFfi
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -30,7 +30,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         console.log('2 * 10', await multiply(2, 10))
 
         const start = Date.now()
-        console.log('2 + 10', await add(2, 10))
+        console.log('2 + 10', await slowAdd(2, 10))
         const end = Date.now()
         console.log('ffi took', end - start, 'ms')
     }
