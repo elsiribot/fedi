@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { View, Text, Button, Share, StyleSheet } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import QRCode from 'react-native-qrcode-svg'
 
 import type { RootStackParamList } from '../App'
 
@@ -46,6 +47,7 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
 
     return (
         <View style={styles.container}>
+            <QRCode value={invoice} size={250} />
             <Text>{invoice}</Text>
             <View style={styles.buttonsContainer}>
                 <Button title="Share" onPress={openShareDialog} />
@@ -62,7 +64,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     buttonsContainer: {
+        width: '90%',
         flexDirection: 'row',
+        justifyContent: 'space-evenly',
     },
 })
 
