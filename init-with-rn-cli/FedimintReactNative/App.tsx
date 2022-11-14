@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next'
 import RNFS from 'react-native-fs'
 import { NativeModules } from 'react-native'
 
+import ConfirmSend from './screens/ConfirmSend'
 import Home from './screens/Home'
-import Receive from './screens/Receive'
 import LnInvoice from './screens/LnInvoice'
+import Receive from './screens/Receive'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
 
@@ -21,6 +22,7 @@ export type RootStackParamList = {
     Splash: undefined
     Receive: undefined
     LnInvoice: { invoice: string }
+    ConfirmSend: { invoice: string }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -54,6 +56,11 @@ const App = () => {
                     name="Send"
                     component={Send}
                     options={{ title: t('words.send') }}
+                />
+                <Stack.Screen
+                    name="ConfirmSend"
+                    component={ConfirmSend}
+                    options={{ title: t('feature.send.confirm-send') }}
                 />
                 <Stack.Screen
                     name="Receive"

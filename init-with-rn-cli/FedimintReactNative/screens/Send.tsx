@@ -1,22 +1,11 @@
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ActivityIndicator,
-    Button,
-    NativeModules,
-    View,
-    Text,
-    StyleSheet,
-} from 'react-native'
+import { ActivityIndicator, Button, View, Text, StyleSheet } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Camera from 'react-native-vision-camera'
 
 import type { RootStackParamList } from '../App'
-
-const {
-    FedimintFfi: { payInvoice },
-} = NativeModules
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
@@ -51,9 +40,11 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         if (invoice.length > 0) {
             // TODO: go to send confirm screen before calling payInvoice
-            payInvoice(invoice)
+            navigation.navigate('ConfirmSend', {
+                invoice,
+            })
         }
-    }, [invoice])
+    }, [invoice, navigation])
 
     const checkClipboard = async () => {
         // call fedimint-ffi here
