@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Text, StyleSheet, View, NativeModules } from 'react-native'
+import {
+    Button,
+    Text,
+    StyleSheet,
+    View,
+    NativeModules,
+    Modal,
+} from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 import type { RootStackParamList } from '../App'
@@ -30,12 +37,30 @@ const formatFee = (feeEstimate: FeeEstimate): string => {
     return `~${feeEstimate.minimum} - ${feeEstimate.maximum} ${feeEstimate.units}`
 }
 
-const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
+// temporary function until decodeInvoice is available from FFI module
+const getAmountFromInvoice = (invoice: string) => {
+    const part = invoice.split('lnbcrt')[1]
+    var prefixLocation = part.search(/\D/g)
+    const amount = part.substring(0, prefixLocation)
+    const prefix = part.substring(prefixLocation, prefixLocation + 1)
+    const multiplier =
+        prefix === 'm'
+            ? 0.001
+            : prefix === 'u'
+            ? 0.000001
+            : prefix === 'n'
+            ? 0.000000001
+            : 0.000000000001
+    return Number(amount) * multiplier * 100000000
+}
+
+const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { invoice } = route.params
 
-    const [amount] = useState('0.00615')
-    const [unit] = useState('BTC')
+    const [invoicePaid, setInvoicePaid] = useState(false)
+    const [amount] = useState(getAmountFromInvoice(invoice))
+    const [unit] = useState('sats')
     const [memo] = useState('Pineapple pizza slice')
     const [expiry] = useState(3600)
     const [feeEstimate] = useState({
@@ -53,8 +78,14 @@ const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
         decodeInvoice()
     })
 
-    const onSendBtc = () => {
-        payInvoice(invoice)
+    const onSendBtc = async () => {
+        try {
+            await payInvoice(invoice)
+            console.log('invoice paid')
+            setInvoicePaid(true)
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     return (
@@ -73,6 +104,25 @@ const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
             <View style={styles.buttonContainer}>
                 <Button title={t('words.send')} onPress={onSendBtc} />
             </View>
+            <Modal
+                animationType="fade"
+                visible={invoicePaid}
+                onRequestClose={() => {
+                    navigation.navigate('Home')
+                }}>
+                <View style={styles.detailsContainer}>
+                    <Text>{t('feature.send.you-sent')}</Text>
+                    <Text>{`${amount} ${unit}`}</Text>
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title={t('words.done')}
+                            onPress={() => {
+                                navigation.navigate('Home')
+                            }}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </View>
     )
 }
@@ -85,6 +135,7 @@ const styles = StyleSheet.create({
     },
     detailsContainer: {
         height: '50%',
+        alignItems: 'center',
         justifyContent: 'center',
     },
     buttonContainer: {

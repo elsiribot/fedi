@@ -1,8 +1,10 @@
 {
     "words": {
         "amount": "Amount",
-        "copy": "copy",
+        "copy": "Copy",
+        "done": "Done",
         "fedimint": "Fedimint",
+        "fee": "Fee",
         "home": "Home",
         "lightning": "Lightning",
         "onchain": "On-chain",
@@ -13,14 +15,18 @@
     },
     "phrases": {
         "connect-to-federation": "Connect to federation",
+        "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
         "invalid-federation-code": "Invalid federation code",
         "receive-bitcoin": "Receive bitcoin"
     },
     "feature": {
         "send": {
+            "confirm-send": "Confirm Send",
+            "paste-lightning-request": "Paste lightning request",
             "scan-qr-code": "Scan a Lightning QR Code",
-            "paste-lightning-request": "Paste lightning request"
+            "you-are-sending": "You are sending",
+            "you-sent": "You sent"
         },
         "receive": {
             "instructions": "Enter how much you want to receive"
