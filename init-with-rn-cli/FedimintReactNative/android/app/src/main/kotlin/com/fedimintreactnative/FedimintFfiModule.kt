@@ -31,7 +31,12 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun balance(promise: Promise) {
-        promise.resolve(balance().toInt()) // FIXME: it barfs on ULong
+        try {
+            println("inside balance")
+            promise.resolve(balance().toInt()) // FIXME: it barfs on ULong
+        } catch (error: Throwable) {
+            promise.reject("balance error", error.localizedMessage, error)
+        }
     }
 
     @ReactMethod
