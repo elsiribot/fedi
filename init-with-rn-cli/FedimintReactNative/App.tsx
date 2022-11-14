@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react'
 import {
-    NavigationContainer,
     DarkTheme,
     DefaultTheme,
+    NavigationContainer,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import RNFS from 'react-native-fs'
 import { NativeModules, useColorScheme } from 'react-native'
+import RNFS from 'react-native-fs'
 
 import Backup from './screens/Backup'
 import ConfirmSend from './screens/ConfirmSend'

@@ -5,12 +5,10 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 
-import org.fedimint.init;
-import org.fedimint.balance;
-import org.fedimint.generateInvoice;
-
-
-import org.fedimint.payInvoice;
+import org.rustylibs.calculator.fedimintInit;
+import org.rustylibs.calculator.fedimintBalance;
+import org.rustylibs.calculator.fedimintPayInvoice;
+import org.rustylibs.calculator.fedimintGenerateInvoice
 
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
@@ -22,7 +20,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun init(dataDir: String, promise: Promise) {
         try {
-            init(dataDir)
+            fedimintInit(dataDir)
             promise.resolve(null)
         } catch (error: Throwable) {
             promise.reject("Init error", error.localizedMessage, error)
@@ -33,7 +31,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     fun balance(promise: Promise) {
         try {
             println("inside balance")
-            promise.resolve(balance().toInt()) // FIXME: it barfs on ULong
+            promise.resolve(fedimintBalance().toInt()) // FIXME: it barfs on ULong
         } catch (error: Throwable) {
             promise.reject("balance error", error.localizedMessage, error)
         }
@@ -43,7 +41,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     fun generateInvoice(amount: String, description: String, promise: Promise) {
         try {
             println("inside generate invoice")
-            var invoice = generateInvoice(amount, description)
+            var invoice = fedimintGenerateInvoice(amount, description)
             promise.resolve(invoice)
         } catch (error: Throwable) {
             promise.reject("generateInvoice error", error.localizedMessage, error)
@@ -53,7 +51,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun payInvoice(invoice: String, promise: Promise) {
         try {
-            payInvoice(invoice)
+            fedimintPayInvoice(invoice)
             promise.resolve(null)
         } catch (error: Throwable) {
             promise.reject("payInvoice error", error.localizedMessage, error)
