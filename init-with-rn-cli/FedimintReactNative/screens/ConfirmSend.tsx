@@ -11,6 +11,25 @@ const {
     FedimintFfi: { payInvoice },
 } = NativeModules
 
+type FeeEstimate = {
+    minimum: number
+    maximum: number
+    units: string
+}
+
+const truncateInvoice = (invoice: string): string => {
+    return `${invoice.substring(0, 14)} ... ${invoice.slice(-14)}`
+}
+
+const formatExpiry = (expiryInSeconds: number): number => {
+    // TODO: Format expiry to hours/seconds/minutes
+    return expiryInSeconds
+}
+
+const formatFee = (feeEstimate: FeeEstimate): string => {
+    return `~${feeEstimate.minimum} - ${feeEstimate.maximum} ${feeEstimate.units}`
+}
+
 const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { invoice } = route.params
@@ -18,11 +37,17 @@ const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
     const [amount] = useState('0.00615')
     const [unit] = useState('BTC')
     const [memo] = useState('Pineapple pizza slice')
+    const [expiry] = useState(3600)
+    const [feeEstimate] = useState({
+        minimum: 3,
+        maximum: 11,
+        units: 'sats',
+    })
 
     useEffect(() => {
         const decodeInvoice = async () => {
             // TODO: Call FedimintFfi.decodeInvoice and hydrate state
-            // amount, unit, memo
+            // amount, unit, memo, expiry, feeEstimate
         }
 
         decodeInvoice()
@@ -38,6 +63,12 @@ const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
                 <Text>{t('feature.send.you-are-sending')}</Text>
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
+                <Text>{``}</Text>
+                <Text>{`${truncateInvoice(invoice)}`}</Text>
+                <Text>{`${t('phrases.expires-in')} ${formatExpiry(
+                    expiry,
+                )}`}</Text>
+                <Text>{`${t('words.fee')}: ${formatFee(feeEstimate)}`}</Text>
             </View>
             <View style={styles.buttonContainer}>
                 <Button title={t('words.send')} onPress={onSendBtc} />
