@@ -8,9 +8,13 @@ import type { RootStackParamList } from '../App'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
-const LnInvoice: React.FC<Props> = ({ navigation }: Props) => {
+const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
-    const [invoice, setInvoice] = useState('lnbc1...abc')
+    const { invoice } = route.params
+
+    console.log('invoice', invoice)
+
+    // const [invoice, setInvoice] = useState('lnbc1...abc')
 
     const copyToClipboard = () => {
         Clipboard.setString(invoice)

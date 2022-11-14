@@ -1,26 +1,42 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, Text, Button, TextInput } from 'react-native'
+import { Button, NativeModules, Text, TextInput, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+
 import type { RootStackParamList } from '../App'
+
+const {
+    FedimintFfi: { generateInvoice },
+} = NativeModules
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
 const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const [amount, setAmount] = useState<string>('')
-    const [invoice, setInvoice] = useState('')
+    const [amountIsValid, setAmountIsValid] = useState(false)
+
+    useEffect(() => {
+        const isNumeric = /^-?\d+$/.test(amount)
+
+        if (amount === '' || amount === '0' || isNumeric === false) {
+            setAmountIsValid(false)
+        } else {
+            setAmountIsValid(true)
+        }
+    }, [amount])
 
     const onChangeText = (updatedValue: string) => {
         setAmount(updatedValue)
     }
 
-    const generateInvoice = () => {
+    const onGenerateInvoice = async () => {
         // call fedimint-ffi to generate invoice
-        // const newInvoice = callFedimintFfi('createinvoice', amount)
-        console.log(`callFedimintFfi('createinvoice', ${amount})`)
-        // setInvoice(newInvoice)
-        navigation.navigate('LnInvoice')
+        const newInvoice = await generateInvoice(amount, 'test memo')
+        console.log(`generateInvoice: ', ${newInvoice})`)
+        navigation.navigate('LnInvoice', {
+            invoice: newInvoice,
+        })
     }
 
     return (
@@ -34,8 +50,11 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 keyboardType="numeric"
                 returnKeyType="done"
             />
-            <Text>{invoice}</Text>
-            <Button title="Generate Invoice" onPress={generateInvoice} />
+            <Button
+                title="Generate Invoice"
+                onPress={onGenerateInvoice}
+                disabled={!amountIsValid}
+            />
         </View>
     )
 }

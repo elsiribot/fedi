@@ -20,7 +20,7 @@ export type RootStackParamList = {
     Send: undefined
     Splash: undefined
     Receive: undefined
-    LnInvoice: undefined
+    LnInvoice: { invoice: string }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()

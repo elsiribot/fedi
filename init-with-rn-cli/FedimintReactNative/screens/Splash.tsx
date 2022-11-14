@@ -6,7 +6,7 @@ import { Button, NativeModules, Text, View } from 'react-native'
 import type { RootStackParamList } from '../App'
 
 const { FedimintFfi } = NativeModules
-const { multiply, init } = FedimintFfi
+const { init } = FedimintFfi
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -26,8 +26,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const testModuleFunction = async () => {
         // call fedimint-ffi here with FEDERATION_CONNECTION_STRING
         // then navigate to home screen on success
-
-        console.log('2 * 10', await multiply(2, 10))
+        // console.log('2 * 10', await multiply(2, 10))
     }
 
     return (
