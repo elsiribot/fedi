@@ -20,18 +20,40 @@ const {
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
-// const CameraScanner = () => {
-//     const devices = Camera.useCameraDevices()
-//     const device = devices.back
+const CameraScanner = () => {
+    // const devices = Camera.useCameraDevices()
+    // const device = devices.back
 
-//     if (device == null) return <ActivityIndicator />
+    return <ActivityIndicator />
+    // if (device == null) return <ActivityIndicator />
 
-//     return <Camera style={styles.camera} device={device} />
-// }
+    // return <Camera style={styles.camera} device={device} />
+}
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const [invoice, setInvoice] = React.useState('')
+
+    // first check if user has granted camera permissions
+    useEffect(() => {
+        const checkForPermissions = async () => {
+            // TODO: request permission & handle navigation to update permissions page
+
+            // const cameraPermission = await Camera.getCameraPermissionStatus()
+            // console.log(cameraPermission)
+            console.log(Camera)
+        }
+
+        checkForPermissions()
+    }, [])
+
+    // side effect to detect if invoice has been pasted or scanned
+    useEffect(() => {
+        if (invoice.length > 0) {
+            // TODO: go to send confirm screen before calling payInvoice
+            payInvoice(invoice)
+        }
+    }, [invoice])
 
     const checkClipboard = async () => {
         // call fedimint-ffi here
@@ -42,39 +64,28 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         } else {
             console.log('no invoice detected')
         }
-        // const result = callFedimintFfi('payinvoice', invoice)
     }
 
-    useEffect(() => {
-        if (invoice.length > 0) {
-            // go to send confirm screen to pay invoice
-            payInvoice(invoice)
-        }
-    }, [invoice])
-
-    useEffect(() => {
-        const checkForPermissions = async () => {
-            // const cameraPermission = await Camera.getCameraPermissionStatus()
-            // console.log(cameraPermission)
-            console.log(Camera)
-        }
-
-        checkForPermissions()
-    }, [])
-
     return (
-        <View
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text>{`Scan a Lightning QR code`}</Text>
+        <View style={styles.container}>
+            <Text>{t('feature.send.scan-qr-code')}</Text>
             <View style={styles.cameraScannerContainer}>
-                {/* <CameraScanner /> */}
+                <CameraScanner />
             </View>
-            <Button title="Paste Lightning request" onPress={checkClipboard} />
+            <Button
+                title={t('feature.send.paste-lightning-request')}
+                onPress={checkClipboard}
+            />
         </View>
     )
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     cameraScannerContainer: {
         height: '50%',
         width: '100%',

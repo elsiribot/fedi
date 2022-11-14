@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, NativeModules, Text, View } from 'react-native'
+import { Button, NativeModules, StyleSheet, Text, View } from 'react-native'
 
 import type { RootStackParamList } from '../App'
 
@@ -10,36 +10,38 @@ const { init } = FedimintFfi
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
-// const FEDERATION_CONNECTION_STRING = ''
-
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
 
     const connectToFederation = () => {
         console.log('connecting to federation')
-        // call fedimint-ffi here with FEDERATION_CONNECTION_STRING
+        // TODO: call FedimintFfi.init here after getting the connection
+        // string from a QR Code / Paste String UI (hardcoded in rust for now...)
         // then navigate to home screen on success
 
         navigation.navigate('Home')
     }
 
     const testModuleFunction = async () => {
-        // call fedimint-ffi here with FEDERATION_CONNECTION_STRING
-        // then navigate to home screen on success
         // console.log('2 * 10', await multiply(2, 10))
     }
 
     return (
-        <View
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text>{'Splash'}</Text>
+        <View style={styles.container}>
             <Button
-                title="Connect to Federation"
+                title={t('phrases.connect-to-federation')}
                 onPress={connectToFederation}
             />
             <Button title="Test module function" onPress={testModuleFunction} />
         </View>
     )
 }
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+    },
+})
 
 export default Splash

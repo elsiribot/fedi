@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, NativeModules, Text, TextInput, View } from 'react-native'
+import {
+    Button,
+    NativeModules,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 import type { RootStackParamList } from '../App'
@@ -40,23 +47,30 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text>{`Enter how much you want to receive`}</Text>
+        <View style={styles.container}>
+            <Text>{t('feature.receive.instructions')}</Text>
             <TextInput
                 onChangeText={onChangeText}
                 value={amount}
-                placeholder="Amount (sats)"
+                placeholder={`${t('words.amount')} (${t('words.sats')})`}
                 keyboardType="numeric"
                 returnKeyType="done"
             />
             <Button
-                title="Generate Invoice"
+                title={t('phrases.generate-invoice')}
                 onPress={onGenerateInvoice}
                 disabled={!amountIsValid}
             />
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+})
 
 export default Receive

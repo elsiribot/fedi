@@ -11,14 +11,14 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles.container}>
-            <Text>{`Home`}</Text>
+            <Text>{t('words.home')}</Text>
             <View style={styles.buttonsContainer}>
                 <Button
-                    title="Receive"
+                    title={t('words.receive')}
                     onPress={() => navigation.navigate('Receive')}
                 />
                 <Button
-                    title="Send"
+                    title={t('words.send')}
                     onPress={() => navigation.navigate('Send')}
                 />
             </View>

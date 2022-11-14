@@ -12,7 +12,7 @@ import Send from './screens/Send'
 import Splash from './screens/Splash'
 
 const {
-    FedimintFfi: { init, balance, generateInvoice, payInvoice },
+    FedimintFfi: { init },
 } = NativeModules
 
 export type RootStackParamList = {
@@ -28,24 +28,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const App = () => {
     const { t } = useTranslation()
 
+    // Initializes the connection to the federation
     async function initialize() {
         await init(RNFS.DocumentDirectoryPath)
-        // console.log('initialized')
-
-        // console.log('initial balance', await balance())
-
-        // console.log(generateInvoice, payInvoice)
-        // const invoice = await generateInvoice('21', 'foobar')
-        // console.log('invoice', invoice)
-
-        // try {
-        //     // await payInvoice(invoice)
-        //     console.log('paid invoice')
-        // } catch (e) {
-        //     console.log('failed to pay invoice', e)
-        // }
-
-        // console.log('end balance', await balance())
     }
 
     useEffect(() => {
@@ -58,27 +43,27 @@ const App = () => {
                 <Stack.Screen
                     name="Splash"
                     component={Splash}
-                    options={{ title: 'Splash' }}
+                    options={{ title: t('words.fedimint') }}
                 />
                 <Stack.Screen
                     name="Home"
                     component={Home}
-                    options={{ title: 'Home' }}
+                    options={{ title: t('words.home') }}
                 />
                 <Stack.Screen
                     name="Send"
                     component={Send}
-                    options={{ title: 'Send' }}
+                    options={{ title: t('words.send') }}
                 />
                 <Stack.Screen
                     name="Receive"
                     component={Receive}
-                    options={{ title: 'Receive' }}
+                    options={{ title: t('phrases.receive-bitcoin') }}
                 />
                 <Stack.Screen
                     name="LnInvoice"
                     component={LnInvoice}
-                    options={{ title: 'Receive Bitcoin' }}
+                    options={{ title: t('phrases.receive-bitcoin') }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

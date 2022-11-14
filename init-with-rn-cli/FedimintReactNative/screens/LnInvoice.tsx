@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Text, Share, StyleSheet, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
@@ -9,7 +9,7 @@ import type { RootStackParamList } from '../App'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
-const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
+const LnInvoice: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { invoice } = route.params
 
@@ -46,8 +46,8 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
             <QRCode value={invoice} size={250} />
             <Text>{invoice}</Text>
             <View style={styles.buttonsContainer}>
-                <Button title="Share" onPress={openShareDialog} />
-                <Button title="Copy" onPress={copyToClipboard} />
+                <Button title={t('words.share')} onPress={openShareDialog} />
+                <Button title={t('words.copy')} onPress={copyToClipboard} />
             </View>
         </View>
     )
