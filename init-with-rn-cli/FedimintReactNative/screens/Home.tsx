@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, Text, Button, NativeModules, StyleSheet } from 'react-native'
+import {
+    View,
+    Text,
+    Button,
+    NativeModules,
+    StyleSheet,
+    ActivityIndicator,
+} from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../App'
 
@@ -9,6 +16,20 @@ const {
 } = NativeModules
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
+
+type BalanceProps = {
+    value: string
+}
+
+const Balance = ({ value }: BalanceProps) => {
+    const { t } = useTranslation()
+
+    if (value) {
+        return <Text>{`${value} ${t('words.sats')}`}</Text>
+    } else {
+        return <ActivityIndicator />
+    }
+}
 
 const Home: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
@@ -34,7 +55,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles.container}>
             <Text>{t('words.home')}</Text>
-            <Text>{`${btcBalance} ${t('words.sats')}`}</Text>
+            <Balance value={btcBalance} />
             <View style={styles.buttonsContainer}>
                 <Button
                     title={t('words.receive')}
