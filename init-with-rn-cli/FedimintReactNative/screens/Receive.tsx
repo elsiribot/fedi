@@ -32,6 +32,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 value={amount}
                 placeholder="Amount (sats)"
                 keyboardType="numeric"
+                returnKeyType="done"
             />
             <Text>{invoice}</Text>
             <Button title="Generate Invoice" onPress={generateInvoice} />
