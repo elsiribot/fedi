@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, Text, Button, Share, StyleSheet } from 'react-native'
+import { Button, Text, Share, StyleSheet, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import QRCode from 'react-native-qrcode-svg'
@@ -12,10 +12,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { invoice } = route.params
-
-    console.log('invoice', invoice)
-
-    // const [invoice, setInvoice] = useState('lnbc1...abc')
 
     const copyToClipboard = () => {
         Clipboard.setString(invoice)
