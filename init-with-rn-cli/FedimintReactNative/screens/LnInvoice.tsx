@@ -43,7 +43,7 @@ const LnInvoice: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <View style={styles.container}>
-            <QRCode value={invoice} size={250} />
+            <QRCode value={invoice} size={300} />
             <Text>{invoice}</Text>
             <View style={styles.buttonsContainer}>
                 <Button title={t('words.share')} onPress={openShareDialog} />
