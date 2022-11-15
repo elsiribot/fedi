@@ -25,7 +25,11 @@ const Balance = ({ value }: BalanceProps) => {
     const { t } = useTranslation()
 
     if (value) {
-        return <Text>{`${value} ${t('words.sats')}`}</Text>
+        return (
+            <Text style={styles.balanceText}>
+                {`${value} ${t('words.sats')}`}
+            </Text>
+        )
     } else {
         return <ActivityIndicator />
     }
@@ -33,7 +37,7 @@ const Balance = ({ value }: BalanceProps) => {
 
 const Home: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const [btcBalance, setBtcBalance] = useState()
+    const [btcBalance, setBtcBalance] = useState('')
 
     useEffect(() => {
         const getBalance = async () => {
@@ -54,7 +58,6 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles.container}>
-            <Text>{t('words.home')}</Text>
             <Balance value={btcBalance} />
             <View style={styles.buttonsContainer}>
                 <Button
@@ -75,6 +78,10 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    balanceText: {
+        fontSize: 36,
+        margin: 20,
     },
     buttonsContainer: {
         width: '90%',
