@@ -11,6 +11,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 import type { RootStackParamList } from '../App'
+import { useTheme } from '@react-navigation/native'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ConfirmSend'>
 
@@ -51,11 +52,12 @@ const getAmountFromInvoice = (invoice: string) => {
             : prefix === 'n'
             ? 0.000000001
             : 0.000000000001
-    return Number(amount) * multiplier * 100000000
+    return Number(Number(amount) * multiplier * 100000000).toFixed(0)
 }
 
 const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
+    const { colors } = useTheme()
     const { invoice } = route.params
 
     const [invoicePaid, setInvoicePaid] = useState(false)
@@ -110,9 +112,22 @@ const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
                 onRequestClose={() => {
                     navigation.navigate('Home')
                 }}>
-                <View style={styles.detailsContainer}>
-                    <Text>{t('feature.send.you-sent')}</Text>
-                    <Text>{`${amount} ${unit}`}</Text>
+                <View
+                    style={{
+                        backgroundColor: colors.card,
+                        ...styles.detailsContainer,
+                        height: '100%',
+                    }}>
+                    <Text style={{ color: colors.text, ...styles.text }}>
+                        {t('feature.send.you-sent')}
+                    </Text>
+                    <Text
+                        style={{
+                            color: colors.text,
+                            ...styles.text,
+                        }}>
+                        {`${amount} ${unit}`}
+                    </Text>
                     <View style={styles.buttonContainer}>
                         <Button
                             title={t('words.done')}
@@ -142,6 +157,11 @@ const styles = StyleSheet.create({
         width: '90%',
         flexDirection: 'row',
         justifyContent: 'space-evenly',
+        margin: 10,
+    },
+    text: {
+        fontSize: 30,
+        margin: 10,
     },
 })
 

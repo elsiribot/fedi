@@ -3,34 +3,63 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Button, View, Text, StyleSheet } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import Clipboard from '@react-native-clipboard/clipboard'
-import Camera from 'react-native-vision-camera'
+import {
+    Camera,
+    useCameraDevices,
+    CameraDevice,
+} from 'react-native-vision-camera'
+import { useScanBarcodes, BarcodeFormat } from 'vision-camera-code-scanner'
 
 import type { RootStackParamList } from '../App'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
-const CameraScanner = () => {
-    // const devices = Camera.useCameraDevices()
-    // const device = devices.back
+type CameraScannerProps = {
+    device: CameraDevice
+    onQrCodeDetected: Function
+}
 
-    return <ActivityIndicator />
-    // if (device == null) return <ActivityIndicator />
+const CameraScanner = ({ device, onQrCodeDetected }: CameraScannerProps) => {
+    const [frameProcessor, barcodes] = useScanBarcodes(
+        [BarcodeFormat.QR_CODE],
+        {
+            checkInverted: true,
+        },
+    )
 
-    // return <Camera style={styles.camera} device={device} />
+    useEffect(() => {
+        barcodes.map(b => {
+            onQrCodeDetected(b.content?.data)
+        })
+    }, [barcodes, onQrCodeDetected])
+
+    return (
+        <Camera
+            style={styles.camera}
+            device={device}
+            isActive={true}
+            frameProcessor={frameProcessor}
+            frameProcessorFps={5}
+        />
+    )
 }
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
+    const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
     const [invoice, setInvoice] = React.useState('')
 
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
             // TODO: request permission & handle navigation to update permissions page
-
-            // const cameraPermission = await Camera.getCameraPermissionStatus()
-            // console.log(cameraPermission)
             console.log(Camera)
+
+            const status = await Camera.getCameraPermissionStatus()
+            console.log('cameraPermissionStatus: ', status)
+            setHasCameraPermission(status === 'authorized')
+
+            await Camera.requestCameraPermission()
         }
 
         checkForPermissions()
@@ -57,11 +86,32 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const devices = useCameraDevices()
+    const device = devices.back
+
+    const renderCameraScanner = () => {
+        if (device == null || hasCameraPermission === false) {
+            return <ActivityIndicator />
+        } else {
+            return (
+                <CameraScanner
+                    device={device}
+                    onQrCodeDetected={(qrCodeData: string) => {
+                        if (!invoice && qrCodeData.substring(0, 2) === 'ln') {
+                            setInvoice(qrCodeData)
+                        }
+                        setInvoice(qrCodeData)
+                    }}
+                />
+            )
+        }
+    }
+
     return (
         <View style={styles.container}>
             <Text>{t('feature.send.scan-qr-code')}</Text>
             <View style={styles.cameraScannerContainer}>
-                <CameraScanner />
+                {renderCameraScanner()}
             </View>
             <Button
                 title={t('feature.send.paste-lightning-request')}
