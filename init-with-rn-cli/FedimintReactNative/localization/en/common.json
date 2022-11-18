@@ -6,6 +6,7 @@
         "fedimint": "Fedimint",
         "fee": "Fee",
         "home": "Home",
+        "important": "Important",
         "lightning": "Lightning",
         "onchain": "On-chain",
         "receive": "Receive",
@@ -29,7 +30,8 @@
             "you-sent": "You sent"
         },
         "receive": {
-            "instructions": "Enter how much you want to receive"
+            "instructions": "Enter how much you want to receive",
+            "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions"
         }
     }
 }
