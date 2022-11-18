@@ -69,6 +69,12 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => navigation.navigate('Send')}
                 />
             </View>
+            <View style={styles.buttonsContainer}>
+                <Button
+                    title={t('words.backup')}
+                    onPress={() => navigation.navigate('Backup')}
+                />
+            </View>
         </View>
     )
 }
@@ -84,6 +90,7 @@ const styles = StyleSheet.create({
         margin: 20,
     },
     buttonsContainer: {
+        margin: 10,
         width: '90%',
         flexDirection: 'row',
         justifyContent: 'space-evenly',

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import RNFS from 'react-native-fs'
 import { NativeModules, useColorScheme } from 'react-native'
 
+import Backup from './screens/Backup'
 import ConfirmSend from './screens/ConfirmSend'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
@@ -21,12 +22,13 @@ const {
 } = NativeModules
 
 export type RootStackParamList = {
+    Backup: undefined
+    ConfirmSend: { invoice: string }
     Home: undefined
+    LnInvoice: { invoice: string }
+    Receive: undefined
     Send: undefined
     Splash: undefined
-    Receive: undefined
-    LnInvoice: { invoice: string }
-    ConfirmSend: { invoice: string }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -80,6 +82,11 @@ const App = () => {
                     name="LnInvoice"
                     component={LnInvoice}
                     options={{ title: `${t('phrases.receive-bitcoin')}` }}
+                />
+                <Stack.Screen
+                    name="Backup"
+                    component={Backup}
+                    options={{ title: `${t('words.backup')}` }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
