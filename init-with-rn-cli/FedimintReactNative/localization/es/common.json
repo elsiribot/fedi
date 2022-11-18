@@ -1,6 +1,7 @@
 {
     "words": {
         "amount": "Amount",
+        "backup": "Backup",
         "copy": "Copy",
         "done": "Done",
         "fedimint": "Fedimint",
@@ -21,6 +22,11 @@
         "receive-bitcoin": "Receive bitcoin"
     },
     "feature": {
+        "backup": {
+            "record-video": "Record video",
+            "start-recording": "Start recording",
+            "stop-recording": "Stop recording"
+        },
         "send": {
             "confirm-send": "Confirm Send",
             "paste-lightning-request": "Paste lightning request",

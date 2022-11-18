@@ -4,7 +4,7 @@ import { ActivityIndicator, Button, View, Text, StyleSheet } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
-// import { useScanBarcodes, BarcodeFormat } from 'vision-camera-code-scanner'
+import Share from 'react-native-share'
 
 import type { RootStackParamList } from '../App'
 
@@ -20,13 +20,25 @@ const VideoRecorder = () => {
 
     if (devices.front === undefined) return null
 
-    const saveVideo = (video: VideoFile) => {
+    const saveVideo = async (video: VideoFile) => {
         console.log('saveVideo', video)
-        setVideoFilePath(video.path)
+        setVideoFile(video)
+    }
+
+    const shareVideo = async () => {
+        if (!videoFile?.path) return
+
+        try {
+            const result = await Share.open({
+                url: videoFile.path,
+            })
+            console.log(result)
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     const startRecording = async () => {
-        console.log('startRecording')
         setIsRecording(true)
         camera.current?.startRecording({
             onRecordingFinished: saveVideo,
@@ -37,7 +49,6 @@ const VideoRecorder = () => {
     }
 
     const stopRecording = async () => {
-        console.log('stopRecording')
         setIsRecording(false)
         camera.current?.stopRecording()
     }
@@ -70,6 +81,8 @@ const VideoRecorder = () => {
             {videoFile && (
                 <View>
                     <Text>{`${videoFile.duration} second video of size ${videoFile.size} saved to: ${videoFile.path}`}</Text>
+
+                    <Button title={t('words.share')} onPress={shareVideo} />
                 </View>
             )}
         </>
@@ -79,7 +92,6 @@ const VideoRecorder = () => {
 const Backup: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
-    const [invoice, setInvoice] = React.useState('')
 
     // first check if user has granted camera permissions
     useEffect(() => {
