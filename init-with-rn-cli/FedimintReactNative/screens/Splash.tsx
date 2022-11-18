@@ -2,6 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, NativeModules, StyleSheet, Text, View } from 'react-native'
+import Icon from 'react-native-vector-icons/FontAwesome'
 
 import type { RootStackParamList } from '../App'
 
@@ -33,6 +34,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                 onPress={connectToFederation}
             />
             <Button title="Test module function" onPress={testModuleFunction} />
+            <Icon name="bitcoin" size={30} color="orange" />
         </View>
     )
 }
