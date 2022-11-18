@@ -15,8 +15,6 @@
 
 default_platform(:ios)
 
-ENV['FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD'] = 'wjzg-kteq-uqjx-ftvh'
-
 platform :ios do
   desc "Push a new beta build to TestFlight"
   lane :beta do
