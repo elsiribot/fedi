@@ -22,7 +22,7 @@ const {
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
-const OnchainBtcAddress = () => {
+const ReceiveOnchain = () => {
     const { t } = useTranslation()
     const [address, setAddress] = useState<string>('')
 
@@ -91,9 +91,12 @@ const OnchainBtcAddress = () => {
     )
 }
 
-const Receive: React.FC<Props> = ({ navigation }: Props) => {
+type ReceiveLightningProps = {
+    handleInvoice: Function
+}
+
+const ReceiveLightning = ({ handleInvoice }: ReceiveLightningProps) => {
     const { t } = useTranslation()
-    const [walletMode, setWalletMode] = useState<string>('lightning')
     const [amount, setAmount] = useState<string>('')
     const [amountIsValid, setAmountIsValid] = useState(false)
 
@@ -115,8 +118,35 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         // call fedimint-ffi to generate invoice
         const newInvoice = await generateInvoice(amount, 'test memo')
         console.log(`generateInvoice: ', ${newInvoice})`)
+        handleInvoice(newInvoice)
+    }
+
+    return (
+        <View>
+            <Text>{t('feature.receive.instructions')}</Text>
+            <TextInput
+                onChangeText={onChangeText}
+                value={amount}
+                placeholder={`${t('words.amount')} (${t('words.sats')})`}
+                keyboardType="numeric"
+                returnKeyType="done"
+            />
+            <Button
+                title={t('phrases.generate-invoice')}
+                onPress={onGenerateInvoice}
+                disabled={!amountIsValid}
+            />
+        </View>
+    )
+}
+
+const Receive: React.FC<Props> = ({ navigation }: Props) => {
+    const { t } = useTranslation()
+    const [walletMode, setWalletMode] = useState<string>('lightning')
+
+    const showInvoice = (invoice: string) => {
         navigation.navigate('LnInvoice', {
-            invoice: newInvoice,
+            invoice,
         })
     }
 
@@ -136,27 +166,9 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
             </View>
 
             {walletMode === 'lightning' ? (
-                <View>
-                    <Text>{t('feature.receive.instructions')}</Text>
-                    <TextInput
-                        onChangeText={onChangeText}
-                        value={amount}
-                        placeholder={`${t('words.amount')} (${t(
-                            'words.sats',
-                        )})`}
-                        keyboardType="numeric"
-                        returnKeyType="done"
-                    />
-                    <Button
-                        title={t('phrases.generate-invoice')}
-                        onPress={onGenerateInvoice}
-                        disabled={!amountIsValid}
-                    />
-                </View>
+                <ReceiveLightning handleInvoice={showInvoice} />
             ) : (
-                <View>
-                    <OnchainBtcAddress />
-                </View>
+                <ReceiveOnchain />
             )}
         </View>
     )
