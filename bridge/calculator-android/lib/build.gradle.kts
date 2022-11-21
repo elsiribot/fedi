@@ -57,7 +57,7 @@ afterEvaluate {
             create<MavenPublication>("maven") {
                 groupId = "org.rustylibs"
                 artifactId = "calculator-android"
-                version = "0.1.0"
+                version = "0.1.1"
 
                 from(components["release"])
                 pom {

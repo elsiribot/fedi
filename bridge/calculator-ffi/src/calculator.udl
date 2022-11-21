@@ -6,5 +6,15 @@ enum FedimintError {
 
 namespace calculator {
   [Throws=FedimintError]
-  void init(string data_dir);
+  void fedimint_init(string data_dir);
+
+  [Throws=FedimintError]
+  string fedimint_generate_invoice(string amount, string description);
+
+  [Throws=FedimintError]
+  void fedimint_pay_invoice(string invoice);
+
+  u64 fedimint_balance();
+
+  string fedimint_generate_address();
 };

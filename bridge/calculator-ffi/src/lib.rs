@@ -62,18 +62,27 @@ async fn get_fed() -> Arc<Federation> {
     federation.clone()
 }
 
-pub fn init(data_dir: String) -> Result<()> {
+pub fn fedimint_init(data_dir: String) -> Result<()> {
     RUNTIME.block_on(async {
         init_logging();
+        tracing::info!("init called ...");
 
         let bridge = Bridge::new(PathBuf::from(data_dir));
-        let federation = Federation::join(
-            String::from(r#"{"members":[[0,"ws://188.166.55.8:4001"]]}"#),
-            bridge.data_dir.clone(),
-            bridge.sender.clone(),
-        )
-        .await?;
-        bridge.join_federation(Arc::new(federation)).await;
+
+        // Auto-join testfed
+        {
+            let clients = bridge.clients.lock().await;
+            if clients.len() == 0 {
+                let federation = Federation::join(
+                    String::from(r#"{"members":[[0,"ws://188.166.55.8:4001"]]}"#),
+                    bridge.data_dir.clone(),
+                    bridge.sender.clone(),
+                )
+                .await?;
+                bridge.join_federation(Arc::new(federation)).await;
+            }
+        }
+
         set_bridge(bridge).await;
 
         Ok(())
@@ -81,19 +90,24 @@ pub fn init(data_dir: String) -> Result<()> {
 }
 
 // TODO: can we return lightning_invoice::Invoice type?
-pub fn generate_invoice(amount: String, description: String) -> Result<String> {
+pub fn fedimint_generate_invoice(amount: String, description: String) -> Result<String> {
     RUNTIME.block_on(async {
+        tracing::info!("calling generate_invoice");
         let amount: u64 = amount.parse().unwrap(); // FIXME
+        tracing::info!("partsed amount");
         let federation = get_fed().await;
+        tracing::info!("got fed");
         let amount = Amount::from_sat(amount);
         let invoice = federation.generate_invoice(amount, description).await?;
+        tracing::info!("got invoice {}", invoice.to_string());
         Ok(invoice.to_string())
     })
 }
 
-pub fn pay_invoice(invoice: String) -> Result<()> {
+pub fn fedimint_pay_invoice(invoice: String) -> Result<()> {
     RUNTIME
         .block_on(async {
+            tracing::info!("calling generate_invoice");
             let federation = get_fed().await;
             let invoice: Invoice = invoice.parse().unwrap();
             federation.pay_invoice(&invoice).await
@@ -101,11 +115,23 @@ pub fn pay_invoice(invoice: String) -> Result<()> {
         .map_err(FedimintError::AnyhowError)
 }
 
-pub fn balance() -> u64 {
+pub fn fedimint_balance() -> u64 {
+    RUNTIME.block_on(async {
+        tracing::info!("calling balance");
+        let federation = get_fed().await;
+        tracing::info!("got fed");
+        federation.client.fetch_all_coins().await;
+        tracing::info!("fetching coins");
+        let balance = hacky_millisat_to_sat(federation.client.coins().total_amount().milli_sat);
+        tracing::info!("balance {}", balance);
+        balance
+    })
+}
+
+pub fn fedimint_generate_address() -> String {
     RUNTIME.block_on(async {
         let federation = get_fed().await;
-        federation.client.fetch_all_coins().await;
-        let balance = hacky_millisat_to_sat(federation.client.coins().total_amount().milli_sat);
-        balance
+        let address = federation.generate_address();
+        address.to_string()
     })
 }

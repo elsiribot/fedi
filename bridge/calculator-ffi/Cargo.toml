@@ -1,6 +1,6 @@
 [package]
 name = "calculator-ffi"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
@@ -40,8 +40,8 @@ uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
 [build-dependencies]
 uniffi_build = { version = "0.21.0", features = ["builtin-bindgen"] }
 
-[target.'cfg(target_os = "ios")'.dependencies]
-tracing-oslog = "0.1.2"
+# [target.'cfg(target_os = "ios")'.dependencies]
+# tracing-oslog = "0.1.2"
 
 [target.'cfg(target_os = "android")'.dependencies]
 paranoid-android = { git = "https://github.com/justinmoon/paranoid-android", branch="c_char" }

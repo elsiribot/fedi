@@ -39,7 +39,7 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
                 Pair("PATH",
                     "${System.getenv("PATH")}:${System.getenv("ANDROID_NDK_ROOT")}/toolchains/llvm/prebuilt/$llvmArchPath/bin"),
 
-                Pair("CFLAGS", "-D__ANDROID_API__=21"),
+                // Pair("CFLAGS", "-D__ANDROID_API__=21"),
                 Pair("CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER", "aarch64-linux-android21-clang"),
                 Pair("CC", "aarch64-linux-android21-clang")
             )
@@ -71,7 +71,7 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
                 Pair("PATH",
                     "${System.getenv("PATH")}:${System.getenv("ANDROID_NDK_ROOT")}/toolchains/llvm/prebuilt/$llvmArchPath/bin"),
 
-                Pair("CFLAGS", "-D__ANDROID_API__=21"),
+                // Pair("CFLAGS", "-D__ANDROID_API__=21"),
                 Pair("CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER", "x86_64-linux-android21-clang"),
                 Pair("CC", "x86_64-linux-android21-clang")
             )
@@ -103,7 +103,7 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
                 Pair("PATH",
                     "${System.getenv("PATH")}:${System.getenv("ANDROID_NDK_ROOT")}/toolchains/llvm/prebuilt/$llvmArchPath/bin"),
 
-                Pair("CFLAGS", "-D__ANDROID_API__=21"),
+                // Pair("CFLAGS", "-D__ANDROID_API__=21"),
                 Pair("CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER",
                     "armv7a-linux-androideabi21-clang"),
                 Pair("CC", "armv7a-linux-androideabi21-clang")
@@ -124,15 +124,15 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
             into("${project.projectDir}/../lib/src/main/jniLibs/")
 
             into("arm64-v8a") {
-                from("${project.projectDir}/../../calculator-ffi/target/aarch64-linux-android/release/libcalculatorffi.so")
+                from("${project.projectDir}/../../target/aarch64-linux-android/release/libcalculatorffi.so")
             }
 
             into("x86_64") {
-                from("${project.projectDir}/../../calculator-ffi/target/x86_64-linux-android/release/libcalculatorffi.so")
+                from("${project.projectDir}/../../target/x86_64-linux-android/release/libcalculatorffi.so")
             }
 
             into("armeabi-v7a") {
-                from("${project.projectDir}/../../calculator-ffi/target/armv7-linux-androideabi/release/libcalculatorffi.so")
+                from("${project.projectDir}/../../target/armv7-linux-androideabi/release/libcalculatorffi.so")
             }
 
             doLast {

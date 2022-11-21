@@ -170,6 +170,11 @@ impl Federation {
         Ok(Self::new(client, sender))
     }
 
+    pub fn generate_address(&self) -> Address {
+        let rng = rand::rngs::OsRng;
+        self.client.get_new_pegin_address(rng)
+    }
+
     pub async fn generate_invoice(
         &self,
         amount: fedimint_api::Amount,
@@ -180,8 +185,7 @@ impl Federation {
         let confirmed_invoice = self
             .client
             .generate_invoice(amount, description, &mut rng, None)
-            .await
-            .expect("Couldn't create invoice");
+            .await?;
 
         // Save the keys and invoice for later polling`
         self.save_payment(&Payment::new(
