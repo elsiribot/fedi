@@ -24,7 +24,7 @@ type BalanceProps = {
 const Balance = ({ value }: BalanceProps) => {
     const { t } = useTranslation()
 
-    if (value) {
+    if (value !== '') {
         return (
             <Text style={styles.balanceText}>
                 {`${value} ${t('words.sats')}`}
