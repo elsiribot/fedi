@@ -22,6 +22,11 @@ RCT_EXTERN_METHOD(payInvoice:(NSString*)invoice
 RCT_EXTERN_METHOD(generateAddress:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(payAddress:(NSString*)address
+                  amount:(NSString*)amount
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+
 + (BOOL)requiresMainQueueSetup
 {
   return NO;

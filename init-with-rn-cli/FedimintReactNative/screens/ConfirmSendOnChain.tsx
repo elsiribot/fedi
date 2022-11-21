@@ -1,21 +1,60 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+    Button,
+    NativeModules,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native'
 
 import type { RootStackParamList } from '../App'
+
+const {
+    FedimintFfi: { payAddress },
+} = NativeModules
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'ConfirmSendOnChain'
 >
 
-const ConfirmSend: React.FC<Props> = ({ route }: Props) => {
+const ConfirmSend: React.FC<Props> = ({ navigation, route }: Props) => {
+    const { t } = useTranslation()
     const { address } = route.params
+    const [amount, setAmount] = useState<string>('')
+
+    const onSendBtc = async () => {
+        try {
+            console.log('paying address', address, amount)
+            await payAddress(address, amount)
+            console.log('paid')
+            navigation.navigate('Home')
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    const onChangeText = (updatedValue: string) => {
+        setAmount(updatedValue)
+    }
 
     return (
         <View style={styles.container}>
             <View style={styles.detailsContainer}>
                 <Text style={styles.address}>{address}</Text>
+                <TextInput
+                    onChangeText={onChangeText}
+                    value={amount}
+                    placeholder={`${t('words.amount')} (${t('words.sats')})`}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                />
+                <View style={styles.buttonContainer}>
+                    <Button title={t('words.send')} onPress={onSendBtc} />
+                </View>
             </View>
         </View>
     )

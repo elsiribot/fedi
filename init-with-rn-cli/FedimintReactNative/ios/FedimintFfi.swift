@@ -47,4 +47,16 @@ class FedimintFfi: NSObject {
     resolve(fedimintGenerateAddress())
   }
 
+  @objc
+  func payAddress(_ address: NSString, amount: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    let addr = String(address)
+    let amt = String(amount)
+    do {
+      let txid = try fedimintPayAddress(address: addr, amount: amt)
+      resolve(txid)
+    } catch {
+      reject(error.localizedDescription, error.localizedDescription, error)
+    }
+  }
+
 }

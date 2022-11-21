@@ -54,6 +54,16 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
         promise.resolve(fedimintGenerateAddress())
     }
 
+    @ReactMethod
+    fun payAddress(address: String, amount: String, promise: Promise) {
+        try {
+            var txid = fedimintPayAddress(address, amount)
+            promise.resolve(txid)
+        } catch (error: Throwable) {
+            promise.reject("payInvoice error", error.localizedMessage, error)
+        }
+    }
+
     companion object {
         const val NAME = "FedimintFfi"
     }

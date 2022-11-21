@@ -1,17 +1,17 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Button,
-    Text,
-    StyleSheet,
-    View,
-    NativeModules,
     Modal,
+    NativeModules,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
-import type { RootStackParamList } from '../App'
 import { useTheme } from '@react-navigation/native'
+import type { RootStackParamList } from '../App'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ConfirmSend'>
 
@@ -82,6 +82,7 @@ const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
 
     const onSendBtc = async () => {
         try {
+            console.log('paying invoice', invoice)
             await payInvoice(invoice)
             console.log('invoice paid')
             setInvoicePaid(true)
@@ -96,7 +97,7 @@ const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
                 <Text>{t('feature.send.you-are-sending')}</Text>
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
-                <Text>{``}</Text>
+                <Text>{''}</Text>
                 <Text>{`${truncateInvoice(invoice)}`}</Text>
                 <Text>{`${t('phrases.expires-in')} ${formatExpiry(
                     expiry,
