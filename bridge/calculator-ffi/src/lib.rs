@@ -5,7 +5,7 @@ pub mod test;
 pub mod tx;
 pub mod types;
 
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use fedimint_api::Amount;
 use lazy_static::lazy_static;
@@ -14,9 +14,10 @@ uniffi_macros::include_scaffolding!("calculator");
 
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
-use mint_client::ClientError;
+use mint_client::{wallet::WalletClientError, ClientError};
 use test::init_logging;
 use tokio::sync::Mutex;
+use tx::Transaction;
 use types::hacky_millisat_to_sat;
 
 type Result<T> = std::result::Result<T, FedimintError>;
@@ -25,8 +26,12 @@ type Result<T> = std::result::Result<T, FedimintError>;
 pub enum FedimintError {
     #[error("ClientError {0}")]
     ClientError(#[from] ClientError),
+    #[error("WalletClientError {0}")]
+    WalletClientError(#[from] WalletClientError),
     #[error("Anyhow {0}")]
     AnyhowError(#[from] anyhow::Error),
+    #[error("InvalidAddress")]
+    InvalidAddress,
 }
 
 lazy_static! {
@@ -133,5 +138,30 @@ pub fn fedimint_generate_address() -> String {
         let federation = get_fed().await;
         let address = federation.generate_address();
         address.to_string()
+    })
+}
+
+pub fn fedimint_pay_address(address: String, amount: String) -> Result<String> {
+    RUNTIME.block_on(async {
+        let federation = get_fed().await;
+        let amount: u64 = amount.parse().unwrap();
+        let amount = bitcoin::Amount::from_sat(amount);
+        let address = bitcoin::util::address::Address::from_str(&address)
+            .map_err(|_| FedimintError::InvalidAddress)?;
+        let mut rng = rand::rngs::OsRng;
+        let peg_out = federation
+            .client
+            .new_peg_out_with_fees(amount, address)
+            .await?;
+        let out_point = federation.client.peg_out(peg_out, &mut rng).await?;
+        federation
+            .client
+            .wallet_client()
+            .await_peg_out_outcome(out_point)
+            .await
+            .map_err(FedimintError::WalletClientError)?;
+        federation.update_balance().await;
+        federation.save_transaction(&Transaction::new(true, amount.to_sat() * 1000));
+        Ok(out_point.txid.to_string())
     })
 }

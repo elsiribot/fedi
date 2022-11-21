@@ -2,6 +2,8 @@
 enum FedimintError {
   "ClientError",
   "AnyhowError",
+  "WalletClientError",
+  "InvalidAddress",
 };
 
 namespace calculator {
@@ -17,4 +19,7 @@ namespace calculator {
   u64 fedimint_balance();
 
   string fedimint_generate_address();
+
+  [Throws=FedimintError]
+  string fedimint_pay_address(string address, string amount);
 };
