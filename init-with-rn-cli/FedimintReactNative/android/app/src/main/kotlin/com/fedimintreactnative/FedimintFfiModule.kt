@@ -4,11 +4,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
-
-import org.rustylibs.calculator.fedimintInit;
-import org.rustylibs.calculator.fedimintBalance;
-import org.rustylibs.calculator.fedimintPayInvoice;
-import org.rustylibs.calculator.fedimintGenerateInvoice
+import org.rustylibs.calculator.*
 
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
@@ -29,12 +25,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun balance(promise: Promise) {
-        try {
-            println("inside balance")
-            promise.resolve(fedimintBalance().toInt()) // FIXME: it barfs on ULong
-        } catch (error: Throwable) {
-            promise.reject("balance error", error.localizedMessage, error)
-        }
+        promise.resolve(fedimintBalance().toInt()) // FIXME: it barfs on ULong
     }
 
     @ReactMethod
@@ -58,7 +49,13 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
         }
     }
 
+    @ReactMethod
+    fun generateAddress(promise: Promise) {
+        promise.resolve(fedimintGenerateAddress())
+    }
+
     companion object {
         const val NAME = "FedimintFfi"
     }
+
 }

@@ -1,3 +1,5 @@
+import Clipboard from '@react-native-clipboard/clipboard'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -10,14 +12,12 @@ import {
     TextInput,
     View,
 } from 'react-native'
-import Clipboard from '@react-native-clipboard/clipboard'
 import QRCode from 'react-native-qrcode-svg'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 import type { RootStackParamList } from '../App'
 
 const {
-    FedimintFfi: { generateInvoice },
+    FedimintFfi: { generateInvoice, generateAddress },
 } = NativeModules
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
@@ -29,8 +29,7 @@ const ReceiveOnchain = () => {
     useEffect(() => {
         const generateOnchainAddress = async () => {
             // Using hardcoded address until rust FFI is ready
-            // const newAddress = await generateOnchainAddress()
-            const newAddress = 'bcrt1qaqwtgvfq96f8e3mm2qe394pp2atnz4syzkpv07'
+            const newAddress = await generateAddress()
 
             setAddress(newAddress)
         }

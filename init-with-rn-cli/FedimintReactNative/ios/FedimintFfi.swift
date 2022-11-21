@@ -42,4 +42,9 @@ class FedimintFfi: NSObject {
     }
   }
 
+  @objc
+  func generateAddress(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    resolve(fedimintGenerateAddress())
+  }
+
 }
