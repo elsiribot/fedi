@@ -1,11 +1,21 @@
-# Readme
+# Fedi README
+
+You might need to do slightly different things than these. Still figuring out how Android works ...
+
+```shell
+export ANDROID_NDK_ROOT=/Users/justin/Library/Android/sdk/ndk/25.1.8937393
+export PATH="$PATH:/Users/justin/Library/Android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/darwin-x86_64/bin"
+export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
+./build.sh
+```
+
+# Old README
+
 ## Build the library for Android
 1. Fire the `buildAndroidLib` gradle task in the `calculator-android` directory
 2. Publish it to your local Maven (the library will appear at `~/.m2/repository/org/rustylibs/calculator-android/0.1.1/`)
 ```shell
 cd calculator-android
-export PATH="$PATH:/Users/justin/Library/Android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/darwin-x86_64/bin"
-export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
 ./gradlew buildAndroidLib
 ./gradlew publishToMavenLocal
 ```
