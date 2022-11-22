@@ -1,13 +1,21 @@
 package com.fedimintreactnative
 
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.Promise
+import android.util.Log
+import com.facebook.react.bridge.*
+import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.rustylibs.calculator.*
 
+object EventDispatcher : EventSink {
+    override fun event(eventType: String, body: String) {
+        FedimintEventEmitter.send(eventType, body)
+    }
+}
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
+
+    init {
+        FedimintEventEmitter.setContext(reactContext)
+    }
 
     override fun getName(): String {
         return NAME
@@ -15,8 +23,9 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun init(dataDir: String, promise: Promise) {
+        Log.i("test", "kotlin calling init")
         try {
-            fedimintInit(dataDir)
+            fedimintInit(dataDir, EventDispatcher)
             promise.resolve(null)
         } catch (error: Throwable) {
             promise.reject("Init error", error.localizedMessage, error)
@@ -68,4 +77,20 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
         const val NAME = "FedimintFfi"
     }
 
+}
+
+object FedimintEventEmitter {
+    private var reactContext: ReactContext? = null
+
+    fun setContext(reactContext: ReactContext) {
+        this.reactContext = reactContext
+    }
+
+    fun send(eventType: String, body: Any) {
+        if (this.reactContext === null) {
+            return
+        }
+
+        this.reactContext!!.getJSModule(RCTDeviceEventEmitter::class.java).emit(eventType, body)
+    }
 }
