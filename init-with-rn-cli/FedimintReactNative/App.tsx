@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react'
 import {
-    NavigationContainer,
     DarkTheme,
     DefaultTheme,
+    NavigationContainer,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import RNFS from 'react-native-fs'
 import { NativeModules, useColorScheme } from 'react-native'
+import RNFS from 'react-native-fs'
 
 import Backup from './screens/Backup'
 import ConfirmSend from './screens/ConfirmSend'
+import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
 import Receive from './screens/Receive'
@@ -24,6 +25,7 @@ const {
 export type RootStackParamList = {
     Backup: undefined
     ConfirmSend: { invoice: string }
+    ConfirmSendOnChain: { address: string }
     Home: undefined
     LnInvoice: { invoice: string }
     Receive: undefined
@@ -71,6 +73,11 @@ const App = () => {
                 <Stack.Screen
                     name="ConfirmSend"
                     component={ConfirmSend}
+                    options={{ title: `${t('feature.send.confirm-send')}` }}
+                />
+                <Stack.Screen
+                    name="ConfirmSendOnChain"
+                    component={ConfirmSendOnChain}
                     options={{ title: `${t('feature.send.confirm-send')}` }}
                 />
                 <Stack.Screen

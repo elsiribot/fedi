@@ -4,13 +4,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
-
-import org.fedimint.init;
-import org.fedimint.balance;
-import org.fedimint.generateInvoice;
-
-
-import org.fedimint.payInvoice;
+import org.rustylibs.calculator.*
 
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
@@ -22,7 +16,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun init(dataDir: String, promise: Promise) {
         try {
-            init(dataDir)
+            fedimintInit(dataDir)
             promise.resolve(null)
         } catch (error: Throwable) {
             promise.reject("Init error", error.localizedMessage, error)
@@ -31,19 +25,14 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun balance(promise: Promise) {
-        try {
-            println("inside balance")
-            promise.resolve(balance().toInt()) // FIXME: it barfs on ULong
-        } catch (error: Throwable) {
-            promise.reject("balance error", error.localizedMessage, error)
-        }
+        promise.resolve(fedimintBalance().toInt()) // FIXME: it barfs on ULong
     }
 
     @ReactMethod
     fun generateInvoice(amount: String, description: String, promise: Promise) {
         try {
             println("inside generate invoice")
-            var invoice = generateInvoice(amount, description)
+            var invoice = fedimintGenerateInvoice(amount, description)
             promise.resolve(invoice)
         } catch (error: Throwable) {
             promise.reject("generateInvoice error", error.localizedMessage, error)
@@ -53,8 +42,23 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun payInvoice(invoice: String, promise: Promise) {
         try {
-            payInvoice(invoice)
+            fedimintPayInvoice(invoice)
             promise.resolve(null)
+        } catch (error: Throwable) {
+            promise.reject("payInvoice error", error.localizedMessage, error)
+        }
+    }
+
+    @ReactMethod
+    fun generateAddress(promise: Promise) {
+        promise.resolve(fedimintGenerateAddress())
+    }
+
+    @ReactMethod
+    fun payAddress(address: String, amount: String, promise: Promise) {
+        try {
+            var txid = fedimintPayAddress(address, amount)
+            promise.resolve(txid)
         } catch (error: Throwable) {
             promise.reject("payInvoice error", error.localizedMessage, error)
         }
@@ -63,4 +67,5 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     companion object {
         const val NAME = "FedimintFfi"
     }
+
 }

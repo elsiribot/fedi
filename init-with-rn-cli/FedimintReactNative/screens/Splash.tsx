@@ -1,13 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, NativeModules, StyleSheet, Text, View } from 'react-native'
+import { Button, StyleSheet, View } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome'
 
 import type { RootStackParamList } from '../App'
-
-const { FedimintFfi } = NativeModules
-const { init } = FedimintFfi
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 

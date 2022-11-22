@@ -1,14 +1,14 @@
+import Clipboard from '@react-native-clipboard/clipboard'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Button, View, Text, StyleSheet } from 'react-native'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import Clipboard from '@react-native-clipboard/clipboard'
+import { ActivityIndicator, Button, StyleSheet, Text, View } from 'react-native'
 import {
     Camera,
-    useCameraDevices,
     CameraDevice,
+    useCameraDevices,
 } from 'react-native-vision-camera'
-import { useScanBarcodes, BarcodeFormat } from 'vision-camera-code-scanner'
+import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
 
 import type { RootStackParamList } from '../App'
 
@@ -48,6 +48,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
     const [invoice, setInvoice] = React.useState('')
+    const [address, setAddress] = React.useState('')
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -73,17 +74,30 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 invoice,
             })
         }
-    }, [invoice, navigation])
+        if (address.length > 0) {
+            // TODO: go to send confirm screen before calling payInvoice
+            navigation.navigate('ConfirmSendOnChain', {
+                address,
+            })
+        }
+    }, [invoice, address, navigation])
+
+    function handleUserInput(input: string) {
+        if (input.startsWith('lnbc')) {
+            console.log('sending ln')
+            setInvoice(input)
+        } else if (input.startsWith('bcrt')) {
+            console.log('sending btc')
+            setAddress(input)
+        } else {
+            console.log('no invoice detected')
+        }
+    }
 
     const checkClipboard = async () => {
         // call fedimint-ffi here
         const text = await Clipboard.getString()
-
-        if (text.startsWith('lnbc')) {
-            setInvoice(text)
-        } else {
-            console.log('no invoice detected')
-        }
+        handleUserInput(text)
     }
 
     const devices = useCameraDevices()
@@ -97,10 +111,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 <CameraScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
-                        if (!invoice && qrCodeData.substring(0, 2) === 'ln') {
-                            setInvoice(qrCodeData)
-                        }
-                        setInvoice(qrCodeData)
+                        handleUserInput(qrCodeData)
                     }}
                 />
             )
