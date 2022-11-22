@@ -21,6 +21,12 @@ platform :android do
     gradle(task: "test")
   end
 
+  desc "Build a new app bundle (but do not upload)"
+  lane :build do
+    gradle(task: 'clean')
+    gradle(task: 'bundleRelease')
+  end
+
   desc "Submit a new internal build"
   lane :internal do
     gradle(task: 'clean')
@@ -31,18 +37,28 @@ platform :android do
     )
   end
 
-  desc "Submit a new Beta Build"
-  lane :beta do
-    gradle(
-      task: 'assemble',
-      build_type: 'Release'
+  desc "Upload a build for internal testing"
+  lane :internalUploadOnly do
+    upload_to_play_store(
+      track: 'internal',
+      aab: './app/build/outputs/bundle/release/app-release.aab',
+      release_status: 'draft',
+      skip_upload_apk: true
     )
-    upload_to_play_store(track: 'beta')
   end
 
-  desc "Deploy a new version to the Google Play"
-  lane :deploy do
-    gradle(task: "clean assembleRelease")
-    upload_to_play_store
-  end
+  # desc "Submit a new Beta Build"
+  # lane :beta do
+  #   gradle(
+  #     task: 'assemble',
+  #     build_type: 'Release'
+  #   )
+  #   upload_to_play_store(track: 'beta')
+  # end
+
+  # desc "Deploy a new version to the Google Play"
+  # lane :deploy do
+  #   gradle(task: "clean assembleRelease")
+  #   upload_to_play_store
+  # end
 end
