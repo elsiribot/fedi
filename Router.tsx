@@ -34,19 +34,9 @@ const Router = () => {
         <NavigationContainer theme={theme}>
             <Stack.Navigator>
                 <Stack.Screen
-                    name="Splash"
-                    component={Splash}
-                    options={{ title: `${t('words.fedimint')}` }}
-                />
-                <Stack.Screen
-                    name="Home"
-                    component={Home}
-                    options={{ title: `${t('words.home')}` }}
-                />
-                <Stack.Screen
-                    name="Send"
-                    component={Send}
-                    options={{ title: `${t('words.send')}` }}
+                    name="Backup"
+                    component={Backup}
+                    options={{ title: `${t('words.backup')}` }}
                 />
                 <Stack.Screen
                     name="ConfirmSend"
@@ -63,11 +53,9 @@ const Router = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="Receive"
-                    component={Receive}
-                    options={{
-                        title: `${t('phrases.receive-bitcoin')}`,
-                    }}
+                    name="Home"
+                    component={Home}
+                    options={{ title: `${t('words.home')}` }}
                 />
                 <Stack.Screen
                     name="LnInvoice"
@@ -77,9 +65,21 @@ const Router = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="Backup"
-                    component={Backup}
-                    options={{ title: `${t('words.backup')}` }}
+                    name="Receive"
+                    component={Receive}
+                    options={{
+                        title: `${t('phrases.receive-bitcoin')}`,
+                    }}
+                />
+                <Stack.Screen
+                    name="Send"
+                    component={Send}
+                    options={{ title: `${t('words.send')}` }}
+                />
+                <Stack.Screen
+                    name="Splash"
+                    component={Splash}
+                    options={{ title: `${t('words.fedimint')}` }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
