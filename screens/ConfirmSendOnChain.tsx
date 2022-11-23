@@ -10,7 +10,7 @@ import {
     View,
 } from 'react-native'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 const {
     FedimintFfi: { payAddress },

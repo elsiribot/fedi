@@ -6,7 +6,7 @@ import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
 import Share from 'react-native-share'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Backup'>
 

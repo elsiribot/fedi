@@ -10,7 +10,7 @@ import {
 } from 'react-native-vision-camera'
 import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 

@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 const {
     FedimintFfi: { generateInvoice, generateAddress },

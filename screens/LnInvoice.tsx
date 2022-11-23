@@ -5,7 +5,7 @@ import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import QRCode from 'react-native-qrcode-svg'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 

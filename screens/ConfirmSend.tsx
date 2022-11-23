@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 
 import { useTheme } from '@react-navigation/native'
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ConfirmSend'>
 

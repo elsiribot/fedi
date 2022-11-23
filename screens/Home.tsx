@@ -9,7 +9,7 @@ import {
     ActivityIndicator,
 } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 const {
     FedimintFfi: { balance },
