@@ -73,10 +73,6 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                     containerStyle={styles.button}
                 />
             </View>
-            <Button
-                title={t('words.backup')}
-                onPress={() => navigation.navigate('Backup')}
-            />
         </View>
     )
 }
