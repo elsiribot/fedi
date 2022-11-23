@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     View,
-    Text,
     NativeModules,
     StyleSheet,
     ActivityIndicator,
 } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../Router'
-import { Button } from '@rneui/themed'
+import { Button, Text } from '@rneui/themed'
 
 const {
     FedimintFfi: { balance },
@@ -25,11 +24,7 @@ const Balance = ({ value }: BalanceProps) => {
     const { t } = useTranslation()
 
     if (value !== '') {
-        return (
-            <Text style={styles.balanceText}>
-                {`${value} ${t('words.sats')}`}
-            </Text>
-        )
+        return <Text h2>{`${value} ${t('words.sats')}`}</Text>
     } else {
         return <ActivityIndicator />
     }
@@ -63,18 +58,20 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 <Button
                     title={t('words.receive')}
                     onPress={() => navigation.navigate('Receive')}
+                    size="lg"
+                    containerStyle={styles.button}
                 />
                 <Button
                     title={t('words.send')}
                     onPress={() => navigation.navigate('Send')}
+                    size="lg"
+                    containerStyle={styles.button}
                 />
             </View>
-            <View style={styles.buttonsContainer}>
-                <Button
-                    title={t('words.backup')}
-                    onPress={() => navigation.navigate('Backup')}
-                />
-            </View>
+            <Button
+                title={t('words.backup')}
+                onPress={() => navigation.navigate('Backup')}
+            />
         </View>
     )
 }
@@ -85,12 +82,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    balanceText: {
-        fontSize: 36,
-        margin: 20,
+    button: {
+        flex: 1,
+        marginLeft: 10,
+        marginRight: 10,
     },
     buttonsContainer: {
-        margin: 10,
+        margin: 20,
         width: '90%',
         flexDirection: 'row',
         justifyContent: 'space-evenly',

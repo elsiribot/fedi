@@ -1,7 +1,11 @@
-import { Platform } from 'react-native'
 import { lightColors, createTheme } from '@rneui/themed'
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
 
+const colors = {
+    ...lightColors,
+    primary: '#000000',
+    secondary: '#FFFFFF',
+}
 const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
@@ -15,11 +19,8 @@ const theme = createTheme({
             },
         },
     },
-    lightColors: {
-        ...Platform.select({
-            default: lightColors.platform.android,
-            ios: lightColors.platform.ios,
-        }),
+    colors: {
+        ...colors,
     },
 })
 
