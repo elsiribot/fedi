@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next'
 import {
     View,
     Text,
-    Button,
     NativeModules,
     StyleSheet,
     ActivityIndicator,
 } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../Router'
+import { Button } from '@rneui/themed'
 
 const {
     FedimintFfi: { balance },

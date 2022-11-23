@@ -1,9 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Text, Share, StyleSheet, View } from 'react-native'
+import { Text, Share, StyleSheet, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import QRCode from 'react-native-qrcode-svg'
+import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 

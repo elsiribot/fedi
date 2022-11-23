@@ -23,7 +23,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles.container}>
             <Button
-                title={t('phrases.connect-to-federation') as string}
+                title={t('phrases.connect-to-federation')}
                 onPress={connectToFederation}
             />
         </View>
