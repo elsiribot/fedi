@@ -13,10 +13,11 @@ use std::{
 };
 
 use crate::{
-    event::BridgeEvent,
+    event::Event,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     tx::{Transaction, TransactionKey, TransactionKeyPrefix},
     types::hacky_millisat_to_sat,
+    EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
 use bitcoin::{hashes::sha256, Address, Script, Txid};
@@ -37,15 +38,13 @@ use mint_client::{
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tokio::{sync::broadcast, task::JoinHandle};
+use tokio::task::JoinHandle;
 
 type FederationId = String;
-type BridgeEventSender = broadcast::Sender<BridgeEvent>;
-type EventReceiver = broadcast::Receiver<BridgeEvent>;
 
 fn get_federations(
     data_dir: &PathBuf,
-    sender: BridgeEventSender,
+    event_sink: Arc<EventSinkWrapper>,
 ) -> HashMap<FederationId, Arc<Federation>> {
     let mut federations = HashMap::new();
     for element in data_dir.read_dir().unwrap() {
@@ -57,7 +56,7 @@ fn get_federations(
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
                 let client = UserClient::new(cfg.clone(), db.into(), Default::default());
-                let federation = Arc::new(Federation::new(client, sender.clone()));
+                let federation = Arc::new(Federation::new(client, event_sink.clone()));
                 federations.insert(cfg.0.federation_name, federation);
             }
         }
@@ -69,17 +68,14 @@ pub struct Bridge {
     /// Where dbs & configs are stored. Result of calling getApplicationDocumentsDirectory() in Dart.
     pub data_dir: PathBuf,
     pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
-    pub receiver: EventReceiver,
-    pub sender: BridgeEventSender,
+    pub event_sink: Arc<EventSinkWrapper>,
     pub pollers: Arc<Mutex<Vec<JoinHandle<()>>>>,
 }
 
 impl Bridge {
     // TODO: initialize all clients in data_dir
-    // pub fn new(data_dir: PathBuf, stream_sink: StreamSink<BridgeEvent>) -> Self {
-    pub fn new(data_dir: PathBuf) -> Self {
-        let (sender, receiver) = tokio::sync::broadcast::channel::<BridgeEvent>(100);
-        let federations = get_federations(&data_dir, sender.clone());
+    pub fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
+        let federations = get_federations(&data_dir, event_sink.clone());
 
         // spawn pollers
         let mut pollers = vec![];
@@ -91,9 +87,8 @@ impl Bridge {
         let bridge = Self {
             data_dir,
             clients: Arc::new(Mutex::new(federations)),
-            sender,
-            receiver, // stream_sink,
             pollers: Arc::new(Mutex::new(pollers)),
+            event_sink,
         };
         // TODO: this should start pollers for all federations ...
         // or instantiating `Federation` should do so ...
@@ -117,21 +112,21 @@ impl Bridge {
 #[derive(Clone)]
 pub struct Federation {
     pub client: Arc<UserClient>,
-    pub sender: Arc<BridgeEventSender>,
+    pub event_sink: Arc<EventSinkWrapper>,
 }
 
 impl Federation {
-    pub fn new(client: UserClient, sender: BridgeEventSender) -> Self {
+    pub fn new(client: UserClient, event_sink: Arc<EventSinkWrapper>) -> Self {
         Self {
             client: Arc::new(client),
-            sender: Arc::new(sender),
+            event_sink,
         }
     }
 
     pub async fn join(
         connect_string: String,
         data_dir: PathBuf,
-        sender: BridgeEventSender,
+        event_sink: Arc<EventSinkWrapper>,
     ) -> Result<Self> {
         // Download federation config
         let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
@@ -167,7 +162,7 @@ impl Federation {
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
         let db = SledDb::open(db_path, "client")?;
         let client = UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default());
-        Ok(Self::new(client, sender))
+        Ok(Self::new(client, event_sink))
     }
 
     pub fn generate_address(&self) -> Address {
@@ -411,23 +406,21 @@ impl Federation {
     fn send_balance_notification(&self) {
         let balance = hacky_millisat_to_sat(self.client.coins().total_amount().milli_sat);
         let federation_id = self.client.config().0.federation_name;
-        let event = BridgeEvent::balance_event(federation_id.clone(), balance);
-        self.sender.send(event).expect("couldn't send event");
+        let event = Event::balance(federation_id.clone(), balance);
+        self.event_sink.event(&event);
     }
 
     fn send_received_lightning_payment_event(&self, invoice: &Invoice) {
         let federation_id = self.client.config().0.federation_name;
-        let event = BridgeEvent::received_lightning(
-            federation_id.clone(),
-            invoice.payment_hash().to_string(),
-        );
-        self.sender.send(event).expect("couldn't send event");
+        let event =
+            Event::received_lightning(federation_id.clone(), invoice.payment_hash().to_string());
+        self.event_sink.event(&event);
     }
 
     fn send_received_on_chain_payment_event(&self, txid: &Txid, address: &Address) {
         let federation_id = self.client.config().0.federation_name;
-        let event = BridgeEvent::received_on_chain(federation_id.clone(), txid, address);
-        self.sender.send(event).expect("couldn't send event");
+        let event = Event::received_bitcoin(federation_id.clone(), txid, address);
+        self.event_sink.event(&event);
     }
 
     pub async fn event_loop(&self) {

@@ -17,7 +17,7 @@ buildscript {
 // and knows whether to publish to a SNAPSHOT repository or not
 // https://github.com/gradle-nexus/publish-plugin#applying-the-plugin
 group = "org.calculator"
-version = "0.1.1"
+version = "0.1.2"
 
 // nexusPublishing {
 //     repositories {

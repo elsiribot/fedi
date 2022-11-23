@@ -20,6 +20,8 @@ use tokio::sync::Mutex;
 use tx::Transaction;
 use types::hacky_millisat_to_sat;
 
+use crate::event::Event;
+
 type Result<T> = std::result::Result<T, FedimintError>;
 
 #[derive(Debug, thiserror::Error)]
@@ -67,12 +69,13 @@ async fn get_fed() -> Arc<Federation> {
     federation.clone()
 }
 
-pub fn fedimint_init(data_dir: String) -> Result<()> {
+pub fn fedimint_init(data_dir: String, event_sink: Box<dyn EventSink>) -> Result<()> {
     RUNTIME.block_on(async {
         init_logging();
         tracing::info!("init called ...");
 
-        let bridge = Bridge::new(PathBuf::from(data_dir));
+        let event_sink = Arc::new(EventSinkWrapper { event_sink });
+        let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone());
 
         // Auto-join testfed
         {
@@ -81,7 +84,7 @@ pub fn fedimint_init(data_dir: String) -> Result<()> {
                 let federation = Federation::join(
                     String::from(r#"{"members":[[0,"ws://188.166.55.8:4001"]]}"#),
                     bridge.data_dir.clone(),
-                    bridge.sender.clone(),
+                    event_sink.clone(),
                 )
                 .await?;
                 bridge.join_federation(Arc::new(federation)).await;
@@ -164,4 +167,36 @@ pub fn fedimint_pay_address(address: String, amount: String) -> Result<String> {
         federation.save_transaction(&Transaction::new(true, amount.to_sat() * 1000));
         Ok(out_point.txid.to_string())
     })
+}
+
+/// Sends events to iOS / Android layer
+pub trait EventSink: Send + Sync + 'static {
+    /// Send event. Body is JSON-serialized
+    // fn event(&self, event: Event, body: String);
+    fn event(&self, event_type: String, body: String);
+}
+
+/// Wrapper around EventSink which JSON serializes messages. This is more ergonomic in Swift / Kotlin
+/// than code-generated enums, and RCTEventEmitter has the same arguments.
+pub struct EventSinkWrapper {
+    event_sink: Box<dyn EventSink>,
+}
+
+impl EventSinkWrapper {
+    fn event(&self, event: &Event) {
+        match event {
+            Event::Balance { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("balance".into(), body);
+            }
+            Event::ReceivedLightning { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("receivedLightning".into(), body);
+            }
+            Event::ReceivedBitcoin { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("receivedBitcoin".into(), body);
+            }
+        };
+    }
 }

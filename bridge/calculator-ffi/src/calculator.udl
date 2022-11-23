@@ -8,7 +8,7 @@ enum FedimintError {
 
 namespace calculator {
   [Throws=FedimintError]
-  void fedimint_init(string data_dir);
+  void fedimint_init(string data_dir, EventSink event_sink);
 
   [Throws=FedimintError]
   string fedimint_generate_invoice(string amount, string description);
@@ -22,4 +22,9 @@ namespace calculator {
 
   [Throws=FedimintError]
   string fedimint_pay_address(string address, string amount);
+
+};
+
+callback interface EventSink {
+  void event(string event_type, string body);
 };

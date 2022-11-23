@@ -13,7 +13,7 @@ export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
 
 ## Build the library for Android
 1. Fire the `buildAndroidLib` gradle task in the `calculator-android` directory
-2. Publish it to your local Maven (the library will appear at `~/.m2/repository/org/rustylibs/calculator-android/0.1.1/`)
+2. Publish it to your local Maven (the library will appear at `~/.m2/repository/org/rustylibs/calculator-android/0.1.2/`)
 ```shell
 cd calculator-android
 ./gradlew buildAndroidLib
