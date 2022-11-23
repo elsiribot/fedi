@@ -65,3 +65,6 @@ buck-out/
 
 # Environment variables
 .env
+
+# local files
+.local
