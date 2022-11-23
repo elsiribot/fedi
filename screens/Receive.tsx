@@ -7,12 +7,11 @@ import {
     NativeModules,
     Share,
     StyleSheet,
-    Text,
     TextInput,
     View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { Button, ButtonGroup } from '@rneui/themed'
+import { Button, ButtonGroup, Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 
@@ -72,6 +71,7 @@ const ReceiveOnchain = () => {
             {address ? (
                 <>
                     <QRCode value={address} size={300} />
+                    <Text>{address}</Text>
                     <View style={styles.buttonsContainer}>
                         <Button
                             title={t('words.share')}
@@ -152,12 +152,12 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles.container}>
             <ButtonGroup
-                selectedIndex={walletMode === 'onchain' ? 0 : 1}
+                selectedIndex={walletMode === 'lightning' ? 0 : 1}
                 onPress={index => {
-                    if (index === 0) setWalletMode('onchain')
-                    if (index === 1) setWalletMode('lightning')
+                    if (index === 0) setWalletMode('lightning')
+                    if (index === 1) setWalletMode('onchain')
                 }}
-                buttons={[t('words.onchain'), t('words.lightning')]}
+                buttons={[t('words.lightning'), t('words.onchain')]}
                 containerStyle={styles.buttonGroupContainer}
             />
 
