@@ -5,8 +5,11 @@ import '@rneui/themed'
 declare module '@rneui/themed' {
     export interface Theme {
         dark: boolean
+        components: any
         colors: {
             primary: string
+            primaryLight: string
+            secondary: string
             background: string
             card: string
             text: string

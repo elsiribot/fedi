@@ -2,7 +2,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useTheme } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 
 import Backup from './screens/Backup'
 import ConfirmSend from './screens/ConfirmSend'
@@ -32,7 +32,15 @@ const Router = () => {
 
     return (
         <NavigationContainer theme={theme}>
-            <Stack.Navigator>
+            <Stack.Navigator
+                screenOptions={{
+                    headerTitle: props => <Text {...props} />,
+                }}>
+                <Stack.Screen
+                    name="Splash"
+                    component={Splash}
+                    options={{ title: `${t('words.fedimint')}` }}
+                />
                 <Stack.Screen
                     name="Backup"
                     component={Backup}
@@ -55,7 +63,10 @@ const Router = () => {
                 <Stack.Screen
                     name="Home"
                     component={Home}
-                    options={{ title: `${t('words.home')}` }}
+                    options={{
+                        title: `${t('words.home')}`,
+                        headerShown: false,
+                    }}
                 />
                 <Stack.Screen
                     name="LnInvoice"
@@ -75,11 +86,6 @@ const Router = () => {
                     name="Send"
                     component={Send}
                     options={{ title: `${t('words.send')}` }}
-                />
-                <Stack.Screen
-                    name="Splash"
-                    component={Splash}
-                    options={{ title: `${t('words.fedimint')}` }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

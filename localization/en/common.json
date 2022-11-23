@@ -12,8 +12,10 @@
         "onchain": "On-chain",
         "receive": "Receive",
         "sats": "sats",
+        "settings": "Settings",
         "share": "Share",
-        "send": "Send"
+        "send": "Send",
+        "wallet": "Wallet"
     },
     "phrases": {
         "connect-to-federation": "Connect to federation",
