@@ -1,10 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, StyleSheet, View } from 'react-native'
-import Icon from 'react-native-vector-icons/FontAwesome'
+import { StyleSheet, View } from 'react-native'
+import { Button } from '@rneui/themed'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -20,18 +20,12 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         navigation.navigate('Home')
     }
 
-    const testModuleFunction = async () => {
-        // console.log('2 * 10', await multiply(2, 10))
-    }
-
     return (
         <View style={styles.container}>
             <Button
                 title={t('phrases.connect-to-federation')}
                 onPress={connectToFederation}
             />
-            <Button title="Test module function" onPress={testModuleFunction} />
-            <Icon name="bitcoin" size={30} color="orange" />
         </View>
     )
 }

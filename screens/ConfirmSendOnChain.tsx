@@ -1,16 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    Button,
-    NativeModules,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native'
+import { NativeModules, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Button } from '@rneui/themed'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 const {
     FedimintFfi: { payAddress },

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
-    Button,
     NativeModules,
     Share,
     StyleSheet,
@@ -13,8 +12,9 @@ import {
     View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
+import { Button, ButtonGroup } from '@rneui/themed'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 const {
     FedimintFfi: { generateInvoice, generateAddress },
@@ -151,18 +151,15 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.buttonsContainer}>
-                <Button
-                    title={t('words.onchain')}
-                    onPress={() => setWalletMode('onchain')}
-                    disabled={walletMode === 'onchain'}
-                />
-                <Button
-                    title={t('words.lightning')}
-                    onPress={() => setWalletMode('lightning')}
-                    disabled={walletMode === 'lightning'}
-                />
-            </View>
+            <ButtonGroup
+                selectedIndex={walletMode === 'onchain' ? 0 : 1}
+                onPress={index => {
+                    if (index === 0) setWalletMode('onchain')
+                    if (index === 1) setWalletMode('lightning')
+                }}
+                buttons={[t('words.onchain'), t('words.lightning')]}
+                containerStyle={styles.buttonGroupContainer}
+            />
 
             {walletMode === 'lightning' ? (
                 <ReceiveLightning handleInvoice={showInvoice} />
@@ -183,6 +180,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-evenly',
         margin: 50,
+    },
+    buttonGroupContainer: {
+        borderRadius: 50,
+        marginTop: 10,
+        marginBottom: 10,
     },
 })
 

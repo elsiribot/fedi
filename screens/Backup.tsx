@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Button, View, Text, StyleSheet } from 'react-native'
+import { ActivityIndicator, View, Text, StyleSheet } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
 import Share from 'react-native-share'
+import { Button } from '@rneui/themed'
 
-import type { RootStackParamList } from '../App'
+import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Backup'>
 
