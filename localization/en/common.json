@@ -18,6 +18,7 @@
         "wallet": "Wallet"
     },
     "phrases": {
+        "bitcoin-address": "Bitcoin address",
         "connect-to-federation": "Connect to federation",
         "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
@@ -38,6 +39,7 @@
             "you-sent": "You sent"
         },
         "receive": {
+            "create-lightning-request": "Create lightning request",
             "instructions": "Enter how much you want to receive",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions"
         }
