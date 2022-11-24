@@ -1,7 +1,7 @@
 pub mod bridge;
 pub mod event;
+pub mod logging;
 pub mod payment;
-pub mod test;
 pub mod tx;
 pub mod types;
 
@@ -14,8 +14,8 @@ uniffi_macros::include_scaffolding!("calculator");
 
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
+use logging::init_logging;
 use mint_client::{wallet::WalletClientError, ClientError};
-use test::init_logging;
 use tokio::sync::Mutex;
 use tx::Transaction;
 use types::hacky_millisat_to_sat;
@@ -71,10 +71,10 @@ async fn get_fed() -> Arc<Federation> {
 
 pub fn fedimint_init(data_dir: String, event_sink: Box<dyn EventSink>) -> Result<()> {
     RUNTIME.block_on(async {
-        init_logging();
+        let event_sink = Arc::new(EventSinkWrapper { event_sink });
+        init_logging(event_sink.clone());
         tracing::info!("init called ...");
 
-        let event_sink = Arc::new(EventSinkWrapper { event_sink });
         let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone());
 
         // Auto-join testfed
@@ -196,6 +196,10 @@ impl EventSinkWrapper {
             Event::ReceivedBitcoin { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 self.event_sink.event("receivedBitcoin".into(), body);
+            }
+            Event::Log { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("log".into(), body);
             }
         };
     }

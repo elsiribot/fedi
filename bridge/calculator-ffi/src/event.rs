@@ -23,11 +23,18 @@ pub struct ReceivedBitcoinEvent {
     pub address: String,
 }
 
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LogEvent {
+    pub log: String,
+}
+
 #[derive(Clone, Debug)]
 pub enum Event {
     Balance { event: BalanceEvent },
     ReceivedLightning { event: ReceivedLightningEvent },
     ReceivedBitcoin { event: ReceivedBitcoinEvent },
+    Log { event: LogEvent },
 }
 
 impl Event {
@@ -54,6 +61,11 @@ impl Event {
                 txid: txid.to_string(),
                 address: address.to_string(),
             },
+        }
+    }
+    pub fn log(log: String) -> Self {
+        Self::Log {
+            event: LogEvent { log },
         }
     }
 }
