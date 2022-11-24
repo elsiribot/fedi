@@ -9,9 +9,11 @@ import ConfirmSend from './screens/ConfirmSend'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
+import LnReceiveSuccess from './screens/LnReceiveSuccess'
 import Receive from './screens/Receive'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
+
 import Header from './components/Header'
 
 export type RootStackParamList = {
@@ -20,6 +22,7 @@ export type RootStackParamList = {
     ConfirmSendOnChain: { address: string }
     Home: undefined
     LnInvoice: { invoice: string }
+    LnReceiveSuccess: { amountPaid: string }
     Receive: undefined
     Send: undefined
     Splash: undefined
@@ -65,7 +68,6 @@ const Router = () => {
                     name="Home"
                     component={Home}
                     options={{
-                        title: `${t('words.home')}`,
                         headerShown: false,
                     }}
                 />
@@ -75,6 +77,11 @@ const Router = () => {
                     options={{
                         title: `${t('phrases.receive-bitcoin')}`,
                     }}
+                />
+                <Stack.Screen
+                    name="LnReceiveSuccess"
+                    component={LnReceiveSuccess}
+                    options={{ headerShown: false }}
                 />
                 <Stack.Screen
                     name="Receive"
