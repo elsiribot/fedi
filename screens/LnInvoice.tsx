@@ -1,16 +1,17 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Text, Share, StyleSheet, View } from 'react-native'
+import { Share, StyleSheet, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import QRCode from 'react-native-qrcode-svg'
-import { Button } from '@rneui/themed'
+import { Button, Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
+import { ReceivedLightningEvent, TFedimintEventEmitter } from '../emitter'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
-const LnInvoice: React.FC<Props> = ({ route }: Props) => {
+const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { invoice } = route.params
 
@@ -41,6 +42,22 @@ const LnInvoice: React.FC<Props> = ({ route }: Props) => {
             console.error(error)
         }
     }
+
+    useEffect(() => {
+        const receivedLightningHandler = (event: ReceivedLightningEvent) => {
+            console.log(`"receivedLightning" -> "${event.paymentHash}"`)
+            // TODO: check paymentHash against invoice
+            if (event.paymentHash) {
+                // TODO: get amount from invoice
+                navigation.navigate('LnReceiveSuccess', {
+                    amountReceived: '615000',
+                })
+            }
+        }
+
+        const emitter = new TFedimintEventEmitter()
+        emitter.onReceivedLightning(receivedLightningHandler)
+    }, [navigation])
 
     return (
         <View style={styles.container}>

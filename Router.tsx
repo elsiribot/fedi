@@ -2,16 +2,20 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useTheme } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 
 import Backup from './screens/Backup'
 import ConfirmSend from './screens/ConfirmSend'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
+import LnReceiveSuccess from './screens/LnReceiveSuccess'
+import OnChainReceiveSuccess from './screens/OnChainReceiveSuccess'
 import Receive from './screens/Receive'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
+
+import Header from './components/Header'
 
 export type RootStackParamList = {
     Backup: undefined
@@ -19,6 +23,8 @@ export type RootStackParamList = {
     ConfirmSendOnChain: { address: string }
     Home: undefined
     LnInvoice: { invoice: string }
+    LnReceiveSuccess: { amountReceived: string }
+    OnChainReceiveSuccess: { amountReceived: string }
     Receive: undefined
     Send: undefined
     Splash: undefined
@@ -32,21 +38,19 @@ const Router = () => {
 
     return (
         <NavigationContainer theme={theme}>
-            <Stack.Navigator>
+            <Stack.Navigator
+                screenOptions={{
+                    headerTitle: props => <Text {...props} />,
+                }}>
                 <Stack.Screen
                     name="Splash"
                     component={Splash}
                     options={{ title: `${t('words.fedimint')}` }}
                 />
                 <Stack.Screen
-                    name="Home"
-                    component={Home}
-                    options={{ title: `${t('words.home')}` }}
-                />
-                <Stack.Screen
-                    name="Send"
-                    component={Send}
-                    options={{ title: `${t('words.send')}` }}
+                    name="Backup"
+                    component={Backup}
+                    options={{ title: `${t('words.backup')}` }}
                 />
                 <Stack.Screen
                     name="ConfirmSend"
@@ -63,10 +67,10 @@ const Router = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="Receive"
-                    component={Receive}
+                    name="Home"
+                    component={Home}
                     options={{
-                        title: `${t('phrases.receive-bitcoin')}`,
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen
@@ -77,9 +81,35 @@ const Router = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="Backup"
-                    component={Backup}
-                    options={{ title: `${t('words.backup')}` }}
+                    name="LnReceiveSuccess"
+                    component={LnReceiveSuccess}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="OnChainReceiveSuccess"
+                    component={OnChainReceiveSuccess}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="Receive"
+                    component={Receive}
+                    options={({ navigation }) => ({
+                        title: `${t('phrases.receive-bitcoin')}`,
+                        header: () => (
+                            <Header
+                                title={t('phrases.receive-bitcoin')}
+                                headerRight={{
+                                    icon: 'close',
+                                    onPress: () => navigation.goBack(),
+                                }}
+                            />
+                        ),
+                    })}
+                />
+                <Stack.Screen
+                    name="Send"
+                    component={Send}
+                    options={{ title: `${t('words.send')}` }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

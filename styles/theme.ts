@@ -3,7 +3,8 @@ import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native
 
 const colors = {
     ...lightColors,
-    primary: '#000000',
+    primary: '#0B1013',
+    primaryLight: '#51768d',
     secondary: '#FFFFFF',
 }
 const theme = createTheme({
@@ -16,6 +17,11 @@ const theme = createTheme({
             titleStyle: {
                 paddingLeft: 10,
                 paddingRight: 10,
+            },
+        },
+        Text: {
+            style: {
+                color: colors.primary,
             },
         },
     },

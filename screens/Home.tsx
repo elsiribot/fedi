@@ -1,98 +1,80 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    View,
-    NativeModules,
-    StyleSheet,
-    ActivityIndicator,
-} from 'react-native'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import type { RootStackParamList } from '../Router'
-import { Button, Text } from '@rneui/themed'
+import FaIcon from 'react-native-vector-icons/FontAwesome'
+import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
+import { Text, Theme, useTheme } from '@rneui/themed'
+import { StyleSheet, TextProps } from 'react-native'
 
-const {
-    FedimintFfi: { balance },
-} = NativeModules
+import type { RootStackParamList } from '../Router'
+import Settings from './Settings'
+import Wallet from './Wallet'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
-type BalanceProps = {
-    value: string
+export type HomeTabsParamList = {
+    Settings: undefined
+    Wallet: undefined
 }
 
-const Balance = ({ value }: BalanceProps) => {
+const Tab = createBottomTabNavigator<HomeTabsParamList>()
+
+const Home: React.FC<Props> = () => {
     const { t } = useTranslation()
-
-    if (value !== '') {
-        return <Text h2>{`${value} ${t('words.sats')}`}</Text>
-    } else {
-        return <ActivityIndicator />
-    }
-}
-
-const Home: React.FC<Props> = ({ navigation }: Props) => {
-    const { t } = useTranslation()
-    const [btcBalance, setBtcBalance] = useState('')
-
-    useEffect(() => {
-        const getBalance = async () => {
-            try {
-                const result = await balance()
-                setBtcBalance(result)
-            } catch (error) {
-                console.error(error)
-            }
-        }
-
-        const interval = setInterval(() => {
-            getBalance()
-        }, 1000)
-
-        return () => clearInterval(interval)
-    }, [])
+    const { theme } = useTheme()
 
     return (
-        <View style={styles.container}>
-            <Balance value={btcBalance} />
-            <View style={styles.buttonsContainer}>
-                <Button
-                    title={t('words.receive')}
-                    onPress={() => navigation.navigate('Receive')}
-                    size="lg"
-                    containerStyle={styles.button}
-                />
-                <Button
-                    title={t('words.send')}
-                    onPress={() => navigation.navigate('Send')}
-                    size="lg"
-                    containerStyle={styles.button}
-                />
-            </View>
-            <Button
-                title={t('words.backup')}
-                onPress={() => navigation.navigate('Backup')}
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                tabBarIcon: ({ color, size }) => {
+                    switch (route.name) {
+                        case 'Wallet':
+                            return (
+                                <Fa5Icon
+                                    name={'wallet'}
+                                    size={size}
+                                    color={color}
+                                />
+                            )
+                        case 'Settings':
+                            return (
+                                <FaIcon
+                                    name={'gear'}
+                                    size={size}
+                                    color={color}
+                                />
+                            )
+                        default:
+                            return null
+                    }
+                },
+                tabBarActiveTintColor: theme.colors.primary,
+                tabBarInactiveTintColor: theme.colors.primaryLight,
+                tabBarStyle: styles(theme).tabBar,
+                headerTitleStyle: theme.components.Text.style,
+            })}>
+            <Tab.Screen
+                name="Wallet"
+                component={Wallet}
+                options={{ title: `${t('words.wallet')}` }}
             />
-        </View>
+            <Tab.Screen
+                name="Settings"
+                component={Settings}
+                options={{ title: `${t('words.settings')}` }}
+            />
+        </Tab.Navigator>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    button: {
-        flex: 1,
-        marginLeft: 10,
-        marginRight: 10,
-    },
-    buttonsContainer: {
-        margin: 20,
-        width: '90%',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        tabBar: {
+            backgroundColor: theme.colors.secondary,
+            paddingBottom: 10,
+            height: 63,
+        },
+    })
 
 export default Home
