@@ -1,8 +1,14 @@
+import { ThemeProvider } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { NativeModules } from 'react-native'
 import RNFS from 'react-native-fs'
-import { ThemeProvider } from '@rneui/themed'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import {
+    BalanceEvent,
+    ReceivedBitcoinEvent,
+    ReceivedLightningEvent,
+    TFedimintEventEmitter,
+} from './emitter'
 
 import Router from './Router'
 
@@ -20,7 +26,21 @@ const App = () => {
         await init(RNFS.DocumentDirectoryPath)
     }
 
+    const balanceHandler = (event: BalanceEvent) => {
+        console.log(`"balance" -> "${event.balance}"`)
+    }
+    const receivedLightningHandler = (event: ReceivedLightningEvent) => {
+        console.log(`"receivedLightning" -> "${event.paymentHash}"`)
+    }
+    const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {
+        console.log(`"receivedBitcoin" -> "${event.txid}"`)
+    }
+
     useEffect(() => {
+        const emitter = new TFedimintEventEmitter()
+        emitter.onBalanceUpdate(balanceHandler)
+        emitter.onReceivedLightning(receivedLightningHandler)
+        emitter.onReceivedBitcoin(receivedBitcoinHandler)
         initialize()
     }, [])
 

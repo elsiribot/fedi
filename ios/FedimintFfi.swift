@@ -2,11 +2,10 @@ import Calculator
 
 @objc(FedimintFfi)
 class FedimintFfi: NSObject {
-
   @objc(init:withResolver:withRejecter:)
   func `init`(dataDir: NSString, resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
     do {
-      try fedimintInit(dataDir: String(dataDir))
+      try fedimintInit(dataDir: String(dataDir), eventSink: EventDispatcher())
       resolve("")  // FIXME: how to resolve nothing?
     } catch {
       reject(error.localizedDescription, error.localizedDescription, error)
@@ -58,5 +57,29 @@ class FedimintFfi: NSObject {
       reject(error.localizedDescription, error.localizedDescription, error)
     }
   }
+}
 
+@objc(FedimintEventEmitter)
+class FedimintEventEmitter: RCTEventEmitter {
+  public static var shared: FedimintEventEmitter!
+
+  override init() {
+    super.init()
+    FedimintEventEmitter.shared = self
+  }
+
+  public func send(withEvent eventType: String, body: Any) {
+    sendEvent(withName: String(describing: eventType), body: body)
+  }
+
+  override func supportedEvents() -> [String] {
+    // FIXME: don't hard-code these
+    return ["balance", "receivedLightning", "receivedBitcoin"]
+  }
+}
+
+class EventDispatcher: EventSink {
+  func event(eventType: String, body: String) {
+    FedimintEventEmitter.shared.send(withEvent: eventType, body: body);
+  }
 }

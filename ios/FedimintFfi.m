@@ -1,5 +1,5 @@
 #import <React/RCTBridgeModule.h>
-
+#import <React/RCTEventEmitter.h>
 
 @interface RCT_EXTERN_MODULE(FedimintFfi, NSObject)
 
@@ -31,5 +31,13 @@ RCT_EXTERN_METHOD(payAddress:(NSString*)address
 {
   return NO;
 }
+
+@end
+
+
+
+@interface RCT_EXTERN_MODULE(FedimintEventEmitter, RCTEventEmitter)
+
+RCT_EXTERN_METHOD(supportedEvents)
 
 @end
