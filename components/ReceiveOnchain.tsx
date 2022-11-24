@@ -38,7 +38,9 @@ const ReceiveOnchain: React.FC<{}> = () => {
         }
 
         generateOnchainAddress()
+    }, [])
 
+    useEffect(() => {
         const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {
             console.log(`"receivedBitcoin" -> "${event.txid}"`)
             // TODO: check txid against address? is event.address the sender?
