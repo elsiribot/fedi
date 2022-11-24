@@ -10,6 +10,7 @@ import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
 import LnReceiveSuccess from './screens/LnReceiveSuccess'
+import OnChainReceiveSuccess from './screens/OnChainReceiveSuccess'
 import Receive from './screens/Receive'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
@@ -22,7 +23,8 @@ export type RootStackParamList = {
     ConfirmSendOnChain: { address: string }
     Home: undefined
     LnInvoice: { invoice: string }
-    LnReceiveSuccess: { amountPaid: string }
+    LnReceiveSuccess: { amountReceived: string }
+    OnChainReceiveSuccess: { amountReceived: string }
     Receive: undefined
     Send: undefined
     Splash: undefined
@@ -81,6 +83,11 @@ const Router = () => {
                 <Stack.Screen
                     name="LnReceiveSuccess"
                     component={LnReceiveSuccess}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="OnChainReceiveSuccess"
+                    component={OnChainReceiveSuccess}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen

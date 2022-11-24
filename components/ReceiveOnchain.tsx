@@ -1,6 +1,8 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
 import {
     ActivityIndicator,
     Dimensions,
@@ -13,13 +15,19 @@ import QRCode from 'react-native-qrcode-svg'
 import { Button, Card, Text } from '@rneui/themed'
 
 import { truncateMiddleOfString } from '../scripts/utils'
+import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../emitter'
+import { RootStackParamList } from '../Router'
 
 const {
     FedimintFfi: { generateAddress },
 } = NativeModules
 
+type ReceiveOnchainNavigationProp =
+    NativeStackNavigationProp<RootStackParamList>
+
 const ReceiveOnchain: React.FC<{}> = () => {
     const { t } = useTranslation()
+    const navigation = useNavigation<ReceiveOnchainNavigationProp>()
     const [address, setAddress] = useState<string>('')
 
     useEffect(() => {
@@ -30,7 +38,21 @@ const ReceiveOnchain: React.FC<{}> = () => {
         }
 
         generateOnchainAddress()
-    }, [])
+
+        const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {
+            console.log(`"receivedBitcoin" -> "${event.txid}"`)
+            // TODO: check txid against address? is event.address the sender?
+            if (event.address === address) {
+                // TODO: get amount from txid?
+                navigation.navigate('OnChainReceiveSuccess', {
+                    amountReceived: '615000',
+                })
+            }
+        }
+
+        const emitter = new TFedimintEventEmitter()
+        emitter.onReceivedBitcoin(receivedBitcoinHandler)
+    }, [navigation, address])
 
     const copyToClipboard = () => {
         Clipboard.setString(address)

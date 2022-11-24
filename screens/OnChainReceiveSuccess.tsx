@@ -8,10 +8,13 @@ import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'LnReceiveSuccess'
+    'OnChainReceiveSuccess'
 >
 
-const LnReceiveSuccess: React.FC<Props> = ({ route, navigation }: Props) => {
+const OnChainReceiveSuccess: React.FC<Props> = ({
+    route,
+    navigation,
+}: Props) => {
     const { t } = useTranslation()
     const { amountReceived } = route.params
 
@@ -19,7 +22,7 @@ const LnReceiveSuccess: React.FC<Props> = ({ route, navigation }: Props) => {
         <View style={styles.container}>
             <View style={styles.detailsContainer}>
                 <Icon name="check" />
-                <Text h3>{t('feature.receive.you-received')}</Text>
+                <Text h3>{t('feature.receive.pending-transaction')}</Text>
                 <Text h3>{`${amountReceived} ${t('words.sats')}`}</Text>
             </View>
             <View style={styles.buttonContainer}>
@@ -51,4 +54,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default LnReceiveSuccess
+export default OnChainReceiveSuccess

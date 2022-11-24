@@ -50,7 +50,7 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
             if (event.paymentHash) {
                 // TODO: get amount from invoice
                 navigation.navigate('LnReceiveSuccess', {
-                    amountPaid: '615000',
+                    amountReceived: '615000',
                 })
             }
         }

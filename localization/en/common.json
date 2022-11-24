@@ -42,6 +42,7 @@
             "create-lightning-request": "Create lightning request",
             "instructions": "Enter how much you want to receive",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
+            "pending-transaction": "pending transaction",
             "you-received": "You received"
         }
     }
