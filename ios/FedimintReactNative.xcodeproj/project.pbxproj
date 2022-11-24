@@ -12,9 +12,9 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
+		515D4DB6292EF54B00F056E4 /* Calculator in Frameworks */ = {isa = PBXBuildFile; productRef = 515D4DB5292EF54B00F056E4 /* Calculator */; };
 		7699B88040F8A987B510C191 /* libPods-FedimintReactNative-FedimintReactNativeTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-FedimintReactNative-FedimintReactNativeTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		D0B411DC292806EA007D447F /* Calculator in Frameworks */ = {isa = PBXBuildFile; productRef = D0B411DB292806EA007D447F /* Calculator */; };
 		D0D73EFA2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFB2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFF2921E5480059F06F /* FedimintFfi.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EFE2921E5480059F06F /* FedimintFfi.swift */; };
@@ -43,13 +43,12 @@
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = FedimintReactNative/main.m; sourceTree = "<group>"; };
 		19F6CBCC0A4E27FBF8BF4A61 /* libPods-FedimintReactNative-FedimintReactNativeTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FedimintReactNative-FedimintReactNativeTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B4392A12AC88292D35C810B /* Pods-FedimintReactNative.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative.debug.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative/Pods-FedimintReactNative.debug.xcconfig"; sourceTree = "<group>"; };
-		51466F27292C547A00D730FB /* calculator-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "calculator-swift"; path = "../../../../bridge/calculator-swift"; sourceTree = "<group>"; };
+		515D4DB4292EF49100F056E4 /* calculator-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "calculator-swift"; path = "../../bridge/calculator-swift"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-FedimintReactNative.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative.release.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative/Pods-FedimintReactNative.release.xcconfig"; sourceTree = "<group>"; };
 		5B7EB9410499542E8C5724F5 /* Pods-FedimintReactNative-FedimintReactNativeTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative-FedimintReactNativeTests.debug.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative-FedimintReactNativeTests/Pods-FedimintReactNative-FedimintReactNativeTests.debug.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-FedimintReactNative.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FedimintReactNative.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = FedimintReactNative/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-FedimintReactNative-FedimintReactNativeTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative-FedimintReactNativeTests.release.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative-FedimintReactNativeTests/Pods-FedimintReactNative-FedimintReactNativeTests.release.xcconfig"; sourceTree = "<group>"; };
-		D065134A292AD21B0036869C /* calculator-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "calculator-swift"; path = "../../../../uniffi-bindings-template/calculator-swift"; sourceTree = "<group>"; };
 		D0D73EF92921E1C80059F06F /* FedimintFfi.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FedimintFfi.m; sourceTree = "<group>"; };
 		D0D73EFC2921E5480059F06F /* FedimintReactNative-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FedimintReactNative-Bridging-Header.h"; sourceTree = "<group>"; };
 		D0D73EFE2921E5480059F06F /* FedimintFfi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FedimintFfi.swift; sourceTree = "<group>"; };
@@ -69,7 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0B411DC292806EA007D447F /* Calculator in Frameworks */,
+				515D4DB6292EF54B00F056E4 /* Calculator in Frameworks */,
 				0C80B921A6F3F58F76C31292 /* libPods-FedimintReactNative.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -166,8 +165,7 @@
 		D0B411D9292806D8007D447F /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				D065134A292AD21B0036869C /* calculator-swift */,
-				51466F27292C547A00D730FB /* calculator-swift */,
+				515D4DB4292EF49100F056E4 /* calculator-swift */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -215,7 +213,7 @@
 			);
 			name = FedimintReactNative;
 			packageProductDependencies = (
-				D0B411DB292806EA007D447F /* Calculator */,
+				515D4DB5292EF54B00F056E4 /* Calculator */,
 			);
 			productName = FedimintReactNative;
 			productReference = 13B07F961A680F5B00A75B9A /* FedimintReactNative.app */;
@@ -762,7 +760,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D0B411DB292806EA007D447F /* Calculator */ = {
+		515D4DB5292EF54B00F056E4 /* Calculator */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Calculator;
 		};
