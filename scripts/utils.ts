@@ -1,3 +1,9 @@
-export const truncateMiddleOfString = (longString: string): string => {
-    return `${longString.substring(0, 14)} ... ${longString.slice(-14)}`
+export const truncateMiddleOfString = (
+    longString: string,
+    numberOfCharacters: number,
+): string => {
+    return `${longString.substring(
+        0,
+        numberOfCharacters,
+    )} ... ${longString.slice(numberOfCharacters * -1)}`
 }

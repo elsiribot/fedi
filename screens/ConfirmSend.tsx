@@ -89,7 +89,7 @@ const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
                 <Text>{''}</Text>
-                <Text>{`${truncateMiddleOfString(invoice)}`}</Text>
+                <Text>{`${truncateMiddleOfString(invoice, 14)}`}</Text>
                 <Text>{`${t('phrases.expires-in')} ${formatExpiry(
                     expiry,
                 )}`}</Text>
