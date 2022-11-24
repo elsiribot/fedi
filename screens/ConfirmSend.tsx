@@ -6,6 +6,7 @@ import { Button } from '@rneui/themed'
 
 import { useTheme } from '@react-navigation/native'
 import type { RootStackParamList } from '../Router'
+import { truncateMiddleOfString } from '../scripts/utils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ConfirmSend'>
 
@@ -17,10 +18,6 @@ type FeeEstimate = {
     minimum: number
     maximum: number
     units: string
-}
-
-const truncateInvoice = (invoice: string): string => {
-    return `${invoice.substring(0, 14)} ... ${invoice.slice(-14)}`
 }
 
 const formatExpiry = (expiryInSeconds: number): number => {
@@ -92,7 +89,7 @@ const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
                 <Text>{''}</Text>
-                <Text>{`${truncateInvoice(invoice)}`}</Text>
+                <Text>{`${truncateMiddleOfString(invoice)}`}</Text>
                 <Text>{`${t('phrases.expires-in')} ${formatExpiry(
                     expiry,
                 )}`}</Text>
