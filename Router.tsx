@@ -12,6 +12,7 @@ import LnInvoice from './screens/LnInvoice'
 import Receive from './screens/Receive'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
+import Header from './components/Header'
 
 export type RootStackParamList = {
     Backup: undefined
@@ -78,9 +79,18 @@ const Router = () => {
                 <Stack.Screen
                     name="Receive"
                     component={Receive}
-                    options={{
+                    options={({ navigation }) => ({
                         title: `${t('phrases.receive-bitcoin')}`,
-                    }}
+                        header: () => (
+                            <Header
+                                title={t('phrases.receive-bitcoin')}
+                                headerRight={{
+                                    icon: 'close',
+                                    onPress: () => navigation.goBack(),
+                                }}
+                            />
+                        ),
+                    })}
                 />
                 <Stack.Screen
                     name="Send"
