@@ -2,14 +2,14 @@ import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import {
     Camera,
     CameraDevice,
     useCameraDevices,
 } from 'react-native-vision-camera'
 import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
-import { Button } from '@rneui/themed'
+import { Button, Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 

@@ -1,8 +1,8 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, NativeModules, StyleSheet, Text, View } from 'react-native'
-import { Button } from '@rneui/themed'
+import { Modal, NativeModules, StyleSheet, View } from 'react-native'
+import { Button, Text } from '@rneui/themed'
 
 import { useTheme } from '@react-navigation/native'
 import type { RootStackParamList } from '../Router'
