@@ -2,20 +2,15 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Button, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ActivityIndicator,
-    NativeModules,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { listTransactions } from '../bridge'
 import type { RootStackParamList } from '../Router'
 import type { HomeTabsParamList } from './Home'
-
-const {
-    FedimintFfi: { balance },
-} = NativeModules
+import {
+    BalanceEvent,
+    listTransactions,
+    TFedimintEventEmitter,
+} from '../bridge'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -40,6 +35,11 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const [btcBalance, setBtcBalance] = useState('')
 
+    const balanceHandler = (event: BalanceEvent) => {
+        console.log(`"Wallet: balance" -> "${event.balance}"`)
+        setBtcBalance(String(event.balance))
+    }
+
     useEffect(() => {
         const testFetchTransactions = async () => {
             const transactions = await listTransactions()
@@ -50,20 +50,8 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
     }, [])
 
     useEffect(() => {
-        const getBalance = async () => {
-            try {
-                const result = await balance()
-                setBtcBalance(result)
-            } catch (error) {
-                console.error(error)
-            }
-        }
-
-        const interval = setInterval(() => {
-            getBalance()
-        }, 1000)
-
-        return () => clearInterval(interval)
+        const emitter = new TFedimintEventEmitter()
+        emitter.onBalanceUpdate(balanceHandler)
     }, [])
 
     return (
