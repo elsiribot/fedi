@@ -76,18 +76,14 @@ export class TFedimintEventEmitter {
     }
 }
 
-export async function joinFederation(connectString: string) {
-    await FedimintFfi.joinFederation(connectString)
-}
-
 export type Federation = {
     name: string
 }
 
-// TODO: Rust should return object in the first place
+export async function joinFederation(connectString: string) {
+    await FedimintFfi.joinFederation(connectString)
+}
+
 export async function listFederations(): Promise<Federation[]> {
-    const federationNames: string[] = await FedimintFfi.listFederations()
-    return federationNames.map(name => ({
-        name,
-    }))
+    return FedimintFfi.listFederations()
 }
