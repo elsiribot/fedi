@@ -5,6 +5,7 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import {
     BalanceEvent,
+    LogEvent,
     ReceivedBitcoinEvent,
     ReceivedLightningEvent,
     TFedimintEventEmitter,
@@ -26,6 +27,9 @@ const App = () => {
         await init(RNFS.DocumentDirectoryPath)
     }
 
+    const logHandler = (event: LogEvent) => {
+        console.log(`"log" -> "${event.log}"`)
+    }
     const balanceHandler = (event: BalanceEvent) => {
         console.log(`"balance" -> "${event.balance}"`)
     }
@@ -39,6 +43,7 @@ const App = () => {
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
         emitter.onBalanceUpdate(balanceHandler)
+        emitter.onLog(logHandler)
         emitter.onReceivedLightning(receivedLightningHandler)
         emitter.onReceivedBitcoin(receivedBitcoinHandler)
         initialize()

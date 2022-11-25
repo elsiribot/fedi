@@ -6,6 +6,10 @@ import {
 
 const { FedimintEventEmitter } = NativeModules
 
+export type LogEvent = {
+    log: string
+}
+
 export type BalanceEvent = {
     federationId: string
     balance: number
@@ -38,12 +42,16 @@ export class TFedimintEventEmitter {
     ): EmitterSubscription => {
         return this.emitter.addListener(
             eventType,
-            (serializedEvent: string) => {
-                console.log(eventType, serializedEvent)
-                return listener(JSON.parse(serializedEvent))
-            },
+            (serializedEvent: string) => listener(JSON.parse(serializedEvent)),
             context,
         )
+    }
+
+    onLog = (
+        listener: (event: LogEvent) => void,
+        context?: Object,
+    ): EmitterSubscription => {
+        return this.addListener('log', listener, context)
     }
 
     onBalanceUpdate = (
