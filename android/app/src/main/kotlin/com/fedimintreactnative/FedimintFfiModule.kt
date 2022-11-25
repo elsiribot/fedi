@@ -55,6 +55,10 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
         promise.resolve(reactFederations)
     }
 
+    @ReactMethod
+    fun listTransactions(promise: Promise) {
+        promise.resolve(fedimintListTransactions())
+    }
 
     @ReactMethod
     fun balance(promise: Promise) {

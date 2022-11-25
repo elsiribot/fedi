@@ -1,16 +1,17 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { Button, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    View,
+    ActivityIndicator,
     NativeModules,
     StyleSheet,
-    ActivityIndicator,
+    View,
 } from 'react-native'
-import { Button, Text } from '@rneui/themed'
 
-import type { HomeTabsParamList } from './Home'
+import { listTransaction } from '../bridge'
 import type { RootStackParamList } from '../Router'
+import type { HomeTabsParamList } from './Home'
 
 const {
     FedimintFfi: { balance },
@@ -38,6 +39,15 @@ const Balance = ({ value }: BalanceProps) => {
 const Wallet: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const [btcBalance, setBtcBalance] = useState('')
+
+    useEffect(() => {
+        const testFetchTransactions = async () => {
+            const transactions = await listTransaction()
+            console.log('transactions', transactions)
+        }
+
+        testFetchTransactions()
+    }, [])
 
     useEffect(() => {
         const getBalance = async () => {

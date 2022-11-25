@@ -37,6 +37,11 @@ class FedimintFfi: NSObject {
   }
 
   @objc
+  func listTransactions(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    resolve(fedimintListTransactions())
+  }
+
+  @objc
   func generateInvoice(_ amount: NSString, description: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
     let a = String(amount)
     let d = String(description)
