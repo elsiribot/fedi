@@ -6,6 +6,11 @@ pub fn hacky_millisat_to_sat(millisat: u64) -> u64 {
 }
 
 #[derive(Clone, Debug)]
+pub struct FedimintFederation {
+    pub name: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct Invoice {
     pub payment_hash: String,
     pub amount: u64,

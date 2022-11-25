@@ -19,7 +19,7 @@ use lightning_invoice::Invoice;
 use logging::init_logging;
 use tokio::sync::Mutex;
 use tx::Transaction;
-use types::hacky_millisat_to_sat;
+use types::{hacky_millisat_to_sat, FedimintFederation};
 
 use crate::event::EventSinkWrapper;
 
@@ -73,23 +73,41 @@ pub fn fedimint_init(data_dir: String, event_sink: Box<dyn EventSink>) -> Result
 
         let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone());
 
-        // Auto-join testfed
-        {
-            let clients = bridge.clients.lock().await;
-            if clients.len() == 0 {
-                let federation = Federation::join(
-                    String::from(r#"{"members":[[0,"ws://188.166.55.8:4001"]]}"#),
-                    bridge.data_dir.clone(),
-                    event_sink.clone(),
-                )
-                .await?;
-                bridge.join_federation(Arc::new(federation)).await;
-            }
-        }
-
         set_bridge(bridge).await;
 
         Ok(())
+    })
+}
+
+pub fn fedimint_join_federation(connect_string: String) -> Result<()> {
+    RUNTIME.block_on(async {
+        let bridge = get_bridge().await.expect("bridge not initialized");
+        let federation = Arc::new(
+            Federation::join(
+                connect_string,
+                bridge.data_dir.clone(),
+                bridge.event_sink.clone(),
+            )
+            .await?,
+        );
+
+        bridge.join_federation(federation).await;
+
+        Ok(())
+    })
+}
+
+pub fn fedimint_list_federations() -> Vec<FedimintFederation> {
+    RUNTIME.block_on(async {
+        let bridge = get_bridge().await.expect("bridge not initialized");
+        let names = bridge
+            .clients
+            .lock()
+            .await
+            .keys()
+            .map(|name| FedimintFederation { name: name.clone() })
+            .collect();
+        names
     })
 }
 
