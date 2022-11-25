@@ -4,7 +4,7 @@ import {
     NativeModules,
 } from 'react-native'
 
-const { FedimintEventEmitter } = NativeModules
+const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
 export type LogEvent = {
     log: string
@@ -74,4 +74,20 @@ export class TFedimintEventEmitter {
     ): EmitterSubscription => {
         return this.addListener('receivedBitcoin', listener, context)
     }
+}
+
+export async function joinFederation(connectString: string) {
+    await FedimintFfi.joinFederation(connectString)
+}
+
+export type Federation = {
+    name: string
+}
+
+// TODO: Rust should return object in the first place
+export async function listFederations(): Promise<Federation[]> {
+    const federationNames: string[] = await FedimintFfi.listFederations()
+    return federationNames.map(name => ({
+        name,
+    }))
 }

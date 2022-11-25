@@ -9,7 +9,7 @@ import {
     ReceivedBitcoinEvent,
     ReceivedLightningEvent,
     TFedimintEventEmitter,
-} from './emitter'
+} from './bridge'
 
 import Router from './Router'
 
