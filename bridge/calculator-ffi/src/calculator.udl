@@ -16,6 +16,8 @@ namespace calculator {
 
   sequence<FedimintFederation> fedimint_list_federations();
 
+  string fedimint_list_transactions();
+
   [Throws=FedimintError]
   string fedimint_generate_invoice(string amount, string description);
 
