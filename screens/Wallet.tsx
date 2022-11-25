@@ -1,8 +1,9 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { Button, Text } from '@rneui/themed'
+import { Button, Card, Icon, Text, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import type { Theme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import type { HomeTabsParamList } from './Home'
@@ -23,9 +24,14 @@ type BalanceProps = {
 
 const Balance = ({ value }: BalanceProps) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
 
     if (value !== '') {
-        return <Text h2>{`${value} ${t('words.sats')}`}</Text>
+        return (
+            <Text h2 style={styles(theme).balanceText}>{`${value} ${t(
+                'words.sats',
+            )}`}</Text>
+        )
     } else {
         return <ActivityIndicator />
     }
@@ -33,6 +39,7 @@ const Balance = ({ value }: BalanceProps) => {
 
 const Wallet: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const [btcBalance, setBtcBalance] = useState('')
 
     const balanceHandler = (event: BalanceEvent) => {
@@ -55,43 +62,93 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
     }, [])
 
     return (
-        <View style={styles.container}>
-            <Balance value={btcBalance} />
-            <View style={styles.buttonsContainer}>
-                <Button
-                    title={t('words.receive')}
-                    onPress={() => navigation.navigate('Receive')}
-                    size="lg"
-                    containerStyle={styles.button}
-                />
-                <Button
-                    title={t('words.send')}
-                    onPress={() => navigation.navigate('Send')}
-                    size="lg"
-                    containerStyle={styles.button}
-                />
-            </View>
+        <View style={styles(theme).container}>
+            <Card
+                containerStyle={styles(theme).cardContainer}
+                wrapperStyle={styles(theme).cardWrapper}>
+                <View style={styles(theme).titleContainer}>
+                    <Icon
+                        name="bitcoin"
+                        type="material-community"
+                        color={theme.colors.secondary}
+                        size={24}
+                    />
+                    <Text h4 style={styles(theme).titleText}>
+                        {t('words.bitcoin')}
+                    </Text>
+                </View>
+                <Balance value={btcBalance} />
+                <View style={styles(theme).buttonsGroupContainer}>
+                    <Button
+                        title={t('words.receive')}
+                        onPress={() => navigation.navigate('Receive')}
+                        size="lg"
+                        containerStyle={styles(theme).buttonContainer}
+                        titleStyle={styles(theme).buttonTitle}
+                        buttonStyle={styles(theme).button}
+                    />
+                    <Button
+                        title={t('words.send')}
+                        onPress={() => navigation.navigate('Send')}
+                        size="lg"
+                        containerStyle={styles(theme).buttonContainer}
+                        titleStyle={styles(theme).buttonTitle}
+                        buttonStyle={styles(theme).button}
+                    />
+                </View>
+            </Card>
         </View>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    button: {
-        flex: 1,
-        marginLeft: 10,
-        marginRight: 10,
-    },
-    buttonsContainer: {
-        margin: 20,
-        width: '90%',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        cardContainer: {
+            backgroundColor: theme.colors.orange,
+            borderRadius: 20,
+            padding: 8,
+            width: '88%',
+            height: 327,
+        },
+        cardWrapper: {
+            flex: 1,
+            justifyContent: 'space-between',
+        },
+        titleContainer: {
+            textAlign: 'left',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 16,
+        },
+        titleText: {
+            color: theme.colors.secondary,
+            paddingHorizontal: 8,
+            flex: 1,
+        },
+        balanceText: {
+            textAlign: 'center',
+            color: theme.colors.secondary,
+        },
+        buttonsGroupContainer: {
+            margin: 8,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
+        button: {
+            backgroundColor: theme.colors.secondary,
+        },
+        buttonContainer: {
+            margin: 8,
+            flex: 1,
+        },
+        buttonTitle: {
+            color: theme.colors.primary,
+        },
+    })
 
 export default Wallet
