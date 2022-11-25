@@ -10,8 +10,9 @@ pushd calculator-ffi
 cargo run --package ffi-bindgen -- --language swift --out-dir ../calculator-swift/Sources/Calculator
 popd
 
-cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-darwin
-cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-darwin
+# ignoring MacOS for now
+# cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-darwin
+# cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-darwin
 cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-ios
 cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-ios
 cargo +nightly build --package calculator-ffi --release -Z build-std --target aarch64-apple-ios-sim
