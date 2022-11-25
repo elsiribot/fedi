@@ -5,15 +5,20 @@ use fedimint_api::{
     encoding::{Decodable, Encodable},
 };
 use rand::Rng;
+use serde::Serialize;
+
+use crate::types::hacky_millisat_to_sat;
 
 const DB_PREFIX_PAYMENTS: u8 = 0x52;
 
-#[derive(Clone, Debug, Encodable, Decodable)]
+#[derive(Clone, Debug, Encodable, Decodable, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub id: u64,
     pub created_at: u64,
     pub outgoing: bool,
     pub amount_millis: u64,
+    pub amount_sats: u64,
 }
 
 impl Transaction {
@@ -27,6 +32,7 @@ impl Transaction {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("couldn't get utc timestamp") // FIXME: maybe just return 0?
                 .as_secs(),
+            amount_sats: hacky_millisat_to_sat(amount_millis),
         }
     }
 }

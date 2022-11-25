@@ -187,3 +187,14 @@ pub fn fedimint_pay_address(address: String, amount: String) -> Result<String> {
         Ok(out_point.txid.to_string())
     })
 }
+
+// Experiment: this returns a JSON vec of transactions ...
+pub fn fedimint_list_transactions() -> String {
+    RUNTIME.block_on(async {
+        let federation = get_fed().await;
+        // FIXME: consider mapping from millisat to sat
+        let transactions = federation.list_transactions();
+        tracing::info!("txns: {:?}", transactions);
+        serde_json::to_string(&transactions).expect("A vec of transactions is json-serializable")
+    })
+}
