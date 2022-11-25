@@ -1,9 +1,6 @@
 [Error]
 enum FedimintError {
-  "ClientError",
-  "AnyhowError",
-  "WalletClientError",
-  "InvalidAddress",
+  "OtherError",
 };
 
 namespace calculator {

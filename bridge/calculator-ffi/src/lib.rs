@@ -12,10 +12,10 @@ use lazy_static::lazy_static;
 
 uniffi_macros::include_scaffolding!("calculator");
 
+use anyhow::anyhow;
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use logging::init_logging;
-use mint_client::{wallet::WalletClientError, ClientError};
 use tokio::sync::Mutex;
 use tx::Transaction;
 use types::hacky_millisat_to_sat;
@@ -26,14 +26,8 @@ type Result<T> = std::result::Result<T, FedimintError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
-    #[error("ClientError {0}")]
-    ClientError(#[from] ClientError),
-    #[error("WalletClientError {0}")]
-    WalletClientError(#[from] WalletClientError),
-    #[error("Anyhow {0}")]
-    AnyhowError(#[from] anyhow::Error),
-    #[error("InvalidAddress")]
-    InvalidAddress,
+    #[error("{0}")]
+    OtherError(#[from] anyhow::Error),
 }
 
 lazy_static! {
@@ -53,6 +47,7 @@ async fn set_bridge(bridge: Bridge) {
         }
     }
     *BRIDGE.lock().await = Some(Arc::new(bridge));
+    tracing::info!("reset bridge");
 }
 
 async fn get_bridge() -> Option<Arc<Bridge>> {
@@ -120,7 +115,7 @@ pub fn fedimint_pay_invoice(invoice: String) -> Result<()> {
             let invoice: Invoice = invoice.parse().unwrap();
             federation.pay_invoice(&invoice).await
         })
-        .map_err(FedimintError::AnyhowError)
+        .map_err(FedimintError::OtherError)
 }
 
 pub fn fedimint_balance() -> u64 {
@@ -150,19 +145,24 @@ pub fn fedimint_pay_address(address: String, amount: String) -> Result<String> {
         let amount: u64 = amount.parse().unwrap();
         let amount = bitcoin::Amount::from_sat(amount);
         let address = bitcoin::util::address::Address::from_str(&address)
-            .map_err(|_| FedimintError::InvalidAddress)?;
+            .map_err(|_| FedimintError::OtherError(anyhow!("Invalid address")))?;
         let mut rng = rand::rngs::OsRng;
         let peg_out = federation
             .client
             .new_peg_out_with_fees(amount, address)
-            .await?;
-        let out_point = federation.client.peg_out(peg_out, &mut rng).await?;
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        let out_point = federation
+            .client
+            .peg_out(peg_out, &mut rng)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
         federation
             .client
             .wallet_client()
             .await_peg_out_outcome(out_point)
             .await
-            .map_err(FedimintError::WalletClientError)?;
+            .map_err(|e| anyhow!(e.to_string()))?;
         federation.update_balance().await;
         federation.save_transaction(&Transaction::new(true, amount.to_sat() * 1000));
         Ok(out_point.txid.to_string())
