@@ -3,9 +3,18 @@ enum FedimintError {
   "OtherError",
 };
 
+dictionary FedimintFederation {
+  string name;
+};
+
 namespace calculator {
   [Throws=FedimintError]
   void fedimint_init(string data_dir, EventSink event_sink);
+
+  [Throws=FedimintError]
+  void fedimint_join_federation(string connect_string);
+
+  sequence<FedimintFederation> fedimint_list_federations();
 
   [Throws=FedimintError]
   string fedimint_generate_invoice(string amount, string description);
@@ -19,7 +28,6 @@ namespace calculator {
 
   [Throws=FedimintError]
   string fedimint_pay_address(string address, string amount);
-
 };
 
 callback interface EventSink {
