@@ -19,6 +19,9 @@ const theme = createTheme({
                 paddingLeft: 10,
                 paddingRight: 10,
             },
+            disabledStyle: {
+                opacity: 0.7,
+            },
         },
         Text: {
             style: {

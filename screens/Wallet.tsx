@@ -94,6 +94,7 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                         containerStyle={styles(theme).buttonContainer}
                         titleStyle={styles(theme).buttonTitle}
                         buttonStyle={styles(theme).button}
+                        disabled={!(Number(btcBalance) > 0)}
                     />
                 </View>
             </Card>
