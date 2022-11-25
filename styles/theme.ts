@@ -23,6 +23,7 @@ const theme = createTheme({
             style: {
                 color: colors.primary,
                 fontFamily: 'AlbertSans-Regular',
+                fontWeight: '500',
             },
         },
     },
