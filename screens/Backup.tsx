@@ -81,7 +81,7 @@ const VideoRecorder = () => {
             )}
             {videoFile && (
                 <View>
-                    <Text>{`${videoFile.duration} second video of size ${videoFile.size} saved to: ${videoFile.path}`}</Text>
+                    <Text>{`${videoFile.duration} second video saved to: ${videoFile.path}`}</Text>
 
                     <Button title={t('words.share')} onPress={shareVideo} />
                 </View>
@@ -90,7 +90,7 @@ const VideoRecorder = () => {
     )
 }
 
-const Backup: React.FC<Props> = ({ navigation }: Props) => {
+const Backup: React.FC<Props> = () => {
     const { t } = useTranslation()
     const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
 
