@@ -69,3 +69,38 @@ impl Event {
         }
     }
 }
+
+/// Sends events to iOS / Android layer
+pub trait EventSink: Send + Sync + 'static {
+    /// Send event. Body is JSON-serialized
+    fn event(&self, event_type: String, body: String);
+}
+
+/// Wrapper around EventSink which JSON serializes messages. This is more ergonomic in Swift / Kotlin
+/// than code-generated enums, and RCTEventEmitter has the same arguments.
+pub struct EventSinkWrapper {
+    pub event_sink: Box<dyn EventSink>,
+}
+
+impl EventSinkWrapper {
+    pub fn event(&self, event: &Event) {
+        match event {
+            Event::Balance { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("balance".into(), body);
+            }
+            Event::ReceivedLightning { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("receivedLightning".into(), body);
+            }
+            Event::ReceivedBitcoin { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("receivedBitcoin".into(), body);
+            }
+            Event::Log { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("log".into(), body);
+            }
+        };
+    }
+}
