@@ -1,7 +1,7 @@
+import { Button, Input, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NativeModules, StyleSheet, View } from 'react-native'
-import { Button, Input, Text } from '@rneui/themed'
 
 const {
     FedimintFfi: { generateInvoice },
@@ -33,10 +33,12 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
     }
 
     const onGenerateInvoice = async () => {
-        // call fedimint-ffi to generate invoice
-        const newInvoice = await generateInvoice(amount, 'test memo')
-        console.log(`generateInvoice: ', ${newInvoice})`)
-        handleInvoice(newInvoice)
+        try {
+            const newInvoice = await generateInvoice(amount, 'test memo')
+            handleInvoice(newInvoice)
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     return (
