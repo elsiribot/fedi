@@ -7,6 +7,7 @@ pub mod types;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
+use event::EventSink;
 use fedimint_api::Amount;
 use lazy_static::lazy_static;
 
@@ -20,7 +21,7 @@ use tokio::sync::Mutex;
 use tx::Transaction;
 use types::hacky_millisat_to_sat;
 
-use crate::event::Event;
+use crate::event::EventSinkWrapper;
 
 type Result<T> = std::result::Result<T, FedimintError>;
 
@@ -167,40 +168,4 @@ pub fn fedimint_pay_address(address: String, amount: String) -> Result<String> {
         federation.save_transaction(&Transaction::new(true, amount.to_sat() * 1000));
         Ok(out_point.txid.to_string())
     })
-}
-
-/// Sends events to iOS / Android layer
-pub trait EventSink: Send + Sync + 'static {
-    /// Send event. Body is JSON-serialized
-    // fn event(&self, event: Event, body: String);
-    fn event(&self, event_type: String, body: String);
-}
-
-/// Wrapper around EventSink which JSON serializes messages. This is more ergonomic in Swift / Kotlin
-/// than code-generated enums, and RCTEventEmitter has the same arguments.
-pub struct EventSinkWrapper {
-    event_sink: Box<dyn EventSink>,
-}
-
-impl EventSinkWrapper {
-    fn event(&self, event: &Event) {
-        match event {
-            Event::Balance { event } => {
-                let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("balance".into(), body);
-            }
-            Event::ReceivedLightning { event } => {
-                let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("receivedLightning".into(), body);
-            }
-            Event::ReceivedBitcoin { event } => {
-                let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("receivedBitcoin".into(), body);
-            }
-            Event::Log { event } => {
-                let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("log".into(), body);
-            }
-        };
-    }
 }
