@@ -22,6 +22,7 @@ const theme = createTheme({
         Text: {
             style: {
                 color: colors.primary,
+                fontFamily: 'AlbertSans-Regular',
             },
         },
     },

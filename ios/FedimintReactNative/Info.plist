@@ -36,7 +36,7 @@
 		</dict>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>NSCameraUsageDescription</key>
 	<string>Fedi needs access to the camera to scan QR codes</string>
 	<key>UILaunchStoryboardName</key>
@@ -61,6 +61,7 @@
 		<string>FontAwesome5_Solid.ttf</string>
 		<string>MaterialIcons.ttf</string>
 		<string>MaterialCommunityIcons.ttf</string>
+		<string>AlbertSans-Regular.ttf</string>
 	</array>
 </dict>
 </plist>

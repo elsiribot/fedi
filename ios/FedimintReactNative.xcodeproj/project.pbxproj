@@ -19,6 +19,7 @@
 		D0D73EFB2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFF2921E5480059F06F /* FedimintFfi.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EFE2921E5480059F06F /* FedimintFfi.swift */; };
 		D0D73F002921E5480059F06F /* FedimintFfi.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EFE2921E5480059F06F /* FedimintFfi.swift */; };
+		F3FA384A62E446EFAA757304 /* AlbertSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CA334607B4314C63BA2FFF2E /* AlbertSans-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +54,7 @@
 		D0D73EFC2921E5480059F06F /* FedimintReactNative-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FedimintReactNative-Bridging-Header.h"; sourceTree = "<group>"; };
 		D0D73EFE2921E5480059F06F /* FedimintFfi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FedimintFfi.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		CA334607B4314C63BA2FFF2E /* AlbertSans-Regular.ttf */ = {isa = PBXFileReference; name = "AlbertSans-Regular.ttf"; path = "../assets/fonts/AlbertSans-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +138,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
 				D0D73EFC2921E5480059F06F /* FedimintReactNative-Bridging-Header.h */,
+				F88983E10CC840958B359282 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -169,6 +172,15 @@
 			);
 			name = Packages;
 			sourceTree = "<group>";
+		};
+		F88983E10CC840958B359282 /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				CA334607B4314C63BA2FFF2E /* AlbertSans-Regular.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -270,6 +282,7 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				F3FA384A62E446EFAA757304 /* AlbertSans-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
