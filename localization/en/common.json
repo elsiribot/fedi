@@ -12,10 +12,12 @@
         "lightning": "Lightning",
         "onchain": "On-chain",
         "receive": "Receive",
+        "received": "Received",
         "sats": "sats",
+        "send": "Send",
+        "sent": "Sent",
         "settings": "Settings",
         "share": "Share",
-        "send": "Send",
         "transactions": "Transactions",
         "wallet": "Wallet"
     },

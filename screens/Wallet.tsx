@@ -7,11 +7,7 @@ import type { Theme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import type { HomeTabsParamList } from './Home'
-import {
-    BalanceEvent,
-    listTransactions,
-    TFedimintEventEmitter,
-} from '../bridge'
+import { BalanceEvent, TFedimintEventEmitter } from '../bridge'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -50,15 +46,6 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
         )
         setBtcBalance(String(event.balance))
     }
-
-    useEffect(() => {
-        const testFetchTransactions = async () => {
-            const transactions = await listTransactions()
-            console.log('transactions', transactions)
-        }
-
-        testFetchTransactions()
-    }, [])
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
