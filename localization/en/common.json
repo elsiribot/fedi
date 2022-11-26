@@ -16,6 +16,7 @@
         "settings": "Settings",
         "share": "Share",
         "send": "Send",
+        "transactions": "Transactions",
         "wallet": "Wallet"
     },
     "phrases": {
@@ -24,6 +25,7 @@
         "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
         "invalid-federation-code": "Invalid federation code",
+        "no-transactions": "No transactions",
         "receive-bitcoin": "Receive bitcoin"
     },
     "feature": {

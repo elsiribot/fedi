@@ -8,14 +8,14 @@ type HeaderButton = {
 }
 
 type HeaderProps = {
-    headerLeft?: HeaderButton
-    title: string
-    headerRight?: HeaderButton
+    headerLeft?: React.ReactNode
+    headerCenter?: React.ReactNode
+    headerRight?: React.ReactNode
 }
 
 const Header: React.FC<HeaderProps> = ({
     headerLeft,
-    title,
+    headerCenter,
     headerRight,
 }: HeaderProps) => {
     const { theme } = useTheme()
@@ -23,25 +23,9 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <HeaderRNE
             backgroundColor={theme.colors.secondary}
-            centerComponent={<Text>{title}</Text>}
-            leftComponent={
-                <View>
-                    {headerLeft && (
-                        <TouchableOpacity onPress={headerLeft.onPress}>
-                            <Icon name={headerLeft.icon} />
-                        </TouchableOpacity>
-                    )}
-                </View>
-            }
-            rightComponent={
-                <View>
-                    {headerRight && (
-                        <TouchableOpacity onPress={headerRight.onPress}>
-                            <Icon name={headerRight.icon} />
-                        </TouchableOpacity>
-                    )}
-                </View>
-            }
+            centerComponent={<View>{headerCenter || null}</View>}
+            leftComponent={<View>{headerLeft || null}</View>}
+            rightComponent={<View>{headerRight || null}</View>}
         />
     )
 }

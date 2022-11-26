@@ -29,8 +29,26 @@ const theme = createTheme({
                 fontFamily: 'AlbertSans-Regular',
                 fontWeight: '500',
             },
+            h3Style: {
+                fontSize: 24,
+            },
             h4Style: {
                 fontSize: 16,
+            },
+        },
+        Header: {
+            containerStyle: {
+                paddingHorizontal: 24,
+                borderBottomColor: colors.secondary,
+            },
+            leftContainerStyle: {
+                flex: 1,
+            },
+            centerContainerStyle: {
+                flex: 1,
+            },
+            rightContainerStyle: {
+                flex: 1,
             },
         },
     },
