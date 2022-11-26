@@ -80,10 +80,23 @@ export type Federation = {
     name: string
 }
 
+export type Transaction = {
+    id: number
+    createdAt: number
+    outgoing: boolean
+    amountMillis: number
+    amountSats: number
+}
+
 export async function joinFederation(connectString: string) {
     await FedimintFfi.joinFederation(connectString)
 }
 
 export async function listFederations(): Promise<Federation[]> {
     return FedimintFfi.listFederations()
+}
+
+export async function listTransactions(): Promise<Transaction[]> {
+    let json = await FedimintFfi.listTransactions()
+    return JSON.parse(json)
 }

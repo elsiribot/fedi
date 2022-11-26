@@ -17,6 +17,9 @@ RCT_EXTERN_METHOD(listFederations:(RCTPromiseResolveBlock)resolve
 RCT_EXTERN_METHOD(balance:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(listTransactions:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(generateInvoice:(NSString*)amount
                   description:(NSString*)description
                   resolve:(RCTPromiseResolveBlock)resolve
