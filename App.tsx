@@ -27,7 +27,7 @@ const App = () => {
     }
 
     const logHandler = (event: LogEvent) => {
-        console.log(`"log" -> "${event.log}"`, 'OS:', Platform.OS)
+        console.log('OS:', Platform.OS, `": log" -> "${event.log}"`)
     }
 
     useEffect(() => {
