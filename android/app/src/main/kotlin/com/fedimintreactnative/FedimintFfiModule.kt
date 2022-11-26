@@ -28,9 +28,33 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
             fedimintInit(dataDir, EventDispatcher)
             promise.resolve(null)
         } catch (error: Throwable) {
-            promise.reject("Init error", error.localizedMessage, error)
+            promise.reject("init() error", error.localizedMessage, error)
         }
     }
+
+    @ReactMethod
+    fun joinFederation(connectString: String, promise: Promise) {
+        Log.i("test", "kotlin calling joinFederation")
+        try {
+            fedimintJoinFederation(connectString)
+            promise.resolve(null)
+        } catch (error: Throwable) {
+            promise.reject("joinFederation() error", error.localizedMessage, error)
+        }
+    }
+
+    @ReactMethod
+    fun listFederations(promise: Promise) {
+        var fedimintFederations = fedimintListFederations()
+        val reactFederations = Arguments.createArray()
+        fedimintFederations.forEach {
+            val federation = Arguments.createMap()
+            federation.putString("name", it.name)
+            reactFederations.pushMap(federation)
+        }
+        promise.resolve(reactFederations)
+    }
+
 
     @ReactMethod
     fun balance(promise: Promise) {
@@ -44,7 +68,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
             var invoice = fedimintGenerateInvoice(amount, description)
             promise.resolve(invoice)
         } catch (error: Throwable) {
-            promise.reject("generateInvoice error", error.localizedMessage, error)
+            promise.reject("generateInvoice() error", error.localizedMessage, error)
         }
     }
 
@@ -54,7 +78,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
             fedimintPayInvoice(invoice)
             promise.resolve(null)
         } catch (error: Throwable) {
-            promise.reject("payInvoice error", error.localizedMessage, error)
+            promise.reject("payInvoice() error", error.localizedMessage, error)
         }
     }
 
@@ -69,7 +93,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
             var txid = fedimintPayAddress(address, amount)
             promise.resolve(txid)
         } catch (error: Throwable) {
-            promise.reject("payInvoice error", error.localizedMessage, error)
+            promise.reject("payAddress() error", error.localizedMessage, error)
         }
     }
 

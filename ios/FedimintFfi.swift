@@ -13,7 +13,24 @@ class FedimintFfi: NSObject {
       // can't happen
     }
   }
+  
+  @objc
+  func joinFederation(_ connectString: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    do {
+      try fedimintJoinFederation(connectString: String(connectString))
+      resolve("")  // FIXME: how to resolve nothing?
+    } catch FedimintError.OtherError(let message) {
+      reject("", message, nil)
+    } catch {
+      // can't happen
+    }
+  }
 
+  @objc
+  func listFederations(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    resolve(fedimintListFederations())
+  }
+  
   @objc
   func balance(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
     resolve(fedimintBalance())

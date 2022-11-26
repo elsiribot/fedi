@@ -4,7 +4,7 @@ import {
     NativeModules,
 } from 'react-native'
 
-const { FedimintEventEmitter } = NativeModules
+const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
 export type LogEvent = {
     log: string
@@ -74,4 +74,16 @@ export class TFedimintEventEmitter {
     ): EmitterSubscription => {
         return this.addListener('receivedBitcoin', listener, context)
     }
+}
+
+export type Federation = {
+    name: string
+}
+
+export async function joinFederation(connectString: string) {
+    await FedimintFfi.joinFederation(connectString)
+}
+
+export async function listFederations(): Promise<Federation[]> {
+    return FedimintFfi.listFederations()
 }

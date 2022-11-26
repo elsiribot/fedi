@@ -1,8 +1,9 @@
 import Clipboard from '@react-native-clipboard/clipboard'
+import { useNavigation } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { Button, Card, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { useNavigation } from '@react-navigation/native'
 import {
     ActivityIndicator,
     Dimensions,
@@ -12,11 +13,10 @@ import {
     View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { Button, Card, Text } from '@rneui/themed'
 
-import { truncateMiddleOfString } from '../scripts/utils'
-import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../emitter'
+import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../bridge'
 import { RootStackParamList } from '../Router'
+import { truncateMiddleOfString } from '../scripts/utils'
 
 const {
     FedimintFfi: { generateAddress },

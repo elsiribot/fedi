@@ -1,13 +1,13 @@
+import Clipboard from '@react-native-clipboard/clipboard'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Text } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Share, StyleSheet, View } from 'react-native'
-import Clipboard from '@react-native-clipboard/clipboard'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import QRCode from 'react-native-qrcode-svg'
-import { Button, Text } from '@rneui/themed'
 
+import { ReceivedLightningEvent, TFedimintEventEmitter } from '../bridge'
 import type { RootStackParamList } from '../Router'
-import { ReceivedLightningEvent, TFedimintEventEmitter } from '../emitter'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
