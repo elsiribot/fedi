@@ -1,15 +1,9 @@
 import { ThemeProvider } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { NativeModules } from 'react-native'
+import { NativeModules, Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import {
-    BalanceEvent,
-    LogEvent,
-    ReceivedBitcoinEvent,
-    ReceivedLightningEvent,
-    TFedimintEventEmitter,
-} from './bridge'
+import { LogEvent, TFedimintEventEmitter } from './bridge'
 
 import Router from './Router'
 
@@ -20,32 +14,25 @@ const {
 } = NativeModules
 
 const App = () => {
+    // const [federationIsReady, setFederationIsReady] = useState<boolean>(false)
     // const scheme = useColorScheme()
 
     // Initializes the connection to the federation
     async function initialize() {
+        console.log('initializing connection to federation')
+        const start = Date.now()
         await init(RNFS.DocumentDirectoryPath)
+        const stop = Date.now()
+        console.log('initialized:', stop - start, 'ms OS:', Platform.OS)
     }
 
     const logHandler = (event: LogEvent) => {
-        console.log(`"log" -> "${event.log}"`)
-    }
-    const balanceHandler = (event: BalanceEvent) => {
-        console.log(`"balance" -> "${event.balance}"`)
-    }
-    const receivedLightningHandler = (event: ReceivedLightningEvent) => {
-        console.log(`"receivedLightning" -> "${event.paymentHash}"`)
-    }
-    const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {
-        console.log(`"receivedBitcoin" -> "${event.txid}"`)
+        console.log(`"log" -> "${event.log}"`, 'OS:', Platform.OS)
     }
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
-        emitter.onBalanceUpdate(balanceHandler)
         emitter.onLog(logHandler)
-        emitter.onReceivedLightning(receivedLightningHandler)
-        emitter.onReceivedBitcoin(receivedBitcoinHandler)
         initialize()
     }, [])
 

@@ -36,7 +36,7 @@
 		</dict>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>NSCameraUsageDescription</key>
 	<string>Fedi needs access to the camera to scan QR codes</string>
 	<key>UILaunchStoryboardName</key>
@@ -61,6 +61,24 @@
 		<string>FontAwesome5_Solid.ttf</string>
 		<string>MaterialIcons.ttf</string>
 		<string>MaterialCommunityIcons.ttf</string>
+		<string>AlbertSans-Regular.ttf</string>
+		<string>AlbertSans-Black.ttf</string>
+		<string>AlbertSans-BlackItalic.ttf</string>
+		<string>AlbertSans-Bold.ttf</string>
+		<string>AlbertSans-BoldItalic.ttf</string>
+		<string>AlbertSans-ExtraBold.ttf</string>
+		<string>AlbertSans-ExtraBoldItalic.ttf</string>
+		<string>AlbertSans-ExtraLight.ttf</string>
+		<string>AlbertSans-ExtraLightItalic.ttf</string>
+		<string>AlbertSans-Italic.ttf</string>
+		<string>AlbertSans-Light.ttf</string>
+		<string>AlbertSans-LightItalic.ttf</string>
+		<string>AlbertSans-Medium.ttf</string>
+		<string>AlbertSans-MediumItalic.ttf</string>
+		<string>AlbertSans-SemiBold.ttf</string>
+		<string>AlbertSans-SemiBoldItalic.ttf</string>
+		<string>AlbertSans-Thin.ttf</string>
+		<string>AlbertSans-ThinItalic.ttf</string>
 	</array>
 </dict>
 </plist>

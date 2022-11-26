@@ -6,6 +6,7 @@ const colors = {
     primary: '#0B1013',
     primaryLight: '#51768d',
     secondary: '#FFFFFF',
+    orange: '#DF7B00',
 }
 const theme = createTheme({
     ...NavigationDefaultTheme,
@@ -18,10 +19,18 @@ const theme = createTheme({
                 paddingLeft: 10,
                 paddingRight: 10,
             },
+            disabledStyle: {
+                opacity: 0.7,
+            },
         },
         Text: {
             style: {
                 color: colors.primary,
+                fontFamily: 'AlbertSans-Regular',
+                fontWeight: '500',
+            },
+            h4Style: {
+                fontSize: 16,
             },
         },
     },

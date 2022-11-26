@@ -1,11 +1,12 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Text, Theme, useTheme } from '@rneui/themed'
-import { StyleSheet, TextProps } from 'react-native'
+import { Theme, useTheme } from '@rneui/themed'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { StyleSheet } from 'react-native'
 
 import type { RootStackParamList } from '../Router'
 import Settings from './Settings'
@@ -23,6 +24,7 @@ const Tab = createBottomTabNavigator<HomeTabsParamList>()
 const Home: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
 
     return (
         <Tab.Navigator
@@ -51,7 +53,7 @@ const Home: React.FC<Props> = () => {
                 },
                 tabBarActiveTintColor: theme.colors.primary,
                 tabBarInactiveTintColor: theme.colors.primaryLight,
-                tabBarStyle: styles(theme).tabBar,
+                tabBarStyle: styles(theme, insets).tabBar,
                 headerTitleStyle: theme.components.Text.style,
             })}>
             <Tab.Screen
@@ -68,12 +70,12 @@ const Home: React.FC<Props> = () => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         tabBar: {
             backgroundColor: theme.colors.secondary,
-            paddingBottom: 10,
-            height: 63,
+            paddingBottom: 10 + insets.bottom,
+            height: 63 + insets.bottom,
         },
     })
 
