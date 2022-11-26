@@ -16,7 +16,7 @@ import QRCode from 'react-native-qrcode-svg'
 
 import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../bridge'
 import { RootStackParamList } from '../Router'
-import { truncateMiddleOfString } from '../scripts/utils'
+import StringUtils from '../utils/StringUtils'
 
 const {
     FedimintFfi: { generateAddress },
@@ -103,7 +103,7 @@ const ReceiveOnchain: React.FC<{}> = () => {
                             <Text
                                 style={styles.addressString}
                                 numberOfLines={1}>
-                                {truncateMiddleOfString(address, 6)}
+                                {StringUtils.truncateMiddleOfString(address, 6)}
                             </Text>
                         </View>
                     </Card>

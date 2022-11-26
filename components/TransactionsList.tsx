@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Transaction } from '../bridge'
+import DateUtils from '../utils/DateUtils'
 
 type TransactionsListProps = {
     transactions: Transaction[]
@@ -27,7 +28,14 @@ const TransactionTile = ({ txn }: TransactionTileProps) => {
     const { theme } = useTheme()
 
     return (
-        <View style={styles(theme).tileContainer}>
+        <View
+            style={[
+                styles(theme).tileContainer,
+                // TODO: Add opacity based on "pending" state for onchain txns
+                // {
+                //     opacity: txn.pending ? 0.6 : 1,
+                // },
+            ]}>
             <View style={styles(theme).leftContainer}>
                 <Icon
                     name="bitcoin"
@@ -52,9 +60,15 @@ const TransactionTile = ({ txn }: TransactionTileProps) => {
                     {`${txn.amountSats} ${t('words.sats').toUpperCase()}`}
                 </Text>
                 <Text
-                    style={
-                        styles(theme).rightAlignedText
-                    }>{`${txn.createdAt}`}</Text>
+                    style={[
+                        styles(theme).rightAlignedText,
+                        styles(theme).subText,
+                    ]}>
+                    {`${DateUtils.formatTimestamp(
+                        txn.createdAt,
+                        'MMM dd, h:mmaaa',
+                    )}`}
+                </Text>
             </View>
         </View>
     )
@@ -115,6 +129,10 @@ const styles = (theme: Theme) =>
         },
         rightAlignedText: {
             textAlign: 'right',
+        },
+        subText: {
+            fontSize: theme.sizes.xs,
+            opa: theme.colors.primaryLight,
         },
     })
 
