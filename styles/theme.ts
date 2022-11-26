@@ -55,6 +55,11 @@ const theme = createTheme({
     colors: {
         ...colors,
     },
+    sizes: {
+        sm: 24,
+        md: 32,
+        lg: 48,
+    },
 })
 
 export default theme

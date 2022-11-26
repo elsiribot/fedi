@@ -17,5 +17,8 @@ declare module '@rneui/themed' {
             border: string
             notification: string
         }
+        sizes: {
+            [key: string]: number
+        }
     }
 }

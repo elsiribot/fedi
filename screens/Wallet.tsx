@@ -62,7 +62,7 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                         name="bitcoin"
                         type="material-community"
                         color={theme.colors.secondary}
-                        size={24}
+                        size={theme.sizes.sm}
                     />
                     <Text h4 style={styles(theme).titleText}>
                         {t('words.bitcoin')}

@@ -33,7 +33,7 @@ const TransactionTile = ({ txn }: TransactionTileProps) => {
                     name="bitcoin"
                     type="material-community"
                     color={theme.colors.orange}
-                    size={32}
+                    size={theme.sizes.md}
                 />
             </View>
             <View style={styles(theme).centerContainer}>
