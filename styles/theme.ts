@@ -4,7 +4,7 @@ import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native
 const colors = {
     ...lightColors,
     primary: '#0B1013',
-    primaryLight: '#51768d',
+    primaryLight: '#6D7071',
     secondary: '#FFFFFF',
     orange: '#DF7B00',
 }
@@ -56,6 +56,7 @@ const theme = createTheme({
         ...colors,
     },
     sizes: {
+        xs: 12,
         sm: 24,
         md: 32,
         lg: 48,
