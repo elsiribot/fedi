@@ -9,7 +9,7 @@ import {
     View,
 } from 'react-native'
 
-import { listTransaction } from '../bridge'
+import { listTransactions } from '../bridge'
 import type { RootStackParamList } from '../Router'
 import type { HomeTabsParamList } from './Home'
 
@@ -42,7 +42,7 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
 
     useEffect(() => {
         const testFetchTransactions = async () => {
-            const transactions = await listTransaction()
+            const transactions = await listTransactions()
             console.log('transactions', transactions)
         }
 

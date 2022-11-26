@@ -96,7 +96,7 @@ export async function listFederations(): Promise<Federation[]> {
     return FedimintFfi.listFederations()
 }
 
-export async function listTransaction(): Promise<Transaction[]> {
+export async function listTransactions(): Promise<Transaction[]> {
     let json = await FedimintFfi.listTransactions()
     return JSON.parse(json)
 }
