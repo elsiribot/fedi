@@ -7,8 +7,10 @@ class FedimintFfi: NSObject {
     do {
       try fedimintInit(dataDir: String(dataDir), eventSink: EventDispatcher())
       resolve("")  // FIXME: how to resolve nothing?
+    } catch FedimintError.OtherError(let message) {
+      reject("", message, nil)
     } catch {
-      reject(error.localizedDescription, error.localizedDescription, error)
+      // can't happen
     }
   }
 
@@ -24,9 +26,10 @@ class FedimintFfi: NSObject {
     do {
       let invoice = try fedimintGenerateInvoice(amount: a, description: d)
       resolve(invoice)
-
+    } catch FedimintError.OtherError(let message) {
+      reject("", message, nil)
     } catch {
-      reject(error.localizedDescription, error.localizedDescription, error)
+      // can't happen
     }
   }
 
@@ -36,8 +39,10 @@ class FedimintFfi: NSObject {
     do {
       try fedimintPayInvoice(invoice: i)
       resolve("")  // FIXME: how to resolve nothing?
+    } catch FedimintError.OtherError(let message) {
+      reject("", message, nil)
     } catch {
-      reject(error.localizedDescription, error.localizedDescription, error)
+      // can't happen
     }
   }
 
@@ -53,8 +58,10 @@ class FedimintFfi: NSObject {
     do {
       let txid = try fedimintPayAddress(address: addr, amount: amt)
       resolve(txid)
+    } catch FedimintError.OtherError(let message) {
+      reject("", message, nil)
     } catch {
-      reject(error.localizedDescription, error.localizedDescription, error)
+      // can't happen
     }
   }
 }
