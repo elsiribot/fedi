@@ -1,11 +1,6 @@
 import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
-import { Header as HeaderRNE, Icon, Text, useTheme } from '@rneui/themed'
-
-type HeaderButton = {
-    icon: string
-    onPress: () => void
-}
+import { View } from 'react-native'
+import { Header as HeaderRNE, useTheme } from '@rneui/themed'
 
 type HeaderProps = {
     headerLeft?: React.ReactNode
