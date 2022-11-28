@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, TouchableOpacity } from 'react-native'
 
 import type { RootStackParamList } from '../Router'
 import Settings from './Settings'
 import Wallet from './Wallet'
+import Header from '../components/Header'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
@@ -59,7 +60,21 @@ const Home: React.FC<Props> = () => {
             <Tab.Screen
                 name="Wallet"
                 component={Wallet}
-                options={{ title: `${t('words.wallet')}` }}
+                options={({ navigation }) => ({
+                    header: () => (
+                        <Header
+                            headerLeft={<Text h3>{t('words.wallet')}</Text>}
+                            headerRight={
+                                <TouchableOpacity
+                                    onPress={() =>
+                                        navigation.navigate('Transactions')
+                                    }>
+                                    <Icon name={'format-list-bulleted'} />
+                                </TouchableOpacity>
+                            }
+                        />
+                    ),
+                })}
             />
             <Tab.Screen
                 name="Settings"

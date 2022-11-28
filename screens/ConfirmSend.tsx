@@ -6,7 +6,7 @@ import { Button, Text, useTheme } from '@rneui/themed'
 import type { Theme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
-import { truncateMiddleOfString } from '../scripts/utils'
+import StringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ConfirmSend'>
 
@@ -89,7 +89,9 @@ const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
                 <Text>{''}</Text>
-                <Text>{`${truncateMiddleOfString(invoice, 14)}`}</Text>
+                <Text>
+                    {`${StringUtils.truncateMiddleOfString(invoice, 14)}`}
+                </Text>
                 <Text>{`${t('phrases.expires-in')} ${formatExpiry(
                     expiry,
                 )}`}</Text>

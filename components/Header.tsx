@@ -1,21 +1,16 @@
 import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
-import { Header as HeaderRNE, Icon, Text, useTheme } from '@rneui/themed'
-
-type HeaderButton = {
-    icon: string
-    onPress: () => void
-}
+import { View } from 'react-native'
+import { Header as HeaderRNE, useTheme } from '@rneui/themed'
 
 type HeaderProps = {
-    headerLeft?: HeaderButton
-    title: string
-    headerRight?: HeaderButton
+    headerLeft?: React.ReactNode
+    headerCenter?: React.ReactNode
+    headerRight?: React.ReactNode
 }
 
 const Header: React.FC<HeaderProps> = ({
     headerLeft,
-    title,
+    headerCenter,
     headerRight,
 }: HeaderProps) => {
     const { theme } = useTheme()
@@ -23,25 +18,9 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <HeaderRNE
             backgroundColor={theme.colors.secondary}
-            centerComponent={<Text>{title}</Text>}
-            leftComponent={
-                <View>
-                    {headerLeft && (
-                        <TouchableOpacity onPress={headerLeft.onPress}>
-                            <Icon name={headerLeft.icon} />
-                        </TouchableOpacity>
-                    )}
-                </View>
-            }
-            rightComponent={
-                <View>
-                    {headerRight && (
-                        <TouchableOpacity onPress={headerRight.onPress}>
-                            <Icon name={headerRight.icon} />
-                        </TouchableOpacity>
-                    )}
-                </View>
-            }
+            centerComponent={<View>{headerCenter || null}</View>}
+            leftComponent={<View>{headerLeft || null}</View>}
+            rightComponent={<View>{headerRight || null}</View>}
         />
     )
 }

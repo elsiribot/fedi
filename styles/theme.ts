@@ -4,10 +4,12 @@ import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native
 const colors = {
     ...lightColors,
     primary: '#0B1013',
-    primaryLight: '#51768d',
+    primaryLight: '#6D7071',
     secondary: '#FFFFFF',
     orange: '#DF7B00',
+    grey: '#D9D9D9',
 }
+
 const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
@@ -29,13 +31,37 @@ const theme = createTheme({
                 fontFamily: 'AlbertSans-Regular',
                 fontWeight: '500',
             },
+            h3Style: {
+                fontSize: 24,
+            },
             h4Style: {
                 fontSize: 16,
+            },
+        },
+        Header: {
+            containerStyle: {
+                paddingHorizontal: 24,
+                borderBottomColor: colors.secondary,
+            },
+            leftContainerStyle: {
+                flex: 1,
+            },
+            centerContainerStyle: {
+                flex: 1,
+            },
+            rightContainerStyle: {
+                flex: 1,
             },
         },
     },
     colors: {
         ...colors,
+    },
+    sizes: {
+        xs: 12,
+        sm: 24,
+        md: 32,
+        lg: 48,
     },
 })
 

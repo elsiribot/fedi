@@ -2,16 +2,12 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Button, Card, Icon, Text, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
 import type { Theme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import type { HomeTabsParamList } from './Home'
-import {
-    BalanceEvent,
-    listTransactions,
-    TFedimintEventEmitter,
-} from '../bridge'
+import { BalanceEvent, TFedimintEventEmitter } from '../bridge'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -43,18 +39,13 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
     const [btcBalance, setBtcBalance] = useState('')
 
     const balanceHandler = (event: BalanceEvent) => {
-        console.log(`"Wallet: balance" -> "${event.balance}"`)
+        console.log(
+            `"Wallet: balance" -> "${event.balance}"`,
+            'OS:',
+            Platform.OS,
+        )
         setBtcBalance(String(event.balance))
     }
-
-    useEffect(() => {
-        const testFetchTransactions = async () => {
-            const transactions = await listTransactions()
-            console.log('transactions', transactions)
-        }
-
-        testFetchTransactions()
-    }, [])
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
@@ -71,7 +62,7 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                         name="bitcoin"
                         type="material-community"
                         color={theme.colors.secondary}
-                        size={24}
+                        size={theme.sizes.sm}
                     />
                     <Text h4 style={styles(theme).titleText}>
                         {t('words.bitcoin')}
