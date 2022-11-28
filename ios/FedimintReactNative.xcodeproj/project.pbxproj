@@ -68,7 +68,6 @@
 		3B4392A12AC88292D35C810B /* Pods-FedimintReactNative.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative.debug.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative/Pods-FedimintReactNative.debug.xcconfig"; sourceTree = "<group>"; };
 		3DD2FB1C26C641AEBCA7E84B /* AlbertSans-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-Bold.ttf"; path = "../assets/fonts/AlbertSans-Bold.ttf"; sourceTree = "<group>"; };
 		42187D2041144CAD89D9DD1E /* AlbertSans-ExtraLightItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-ExtraLightItalic.ttf"; path = "../assets/fonts/AlbertSans-ExtraLightItalic.ttf"; sourceTree = "<group>"; };
-		51D9AA822931D218004490B3 /* calculator-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "calculator-swift"; path = "../../bridge/calculator-swift"; sourceTree = "<group>"; };
 		55AC34EB407849329AE54B10 /* AlbertSans-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-MediumItalic.ttf"; path = "../assets/fonts/AlbertSans-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-FedimintReactNative.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative.release.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative/Pods-FedimintReactNative.release.xcconfig"; sourceTree = "<group>"; };
 		57F5074F39D74067B3835E4C /* AlbertSans-BlackItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-BlackItalic.ttf"; path = "../assets/fonts/AlbertSans-BlackItalic.ttf"; sourceTree = "<group>"; };
@@ -202,7 +201,6 @@
 		D0B411D9292806D8007D447F /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				51D9AA822931D218004490B3 /* calculator-swift */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -606,11 +604,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 23;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4JUZY29459;
+				DEVELOPMENT_TEAM = 4JUZY29459;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = FedimintReactNative/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Fedimint;
@@ -627,7 +624,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.fedi.fedimintreactnative;
 				PRODUCT_NAME = FedimintReactNative;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match Development org.fedi.fedimintreactnative";
 				SWIFT_OBJC_BRIDGING_HEADER = "FedimintReactNative-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
