@@ -1,17 +1,27 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import {
+    Divider,
+    Icon,
+    ListItem,
+    Overlay,
+    Text,
+    Theme,
+    useTheme,
+} from '@rneui/themed'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Dimensions,
     FlatList,
     ListRenderItem,
     StyleSheet,
+    TouchableOpacity,
     View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Transaction } from '../bridge'
 import DateUtils from '../utils/DateUtils'
+import StringUtils from '../utils/StringUtils'
 
 type TransactionsListProps = {
     transactions: Transaction[]
@@ -19,16 +29,23 @@ type TransactionsListProps = {
 
 type TransactionTileProps = {
     txn: Transaction
+    selectTransaction: (txn: Transaction) => void
+}
+
+type TransactionDetailProps = {
+    txn: Transaction
+    handleCloseModal: () => void
 }
 
 const WINDOW_WIDTH = Dimensions.get('window').width
 
-const TransactionTile = ({ txn }: TransactionTileProps) => {
+const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
     return (
-        <View
+        <TouchableOpacity
+            onPress={() => selectTransaction(txn)}
             style={[
                 styles(theme).tileContainer,
                 // TODO: Add opacity based on "pending" state for onchain txns
@@ -70,15 +87,87 @@ const TransactionTile = ({ txn }: TransactionTileProps) => {
                     )}`}
                 </Text>
             </View>
-        </View>
+        </TouchableOpacity>
     )
 }
 
+const TransactionDetail = ({
+    txn,
+    handleCloseModal,
+}: TransactionDetailProps) => {
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+
+    console.log(txn)
+
+    return (
+        <View style={styles(theme).detailContainer}>
+            <TouchableOpacity
+                style={styles(theme).closeIconContainer}
+                onPress={handleCloseModal}>
+                <Icon name="close" size={theme.sizes.md} />
+            </TouchableOpacity>
+            <Icon
+                name="bitcoin"
+                type="material-community"
+                color={theme.colors.orange}
+                size={theme.sizes.lg}
+            />
+            <Text h3>{`${t('feature.receive.you-received')}`}</Text>
+            <Text h3>{`${txn.amountSats} ${t('words.sats')}`}</Text>
+            <View style={styles(theme).detailItemsContainer}>
+                <Divider />
+                <View style={styles(theme).detailItem}>
+                    <Text>{`${t('words.memo')}`}</Text>
+                    {/* TODO: Replace with actual memo*/}
+                    {/* <Text>{txn.memo}</Text> */}
+                    <Text>{`Memo here`}</Text>
+                </View>
+                <Divider />
+                <View style={styles(theme).detailItem}>
+                    <Text>{`${t('words.time')}`}</Text>
+                    <Text>{`${DateUtils.formatTimestamp(
+                        txn.createdAt,
+                        'MMM dd yyyy, h:mmaaa',
+                    )}`}</Text>
+                </View>
+                <Divider />
+                <View style={styles(theme).detailItem}>
+                    <Text>{`${t('words.fee')}`}</Text>
+                    {/* TODO: Replace with actual fee amount*/}
+                    {/* <Text>{txn.feeSats}</Text> */}
+                    <Text>{`${'~3 - 11'} ${t('words.sats')}`}</Text>
+                </View>
+                <Divider />
+                <View style={styles(theme).detailItem}>
+                    <Text>{`${t('phrases.lightning-request')}`}</Text>
+                    {/* TODO: Replace with actual invoice string*/}
+                    {/* <Text>{StringUtils.truncateMiddleOfString(txn.invoice, 5)}</Text> */}
+                    <Text>{`${'lnbc1...o19n382x'}`}</Text>
+                </View>
+                <Divider />
+                <View style={styles(theme).detailItem}>
+                    <Text>{`${t('phrases.add-note')} +`}</Text>
+                    <Text>{`${'Optional'}`}</Text>
+                </View>
+            </View>
+        </View>
+    )
+}
 const TransactionsList = ({ transactions }: TransactionsListProps) => {
     const { theme } = useTheme()
+    const [selectedTransaction, setSelectedTransaction] =
+        useState<Transaction | null>(null)
 
     const renderTransaction: ListRenderItem<Transaction> = ({ item }) => {
-        return <TransactionTile txn={item} />
+        return (
+            <TransactionTile
+                txn={item}
+                selectTransaction={(txn: Transaction) =>
+                    setSelectedTransaction(txn)
+                }
+            />
+        )
     }
 
     return (
@@ -95,6 +184,17 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
                     index,
                 })}
             />
+            <Overlay
+                isVisible={selectedTransaction !== null}
+                overlayStyle={styles(theme).overlayContainer}
+                onBackdropPress={() => setSelectedTransaction(null)}>
+                {selectedTransaction && (
+                    <TransactionDetail
+                        txn={selectedTransaction}
+                        handleCloseModal={() => setSelectedTransaction(null)}
+                    />
+                )}
+            </Overlay>
         </SafeAreaView>
     )
 }
@@ -104,6 +204,27 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
+        },
+        closeIconContainer: {
+            alignSelf: 'flex-end',
+        },
+        detailContainer: {
+            alignItems: 'center',
+            margin: 10,
+            width: 300,
+        },
+        detailItemsContainer: {
+            marginTop: 20,
+            width: 250,
+        },
+        detailItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 32,
+        },
+        overlayContainer: {
+            borderRadius: 20,
         },
         tileContainer: {
             flexDirection: 'row',
