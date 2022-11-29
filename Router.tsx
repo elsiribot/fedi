@@ -13,6 +13,8 @@ import LnInvoice from './screens/LnInvoice'
 import LnReceiveSuccess from './screens/LnReceiveSuccess'
 import OnChainReceiveSuccess from './screens/OnChainReceiveSuccess'
 import Receive from './screens/Receive'
+import RequestCameraAccess from './screens/RequestCameraAccess'
+import ScanFederationCode from './screens/ScanFederationCode'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
 import Transactions from './screens/Transactions'
@@ -28,6 +30,8 @@ export type RootStackParamList = {
     LnReceiveSuccess: { amountReceived: string }
     OnChainReceiveSuccess: { amountReceived: string }
     Receive: undefined
+    RequestCameraAccess: undefined
+    ScanFederationCode: undefined
     Send: undefined
     Splash: undefined
     Transactions: undefined
@@ -49,7 +53,9 @@ const Router = () => {
                     <Stack.Screen
                         name="Splash"
                         component={Splash}
-                        options={{ title: `${t('words.fedimint')}` }}
+                        options={{
+                            headerShown: false,
+                        }}
                     />
                     <Stack.Screen
                         name="Backup"
@@ -111,6 +117,38 @@ const Router = () => {
                                             <Icon name={'close'} />
                                         </TouchableOpacity>
                                     }
+                                />
+                            ),
+                        })}
+                    />
+                    <Stack.Screen
+                        name="RequestCameraAccess"
+                        component={RequestCameraAccess}
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="ScanFederationCode"
+                        component={ScanFederationCode}
+                        options={({ navigation }) => ({
+                            header: () => (
+                                <Header
+                                    headerLeft={
+                                        <TouchableOpacity
+                                            onPress={() => navigation.goBack()}>
+                                            <Icon
+                                                name={'angle-left'}
+                                                type="font-awesome"
+                                            />
+                                        </TouchableOpacity>
+                                    }
+                                    headerCenter={
+                                        <Text h4>
+                                            {t(
+                                                'feature.federations.scan-federation-invite',
+                                            )}
+                                        </Text>
+                                    }
+                                    centerContainerStyle={{ flex: 3 }}
                                 />
                             ),
                         })}
