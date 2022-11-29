@@ -3,47 +3,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import {
-    Camera,
-    CameraDevice,
-    useCameraDevices,
-} from 'react-native-vision-camera'
-import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
+import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { Button, Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
+import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
-
-type CameraScannerProps = {
-    device: CameraDevice
-    onQrCodeDetected: Function
-}
-
-const CameraScanner = ({ device, onQrCodeDetected }: CameraScannerProps) => {
-    const [frameProcessor, barcodes] = useScanBarcodes(
-        [BarcodeFormat.QR_CODE],
-        {
-            checkInverted: true,
-        },
-    )
-
-    useEffect(() => {
-        barcodes.map(b => {
-            onQrCodeDetected(b.content?.data)
-        })
-    }, [barcodes, onQrCodeDetected])
-
-    return (
-        <Camera
-            style={styles.camera}
-            device={device}
-            isActive={true}
-            frameProcessor={frameProcessor}
-            frameProcessorFps={5}
-        />
-    )
-}
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
@@ -104,12 +70,12 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const devices = useCameraDevices()
     const device = devices.back
 
-    const renderCameraScanner = () => {
+    const renderQrCodeScanner = () => {
         if (device == null || hasCameraPermission === false) {
             return <ActivityIndicator />
         } else {
             return (
-                <CameraScanner
+                <QrCodeScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
                         handleUserInput(qrCodeData)
@@ -123,7 +89,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles.container}>
             <Text>{t('feature.send.scan-qr-code')}</Text>
             <View style={styles.cameraScannerContainer}>
-                {renderCameraScanner()}
+                {renderQrCodeScanner()}
             </View>
             <Button
                 title={t('feature.send.paste-lightning-request')}
@@ -141,10 +107,6 @@ const styles = StyleSheet.create({
     },
     cameraScannerContainer: {
         height: '50%',
-        width: '100%',
-    },
-    camera: {
-        height: '100%',
         width: '100%',
     },
 })
