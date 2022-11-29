@@ -11,7 +11,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native'
 import type { RootStackParamList } from '../Router'
 import Settings from './Settings'
 import Wallet from './Wallet'
-import Header from '../components/Header'
+import Header from '../components/ui/Header'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 

@@ -6,7 +6,7 @@ import { Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import { listTransactions, Transaction } from '../bridge'
-import TransactionsList from '../components/TransactionsList'
+import TransactionsList from '../components/feature/transaction-history/TransactionsList'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>
 

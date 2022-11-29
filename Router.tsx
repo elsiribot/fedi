@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Icon, Text, useTheme } from '@rneui/themed'
 
 import Backup from './screens/Backup'
-import ConfirmSend from './screens/ConfirmSend'
+import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
@@ -17,11 +17,11 @@ import Send from './screens/Send'
 import Splash from './screens/Splash'
 import Transactions from './screens/Transactions'
 
-import Header from './components/Header'
+import Header from './components/ui/Header'
 
 export type RootStackParamList = {
     Backup: undefined
-    ConfirmSend: { invoice: string }
+    ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
     Home: undefined
     LnInvoice: { invoice: string }
@@ -57,8 +57,8 @@ const Router = () => {
                         options={{ title: `${t('words.backup')}` }}
                     />
                     <Stack.Screen
-                        name="ConfirmSend"
-                        component={ConfirmSend}
+                        name="ConfirmSendLightning"
+                        component={ConfirmSendLightning}
                         options={{
                             title: `${t('feature.send.confirm-send')}`,
                         }}

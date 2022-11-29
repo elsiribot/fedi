@@ -71,7 +71,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         if (invoice.length > 0) {
             // TODO: go to send confirm screen before calling payInvoice
-            navigation.navigate('ConfirmSend', {
+            navigation.navigate('ConfirmSendLightning', {
                 invoice,
             })
         }
