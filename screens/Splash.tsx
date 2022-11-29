@@ -1,11 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button } from '@rneui/themed'
+import { Button, Image } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ImageBackground, StyleSheet, View } from 'react-native'
+import { Camera } from 'react-native-vision-camera'
 
 import { joinFederation, listFederations } from '../bridge'
 import type { RootStackParamList } from '../Router'
+import Images from '../assets/images'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -24,13 +26,34 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         navigation.navigate('Home')
     }
 
+    const handleJoinFederation = async () => {
+        const status = await Camera.getCameraPermissionStatus()
+        console.log('status', status)
+        if (status === 'authorized') {
+            navigation.navigate('ScanFederationCode')
+        } else {
+            navigation.navigate('RequestCameraAccess')
+        }
+    }
+
     return (
-        <View style={styles.container}>
-            <Button
-                title={t('phrases.connect-to-federation')}
-                onPress={connectToFederation}
-            />
-        </View>
+        <ImageBackground
+            resizeMode="cover"
+            style={styles.imageBackground}
+            source={Images.RainbowGradient}>
+            <View style={styles.container}>
+                <Image source={Images.FediLogo} style={styles.image} />
+                <Button
+                    title={t('feature.federations.join-federation')}
+                    onPress={handleJoinFederation}
+                />
+                <Button
+                    title={t('phrases.connect-to-federation')}
+                    onPress={connectToFederation}
+                    type="clear"
+                />
+            </View>
+        </ImageBackground>
     )
 }
 const styles = StyleSheet.create({
@@ -38,6 +61,16 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'space-evenly',
+    },
+    imageBackground: {
+        height: '100%',
+        width: '100%',
+        resizeMode: 'cover',
+    },
+    image: {
+        height: 32,
+        width: 120,
+        resizeMode: 'contain',
     },
 })
 
