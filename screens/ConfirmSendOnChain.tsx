@@ -15,7 +15,7 @@ export type Props = NativeStackScreenProps<
     'ConfirmSendOnChain'
 >
 
-const ConfirmSend: React.FC<Props> = ({ navigation, route }: Props) => {
+const ConfirmSendOnChain: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { address } = route.params
     const [amount, setAmount] = useState<string>('')
@@ -80,4 +80,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default ConfirmSend
+export default ConfirmSendOnChain

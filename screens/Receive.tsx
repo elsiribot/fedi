@@ -6,8 +6,8 @@ import { ButtonGroup } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 
-import ReceiveLightning from '../components/ReceiveLightning'
-import ReceiveOnchain from '../components/ReceiveOnchain'
+import ReceiveLightning from '../components/feature/receive/ReceiveLightning'
+import ReceiveOnchain from '../components/feature/receive/ReceiveOnchain'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 

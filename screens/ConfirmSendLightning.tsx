@@ -8,7 +8,10 @@ import type { Theme } from '@rneui/themed'
 import type { RootStackParamList } from '../Router'
 import StringUtils from '../utils/StringUtils'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'ConfirmSend'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'ConfirmSendLightning'
+>
 
 const {
     FedimintFfi: { payInvoice },
@@ -46,7 +49,10 @@ const getAmountFromInvoice = (invoice: string) => {
     return Number(Number(amount) * multiplier * 100000000).toFixed(0)
 }
 
-const ConfirmSend: React.FC<Props> = ({ route, navigation }: Props) => {
+const ConfirmSendLightning: React.FC<Props> = ({
+    route,
+    navigation,
+}: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { invoice } = route.params
@@ -158,4 +164,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ConfirmSend
+export default ConfirmSendLightning

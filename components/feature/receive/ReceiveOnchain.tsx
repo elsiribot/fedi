@@ -14,9 +14,9 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../bridge'
-import { RootStackParamList } from '../Router'
-import StringUtils from '../utils/StringUtils'
+import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../../../bridge'
+import { RootStackParamList } from '../../../Router'
+import StringUtils from '../../../utils/StringUtils'
 
 const {
     FedimintFfi: { generateAddress },
