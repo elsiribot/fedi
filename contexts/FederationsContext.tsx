@@ -18,6 +18,7 @@ enum ActionType {
     ADD_TO_CONNECTED_FEDERATIONS = 'ADD_TO_CONNECTED_FEDERATIONS',
     CHANGE_SELECTED_FEDERATION = 'CHANGE_SELECTED_FEDERATION',
     CLEAR_CONNECTED_FEDERATIONS = 'CLEAR_CONNECTED_FEDERATIONS',
+    UPDATE_CONNECTED_FEDERATIONS = 'UPDATE_CONNECTED_FEDERATIONS',
 }
 interface Action {
     type: ActionType
@@ -38,15 +39,21 @@ export function addToConnectedFederations(federation: Federation): Action {
         payload: federation,
     }
 }
-export function resetConnectedFederations(): Action {
-    return {
-        type: ActionType.CLEAR_CONNECTED_FEDERATIONS,
-    }
-}
 export function changeSelectedFederation(federation: Federation): Action {
     return {
         type: ActionType.CHANGE_SELECTED_FEDERATION,
         payload: federation,
+    }
+}
+export function clearConnectedFederations(): Action {
+    return {
+        type: ActionType.CLEAR_CONNECTED_FEDERATIONS,
+    }
+}
+export function updateConnectedFederations(federations: Federation[]): Action {
+    return {
+        type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
+        payload: federations,
     }
 }
 
@@ -65,6 +72,11 @@ export function reducer(state: AppState, action: Action): AppState {
             return { ...state, connectedFederations: [] }
         case ActionType.CHANGE_SELECTED_FEDERATION:
             return { ...state, selectedFederation: action.payload }
+        case ActionType.UPDATE_CONNECTED_FEDERATIONS:
+            return {
+                ...state,
+                connectedFederations: action.payload,
+            }
         default:
             return state
     }
@@ -80,6 +92,8 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         () => ({ state, dispatch }),
         [state, dispatch],
     )
+
+    console.log('FederationsProvider')
 
     return <FederationsContext.Provider value={providerValue} {...props} />
 }

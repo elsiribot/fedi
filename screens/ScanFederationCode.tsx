@@ -1,13 +1,19 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { Camera, useCameraDevices } from 'react-native-vision-camera'
-import { Button, Text } from '@rneui/themed'
+import { useCameraDevices } from 'react-native-vision-camera'
+import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import {
+    changeSelectedFederation,
+    updateConnectedFederations,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
+import { joinFederation, listFederations } from '../bridge'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -16,10 +22,25 @@ export type Props = NativeStackScreenProps<
 
 const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
+    const { state, dispatch } = useFederationsContext()
 
-    function handleUserInput(input: string) {
-        if (input.startsWith('fedi:')) {
-            console.log('fedi qr code detected')
+    async function handleUserInput(input: string) {
+        if (input.startsWith('{"members":')) {
+            console.log('fedi qr code detected', input)
+            try {
+                await joinFederation(input)
+            } catch (e) {
+                console.error('Failed to join federation', e)
+                return
+            }
+            const federations = await listFederations()
+            if (federations.length > 0) {
+                dispatch(updateConnectedFederations(federations))
+                dispatch(changeSelectedFederation(federations[0]))
+                navigation.navigate('Home')
+            }
+        } else {
+            // TODO: display invalid federation code error toast
         }
     }
 

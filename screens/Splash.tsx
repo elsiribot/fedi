@@ -8,22 +8,33 @@ import { Camera } from 'react-native-vision-camera'
 import { joinFederation, listFederations } from '../bridge'
 import type { RootStackParamList } from '../Router'
 import Images from '../assets/images'
+import {
+    changeSelectedFederation,
+    updateConnectedFederations,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
+import { TEST_FEDERATION } from '../constants'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
+    const { state, dispatch } = useFederationsContext()
 
-    const connectToFederation = async () => {
+    const connectToTestFederation = async () => {
         try {
-            await joinFederation('{"members":[[0,"ws://188.166.55.8:4001"]]}')
+            await joinFederation(TEST_FEDERATION)
         } catch (e) {
             console.error('Failed to join federation', e)
             return
         }
         const federations = await listFederations()
         console.log('Federations: ', federations)
-        navigation.navigate('Home')
+        if (federations.length > 0) {
+            dispatch(updateConnectedFederations(federations))
+            dispatch(changeSelectedFederation(federations[0]))
+            navigation.navigate('Home')
+        }
     }
 
     const handleJoinFederation = async () => {
@@ -49,7 +60,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <Button
                     title={t('phrases.connect-to-federation')}
-                    onPress={connectToFederation}
+                    onPress={connectToTestFederation}
                     type="clear"
                 />
             </View>
