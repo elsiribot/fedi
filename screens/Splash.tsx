@@ -19,7 +19,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const { state, dispatch } = useFederationsContext()
+    const { dispatch } = useFederationsContext()
 
     const connectToTestFederation = async () => {
         try {
@@ -29,7 +29,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             return
         }
         const federations = await listFederations()
-        console.log('Federations: ', federations)
         if (federations.length > 0) {
             dispatch(updateConnectedFederations(federations))
             dispatch(changeSelectedFederation(federations[0]))
