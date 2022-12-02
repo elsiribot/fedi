@@ -1,6 +1,14 @@
-import React, { createContext, useReducer, useContext, useMemo } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import React, {
+    createContext,
+    useReducer,
+    useContext,
+    useMemo,
+    useEffect,
+} from 'react'
 
 import { Federation } from '../bridge'
+import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
@@ -18,6 +26,7 @@ enum ActionType {
     ADD_TO_CONNECTED_FEDERATIONS = 'ADD_TO_CONNECTED_FEDERATIONS',
     CHANGE_SELECTED_FEDERATION = 'CHANGE_SELECTED_FEDERATION',
     CLEAR_CONNECTED_FEDERATIONS = 'CLEAR_CONNECTED_FEDERATIONS',
+    RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
     UPDATE_CONNECTED_FEDERATIONS = 'UPDATE_CONNECTED_FEDERATIONS',
 }
 interface Action {
@@ -50,6 +59,11 @@ export function clearConnectedFederations(): Action {
         type: ActionType.CLEAR_CONNECTED_FEDERATIONS,
     }
 }
+export function resetFederationsState(): Action {
+    return {
+        type: ActionType.RESET_FEDERATIONS_STATE,
+    }
+}
 export function updateConnectedFederations(federations: Federation[]): Action {
     return {
         type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
@@ -77,6 +91,8 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 connectedFederations: action.payload,
             }
+        case ActionType.RESET_FEDERATIONS_STATE:
+            return { ...initialState }
         default:
             return state
     }
@@ -88,12 +104,49 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         initialState,
     )
 
+    // useMemo makes sure the Provider only re-renders when
+    // there is a state change
     const providerValue = useMemo(
         () => ({ state, dispatch }),
         [state, dispatch],
     )
 
-    console.log('FederationsProvider')
+    // this useEffect checks async storage to restore
+    // federations state on a fresh app load
+    useEffect(() => {
+        const restoreState = async () => {
+            try {
+                const savedFederationsStateJson = await AsyncStorage.getItem(
+                    FEDERATIONS_PERSISTENCE_KEY,
+                )
+
+                const savedFederationsState = savedFederationsStateJson
+                    ? JSON.parse(savedFederationsStateJson)
+                    : null
+
+                if (savedFederationsState === null) return
+
+                const { selectedFederation, connectedFederations } =
+                    savedFederationsState
+
+                dispatch(changeSelectedFederation(selectedFederation))
+                dispatch(updateConnectedFederations(connectedFederations))
+            } catch (error) {
+                console.error(error)
+            }
+        }
+
+        restoreState()
+    }, [])
+
+    useEffect(() => {
+        if (state.selectedFederation !== null) {
+            AsyncStorage.setItem(
+                FEDERATIONS_PERSISTENCE_KEY,
+                JSON.stringify(state),
+            )
+        }
+    }, [state])
 
     return <FederationsContext.Provider value={providerValue} {...props} />
 }
