@@ -3,5 +3,6 @@ export default {
     FederationXIconXs: require('./federationx-icon-xs.png'),
     FederationXIconSm: require('./federationx-icon-sm.png'),
     FediLogo: require('./fedi-logo.png'),
+    FediQrLogo: require('./fedi-qr-logo.png'),
     RainbowGradient: require('./rainbow-gradient.jpg'),
 }
