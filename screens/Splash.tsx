@@ -31,8 +31,14 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         const federations = await listFederations()
         if (federations.length > 0) {
             dispatch(updateConnectedFederations(federations))
-            dispatch(changeSelectedFederation(federations[0]))
-            navigation.navigate('Home')
+
+            // temp workaround for iOS until #46 is fixed
+            if (federations[0] === null) {
+                dispatch(changeSelectedFederation({ name: 'fed0' }))
+            } else {
+                dispatch(changeSelectedFederation(federations[0]))
+            }
+            navigation.getParent('MainStackNavigator').navigate('Home')
         }
     }
 
