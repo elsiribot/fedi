@@ -4,7 +4,7 @@ import { Icon, Image, Text } from '@rneui/themed'
 import Header from '../../ui/Header'
 import { useFederationsContext } from '../../../contexts/FederationsContext'
 import { Federation } from '../../../bridge'
-import Images from '../../../assets/images'
+import { Images } from '../../../assets/images'
 
 export type Props = { navigation: any }
 

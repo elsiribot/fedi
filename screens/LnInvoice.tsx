@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import Images from '../assets/images'
+import { Images } from '../assets/images'
 
 import { ReceivedLightningEvent, TFedimintEventEmitter } from '../bridge'
 import type { RootStackParamList } from '../Router'

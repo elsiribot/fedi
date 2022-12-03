@@ -19,7 +19,7 @@ import {
     useFederationsContext,
 } from '../../../contexts/FederationsContext'
 import { Federation, listFederations } from '../../../bridge'
-import Images from '../../../assets/images'
+import { Images } from '../../../assets/images'
 import { useNavigation } from '@react-navigation/native'
 
 type Props = {

@@ -7,7 +7,7 @@ import { Camera } from 'react-native-vision-camera'
 
 import { joinFederation, listFederations } from '../bridge'
 import type { RootStackParamList } from '../Router'
-import Images from '../assets/images'
+import { Images } from '../assets/images'
 import {
     changeSelectedFederation,
     updateConnectedFederations,

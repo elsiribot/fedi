@@ -1,4 +1,4 @@
-export default {
+export const Images = {
     AllowCameraAccessIcon: require('./allow-camera-access-icon.png'),
     FederationXIconXs: require('./federationx-icon-xs.png'),
     FederationXIconSm: require('./federationx-icon-sm.png'),
