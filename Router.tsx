@@ -147,6 +147,37 @@ const MainNavigator = () => {
                                     title: `${t('words.send')}`,
                                 }}
                             />
+                            <Stack.Screen
+                                name="ScanFederationCode"
+                                component={ScanFederationCode}
+                                options={({ navigation }) => ({
+                                    header: () => (
+                                        <Header
+                                            headerLeft={
+                                                <TouchableOpacity
+                                                    onPress={() =>
+                                                        navigation.goBack()
+                                                    }>
+                                                    <Icon
+                                                        name={'angle-left'}
+                                                        type="font-awesome"
+                                                    />
+                                                </TouchableOpacity>
+                                            }
+                                            headerCenter={
+                                                <Text h4>
+                                                    {t(
+                                                        'feature.federations.scan-federation-invite',
+                                                    )}
+                                                </Text>
+                                            }
+                                            centerContainerStyle={{
+                                                flex: 3,
+                                            }}
+                                        />
+                                    ),
+                                })}
+                            />
                         </Stack.Group>
                         <Stack.Group screenOptions={{ presentation: 'modal' }}>
                             <Stack.Screen

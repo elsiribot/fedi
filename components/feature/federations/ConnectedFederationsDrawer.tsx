@@ -3,7 +3,7 @@ import {
     DrawerContentScrollView,
     DrawerItem,
 } from '@react-navigation/drawer'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -20,6 +20,7 @@ import {
 } from '../../../contexts/FederationsContext'
 import { Federation, listFederations } from '../../../bridge'
 import Images from '../../../assets/images'
+import { useNavigation } from '@react-navigation/native'
 
 type Props = {
     federation: Federation
@@ -55,6 +56,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     props: DrawerContentComponentProps,
 ) => {
     const { t } = useTranslation()
+    const navigation = useNavigation()
     const { theme } = useTheme()
     const { state, dispatch } = useFederationsContext()
     const { selectedFederation, connectedFederations } = state
@@ -93,15 +95,26 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         }}
                     />
                 ))}
-                {/* For dev purposes only */}
-                <Button
-                    title={'Reset Federations State'}
-                    type="clear"
-                    onPress={() => {
-                        dispatch(resetFederationsState())
-                    }}
-                />
             </DrawerContentScrollView>
+            <TouchableOpacity
+                style={styles(theme).addFederationButton}
+                onPress={() => {
+                    navigation.navigate('ScanFederationCode')
+                }}>
+                <Icon name="add" type="material" />
+                <Text style={styles(theme).addFederationText}>
+                    {t('feature.federations.add-federation')}
+                </Text>
+            </TouchableOpacity>
+
+            {/* For dev purposes only */}
+            <Button
+                title={'Reset Federations State'}
+                type="clear"
+                onPress={() => {
+                    dispatch(resetFederationsState())
+                }}
+            />
         </ImageBackground>
     )
 }
@@ -110,6 +123,15 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             padding: 0,
+        },
+        addFederationButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: 12,
+        },
+        addFederationText: {
+            paddingLeft: 4,
         },
         drawerItem: {
             marginHorizontal: 0,
