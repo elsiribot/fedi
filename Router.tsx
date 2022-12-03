@@ -96,9 +96,40 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="LnInvoice"
                                 component={LnInvoice}
-                                options={{
-                                    title: `${t('phrases.receive-bitcoin')}`,
-                                }}
+                                options={({ navigation }) => ({
+                                    header: () => (
+                                        <Header
+                                            headerLeft={
+                                                <TouchableOpacity
+                                                    onPress={() =>
+                                                        navigation.goBack()
+                                                    }>
+                                                    <Icon
+                                                        name={'angle-left'}
+                                                        type="font-awesome"
+                                                    />
+                                                </TouchableOpacity>
+                                            }
+                                            headerCenter={
+                                                <Text h4>
+                                                    {t(
+                                                        'phrases.receive-bitcoin',
+                                                    )}
+                                                </Text>
+                                            }
+                                            headerRight={
+                                                <TouchableOpacity
+                                                    onPress={() =>
+                                                        navigation.navigate(
+                                                            'Home',
+                                                        )
+                                                    }>
+                                                    <Icon name={'close'} />
+                                                </TouchableOpacity>
+                                            }
+                                        />
+                                    ),
+                                })}
                             />
                             <Stack.Screen
                                 name="LnReceiveSuccess"

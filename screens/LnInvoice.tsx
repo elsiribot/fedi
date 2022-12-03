@@ -16,7 +16,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
 const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const { invoice } = route.params
     const [amount] = useState(InvoiceUtils.getAmountFromInvoice(invoice))
 
@@ -112,7 +111,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     button: {
-        // flex: 1,
         width: '48%',
         marginVertical: 16,
     },
