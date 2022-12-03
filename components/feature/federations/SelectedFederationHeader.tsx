@@ -27,7 +27,7 @@ const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={openFederationsDrawer}>
                     <Image
                         style={styles.image}
-                        source={Images.FederationXIcon}
+                        source={Images.FederationXIconXs}
                     />
                     <Text h4 style={styles.federationName}>
                         {selectedFederation?.name}

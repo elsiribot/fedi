@@ -3,20 +3,58 @@ import {
     DrawerContentScrollView,
     DrawerItem,
 } from '@react-navigation/drawer'
+import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { StyleSheet } from 'react-native'
-import { Button, Theme, useTheme } from '@rneui/themed'
+import { useTranslation } from 'react-i18next'
+import {
+    ImageBackground,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 import {
     changeSelectedFederation,
     resetFederationsState,
     updateConnectedFederations,
     useFederationsContext,
 } from '../../../contexts/FederationsContext'
-import { listFederations } from '../../../bridge'
+import { Federation, listFederations } from '../../../bridge'
+import Images from '../../../assets/images'
+
+type Props = {
+    federation: Federation
+}
+
+const FederationDrawerItemLabel = ({ federation }: Props) => {
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+
+    // TODO: Get balance from federation
+    // const balance = federation.balance
+    const balance = 0
+
+    return (
+        <View style={styles(theme).drawerItemLabel}>
+            <Image
+                style={styles(theme).image}
+                source={Images.FederationXIconSm}
+            />
+            <View style={styles(theme).labelsContainer}>
+                <Text h4 numberOfLines={1}>
+                    {federation.name}
+                </Text>
+                <Text style={styles(theme).subText}>
+                    {`${balance} ${t('words.sats')}`}
+                </Text>
+            </View>
+        </View>
+    )
+}
 
 const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     props: DrawerContentComponentProps,
 ) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const { state, dispatch } = useFederationsContext()
     const { selectedFederation, connectedFederations } = state
@@ -24,7 +62,6 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     useEffect(() => {
         const refreshFederations = async () => {
             const federations = await listFederations()
-            console.log('Federations: ', federations)
             if (federations.length > 0) {
                 dispatch(updateConnectedFederations(federations))
             }
@@ -33,34 +70,76 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
         refreshFederations()
     }, [dispatch])
 
+    console.log('connectedFederations', connectedFederations)
+
     return (
-        <DrawerContentScrollView {...props} style={styles(theme).container}>
-            {connectedFederations.map((f, i) => (
-                <DrawerItem
-                    key={`di-${i}`}
-                    label={f.name}
-                    focused={f.name === selectedFederation?.name}
+        <ImageBackground
+            style={styles(theme).imageBackground}
+            source={Images.RainbowGradient}>
+            <DrawerContentScrollView {...props} style={styles(theme).container}>
+                <Text h3 style={styles(theme).headerTitle}>
+                    {t('words.federations')}
+                </Text>
+                {connectedFederations.map((f, i) => (
+                    <DrawerItem
+                        key={`di-${i}`}
+                        label={() => (
+                            <FederationDrawerItemLabel federation={f} />
+                        )}
+                        style={styles(theme).drawerItem}
+                        focused={f.name === selectedFederation?.name}
+                        onPress={() => {
+                            dispatch(changeSelectedFederation(f))
+                        }}
+                    />
+                ))}
+                {/* For dev purposes only */}
+                <Button
+                    title={'Reset Federations State'}
+                    type="clear"
                     onPress={() => {
-                        dispatch(changeSelectedFederation(f))
+                        dispatch(resetFederationsState())
                     }}
                 />
-            ))}
-            {/* For dev purposes only */}
-            <Button
-                title={'Reset Federations State'}
-                type="clear"
-                onPress={() => {
-                    dispatch(resetFederationsState())
-                }}
-            />
-        </DrawerContentScrollView>
+            </DrawerContentScrollView>
+        </ImageBackground>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            backgroundColor: theme.colors.secondary,
+            padding: 0,
+        },
+        drawerItem: {
+            marginHorizontal: 0,
+        },
+        drawerItemLabel: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 2,
+        },
+        labelsContainer: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+        },
+        imageBackground: {
+            height: '100%',
+            width: '100%',
+            resizeMode: 'cover',
+        },
+        image: {
+            height: 45,
+            width: 45,
+            marginHorizontal: 12,
+            resizeMode: 'contain',
+        },
+        subText: {
+            fontSize: theme.sizes.xs,
+        },
+        headerTitle: {
+            paddingHorizontal: 24,
+            paddingVertical: 12,
         },
     })
 
