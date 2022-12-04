@@ -13,10 +13,10 @@ name = "calculatorffi"
 #fedimint-api = { git = "https://github.com/fedimint/fedimint" }
 #fedimint-core = { git = "https://github.com/fedimint/fedimint" }
 #fedimint-sled = { git = "https://github.com/fedimint/fedimint" }
-mint-client = { git = "https://github.com/justinmoon/fedimint", branch = "somnio" }
-fedimint-api = { git = "https://github.com/justinmoon/fedimint", branch = "somnio" }
-fedimint-core = { git = "https://github.com/justinmoon/fedimint", branch = "somnio" }
-fedimint-sled = { git = "https://github.com/justinmoon/fedimint", branch = "somnio" }
+mint-client = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
+fedimint-api = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
+fedimint-sled = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
 
 anyhow = "1"
 serde = { version = "1.0.142", features = [ "derive" ] }
