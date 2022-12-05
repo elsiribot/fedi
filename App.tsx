@@ -5,6 +5,8 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { LogEvent, TFedimintEventEmitter } from './bridge'
 
+import { FederationsProvider } from './contexts/FederationsContext'
+
 import Router from './Router'
 
 import theme from './styles/theme'
@@ -39,7 +41,9 @@ const App = () => {
     return (
         <SafeAreaProvider>
             <ThemeProvider theme={theme}>
-                <Router />
+                <FederationsProvider>
+                    <Router />
+                </FederationsProvider>
             </ThemeProvider>
         </SafeAreaProvider>
     )

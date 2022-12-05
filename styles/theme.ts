@@ -40,6 +40,7 @@ const theme = createTheme({
         },
         Header: {
             containerStyle: {
+                paddingTop: 0,
                 paddingHorizontal: 24,
                 borderBottomColor: colors.secondary,
             },

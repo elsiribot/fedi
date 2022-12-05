@@ -5,6 +5,7 @@
         "bitcoin": "Bitcoin",
         "copy": "Copy",
         "done": "Done",
+        "federations": "Federations",
         "fedimint": "Fedimint",
         "fee": "Fee",
         "home": "Home",
@@ -25,8 +26,9 @@
     },
     "phrases": {
         "add-note": "Add note",
+        "allow-camera-access": "Allow camera access",
         "bitcoin-address": "Bitcoin address",
-        "connect-to-federation": "Connect to federation",
+        "connect-to-federation": "Connect to test federation",
         "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
         "invalid-federation-code": "Invalid federation code",
@@ -39,6 +41,14 @@
             "record-video": "Record video",
             "start-recording": "Start recording",
             "stop-recording": "Stop recording"
+        },
+        "federations": {
+            "add-federation": "Add a Federation",
+            "camera-access-information": "To join a Federation, you will need to allow Fedi access to your camera to scan the Federation invite code",
+            "join-federation": "Join a new Federation",
+            "paste-federation-code-instead": "Paste federation code instead",
+            "paste-federation-code": "Paste federation code",
+            "scan-federation-invite": "Scan a Federation Invite"
         },
         "send": {
             "confirm-send": "Confirm Send",
