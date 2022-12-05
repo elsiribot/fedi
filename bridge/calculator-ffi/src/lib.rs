@@ -71,7 +71,7 @@ pub fn fedimint_init(data_dir: String, event_sink: Box<dyn EventSink>) -> Result
         init_logging(event_sink.clone());
         tracing::info!("init called ...");
 
-        let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone());
+        let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone()).await;
 
         set_bridge(bridge).await;
 
@@ -153,7 +153,7 @@ pub fn fedimint_balance() -> u64 {
 pub fn fedimint_generate_address() -> String {
     RUNTIME.block_on(async {
         let federation = get_fed().await;
-        let address = federation.generate_address();
+        let address = federation.generate_address().await;
         address.to_string()
     })
 }
@@ -183,7 +183,7 @@ pub fn fedimint_pay_address(address: String, amount: String) -> Result<String> {
             .await
             .map_err(|e| anyhow!(e.to_string()))?;
         federation.update_balance().await;
-        federation.save_transaction(&Transaction::new(true, amount.to_sat() * 1000));
+        federation.save_transaction(&Transaction::new(true, amount.to_sat() * 1000)).await;
         Ok(out_point.txid.to_string())
     })
 }

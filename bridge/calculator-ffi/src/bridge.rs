@@ -10,6 +10,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, SystemTime},
+    default::Default,
 };
 
 use crate::{
@@ -22,10 +23,13 @@ use crate::{
 use anyhow::{anyhow, Result};
 use bitcoin::{hashes::sha256, Address, Script, Txid};
 use electrum_client::{Client, ElectrumApi};
+use fedimint_api::config::ClientConfig;
+use fedimint_api::db::DatabaseTransaction;
+use fedimint_api::encoding::ModuleRegistry;
 use fedimint_api::NumPeers;
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{
-    config::{load_from_file, ClientConfig},
+    config::{load_from_file},
     modules::wallet::txoproof::TxOutProof,
 };
 use fedimint_sled::SledDb;
@@ -42,7 +46,7 @@ use tokio::task::JoinHandle;
 
 type FederationId = String;
 
-fn get_federations(
+async fn get_federations(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
 ) -> HashMap<FederationId, Arc<Federation>> {
@@ -52,10 +56,10 @@ fn get_federations(
         if let Some(extension) = path.extension() {
             if extension == "json" {
                 // TODO: perhaps this should be a federation method?
-                let cfg: UserClientConfig = load_from_file(&path); // FIXME: this panics
+                let cfg: UserClientConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
-                let client = UserClient::new(cfg.clone(), db.into(), Default::default());
+                let client = UserClient::new(cfg.clone(), db.into(), Default::default()).await;
                 let federation = Arc::new(Federation::new(client, event_sink.clone()));
                 federations.insert(cfg.0.federation_name, federation);
             }
@@ -74,8 +78,8 @@ pub struct Bridge {
 
 impl Bridge {
     // TODO: initialize all clients in data_dir
-    pub fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
-        let federations = get_federations(&data_dir, event_sink.clone());
+    pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
+        let federations = get_federations(&data_dir, event_sink.clone()).await;
 
         // spawn pollers
         let mut pollers = vec![];
@@ -123,6 +127,10 @@ impl Federation {
         }
     }
 
+    fn dbtx(&self) -> DatabaseTransaction<'_> {
+        self.client.db().begin_transaction(ModuleRegistry::default())
+    }
+
     pub async fn join(
         connect_string: String,
         data_dir: PathBuf,
@@ -161,13 +169,13 @@ impl Federation {
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
         let db = SledDb::open(db_path, "client")?;
-        let client = UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default());
+        let client = UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
         Ok(Self::new(client, event_sink))
     }
 
-    pub fn generate_address(&self) -> Address {
+    pub async fn generate_address(&self) -> Address {
         let rng = rand::rngs::OsRng;
-        self.client.get_new_pegin_address(rng)
+        self.client.get_new_pegin_address(rng).await
     }
 
     pub async fn generate_invoice(
@@ -187,7 +195,7 @@ impl Federation {
             confirmed_invoice.invoice.clone(),
             PaymentStatus::Pending,
             PaymentDirection::Incoming,
-        ));
+        )).await;
         tracing::info!("saved invoice to db");
 
         Ok(confirmed_invoice.invoice)
@@ -228,9 +236,7 @@ impl Federation {
     }
 
     pub fn list_scripts(&self) -> Vec<Script> {
-        self.client
-            .db()
-            .begin_transaction()
+        self.dbtx()
             .find_by_prefix(&PegInPrefixKey)
             .map(|res| {
                 let (key, _) = res.expect("DB error");
@@ -261,7 +267,7 @@ impl Federation {
                 // TODO: save the transaction to db. if pegin succeeded, say "complete", otherwise say "pendin"
 
                 let address =
-                    Address::from_script(script, self.client.config().0.wallet.network).unwrap();
+                    Address::from_script(script, self.client.wallet_client().config.network).unwrap();
                 tracing::info!("peg-in successful for {}", address);
                 self.update_balance().await;
                 self.send_received_on_chain_payment_event(&item.tx_hash, &address);
@@ -274,7 +280,7 @@ impl Federation {
                     .tx_output()
                     .value
                     * 1000;
-                self.save_transaction(&Transaction::new(false, amount_millisat));
+                self.save_transaction(&Transaction::new(false, amount_millisat)).await;
             }
         }
 
@@ -292,7 +298,7 @@ impl Federation {
                 if let Err(e) = f.pegin_script(&s).await {
                     tracing::debug!(
                         "Failed to pegin address: {}",
-                        Address::from_script(&s, f.client.config().0.wallet.network).unwrap()
+                        Address::from_script(&s, f.client.wallet_client().config.network).unwrap()
                     );
                     tracing::debug!("{:?}", e);
                 }
@@ -312,14 +318,14 @@ impl Federation {
                     invoice.clone(),
                     PaymentStatus::Paid,
                     PaymentDirection::Outgoing,
-                ));
+                )).await;
                 self.update_balance().await;
                 self.save_transaction(&Transaction::new(
                     true,
                     invoice
                         .amount_milli_satoshis()
                         .expect("assuming invoice has amount"),
-                ));
+                )).await;
                 Ok(())
             }
             Err(e) => {
@@ -327,63 +333,62 @@ impl Federation {
                     invoice.clone(),
                     PaymentStatus::Failed,
                     PaymentDirection::Outgoing,
-                ));
+                )).await;
                 Err(e)
             }
         }
     }
 
-    pub fn save_transaction(&self, tx: &Transaction) {
+    pub async fn save_transaction(&self, tx: &Transaction) {
         // TODO: need to expose the database
-        let mut dbtx = self.client.db().begin_transaction();
+        let mut dbtx = self.dbtx();
         dbtx.insert_entry(&TransactionKey(tx.id), tx)
+            .await
             .expect("Db error");
-        dbtx.commit_tx().expect("Db error");
+        dbtx.commit_tx().await.expect("Db error");
     }
 
     pub fn list_transactions(&self) -> Vec<Transaction> {
         self.client
             .db()
-            .begin_transaction()
+            .begin_transaction(ModuleRegistry::default())
             .find_by_prefix(&TransactionKeyPrefix)
             .map(|res| res.expect("Db error").1)
             .collect()
     }
 
-    pub fn save_payment(&self, payment: &Payment) {
+    pub async fn save_payment(&self, payment: &Payment) {
         // TODO: need to expose the database
         tracing::info!("saving payment");
-        let mut dbtx = self.client.db().begin_transaction();
+        let mut dbtx = self.dbtx();
         dbtx.insert_entry(&PaymentKey(payment.invoice.payment_hash().clone()), payment)
+            .await
             .expect("Db error");
-        dbtx.commit_tx().expect("Db error");
+        dbtx.commit_tx().await.expect("Db error");
         tracing::info!("saved payment");
     }
 
     pub fn list_payments(&self) -> Vec<Payment> {
-        self.client
-            .db()
-            .begin_transaction()
+        self.dbtx()
             .find_by_prefix(&PaymentKeyPrefix)
             .map(|res| res.expect("Db error").1)
             .collect()
     }
 
     pub fn fetch_payment(&self, payment_hash: &sha256::Hash) -> Option<Payment> {
-        self.client
-            .db()
-            .begin_transaction()
+        self.dbtx()
             .get_value(&PaymentKey(payment_hash.clone()))
             .expect("Db error")
     }
 
-    pub fn update_payment_status(&self, payment_hash: &sha256::Hash, status: PaymentStatus) {
+    pub async fn update_payment_status(&self, payment_hash: &sha256::Hash, status: PaymentStatus) {
         if let Some(mut payment) = self.fetch_payment(&payment_hash) {
             payment.status = status;
-            let mut dbtx = self.client.db().begin_transaction();
+            let mut dbtx = self.dbtx();
             dbtx.insert_entry(&PaymentKey(*payment_hash), &payment)
+                .await
                 .expect("Db error");
-            dbtx.commit_tx().expect("Db error");
+            dbtx.commit_tx().await.expect("Db error");
         }
         // TODO: what to do if this payment doesn't exist?
     }
@@ -497,18 +502,18 @@ impl Federation {
                         tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
                         // Mark it "expired" in db if we couldn't claim it and invoice is expired
                         if invoice_expired {
-                            fed.update_payment_status(payment_hash, PaymentStatus::Expired);
+                            fed.update_payment_status(payment_hash, PaymentStatus::Expired).await;
                         }
                     } else {
                         tracing::info!("completed payment: {:?}", &payment_hash);
-                        fed.update_payment_status(payment_hash, PaymentStatus::Paid);
+                        fed.update_payment_status(payment_hash, PaymentStatus::Paid).await;
                         fed.update_balance().await;
                         fed.send_received_lightning_payment_event(&payment.invoice);
                         let amount = payment
                             .invoice
                             .amount_milli_satoshis()
                             .expect("assuming we only receive payments for invoices with amount");
-                        fed.save_transaction(&Transaction::new(false, amount));
+                        fed.save_transaction(&Transaction::new(false, amount)).await;
                     }
                 })
                 .collect::<FuturesUnordered<_>>()
