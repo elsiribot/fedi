@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
     Dimensions,
-    NativeModules,
     Share,
     StyleSheet,
     View,
@@ -15,13 +14,13 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 
-import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../../../bridge'
+import {
+    generateAddress,
+    ReceivedBitcoinEvent,
+    TFedimintEventEmitter,
+} from '../../../bridge'
 import { RootStackParamList } from '../../../Router'
 import StringUtils from '../../../utils/StringUtils'
-
-const {
-    FedimintFfi: { generateAddress },
-} = NativeModules
 
 type ReceiveOnchainNavigationProp =
     NativeStackNavigationProp<RootStackParamList>

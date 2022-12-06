@@ -1,22 +1,19 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { Theme } from '@rneui/themed'
+import { Button, Text, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, NativeModules, StyleSheet, View } from 'react-native'
-import { Button, Text, useTheme } from '@rneui/themed'
-import type { Theme } from '@rneui/themed'
+import { Modal, StyleSheet, View } from 'react-native'
+import { decodeInvoice, payInvoice } from '../bridge'
 
 import type { RootStackParamList } from '../Router'
-import StringUtils from '../utils/StringUtils'
 import InvoiceUtils from '../utils/InvoiceUtils'
+import StringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'ConfirmSendLightning'
 >
-
-const {
-    FedimintFfi: { payInvoice },
-} = NativeModules
 
 const ConfirmSendLightning: React.FC<Props> = ({
     route,
@@ -38,13 +35,13 @@ const ConfirmSendLightning: React.FC<Props> = ({
     })
 
     useEffect(() => {
-        const decodeInvoice = async () => {
-            // TODO: Call FedimintFfi.decodeInvoice and hydrate state
-            // amount, unit, memo, expiry, feeEstimate
+        const _decodeInvoice = async () => {
+            const decoded = await decodeInvoice(invoice)
+            console.log('decoded invoice', decoded)
         }
 
-        decodeInvoice()
-    })
+        _decodeInvoice()
+    }, [invoice])
 
     const onSendBtc = async () => {
         try {

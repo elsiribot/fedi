@@ -3,6 +3,7 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
+import { TEST_FEDERATION_ID } from './constants'
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
@@ -24,6 +25,14 @@ export type ReceivedBitcoinEvent = {
     federationId: string
     txid: string
     address: string
+}
+
+export type Invoice = {
+    paymentHash: string
+    amount: number
+    description: string
+    invoice: string
+    fee: null | number
 }
 
 export class TFedimintEventEmitter {
@@ -88,15 +97,79 @@ export type Transaction = {
     amountSats: number
 }
 
-export async function joinFederation(connectString: string) {
-    await FedimintFfi.joinFederation(connectString)
-}
-
-export async function listFederations(): Promise<Federation[]> {
-    return FedimintFfi.listFederations()
+function handleRpcResponse<Type>(json: string): Type {
+    const parsed = JSON.parse(json)
+    if (parsed.error) {
+        throw Error(parsed.error)
+    } else {
+        return parsed.result
+    }
 }
 
 export async function listTransactions(): Promise<Transaction[]> {
-    let json = await FedimintFfi.listTransactions()
-    return JSON.parse(json)
+    let payload = JSON.stringify({
+        federationId: TEST_FEDERATION_ID,
+    })
+    let response = await FedimintFfi.rpc('listTransactions', payload)
+    return handleRpcResponse<Transaction[]>(response)
+}
+
+export async function joinFederation(connectString: string) {
+    let payload = JSON.stringify({ connectString })
+    let response = await FedimintFfi.rpc('joinFederation', payload)
+    return handleRpcResponse<null>(response)
+}
+
+export async function listFederations(): Promise<Federation[]> {
+    let payload = JSON.stringify({}) // FIXME
+    let response = await FedimintFfi.rpc('listFederations', payload)
+    return handleRpcResponse<Federation[]>(response)
+}
+
+export async function generateInvoice(
+    amount: string,
+    description: string,
+): Promise<string> {
+    let payload = JSON.stringify({
+        amount,
+        description,
+        federationId: TEST_FEDERATION_ID,
+    })
+    let response = await FedimintFfi.rpc('generateInvoice', payload)
+    return handleRpcResponse<string>(response)
+}
+
+export async function decodeInvoice(invoice: string): Promise<Invoice> {
+    let payload = JSON.stringify({ invoice })
+    let response = await FedimintFfi.rpc('decodeInvoice', payload)
+    return handleRpcResponse<Invoice>(response)
+}
+
+export async function payInvoice(invoice: string) {
+    let payload = JSON.stringify({ invoice, federationId: TEST_FEDERATION_ID })
+    let response = await FedimintFfi.rpc('payInvoice', payload)
+    return handleRpcResponse<null>(response)
+}
+
+export async function generateAddress(): Promise<string> {
+    let payload = JSON.stringify({ federationId: TEST_FEDERATION_ID })
+    let response = await FedimintFfi.rpc('generateAddress', payload)
+    return handleRpcResponse<string>(response)
+}
+
+export async function payAddress(
+    address: string,
+    amount: string,
+): Promise<string> {
+    let payload = JSON.stringify({
+        address,
+        amount,
+        federationId: TEST_FEDERATION_ID,
+    })
+    let response = await FedimintFfi.rpc('payAddress', payload)
+    return handleRpcResponse<string>(response)
+}
+
+export async function init(dataDir: string) {
+    return FedimintFfi.init(dataDir)
 }

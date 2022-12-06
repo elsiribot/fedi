@@ -1,19 +1,15 @@
 import { ThemeProvider } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { NativeModules, Platform } from 'react-native'
+import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { LogEvent, TFedimintEventEmitter } from './bridge'
+import { init, LogEvent, TFedimintEventEmitter } from './bridge'
 
 import { FederationsProvider } from './contexts/FederationsContext'
 
 import Router from './Router'
 
 import theme from './styles/theme'
-
-const {
-    FedimintFfi: { init },
-} = NativeModules
 
 const App = () => {
     // const [federationIsReady, setFederationIsReady] = useState<boolean>(false)
