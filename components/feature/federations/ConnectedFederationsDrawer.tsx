@@ -19,7 +19,7 @@ import {
     useFederationsContext,
 } from '../../../contexts/FederationsContext'
 import { Federation, listFederations } from '../../../bridge'
-import Images from '../../../assets/images'
+import { Images } from '../../../assets/images'
 import { useNavigation } from '@react-navigation/native'
 
 type Props = {
@@ -77,7 +77,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     return (
         <ImageBackground
             style={styles(theme).imageBackground}
-            source={Images.RainbowGradient}>
+            source={Images.HoloBackground}>
             <DrawerContentScrollView {...props} style={styles(theme).container}>
                 <Text h3 style={styles(theme).headerTitle}>
                     {t('words.federations')}

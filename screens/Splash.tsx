@@ -7,7 +7,7 @@ import { Camera } from 'react-native-vision-camera'
 
 import { joinFederation, listFederations } from '../bridge'
 import type { RootStackParamList } from '../Router'
-import Images from '../assets/images'
+import { Images } from '../assets/images'
 import {
     changeSelectedFederation,
     updateConnectedFederations,
@@ -56,7 +56,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         <ImageBackground
             resizeMode="cover"
             style={styles.imageBackground}
-            source={Images.RainbowGradient}>
+            source={Images.HoloBackground}>
             <View style={styles.container}>
                 <Image source={Images.FediLogo} style={styles.image} />
                 <Button

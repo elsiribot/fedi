@@ -7,6 +7,7 @@ import type { Theme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import StringUtils from '../utils/StringUtils'
+import InvoiceUtils from '../utils/InvoiceUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -17,38 +18,6 @@ const {
     FedimintFfi: { payInvoice },
 } = NativeModules
 
-type FeeEstimate = {
-    minimum: number
-    maximum: number
-    units: string
-}
-
-const formatExpiry = (expiryInSeconds: number): number => {
-    // TODO: Format expiry to hours/seconds/minutes
-    return expiryInSeconds
-}
-
-const formatFee = (feeEstimate: FeeEstimate): string => {
-    return `~${feeEstimate.minimum} - ${feeEstimate.maximum} ${feeEstimate.units}`
-}
-
-// temporary function until decodeInvoice is available from FFI module
-const getAmountFromInvoice = (invoice: string) => {
-    const part = invoice.split('lnbcrt')[1]
-    var prefixLocation = part.search(/\D/g)
-    const amount = part.substring(0, prefixLocation)
-    const prefix = part.substring(prefixLocation, prefixLocation + 1)
-    const multiplier =
-        prefix === 'm'
-            ? 0.001
-            : prefix === 'u'
-            ? 0.000001
-            : prefix === 'n'
-            ? 0.000000001
-            : 0.000000000001
-    return Number(Number(amount) * multiplier * 100000000).toFixed(0)
-}
-
 const ConfirmSendLightning: React.FC<Props> = ({
     route,
     navigation,
@@ -58,7 +27,7 @@ const ConfirmSendLightning: React.FC<Props> = ({
     const { invoice } = route.params
 
     const [invoicePaid, setInvoicePaid] = useState(false)
-    const [amount] = useState(getAmountFromInvoice(invoice))
+    const [amount] = useState(InvoiceUtils.getAmountFromInvoice(invoice))
     const [unit] = useState('sats')
     const [memo] = useState('Pineapple pizza slice')
     const [expiry] = useState(3600)
@@ -98,10 +67,12 @@ const ConfirmSendLightning: React.FC<Props> = ({
                 <Text>
                     {`${StringUtils.truncateMiddleOfString(invoice, 14)}`}
                 </Text>
-                <Text>{`${t('phrases.expires-in')} ${formatExpiry(
+                <Text>{`${t('phrases.expires-in')} ${InvoiceUtils.formatExpiry(
                     expiry,
                 )}`}</Text>
-                <Text>{`${t('words.fee')}: ${formatFee(feeEstimate)}`}</Text>
+                <Text>{`${t('words.fee')}: ${InvoiceUtils.formatFee(
+                    feeEstimate,
+                )}`}</Text>
             </View>
             <View style={styles(theme).buttonContainer}>
                 <Button title={t('words.send')} onPress={onSendBtc} />

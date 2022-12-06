@@ -13,6 +13,7 @@ import {
     View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
+import { Images } from '../../../assets/images'
 
 import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../../../bridge'
 import { RootStackParamList } from '../../../Router'
@@ -95,7 +96,11 @@ const ReceiveOnchain: React.FC<{}> = () => {
             {address ? (
                 <>
                     <Card containerStyle={styles.roundedCardContainer}>
-                        <QRCode value={address} size={qrCodeSize} />
+                        <QRCode
+                            value={address}
+                            size={qrCodeSize}
+                            logo={Images.FediQrLogo}
+                        />
                         <View style={styles.addressTextContainer}>
                             <Text style={styles.addressTitle}>
                                 {t('phrases.bitcoin-address')}

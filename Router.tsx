@@ -1,9 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { Icon, Text, useTheme } from '@rneui/themed'
+import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { TouchableOpacity } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import Backup from './screens/Backup'
@@ -20,9 +19,13 @@ import Send from './screens/Send'
 import Splash from './screens/Splash'
 import Transactions from './screens/Transactions'
 
-import Header from './components/ui/Header'
-import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
+import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
+import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
+import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
+import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
+import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
+
 import { useFederationsContext } from './contexts/FederationsContext'
 
 export type RootStackParamList = {
@@ -96,9 +99,9 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="LnInvoice"
                                 component={LnInvoice}
-                                options={{
-                                    title: `${t('phrases.receive-bitcoin')}`,
-                                }}
+                                options={() => ({
+                                    header: () => <LnInvoiceHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="LnReceiveSuccess"
@@ -113,26 +116,8 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="Receive"
                                 component={Receive}
-                                options={({ navigation }) => ({
-                                    header: () => (
-                                        <Header
-                                            headerCenter={
-                                                <Text h4>
-                                                    {t(
-                                                        'phrases.receive-bitcoin',
-                                                    )}
-                                                </Text>
-                                            }
-                                            headerRight={
-                                                <TouchableOpacity
-                                                    onPress={() =>
-                                                        navigation.goBack()
-                                                    }>
-                                                    <Icon name={'close'} />
-                                                </TouchableOpacity>
-                                            }
-                                        />
-                                    ),
+                                options={() => ({
+                                    header: () => <ReceiveBitcoinHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -150,32 +135,8 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="ScanFederationCode"
                                 component={ScanFederationCode}
-                                options={({ navigation }) => ({
-                                    header: () => (
-                                        <Header
-                                            headerLeft={
-                                                <TouchableOpacity
-                                                    onPress={() =>
-                                                        navigation.goBack()
-                                                    }>
-                                                    <Icon
-                                                        name={'angle-left'}
-                                                        type="font-awesome"
-                                                    />
-                                                </TouchableOpacity>
-                                            }
-                                            headerCenter={
-                                                <Text h4>
-                                                    {t(
-                                                        'feature.federations.scan-federation-invite',
-                                                    )}
-                                                </Text>
-                                            }
-                                            centerContainerStyle={{
-                                                flex: 3,
-                                            }}
-                                        />
-                                    ),
+                                options={() => ({
+                                    header: () => <ScanFederationCodeHeader />,
                                 })}
                             />
                         </Stack.Group>
@@ -183,24 +144,8 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="Transactions"
                                 component={Transactions}
-                                options={({ navigation }) => ({
-                                    header: () => (
-                                        <Header
-                                            headerCenter={
-                                                <Text h4>
-                                                    {t('words.transactions')}
-                                                </Text>
-                                            }
-                                            headerRight={
-                                                <TouchableOpacity
-                                                    onPress={() =>
-                                                        navigation.goBack()
-                                                    }>
-                                                    <Icon name={'close'} />
-                                                </TouchableOpacity>
-                                            }
-                                        />
-                                    ),
+                                options={() => ({
+                                    header: () => <TransactionsHeader />,
                                 })}
                             />
                         </Stack.Group>
@@ -225,32 +170,8 @@ const MainNavigator = () => {
                         <Stack.Screen
                             name="ScanFederationCode"
                             component={ScanFederationCode}
-                            options={({ navigation }) => ({
-                                header: () => (
-                                    <Header
-                                        headerLeft={
-                                            <TouchableOpacity
-                                                onPress={() =>
-                                                    navigation.goBack()
-                                                }>
-                                                <Icon
-                                                    name={'angle-left'}
-                                                    type="font-awesome"
-                                                />
-                                            </TouchableOpacity>
-                                        }
-                                        headerCenter={
-                                            <Text h4>
-                                                {t(
-                                                    'feature.federations.scan-federation-invite',
-                                                )}
-                                            </Text>
-                                        }
-                                        centerContainerStyle={{
-                                            flex: 3,
-                                        }}
-                                    />
-                                ),
+                            options={() => ({
+                                header: () => <ScanFederationCodeHeader />,
                             })}
                         />
                     </Stack.Group>
