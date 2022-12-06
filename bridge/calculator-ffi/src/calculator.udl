@@ -3,33 +3,10 @@ enum FedimintError {
   "OtherError",
 };
 
-dictionary FedimintFederation {
-  string name;
-};
-
 namespace calculator {
-  [Throws=FedimintError]
   void fedimint_init(string data_dir, EventSink event_sink);
 
-  [Throws=FedimintError]
-  void fedimint_join_federation(string connect_string);
-
-  sequence<FedimintFederation> fedimint_list_federations();
-
-  string fedimint_list_transactions();
-
-  [Throws=FedimintError]
-  string fedimint_generate_invoice(string amount, string description);
-
-  [Throws=FedimintError]
-  void fedimint_pay_invoice(string invoice);
-
-  u64 fedimint_balance();
-
-  string fedimint_generate_address();
-
-  [Throws=FedimintError]
-  string fedimint_pay_address(string address, string amount);
+  string fedimint_rpc(string method, string payload);
 };
 
 callback interface EventSink {
