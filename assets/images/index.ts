@@ -4,5 +4,5 @@ export const Images = {
     FederationXIconSm: require('./federationx-icon-sm.png'),
     FediLogo: require('./fedi-logo.png'),
     FediQrLogo: require('./fedi-qr-logo.png'),
-    RainbowGradient: require('./rainbow-gradient.jpg'),
+    HoloBackground: require('./holo-background.jpg'),
 }

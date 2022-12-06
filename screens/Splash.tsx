@@ -56,7 +56,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         <ImageBackground
             resizeMode="cover"
             style={styles.imageBackground}
-            source={Images.RainbowGradient}>
+            source={Images.HoloBackground}>
             <View style={styles.container}>
                 <Image source={Images.FediLogo} style={styles.image} />
                 <Button

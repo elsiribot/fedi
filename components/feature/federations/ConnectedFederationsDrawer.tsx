@@ -77,7 +77,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     return (
         <ImageBackground
             style={styles(theme).imageBackground}
-            source={Images.RainbowGradient}>
+            source={Images.HoloBackground}>
             <DrawerContentScrollView {...props} style={styles(theme).container}>
                 <Text h3 style={styles(theme).headerTitle}>
                     {t('words.federations')}
