@@ -4,7 +4,6 @@ use std::{
     fs::File,
     path::{Path, PathBuf},
     sync::Arc,
-    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -429,135 +428,137 @@ impl Federation {
     }
 
     pub async fn event_loop(&self) {
-        let mut last_consensus_block_height = self.block_height().await.ok();
-        let mut last_poll = SystemTime::now();
-        let mut last_outgoing_check = SystemTime::now();
-        loop {
-            // on-chain
-            let current_block_height = self.block_height().await.ok();
-            if last_consensus_block_height != current_block_height {
-                self.attempt_pegins();
-                last_consensus_block_height = current_block_height;
-            }
-
-            // incoming lightning payments
-            self.poll_incoming_ln();
-
-            // check for refunds once per minute
-            if last_outgoing_check
-                .elapsed()
-                .expect("Unix time not available")
-                > Duration::from_secs(60)
-            {
-                if let Some(height) = last_consensus_block_height {
-                    self.poll_ln_refunds(height);
-                }
-                last_outgoing_check = SystemTime::now();
-            }
-
-            // update our balance just in case
-            self.poll_balance();
-
-            let poll_duration = last_poll.elapsed().expect("couldn't get system time");
-            tracing::info!("poll {:?}", poll_duration);
-            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
-            last_poll = SystemTime::now();
-        }
+        self.poll_balance();
+        self.poll_peg_ins();
+        self.poll_incoming_ln();
+        self.poll_ln_refunds();
     }
 
+    /// Checks for peg-ins every second
+    pub fn poll_peg_ins(&self) {
+        let fed = self.clone();
+        tokio::spawn(async move {
+            let mut last_consensus_block_height = None;
+            loop {
+                let current_block_height = fed.block_height().await.ok();
+                if last_consensus_block_height != current_block_height {
+                    fed.attempt_pegins();
+                    last_consensus_block_height = current_block_height;
+                }
+                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+            }
+        });
+    }
+
+    /// Announces balance to event emitter every second
     pub fn poll_balance(&self) {
         let fed = self.clone();
         tokio::spawn(async move {
-            fed.update_balance().await;
+            loop {
+                fed.update_balance().await;
+                tracing::debug!("poll balance");
+                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+            }
         });
     }
 
+    /// Checks for incoming payments every second
     pub fn poll_incoming_ln(&self) {
         let fed = self.clone();
-        let pending_payments: Vec<Payment> = fed
-            .list_payments()
-            .into_iter()
-            // TODO: should we filter
-            .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
-            .collect();
-
         tokio::spawn(async move {
-            // Try to complete incoming payments
-            pending_payments
-                .iter()
-                .map(|payment| async {
-                    // FIXME: don't create rng in here ...
-                    let invoice_expired = payment.invoice.is_expired();
-                    let rng = rand::rngs::OsRng;
-                    let payment_hash = payment.invoice.payment_hash();
-                    tracing::debug!("fetching incoming contract {:?}", &payment_hash);
-                    let result = &fed
-                        .client
-                        .claim_incoming_contract(
-                            ContractId::from_hash(payment_hash.clone()),
-                            rng.clone(),
-                        )
-                        .await;
-                    if let Err(_) = result {
-                        tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
-                        // Mark it "expired" in db if we couldn't claim it and invoice is expired
-                        if invoice_expired {
-                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
-                                .await;
-                        }
-                    } else {
-                        tracing::info!("completed payment: {:?}", &payment_hash);
-                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+            loop {
+                let pending_payments: Vec<Payment> = fed
+                    .list_payments()
+                    .into_iter()
+                    // TODO: should we filter
+                    .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
+                    .collect();
+
+                // Try to complete incoming payments
+                pending_payments
+                    .iter()
+                    .map(|payment| async {
+                        // FIXME: don't create rng in here ...
+                        let invoice_expired = payment.invoice.is_expired();
+                        let rng = rand::rngs::OsRng;
+                        let payment_hash = payment.invoice.payment_hash();
+                        tracing::debug!("fetching incoming contract {:?}", &payment_hash);
+                        let result = &fed
+                            .client
+                            .claim_incoming_contract(
+                                ContractId::from_hash(payment_hash.clone()),
+                                rng.clone(),
+                            )
                             .await;
-                        fed.update_balance().await;
-                        fed.send_received_lightning_payment_event(&payment.invoice);
-                        let amount = payment
-                            .invoice
-                            .amount_milli_satoshis()
-                            .expect("assuming we only receive payments for invoices with amount");
-                        fed.save_transaction(&Transaction::new(false, amount)).await;
-                    }
-                })
-                .collect::<FuturesUnordered<_>>()
-                .collect::<Vec<()>>()
-                .await;
+                        if let Err(_) = result {
+                            tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
+                            // Mark it "expired" in db if we couldn't claim it and invoice is expired
+                            if invoice_expired {
+                                fed.update_payment_status(payment_hash, PaymentStatus::Expired)
+                                    .await;
+                            }
+                        } else {
+                            tracing::info!("completed payment: {:?}", &payment_hash);
+                            fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                                .await;
+                            fed.update_balance().await;
+                            fed.send_received_lightning_payment_event(&payment.invoice);
+                            let amount = payment.invoice.amount_milli_satoshis().expect(
+                                "assuming we only receive payments for invoices with amount",
+                            );
+                            fed.save_transaction(&Transaction::new(false, amount)).await;
+                        }
+                    })
+                    .collect::<FuturesUnordered<_>>()
+                    .collect::<Vec<()>>()
+                    .await;
+
+                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+            }
         });
     }
 
-    pub fn poll_ln_refunds(&self, consensus_block_height: u64) {
+    /// Attempts lightning refunds every minute
+    pub fn poll_ln_refunds(&self) {
         let fed = self.clone();
-        let contracts = fed
-            .client
-            .ln_client()
-            .refundable_outgoing_contracts(consensus_block_height);
 
         tokio::spawn(async move {
-            tracing::info!("looking for refunds...");
-            contracts
-                .iter()
-                .map(|contract| async {
-                    tracing::info!(
-                        "attempting to get refund {:?}",
-                        contract.contract_account.contract.contract_id(),
-                    );
-                    match fed
-                        .client
-                        .try_refund_outgoing_contract(
+            loop {
+                let consensus_block_height = fed.block_height().await.unwrap_or(0);
+                let contracts = fed
+                    .client
+                    .ln_client()
+                    .refundable_outgoing_contracts(consensus_block_height);
+                tracing::info!("looking for refunds...");
+                contracts
+                    .iter()
+                    .map(|contract| async {
+                        tracing::info!(
+                            "attempting to get refund {:?}",
                             contract.contract_account.contract.contract_id(),
-                            rand::rngs::OsRng,
-                        )
-                        .await
-                    {
-                        Ok(_) => {
-                            tracing::info!("got refund");
-                            fed.update_balance().await;
-                        }
-                        Err(e) => tracing::info!("refund failed {:?}", e),
-                    };
-                })
-                .collect::<FuturesUnordered<_>>()
-                .collect::<Vec<()>>()
-                .await;
+                        );
+                        match fed
+                            .client
+                            .try_refund_outgoing_contract(
+                                contract.contract_account.contract.contract_id(),
+                                rand::rngs::OsRng,
+                            )
+                            .await
+                        {
+                            Ok(_) => {
+                                tracing::info!("got refund");
+                                fed.update_balance().await;
+                            }
+                            Err(e) => tracing::info!("refund failed {:?}", e),
+                        };
+                    })
+                    .collect::<FuturesUnordered<_>>()
+                    .collect::<Vec<()>>()
+                    .await;
+
+                // once per minute
+                fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
+            }
         });
     }
 }
