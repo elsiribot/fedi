@@ -1,19 +1,22 @@
-use crate::payment::{Payment, PaymentDirection, PaymentStatus};
 use anyhow::anyhow;
+use serde::Serialize;
 
 pub fn hacky_millisat_to_sat(millisat: u64) -> u64 {
     (millisat as f64 / 1000 as f64).round() as u64
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FedimintFederation {
     pub name: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Invoice {
     pub payment_hash: String,
     pub amount: u64,
+    pub fee: Option<u64>, // FIXME: probably shouldn't be option
     pub description: String,
     pub invoice: String,
 }
@@ -33,34 +36,19 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
             lightning_invoice::InvoiceDescription::Hash(_) => "".to_string(),
         };
 
+        let fee = invoice
+            .amount_milli_satoshis()
+            .map(|msat| {
+                msat / 100 // FIXME: hard-coded 1% fee
+            })
+            .map(|msat| hacky_millisat_to_sat(msat));
+
         Ok(Invoice {
             amount,
+            fee,
             description,
             invoice: invoice.to_string(),
             payment_hash: invoice.payment_hash().to_string(),
-        })
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct BridgePayment {
-    pub invoice: Invoice,
-    pub status: PaymentStatus,
-    pub created_at: u64,
-    pub paid: bool,
-    pub direction: PaymentDirection,
-}
-
-impl TryFrom<&Payment> for BridgePayment {
-    type Error = anyhow::Error;
-
-    fn try_from(payment: &Payment) -> anyhow::Result<Self> {
-        Ok(Self {
-            invoice: Invoice::try_from(&payment.invoice)?,
-            status: payment.status,
-            created_at: payment.created_at,
-            paid: payment.paid(),
-            direction: payment.direction,
         })
     }
 }

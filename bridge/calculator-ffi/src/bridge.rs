@@ -1,16 +1,10 @@
-// pub mod bridge;
-// pub mod event;
-// pub mod payment;
-// pub mod tx;
-// pub mod types;
-
 use std::{
     collections::HashMap,
+    default::Default,
     fs::File,
     path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, SystemTime},
-    default::Default,
 };
 
 use crate::{
@@ -28,10 +22,7 @@ use fedimint_api::db::DatabaseTransaction;
 use fedimint_api::encoding::ModuleRegistry;
 use fedimint_api::NumPeers;
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
-use fedimint_core::{
-    config::{load_from_file},
-    modules::wallet::txoproof::TxOutProof,
-};
+use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
 use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
@@ -128,7 +119,9 @@ impl Federation {
     }
 
     fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.client.db().begin_transaction(ModuleRegistry::default())
+        self.client
+            .db()
+            .begin_transaction(ModuleRegistry::default())
     }
 
     pub async fn join(
@@ -169,7 +162,8 @@ impl Federation {
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
         let db = SledDb::open(db_path, "client")?;
-        let client = UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
+        let client =
+            UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
         Ok(Self::new(client, event_sink))
     }
 
@@ -195,7 +189,8 @@ impl Federation {
             confirmed_invoice.invoice.clone(),
             PaymentStatus::Pending,
             PaymentDirection::Incoming,
-        )).await;
+        ))
+        .await;
         tracing::info!("saved invoice to db");
 
         Ok(confirmed_invoice.invoice)
@@ -267,7 +262,8 @@ impl Federation {
                 // TODO: save the transaction to db. if pegin succeeded, say "complete", otherwise say "pendin"
 
                 let address =
-                    Address::from_script(script, self.client.wallet_client().config.network).unwrap();
+                    Address::from_script(script, self.client.wallet_client().config.network)
+                        .unwrap();
                 tracing::info!("peg-in successful for {}", address);
                 self.update_balance().await;
                 self.send_received_on_chain_payment_event(&item.tx_hash, &address);
@@ -280,7 +276,8 @@ impl Federation {
                     .tx_output()
                     .value
                     * 1000;
-                self.save_transaction(&Transaction::new(false, amount_millisat)).await;
+                self.save_transaction(&Transaction::new(false, amount_millisat))
+                    .await;
             }
         }
 
@@ -318,14 +315,16 @@ impl Federation {
                     invoice.clone(),
                     PaymentStatus::Paid,
                     PaymentDirection::Outgoing,
-                )).await;
+                ))
+                .await;
                 self.update_balance().await;
                 self.save_transaction(&Transaction::new(
                     true,
                     invoice
                         .amount_milli_satoshis()
                         .expect("assuming invoice has amount"),
-                )).await;
+                ))
+                .await;
                 Ok(())
             }
             Err(e) => {
@@ -333,7 +332,8 @@ impl Federation {
                     invoice.clone(),
                     PaymentStatus::Failed,
                     PaymentDirection::Outgoing,
-                )).await;
+                ))
+                .await;
                 Err(e)
             }
         }
@@ -502,11 +502,13 @@ impl Federation {
                         tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
                         // Mark it "expired" in db if we couldn't claim it and invoice is expired
                         if invoice_expired {
-                            fed.update_payment_status(payment_hash, PaymentStatus::Expired).await;
+                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
+                                .await;
                         }
                     } else {
                         tracing::info!("completed payment: {:?}", &payment_hash);
-                        fed.update_payment_status(payment_hash, PaymentStatus::Paid).await;
+                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                            .await;
                         fed.update_balance().await;
                         fed.send_received_lightning_payment_event(&payment.invoice);
                         let amount = payment
