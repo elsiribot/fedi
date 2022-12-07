@@ -130,8 +130,8 @@ async fn handle_list_federations() -> anyhow::Result<String> {
         .clients
         .lock()
         .await
-        .keys()
-        .map(|name| FedimintFederation { name: name.clone() })
+        .values()
+        .map(|federation| FedimintFederation::from(federation))
         .collect();
     Ok(json!({ "result": federations }).to_string())
 }
