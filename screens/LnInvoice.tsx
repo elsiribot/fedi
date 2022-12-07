@@ -20,6 +20,7 @@ import {
     TFedimintEventEmitter,
 } from '../bridge'
 import type { RootStackParamList } from '../Router'
+import amountUtils from '../utils/AmountUtils'
 import stringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
@@ -101,9 +102,14 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
         return <ActivityIndicator />
     }
 
+    console.log(decodedInvoice)
+    console.log(decodedInvoice.amount)
+
     return (
         <View style={styles.container}>
-            <Text h2>{`${decodedInvoice.amount} ${t('words.sats')}`}</Text>
+            <Text h2>{`${amountUtils.millisToSats(decodedInvoice.amount)} ${t(
+                'words.sats',
+            )}`}</Text>
             <Card containerStyle={styles.roundedCardContainer}>
                 <QRCode
                     value={decodedInvoice.invoice}

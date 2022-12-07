@@ -3,8 +3,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { Transaction } from '../../../bridge'
+import { Transaction, TransactionDirection } from '../../../bridge'
+import amountUtils from '../../../utils/AmountUtils'
 import DateUtils from '../../../utils/DateUtils'
+import StringUtils from '../../../utils/StringUtils'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -33,15 +35,23 @@ const TransactionDetail = ({
                 color={theme.colors.orange}
                 size={theme.sizes.lg}
             />
-            <Text h3>{`${t('feature.receive.you-received')}`}</Text>
-            <Text h3>{`${txn.amountSats} ${t('words.sats')}`}</Text>
+            <Text>
+                {`${
+                    txn.direction === TransactionDirection.send
+                        ? t('feature.send.you-sent')
+                        : t('feature.receive.you-received')
+                }`}
+            </Text>
+            <Text h3>{`${amountUtils.millisToSats(txn.amount)} ${t(
+                'words.sats',
+            )}`}</Text>
             <View style={styles.detailItemsContainer}>
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
                     {/* TODO: Replace with actual memo*/}
                     {/* <Text>{txn.memo}</Text> */}
-                    <Text>{`Memo here`}</Text>
+                    <Text>{'Memo here'}</Text>
                 </View>
                 <Divider />
                 <View style={styles.detailItem}>
@@ -59,12 +69,22 @@ const TransactionDetail = ({
                     <Text>{`${'~3 - 11'} ${t('words.sats')}`}</Text>
                 </View>
                 <Divider />
-                <View style={styles.detailItem}>
-                    <Text>{`${t('phrases.lightning-request')}`}</Text>
-                    {/* TODO: Replace with actual invoice string*/}
-                    {/* <Text>{StringUtils.truncateMiddleOfString(txn.invoice, 5)}</Text> */}
-                    <Text>{`${'lnbc1...o19n382x'}`}</Text>
-                </View>
+                {txn.method === 'lightning' && (
+                    <View style={styles.detailItem}>
+                        <Text>{`${t('phrases.lightning-request')}`}</Text>
+                        <Text>
+                            {StringUtils.truncateMiddleOfString(txn.invoice, 5)}
+                        </Text>
+                    </View>
+                )}
+                {txn.method === 'bitcoin' && (
+                    <View style={styles.detailItem}>
+                        <Text>{`${t('phrases.transaction-id')}`}</Text>
+                        <Text>
+                            {StringUtils.truncateMiddleOfString(txn.txid, 5)}
+                        </Text>
+                    </View>
+                )}
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('phrases.add-note')} +`}</Text>

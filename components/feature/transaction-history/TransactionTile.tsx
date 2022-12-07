@@ -3,7 +3,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { Transaction } from '../../../bridge'
+import { Transaction, TransactionDirection } from '../../../bridge'
+import amountUtils from '../../../utils/AmountUtils'
 import DateUtils from '../../../utils/DateUtils'
 
 type TransactionTileProps = {
@@ -14,7 +15,7 @@ type TransactionTileProps = {
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-
+    console.log(txn.direction)
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
@@ -36,17 +37,19 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             <View style={styles(theme).centerContainer}>
                 <Text>
                     {`${
-                        txn.outgoing === true
+                        txn.direction === TransactionDirection.send
                             ? t('words.sent')
                             : t('words.received')
                     }`}
                 </Text>
-                <Text>{`Memo here`}</Text>
+                <Text>{'Memo here'}</Text>
             </View>
 
             <View style={styles(theme).rightContainer}>
                 <Text style={styles(theme).rightAlignedText}>
-                    {`${txn.amountSats} ${t('words.sats').toUpperCase()}`}
+                    {`${amountUtils.millisToSats(txn.amount)} ${t(
+                        'words.sats',
+                    ).toUpperCase()}`}
                 </Text>
                 <Text
                     style={[

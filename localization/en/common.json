@@ -46,6 +46,7 @@
         "generate-invoice": "Generate invoice",
         "invalid-federation-code": "Invalid federation code",
         "lightning-request": "Lightning request",
+        "transaction-id": "Transaction ID",
         "no-transactions": "No transactions",
         "receive-bitcoin": "Receive bitcoin"
     },
@@ -121,7 +122,7 @@
             "instructions": "Enter how much you want to receive",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
             "pending-transaction": "pending transaction",
-            "you-received": "You received"
+            "you-received": "You received",
         }
     }
 }

@@ -9,6 +9,7 @@ import type { RootStackParamList } from '../Router'
 import type { HomeTabsParamList } from './Home'
 import { BalanceEvent, TFedimintEventEmitter } from '../bridge'
 import { useFederationsContext } from '../contexts/FederationsContext'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props =
     | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {
@@ -16,18 +17,20 @@ export type Props =
       }
 
 type BalanceProps = {
-    value: string
+    balance: number | null
 }
 
-const Balance = ({ value }: BalanceProps) => {
+const Balance = ({ balance }: BalanceProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    if (value !== '') {
+    if (balance !== null) {
         return (
-            <Text h2 style={styles(theme).balanceText}>{`${value} ${t(
-                'words.sats',
-            )}`}</Text>
+            <Text
+                h2
+                style={styles(theme).balanceText}>{`${amountUtils.millisToSats(
+                balance,
+            )} ${t('words.sats')}`}</Text>
         )
     } else {
         return <ActivityIndicator />
@@ -38,7 +41,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
-    const [btcBalance, setBtcBalance] = useState('')
+    const [balance, setBalance] = useState<number | null>(null)
 
     // The balanceHandler should change whenever the selectedFederation changes
     const balanceHandler = useCallback(
@@ -53,7 +56,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                 `| federation -> "${event.federationId}"`,
                 `| Wallet: balance -> "${event.balance}"`,
             )
-            setBtcBalance(String(event.balance))
+            setBalance(event.balance)
         },
         [selectedFederation],
     )
@@ -86,7 +89,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                         {t('words.bitcoin')}
                     </Text>
                 </View>
-                <Balance value={btcBalance} />
+                <Balance balance={balance} />
                 <View style={styles(theme).buttonsGroupContainer}>
                     <Button
                         title={t('words.receive')}
@@ -111,7 +114,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                         containerStyle={styles(theme).buttonContainer}
                         titleStyle={styles(theme).buttonTitle}
                         buttonStyle={styles(theme).button}
-                        disabled={!(Number(btcBalance) > 0)}
+                        disabled={!(Number(balance) > 0)}
                     />
                 </View>
             </Card>

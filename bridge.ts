@@ -49,6 +49,37 @@ export type TemporaryTransaction =
     | { type: 'lightning'; amount: number }
     | { type: 'ecash'; amount: number }
 
+export enum TransactionDirection {
+    send = 'send',
+    receive = 'send',
+}
+
+export enum TransactionMethod {
+    bitcoin = 'bitcoin',
+    lightning = 'lightning',
+}
+
+export type BitcoinTransaction = {
+    method: TransactionMethod.bitcoin
+    address: string
+    txid: string
+    id: number
+    createdAt: number
+    direction: TransactionDirection
+    amount: number
+}
+
+export type LightningTransaction = {
+    method: TransactionMethod.lightning
+    invoice: string
+    id: number
+    createdAt: number
+    direction: TransactionDirection
+    amount: number
+}
+
+export type Transaction = BitcoinTransaction | LightningTransaction
+
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter
 
@@ -108,14 +139,6 @@ export type Federation = {
     connectInfo: {
         members: [number, string][]
     }
-}
-
-export type Transaction = {
-    id: number
-    createdAt: number
-    outgoing: boolean
-    amountMillis: number
-    amountSats: number
 }
 
 function handleRpcResponse<Type>(json: string): Type {
