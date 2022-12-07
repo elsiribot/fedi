@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
-import { Button, Icon, Text } from '@rneui/themed'
+import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
+import { Button, Icon, Text, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
+import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -16,16 +17,19 @@ const OnChainReceiveSuccess: React.FC<Props> = ({
     navigation,
 }: Props) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const { amountReceived } = route.params
 
     return (
-        <View style={styles.container}>
-            <View style={styles.detailsContainer}>
-                <Icon name="check" />
+        <ImageBackground
+            source={Images.HoloBackground}
+            style={styles(theme).container}>
+            <View style={styles(theme).detailsContainer}>
+                <Icon name="check" style={styles(theme).icon} />
                 <Text h3>{t('feature.receive.pending-transaction')}</Text>
                 <Text h3>{`${amountReceived} ${t('words.sats')}`}</Text>
             </View>
-            <View style={styles.buttonContainer}>
+            <View style={styles(theme).buttonContainer}>
                 <Button
                     title={t('words.done')}
                     onPress={() => {
@@ -33,25 +37,47 @@ const OnChainReceiveSuccess: React.FC<Props> = ({
                     }}
                 />
             </View>
-        </View>
+        </ImageBackground>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
-    },
-    detailsContainer: {
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonContainer: {
-        width: '90%',
-        marginBottom: 50,
-    },
-})
+const WINDOW_WIDTH = Dimensions.get('window').width
+const CIRCLE_SIZE = WINDOW_WIDTH * 0.85
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+        },
+        detailsContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme.colors.secondary,
+            // for a perfect circle borderRadius should be half of
+            // height and width
+            height: CIRCLE_SIZE,
+            width: CIRCLE_SIZE,
+            borderRadius: CIRCLE_SIZE * 0.5,
+            shadowRadius: 1,
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            elevation: 1,
+            shadowColor: theme.colors.primaryLight,
+        },
+        icon: {
+            marginVertical: 10,
+        },
+        buttonContainer: {
+            width: '90%',
+            height: '30%',
+            marginBottom: 50,
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+        },
+    })
 
 export default OnChainReceiveSuccess
