@@ -1,5 +1,6 @@
-use bitcoin::{Address, Txid};
 use serde::Serialize;
+
+use crate::tx::Transaction;
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -10,17 +11,9 @@ pub struct BalanceEvent {
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ReceivedLightningEvent {
+pub struct TransactionEvent {
     pub federation_id: String,
-    pub payment_hash: String,
-}
-
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ReceivedBitcoinEvent {
-    pub federation_id: String,
-    pub txid: String,
-    pub address: String,
+    pub transaction: Transaction,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -32,8 +25,7 @@ pub struct LogEvent {
 #[derive(Clone, Debug)]
 pub enum Event {
     Balance { event: BalanceEvent },
-    ReceivedLightning { event: ReceivedLightningEvent },
-    ReceivedBitcoin { event: ReceivedBitcoinEvent },
+    Transaction { event: TransactionEvent },
     Log { event: LogEvent },
 }
 
@@ -46,20 +38,11 @@ impl Event {
             },
         }
     }
-    pub fn received_lightning(federation_id: String, payment_hash: String) -> Self {
-        Self::ReceivedLightning {
-            event: ReceivedLightningEvent {
+    pub fn transaction(federation_id: String, transaction: Transaction) -> Self {
+        Self::Transaction {
+            event: TransactionEvent {
                 federation_id,
-                payment_hash,
-            },
-        }
-    }
-    pub fn received_bitcoin(federation_id: String, txid: &Txid, address: &Address) -> Self {
-        Self::ReceivedBitcoin {
-            event: ReceivedBitcoinEvent {
-                federation_id,
-                txid: txid.to_string(),
-                address: address.to_string(),
+                transaction,
             },
         }
     }
@@ -89,13 +72,9 @@ impl EventSinkWrapper {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 self.event_sink.event("balance".into(), body);
             }
-            Event::ReceivedLightning { event } => {
+            Event::Transaction { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("receivedLightning".into(), body);
-            }
-            Event::ReceivedBitcoin { event } => {
-                let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("receivedBitcoin".into(), body);
+                self.event_sink.event("transaction".into(), body);
             }
             Event::Log { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
