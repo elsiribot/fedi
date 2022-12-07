@@ -13,25 +13,23 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
 
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
-            // TODO: request permission & handle navigation to update permissions page
-            console.log(Camera)
-
             const status = await Camera.getCameraPermissionStatus()
-            console.log('cameraPermissionStatus: ', status)
-            setHasCameraPermission(status === 'authorized')
+            console.log('checkForPermissions: ', status)
+            if (status === 'denied') {
+                navigation.navigate('RequestCameraAccess')
+            }
 
             await Camera.requestCameraPermission()
         }
 
         checkForPermissions()
-    }, [])
+    }, [navigation])
 
     // side effect to detect if invoice has been pasted or scanned
     useEffect(() => {
@@ -71,7 +69,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const device = devices.back
 
     const renderQrCodeScanner = () => {
-        if (device == null || hasCameraPermission === false) {
+        if (device == null) {
             return <ActivityIndicator />
         } else {
             return (
