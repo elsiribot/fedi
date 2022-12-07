@@ -14,11 +14,11 @@ import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../assets/images'
 
 import {
+    decodeInvoice,
     Invoice,
     ReceivedLightningEvent,
     TFedimintEventEmitter,
 } from '../bridge'
-import { useBridge } from '../contexts/FederationsContext'
 import type { RootStackParamList } from '../Router'
 import stringUtils from '../utils/StringUtils'
 
@@ -26,7 +26,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
 const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
-    const { decodeInvoice } = useBridge()
     const { invoice } = route.params
     const [decodedInvoice, setDecodedInvoice] = useState<Invoice>({
         paymentHash: '',
@@ -73,7 +72,7 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
         }
 
         _decodeInvoice()
-    }, [decodeInvoice, invoice])
+    }, [invoice])
 
     const receivedLightningHandler = useCallback(
         (event: ReceivedLightningEvent) => {

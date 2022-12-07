@@ -8,5 +8,4 @@ export const FEDERATION_SIGNET =
     '{"members":[[0,"wss://fm-signet.sirion.io:443"]]}'
 
 export const TEST_FEDERATION = FEDERATION_ALPHA
-export const TEST_FEDERATION_ID = 'alpha'
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'

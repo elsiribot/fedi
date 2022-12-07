@@ -14,11 +14,8 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 
-import {
-    generateAddress,
-    ReceivedBitcoinEvent,
-    TFedimintEventEmitter,
-} from '../../../bridge'
+import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../../../bridge'
+import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../Router'
 import StringUtils from '../../../utils/StringUtils'
 
@@ -27,6 +24,7 @@ type ReceiveOnchainNavigationProp =
 
 const ReceiveOnchain: React.FC<{}> = () => {
     const { t } = useTranslation()
+    const { generateAddress } = useBridge()
     const navigation = useNavigation<ReceiveOnchainNavigationProp>()
     const [address, setAddress] = useState<string>('')
 
@@ -38,7 +36,7 @@ const ReceiveOnchain: React.FC<{}> = () => {
         }
 
         generateOnchainAddress()
-    }, [])
+    }, [generateAddress])
 
     useEffect(() => {
         const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {

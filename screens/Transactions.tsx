@@ -5,13 +5,15 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
-import { listTransactions, Transaction } from '../bridge'
+import { Transaction } from '../bridge'
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
+import { useBridge } from '../contexts/FederationsContext'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>
 
 const Transactions: React.FC<Props> = () => {
     const { t } = useTranslation()
+    const { listTransactions } = useBridge()
     const [isLoading, setIsLoading] = useState(false)
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
 
@@ -25,7 +27,7 @@ const Transactions: React.FC<Props> = () => {
         }
 
         getTransactionsList()
-    }, [])
+    }, [listTransactions])
 
     if (isLoading) return <ActivityIndicator />
 

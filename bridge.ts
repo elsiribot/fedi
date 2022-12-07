@@ -3,7 +3,6 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
-import { TEST_FEDERATION_ID } from './constants'
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
@@ -110,9 +109,11 @@ function handleRpcResponse<Type>(json: string): Type {
     }
 }
 
-export async function listTransactions(): Promise<Transaction[]> {
+export async function listTransactions(
+    federationId: string,
+): Promise<Transaction[]> {
     let payload = JSON.stringify({
-        federationId: TEST_FEDERATION_ID,
+        federationId,
     })
     let response = await FedimintFfi.rpc('listTransactions', payload)
     return handleRpcResponse<Transaction[]>(response)
@@ -150,8 +151,8 @@ export async function decodeInvoice(invoice: string): Promise<Invoice> {
     return handleRpcResponse<Invoice>(response)
 }
 
-export async function payInvoice(invoice: string) {
-    let payload = JSON.stringify({ invoice, federationId: TEST_FEDERATION_ID })
+export async function payInvoice(invoice: string, federationId: string) {
+    let payload = JSON.stringify({ invoice, federationId })
     let response = await FedimintFfi.rpc('payInvoice', payload)
     return handleRpcResponse<null>(response)
 }
@@ -165,11 +166,12 @@ export async function generateAddress(federationId: string): Promise<string> {
 export async function payAddress(
     address: string,
     amount: string,
+    federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({
         address,
         amount,
-        federationId: TEST_FEDERATION_ID,
+        federationId,
     })
     let response = await FedimintFfi.rpc('payAddress', payload)
     return handleRpcResponse<string>(response)

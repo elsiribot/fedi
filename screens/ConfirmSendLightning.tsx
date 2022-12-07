@@ -4,9 +4,10 @@ import { Button, Text, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, StyleSheet, View } from 'react-native'
-import { decodeInvoice, payInvoice } from '../bridge'
 
 import type { RootStackParamList } from '../Router'
+import { decodeInvoice } from '../bridge'
+import { useBridge } from '../contexts/FederationsContext'
 import InvoiceUtils from '../utils/InvoiceUtils'
 import StringUtils from '../utils/StringUtils'
 
@@ -20,6 +21,7 @@ const ConfirmSendLightning: React.FC<Props> = ({
     navigation,
 }: Props) => {
     const { t } = useTranslation()
+    const { payInvoice } = useBridge()
     const { theme } = useTheme()
     const { invoice } = route.params
 
