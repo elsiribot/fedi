@@ -3,7 +3,7 @@ import { Button, Text } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TextInput, View } from 'react-native'
-import { payAddress } from '../bridge'
+import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
 
@@ -14,6 +14,7 @@ export type Props = NativeStackScreenProps<
 
 const ConfirmSendOnChain: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
+    const { payAddress } = useBridge()
     const { address } = route.params
     const [amount, setAmount] = useState<string>('')
 

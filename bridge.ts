@@ -3,7 +3,6 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
-import { TEST_FEDERATION_ID } from './constants'
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
@@ -18,7 +17,7 @@ export type BalanceEvent = {
 
 export type ReceivedLightningEvent = {
     federationId: string
-    paymentHash: number
+    paymentHash: string
 }
 
 export type ReceivedBitcoinEvent = {
@@ -54,6 +53,10 @@ export class TFedimintEventEmitter {
             (serializedEvent: string) => listener(JSON.parse(serializedEvent)),
             context,
         )
+    }
+
+    removeListener = (eventType: string): void => {
+        this.emitter.removeAllListeners(eventType)
     }
 
     onLog = (
@@ -106,9 +109,11 @@ function handleRpcResponse<Type>(json: string): Type {
     }
 }
 
-export async function listTransactions(): Promise<Transaction[]> {
+export async function listTransactions(
+    federationId: string,
+): Promise<Transaction[]> {
     let payload = JSON.stringify({
-        federationId: TEST_FEDERATION_ID,
+        federationId,
     })
     let response = await FedimintFfi.rpc('listTransactions', payload)
     return handleRpcResponse<Transaction[]>(response)
@@ -129,11 +134,12 @@ export async function listFederations(): Promise<Federation[]> {
 export async function generateInvoice(
     amount: string,
     description: string,
+    federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({
         amount,
         description,
-        federationId: TEST_FEDERATION_ID,
+        federationId,
     })
     let response = await FedimintFfi.rpc('generateInvoice', payload)
     return handleRpcResponse<string>(response)
@@ -145,14 +151,14 @@ export async function decodeInvoice(invoice: string): Promise<Invoice> {
     return handleRpcResponse<Invoice>(response)
 }
 
-export async function payInvoice(invoice: string) {
-    let payload = JSON.stringify({ invoice, federationId: TEST_FEDERATION_ID })
+export async function payInvoice(invoice: string, federationId: string) {
+    let payload = JSON.stringify({ invoice, federationId })
     let response = await FedimintFfi.rpc('payInvoice', payload)
     return handleRpcResponse<null>(response)
 }
 
-export async function generateAddress(): Promise<string> {
-    let payload = JSON.stringify({ federationId: TEST_FEDERATION_ID })
+export async function generateAddress(federationId: string): Promise<string> {
+    let payload = JSON.stringify({ federationId })
     let response = await FedimintFfi.rpc('generateAddress', payload)
     return handleRpcResponse<string>(response)
 }
@@ -160,11 +166,12 @@ export async function generateAddress(): Promise<string> {
 export async function payAddress(
     address: string,
     amount: string,
+    federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({
         address,
         amount,
-        federationId: TEST_FEDERATION_ID,
+        federationId,
     })
     let response = await FedimintFfi.rpc('payAddress', payload)
     return handleRpcResponse<string>(response)

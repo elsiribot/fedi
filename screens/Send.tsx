@@ -13,36 +13,30 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
 
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
-            // TODO: request permission & handle navigation to update permissions page
-            console.log(Camera)
-
             const status = await Camera.getCameraPermissionStatus()
-            console.log('cameraPermissionStatus: ', status)
-            setHasCameraPermission(status === 'authorized')
-
-            await Camera.requestCameraPermission()
+            console.log('checkForPermissions: ', status)
+            if (status === 'denied') {
+                navigation.navigate('RequestCameraAccess')
+            }
         }
 
         checkForPermissions()
-    }, [])
+    }, [navigation])
 
-    // side effect to detect if invoice has been pasted or scanned
+    // detect if invoice or address has been pasted or scanned
     useEffect(() => {
         if (invoice.length > 0) {
-            // TODO: go to send confirm screen before calling payInvoice
             navigation.navigate('ConfirmSendLightning', {
                 invoice,
             })
         }
         if (address.length > 0) {
-            // TODO: go to send confirm screen before calling payInvoice
             navigation.navigate('ConfirmSendOnChain', {
                 address,
             })
@@ -62,7 +56,6 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const checkClipboard = async () => {
-        // call fedimint-ffi here
         const text = await Clipboard.getString()
         handleUserInput(text)
     }
@@ -71,7 +64,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const device = devices.back
 
     const renderQrCodeScanner = () => {
-        if (device == null || hasCameraPermission === false) {
+        if (device == null) {
             return <ActivityIndicator />
         } else {
             return (

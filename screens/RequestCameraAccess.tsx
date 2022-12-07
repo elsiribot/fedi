@@ -1,6 +1,6 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
@@ -17,34 +17,32 @@ export type Props = NativeStackScreenProps<
 const RequestCameraAccess: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [hasCameraPermission, setHasCameraPermission] = React.useState(false)
 
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
-            setHasCameraPermission(status === 'authorized')
+            if (status === 'authorized') {
+                navigation.navigate('ScanFederationCode')
+            }
         }
 
         checkForPermissions()
-    }, [])
-
-    useEffect(() => {
-        if (hasCameraPermission) {
-            console.log('access granted')
-        }
-    }, [hasCameraPermission])
+    }, [navigation])
 
     const requestPermission = async () => {
+        const requestResult = await Camera.requestCameraPermission()
+        console.log('requestResult: ', requestResult)
+        if (requestResult === 'authorized') {
+            navigation.navigate('ScanFederationCode')
+        }
+
         const status = await Camera.getCameraPermissionStatus()
-        // User explicitly denied, link to Settings
-        console.log('requestPermission: ', status)
+        console.log('status:', status)
+        // User explicitly denied... link to Settings instead
         if (status === 'denied') {
             Linking.openSettings()
-        } else {
-            const result = await Camera.requestCameraPermission()
-            setHasCameraPermission(result === 'authorized')
         }
     }
 

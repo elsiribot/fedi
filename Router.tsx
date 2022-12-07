@@ -35,8 +35,8 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     Home: undefined
     LnInvoice: { invoice: string }
-    LnReceiveSuccess: { amountReceived: string }
-    OnChainReceiveSuccess: { amountReceived: string }
+    LnReceiveSuccess: { amountReceived: number }
+    OnChainReceiveSuccess: { amountReceived: number }
     Receive: undefined
     RequestCameraAccess: undefined
     ScanFederationCode: undefined
@@ -55,7 +55,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator id="MainStackNavigator" initialRouteName="Splash">
+        <Stack.Navigator initialRouteName="Splash" id="MainStackNavigator">
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation

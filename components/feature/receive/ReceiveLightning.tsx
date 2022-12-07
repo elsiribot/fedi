@@ -2,7 +2,8 @@ import { Button, Input, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { generateInvoice } from '../../../bridge'
+
+import { useBridge } from '../../../contexts/FederationsContext'
 
 type ReceiveLightningProps = {
     handleInvoice: Function
@@ -14,6 +15,7 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
     const { t } = useTranslation()
     const [amount, setAmount] = useState<string>('')
     const [amountIsValid, setAmountIsValid] = useState(false)
+    const { generateInvoice } = useBridge()
 
     useEffect(() => {
         const isNumeric = /^-?\d+$/.test(amount)

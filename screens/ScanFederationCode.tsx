@@ -1,9 +1,9 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { useCameraDevices } from 'react-native-vision-camera'
+import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
@@ -24,6 +24,18 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { state, dispatch } = useFederationsContext()
 
+    useEffect(() => {
+        const checkForPermissions = async () => {
+            const status = await Camera.getCameraPermissionStatus()
+            console.log('checkForPermissions: ', status)
+            if (status === 'denied') {
+                navigation.navigate('RequestCameraAccess')
+            }
+        }
+
+        checkForPermissions()
+    }, [navigation])
+
     async function handleUserInput(input: string) {
         if (input.startsWith('{"members":')) {
             console.log('fedi qr code detected', input)
@@ -36,7 +48,18 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             const federations = await listFederations()
             if (federations.length > 0) {
                 dispatch(updateConnectedFederations(federations))
+
+                // TODO: Use detected connection string to find and select correct
+                // federation... listFederations must return it...
                 dispatch(changeSelectedFederation(federations[0]))
+                // const matchingFederation = federations.find(
+                //     f => f.connectionString == input,
+                // )
+                // if (matchingFederation) {
+                //     dispatch(changeSelectedFederation(matchingFederation))
+                // } else {
+                //     dispatch(changeSelectedFederation(federations[0]))
+                // }
                 navigation.navigate('Home')
             }
         } else {
