@@ -119,9 +119,10 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
         .await?,
     );
 
-    bridge.join_federation(federation).await;
+    bridge.join_federation(federation.clone()).await;
 
-    Ok(json!({ "result": () }).to_string())
+    let fedimint_federation = FedimintFederation::from(&federation);
+    Ok(json!({ "result": fedimint_federation }).to_string())
 }
 
 async fn handle_list_federations() -> anyhow::Result<String> {
@@ -130,8 +131,8 @@ async fn handle_list_federations() -> anyhow::Result<String> {
         .clients
         .lock()
         .await
-        .keys()
-        .map(|name| FedimintFederation { name: name.clone() })
+        .values()
+        .map(|federation| FedimintFederation::from(federation))
         .collect();
     Ok(json!({ "result": federations }).to_string())
 }

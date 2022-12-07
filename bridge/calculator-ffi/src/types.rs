@@ -1,14 +1,30 @@
+use std::sync::Arc;
+
 use anyhow::anyhow;
+use mint_client::api::WsFederationConnect;
 use serde::Serialize;
+
+use crate::bridge::Federation;
 
 pub fn hacky_millisat_to_sat(millisat: u64) -> u64 {
     (millisat as f64 / 1000 as f64).round() as u64
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FedimintFederation {
     pub name: String,
+    pub connect_info: WsFederationConnect,
+}
+
+impl From<&Arc<Federation>> for FedimintFederation {
+    fn from(federation: &Arc<Federation>) -> Self {
+        let client_config = federation.client.config().0;
+        Self {
+            name: client_config.federation_name.clone(),
+            connect_info: WsFederationConnect::from(&client_config),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
