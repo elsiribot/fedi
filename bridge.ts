@@ -119,10 +119,12 @@ export async function listTransactions(
     return handleRpcResponse<Transaction[]>(response)
 }
 
-export async function joinFederation(connectString: string) {
+export async function joinFederation(
+    connectString: string,
+): Promise<Federation> {
     let payload = JSON.stringify({ connectString })
     let response = await FedimintFfi.rpc('joinFederation', payload)
-    return handleRpcResponse<null>(response)
+    return handleRpcResponse<Federation>(response)
 }
 
 export async function listFederations(): Promise<Federation[]> {

@@ -40,7 +40,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
         if (input.startsWith('{"members":')) {
             console.log('fedi qr code detected', input)
             try {
-                await joinFederation(input)
+                var federation = await joinFederation(input)
             } catch (e) {
                 console.error('Failed to join federation', e)
                 return
@@ -48,18 +48,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             const federations = await listFederations()
             if (federations.length > 0) {
                 dispatch(updateConnectedFederations(federations))
-
-                // TODO: Use detected connection string to find and select correct
-                // federation... listFederations must return it...
-                dispatch(changeSelectedFederation(federations[0]))
-                // const matchingFederation = federations.find(
-                //     f => f.connectionString == input,
-                // )
-                // if (matchingFederation) {
-                //     dispatch(changeSelectedFederation(matchingFederation))
-                // } else {
-                //     dispatch(changeSelectedFederation(federations[0]))
-                // }
+                dispatch(changeSelectedFederation(federation))
                 navigation.navigate('Home')
             }
         } else {
