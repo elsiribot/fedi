@@ -56,6 +56,10 @@ export class TFedimintEventEmitter {
         )
     }
 
+    removeListener = (eventType: string): void => {
+        this.emitter.removeAllListeners(eventType)
+    }
+
     onLog = (
         listener: (event: LogEvent) => void,
         context?: Object,
