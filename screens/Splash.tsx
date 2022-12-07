@@ -44,7 +44,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleJoinFederation = async () => {
         const status = await Camera.getCameraPermissionStatus()
-        console.log('status', status)
         if (status === 'authorized') {
             navigation.navigate('ScanFederationCode')
         } else {
