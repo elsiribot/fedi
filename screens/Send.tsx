@@ -16,7 +16,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
 
-    // check if user has granted camera permissions
+    // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
             const status = await Camera.getCameraPermissionStatus()
