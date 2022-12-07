@@ -4,87 +4,13 @@ import Calculator
 class FedimintFfi: NSObject {
   @objc(init:withResolver:withRejecter:)
   func `init`(dataDir: NSString, resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
-    do {
-      try fedimintInit(dataDir: String(dataDir), eventSink: EventDispatcher())
-      resolve("")  // FIXME: how to resolve nothing?
-    } catch FedimintError.OtherError(let message) {
-      reject("", message, nil)
-    } catch {
-      // can't happen
-    }
-  }
-  
-  @objc
-  func joinFederation(_ connectString: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    do {
-      try fedimintJoinFederation(connectString: String(connectString))
-      resolve("")  // FIXME: how to resolve nothing?
-    } catch FedimintError.OtherError(let message) {
-      reject("", message, nil)
-    } catch {
-      // can't happen
-    }
+    fedimintInit(dataDir: String(dataDir), eventSink: EventDispatcher())
+    resolve("")  // FIXME: how to resolve nothing?
   }
 
   @objc
-  func listFederations(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintListFederations())
-  }
-  
-  @objc
-  func balance(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintBalance())
-  }
-
-  @objc
-  func listTransactions(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintListTransactions())
-  }
-
-  @objc
-  func generateInvoice(_ amount: NSString, description: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    let a = String(amount)
-    let d = String(description)
-    do {
-      let invoice = try fedimintGenerateInvoice(amount: a, description: d)
-      resolve(invoice)
-    } catch FedimintError.OtherError(let message) {
-      reject("", message, nil)
-    } catch {
-      // can't happen
-    }
-  }
-
-  @objc
-  func payInvoice(_ invoice: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    let i = String(invoice)
-    do {
-      try fedimintPayInvoice(invoice: i)
-      resolve("")  // FIXME: how to resolve nothing?
-    } catch FedimintError.OtherError(let message) {
-      reject("", message, nil)
-    } catch {
-      // can't happen
-    }
-  }
-
-  @objc
-  func generateAddress(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintGenerateAddress())
-  }
-
-  @objc
-  func payAddress(_ address: NSString, amount: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    let addr = String(address)
-    let amt = String(amount)
-    do {
-      let txid = try fedimintPayAddress(address: addr, amount: amt)
-      resolve(txid)
-    } catch FedimintError.OtherError(let message) {
-      reject("", message, nil)
-    } catch {
-      // can't happen
-    }
+  func rpc(_ method: NSString, payload: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    resolve(fedimintRpc(method: String(method), payload: String(payload)))
   }
 }
 

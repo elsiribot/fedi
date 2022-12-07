@@ -1,11 +1,8 @@
 import { Button, Input, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NativeModules, StyleSheet, View } from 'react-native'
-
-const {
-    FedimintFfi: { generateInvoice },
-} = NativeModules
+import { StyleSheet, View } from 'react-native'
+import { generateInvoice } from '../../../bridge'
 
 type ReceiveLightningProps = {
     handleInvoice: Function

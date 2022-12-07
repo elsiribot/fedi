@@ -1,14 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Text } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NativeModules, StyleSheet, TextInput, View } from 'react-native'
-import { Button, Text } from '@rneui/themed'
+import { StyleSheet, TextInput, View } from 'react-native'
+import { payAddress } from '../bridge'
 
 import type { RootStackParamList } from '../Router'
-
-const {
-    FedimintFfi: { payAddress },
-} = NativeModules
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

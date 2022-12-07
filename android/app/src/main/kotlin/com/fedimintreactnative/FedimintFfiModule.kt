@@ -23,82 +23,14 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun init(dataDir: String, promise: Promise) {
-        Log.i("test", "kotlin calling init")
-        try {
-            fedimintInit(dataDir, EventDispatcher)
-            promise.resolve(null)
-        } catch (error: Throwable) {
-            promise.reject("init() error", error.localizedMessage, error)
-        }
+        fedimintInit(dataDir, EventDispatcher)
+        promise.resolve(null)
     }
 
     @ReactMethod
-    fun joinFederation(connectString: String, promise: Promise) {
-        Log.i("test", "kotlin calling joinFederation")
-        try {
-            fedimintJoinFederation(connectString)
-            promise.resolve(null)
-        } catch (error: Throwable) {
-            promise.reject("joinFederation() error", error.localizedMessage, error)
-        }
-    }
-
-    @ReactMethod
-    fun listFederations(promise: Promise) {
-        var fedimintFederations = fedimintListFederations()
-        val reactFederations = Arguments.createArray()
-        fedimintFederations.forEach {
-            val federation = Arguments.createMap()
-            federation.putString("name", it.name)
-            reactFederations.pushMap(federation)
-        }
-        promise.resolve(reactFederations)
-    }
-
-    @ReactMethod
-    fun listTransactions(promise: Promise) {
-        promise.resolve(fedimintListTransactions())
-    }
-
-    @ReactMethod
-    fun balance(promise: Promise) {
-        promise.resolve(fedimintBalance().toInt()) // FIXME: it barfs on ULong
-    }
-
-    @ReactMethod
-    fun generateInvoice(amount: String, description: String, promise: Promise) {
-        try {
-            println("inside generate invoice")
-            var invoice = fedimintGenerateInvoice(amount, description)
-            promise.resolve(invoice)
-        } catch (error: Throwable) {
-            promise.reject("generateInvoice() error", error.localizedMessage, error)
-        }
-    }
-
-    @ReactMethod
-    fun payInvoice(invoice: String, promise: Promise) {
-        try {
-            fedimintPayInvoice(invoice)
-            promise.resolve(null)
-        } catch (error: Throwable) {
-            promise.reject("payInvoice() error", error.localizedMessage, error)
-        }
-    }
-
-    @ReactMethod
-    fun generateAddress(promise: Promise) {
-        promise.resolve(fedimintGenerateAddress())
-    }
-
-    @ReactMethod
-    fun payAddress(address: String, amount: String, promise: Promise) {
-        try {
-            var txid = fedimintPayAddress(address, amount)
-            promise.resolve(txid)
-        } catch (error: Throwable) {
-            promise.reject("payAddress() error", error.localizedMessage, error)
-        }
+    fun rpc(method: String, payload: String, promise: Promise) {
+        var response = fedimintRpc(method, payload)
+        promise.resolve(response)
     }
 
     companion object {
