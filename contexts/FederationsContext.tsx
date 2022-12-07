@@ -7,7 +7,11 @@ import React, {
     useEffect,
 } from 'react'
 
-import { Federation } from '../bridge'
+import {
+    Federation,
+    decodeInvoice,
+    generateInvoice as _generateInvoice,
+} from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
 // Define the structure of this Context and its initial state
@@ -165,4 +169,20 @@ function useFederationsContext() {
     return useContext(FederationsContext)
 }
 
-export { FederationsProvider, useFederationsContext }
+function useBridge() {
+    const { state } = useFederationsContext()
+    const { selectedFederation } = state
+
+    return {
+        decodeInvoice,
+        generateInvoice: (amount: string, description: string) => {
+            return _generateInvoice(
+                amount,
+                description,
+                selectedFederation!.name,
+            )
+        },
+    }
+}
+
+export { FederationsProvider, useFederationsContext, useBridge }

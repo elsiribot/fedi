@@ -18,7 +18,7 @@ export type BalanceEvent = {
 
 export type ReceivedLightningEvent = {
     federationId: string
-    paymentHash: number
+    paymentHash: string
 }
 
 export type ReceivedBitcoinEvent = {
@@ -129,11 +129,12 @@ export async function listFederations(): Promise<Federation[]> {
 export async function generateInvoice(
     amount: string,
     description: string,
+    federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({
         amount,
         description,
-        federationId: TEST_FEDERATION_ID,
+        federationId,
     })
     let response = await FedimintFfi.rpc('generateInvoice', payload)
     return handleRpcResponse<string>(response)
@@ -151,8 +152,8 @@ export async function payInvoice(invoice: string) {
     return handleRpcResponse<null>(response)
 }
 
-export async function generateAddress(): Promise<string> {
-    let payload = JSON.stringify({ federationId: TEST_FEDERATION_ID })
+export async function generateAddress(federationId: string): Promise<string> {
+    let payload = JSON.stringify({ federationId })
     let response = await FedimintFfi.rpc('generateAddress', payload)
     return handleRpcResponse<string>(response)
 }
