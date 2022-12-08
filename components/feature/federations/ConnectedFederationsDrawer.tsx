@@ -21,7 +21,6 @@ import {
 } from '../../../contexts/FederationsContext'
 import { Federation, listFederations } from '../../../bridge'
 import { Images } from '../../../assets/images'
-import { TEST_FEDERATION } from '../../../constants'
 
 type Props = {
     federation: Federation
@@ -35,9 +34,8 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     // TODO: Get balance from federation
     // const balance = federation.balance
     const balance = 0
-    // TODO: Remove fallback when listFederations
-    // includes the connect_string field
-    const inviteLink = federation.connect_string || TEST_FEDERATION
+
+    const inviteLink = federation.connect_string
 
     return (
         <View style={styles(theme).drawerItemLabel}>
