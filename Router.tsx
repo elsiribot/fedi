@@ -18,6 +18,7 @@ import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
 import Send from './screens/Send'
 import Splash from './screens/Splash'
+import StartPersonalBackup from './screens/StartPersonalBackup'
 import Transactions from './screens/Transactions'
 
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
@@ -32,6 +33,9 @@ import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
+import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
+import RecoveryWords from './screens/RecoveryWords'
+import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 
 export type RootStackParamList = {
     Backup: undefined
@@ -44,10 +48,12 @@ export type RootStackParamList = {
     LnReceiveSuccess: { amountReceived: number }
     OnChainReceiveSuccess: { amountReceived: number }
     Receive: undefined
+    RecoveryWords: undefined
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     Send: undefined
     Splash: undefined
+    StartPersonalBackup: undefined
     Transactions: undefined
 }
 
@@ -131,6 +137,20 @@ const MainNavigator = () => {
                                 component={Receive}
                                 options={() => ({
                                     header: () => <ReceiveBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StartPersonalBackup"
+                                component={StartPersonalBackup}
+                                options={() => ({
+                                    header: () => <PersonalBackupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryWords"
+                                component={RecoveryWords}
+                                options={() => ({
+                                    header: () => <RecoveryWordsHeader />,
                                 })}
                             />
                             <Stack.Screen

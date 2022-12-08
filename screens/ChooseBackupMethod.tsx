@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
 import { Images } from '../assets/images'
@@ -41,6 +41,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {
                         // navigation.navigate('SocialBackup')
                     }}
+                    disabled
                 />
             </ImageBackground>
             <ImageBackground
@@ -58,7 +59,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('feature.backup.start-personal-backup')}
                     containerStyle={styles(theme).backupMethodButton}
                     onPress={() => {
-                        // navigation.navigate('PersonalBackup')
+                        navigation.navigate('StartPersonalBackup')
                     }}
                 />
             </ImageBackground>
@@ -74,7 +75,7 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             padding: 24,
         },
         backupMethodContainer: {
@@ -106,7 +107,6 @@ const styles = (theme: Theme) =>
         instructionsText: {
             textAlign: 'center',
             paddingHorizontal: 24,
-            // marginVertical: 24,
             fontWeight: '400',
         },
     })
