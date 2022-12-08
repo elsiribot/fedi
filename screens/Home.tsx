@@ -9,14 +9,14 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StyleSheet, TouchableOpacity } from 'react-native'
 
 import type { RootStackParamList } from '../Router'
-import Settings from './Settings'
+import Admin from './Admin'
 import Wallet from './Wallet'
 import Header from '../components/ui/Header'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
 export type HomeTabsParamList = {
-    Settings: undefined
+    Admin: undefined
     Wallet: undefined
 }
 
@@ -29,6 +29,7 @@ const Home: React.FC<Props> = () => {
 
     return (
         <Tab.Navigator
+            initialRouteName="Wallet"
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
                     switch (route.name) {
@@ -40,7 +41,7 @@ const Home: React.FC<Props> = () => {
                                     color={color}
                                 />
                             )
-                        case 'Settings':
+                        case 'Admin':
                             return (
                                 <FaIcon
                                     name={'gear'}
@@ -77,9 +78,11 @@ const Home: React.FC<Props> = () => {
                 })}
             />
             <Tab.Screen
-                name="Settings"
-                component={Settings}
-                options={{ title: `${t('words.settings')}` }}
+                name="Admin"
+                component={Admin}
+                options={{
+                    headerShown: false,
+                }}
             />
         </Tab.Navigator>
     )

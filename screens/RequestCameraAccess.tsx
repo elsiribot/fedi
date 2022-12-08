@@ -1,6 +1,6 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
@@ -14,9 +14,10 @@ export type Props = NativeStackScreenProps<
     'RequestCameraAccess'
 >
 
-const RequestCameraAccess: React.FC<Props> = ({ navigation }: Props) => {
+const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { nextScreen } = route.params
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -24,18 +25,18 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation }: Props) => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
             if (status === 'authorized') {
-                navigation.navigate('ScanFederationCode')
+                navigation.navigate(nextScreen)
             }
         }
 
         checkForPermissions()
-    }, [navigation])
+    }, [navigation, nextScreen])
 
     const requestPermission = async () => {
         const requestResult = await Camera.requestCameraPermission()
         console.log('requestResult: ', requestResult)
         if (requestResult === 'authorized') {
-            navigation.navigate('ScanFederationCode')
+            navigation.navigate(nextScreen)
         }
 
         const status = await Camera.getCameraPermissionStatus()

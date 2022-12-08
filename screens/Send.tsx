@@ -4,7 +4,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
-import { Button, Text } from '@rneui/themed'
+import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
@@ -22,7 +22,9 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
             if (status === 'denied') {
-                navigation.navigate('RequestCameraAccess')
+                navigation.navigate('RequestCameraAccess', {
+                    nextScreen: 'Send',
+                })
             }
         }
 
@@ -80,12 +82,11 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles.container}>
-            <Text>{t('feature.send.scan-qr-code')}</Text>
             <View style={styles.cameraScannerContainer}>
                 {renderQrCodeScanner()}
             </View>
             <Button
-                title={t('feature.send.paste-lightning-request')}
+                title={t('feature.send.paste-payment-request')}
                 onPress={checkClipboard}
             />
         </View>
@@ -99,8 +100,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cameraScannerContainer: {
-        height: '50%',
+        height: '80%',
         width: '100%',
+        margin: 16,
     },
 })
 

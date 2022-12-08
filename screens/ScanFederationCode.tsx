@@ -29,7 +29,9 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
             if (status === 'denied') {
-                navigation.navigate('RequestCameraAccess')
+                navigation.navigate('RequestCameraAccess', {
+                    nextScreen: 'ScanFederationCode',
+                })
             }
         }
 
@@ -102,10 +104,6 @@ const styles = StyleSheet.create({
         height: '80%',
         width: '100%',
         margin: 16,
-    },
-    camera: {
-        height: '100%',
-        width: '100%',
     },
 })
 

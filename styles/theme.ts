@@ -5,6 +5,7 @@ const colors = {
     ...lightColors,
     primary: '#0B1013',
     primaryLight: '#6D7071',
+    primaryVeryLight: '#D3D4DB',
     secondary: '#FFFFFF',
     orange: '#DF7B00',
     grey: '#D9D9D9',
@@ -29,12 +30,14 @@ const theme = createTheme({
             style: {
                 color: colors.primary,
                 fontFamily: 'AlbertSans-Regular',
-                fontWeight: '500',
+                fontWeight: '600',
             },
             h3Style: {
+                fontFamily: 'AlbertSans-Regular',
                 fontSize: 24,
             },
             h4Style: {
+                fontFamily: 'AlbertSans-Regular',
                 fontSize: 16,
             },
         },
