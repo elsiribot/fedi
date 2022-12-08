@@ -5,6 +5,7 @@ const colors = {
     ...lightColors,
     primary: '#0B1013',
     primaryLight: '#6D7071',
+    primaryVeryLight: '#D3D4DB',
     secondary: '#FFFFFF',
     orange: '#DF7B00',
     grey: '#D9D9D9',
