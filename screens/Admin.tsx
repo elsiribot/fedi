@@ -18,7 +18,7 @@ import { Images } from '../assets/images'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
-    'Settings'
+    'Admin'
 >
 
 type SettingsItemProps = {
@@ -50,14 +50,14 @@ const SettingsItem = ({ imageSource, label, onPress }: SettingsItemProps) => {
     )
 }
 
-const Settings: React.FC<Props> = ({ navigation }: Props) => {
+const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
-                <Text h4>{t('words.settings')}</Text>
+                <Text h4>{t('words.admin')}</Text>
                 {/*
                     TODO: Replace with username set during onboarding
                 */}
@@ -173,4 +173,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default Settings
+export default Admin

@@ -1,5 +1,6 @@
 {
     "words": {
+        "admin": "Admin",
         "amount": "Amount",
         "backup": "Backup",
         "bitcoin": "Bitcoin",
@@ -20,7 +21,6 @@
         "sats": "sats",
         "send": "Send",
         "sent": "Sent",
-        "settings": "Settings",
         "share": "Share",
         "time": "Time",
         "transactions": "Transactions",
