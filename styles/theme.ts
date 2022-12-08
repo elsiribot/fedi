@@ -32,9 +32,11 @@ const theme = createTheme({
                 fontWeight: '500',
             },
             h3Style: {
+                fontFamily: 'AlbertSans-Regular',
                 fontSize: 24,
             },
             h4Style: {
+                fontFamily: 'AlbertSans-Regular',
                 fontSize: 16,
             },
         },

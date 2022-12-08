@@ -12,6 +12,7 @@ import type { RootStackParamList } from '../Router'
 import Settings from './Settings'
 import Wallet from './Wallet'
 import Header from '../components/ui/Header'
+import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
@@ -29,6 +30,7 @@ const Home: React.FC<Props> = () => {
 
     return (
         <Tab.Navigator
+            initialRouteName="Settings"
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
                     switch (route.name) {
@@ -79,7 +81,9 @@ const Home: React.FC<Props> = () => {
             <Tab.Screen
                 name="Settings"
                 component={Settings}
-                options={{ title: `${t('words.settings')}` }}
+                options={{
+                    headerShown: false,
+                }}
             />
         </Tab.Navigator>
     )
