@@ -1,4 +1,10 @@
-export const Images = {
+import { ImageSourcePropType } from 'react-native'
+
+interface ImagesMap {
+    [key: string]: ImageSourcePropType
+}
+
+export const Images: ImagesMap = {
     AllowCameraAccessIcon: require('./allow-camera-access-icon.png'),
     Federation: require('./federation.png'),
     FederationXIconXs: require('./federationx-icon-xs.png'),
