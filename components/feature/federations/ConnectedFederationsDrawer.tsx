@@ -35,7 +35,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     // const balance = federation.balance
     const balance = 0
 
-    const inviteLink = federation.connect_string
+    const inviteLink = JSON.stringify(federation.connectInfo)
 
     return (
         <View style={styles(theme).drawerItemLabel}>

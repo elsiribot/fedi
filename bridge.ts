@@ -90,7 +90,9 @@ export class TFedimintEventEmitter {
 
 export type Federation = {
     name: string
-    connect_string: string
+    connectInfo: {
+        members: [number, string][]
+    }
 }
 
 export type Transaction = {
