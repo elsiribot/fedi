@@ -54,6 +54,7 @@
             "confirm-send": "Confirm Send",
             "paste-lightning-request": "Paste lightning request",
             "scan-qr-code": "Scan a Lightning QR Code",
+            "send-bitcoin": "Send bitcoin",
             "you-are-sending": "You are sending",
             "you-sent": "You sent"
         },

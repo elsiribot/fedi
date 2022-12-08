@@ -27,6 +27,8 @@ import SelectedFederationHeader from './components/feature/federations/SelectedF
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
+import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
+import SendHeader from './components/feature/send/SendHeader'
 
 export type RootStackParamList = {
     Backup: undefined
@@ -85,16 +87,16 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="ConfirmSendLightning"
                                 component={ConfirmSendLightning}
-                                options={{
-                                    title: `${t('feature.send.confirm-send')}`,
-                                }}
+                                options={() => ({
+                                    header: () => <SendBitcoinHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="ConfirmSendOnChain"
                                 component={ConfirmSendOnChain}
-                                options={{
-                                    title: `${t('feature.send.confirm-send')}`,
-                                }}
+                                options={() => ({
+                                    header: () => <SendBitcoinHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="LnInvoice"
@@ -128,9 +130,9 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="Send"
                                 component={Send}
-                                options={{
-                                    title: `${t('words.send')}`,
-                                }}
+                                options={() => ({
+                                    header: () => <SendHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="ScanFederationCode"
