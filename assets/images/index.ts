@@ -19,4 +19,5 @@ export const Images: ImagesMap = {
     Recovery: require('./recovery.png'),
     SocialPeople: require('./social-people.png'),
     Wallet: require('./wallet.png'),
+    WordList: require('./word-list.png'),
 }
