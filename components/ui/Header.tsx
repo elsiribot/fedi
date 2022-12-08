@@ -9,6 +9,8 @@ type HeaderProps = {
     leftContainerStyle?: ViewStyle
     centerContainerStyle?: ViewStyle
     rightContainerStyle?: ViewStyle
+    containerStyle?: ViewStyle
+    backgroundColor?: string
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -18,18 +20,23 @@ const Header: React.FC<HeaderProps> = ({
     leftContainerStyle,
     centerContainerStyle,
     rightContainerStyle,
+    containerStyle,
+    backgroundColor,
 }: HeaderProps) => {
     const { theme } = useTheme()
 
     return (
         <HeaderRNE
-            backgroundColor={theme.colors.secondary}
+            backgroundColor={
+                backgroundColor ? backgroundColor : theme.colors.secondary
+            }
             centerComponent={<View>{headerCenter || null}</View>}
             leftComponent={<View>{headerLeft || null}</View>}
             rightComponent={<View>{headerRight || null}</View>}
             {...(leftContainerStyle ? { leftContainerStyle } : {})}
             {...(centerContainerStyle ? { centerContainerStyle } : {})}
             {...(rightContainerStyle ? { rightContainerStyle } : {})}
+            {...(containerStyle ? { containerStyle } : {})}
         />
     )
 }

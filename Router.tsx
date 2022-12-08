@@ -9,6 +9,7 @@ import Backup from './screens/Backup'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
+import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
 import LnReceiveSuccess from './screens/LnReceiveSuccess'
@@ -22,6 +23,7 @@ import StartPersonalBackup from './screens/StartPersonalBackup'
 import Transactions from './screens/Transactions'
 
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
+import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
@@ -43,6 +45,7 @@ export type RootStackParamList = {
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
     ConnectedFederationsDrawer: undefined
+    FederationInvite: { inviteLink: string }
     Home: undefined
     LnInvoice: { invoice: string }
     LnReceiveSuccess: { amountReceived: number }
@@ -106,6 +109,13 @@ const MainNavigator = () => {
                                 component={ConfirmSendLightning}
                                 options={() => ({
                                     header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationInvite"
+                                component={FederationInvite}
+                                options={() => ({
+                                    header: () => <FederationInviteHeader />,
                                 })}
                             />
                             <Stack.Screen
