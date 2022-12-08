@@ -64,7 +64,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <ImageBackground
                     source={Images.HoloBackground}
                     style={styles(theme).profileCircle}
-                    imageStyle={styles(theme).roundCircle}>
+                    imageStyle={styles(theme).circleBorder}>
                     <Text h3>{'SN'}</Text>
                 </ImageBackground>
                 <Text h3>{'Satoshi Nakomoto'}</Text>
@@ -140,7 +140,7 @@ const styles = (theme: Theme) =>
             marginTop: 24,
             marginBottom: 16,
         },
-        roundCircle: {
+        circleBorder: {
             borderRadius: CIRCLE_SIZE * 0.5,
         },
         sectionContainer: {
