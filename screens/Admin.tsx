@@ -96,12 +96,12 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
                 <SettingsItem
                     imageSource={Images.Wallet}
-                    label={t('feature.backup.backup-your-wallet')}
+                    label={t('feature.backup.backup-wallet')}
                     onPress={() => navigation.navigate('Backup')}
                 />
                 <SettingsItem
                     imageSource={Images.Recovery}
-                    label={t('feature.backup.recover-your-wallet')}
+                    label={t('feature.backup.recover-wallet')}
                     onPress={() => {}}
                 />
             </View>
