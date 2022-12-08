@@ -23,8 +23,9 @@ export type MainNavigatorDrawerParamList = {
 }
 export type HomeTabsParamList = {
     Admin: undefined
-    Wallet: { offline: boolean }
+    Community: undefined
     Sites: undefined
+    Wallet: { offline: boolean }
 }
 export type RootStackParamList = {
     BitcoinRequest: { uri: string }
