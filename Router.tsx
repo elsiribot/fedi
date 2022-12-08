@@ -40,7 +40,7 @@ export type RootStackParamList = {
     LnReceiveSuccess: { amountReceived: number }
     OnChainReceiveSuccess: { amountReceived: number }
     Receive: undefined
-    RequestCameraAccess: undefined
+    RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     Send: undefined
     Splash: undefined
@@ -126,6 +126,9 @@ const MainNavigator = () => {
                                 name="RequestCameraAccess"
                                 component={RequestCameraAccess}
                                 options={{ headerShown: false }}
+                                initialParams={{
+                                    nextScreen: 'ScanFederationCode',
+                                }}
                             />
                             <Stack.Screen
                                 name="Send"
@@ -168,6 +171,9 @@ const MainNavigator = () => {
                             name="RequestCameraAccess"
                             component={RequestCameraAccess}
                             options={{ headerShown: false }}
+                            initialParams={{
+                                nextScreen: 'ScanFederationCode',
+                            }}
                         />
                         <Stack.Screen
                             name="ScanFederationCode"

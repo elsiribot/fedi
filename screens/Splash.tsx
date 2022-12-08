@@ -47,7 +47,9 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         if (status === 'authorized') {
             navigation.navigate('ScanFederationCode')
         } else {
-            navigation.navigate('RequestCameraAccess')
+            navigation.navigate('RequestCameraAccess', {
+                nextScreen: 'ScanFederationCode',
+            })
         }
     }
 
