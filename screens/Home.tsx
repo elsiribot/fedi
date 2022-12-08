@@ -29,7 +29,7 @@ const Home: React.FC<Props> = () => {
 
     return (
         <Tab.Navigator
-            initialRouteName="Admin"
+            initialRouteName="Wallet"
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
                     switch (route.name) {

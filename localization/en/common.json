@@ -43,9 +43,17 @@
     "feature": {
         "backup": {
             "backup-wallet": "Backup your wallet",
+            "choose-method": "Choose a backup method",
+            "choose-method-instructions": "Backing up your wallet will help you recover your money if you ever lose access to Fedi",
+            "personal-backup": "Personal backup",
+            "personal-backup-instructions": "Write down 12 recovery words. This is for experienced members.",
             "record-video": "Record video",
             "recover-wallet": "Recover a wallet",
+            "social-backup": "Social backup",
+            "social-backup-instructions": "Record a video to prove your identity. This option is best if you know your guardians well.",
+            "start-personal-backup": "Start personal backup",
             "start-recording": "Start recording",
+            "start-social-backup": "Start social backup",
             "stop-recording": "Stop recording"
         },
         "federations": {

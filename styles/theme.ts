@@ -29,7 +29,7 @@ const theme = createTheme({
             style: {
                 color: colors.primary,
                 fontFamily: 'AlbertSans-Regular',
-                fontWeight: '500',
+                fontWeight: '600',
             },
             h3Style: {
                 fontFamily: 'AlbertSans-Regular',

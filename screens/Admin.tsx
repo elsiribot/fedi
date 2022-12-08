@@ -97,7 +97,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <SettingsItem
                     imageSource={Images.Wallet}
                     label={t('feature.backup.backup-wallet')}
-                    onPress={() => navigation.navigate('Backup')}
+                    onPress={() => navigation.navigate('ChooseBackupMethod')}
                 />
                 <SettingsItem
                     imageSource={Images.Recovery}
@@ -159,8 +159,8 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         settingsItemImage: {
-            height: 24,
-            width: 24,
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
         },
         settingsItemLabel: {
             flexGrow: 1,

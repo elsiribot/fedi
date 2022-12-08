@@ -15,6 +15,8 @@ export const Images: ImagesMap = {
     HoloBackground: require('./holo-background.jpg'),
     InviteMembers: require('./invite-members.png'),
     LeaveFederation: require('./leave-federation.png'),
+    Note: require('./note.png'),
     Recovery: require('./recovery.png'),
+    SocialPeople: require('./social-people.png'),
     Wallet: require('./wallet.png'),
 }

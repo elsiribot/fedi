@@ -6,6 +6,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import Backup from './screens/Backup'
+import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import Home from './screens/Home'
@@ -26,12 +27,15 @@ import ScanFederationCodeHeader from './components/feature/federations/ScanFeder
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
-import { useFederationsContext } from './contexts/FederationsContext'
+import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
 
+import { useFederationsContext } from './contexts/FederationsContext'
+
 export type RootStackParamList = {
     Backup: undefined
+    ChooseBackupMethod: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
     ConnectedFederationsDrawer: undefined
@@ -83,6 +87,13 @@ const MainNavigator = () => {
                                 options={{
                                     title: `${t('words.backup')}`,
                                 }}
+                            />
+                            <Stack.Screen
+                                name="ChooseBackupMethod"
+                                component={ChooseBackupMethod}
+                                options={() => ({
+                                    header: () => <ChooseBackupMethodHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="ConfirmSendLightning"
