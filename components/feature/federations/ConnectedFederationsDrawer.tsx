@@ -3,6 +3,7 @@ import {
     DrawerContentScrollView,
     DrawerItem,
 } from '@react-navigation/drawer'
+import { useNavigation } from '@react-navigation/native'
 import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,7 +21,7 @@ import {
 } from '../../../contexts/FederationsContext'
 import { Federation, listFederations } from '../../../bridge'
 import { Images } from '../../../assets/images'
-import { useNavigation } from '@react-navigation/native'
+import { TEST_FEDERATION } from '../../../constants'
 
 type Props = {
     federation: Federation
@@ -28,11 +29,15 @@ type Props = {
 
 const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
+    const navigation = useNavigation()
     const { t } = useTranslation()
 
     // TODO: Get balance from federation
     // const balance = federation.balance
     const balance = 0
+    // TODO: Remove fallback when listFederations
+    // includes the connect_string field
+    const inviteLink = federation.connect_string || TEST_FEDERATION
 
     return (
         <View style={styles(theme).drawerItemLabel}>
@@ -48,6 +53,19 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     {`${balance} ${t('words.sats')}`}
                 </Text>
             </View>
+
+            <TouchableOpacity
+                style={styles(theme).iconImage}
+                onPress={() => {
+                    navigation.navigate('FederationInvite', {
+                        inviteLink,
+                    })
+                }}>
+                <Image
+                    style={styles(theme).iconImage}
+                    source={Images.InviteMembers}
+                />
+            </TouchableOpacity>
         </View>
     )
 }
@@ -136,25 +154,35 @@ const styles = (theme: Theme) =>
         drawerItem: {
             marginHorizontal: 0,
         },
+        // Unusual width sizings needed here due to the DrawerItem having
+        // some obfuscated styles blocking us from using the full width of the drawer
         drawerItemLabel: {
             flexDirection: 'row',
             alignItems: 'center',
+            width: '110%',
             paddingHorizontal: 2,
         },
         labelsContainer: {
+            // Makes sure very long federation names do not overflow
+            maxWidth: '60%',
+            flexGrow: 1,
             flexDirection: 'column',
             alignItems: 'flex-start',
+        },
+        iconImage: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+        },
+        image: {
+            height: theme.sizes.lg,
+            width: theme.sizes.lg,
+            marginHorizontal: 12,
+            resizeMode: 'contain',
         },
         imageBackground: {
             height: '100%',
             width: '100%',
             resizeMode: 'cover',
-        },
-        image: {
-            height: 45,
-            width: 45,
-            marginHorizontal: 12,
-            resizeMode: 'contain',
         },
         subText: {
             fontSize: theme.sizes.xs,
