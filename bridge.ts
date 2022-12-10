@@ -185,3 +185,136 @@ export async function payAddress(
 export async function init(dataDir: string) {
     return FedimintFfi.init(dataDir)
 }
+
+/*
+ * Mocked-out seed backup and recovery methods
+ */
+
+export async function generateMnemonic(
+    _federationId: string,
+): Promise<string[]> {
+    return new Promise(resolve => {
+        resolve([
+            'never',
+            'gonna',
+            'give',
+            'you',
+            'up',
+            'never',
+            'gonna',
+            'let',
+            'you',
+            'down',
+            'never',
+            'gonna',
+        ])
+    })
+}
+
+// progress reported via `SeedRecoveryEvent` events
+export async function recoverFromMnemonic(
+    _federationId: string,
+    _mnemonic: string[],
+): Promise<null> {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(null), 1000)
+    })
+}
+
+/*
+ * Mocked-out seed backup and recovery events
+ */
+
+export type SeedRecoveryEvent =
+    | { type: 'progress'; percentComplete: number }
+    | { type: 'failed' }
+    | { type: 'complete' }
+
+/*
+ * Mocked-out social backup and recovery methods
+ */
+
+export async function uploadBackupFile(
+    _federationId: string,
+    _contents: string,
+): Promise<null> {
+    return new Promise(resolve => {
+        resolve(null)
+    })
+}
+
+export async function validateBackupFile(
+    _federationId: string,
+    _contents: string,
+): Promise<boolean> {
+    return new Promise(resolve => {
+        resolve(true)
+    })
+}
+
+// This string contains a public key and URL to video file
+export async function backupQr(_federationId: string): Promise<string> {
+    return new Promise(resolve => {
+        resolve('TODO')
+    })
+}
+
+// guardian fetches `_secret` (somehow) from federation admin web UI
+export async function authenticateGuardian(
+    _federationId: string,
+    _secret: string,
+): Promise<null> {
+    return new Promise(resolve => {
+        resolve(null)
+    })
+}
+
+// `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
+export async function rejectSocialRecoveryRequest(
+    _federationId: string,
+    _userPublicKey: string,
+): Promise<null> {
+    return new Promise(resolve => {
+        resolve(null)
+    })
+}
+
+// `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
+export async function approveSocialRecoveryRequest(
+    _federationId: string,
+    _userPublicKey: string,
+): Promise<null> {
+    return new Promise(resolve => {
+        resolve(null)
+    })
+}
+
+/*
+ * Mocked-out social backup and recovery events
+ */
+
+enum GuardianApprovalStatus {
+    approved = 'approved',
+    denied = 'denied',
+    pending = 'pending',
+}
+
+export type Guardian = {
+    name: string
+}
+
+export type GuardianApproval = {
+    guardian: Guardian
+    status: GuardianApprovalStatus
+}
+
+export type SocialRecoveryStatus =
+    | { type: 'failed' }
+    | { type: 'complete' }
+    | { type: 'pending'; approvalsRemaining: number }
+
+export type SocialRecoveryEvent = {
+    federationId: string
+    approvals: GuardianApproval[]
+    status: SocialRecoveryStatus
+}
