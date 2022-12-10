@@ -18,7 +18,7 @@ class DateUtils {
         const timestamp = fromUnixTime(unixSeconds)
         return format(timestamp, dateFormat)
     }
-    formatConversationTimestamp = (unixSeconds: number): string => {
+    formatRoomTileTimestamp = (unixSeconds: number): string => {
         const today = new Date()
         const date = new Date(unixSeconds * 1000)
 
