@@ -8,7 +8,7 @@ pub mod types;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use event::EventSink;
-use fedimint_api::Amount;
+use fedimint_api::{Amount, TieredMulti};
 use lazy_static::lazy_static;
 
 uniffi_macros::include_scaffolding!("calculator");
@@ -17,7 +17,8 @@ use anyhow::anyhow;
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use logging::init_logging;
-use serde::Deserialize;
+use mint_client::mint::SpendableNote;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
 use tx::Transaction;
@@ -195,6 +196,71 @@ async fn handle_generate_address(payload: String) -> anyhow::Result<String> {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PayOfflinePayload {
+    federation_id: String,
+    amount: Amount,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteWithAmount {
+    amount: Amount,
+    // FIXME: spendable_note
+    note: SpendableNote,
+}
+
+async fn handle_pay_offline(payload: String) -> anyhow::Result<String> {
+    let PayOfflinePayload {
+        federation_id,
+        amount,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Ok(rpc_error("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let rng = rand::rngs::OsRng;
+    let ecash: Vec<NoteWithAmount> = federation
+        .client
+        .spend_ecash(amount, rng)
+        .await?
+        .iter_items()
+        .map(|(amount, note)| NoteWithAmount {
+            amount,
+            note: note.clone(),
+        })
+        .collect();
+    // TODO: this should be serialized with Encodable, not Serializable
+    let ecash = serde_json::to_string(&ecash).unwrap();
+    Ok(json!({ "result": ecash }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReceiveOfflinePayload {
+    federation_id: String,
+    // TODO: checksum
+    ecash: Vec<NoteWithAmount>,
+}
+
+async fn handle_receive_offline(payload: String) -> anyhow::Result<String> {
+    // TODO: TieredMulti::from_iter to collect NoteWithAmount's into TieredMulti
+    let ReceiveOfflinePayload {
+        federation_id,
+        ecash,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Ok(rpc_error("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let rng = rand::rngs::OsRng;
+    let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
+    let tiered_multi = TieredMulti::from_iter(input);
+    federation.client.reissue(tiered_multi, rng).await?;
+    Ok(json!({ "result": () }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PayAddressPayload {
     federation_id: String,
     address: String,
@@ -262,6 +328,8 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "payInvoice" => handle_pay_invoice(payload).await,
             "generateAddress" => handle_generate_address(payload).await,
             "payAddress" => handle_pay_address(payload).await,
+            "payOffline" => handle_pay_offline(payload).await,
+            "receiveOffline" => handle_receive_offline(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
