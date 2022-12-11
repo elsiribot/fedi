@@ -8,6 +8,7 @@ import { Images } from '../../../assets/images'
 import { dataToFrames } from 'qrloop'
 
 import type { RootStackParamList } from '../../../Router'
+import { Camera } from 'react-native-vision-camera'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 
@@ -20,6 +21,20 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
         navigation.navigate('Home')
     }
     const frames = dataToFrames(ecash)
+
+    useEffect(() => {
+        const checkForPermissions = async () => {
+            const status = await Camera.getCameraPermissionStatus()
+            console.log('checkForPermissions: ', status)
+            if (status === 'denied') {
+                navigation.navigate('RequestCameraAccess', {
+                    nextScreen: 'SendOfflineQr',
+                })
+            }
+        }
+
+        checkForPermissions()
+    }, [navigation])
 
     // show new qr every second
     useEffect(() => {
