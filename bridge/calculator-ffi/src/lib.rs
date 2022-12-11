@@ -142,7 +142,7 @@ async fn handle_list_federations() -> anyhow::Result<String> {
 #[serde(rename_all = "camelCase")]
 pub struct GenerateInvoicePayload {
     federation_id: String,
-    amount: String,
+    amount: Amount,
     description: String,
 }
 
@@ -152,10 +152,8 @@ async fn handle_generate_invoice(payload: String) -> anyhow::Result<String> {
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&payload.federation_id).await;
-    let amount: u64 = payload.amount.parse().unwrap(); // FIXME
-    let amount = Amount::from_sat(amount);
     let invoice = federation
-        .generate_invoice(amount, payload.description)
+        .generate_invoice(payload.amount, payload.description)
         .await?;
     Ok(json!({ "result": invoice.to_string() }).to_string())
 }
@@ -196,7 +194,7 @@ async fn handle_generate_address(payload: String) -> anyhow::Result<String> {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PayOfflinePayload {
+pub struct GenerateEcashPayload {
     federation_id: String,
     amount: Amount,
 }
@@ -209,8 +207,8 @@ pub struct NoteWithAmount {
     note: SpendableNote,
 }
 
-async fn handle_pay_offline(payload: String) -> anyhow::Result<String> {
-    let PayOfflinePayload {
+async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
+    let GenerateEcashPayload {
         federation_id,
         amount,
     } = match serde_json::from_str(&payload) {
@@ -236,15 +234,13 @@ async fn handle_pay_offline(payload: String) -> anyhow::Result<String> {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReceiveOfflinePayload {
+pub struct ReceiveEcashPayload {
     federation_id: String,
-    // TODO: checksum
     ecash: Vec<NoteWithAmount>,
 }
 
-async fn handle_receive_offline(payload: String) -> anyhow::Result<String> {
-    // TODO: TieredMulti::from_iter to collect NoteWithAmount's into TieredMulti
-    let ReceiveOfflinePayload {
+async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
+    let ReceiveEcashPayload {
         federation_id,
         ecash,
     } = match serde_json::from_str(&payload) {
@@ -255,17 +251,38 @@ async fn handle_receive_offline(payload: String) -> anyhow::Result<String> {
     let rng = rand::rngs::OsRng;
     let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
     let tiered_multi = TieredMulti::from_iter(input);
-    federation.client.reissue(tiered_multi, rng).await?;
-    Ok(json!({ "result": () }).to_string())
+    federation.client.reissue(tiered_multi.clone(), rng).await?;
+    Ok(json!({ "result": { "amount": tiered_multi.total_amount() } }).to_string())
 }
 
+// FIXME: this is the same as ReceiveOfflinePayload ...
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PayAddressPayload {
+pub struct ValidateEcashPayload {
     federation_id: String,
-    address: String,
-    amount: String,
+    ecash: Vec<NoteWithAmount>,
 }
+
+async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
+    let ValidateEcashPayload {
+        federation_id,
+        ecash,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Ok(rpc_error("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
+    let tiered_multi = TieredMulti::from_iter(input);
+    let valid = federation
+        .client
+        .validate_note_signatures(&tiered_multi)
+        .await
+        .is_ok();
+    let amount = tiered_multi.total_amount();
+    Ok(json!({ "result": { "valid": valid, "amount": amount }}).to_string())
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DecodeInvoicePayload {
@@ -283,20 +300,28 @@ async fn handle_decode_invoice(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": bridge_invoice }).to_string())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayAddressPayload {
+    federation_id: String,
+    address: String,
+    // TODO: parse this as bitcoin::Amount
+    sats: u64,
+}
+
 async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     let payload: PayAddressPayload = match serde_json::from_str(&payload) {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&payload.federation_id).await;
-    let amount: u64 = payload.amount.parse().unwrap();
-    let amount = bitcoin::Amount::from_sat(amount);
     let address = bitcoin::util::address::Address::from_str(&payload.address)
         .map_err(|_| FedimintError::OtherError(anyhow!("Invalid address")))?;
     let mut rng = rand::rngs::OsRng;
+    let sats = bitcoin::Amount::from_sat(payload.sats);
     let peg_out = federation
         .client
-        .new_peg_out_with_fees(amount, address)
+        .new_peg_out_with_fees(sats, address)
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
     let out_point = federation
@@ -312,7 +337,7 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
         .map_err(|e| anyhow!(e.to_string()))?;
     federation.update_balance().await;
     federation
-        .save_transaction(&Transaction::new(true, amount.to_sat() * 1000))
+        .save_transaction(&Transaction::new(true, sats.to_sat() * 1000))
         .await;
     Ok(json!({ "result": out_point.txid.to_string() }).to_string())
 }
@@ -328,8 +353,9 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "payInvoice" => handle_pay_invoice(payload).await,
             "generateAddress" => handle_generate_address(payload).await,
             "payAddress" => handle_pay_address(payload).await,
-            "payOffline" => handle_pay_offline(payload).await,
-            "receiveOffline" => handle_receive_offline(payload).await,
+            "generateEcash" => handle_generate_ecash(payload).await,
+            "receiveEcash" => handle_receive_ecash(payload).await,
+            "validateEcash" => handle_validate_ecash(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
