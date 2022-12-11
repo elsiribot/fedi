@@ -1,15 +1,19 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../Router'
 
 import AnimatedQrCodeScanner from '../scan/AnimatedQrCodeScanner'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 
-const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
+const ReceiveOffline: React.FC<Props> = () => {
+    const { receiveEcash } = useBridge()
+    const navigation = useNavigation()
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
@@ -41,8 +45,10 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
-    const onResult = (finalResult: string) =>
-        console.log('finished', finalResult)
+    const onResult = async (notes: string) => {
+        await receiveEcash(notes)
+        navigation.navigate('Home')
+    }
 
     return (
         <View style={styles.container}>

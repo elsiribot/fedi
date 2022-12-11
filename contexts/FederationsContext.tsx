@@ -15,6 +15,7 @@ import {
     payAddress as _payAddress,
     payInvoice as _payInvoice,
     generateEcash as _generateEcash,
+    receiveEcash as _receiveEcash,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
@@ -199,6 +200,9 @@ function useBridge() {
         },
         generateEcash: (amount: number) => {
             return _generateEcash(amount, selectedFederation!.name)
+        },
+        receiveEcash: (ecash: string) => {
+            return _receiveEcash(ecash, selectedFederation!.name)
         },
     }
 }

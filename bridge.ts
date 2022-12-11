@@ -197,8 +197,11 @@ export async function generateEcash(
     return handleRpcResponse<string>(response)
 }
 
-export async function receiveOffline(notes: string) {
-    return FedimintFfi.receiveOffline(notes)
+export async function receiveEcash(ecash: string, federationId: string) {
+    console.log('ecash', ecash)
+    let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
+    let response = await FedimintFfi.rpc('receiveOffline', payload)
+    return handleRpcResponse<void>(response)
 }
 
 /*
