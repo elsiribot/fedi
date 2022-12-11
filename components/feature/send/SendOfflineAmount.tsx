@@ -22,8 +22,9 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const onGenerateEcash = async () => {
         try {
             // FIXME: parseInt
-            const ecash = await generateEcash(parseInt(amount))
-            navigation.navigate('SendOfflineQr', { ecash })
+            const amountInt = parseInt(amount)
+            const ecash = await generateEcash(amountInt)
+            navigation.navigate('SendOfflineQr', { ecash, amount: amountInt })
         } catch (error) {
             console.log(error)
         }

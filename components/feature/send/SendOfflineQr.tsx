@@ -1,25 +1,28 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { Dimensions, StyleSheet, View } from 'react-native'
+import { Dimensions, Modal, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 import { dataToFrames } from 'qrloop'
 
 import type { RootStackParamList } from '../../../Router'
 import { Camera } from 'react-native-vision-camera'
+import { useTranslation } from 'react-i18next'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 
 const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
-    const { ecash } = route.params
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { ecash, amount } = route.params
     const qrCodeSize = Dimensions.get('window').width * 0.8
     const [index, setIndex] = useState(0)
     const navigation = useNavigation()
-    const onDone = async () => {
-        navigation.navigate('Home')
-    }
+    const [showModal, setShowModal] = useState(false)
+    const [unit] = useState('sats')
+
     const frames = dataToFrames(ecash)
 
     useEffect(() => {
@@ -45,23 +48,64 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
     }, [index, frames])
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <QRCode
                 value={frames[index]}
                 size={qrCodeSize}
                 logo={Images.FediQrLogo}
             />
-            <Button title={'done'} onPress={onDone} />
+            <Button title={'done'} onPress={() => setShowModal(true)} />
+            <Modal
+                animationType="fade"
+                visible={showModal}
+                onRequestClose={() => {
+                    navigation.navigate('Home')
+                }}>
+                <View style={styles(theme).modalContent}>
+                    <Text style={styles(theme).modalText}>
+                        {t('feature.send.you-sent')}
+                    </Text>
+                    <Text style={styles(theme).modalText}>
+                        {`${amount} ${unit}`}
+                    </Text>
+                    <View style={styles(theme).buttonContainer}>
+                        <Button
+                            title={t('words.done')}
+                            onPress={() => {
+                                navigation.navigate('Home')
+                            }}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </View>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        modalContent: {
+            backgroundColor: theme.colors.secondary,
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        modalText: {
+            color: theme.colors.primary,
+            fontSize: 30,
+            margin: 10,
+        },
+        buttonContainer: {
+            width: '90%',
+            flexDirection: 'row',
+            justifyContent: 'space-evenly',
+            margin: 10,
+        },
+    })
 
 export default SendOfflineQr
