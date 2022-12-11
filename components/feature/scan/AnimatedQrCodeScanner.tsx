@@ -35,6 +35,8 @@ const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
                 setFrames(updatedFrames)
                 if (areFramesComplete(updatedFrames)) {
                     onQrCodeDetected(framesToData(updatedFrames).toString())
+                    // reset frames once we've found a hit ...
+                    setFrames(null)
                 } else {
                     console.log('Progress:', progressOfFrames(updatedFrames))
                 }

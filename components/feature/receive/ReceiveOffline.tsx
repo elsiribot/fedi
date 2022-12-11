@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../Router'
@@ -15,6 +15,7 @@ const ReceiveOffline: React.FC<Props> = () => {
     const { validateEcash } = useBridge()
     const navigation = useNavigation()
     const [validating, setValidating] = useState(false)
+    const [showingError, setShowingError] = useState(false)
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -48,17 +49,38 @@ const ReceiveOffline: React.FC<Props> = () => {
     }
 
     const onResult = async (ecash: string) => {
-        // Don't call multiple times
-        if (!validating) {
+        // `!validating` so we don't call multiple times
+        // `!showingError` so we don't stack error alerts
+        console.log('onResult', ecash)
+        if (!validating && !showingError) {
             setValidating(true)
-            const { valid, amount } = await validateEcash(ecash)
-            if (valid) {
-                navigation.navigate('ConfirmReceiveOffline', {
-                    amount,
-                    ecash,
-                })
+            try {
+                const { valid, amount } = await validateEcash(ecash)
+                if (valid) {
+                    navigation.navigate('ConfirmReceiveOffline', {
+                        amount,
+                        ecash,
+                    })
+                } else {
+                    // TODO: translate
+                    Alert.alert('Error', 'Invalid ecash tokens', [
+                        {
+                            text: 'OK',
+                            onPress: () => setShowingError(false),
+                        },
+                    ])
+                }
+            } catch (e) {
+                setShowingError(true)
+                // this happens when the QR code doesn't contain valid tokens
+                // TODO: translate
+                Alert.alert('Error', e, [
+                    {
+                        text: 'OK',
+                        onPress: () => setShowingError(false),
+                    },
+                ])
             }
-            // TODO: display errors
             setValidating(false)
         }
     }
