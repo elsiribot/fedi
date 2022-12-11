@@ -10,10 +10,10 @@ import type { HomeTabsParamList } from './Home'
 import { BalanceEvent, TFedimintEventEmitter } from '../bridge'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
-export type Props = BottomTabScreenProps<
-    HomeTabsParamList & RootStackParamList,
-    'Wallet'
->
+export type Props =
+    | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {
+          offline: boolean
+      }
 
 type BalanceProps = {
     value: string
@@ -34,7 +34,7 @@ const Balance = ({ value }: BalanceProps) => {
     }
 }
 
-const Wallet: React.FC<Props> = ({ navigation }: Props) => {
+const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
@@ -90,7 +90,11 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                 <View style={styles(theme).buttonsGroupContainer}>
                     <Button
                         title={t('words.receive')}
-                        onPress={() => navigation.navigate('Receive')}
+                        onPress={() =>
+                            navigation.navigate(
+                                offline ? 'ReceiveOffline' : 'Receive',
+                            )
+                        }
                         size="lg"
                         containerStyle={styles(theme).buttonContainer}
                         titleStyle={styles(theme).buttonTitle}
@@ -98,7 +102,13 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                     />
                     <Button
                         title={t('words.send')}
-                        onPress={() => navigation.navigate('SendOfflineAmount')}
+                        onPress={() =>
+                            navigation.navigate(
+                                offline
+                                    ? 'SendOfflineAmount'
+                                    : 'SendOfflineAmount',
+                            )
+                        }
                         size="lg"
                         containerStyle={styles(theme).buttonContainer}
                         titleStyle={styles(theme).buttonTitle}

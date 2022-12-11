@@ -40,6 +40,7 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWords from './screens/RecoveryWords'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SendOfflineAmount from './components/feature/send/SendOfflineAmount'
+import ReceiveOffline from './components/feature/receive/ReceiveOffline'
 
 export type RootStackParamList = {
     Backup: undefined
@@ -166,6 +167,13 @@ const MainNavigator = () => {
                                 component={Receive}
                                 options={() => ({
                                     header: () => <ReceiveBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveOffline"
+                                component={ReceiveOffline}
+                                options={() => ({
+                                    // header: () => <ReceiveBitcoinHeader />,
                                 })}
                             />
                             <Stack.Screen

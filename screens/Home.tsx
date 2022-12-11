@@ -1,23 +1,24 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import type { RootStackParamList } from '../Router'
 import Admin from './Admin'
 import Wallet from './Wallet'
 import Header from '../components/ui/Header'
+import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
 export type HomeTabsParamList = {
     Admin: undefined
-    Wallet: undefined
+    Wallet: { offline: boolean }
 }
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>()
@@ -26,6 +27,12 @@ const Home: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
+    const [offline, setOffline] = useState(false)
+
+    const toggleOffline = () => {
+        setOffline(!offline)
+        console.log('offline', offline)
+    }
 
     return (
         <Tab.Navigator
@@ -60,23 +67,36 @@ const Home: React.FC<Props> = () => {
             })}>
             <Tab.Screen
                 name="Wallet"
-                component={Wallet}
+                initialParams={{ offline }}
                 options={({ navigation }) => ({
                     header: () => (
                         <Header
-                            headerLeft={<Text h3>{t('words.wallet')}</Text>}
+                            headerLeft={
+                                <Text onPress={toggleOffline} h3>
+                                    {t('words.wallet')}
+                                </Text>
+                            }
                             headerRight={
-                                <TouchableOpacity
-                                    onPress={() =>
-                                        navigation.navigate('Transactions')
-                                    }>
-                                    <Icon name={'format-list-bulleted'} />
-                                </TouchableOpacity>
+                                <View style={styles(theme, insets).row}>
+                                    {offline && (
+                                        <Image
+                                            source={Images.Offline}
+                                            style={styles(theme, insets).image}
+                                        />
+                                    )}
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            navigation.navigate('Transactions')
+                                        }>
+                                        <Icon name={'format-list-bulleted'} />
+                                    </TouchableOpacity>
+                                </View>
                             }
                         />
                     ),
-                })}
-            />
+                })}>
+                {props => <Wallet {...props} offline={offline} />}
+            </Tab.Screen>
             <Tab.Screen
                 name="Admin"
                 component={Admin}
@@ -94,6 +114,15 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             backgroundColor: theme.colors.secondary,
             paddingBottom: 10 + insets.bottom,
             height: 63 + insets.bottom,
+        },
+        image: {
+            height: 32,
+            width: 120,
+            color: theme.colors.grey,
+            resizeMode: 'contain',
+        },
+        row: {
+            flexDirection: 'row',
         },
     })
 
