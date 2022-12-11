@@ -13,8 +13,6 @@ import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
 import SendOfflineQr from './components/feature/send/SendOfflineQr'
-import LnReceiveSuccess from './screens/LnReceiveSuccess'
-import OnChainReceiveSuccess from './screens/OnChainReceiveSuccess'
 import Receive from './screens/Receive'
 import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
@@ -42,6 +40,9 @@ import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader
 import SendOfflineAmount from './components/feature/send/SendOfflineAmount'
 import ReceiveOffline from './components/feature/receive/ReceiveOffline'
 
+import { TemporaryTransaction } from './bridge'
+import ReceiveSuccess from './screens/ReceiveSuccess'
+
 export type RootStackParamList = {
     Backup: undefined
     ChooseBackupMethod: undefined
@@ -51,8 +52,7 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     Home: undefined
     LnInvoice: { invoice: string }
-    LnReceiveSuccess: { amountReceived: number }
-    OnChainReceiveSuccess: { amountReceived: number }
+    ReceiveSuccess: { tx: TemporaryTransaction }
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
@@ -153,16 +153,6 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="LnReceiveSuccess"
-                                component={LnReceiveSuccess}
-                                options={{ headerShown: false }}
-                            />
-                            <Stack.Screen
-                                name="OnChainReceiveSuccess"
-                                component={OnChainReceiveSuccess}
-                                options={{ headerShown: false }}
-                            />
-                            <Stack.Screen
                                 name="Receive"
                                 component={Receive}
                                 options={() => ({
@@ -175,6 +165,11 @@ const MainNavigator = () => {
                                 options={() => ({
                                     // header: () => <ReceiveBitcoinHeader />,
                                 })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveSuccess"
+                                component={ReceiveSuccess}
+                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="StartPersonalBackup"

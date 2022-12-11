@@ -26,6 +26,15 @@ export type ReceivedBitcoinEvent = {
     address: string
 }
 
+export type ValidateEcashResponse = {
+    amount: string
+    valid: boolean
+}
+
+export type ReceiveEcashResponse = {
+    amount: string
+}
+
 export type Invoice = {
     paymentHash: string
     amount: number
@@ -33,6 +42,12 @@ export type Invoice = {
     invoice: string
     fee: null | number
 }
+
+// Temporary until transactions history bridge code gets merged
+export type TemporaryTransaction =
+    | { type: 'bitcoin'; amount: number }
+    | { type: 'lightning'; amount: number }
+    | { type: 'ecash'; amount: number }
 
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter
@@ -197,11 +212,22 @@ export async function generateEcash(
     return handleRpcResponse<string>(response)
 }
 
-export async function receiveEcash(ecash: string, federationId: string) {
-    console.log('ecash', ecash)
+export async function receiveEcash(
+    ecash: string,
+    federationId: string,
+): Promise<ReceiveEcashResponse> {
     let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
     let response = await FedimintFfi.rpc('receiveOffline', payload)
-    return handleRpcResponse<void>(response)
+    return handleRpcResponse<ReceiveEcashResponse>(response)
+}
+
+export async function validateEcash(
+    ecash: string,
+    federationId: string,
+): Promise<ValidateEcashResponse> {
+    let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
+    let response = await FedimintFfi.rpc('validateEcash', payload)
+    return handleRpcResponse<ValidateEcashResponse>(response)
 }
 
 /*

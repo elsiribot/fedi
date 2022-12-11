@@ -52,8 +52,10 @@ const ReceiveOffline: React.FC<Props> = () => {
         if (!receiving) {
             setReceiving(true)
             try {
-                await receiveEcash(notes)
-                navigation.navigate('Home')
+                const { amount } = await receiveEcash(notes)
+                navigation.navigate('ReceiveSuccess', {
+                    tx: { type: 'ecash', amount },
+                })
             } catch {
                 console.log('failed to receive ecash')
                 setReceiving(false)

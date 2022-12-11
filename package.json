@@ -4,6 +4,9 @@
     "private": true,
     "scripts": {
         "android": "sh scripts/run-android.sh",
+        "bridge": "sh scripts/bridge.sh",
+        "bridge-ios": "sh scripts/bridge-ios.sh",
+        "bridge-android": "sh scripts/bridge-android.sh",
         "ios": "sh scripts/run-ios.sh",
         "start": "react-native start",
         "test": "jest",
