@@ -186,6 +186,14 @@ export async function init(dataDir: string) {
     return FedimintFfi.init(dataDir)
 }
 
+export async function payOffline(amount: number): Promise<string> {
+    return FedimintFfi.payOffline(amount)
+}
+
+export async function receiveOffline(notes: string) {
+    return FedimintFfi.receiveOffline(notes)
+}
+
 /*
  * Mocked-out seed backup and recovery methods
  */

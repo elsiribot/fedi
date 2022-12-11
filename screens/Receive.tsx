@@ -7,7 +7,7 @@ import { ButtonGroup } from '@rneui/themed'
 import type { RootStackParamList } from '../Router'
 
 import ReceiveLightning from '../components/feature/receive/ReceiveLightning'
-import ReceiveOnchain from '../components/feature/receive/ReceiveOnchain'
+import ReceiveOffline from '../components/feature/receive/ReceiveOffline'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
@@ -19,6 +19,10 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         navigation.navigate('LnInvoice', {
             invoice,
         })
+    }
+
+    const receiveNotes = (notes: string) => {
+        console.log('receiveNotes', notes)
     }
 
     return (
@@ -36,7 +40,8 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
             {walletMode === 'lightning' ? (
                 <ReceiveLightning handleInvoice={showInvoice} />
             ) : (
-                <ReceiveOnchain />
+                // FIXME: hack to test out offline receives
+                <ReceiveOffline handleNotes={receiveNotes} />
             )}
         </View>
     )

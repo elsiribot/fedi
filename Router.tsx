@@ -12,6 +12,7 @@ import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
+import SendOfflineQr from './components/feature/send/SendOfflineQr'
 import LnReceiveSuccess from './screens/LnReceiveSuccess'
 import OnChainReceiveSuccess from './screens/OnChainReceiveSuccess'
 import Receive from './screens/Receive'
@@ -38,6 +39,7 @@ import { useFederationsContext } from './contexts/FederationsContext'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWords from './screens/RecoveryWords'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
+import SendOfflineAmount from './components/feature/send/SendOfflineAmount'
 
 export type RootStackParamList = {
     Backup: undefined
@@ -51,10 +53,13 @@ export type RootStackParamList = {
     LnReceiveSuccess: { amountReceived: number }
     OnChainReceiveSuccess: { amountReceived: number }
     Receive: undefined
+    ReceiveOffline: undefined
     RecoveryWords: undefined
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     Send: undefined
+    SendOfflineAmount: undefined
+    SendOfflineQr: { tokens: string }
     Splash: undefined
     StartPersonalBackup: undefined
     Transactions: undefined
@@ -130,6 +135,20 @@ const MainNavigator = () => {
                                 component={LnInvoice}
                                 options={() => ({
                                     header: () => <LnInvoiceHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SendOfflineAmount"
+                                component={SendOfflineAmount}
+                                options={() => ({
+                                    // header: () => <LnInvoiceHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SendOfflineQr"
+                                component={SendOfflineQr}
+                                options={() => ({
+                                    // header: () => <LnInvoiceHeader />,
                                 })}
                             />
                             <Stack.Screen

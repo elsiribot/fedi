@@ -1,0 +1,70 @@
+import Clipboard from '@react-native-clipboard/clipboard'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import React, { useEffect } from 'react'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { RootStackParamList } from '../../../Router'
+
+export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
+
+const Send: React.FC<Props> = ({ navigation }: Props) => {
+    // first check if user has granted camera permissions
+    useEffect(() => {
+        const checkForPermissions = async () => {
+            const status = await Camera.getCameraPermissionStatus()
+            console.log('checkForPermissions: ', status)
+            if (status === 'denied') {
+                navigation.navigate('RequestCameraAccess', {
+                    nextScreen: 'Send',
+                })
+            }
+        }
+
+        checkForPermissions()
+    }, [navigation])
+
+    function handleUserInput(input: string) {
+        console.log('scanned notes', input)
+    }
+
+    const devices = useCameraDevices()
+    const device = devices.back
+
+    const renderQrCodeScanner = () => {
+        if (device == null) {
+            return <ActivityIndicator />
+        } else {
+            return (
+                <QrCodeScanner
+                    device={device}
+                    onQrCodeDetected={(qrCodeData: string) => {
+                        handleUserInput(qrCodeData)
+                    }}
+                />
+            )
+        }
+    }
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.cameraScannerContainer}>
+                {renderQrCodeScanner()}
+            </View>
+        </View>
+    )
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cameraScannerContainer: {
+        height: '80%',
+        width: '100%',
+        margin: 16,
+    },
+})
+
+export default Send

@@ -98,7 +98,7 @@ const Wallet: React.FC<Props> = ({ navigation }: Props) => {
                     />
                     <Button
                         title={t('words.send')}
-                        onPress={() => navigation.navigate('Send')}
+                        onPress={() => navigation.navigate('SendOfflineAmount')}
                         size="lg"
                         containerStyle={styles(theme).buttonContainer}
                         titleStyle={styles(theme).buttonTitle}
