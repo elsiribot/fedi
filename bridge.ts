@@ -186,8 +186,15 @@ export async function init(dataDir: string) {
     return FedimintFfi.init(dataDir)
 }
 
-export async function payOffline(amount: number): Promise<string> {
-    return FedimintFfi.payOffline(amount)
+export async function generateEcash(
+    amount: number,
+    federationId: string,
+): Promise<string> {
+    // TODO: helper to convert sats to msats
+    let amountMsats = amount * 1000
+    let payload = JSON.stringify({ federationId, amount: amountMsats })
+    let response = await FedimintFfi.rpc('payOffline', payload)
+    return handleRpcResponse<string>(response)
 }
 
 export async function receiveOffline(notes: string) {

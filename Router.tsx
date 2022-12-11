@@ -59,7 +59,7 @@ export type RootStackParamList = {
     ScanFederationCode: undefined
     Send: undefined
     SendOfflineAmount: undefined
-    SendOfflineQr: { tokens: string }
+    SendOfflineQr: { ecash: string }
     Splash: undefined
     StartPersonalBackup: undefined
     Transactions: undefined
