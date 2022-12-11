@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { useBridge } from '../../../contexts/FederationsContext'
@@ -14,6 +14,8 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 const ReceiveOffline: React.FC<Props> = () => {
     const { receiveEcash } = useBridge()
     const navigation = useNavigation()
+    const [receiving, setReceiving] = useState(false)
+
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
@@ -46,8 +48,17 @@ const ReceiveOffline: React.FC<Props> = () => {
     }
 
     const onResult = async (notes: string) => {
-        await receiveEcash(notes)
-        navigation.navigate('Home')
+        // Don't call multiple times
+        if (!receiving) {
+            setReceiving(true)
+            try {
+                await receiveEcash(notes)
+                navigation.navigate('Home')
+            } catch {
+                console.log('failed to receive ecash')
+                setReceiving(false)
+            }
+        }
     }
 
     return (
