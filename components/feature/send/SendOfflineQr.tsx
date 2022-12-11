@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
+import { dataToFrames } from 'qrloop'
 
 import type { RootStackParamList } from '../../../Router'
 
@@ -18,20 +19,20 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
     const onDone = async () => {
         navigation.navigate('Home')
     }
+    const frames = dataToFrames(ecash)
 
     // show new qr every second
     useEffect(() => {
         const interval = setInterval(() => {
-            console.log('setting index')
-            setIndex((index + 1) % ecash.length)
+            setIndex((index + 1) % frames.length)
         }, 100)
         return () => clearInterval(interval)
-    }, [index, ecash])
+    }, [index, frames])
 
     return (
         <View style={styles.container}>
             <QRCode
-                value={ecash[index]}
+                value={frames[index]}
                 size={qrCodeSize}
                 logo={Images.FediQrLogo}
             />
