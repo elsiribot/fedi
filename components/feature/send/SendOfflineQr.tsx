@@ -1,20 +1,19 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { Dimensions, Modal, StyleSheet, View } from 'react-native'
+import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 import { dataToFrames } from 'qrloop'
 
 import type { RootStackParamList } from '../../../Router'
 import { Camera } from 'react-native-vision-camera'
-import { useTranslation } from 'react-i18next'
+import SendConfirmationModal from './SendConfirmationModal'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 
 const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const { ecash, amount } = route.params
     const qrCodeSize = Dimensions.get('window').width * 0.8
@@ -55,29 +54,11 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
                 logo={Images.FediQrLogo}
             />
             <Button title={'done'} onPress={() => setShowModal(true)} />
-            <Modal
-                animationType="fade"
+            <SendConfirmationModal
                 visible={showModal}
-                onRequestClose={() => {
-                    navigation.navigate('Home')
-                }}>
-                <View style={styles(theme).modalContent}>
-                    <Text style={styles(theme).modalText}>
-                        {t('feature.send.you-sent')}
-                    </Text>
-                    <Text style={styles(theme).modalText}>
-                        {`${amount} ${unit}`}
-                    </Text>
-                    <View style={styles(theme).buttonContainer}>
-                        <Button
-                            title={t('words.done')}
-                            onPress={() => {
-                                navigation.navigate('Home')
-                            }}
-                        />
-                    </View>
-                </View>
-            </Modal>
+                amount={amount}
+                unit={unit}
+            />
         </View>
     )
 }

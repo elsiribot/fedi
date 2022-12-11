@@ -3,6 +3,7 @@ import { Button, Text } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TextInput, View } from 'react-native'
+import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
@@ -12,18 +13,20 @@ export type Props = NativeStackScreenProps<
     'ConfirmSendOnChain'
 >
 
-const ConfirmSendOnChain: React.FC<Props> = ({ navigation, route }: Props) => {
+const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { payAddress } = useBridge()
     const { address } = route.params
-    const [amount, setAmount] = useState<string>('')
+    const [amount, setAmount] = useState('')
+    const [showModal, setShowModal] = useState(false)
+    const [unit] = useState('sats')
 
     const onSendBtc = async () => {
         try {
             console.log('paying address', address, amount)
             await payAddress(address, amount)
             console.log('paid')
-            navigation.navigate('Home')
+            setShowModal(true)
         } catch (error) {
             console.error(error)
         }
@@ -47,6 +50,12 @@ const ConfirmSendOnChain: React.FC<Props> = ({ navigation, route }: Props) => {
                 <View style={styles.buttonContainer}>
                     <Button title={t('words.send')} onPress={onSendBtc} />
                 </View>
+                <SendConfirmationModal
+                    visible={showModal}
+                    // FIXME: parseInt
+                    amount={parseInt(amount)}
+                    unit={unit}
+                />
             </View>
         </View>
     )

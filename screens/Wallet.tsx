@@ -104,9 +104,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                         title={t('words.send')}
                         onPress={() =>
                             navigation.navigate(
-                                offline
-                                    ? 'SendOfflineAmount'
-                                    : 'SendOfflineAmount',
+                                offline ? 'SendOfflineAmount' : 'Send',
                             )
                         }
                         size="lg"
