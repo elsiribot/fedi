@@ -42,12 +42,14 @@ import ReceiveOffline from './components/feature/receive/ReceiveOffline'
 
 import { TemporaryTransaction } from './bridge'
 import ReceiveSuccess from './screens/ReceiveSuccess'
+import ConfirmReceiveOffline from './components/feature/receive/ConfirmReceiveOffline'
 
 export type RootStackParamList = {
     Backup: undefined
     ChooseBackupMethod: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
+    ConfirmReceiveOffline: { ecash: string; amount: number }
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
@@ -129,6 +131,13 @@ const MainNavigator = () => {
                                 component={ConfirmSendOnChain}
                                 options={() => ({
                                     header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmReceiveOffline"
+                                component={ConfirmReceiveOffline}
+                                options={() => ({
+                                    // header: () => <SendBitcoinHeader />,
                                 })}
                             />
                             <Stack.Screen

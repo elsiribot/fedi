@@ -27,12 +27,12 @@ export type ReceivedBitcoinEvent = {
 }
 
 export type ValidateEcashResponse = {
-    amount: string
+    amount: number
     valid: boolean
 }
 
 export type ReceiveEcashResponse = {
-    amount: string
+    amount: number
 }
 
 export type Invoice = {

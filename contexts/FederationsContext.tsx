@@ -16,6 +16,7 @@ import {
     payInvoice as _payInvoice,
     generateEcash as _generateEcash,
     receiveEcash as _receiveEcash,
+    validateEcash as _validateEcash,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
@@ -203,6 +204,9 @@ function useBridge() {
         },
         receiveEcash: (ecash: string) => {
             return _receiveEcash(ecash, selectedFederation!.name)
+        },
+        validateEcash: (ecash: string) => {
+            return _validateEcash(ecash, selectedFederation!.name)
         },
     }
 }

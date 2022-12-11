@@ -12,9 +12,9 @@ import AnimatedQrCodeScanner from '../scan/AnimatedQrCodeScanner'
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 
 const ReceiveOffline: React.FC<Props> = () => {
-    const { receiveEcash } = useBridge()
+    const { validateEcash } = useBridge()
     const navigation = useNavigation()
-    const [receiving, setReceiving] = useState(false)
+    const [validating, setValidating] = useState(false)
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -47,19 +47,19 @@ const ReceiveOffline: React.FC<Props> = () => {
         }
     }
 
-    const onResult = async (notes: string) => {
+    const onResult = async (ecash: string) => {
         // Don't call multiple times
-        if (!receiving) {
-            setReceiving(true)
-            try {
-                const { amount } = await receiveEcash(notes)
-                navigation.navigate('ReceiveSuccess', {
-                    tx: { type: 'ecash', amount },
+        if (!validating) {
+            setValidating(true)
+            const { valid, amount } = await validateEcash(ecash)
+            if (valid) {
+                navigation.navigate('ConfirmReceiveOffline', {
+                    amount,
+                    ecash,
                 })
-            } catch {
-                console.log('failed to receive ecash')
-                setReceiving(false)
             }
+            // TODO: display errors
+            setValidating(false)
         }
     }
 
