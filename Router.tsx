@@ -5,7 +5,6 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import Backup from './screens/Backup'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
@@ -16,6 +15,7 @@ import LnInvoice from './screens/LnInvoice'
 import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
+import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryWords from './screens/RecoveryWords'
 import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
@@ -42,11 +42,12 @@ import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
+import SocialBackupProcessing from './screens/SocialBackupProcessing'
+import SocialBackupProcessingHeader from './components/feature/backup/SocialBackupProcessingHeader'
 
 import { TemporaryTransaction } from './bridge'
 
 export type RootStackParamList = {
-    Backup: undefined
     ChooseBackupMethod: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
@@ -59,6 +60,7 @@ export type RootStackParamList = {
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
+    RecordBackupVideo: undefined
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     Send: undefined
@@ -67,6 +69,7 @@ export type RootStackParamList = {
     Splash: undefined
     StartPersonalBackup: undefined
     StartSocialBackup: undefined
+    SocialBackupProcessing: undefined
     Transactions: undefined
 }
 
@@ -99,13 +102,6 @@ const MainNavigator = () => {
                                         />
                                     ),
                                 })}
-                            />
-                            <Stack.Screen
-                                name="Backup"
-                                component={Backup}
-                                options={{
-                                    title: `${t('words.backup')}`,
-                                }}
                             />
                             <Stack.Screen
                                 name="ChooseBackupMethod"
@@ -183,10 +179,26 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
+                                name="RecordBackupVideo"
+                                component={RecordBackupVideo}
+                                options={() => ({
+                                    header: () => <SocialBackupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="StartSocialBackup"
                                 component={StartSocialBackup}
                                 options={() => ({
                                     header: () => <SocialBackupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupProcessing"
+                                component={SocialBackupProcessing}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupProcessingHeader />
+                                    ),
                                 })}
                             />
                             <Stack.Screen

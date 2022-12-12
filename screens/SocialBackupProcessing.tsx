@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Card, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
@@ -9,10 +9,10 @@ import type { RootStackParamList } from '../Router'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'StartSocialBackup'
+    'SocialBackupProcessing'
 >
 
-const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
+const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
@@ -23,25 +23,33 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                     source={Images.HoloBackground}
                     style={styles(theme).holoCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <Image
-                        source={Images.WordList}
-                        style={styles(theme).holoIconImage}
-                    />
+                    <Text h4 h4Style={styles(theme).instructionsText}>
+                        {'75%'}
+                    </Text>
                 </ImageBackground>
                 <Text h3 h3Style={styles(theme).label}>
-                    {t('feature.backup.social-backup')}
+                    {t('feature.backup.creating-recovery-file')}
                 </Text>
-                <Text h4 h4Style={styles(theme).instructionsText}>
-                    {t('feature.backup.start-social-backup-instructions')}
-                </Text>
+
+                <Card containerStyle={styles(theme).roundedCardContainer}>
+                    <ImageBackground
+                        style={styles(theme).imageBackground}
+                        source={Images.HoloBackground}>
+                        <Text>
+                            {t(
+                                'feature.backup.social-backup-processing-info-1',
+                            )}
+                        </Text>
+                        {/* Linebreak */}
+                        <Text />
+                        <Text>
+                            {t(
+                                'feature.backup.social-backup-processing-info-2',
+                            )}
+                        </Text>
+                    </ImageBackground>
+                </Card>
             </View>
-            <Button
-                title={t('words.continue')}
-                containerStyle={styles(theme).continueButton}
-                onPress={() => {
-                    navigation.navigate('RecordBackupVideo')
-                }}
-            />
         </View>
     )
 }
@@ -55,11 +63,12 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 24,
+            padding: 12,
         },
         label: {
             textAlign: 'center',
             marginVertical: 16,
+            paddingHorizontal: 24,
         },
         instructionsText: {
             textAlign: 'center',
@@ -79,10 +88,15 @@ const styles = (theme: Theme) =>
             height: theme.sizes.lg,
             width: theme.sizes.lg,
         },
-        continueButton: {
+        roundedCardContainer: {
+            borderRadius: 16,
             width: '100%',
-            marginVertical: 16,
+            marginHorizontal: 0,
+            padding: 0,
+        },
+        imageBackground: {
+            padding: 16,
         },
     })
 
-export default StartSocialBackup
+export default SocialBackupProcessing
