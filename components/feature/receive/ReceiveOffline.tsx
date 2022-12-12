@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button } from '@rneui/themed'
+import { Button, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
@@ -16,6 +16,7 @@ const ReceiveOffline: React.FC<Props> = () => {
     const navigation = useNavigation()
     const [validating, setValidating] = useState(false)
     const [showingError, setShowingError] = useState(false)
+    const [percent, setPercent] = useState(0)
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -42,6 +43,7 @@ const ReceiveOffline: React.FC<Props> = () => {
             return (
                 <AnimatedQrCodeScanner
                     device={device}
+                    onProgress={percent => setPercent(percent)}
                     onQrCodeDetected={onResult}
                 />
             )
@@ -90,6 +92,7 @@ const ReceiveOffline: React.FC<Props> = () => {
             <View style={styles.cameraScannerContainer}>
                 {renderQrCodeScanner()}
             </View>
+            <Text>{percent}</Text>
             <Button title={'foobar'} onPress={() => {}} />
         </View>
     )

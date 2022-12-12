@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text } from '@rneui/themed'
+import { Button, Input } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
@@ -43,13 +43,10 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.instructions}>
-                {t('feature.receive.instructions')}
-            </Text>
             <Input
                 onChangeText={e => setNote(e)}
                 value={note}
-                // placeholder={``}
+                placeholder={t('phrases.add-note')}
                 returnKeyType="done"
                 containerStyle={styles.textInput}
             />

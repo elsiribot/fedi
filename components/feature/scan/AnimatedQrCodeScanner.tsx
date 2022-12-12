@@ -13,9 +13,14 @@ import {
 type QrCodeScanner = {
     device: CameraDevice
     onQrCodeDetected: Function
+    onProgress: Function
 }
 
-const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
+const QrCodeScanner = ({
+    device,
+    onQrCodeDetected,
+    onProgress,
+}: QrCodeScanner) => {
     const [frameProcessor, barcodes] = useScanBarcodes(
         [BarcodeFormat.QR_CODE],
         {
@@ -30,8 +35,13 @@ const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
                 frames,
                 b.content?.data as string,
             )
+
+            // Report progress
+            const updatedProgress = progressOfFrames(updatedFrames)
+            onProgress(updatedProgress)
+
             // To prevent infinite loops ...
-            if (progressOfFrames(frames) !== progressOfFrames(updatedFrames)) {
+            if (progressOfFrames(frames) !== updatedProgress) {
                 setFrames(updatedFrames)
                 if (areFramesComplete(updatedFrames)) {
                     onQrCodeDetected(framesToData(updatedFrames).toString())
