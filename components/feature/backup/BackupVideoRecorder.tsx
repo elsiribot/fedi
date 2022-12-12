@@ -191,19 +191,6 @@ const BackupVideoRecorder = () => {
         setVideoFile(video)
     }
 
-    const shareVideo = async () => {
-        if (!videoFile?.path) return
-
-        try {
-            const result = await Share.open({
-                url: videoFile.path,
-            })
-            console.log(result)
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
     return (
         <View style={styles(theme).container}>
             {videoFile ? (

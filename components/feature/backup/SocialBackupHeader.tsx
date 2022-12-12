@@ -6,19 +6,41 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const SocialBackupHeader: React.FC<{}> = () => {
+type SocialBackupHeaderProps = {
+    backButton?: boolean
+    closeButton?: boolean
+}
+
+const SocialBackupHeader: React.FC<SocialBackupHeaderProps> = ({
+    backButton,
+    closeButton,
+}: SocialBackupHeaderProps) => {
     const { t } = useTranslation()
     const navigation = useNavigation()
 
     return (
         <Header
-            headerLeft={
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name={'angle-left'} type="font-awesome" />
-                </TouchableOpacity>
-            }
             headerCenter={<Text h4>{t('feature.backup.social-backup')}</Text>}
             centerContainerStyle={{ flex: 3 }}
+            {...(backButton
+                ? {
+                      headerLeft: (
+                          <TouchableOpacity onPress={() => navigation.goBack()}>
+                              <Icon name={'angle-left'} type="font-awesome" />
+                          </TouchableOpacity>
+                      ),
+                  }
+                : {})}
+            {...(closeButton
+                ? {
+                      headerRight: (
+                          <TouchableOpacity
+                              onPress={() => navigation.navigate('Home')}>
+                              <Icon name={'close'} />
+                          </TouchableOpacity>
+                      ),
+                  }
+                : {})}
         />
     )
 }

@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Card, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
 import { Images } from '../assets/images'
@@ -15,6 +15,16 @@ export type Props = NativeStackScreenProps<
 const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+
+    useEffect(() => {
+        const simulateRecoveryFileCreation = () => {
+            setTimeout(() => {
+                navigation.navigate('SocialBackupCloudUpload')
+            }, 2000)
+        }
+
+        simulateRecoveryFileCreation()
+    }, [navigation])
 
     return (
         <View style={styles(theme).container}>

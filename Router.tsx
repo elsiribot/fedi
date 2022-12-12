@@ -43,7 +43,7 @@ import TransactionsHeader from './components/feature/transaction-history/Transac
 
 import { useFederationsContext } from './contexts/FederationsContext'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
-import SocialBackupProcessingHeader from './components/feature/backup/SocialBackupProcessingHeader'
+import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 
 import { TemporaryTransaction } from './bridge'
 
@@ -70,6 +70,7 @@ export type RootStackParamList = {
     StartPersonalBackup: undefined
     StartSocialBackup: undefined
     SocialBackupProcessing: undefined
+    SocialBackupCloudUpload: undefined
     Transactions: undefined
 }
 
@@ -182,14 +183,18 @@ const MainNavigator = () => {
                                 name="RecordBackupVideo"
                                 component={RecordBackupVideo}
                                 options={() => ({
-                                    header: () => <SocialBackupHeader />,
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
                                 })}
                             />
                             <Stack.Screen
                                 name="StartSocialBackup"
                                 component={StartSocialBackup}
                                 options={() => ({
-                                    header: () => <SocialBackupHeader />,
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
                                 })}
                             />
                             <Stack.Screen
@@ -197,7 +202,16 @@ const MainNavigator = () => {
                                 component={SocialBackupProcessing}
                                 options={() => ({
                                     header: () => (
-                                        <SocialBackupProcessingHeader />
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupCloudUpload"
+                                component={SocialBackupCloudUpload}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
                                     ),
                                 })}
                             />

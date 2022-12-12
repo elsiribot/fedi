@@ -24,6 +24,7 @@
         "send": "Send",
         "sent": "Sent",
         "share": "Share",
+        "skip": "Skip",
         "time": "Time",
         "transactions": "Transactions",
         "wallet": "Wallet"
@@ -45,6 +46,9 @@
     "feature": {
         "backup": {
             "backup-wallet": "Backup your wallet",
+            "backup-to-google-drive": "Backup to Google Drive",
+            "cloud-backup": "Cloud Backup",
+            "cloud-backup-instructions": "Create a backup of your recovery file in your cloud storage. You will also be required to backup this file with two friends or family.",
             "choose-method": "Choose a backup method",
             "choose-method-instructions": "Backing up your wallet will help you recover your money if you ever lose access to Fedi",
             "confirm-backup-video": "Confirm backup video",
