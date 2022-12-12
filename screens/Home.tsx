@@ -31,7 +31,6 @@ const Home: React.FC<Props> = () => {
 
     const toggleOffline = () => {
         setOffline(!offline)
-        console.log('offline', offline)
     }
 
     return (

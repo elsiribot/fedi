@@ -53,7 +53,6 @@ const ReceiveOffline: React.FC<Props> = () => {
     const onResult = async (ecash: string) => {
         // `!validating` so we don't call multiple times
         // `!showingError` so we don't stack error alerts
-        console.log('onResult', ecash)
         if (!validating && !showingError) {
             setValidating(true)
             try {
