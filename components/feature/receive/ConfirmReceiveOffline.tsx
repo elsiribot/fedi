@@ -31,10 +31,9 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
                 })
             } catch (e: any) {
                 // FIXME: how can we type our error messages better?
-                // TODO: translate
-                Alert.alert('Error', e.message, [
+                Alert.alert(t('words.error'), e.message, [
                     {
-                        text: 'OK',
+                        text: t('words.done'),
                     },
                 ])
                 setReceiving(false)

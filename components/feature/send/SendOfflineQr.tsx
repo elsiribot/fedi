@@ -38,7 +38,7 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
         checkForPermissions()
     }, [navigation])
 
-    // show new qr every second
+    // show new qr every 100ms
     useEffect(() => {
         const interval = setInterval(() => {
             setIndex((index + 1) % frames.length)

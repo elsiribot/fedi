@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text } from '@rneui/themed'
+import { Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { useBridge } from '../../../contexts/FederationsContext'
@@ -12,6 +13,7 @@ import AnimatedQrCodeScanner from '../scan/AnimatedQrCodeScanner'
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 
 const ReceiveOffline: React.FC<Props> = () => {
+    const { t } = useTranslation()
     const { validateEcash } = useBridge()
     const navigation = useNavigation()
     const [validating, setValidating] = useState(false)
@@ -63,10 +65,9 @@ const ReceiveOffline: React.FC<Props> = () => {
                         ecash,
                     })
                 } else {
-                    // TODO: translate
-                    Alert.alert('Error', 'Invalid ecash tokens', [
+                    Alert.alert(t('words.error'), 'Invalid ecash tokens', [
                         {
-                            text: 'OK',
+                            text: t('words.done'),
                             onPress: () => setShowingError(false),
                         },
                     ])
@@ -74,10 +75,9 @@ const ReceiveOffline: React.FC<Props> = () => {
             } catch (e: any) {
                 setShowingError(true)
                 // this happens when the QR code doesn't contain valid tokens
-                // TODO: translate
-                Alert.alert('Error', e.message, [
+                Alert.alert(t('words.error'), e.message, [
                     {
-                        text: 'OK',
+                        text: t('words.done'),
                         onPress: () => setShowingError(false),
                     },
                 ])
@@ -92,7 +92,6 @@ const ReceiveOffline: React.FC<Props> = () => {
                 {renderQrCodeScanner()}
             </View>
             <Text>{percent}</Text>
-            <Button title={'foobar'} onPress={() => {}} />
         </View>
     )
 }

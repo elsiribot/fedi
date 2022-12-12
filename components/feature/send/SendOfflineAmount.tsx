@@ -31,7 +31,6 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     const onChangeText = (updatedValue: string) => {
-        console.log('text changed', typeof updatedValue)
         setAmount(updatedValue)
     }
 
