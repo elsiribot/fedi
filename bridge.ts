@@ -206,7 +206,7 @@ export async function generateEcash(
     federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({ federationId, amount })
-    let response = await FedimintFfi.rpc('payOffline', payload)
+    let response = await FedimintFfi.rpc('generateEcash', payload)
     return handleRpcResponse<string>(response)
 }
 
@@ -215,7 +215,7 @@ export async function receiveEcash(
     federationId: string,
 ): Promise<ReceiveEcashResponse> {
     let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
-    let response = await FedimintFfi.rpc('receiveOffline', payload)
+    let response = await FedimintFfi.rpc('receiveEcash', payload)
     return handleRpcResponse<ReceiveEcashResponse>(response)
 }
 
