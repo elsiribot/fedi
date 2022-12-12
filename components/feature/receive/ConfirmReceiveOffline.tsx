@@ -29,9 +29,10 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
                 navigation.navigate('ReceiveSuccess', {
                     tx: { type: 'ecash', amount },
                 })
-            } catch (e) {
+            } catch (e: any) {
+                // FIXME: how can we type our error messages better?
                 // TODO: translate
-                Alert.alert('Error', e, [
+                Alert.alert('Error', e.message, [
                     {
                         text: 'OK',
                     },

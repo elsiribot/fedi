@@ -72,11 +72,11 @@ const ReceiveOffline: React.FC<Props> = () => {
                         },
                     ])
                 }
-            } catch (e) {
+            } catch (e: any) {
                 setShowingError(true)
                 // this happens when the QR code doesn't contain valid tokens
                 // TODO: translate
-                Alert.alert('Error', e, [
+                Alert.alert('Error', e.message, [
                     {
                         text: 'OK',
                         onPress: () => setShowingError(false),
