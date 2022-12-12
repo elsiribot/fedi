@@ -11,7 +11,7 @@ class DateUtils {
         // it is safe to use 13+ characters to detect milliseconds
         // because timestamps should never be older than 2001
         // https://stackoverflow.com/questions/23929145/how-to-test-if-a-given-time-stamp-is-in-seconds-or-milliseconds
-        if (unixSeconds.toString().length >= 13) {
+        if (unixSeconds.toFixed(0).length >= 13) {
             throw new Error('unixSeconds must be in seconds not ms')
         }
         const timestamp = fromUnixTime(unixSeconds)
