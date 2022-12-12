@@ -9,6 +9,8 @@ const colors = {
     secondary: '#FFFFFF',
     orange: '#DF7B00',
     grey: '#D9D9D9',
+    red: '#E00A00',
+    white: '#FFFFFF',
 }
 
 const theme = createTheme({
