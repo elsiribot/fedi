@@ -86,6 +86,10 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 {renderQrCodeScanner()}
             </View>
             <Button
+                title={t('feature.send.send-to-offline-user')}
+                onPress={() => navigation.navigate('SendOfflineAmount')}
+            />
+            <Button
                 title={t('feature.send.paste-payment-request')}
                 onPress={checkClipboard}
             />
