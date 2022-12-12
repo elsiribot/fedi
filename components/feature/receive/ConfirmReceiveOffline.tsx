@@ -2,7 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View } from 'react-native'
 
 import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../Router'
@@ -30,7 +30,12 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
                     tx: { type: 'ecash', amount },
                 })
             } catch (e) {
-                console.log('failed to receive ecash', e)
+                // TODO: translate
+                Alert.alert('Error', e, [
+                    {
+                        text: 'OK',
+                    },
+                ])
                 setReceiving(false)
             }
         }
