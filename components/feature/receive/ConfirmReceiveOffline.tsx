@@ -52,7 +52,9 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
                 containerStyle={styles.textInput}
             />
             <Button
-                title={`${t('words.receive')} ${amountUtils.toSats(amount)}`}
+                title={`${t('words.receive')} ${amountUtils.millisToSats(
+                    amount,
+                )}`}
                 onPress={onReceive}
             />
         </View>

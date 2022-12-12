@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native'
 import { useBridge } from '../../../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../../../Router'
+import amountUtils from '../../../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -21,16 +22,16 @@ const SendOfflineAmount: React.FC<Props> = () => {
 
     const onGenerateEcash = async () => {
         try {
-            // FIXME: parseInt
-            const amountInt = parseInt(amount)
-            const ecash = await generateEcash(amountInt)
-            navigation.navigate('SendOfflineQr', { ecash, amount: amountInt })
+            const millis = amountUtils.stringToMillis(amount)
+            const ecash = await generateEcash(millis)
+            navigation.navigate('SendOfflineQr', { ecash, amount: millis })
         } catch (error) {
             console.log(error)
         }
     }
 
     const onChangeText = (updatedValue: string) => {
+        console.log('text changed', typeof updatedValue)
         setAmount(updatedValue)
     }
 

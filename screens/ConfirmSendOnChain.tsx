@@ -7,6 +7,7 @@ import SendConfirmationModal from '../components/feature/send/SendConfirmationMo
 import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -24,7 +25,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const onSendBtc = async () => {
         try {
             console.log('paying address', address, amount)
-            await payAddress(address, amount)
+            await payAddress(address, amountUtils.stringToSats(amount))
             console.log('paid')
             setShowModal(true)
         } catch (error) {
@@ -52,8 +53,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 </View>
                 <SendConfirmationModal
                     visible={showModal}
-                    // FIXME: parseInt
-                    amount={parseInt(amount)}
+                    amount={amountUtils.stringToSats(amount)}
                     unit={unit}
                 />
             </View>

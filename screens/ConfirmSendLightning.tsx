@@ -10,6 +10,7 @@ import { useBridge } from '../contexts/FederationsContext'
 import InvoiceUtils from '../utils/InvoiceUtils'
 import StringUtils from '../utils/StringUtils'
 import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -74,8 +75,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             </View>
             <SendConfirmationModal
                 visible={invoicePaid}
-                // FIXME: parseInt
-                amount={parseInt(amount)}
+                amount={amountUtils.stringToSats(amount)}
                 unit={unit}
             />
         </View>

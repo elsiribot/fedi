@@ -28,7 +28,7 @@ const ReceiveSuccess: React.FC<Props> = ({ route, navigation }: Props) => {
                             : 'feature.receive.you-received',
                     )}
                 </Text>
-                <Text h3>{`${amountUtils.toSats(tx.amount)} ${t(
+                <Text h3>{`${amountUtils.millisToSats(tx.amount)} ${t(
                     'words.sats',
                 )}`}</Text>
             </View>

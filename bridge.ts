@@ -152,7 +152,7 @@ export async function listFederations(): Promise<Federation[]> {
 }
 
 export async function generateInvoice(
-    amount: string,
+    amount: number,
     description: string,
     federationId: string,
 ): Promise<string> {
@@ -185,12 +185,12 @@ export async function generateAddress(federationId: string): Promise<string> {
 
 export async function payAddress(
     address: string,
-    amount: string,
+    sats: number,
     federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({
         address,
-        amount,
+        sats,
         federationId,
     })
     let response = await FedimintFfi.rpc('payAddress', payload)
@@ -205,9 +205,7 @@ export async function generateEcash(
     amount: number,
     federationId: string,
 ): Promise<string> {
-    // TODO: helper to convert sats to msats
-    let amountMsats = amount * 1000
-    let payload = JSON.stringify({ federationId, amount: amountMsats })
+    let payload = JSON.stringify({ federationId, amount })
     let response = await FedimintFfi.rpc('payOffline', payload)
     return handleRpcResponse<string>(response)
 }

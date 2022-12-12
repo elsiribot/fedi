@@ -183,7 +183,7 @@ function useBridge() {
         generateAddress: () => {
             return _generateAddress(selectedFederation!.name)
         },
-        generateInvoice: (amount: string, description: string) => {
+        generateInvoice: (amount: number, description: string) => {
             return _generateInvoice(
                 amount,
                 description,
@@ -196,8 +196,8 @@ function useBridge() {
         payInvoice: (invoice: string) => {
             return _payInvoice(invoice, selectedFederation!.name)
         },
-        payAddress: (address: string, amount: string) => {
-            return _payAddress(address, amount, selectedFederation!.name)
+        payAddress: (address: string, sats: number) => {
+            return _payAddress(address, sats, selectedFederation!.name)
         },
         generateEcash: (amount: number) => {
             return _generateEcash(amount, selectedFederation!.name)

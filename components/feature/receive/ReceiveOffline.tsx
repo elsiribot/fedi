@@ -43,7 +43,7 @@ const ReceiveOffline: React.FC<Props> = () => {
             return (
                 <AnimatedQrCodeScanner
                     device={device}
-                    onProgress={percent => setPercent(percent)}
+                    onProgress={(p: number) => setPercent(p)}
                     onQrCodeDetected={onResult}
                 />
             )
