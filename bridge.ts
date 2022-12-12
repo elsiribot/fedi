@@ -279,9 +279,9 @@ export type SeedRecoveryEvent =
 export async function uploadBackupFile(
     _federationId: string,
     _contents: string,
-): Promise<null> {
+): Promise<string> {
     return new Promise(resolve => {
-        resolve(null)
+        resolve('/path/to/backup.fedi')
     })
 }
 
