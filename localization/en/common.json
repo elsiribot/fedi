@@ -59,6 +59,7 @@
             "start-personal-backup-instructions": "Get a pen and paper and write down the recovery words on the next screen.",
             "start-recording": "Start recording",
             "start-social-backup": "Start social backup",
+            "start-social-backup-instructions": "Social backups allow you to safely backup your wallet with friends and family and have Federation guardians assist you recover it if you lose access",
             "stop-recording": "Stop recording"
         },
         "federations": {

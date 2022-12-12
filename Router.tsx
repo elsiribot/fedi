@@ -24,20 +24,22 @@ import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
+import StartSocialBackup from './screens/StartSocialBackup'
 import Transactions from './screens/Transactions'
 
+import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
+import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
+import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
-import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
-import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
-import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
-import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
+import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
 
@@ -64,6 +66,7 @@ export type RootStackParamList = {
     SendOfflineQr: { ecash: string; amount: number }
     Splash: undefined
     StartPersonalBackup: undefined
+    StartSocialBackup: undefined
     Transactions: undefined
 }
 
@@ -178,6 +181,13 @@ const MainNavigator = () => {
                                 name="ReceiveSuccess"
                                 component={ReceiveSuccess}
                                 options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="StartSocialBackup"
+                                component={StartSocialBackup}
+                                options={() => ({
+                                    header: () => <SocialBackupHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="StartPersonalBackup"

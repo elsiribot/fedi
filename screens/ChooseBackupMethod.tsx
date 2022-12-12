@@ -39,9 +39,8 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('feature.backup.start-social-backup')}
                     containerStyle={styles(theme).backupMethodButton}
                     onPress={() => {
-                        // navigation.navigate('SocialBackup')
+                        navigation.navigate('StartSocialBackup')
                     }}
-                    disabled
                 />
             </ImageBackground>
             <ImageBackground
