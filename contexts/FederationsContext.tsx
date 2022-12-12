@@ -72,14 +72,6 @@ export function resetFederationsState(): Action {
     }
 }
 export function updateConnectedFederations(federations: Federation[]): Action {
-    // temp workaround for iOS until #46 is fixed
-    if (federations?.length > 0 && federations[0] === null) {
-        return {
-            type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
-            payload: federations.map((f, i) => ({ name: `fed${i}` })),
-        }
-    }
-
     return {
         type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
         payload: federations,
