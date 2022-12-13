@@ -14,6 +14,8 @@ import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
 import SendOfflineQr from './components/feature/send/SendOfflineQr'
 import Receive from './screens/Receive'
+import ReceiveSuccess from './screens/ReceiveSuccess'
+import RecoveryWords from './screens/RecoveryWords'
 import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
 import Send from './screens/Send'
@@ -28,21 +30,18 @@ import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHea
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
-
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
-
-import { useFederationsContext } from './contexts/FederationsContext'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
-import RecoveryWords from './screens/RecoveryWords'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SendOfflineAmount from './components/feature/send/SendOfflineAmount'
 import ReceiveOffline from './components/feature/receive/ReceiveOffline'
+import ConfirmReceiveOffline from './components/feature/receive/ConfirmReceiveOffline'
+
+import { useFederationsContext } from './contexts/FederationsContext'
 
 import { TemporaryTransaction } from './bridge'
-import ReceiveSuccess from './screens/ReceiveSuccess'
-import ConfirmReceiveOffline from './components/feature/receive/ConfirmReceiveOffline'
 
 export type RootStackParamList = {
     Backup: undefined
