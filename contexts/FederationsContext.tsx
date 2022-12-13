@@ -11,12 +11,14 @@ import React, {
 import {
     Federation,
     generateAddress as _generateAddress,
+    generateEcash as _generateEcash,
     generateInvoice as _generateInvoice,
+    locateRecoveryFile as _locateRecoveryFile,
     listTransactions as _listTransactions,
     payAddress as _payAddress,
     payInvoice as _payInvoice,
-    generateEcash as _generateEcash,
     receiveEcash as _receiveEcash,
+    uploadBackupFile as _uploadBackupFile,
     validateEcash as _validateEcash,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
@@ -195,6 +197,9 @@ function useBridge() {
         listTransactions: useCallback(() => {
             return _listTransactions(selectedFederation!.name)
         }, [selectedFederation]),
+        locateRecoveryFile: useCallback(() => {
+            return _locateRecoveryFile(selectedFederation!.name)
+        }, [selectedFederation]),
         payInvoice: useCallback(
             (invoice: string) => {
                 return _payInvoice(invoice, selectedFederation!.name)
@@ -216,6 +221,15 @@ function useBridge() {
         validateEcash: useCallback(
             (ecash: string) => {
                 return _validateEcash(ecash, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        uploadBackupFile: useCallback(
+            (videoFilePath: string) => {
+                return _uploadBackupFile(
+                    selectedFederation!.name,
+                    videoFilePath,
+                )
             },
             [selectedFederation],
         ),

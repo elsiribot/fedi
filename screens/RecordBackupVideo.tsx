@@ -1,6 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, View, StyleSheet } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 
@@ -13,8 +12,6 @@ export type Props = NativeStackScreenProps<
 >
 
 const RecordBackupVideo: React.FC<Props> = ({ navigation }: Props) => {
-    const { t } = useTranslation()
-
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
@@ -34,15 +31,11 @@ const RecordBackupVideo: React.FC<Props> = ({ navigation }: Props) => {
     const devices = useCameraDevices()
     const device = devices.front
 
-    const renderVideoRecorder = () => {
-        if (device == null) {
-            return <ActivityIndicator />
-        } else {
-            return <BackupVideoRecorder />
-        }
-    }
-
-    return <View style={styles.container}>{renderVideoRecorder()}</View>
+    return (
+        <View style={styles.container}>
+            {device === null ? <ActivityIndicator /> : <BackupVideoRecorder />}
+        </View>
+    )
 }
 
 const styles = StyleSheet.create({

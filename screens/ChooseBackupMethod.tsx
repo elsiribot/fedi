@@ -3,7 +3,9 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+
 import { Images } from '../assets/images'
+// import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
 
@@ -15,6 +17,29 @@ export type Props = NativeStackScreenProps<
 const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    // TODO: Uncomment when bridge function is ready
+    // const { locateRecoveryFile } = useBridge()
+    //
+    // const checkForExistingSocialBackup = async (): Promise<boolean> => {
+    //     try {
+    //         await locateRecoveryFile()
+    //         return true
+    //     } catch (error) {
+    //         return false
+    //     }
+    // }
+
+    const handleStartSocialBackup = async () => {
+        // TODO: Uncomment when bridge function is ready
+        // const backupFound = await checkForExistingSocialBackup()
+        const backupFound = false
+
+        if (backupFound) {
+            navigation.navigate('SocialBackupCloudUpload')
+        } else {
+            navigation.navigate('StartSocialBackup')
+        }
+    }
 
     return (
         <View style={styles(theme).container}>
@@ -38,9 +63,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                 <Button
                     title={t('feature.backup.start-social-backup')}
                     containerStyle={styles(theme).backupMethodButton}
-                    onPress={() => {
-                        navigation.navigate('StartSocialBackup')
-                    }}
+                    onPress={handleStartSocialBackup}
                 />
             </ImageBackground>
             <ImageBackground

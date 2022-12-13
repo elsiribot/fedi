@@ -2,13 +2,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
-import { VideoFile } from 'react-native-vision-camera'
 import Share from 'react-native-share'
+import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
 
 import { Images } from '../assets/images'
 
 import type { RootStackParamList } from '../Router'
+import { useBridge } from '../contexts/FederationsContext'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -18,16 +18,16 @@ export type Props = NativeStackScreenProps<
 const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [videoFile, setVideoFile] = useState<VideoFile | null>(null)
+    const { locateRecoveryFile } = useBridge()
 
     const shareVideo = async () => {
-        if (!videoFile?.path) return
-
         try {
+            const recoveryFilePath = await locateRecoveryFile()
             const result = await Share.open({
-                url: videoFile.path,
+                url: recoveryFilePath,
             })
             console.log(result)
+            navigation.navigate('CompleteSocialBackup')
         } catch (error) {
             console.error(error)
         }
@@ -56,17 +56,16 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
             <View style={styles(theme).buttonsContainer}>
                 <Button
                     title={t('words.skip')}
-                    onPress={() => {
-                        // shareVideo()
-                    }}
                     type="clear"
+                    onPress={() => {
+                        navigation.navigate('CompleteSocialBackup')
+                    }}
                 />
                 <Button
                     title={t('feature.backup.backup-to-google-drive')}
                     containerStyle={styles(theme).continueButton}
                     onPress={() => {
-                        navigation.navigate('RecordBackupVideo')
-                        // navigation.navigate('RecordBackupVideo')
+                        shareVideo()
                     }}
                 />
             </View>

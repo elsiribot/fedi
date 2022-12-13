@@ -43,12 +43,15 @@ import TransactionsHeader from './components/feature/transaction-history/Transac
 
 import { useFederationsContext } from './contexts/FederationsContext'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
+import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
+import SocialBackupSuccess from './screens/SocialBackupSuccess'
 
 import { TemporaryTransaction } from './bridge'
 
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
+    CompleteSocialBackup: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
     ConfirmReceiveOffline: { ecash: string; amount: number }
@@ -71,6 +74,7 @@ export type RootStackParamList = {
     StartSocialBackup: undefined
     SocialBackupProcessing: undefined
     SocialBackupCloudUpload: undefined
+    SocialBackupSuccess: undefined
     Transactions: undefined
 }
 
@@ -214,6 +218,20 @@ const MainNavigator = () => {
                                         <SocialBackupHeader closeButton />
                                     ),
                                 })}
+                            />
+                            <Stack.Screen
+                                name="CompleteSocialBackup"
+                                component={CompleteSocialBackup}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupSuccess"
+                                component={SocialBackupSuccess}
+                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="StartPersonalBackup"

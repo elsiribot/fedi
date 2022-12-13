@@ -16,6 +16,7 @@ const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
+    // TODO: Integrate bridge functions
     useEffect(() => {
         const simulateRecoveryFileCreation = () => {
             setTimeout(() => {
@@ -49,9 +50,8 @@ const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
                             {t(
                                 'feature.backup.social-backup-processing-info-1',
                             )}
+                            {'\n'}
                         </Text>
-                        {/* Linebreak */}
-                        <Text />
                         <Text>
                             {t(
                                 'feature.backup.social-backup-processing-info-2',

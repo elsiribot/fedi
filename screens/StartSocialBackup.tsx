@@ -3,6 +3,7 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+
 import { Images } from '../assets/images'
 
 import type { RootStackParamList } from '../Router'
@@ -36,7 +37,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
             </View>
             <Button
-                title={t('words.continue')}
+                title={t('words.next')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
                     navigation.navigate('RecordBackupVideo')
