@@ -20,6 +20,7 @@
 		14831B7E23D94F7999D23385 /* AlbertSans-ExtraBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CBA5A20FFC084EEFB3339B92 /* AlbertSans-ExtraBoldItalic.ttf */; };
 		51575EDC2946FA8E00720177 /* hermes.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51575EDA2946F9DA00720177 /* hermes.xcframework */; };
 		51575EDD2946FA8E00720177 /* hermes.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 51575EDA2946F9DA00720177 /* hermes.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		51575EE72948CABF00720177 /* Calculator in Frameworks */ = {isa = PBXBuildFile; productRef = 51575EE62948CABF00720177 /* Calculator */; };
 		536F5A47CA464486927E82B1 /* AlbertSans-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 57F5074F39D74067B3835E4C /* AlbertSans-BlackItalic.ttf */; };
 		7699B88040F8A987B510C191 /* libPods-FedimintReactNative-FedimintReactNativeTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-FedimintReactNative-FedimintReactNativeTests.a */; };
 		7AC4173906E545D5AAD23172 /* AlbertSans-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 55AC34EB407849329AE54B10 /* AlbertSans-MediumItalic.ttf */; };
@@ -120,6 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				51575EE72948CABF00720177 /* Calculator in Frameworks */,
 				51575EDC2946FA8E00720177 /* hermes.xcframework in Frameworks */,
 				0C80B921A6F3F58F76C31292 /* libPods-FedimintReactNative.a in Frameworks */,
 			);
@@ -293,6 +295,7 @@
 			);
 			name = FedimintReactNative;
 			packageProductDependencies = (
+				51575EE62948CABF00720177 /* Calculator */,
 			);
 			productName = FedimintReactNative;
 			productReference = 13B07F961A680F5B00A75B9A /* FedimintReactNative.app */;
@@ -853,6 +856,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		51575EE62948CABF00720177 /* Calculator */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Calculator;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }
