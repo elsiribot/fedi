@@ -4,10 +4,10 @@ import { Button, Input } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { useBridge } from '../../../contexts/FederationsContext'
+import { useBridge } from '../contexts/FederationsContext'
 
-import type { RootStackParamList } from '../../../Router'
-import amountUtils from '../../../utils/AmountUtils'
+import type { RootStackParamList } from '../Router'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

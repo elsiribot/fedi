@@ -5,10 +5,10 @@ import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { dataToFrames } from 'qrloop'
 
-import { Images } from '../../../assets/images'
+import { Images } from '../assets/images'
 
-import type { RootStackParamList } from '../../../Router'
-import SendConfirmationModal from './SendConfirmationModal'
+import type { RootStackParamList } from '../Router'
+import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 

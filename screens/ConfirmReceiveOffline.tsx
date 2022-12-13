@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
 
-import { useBridge } from '../../../contexts/FederationsContext'
-import { RootStackParamList } from '../../../Router'
-import amountUtils from '../../../utils/AmountUtils'
+import { useBridge } from '../contexts/FederationsContext'
+import { RootStackParamList } from '../Router'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

@@ -37,3 +37,17 @@ npm run android
 ```
 
 You should see your new app running in the iOS Simulator or Android Studio emulator shortly.
+
+## Directory Structure
+
+-   `/screens`
+    -   contains React components that are directly accessible by the navigator
+    -   need to be properly typed and added to the `Router`
+-   `/components` folder
+    -   contains React components categorized by `/feature`
+    -   consider creating a new folder if building something that does not fall into one of the existing `/feature` categories
+    -   `/components/ui` is for more generalized components expected to be reused in many (3+) different components or screens
+
+## Style Guide
+
+TODO:...
