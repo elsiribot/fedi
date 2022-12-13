@@ -9,6 +9,7 @@ export const Images: ImagesMap = {
     Federation: require('./federation.png'),
     FederationXIconXs: require('./federationx-icon-xs.png'),
     FederationXIconSm: require('./federationx-icon-sm.png'),
+    FediFile: require('./fedi-file.png'),
     FediLogo: require('./fedi-logo.png'),
     FediLogoIcon: require('./fedi-logo-icon.png'),
     FediQrLogo: require('./fedi-qr-logo.png'),

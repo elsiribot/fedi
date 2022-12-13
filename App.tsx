@@ -6,6 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { init, LogEvent, TFedimintEventEmitter } from './bridge'
 
 import { FederationsProvider } from './contexts/FederationsContext'
+import { BackupRecoveryProvider } from './contexts/BackupRecoveryContext'
+import ProviderComposer from './contexts/ProviderComposer'
 
 import Router from './Router'
 
@@ -37,9 +39,10 @@ const App = () => {
     return (
         <SafeAreaProvider>
             <ThemeProvider theme={theme}>
-                <FederationsProvider>
+                <ProviderComposer
+                    providers={[FederationsProvider, BackupRecoveryProvider]}>
                     <Router />
-                </FederationsProvider>
+                </ProviderComposer>
             </ThemeProvider>
         </SafeAreaProvider>
     )

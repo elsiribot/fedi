@@ -279,10 +279,23 @@ export type SeedRecoveryEvent =
 export async function uploadBackupFile(
     _federationId: string,
     _contents: string,
-): Promise<null> {
+): Promise<string> {
     return new Promise(resolve => {
-        resolve(null)
+        resolve('/path/to/backup.fedi')
     })
+}
+
+export async function locateRecoveryFile(
+    _federationId: string,
+): Promise<string> {
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId: _federationId })
+    // let response = await FedimintFfi.rpc('locateRecoveryFile', payload)
+    // return handleRpcResponse<string>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<string>('{"result": "/path/to/backup.fedi"}')
+    // return handleRpcResponse<string>('{"error": "no social backup file found"}')
 }
 
 export async function validateBackupFile(
