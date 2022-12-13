@@ -44,6 +44,7 @@
     },
     "feature": {
         "backup": {
+            "backed-up-recovery-words": "You backed up your wallet with 12 recovery words",
             "backup-wallet": "Backup your wallet",
             "choose-method": "Choose a backup method",
             "choose-method-instructions": "Backing up your wallet will help you recover your money if you ever lose access to Fedi",
