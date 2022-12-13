@@ -12,6 +12,7 @@ import {
     Federation,
     generateAddress as _generateAddress,
     generateInvoice as _generateInvoice,
+    generateMnemonic as _generateMnemonic,
     listTransactions as _listTransactions,
     payAddress as _payAddress,
     payInvoice as _payInvoice,
@@ -192,6 +193,9 @@ function useBridge() {
             },
             [selectedFederation],
         ),
+        generateMnemonic: useCallback(() => {
+            return _generateMnemonic(selectedFederation!.name)
+        }, [selectedFederation]),
         listTransactions: useCallback(() => {
             return _listTransactions(selectedFederation!.name)
         }, [selectedFederation]),
