@@ -5,6 +5,7 @@ import React, {
     useContext,
     useMemo,
     useEffect,
+    useCallback,
 } from 'react'
 
 import {
@@ -75,14 +76,6 @@ export function resetFederationsState(): Action {
     }
 }
 export function updateConnectedFederations(federations: Federation[]): Action {
-    // temp workaround for iOS until #46 is fixed
-    if (federations?.length > 0 && federations[0] === null) {
-        return {
-            type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
-            payload: federations.map((f, i) => ({ name: `fed${i}` })),
-        }
-    }
-
     return {
         type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
         payload: federations,
@@ -180,34 +173,52 @@ function useBridge() {
     const { selectedFederation } = state
 
     return {
-        generateAddress: () => {
+        generateAddress: useCallback(() => {
             return _generateAddress(selectedFederation!.name)
-        },
-        generateInvoice: (amount: number, description: string) => {
-            return _generateInvoice(
-                amount,
-                description,
-                selectedFederation!.name,
-            )
-        },
-        listTransactions: () => {
+        }, [selectedFederation]),
+        generateEcash: useCallback(
+            (amount: number) => {
+                return _generateEcash(amount, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        generateInvoice: useCallback(
+            (amount: number, description: string) => {
+                return _generateInvoice(
+                    amount,
+                    description,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
+        listTransactions: useCallback(() => {
             return _listTransactions(selectedFederation!.name)
-        },
-        payInvoice: (invoice: string) => {
-            return _payInvoice(invoice, selectedFederation!.name)
-        },
-        payAddress: (address: string, sats: number) => {
-            return _payAddress(address, sats, selectedFederation!.name)
-        },
-        generateEcash: (amount: number) => {
-            return _generateEcash(amount, selectedFederation!.name)
-        },
-        receiveEcash: (ecash: string) => {
-            return _receiveEcash(ecash, selectedFederation!.name)
-        },
-        validateEcash: (ecash: string) => {
-            return _validateEcash(ecash, selectedFederation!.name)
-        },
+        }, [selectedFederation]),
+        payInvoice: useCallback(
+            (invoice: string) => {
+                return _payInvoice(invoice, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        payAddress: useCallback(
+            (address: string, sats: number) => {
+                return _payAddress(address, sats, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        receiveEcash: useCallback(
+            (ecash: string) => {
+                return _receiveEcash(ecash, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        validateEcash: useCallback(
+            (ecash: string) => {
+                return _validateEcash(ecash, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
     }
 }
 
