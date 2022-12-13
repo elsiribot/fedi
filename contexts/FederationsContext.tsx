@@ -5,6 +5,7 @@ import React, {
     useContext,
     useMemo,
     useEffect,
+    useCallback,
 } from 'react'
 
 import {
@@ -169,25 +170,34 @@ function useBridge() {
     const { selectedFederation } = state
 
     return {
-        generateAddress: () => {
+        generateAddress: useCallback(() => {
             return _generateAddress(selectedFederation!.name)
-        },
-        generateInvoice: (amount: string, description: string) => {
-            return _generateInvoice(
-                amount,
-                description,
-                selectedFederation!.name,
-            )
-        },
-        listTransactions: () => {
+        }, [selectedFederation]),
+        generateInvoice: useCallback(
+            (amount: string, description: string) => {
+                return _generateInvoice(
+                    amount,
+                    description,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
+        listTransactions: useCallback(() => {
             return _listTransactions(selectedFederation!.name)
-        },
-        payInvoice: (invoice: string) => {
-            return _payInvoice(invoice, selectedFederation!.name)
-        },
-        payAddress: (address: string, amount: string) => {
-            return _payAddress(address, amount, selectedFederation!.name)
-        },
+        }, [selectedFederation]),
+        payInvoice: useCallback(
+            (invoice: string) => {
+                return _payInvoice(invoice, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        payAddress: useCallback(
+            (address: string, amount: string) => {
+                return _payAddress(address, amount, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
     }
 }
 
