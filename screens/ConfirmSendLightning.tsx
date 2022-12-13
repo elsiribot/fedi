@@ -1,28 +1,25 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import type { Theme } from '@rneui/themed'
-import { Button, Text, useTheme } from '@rneui/themed'
+import { Button, Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import type { RootStackParamList } from '../Router'
 import { decodeInvoice } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
 import InvoiceUtils from '../utils/InvoiceUtils'
 import StringUtils from '../utils/StringUtils'
+import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'ConfirmSendLightning'
 >
 
-const ConfirmSendLightning: React.FC<Props> = ({
-    route,
-    navigation,
-}: Props) => {
+const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { payInvoice } = useBridge()
-    const { theme } = useTheme()
     const { invoice } = route.params
 
     const [invoicePaid, setInvoicePaid] = useState(false)
@@ -57,8 +54,8 @@ const ConfirmSendLightning: React.FC<Props> = ({
     }
 
     return (
-        <View style={styles(theme).container}>
-            <View style={styles(theme).detailsContainer}>
+        <View style={styles.container}>
+            <View style={styles.detailsContainer}>
                 <Text>{t('feature.send.you-are-sending')}</Text>
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
@@ -73,65 +70,35 @@ const ConfirmSendLightning: React.FC<Props> = ({
                     feeEstimate,
                 )}`}</Text>
             </View>
-            <View style={styles(theme).buttonContainer}>
+            <View style={styles.buttonContainer}>
                 <Button title={t('words.send')} onPress={onSendBtc} />
             </View>
-            <Modal
-                animationType="fade"
+            <SendConfirmationModal
                 visible={invoicePaid}
-                onRequestClose={() => {
-                    navigation.navigate('Home')
-                }}>
-                <View style={styles(theme).modalContent}>
-                    <Text style={styles(theme).modalText}>
-                        {t('feature.send.you-sent')}
-                    </Text>
-                    <Text style={styles(theme).modalText}>
-                        {`${amount} ${unit}`}
-                    </Text>
-                    <View style={styles(theme).buttonContainer}>
-                        <Button
-                            title={t('words.done')}
-                            onPress={() => {
-                                navigation.navigate('Home')
-                            }}
-                        />
-                    </View>
-                </View>
-            </Modal>
+                amount={amountUtils.stringToSats(amount)}
+                unit={unit}
+            />
         </View>
     )
 }
 
-const styles = (theme: Theme) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'space-evenly',
-        },
-        detailsContainer: {
-            height: '50%',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        modalContent: {
-            backgroundColor: theme.colors.secondary,
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        modalText: {
-            color: theme.colors.primary,
-            fontSize: 30,
-            margin: 10,
-        },
-        buttonContainer: {
-            width: '90%',
-            flexDirection: 'row',
-            justifyContent: 'space-evenly',
-            margin: 10,
-        },
-    })
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+    },
+    detailsContainer: {
+        height: '50%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonContainer: {
+        width: '90%',
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        margin: 10,
+    },
+})
 
 export default ConfirmSendLightning

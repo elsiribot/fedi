@@ -12,16 +12,42 @@ First, you will need to start Metro, the JavaScript bundler that ships with Reac
 
 `npx react-native start` inside the root of the React Native project folder (same level as `/android` and `/ios` folders)
 
-2. Start your application
+2. Clone the bridge in same directory as you cloned this repo.
+
+```
+git clone git@github.com:fedibtc/bridge.git
+```
+
+Try to build the bridge independently. It will automatically be built the the React Native build commands in the next step, but let's debug any problems now. If you have any problems, ping Justin.
+
+```
+./build.sh
+```
+
+3. Run the app
 
 Let Metro Bundler run in its own terminal. Open a new terminal inside your React Native project folder and run one of the following:
 
 ```
-npx react-native run-ios
+npm run ios
 
 or
 
-npx react-native run-android
+npm run android
 ```
 
 You should see your new app running in the iOS Simulator or Android Studio emulator shortly.
+
+## Directory Structure
+
+-   `/screens`
+    -   contains React components that are directly accessible by the navigator
+    -   need to be properly typed and added to the `Router`
+-   `/components` folder
+    -   contains React components categorized by `/feature`
+    -   consider creating a new folder if building something that does not fall into one of the existing `/feature` categories
+    -   `/components/ui` is for more generalized components expected to be reused in many (3+) different components or screens
+
+## Style Guide
+
+TODO:...

@@ -15,6 +15,9 @@ import {
     listTransactions as _listTransactions,
     payAddress as _payAddress,
     payInvoice as _payInvoice,
+    generateEcash as _generateEcash,
+    receiveEcash as _receiveEcash,
+    validateEcash as _validateEcash,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
@@ -173,8 +176,14 @@ function useBridge() {
         generateAddress: useCallback(() => {
             return _generateAddress(selectedFederation!.name)
         }, [selectedFederation]),
+        generateEcash: useCallback(
+            (amount: number) => {
+                return _generateEcash(amount, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
         generateInvoice: useCallback(
-            (amount: string, description: string) => {
+            (amount: number, description: string) => {
                 return _generateInvoice(
                     amount,
                     description,
@@ -193,8 +202,20 @@ function useBridge() {
             [selectedFederation],
         ),
         payAddress: useCallback(
-            (address: string, amount: string) => {
-                return _payAddress(address, amount, selectedFederation!.name)
+            (address: string, sats: number) => {
+                return _payAddress(address, sats, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        receiveEcash: useCallback(
+            (ecash: string) => {
+                return _receiveEcash(ecash, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        validateEcash: useCallback(
+            (ecash: string) => {
+                return _validateEcash(ecash, selectedFederation!.name)
             },
             [selectedFederation],
         ),

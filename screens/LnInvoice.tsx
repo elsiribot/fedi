@@ -78,8 +78,11 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
         (event: ReceivedLightningEvent) => {
             console.log(`"receivedLightning" -> "${event.paymentHash}"`)
             if (event.paymentHash === decodedInvoice.paymentHash) {
-                navigation.navigate('LnReceiveSuccess', {
-                    amountReceived: decodedInvoice.amount,
+                navigation.navigate('ReceiveSuccess', {
+                    tx: {
+                        type: 'lightning',
+                        amount: decodedInvoice.amount,
+                    },
                 })
             }
         },

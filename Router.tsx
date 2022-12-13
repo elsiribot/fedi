@@ -7,17 +7,21 @@ import { useTranslation } from 'react-i18next'
 
 import Backup from './screens/Backup'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
+import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
-import LnReceiveSuccess from './screens/LnReceiveSuccess'
-import OnChainReceiveSuccess from './screens/OnChainReceiveSuccess'
 import Receive from './screens/Receive'
+import ReceiveOffline from './screens/ReceiveOffline'
+import ReceiveSuccess from './screens/ReceiveSuccess'
+import RecoveryWords from './screens/RecoveryWords'
 import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
 import Send from './screens/Send'
+import SendOfflineAmount from './screens/SendOfflineAmount'
+import SendOfflineQr from './screens/SendOfflineQr'
 import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
 import Transactions from './screens/Transactions'
@@ -29,32 +33,35 @@ import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHea
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
-
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
+import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
+import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
-import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
-import RecoveryWords from './screens/RecoveryWords'
-import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
+
+import { TemporaryTransaction } from './bridge'
 
 export type RootStackParamList = {
     Backup: undefined
     ChooseBackupMethod: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
+    ConfirmReceiveOffline: { ecash: string; amount: number }
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
     LnInvoice: { invoice: string }
-    LnReceiveSuccess: { amountReceived: number }
-    OnChainReceiveSuccess: { amountReceived: number }
+    ReceiveSuccess: { tx: TemporaryTransaction }
     Receive: undefined
+    ReceiveOffline: undefined
     RecoveryWords: undefined
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     Send: undefined
+    SendOfflineAmount: undefined
+    SendOfflineQr: { ecash: string; amount: number }
     Splash: undefined
     StartPersonalBackup: undefined
     Transactions: undefined
@@ -126,6 +133,13 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="ConfirmReceiveOffline"
+                                component={ConfirmReceiveOffline}
+                                options={() => ({
+                                    // header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="LnInvoice"
                                 component={LnInvoice}
                                 options={() => ({
@@ -133,14 +147,18 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="LnReceiveSuccess"
-                                component={LnReceiveSuccess}
-                                options={{ headerShown: false }}
+                                name="SendOfflineAmount"
+                                component={SendOfflineAmount}
+                                options={() => ({
+                                    // header: () => <LnInvoiceHeader />,
+                                })}
                             />
                             <Stack.Screen
-                                name="OnChainReceiveSuccess"
-                                component={OnChainReceiveSuccess}
-                                options={{ headerShown: false }}
+                                name="SendOfflineQr"
+                                component={SendOfflineQr}
+                                options={() => ({
+                                    // header: () => <LnInvoiceHeader />,
+                                })}
                             />
                             <Stack.Screen
                                 name="Receive"
@@ -148,6 +166,18 @@ const MainNavigator = () => {
                                 options={() => ({
                                     header: () => <ReceiveBitcoinHeader />,
                                 })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveOffline"
+                                component={ReceiveOffline}
+                                options={() => ({
+                                    // header: () => <ReceiveBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveSuccess"
+                                component={ReceiveSuccess}
+                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="StartPersonalBackup"

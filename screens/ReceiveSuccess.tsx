@@ -6,16 +6,14 @@ import { Button, Icon, Text, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import { Images } from '../assets/images'
+import amountUtils from '../utils/AmountUtils'
 
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'LnReceiveSuccess'
->
+export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveSuccess'>
 
-const LnReceiveSuccess: React.FC<Props> = ({ route, navigation }: Props) => {
+const ReceiveSuccess: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { amountReceived } = route.params
+    const { tx } = route.params
 
     return (
         <ImageBackground
@@ -23,8 +21,16 @@ const LnReceiveSuccess: React.FC<Props> = ({ route, navigation }: Props) => {
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
                 <Icon name="check" style={styles(theme).icon} />
-                <Text h3>{t('feature.receive.you-received')}</Text>
-                <Text h3>{`${amountReceived} ${t('words.sats')}`}</Text>
+                <Text h3>
+                    {t(
+                        tx.type === 'bitcoin'
+                            ? 'feature.receive.pending-transaction'
+                            : 'feature.receive.you-received',
+                    )}
+                </Text>
+                <Text h3>{`${amountUtils.millisToSats(tx.amount)} ${t(
+                    'words.sats',
+                )}`}</Text>
             </View>
             <View style={styles(theme).buttonContainer}>
                 <Button
@@ -77,4 +83,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default LnReceiveSuccess
+export default ReceiveSuccess

@@ -3,8 +3,8 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "android": "react-native run-android",
-        "ios": "react-native run-ios",
+        "android": "sh scripts/run-android.sh",
+        "ios": "sh scripts/run-ios.sh",
         "start": "react-native start",
         "test": "jest",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
@@ -22,6 +22,7 @@
         "i18next": "^22.0.4",
         "install": "^0.13.0",
         "npm": "^9.1.3",
+        "qrloop": "^1.4.1",
         "react": "18.1.0",
         "react-i18next": "^12.0.0",
         "react-native": "0.70.5",

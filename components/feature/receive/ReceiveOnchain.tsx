@@ -44,8 +44,11 @@ const ReceiveOnchain: React.FC<{}> = () => {
             // TODO: check txid against address? is event.address the sender?
             if (event.address === address) {
                 // TODO: get amount from txid?
-                navigation.navigate('OnChainReceiveSuccess', {
-                    amountReceived: '615000',
+                navigation.navigate('ReceiveSuccess', {
+                    tx: {
+                        type: 'bitcoin',
+                        amount: 615000,
+                    },
                 })
             }
         }

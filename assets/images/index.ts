@@ -16,6 +16,7 @@ export const Images: ImagesMap = {
     InviteMembers: require('./invite-members.png'),
     LeaveFederation: require('./leave-federation.png'),
     Note: require('./note.png'),
+    Offline: require('./offline.png'),
     Recovery: require('./recovery.png'),
     SocialPeople: require('./social-people.png'),
     Wallet: require('./wallet.png'),

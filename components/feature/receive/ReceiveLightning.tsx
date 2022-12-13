@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useBridge } from '../../../contexts/FederationsContext'
+import amountUtils from '../../../utils/AmountUtils'
 
 type ReceiveLightningProps = {
     handleInvoice: Function
@@ -33,7 +34,10 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
 
     const onGenerateInvoice = async () => {
         try {
-            const newInvoice = await generateInvoice(amount, 'test memo')
+            const newInvoice = await generateInvoice(
+                amountUtils.stringToMillis(amount),
+                'test memo',
+            )
             handleInvoice(newInvoice)
         } catch (error) {
             console.log(error)
