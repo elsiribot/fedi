@@ -12,6 +12,7 @@ declare module '@rneui/themed' {
             primaryLight: string
             primaryVeryLight: string
             secondary: string
+            success: string
             orange: string
             grey: string
             red: string
