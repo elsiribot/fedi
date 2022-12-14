@@ -6,9 +6,12 @@ const colors = {
     primary: '#0B1013',
     primaryLight: '#6D7071',
     primaryVeryLight: '#D3D4DB',
+    success: '#00A829',
     secondary: '#FFFFFF',
     orange: '#DF7B00',
     grey: '#D9D9D9',
+    red: '#E00A00',
+    white: '#FFFFFF',
 }
 
 const theme = createTheme({

@@ -5,7 +5,6 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import Backup from './screens/Backup'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
@@ -17,6 +16,7 @@ import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
+import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryWords from './screens/RecoveryWords'
 import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
@@ -25,28 +25,34 @@ import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
+import StartSocialBackup from './screens/StartSocialBackup'
 import Transactions from './screens/Transactions'
 
+import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
+import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
+import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
-import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
-import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
-import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
-import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
+import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
+import SocialBackupProcessing from './screens/SocialBackupProcessing'
+import CompleteSocialBackup from './screens/CompleteSocialBackup'
+import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
+import SocialBackupSuccess from './screens/SocialBackupSuccess'
 
 import { TemporaryTransaction } from './bridge'
 
 export type RootStackParamList = {
-    Backup: undefined
     ChooseBackupMethod: undefined
+    CompleteSocialBackup: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
     ConfirmReceiveOffline: { ecash: string; amount: number }
@@ -59,6 +65,7 @@ export type RootStackParamList = {
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
+    RecordBackupVideo: undefined
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     Send: undefined
@@ -66,6 +73,10 @@ export type RootStackParamList = {
     SendOfflineQr: { ecash: string; amount: number }
     Splash: undefined
     StartPersonalBackup: undefined
+    StartSocialBackup: undefined
+    SocialBackupProcessing: undefined
+    SocialBackupCloudUpload: undefined
+    SocialBackupSuccess: undefined
     Transactions: undefined
 }
 
@@ -98,13 +109,6 @@ const MainNavigator = () => {
                                         />
                                     ),
                                 })}
-                            />
-                            <Stack.Screen
-                                name="Backup"
-                                component={Backup}
-                                options={{
-                                    title: `${t('words.backup')}`,
-                                }}
                             />
                             <Stack.Screen
                                 name="ChooseBackupMethod"
@@ -179,6 +183,56 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="ReceiveSuccess"
                                 component={ReceiveSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="RecordBackupVideo"
+                                component={RecordBackupVideo}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StartSocialBackup"
+                                component={StartSocialBackup}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupProcessing"
+                                component={SocialBackupProcessing}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupCloudUpload"
+                                component={SocialBackupCloudUpload}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CompleteSocialBackup"
+                                component={CompleteSocialBackup}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupSuccess"
+                                component={SocialBackupSuccess}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
