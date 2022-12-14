@@ -20,6 +20,7 @@ import {
     payInvoice as _payInvoice,
     receiveEcash as _receiveEcash,
     uploadBackupFile as _uploadBackupFile,
+    validateBackupFile as _validateBackupFile,
     validateEcash as _validateEcash,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
@@ -219,6 +220,12 @@ function useBridge() {
         receiveEcash: useCallback(
             (ecash: string) => {
                 return _receiveEcash(ecash, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        validateBackupFile: useCallback(
+            (file: string) => {
+                return _validateBackupFile(file, selectedFederation!.name)
             },
             [selectedFederation],
         ),

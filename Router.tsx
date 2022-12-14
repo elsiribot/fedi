@@ -49,10 +49,19 @@ import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupSuccess from './screens/SocialBackupSuccess'
 
 import { TemporaryTransaction } from './bridge'
+import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
+import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
+import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
+import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
+import LocateRecoveryFileSuccess from './screens/LocateRecoveryFileSuccess'
+import LocateRecoveryFileFailure from './screens/LocateRecoveryFileFailure'
 
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
+    ChooseRecoveryMethod: undefined
     CompleteSocialBackup: undefined
+    CompleteSocialRecovery: undefined
     ConfirmSendLightning: { invoice: string }
     ConfirmSendOnChain: { address: string }
     ConfirmReceiveOffline: { ecash: string; amount: number }
@@ -61,6 +70,9 @@ export type RootStackParamList = {
     Home: undefined
     LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
+    LocateSocialRecovery: undefined
+    LocateRecoveryFileSuccess: { fileName: string }
+    LocateRecoveryFileFailure: { fileName: string }
     ReceiveSuccess: { tx: TemporaryTransaction }
     Receive: undefined
     ReceiveOffline: undefined
@@ -84,7 +96,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
 
 const MainNavigator = () => {
-    const { t } = useTranslation()
     const {
         state: { selectedFederation },
     } = useFederationsContext()
@@ -108,13 +119,6 @@ const MainNavigator = () => {
                                             navigation={navigation}
                                         />
                                     ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChooseBackupMethod"
-                                component={ChooseBackupMethod}
-                                options={() => ({
-                                    header: () => <ChooseBackupMethodHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -186,6 +190,13 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
+                                name="ChooseBackupMethod"
+                                component={ChooseBackupMethod}
+                                options={() => ({
+                                    header: () => <ChooseBackupMethodHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="RecordBackupVideo"
                                 component={RecordBackupVideo}
                                 options={() => ({
@@ -233,6 +244,39 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="SocialBackupSuccess"
                                 component={SocialBackupSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="ChooseRecoveryMethod"
+                                component={ChooseRecoveryMethod}
+                                options={() => ({
+                                    header: () => (
+                                        <ChooseRecoveryMethodHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LocateSocialRecovery"
+                                component={LocateSocialRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialRecoveryHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LocateRecoveryFileSuccess"
+                                component={LocateRecoveryFileSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="LocateRecoveryFileFailure"
+                                component={LocateRecoveryFileFailure}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="CompleteSocialRecovery"
+                                component={CompleteSocialRecovery}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen

@@ -101,8 +101,8 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <SettingsItem
                     imageSource={Images.Recovery}
-                    label={t('feature.backup.recover-wallet')}
-                    onPress={() => {}}
+                    label={t('feature.recovery.recover-wallet')}
+                    onPress={() => navigation.navigate('ChooseRecoveryMethod')}
                 />
             </View>
             <View>

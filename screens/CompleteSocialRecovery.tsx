@@ -12,12 +12,12 @@ import { useBridge } from '../contexts/FederationsContext'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'CompleteSocialBackup'
+    'CompleteSocialRecovery'
 >
 
 const BACKUPS_REQUIRED = 2
 
-const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
+const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { locateRecoveryFile } = useBridge()
@@ -242,4 +242,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default CompleteSocialBackup
+export default CompleteSocialRecovery
