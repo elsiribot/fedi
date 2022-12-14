@@ -6,6 +6,7 @@ interface ImagesMap {
 
 export const Images: ImagesMap = {
     AllowCameraAccessIcon: require('./allow-camera-access-icon.png'),
+    Error: require('./error.png'),
     Federation: require('./federation.png'),
     FederationXIconXs: require('./federationx-icon-xs.png'),
     FederationXIconSm: require('./federationx-icon-sm.png'),
