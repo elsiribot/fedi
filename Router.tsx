@@ -86,7 +86,6 @@ export type RootStackParamList = {
     Splash: undefined
     StartPersonalBackup: undefined
     StartSocialBackup: undefined
-    SocialBackupProcessing: undefined
     SocialBackupCloudUpload: undefined
     SocialBackupSuccess: undefined
     Transactions: undefined

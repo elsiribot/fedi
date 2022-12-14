@@ -36,7 +36,7 @@ const LocateRecoveryFileSuccess: React.FC<Props> = ({
                 <Button
                     title={t('words.okay')}
                     onPress={() => {
-                        // navigation.navigate('CompleteSocialRecovery')
+                        navigation.navigate('CompleteSocialRecovery')
                     }}
                 />
             </View>
