@@ -4,7 +4,7 @@ To set up the development environment you will need to make sure you can build R
 
 Follow the guide here for your OS of choice: https://reactnative.dev/docs/environment-setup
 
-If you have your Android/iOS dependencies installed and configured correctly, you should be able to follow these steps:
+You will also need to [install Rust](https://www.rust-lang.org/tools/install) because all the actual interaction with the Federation happens via [this rust code](https://github.com/fedibtc/bridge) which is built automatically by `npm run ios` / `npm run android`.
 
 1. Start Metro
 
@@ -18,15 +18,25 @@ First, you will need to start Metro, the JavaScript bundler that ships with Reac
 git clone git@github.com:fedibtc/bridge.git
 ```
 
-Try to build the bridge independently. It will automatically be built the the React Native build commands in the next step, but let's debug any problems now. If you have any problems, ping Justin.
+The [Rust bridge](https://github.com/fedibtc/bridge) gets built automatically by our `npm run ios` / `npm run android` commands, but to simplify things just try building it independently. Android is trickier to build than iOS. If you have trouble on Android, message Justin.
 
 ```
-./build.sh
+# builds ios
+./ios.sh
+
+# builds android
+./android.sh
 ```
 
 3. Run the app
 
-Let Metro Bundler run in its own terminal. Open a new terminal inside your React Native project folder and run one of the following:
+In one terminal run the Metro Bundler:
+
+```
+npm run start
+```
+
+In a separate terminal run the ios or android app
 
 ```
 npm run ios
