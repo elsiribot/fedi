@@ -3,7 +3,6 @@ import { createDrawerNavigator } from '@react-navigation/drawer'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
