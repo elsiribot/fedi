@@ -51,7 +51,7 @@ const TransactionDetail = ({
             )}`}</Text>
             <View style={styles.detailItemsContainer}>
                 <Divider />
-                {txn.bitcoin?.incomingStatus !== null && (
+                {txn.bitcoin?.incomingStatus && (
                     <View>
                         <View style={styles.detailItem}>
                             <Text>{`${t('words.status')}`}</Text>

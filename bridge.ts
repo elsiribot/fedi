@@ -74,6 +74,10 @@ export type BitcoinTransactionDetails = {
     incomingStatus: IncomingBitcoinTransactionStatus | null
 }
 
+export type OfflineTransactionDetails = {
+    claimed: boolean
+}
+
 export interface Transaction {
     createdAt: number
     direction: TransactionDirection
@@ -81,12 +85,14 @@ export interface Transaction {
     notes: string
     bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
+    offline: OfflineTransactionDetails | null
 }
 
 // TODO: make a transaction class or something
 export function getFee(tx: Transaction): number | null {
     if (tx.bitcoin !== null) return tx.bitcoin.fee
     if (tx.lightning !== null) return tx.lightning.fee
+    if (tx.offline !== null) return null
     throw 'invalid transaction'
 }
 
