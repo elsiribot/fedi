@@ -10,6 +10,7 @@ import React, {
 
 import {
     Federation,
+    backupQr as _backupQr,
     generateAddress as _generateAddress,
     generateEcash as _generateEcash,
     generateInvoice as _generateInvoice,
@@ -94,17 +95,22 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 connectedFederations: [
                     ...state.connectedFederations,
-                    action.payload,
+                    new Federation(action.payload),
                 ],
             }
         case ActionType.CLEAR_CONNECTED_FEDERATIONS:
             return { ...state, connectedFederations: [] }
         case ActionType.CHANGE_SELECTED_FEDERATION:
-            return { ...state, selectedFederation: action.payload }
+            return {
+                ...state,
+                selectedFederation: new Federation(action.payload),
+            }
         case ActionType.UPDATE_CONNECTED_FEDERATIONS:
             return {
                 ...state,
-                connectedFederations: action.payload,
+                connectedFederations: action.payload.map(
+                    (f: Federation) => new Federation(f),
+                ),
             }
         case ActionType.RESET_FEDERATIONS_STATE:
             return { ...initialState }
@@ -177,6 +183,9 @@ function useBridge() {
     const { selectedFederation } = state
 
     return {
+        backupQr: useCallback(() => {
+            return _backupQr(selectedFederation!.name)
+        }, [selectedFederation]),
         generateAddress: useCallback(() => {
             return _generateAddress(selectedFederation!.name)
         }, [selectedFederation]),
