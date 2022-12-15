@@ -1,6 +1,6 @@
 # re-build bridge bindings for android
 pushd ../bridge
-./local-android.sh
+./android.sh
 popd
 
 # launch android
