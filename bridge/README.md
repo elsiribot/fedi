@@ -1,6 +1,16 @@
+This is a fork of [uniffi-bindings-template](https://github.com/thunderbiscuit/uniffi-bindings-template)
+
 # Fedi README
 
-You might need to do slightly different things than these. Still figuring out how Android works ...
+## Prerequisites
+
+[Install Rust](https://www.rust-lang.org/tools/install)
+
+## Building
+
+`./android.sh` will build the Android package and publish to "maven local". `./ios.sh` build build the ios package which you can add to project via XCode UI.
+
+Justin needs to export the following variables to get Android builds working. You may need to do similar. Ask him if you have any trouble building for Android.
 
 ```shell
 export ANDROID_NDK_ROOT=/Users/justin/Library/Android/sdk/ndk/25.1.8937393
@@ -9,7 +19,7 @@ export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
 ./build.sh
 ```
 
-# Old README
+# Template README
 
 ## Build the library for Android
 1. Fire the `buildAndroidLib` gradle task in the `calculator-android` directory
