@@ -14,7 +14,7 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 
-import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../../../bridge'
+import { TransactionEvent, TFedimintEventEmitter } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../Router'
 import StringUtils from '../../../utils/StringUtils'
@@ -39,22 +39,20 @@ const ReceiveOnchain: React.FC<{}> = () => {
     }, [generateAddress])
 
     useEffect(() => {
-        const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {
-            console.log(`"receivedBitcoin" -> "${event.txid}"`)
-            // TODO: check txid against address? is event.address the sender?
-            if (event.address === address) {
+        const transactionEventHandler = (event: TransactionEvent) => {
+            if (event.transaction.bitcoin?.address === address) {
                 // TODO: get amount from txid?
                 navigation.navigate('ReceiveSuccess', {
                     tx: {
                         type: 'bitcoin',
-                        amount: 615000,
+                        amount: event.transaction.amount,
                     },
                 })
             }
         }
 
         const emitter = new TFedimintEventEmitter()
-        emitter.onReceivedBitcoin(receivedBitcoinHandler)
+        emitter.onTransaction(transactionEventHandler)
     }, [navigation, address])
 
     const copyToClipboard = () => {

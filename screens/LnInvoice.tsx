@@ -16,7 +16,7 @@ import { Images } from '../assets/images'
 import {
     decodeInvoice,
     Invoice,
-    ReceivedLightningEvent,
+    TransactionEvent,
     TFedimintEventEmitter,
 } from '../bridge'
 import type { RootStackParamList } from '../Router'
@@ -75,17 +75,15 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
         _decodeInvoice()
     }, [invoice])
 
-    const receivedLightningHandler = useCallback(
-        (event: ReceivedLightningEvent) => {
-            console.log(`"receivedLightning" -> "${event.paymentHash}"`)
-            if (event.paymentHash === decodedInvoice.paymentHash) {
+    const transactionEventHandler = useCallback(
+        (event: TransactionEvent) => {
+            if (event.transaction.lightning?.invoice === decodedInvoice.invoice)
                 navigation.navigate('ReceiveSuccess', {
                     tx: {
                         type: 'lightning',
                         amount: decodedInvoice.amount,
                     },
                 })
-            }
         },
         [navigation, decodedInvoice],
     )
@@ -93,8 +91,8 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     // Registers an event handler listening for the invoice to be paid
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
-        emitter.onReceivedLightning(receivedLightningHandler)
-    }, [receivedLightningHandler])
+        emitter.onTransaction(transactionEventHandler)
+    }, [transactionEventHandler])
 
     const qrCodeSize = Dimensions.get('window').width * 0.8
 

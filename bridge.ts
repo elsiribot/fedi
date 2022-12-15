@@ -15,15 +15,9 @@ export type BalanceEvent = {
     balance: number
 }
 
-export type ReceivedLightningEvent = {
+export type TransactionEvent = {
     federationId: string
-    paymentHash: string
-}
-
-export type ReceivedBitcoinEvent = {
-    federationId: string
-    txid: string
-    address: string
+    transaction: Transaction
 }
 
 export type ValidateEcashResponse = {
@@ -141,18 +135,11 @@ export class TFedimintEventEmitter {
         return this.addListener('balance', listener, context)
     }
 
-    onReceivedLightning = (
-        listener: (event: ReceivedLightningEvent) => void,
+    onTransaction = (
+        listener: (event: TransactionEvent) => void,
         context?: Object,
     ): EmitterSubscription => {
-        return this.addListener('receivedLightning', listener, context)
-    }
-
-    onReceivedBitcoin = (
-        listener: (event: ReceivedBitcoinEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.addListener('receivedBitcoin', listener, context)
+        return this.addListener('transaction', listener, context)
     }
 }
 
