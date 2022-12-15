@@ -28,5 +28,8 @@ declare module '@rneui/themed' {
         sizes: {
             [key: string]: number
         }
+        spacing: {
+            [key: string]: number
+        }
     }
 }

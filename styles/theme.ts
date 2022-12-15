@@ -71,6 +71,13 @@ const theme = createTheme({
         md: 32,
         lg: 48,
     },
+    spacing: {
+        xs: 2,
+        sm: 4,
+        md: 8,
+        lg: 12,
+        xl: 24,
+    },
 })
 
 export default theme
