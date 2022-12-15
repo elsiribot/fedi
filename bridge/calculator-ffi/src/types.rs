@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::anyhow;
+use fedimint_api::config::Node;
 use mint_client::api::WsFederationConnect;
 use serde::Serialize;
 
@@ -15,6 +16,7 @@ pub fn hacky_millisat_to_sat(millisat: u64) -> u64 {
 pub struct FedimintFederation {
     pub name: String,
     pub connect_info: WsFederationConnect,
+    pub nodes: Vec<Node>
 }
 
 impl From<&Arc<Federation>> for FedimintFederation {
@@ -23,6 +25,7 @@ impl From<&Arc<Federation>> for FedimintFederation {
         Self {
             name: client_config.federation_name.clone(),
             connect_info: WsFederationConnect::from(&client_config),
+            nodes: client_config.nodes.clone(),
         }
     }
 }
