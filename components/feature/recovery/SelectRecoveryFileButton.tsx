@@ -10,7 +10,7 @@ import DocumentPicker, {
 
 import { useBridge } from '../../../contexts/FederationsContext'
 
-const LocateRecoveryFileButton: React.FC<{}> = () => {
+const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { validateBackupFile } = useBridge()
     const navigation = useNavigation()
@@ -35,11 +35,11 @@ const LocateRecoveryFileButton: React.FC<{}> = () => {
         const checkForValidFile = async () => {
             try {
                 await validateBackupFile(result!.uri)
-                navigation.navigate('LocateRecoveryFileSuccess', {
+                navigation.navigate('SelectRecoveryFileSuccess', {
                     fileName: result!.name as string,
                 })
             } catch (error) {
-                navigation.navigate('LocateRecoveryFileFailure', {
+                navigation.navigate('SelectRecoveryFileFailure', {
                     fileName: result!.name as string,
                 })
             }
@@ -66,4 +66,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default LocateRecoveryFileButton
+export default SelectRecoveryFileButton

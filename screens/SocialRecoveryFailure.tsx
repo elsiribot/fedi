@@ -6,20 +6,15 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import { Images } from '../assets/images'
-import LocateRecoveryFileButton from '../components/feature/recovery/LocateRecoveryFileButton'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'LocateRecoveryFileFailure'
+    'SocialRecoveryFailure'
 >
 
-const LocateRecoveryFileFailure: React.FC<Props> = ({
-    navigation,
-    route,
-}: Props) => {
+const SocialRecoveryFailure: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { fileName } = route.params
 
     return (
         <ImageBackground
@@ -27,24 +22,30 @@ const LocateRecoveryFileFailure: React.FC<Props> = ({
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
                 <Image source={Images.Error} style={styles(theme).iconImage} />
-                <Text h3 h3Style={styles(theme).successMessage}>
-                    {t('feature.recovery.opening-backup-file-failed')}
+                <Text h3 h3Style={styles(theme).failureMessage}>
+                    {t('feature.recovery.social-recovery-unsuccessful')}
                 </Text>
-                <Text>
+                <Text style={styles(theme).failureDetails}>
                     {t(
-                        'feature.recovery.opening-backup-file-failed-instructions',
-                        { fileName },
+                        'feature.recovery.social-recovery-unsuccessful-instructions',
                     )}
                 </Text>
             </View>
             <View style={styles(theme).buttonContainer}>
                 <Button
+                    type="clear"
                     title={t('phrases.back-to-app')}
+                    containerStyle={styles(theme).backToAppButton}
                     onPress={() => {
                         navigation.navigate('Home')
                     }}
                 />
-                <LocateRecoveryFileButton />
+                <Button
+                    title={t('feature.recovery.try-social-recovery-again')}
+                    onPress={() => {
+                        navigation.navigate('LocateSocialRecovery')
+                    }}
+                />
             </View>
         </ImageBackground>
     )
@@ -58,11 +59,13 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'flex-end',
+            justifyContent: 'center',
         },
         detailsContainer: {
             alignItems: 'center',
             justifyContent: 'center',
+            marginTop: 'auto',
+            paddingHorizontal: 24,
             backgroundColor: theme.colors.secondary,
             // for a perfect circle borderRadius should be half of
             // height and width
@@ -78,20 +81,27 @@ const styles = (theme: Theme) =>
             shadowColor: theme.colors.primaryLight,
         },
         iconImage: {
-            marginVertical: 10,
             height: theme.sizes.sm,
             width: theme.sizes.sm,
         },
-        successMessage: {
+        failureMessage: {
             textAlign: 'center',
+            marginVertical: 10,
+        },
+        failureDetails: {
+            textAlign: 'center',
+            paddingHorizontal: 12,
+        },
+        backToAppButton: {
+            marginBottom: 16,
         },
         buttonContainer: {
             width: '90%',
-            height: '30%',
+            marginTop: 'auto',
             marginBottom: 50,
             flexDirection: 'column',
             justifyContent: 'flex-end',
         },
     })
 
-export default LocateRecoveryFileFailure
+export default SocialRecoveryFailure

@@ -54,8 +54,10 @@ import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
-import LocateRecoveryFileSuccess from './screens/LocateRecoveryFileSuccess'
-import LocateRecoveryFileFailure from './screens/LocateRecoveryFileFailure'
+import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
+import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
+import SocialRecoveryQrModal from './screens/SocialRecoveryQrModal'
+import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
 
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
@@ -71,8 +73,8 @@ export type RootStackParamList = {
     LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
     LocateSocialRecovery: undefined
-    LocateRecoveryFileSuccess: { fileName: string }
-    LocateRecoveryFileFailure: { fileName: string }
+    SelectRecoveryFileSuccess: { fileName: string }
+    SelectRecoveryFileFailure: { fileName: string }
     ReceiveSuccess: { tx: TemporaryTransaction }
     Receive: undefined
     ReceiveOffline: undefined
@@ -87,7 +89,10 @@ export type RootStackParamList = {
     StartPersonalBackup: undefined
     StartSocialBackup: undefined
     SocialBackupCloudUpload: undefined
+    SocialBackupProcessing: undefined
     SocialBackupSuccess: undefined
+    SocialRecoveryQrModal: undefined
+    SocialRecoveryFailure: undefined
     Transactions: undefined
 }
 
@@ -264,18 +269,27 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="LocateRecoveryFileSuccess"
-                                component={LocateRecoveryFileSuccess}
+                                name="SelectRecoveryFileSuccess"
+                                component={SelectRecoveryFileSuccess}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
-                                name="LocateRecoveryFileFailure"
-                                component={LocateRecoveryFileFailure}
+                                name="SelectRecoveryFileFailure"
+                                component={SelectRecoveryFileFailure}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="CompleteSocialRecovery"
                                 component={CompleteSocialRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialRecoveryHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoveryFailure"
+                                component={SocialRecoveryFailure}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
@@ -327,6 +341,14 @@ const MainNavigator = () => {
                                 options={() => ({
                                     header: () => <TransactionsHeader />,
                                 })}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoveryQrModal"
+                                component={SocialRecoveryQrModal}
+                                options={{
+                                    presentation: 'transparentModal',
+                                    headerShown: false,
+                                }}
                             />
                         </Stack.Group>
                     </Stack.Group>

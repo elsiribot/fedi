@@ -9,10 +9,10 @@ import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'LocateRecoveryFileSuccess'
+    'SelectRecoveryFileSuccess'
 >
 
-const LocateRecoveryFileSuccess: React.FC<Props> = ({
+const SelectRecoveryFileSuccess: React.FC<Props> = ({
     navigation,
     route,
 }: Props) => {
@@ -87,4 +87,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default LocateRecoveryFileSuccess
+export default SelectRecoveryFileSuccess

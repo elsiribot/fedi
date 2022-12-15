@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground } from 'react-native'
 
 import { Images } from '../assets/images'
-import LocateRecoveryFileButton from '../components/feature/recovery/LocateRecoveryFileButton'
+import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecoveryFileButton'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
@@ -87,7 +87,7 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                             {'\n'}
                         </Text>
                     </View>
-                    <LocateRecoveryFileButton />
+                    <SelectRecoveryFileButton />
                 </ImageBackground>
             </Card>
         </View>

@@ -1,117 +1,120 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
-import Share from 'react-native-share'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground } from 'react-native'
 
 import { Images } from '../assets/images'
 
 import type { RootStackParamList } from '../Router'
-import { useBridge } from '../contexts/FederationsContext'
+import {
+    useBridge,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
+import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'CompleteSocialRecovery'
 >
 
-const BACKUPS_REQUIRED = 2
-
 const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { locateRecoveryFile } = useBridge()
-    const [backupsCompleted, setBackupsCompleted] = useState<number>(0)
+    const { selectedFederation } = useFederationsContext().state
+    const [guardianApprovals, setGuardianApprovals] = useState<number>(0)
+    const [guardianDenials, setGuardianDenials] = useState<number>(0)
 
-    const createBackup = async () => {
-        try {
-            const recoveryFilePath = await locateRecoveryFile()
-            const result = await Share.open({
-                url: recoveryFilePath,
-            })
-            console.log(result)
-            setBackupsCompleted(
-                Math.min(BACKUPS_REQUIRED, backupsCompleted + 1),
+    // TODO: Uncomment when bridge is ready
+    const socialRecoveryHandler = useCallback(
+        (event: SocialRecoveryEvent) => {
+            // Ignore all events not from the selectedFederation
+            if (selectedFederation!.name !== event.federationId) {
+                return
+            }
+            console.log('event')
+            console.log(event)
+            setGuardianApprovals(
+                event.approvals?.filter(a => a.status === 'approved').length,
             )
-        } catch (error) {
-            console.error(error)
+            setGuardianDenials(
+                event.approvals?.filter(a => a.status === 'denied').length,
+            )
+        },
+        [selectedFederation],
+    )
+
+    useEffect(() => {
+        if (guardianDenials > (selectedFederation?.denialThreshold as number)) {
+            navigation.navigate('SocialRecoveryFailure')
         }
+    }, [guardianDenials, selectedFederation?.denialThreshold, navigation])
+
+    // useEffect(() => {
+    //     const emitter = new TFedimintEventEmitter()
+    //     emitter.onSocialRecovery(socialRecoveryHandler)
+    //     navigation.navigate('SocialRecoveryQrModal')
+
+    //     return () => {
+    //         emitter.removeListener('socialRecovery')
+    //     }
+    // }, [navigation, socialRecoveryHandler])
+
+    const showQrCode = () => {
+        navigation.navigate('SocialRecoveryQrModal')
+        // Mock guardian approvals 5s after every QR code display
+        setTimeout(() => {
+            setGuardianApprovals(
+                Math.min(
+                    selectedFederation?.approvalsRequired as number,
+                    guardianApprovals + 1,
+                ),
+            )
+            // Mock guardian denial
+            // setGuardianDenials(Math.min(guardianDenials + 1))
+        }, 5000)
     }
 
-    const renderCreateBackupButton = () => {
-        if (backupsCompleted >= BACKUPS_REQUIRED) {
-            return (
-                <Button
-                    title={t('feature.backup.create-another-backup')}
-                    containerStyle={styles(theme).continueButton}
-                    onPress={() => {
-                        createBackup()
-                    }}
-                />
-            )
-        } else if (backupsCompleted === 1) {
-            return (
-                <Button
-                    title={t('feature.backup.create-second-backup')}
-                    containerStyle={styles(theme).continueButton}
-                    onPress={() => {
-                        createBackup()
-                    }}
-                />
-            )
-        } else {
-            return (
-                <Button
-                    title={t('feature.backup.create-first-backup')}
-                    containerStyle={styles(theme).continueButton}
-                    onPress={() => {
-                        createBackup()
-                    }}
-                />
-            )
-        }
-    }
-
-    const renderBackupsMadeStatus = () => {
-        if (backupsCompleted === BACKUPS_REQUIRED) {
+    const renderGuardianApprovalStatus = () => {
+        if (guardianApprovals === selectedFederation.approvalsRequired) {
             return <Text h4>{`(${t('words.complete')})`}</Text>
         } else {
             return (
                 <Text h4>
-                    {`(${BACKUPS_REQUIRED - backupsCompleted} ${t(
-                        'words.required',
-                    )})`}
+                    {`(${
+                        selectedFederation.approvalsRequired - guardianApprovals
+                    } ${t('words.required')})`}
                 </Text>
             )
         }
     }
 
-    const renderFirstBackupStatus = () => {
-        if (backupsCompleted > 0) {
-            return (
-                <Text style={styles(theme).completed}>{`${t(
-                    'words.complete',
-                )}`}</Text>
-            )
-        } else {
-            return <Text>{`${t('words.pending')}`}</Text>
-        }
-    }
+    const renderGuardians = () => {
+        return selectedFederation?.nodes.map((n: Node, i) => {
+            const approvalStatus =
+                guardianApprovals >= 1 ? 'approved' : 'pending'
 
-    const renderSecondBackupStatus = () => {
-        if (backupsCompleted > 1) {
             return (
-                <Text style={styles(theme).completed}>{`${t(
-                    'words.complete',
-                )}`}</Text>
+                <View style={styles(theme).guardianRow} key={`gr-${i}`}>
+                    <Text>{n.name}</Text>
+                    <Text
+                        style={
+                            approvalStatus === 'approved'
+                                ? { color: theme.colors.success }
+                                : {}
+                        }>
+                        {approvalStatus}
+                    </Text>
+                </View>
             )
-        } else {
-            return <Text>{`${t('words.pending')}`}</Text>
-        }
+        })
     }
 
     return (
         <View style={styles(theme).container}>
+            <Text style={styles(theme).instructionsText}>
+                {t('feature.recovery.guardian-approval-instructions')}
+            </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <ImageBackground
                     style={styles(theme).imageBackground}
@@ -121,62 +124,52 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                         style={styles(theme).iconImage}
                     />
                     <Text h4>
-                        {'\n'}
-                        {t('feature.backup.backup-social-recovery-file')}
-                    </Text>
-                    <Text>
-                        {'\n'}
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions',
-                        )}
+                        {t('feature.recovery.social-recovery-steps')}
                         {'\n'}
                     </Text>
-                    <Text>
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions-1',
-                        )}
-                        {'\n'}
-                    </Text>
-                    <Text>
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions-2',
-                        )}
-                        {'\n'}
-                    </Text>
-                    <Text>
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions-3',
-                        )}
-                    </Text>
-                    {renderCreateBackupButton()}
+                    <View>
+                        <Text>
+                            {t('feature.recovery.guardian-approval-step-1')}
+                            {'\n'}
+                        </Text>
+                        <Text>
+                            {t('feature.recovery.guardian-approval-step-2')}
+                            {'\n'}
+                        </Text>
+                        <Text>
+                            {t('feature.recovery.guardian-approval-step-3')}
+                            {'\n'}
+                        </Text>
+                        <Text>
+                            {t('feature.recovery.guardian-approval-step-4')}
+                            {'\n'}
+                        </Text>
+                    </View>
+                    <Button
+                        title={t('feature.recovery.open-qr-code')}
+                        containerStyle={styles(theme).openButton}
+                        onPress={showQrCode}
+                    />
                 </ImageBackground>
             </Card>
 
-            <View style={styles(theme).backupsContainer}>
-                <View style={styles(theme).backupRow}>
+            <View style={styles(theme).approvalsContainer}>
+                <View style={styles(theme).guardianRow}>
                     <Text h4>
-                        {t('feature.backup.backups-made')}
+                        {t('feature.recovery.guardian-approvals')}
                         {'\n'}
                     </Text>
-                    {renderBackupsMadeStatus()}
+                    {renderGuardianApprovalStatus()}
                 </View>
-                <View style={styles(theme).backupRow}>
-                    <Text>
-                        {`${t('words.backup')} ${t('words.one')}`}
-                        {'\n'}
-                    </Text>
-                    {renderFirstBackupStatus()}
-                </View>
-                <View style={styles(theme).backupRow}>
-                    <Text>{`${t('words.backup')} ${t('words.two')}`}</Text>
-                    {renderSecondBackupStatus()}
-                </View>
+                {renderGuardians()}
             </View>
             <Button
-                title={t('feature.backup.complete-social-backup')}
+                title={t('feature.recovery.complete-social-recovery')}
                 containerStyle={[
                     styles(theme).completeButton,
-                    backupsCompleted < 2 ? styles(theme).hidden : {},
+                    guardianApprovals < selectedFederation?.approvalsRequired!
+                        ? styles(theme).hidden
+                        : {},
                 ]}
                 onPress={() => {
                     navigation.navigate('SocialBackupSuccess')
@@ -206,11 +199,11 @@ const styles = (theme: Theme) =>
             paddingHorizontal: 24,
             fontWeight: '400',
         },
-        backupsContainer: {
+        approvalsContainer: {
             width: '100%',
             marginVertical: 16,
         },
-        backupRow: {
+        guardianRow: {
             flexDirection: 'row',
             justifyContent: 'space-between',
         },
@@ -221,7 +214,7 @@ const styles = (theme: Theme) =>
             width: '100%',
             marginTop: 'auto',
         },
-        continueButton: {
+        openButton: {
             width: '100%',
             marginVertical: 16,
         },
