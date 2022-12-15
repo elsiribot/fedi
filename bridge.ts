@@ -37,12 +37,6 @@ export type Invoice = {
     fee: null | number
 }
 
-// Temporary until transactions history bridge code gets merged
-export type TemporaryTransaction =
-    | { type: 'bitcoin'; amount: number }
-    | { type: 'lightning'; amount: number }
-    | { type: 'ecash'; amount: number }
-
 export enum TransactionDirection {
     send = 'send',
     receive = 'receive',

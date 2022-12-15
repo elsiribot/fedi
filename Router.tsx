@@ -48,7 +48,7 @@ import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupSuccess from './screens/SocialBackupSuccess'
 
-import { TemporaryTransaction } from './bridge'
+import { Transaction } from './bridge'
 
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
@@ -60,8 +60,7 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     Home: undefined
     LnInvoice: { invoice: string }
-    PersonalBackupSuccess: undefined
-    ReceiveSuccess: { tx: TemporaryTransaction }
+    ReceiveSuccess: { tx: Transaction }
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
