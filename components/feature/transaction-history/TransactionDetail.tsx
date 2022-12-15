@@ -3,10 +3,16 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { Transaction, TransactionDirection } from '../../../bridge'
+import {
+    getFee,
+    IncomingBitcoinTransactionStatus,
+    Transaction,
+    TransactionDirection,
+} from '../../../bridge'
 import amountUtils from '../../../utils/AmountUtils'
 import DateUtils from '../../../utils/DateUtils'
 import StringUtils from '../../../utils/StringUtils'
+import SendBitcoinHeader from '../send/SendBitcoinHeader'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -19,9 +25,7 @@ const TransactionDetail = ({
 }: TransactionDetailProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-
-    console.log(txn)
-
+    const fee = getFee(txn)
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -47,11 +51,23 @@ const TransactionDetail = ({
             )}`}</Text>
             <View style={styles.detailItemsContainer}>
                 <Divider />
+                {txn.bitcoin?.incomingStatus !== null && (
+                    <View>
+                        <View style={styles.detailItem}>
+                            <Text>{`${t('words.status')}`}</Text>
+                            {txn.bitcoin?.incomingStatus ===
+                            IncomingBitcoinTransactionStatus.complete ? (
+                                <Text>{`${t('words.complete')}`}</Text>
+                            ) : (
+                                <Text>{`${t('words.pending')}`}</Text>
+                            )}
+                        </View>
+                        <Divider />
+                    </View>
+                )}
                 <View style={styles.detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
-                    {/* TODO: Replace with actual memo*/}
-                    {/* <Text>{txn.memo}</Text> */}
-                    <Text>{'Memo here'}</Text>
+                    <Text>{txn.notes}</Text>
                 </View>
                 <Divider />
                 <View style={styles.detailItem}>
@@ -62,26 +78,34 @@ const TransactionDetail = ({
                     )}`}</Text>
                 </View>
                 <Divider />
-                <View style={styles.detailItem}>
-                    <Text>{`${t('words.fee')}`}</Text>
-                    {/* TODO: Replace with actual fee amount*/}
-                    {/* <Text>{txn.feeSats}</Text> */}
-                    <Text>{`${'~3 - 11'} ${t('words.sats')}`}</Text>
-                </View>
+                {fee !== null && (
+                    <View style={styles.detailItem}>
+                        <Text>{`${t('words.fee')}`}</Text>
+                        <Text>{`${amountUtils.millisToSats(fee)} ${t(
+                            'words.sats',
+                        )}`}</Text>
+                    </View>
+                )}
                 <Divider />
-                {txn.method === 'lightning' && (
+                {txn.lightning && (
                     <View style={styles.detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
                         <Text>
-                            {StringUtils.truncateMiddleOfString(txn.invoice, 5)}
+                            {StringUtils.truncateMiddleOfString(
+                                txn.lightning.invoice,
+                                5,
+                            )}
                         </Text>
                     </View>
                 )}
-                {txn.method === 'bitcoin' && (
+                {txn.bitcoin && (
                     <View style={styles.detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
                         <Text>
-                            {StringUtils.truncateMiddleOfString(txn.txid, 5)}
+                            {StringUtils.truncateMiddleOfString(
+                                txn.bitcoin.txid,
+                                5,
+                            )}
                         </Text>
                     </View>
                 )}

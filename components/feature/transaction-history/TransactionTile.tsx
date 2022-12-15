@@ -15,7 +15,6 @@ type TransactionTileProps = {
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    console.log(txn.direction)
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
@@ -42,7 +41,8 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                             : t('words.received')
                     }`}
                 </Text>
-                <Text>{'Memo here'}</Text>
+                {/* TODO: truncate this */}
+                <Text>{txn.notes}</Text>
             </View>
 
             <View style={styles(theme).rightContainer}>

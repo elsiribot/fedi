@@ -51,16 +51,21 @@ export type TemporaryTransaction =
 
 export enum TransactionDirection {
     send = 'send',
-    receive = 'send',
+    receive = 'receive',
 }
 
-export enum TransactionMethod {
+export enum TransactionType {
     bitcoin = 'bitcoin',
     lightning = 'lightning',
 }
 
+export enum IncomingBitcoinTransactionStatus {
+    pending = 'pending',
+    complete = 'complete',
+}
+
 export type BitcoinTransaction = {
-    method: TransactionMethod.bitcoin
+    type: TransactionType.bitcoin
     address: string
     txid: string
     id: number
@@ -69,16 +74,33 @@ export type BitcoinTransaction = {
     amount: number
 }
 
-export type LightningTransaction = {
-    method: TransactionMethod.lightning
+export type LightningTransactionDetails = {
     invoice: string
-    id: number
+    fee: number | null
+}
+
+export type BitcoinTransactionDetails = {
+    address: string
+    txid: string
+    fee: number | null
+    incomingStatus: IncomingBitcoinTransactionStatus | null
+}
+
+export interface Transaction {
     createdAt: number
     direction: TransactionDirection
     amount: number
+    notes: string
+    bitcoin: BitcoinTransactionDetails | null
+    lightning: LightningTransactionDetails | null
 }
 
-export type Transaction = BitcoinTransaction | LightningTransaction
+// TODO: make a transaction class or something
+export function getFee(tx: Transaction): number | null {
+    if (tx.bitcoin !== null) return tx.bitcoin.fee
+    if (tx.lightning !== null) return tx.lightning.fee
+    throw 'invalid transaction'
+}
 
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter

@@ -84,7 +84,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
 
 const MainNavigator = () => {
-    const { t } = useTranslation()
     const {
         state: { selectedFederation },
     } = useFederationsContext()
