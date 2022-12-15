@@ -12,6 +12,7 @@ const colors = {
     grey: '#D9D9D9',
     red: '#E00A00',
     white: '#FFFFFF',
+    black: '#0B1013',
 }
 
 const theme = createTheme({

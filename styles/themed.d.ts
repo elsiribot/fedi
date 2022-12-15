@@ -17,6 +17,7 @@ declare module '@rneui/themed' {
             grey: string
             red: string
             white: string
+            black: string
             // @react-navigation requires these properties
             background: string
             card: string
