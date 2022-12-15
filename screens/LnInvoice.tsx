@@ -100,9 +100,6 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
         return <ActivityIndicator />
     }
 
-    console.log(decodedInvoice)
-    console.log(decodedInvoice.amount)
-
     return (
         <View style={styles.container}>
             <Text h2>{`${amountUtils.millisToSats(decodedInvoice.amount)} ${t(

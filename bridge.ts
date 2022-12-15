@@ -1,4 +1,3 @@
-import { StringOmit } from '@rneui/base'
 import {
     EmitterSubscription,
     NativeEventEmitter,
@@ -167,7 +166,6 @@ export async function updateTransactionNotes(
     federationId: string,
 ): Promise<null> {
     let payload = JSON.stringify({ federationId, transactionId, notes })
-    console.log('updatetx', payload)
     let response = await FedimintFfi.rpc('updateTransactionNotes', payload)
     return handleRpcResponse<null>(response)
 }
