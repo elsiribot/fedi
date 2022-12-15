@@ -231,10 +231,11 @@ export async function validateEcash(
 /*
  * Mocked-out seed backup and recovery methods
  */
+export type SeedWords = string[]
 
 export async function generateMnemonic(
     _federationId: string,
-): Promise<string[]> {
+): Promise<SeedWords> {
     return new Promise(resolve => {
         resolve([
             'never',

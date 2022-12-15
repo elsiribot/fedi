@@ -13,6 +13,7 @@ import {
     generateAddress as _generateAddress,
     generateEcash as _generateEcash,
     generateInvoice as _generateInvoice,
+    generateMnemonic as _generateMnemonic,
     locateRecoveryFile as _locateRecoveryFile,
     listTransactions as _listTransactions,
     payAddress as _payAddress,
@@ -194,6 +195,9 @@ function useBridge() {
             },
             [selectedFederation],
         ),
+        generateMnemonic: useCallback(() => {
+            return _generateMnemonic(selectedFederation!.name)
+        }, [selectedFederation]),
         listTransactions: useCallback(() => {
             return _listTransactions(selectedFederation!.name)
         }, [selectedFederation]),

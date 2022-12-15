@@ -12,6 +12,7 @@ import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
+import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
@@ -59,6 +60,7 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     Home: undefined
     LnInvoice: { invoice: string }
+    PersonalBackupSuccess: undefined
     ReceiveSuccess: { tx: TemporaryTransaction }
     Receive: undefined
     ReceiveOffline: undefined
@@ -246,6 +248,11 @@ const MainNavigator = () => {
                                 options={() => ({
                                     header: () => <RecoveryWordsHeader />,
                                 })}
+                            />
+                            <Stack.Screen
+                                name="PersonalBackupSuccess"
+                                component={PersonalBackupSuccess}
+                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="RequestCameraAccess"

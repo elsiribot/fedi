@@ -1,14 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
+import { SeedWords } from '../bridge'
+import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
-
-// TODO: Get seed phrase from bridge
-const MOCK_SEED_WORDS =
-    'never gonna give you up never gonna let you down never gonna'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RecoveryWords'>
 
@@ -32,7 +30,17 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
 const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const seedWords = MOCK_SEED_WORDS.split(' ')
+    const { generateMnemonic } = useBridge()
+    const [seedWords, setSeedWords] = useState<SeedWords>([])
+
+    useEffect(() => {
+        const getMnemonic = async () => {
+            const seed = await generateMnemonic()
+            setSeedWords(seed)
+        }
+
+        getMnemonic()
+    }, [generateMnemonic])
 
     const renderFirstSixSeedWords = () => {
         return seedWords
@@ -71,7 +79,7 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
-                    navigation.navigate('Home')
+                    navigation.navigate('PersonalBackupSuccess')
                 }}
             />
         </View>
