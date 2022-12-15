@@ -1,3 +1,4 @@
+import { StringOmit } from '@rneui/base'
 import {
     EmitterSubscription,
     NativeEventEmitter,
@@ -52,16 +53,6 @@ export enum IncomingBitcoinTransactionStatus {
     complete = 'complete',
 }
 
-export type BitcoinTransaction = {
-    type: TransactionType.bitcoin
-    address: string
-    txid: string
-    id: number
-    createdAt: number
-    direction: TransactionDirection
-    amount: number
-}
-
 export type LightningTransactionDetails = {
     invoice: string
     fee: number | null
@@ -79,6 +70,7 @@ export type OfflineTransactionDetails = {
 }
 
 export interface Transaction {
+    id: string
     createdAt: number
     direction: TransactionDirection
     amount: number
@@ -167,6 +159,17 @@ export async function listTransactions(
     })
     let response = await FedimintFfi.rpc('listTransactions', payload)
     return handleRpcResponse<Transaction[]>(response)
+}
+
+export async function updateTransactionNotes(
+    transactionId: string,
+    notes: string,
+    federationId: string,
+): Promise<null> {
+    let payload = JSON.stringify({ federationId, transactionId, notes })
+    console.log('updatetx', payload)
+    let response = await FedimintFfi.rpc('updateTransactionNotes', payload)
+    return handleRpcResponse<null>(response)
 }
 
 export async function joinFederation(

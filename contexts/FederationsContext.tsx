@@ -16,6 +16,7 @@ import {
     generateMnemonic as _generateMnemonic,
     locateRecoveryFile as _locateRecoveryFile,
     listTransactions as _listTransactions,
+    updateTransactionNotes as _updateTransactionNotes,
     payAddress as _payAddress,
     payInvoice as _payInvoice,
     receiveEcash as _receiveEcash,
@@ -201,6 +202,16 @@ function useBridge() {
         listTransactions: useCallback(() => {
             return _listTransactions(selectedFederation!.name)
         }, [selectedFederation]),
+        updateTransactionNotes: useCallback(
+            (transactionId: string, notes: string) => {
+                return _updateTransactionNotes(
+                    transactionId,
+                    notes,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
         locateRecoveryFile: useCallback(() => {
             return _locateRecoveryFile(selectedFederation!.name)
         }, [selectedFederation]),

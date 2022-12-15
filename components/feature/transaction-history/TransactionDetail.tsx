@@ -1,5 +1,5 @@
-import { Divider, Icon, Text, useTheme } from '@rneui/themed'
-import React from 'react'
+import { Divider, Icon, Input, Text, useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
@@ -9,10 +9,10 @@ import {
     Transaction,
     TransactionDirection,
 } from '../../../bridge'
+import { useBridge } from '../../../contexts/FederationsContext'
 import amountUtils from '../../../utils/AmountUtils'
 import DateUtils from '../../../utils/DateUtils'
 import StringUtils from '../../../utils/StringUtils'
-import SendBitcoinHeader from '../send/SendBitcoinHeader'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -23,9 +23,15 @@ const TransactionDetail = ({
     txn,
     handleCloseModal,
 }: TransactionDetailProps) => {
+    const { updateTransactionNotes } = useBridge()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const fee = getFee(txn)
+    const [notes, setNotes] = useState(txn.notes)
+    const onChangeNotes = (updatedNotes: string) => {
+        setNotes(updatedNotes)
+        updateTransactionNotes(txn.id, updatedNotes)
+    }
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -112,7 +118,12 @@ const TransactionDetail = ({
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('phrases.add-note')} +`}</Text>
-                    <Text>{`${'Optional'}`}</Text>
+                    {/* FIXME: this is terrible UX, probably shouldn't write on every keystroke */}
+                    <Input
+                        onChangeText={onChangeNotes}
+                        value={notes}
+                        returnKeyType="done"
+                    />
                 </View>
             </View>
         </View>
