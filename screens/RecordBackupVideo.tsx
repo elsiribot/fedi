@@ -3,7 +3,7 @@ import React from 'react'
 import { ActivityIndicator, View, StyleSheet } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import BackupVideoRecorder from '../components/feature/backup/BackupVideoRecorder'
 import { useTranslation } from 'react-i18next'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'

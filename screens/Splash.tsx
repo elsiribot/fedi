@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { ImageBackground, StyleSheet, View } from 'react-native'
 
 import { joinFederation, listFederations } from '../bridge'
-import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../Router'
 import { Images } from '../assets/images'
 import {
     changeSelectedFederation,
@@ -13,6 +12,7 @@ import {
     useFederationsContext,
 } from '../contexts/FederationsContext'
 import { TEST_FEDERATION } from '../constants'
+import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 

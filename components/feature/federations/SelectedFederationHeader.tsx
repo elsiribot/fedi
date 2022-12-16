@@ -5,7 +5,7 @@ import Header from '../../ui/Header'
 import { useFederationsContext } from '../../../contexts/FederationsContext'
 import { Federation } from '../../../bridge'
 import { Images } from '../../../assets/images'
-import { DRAWER_NAVIGATION_ID } from '../../../Router'
+import { DRAWER_NAVIGATION_ID } from '../../../types/navigation'
 
 export type Props = { navigation: any }
 

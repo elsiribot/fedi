@@ -7,7 +7,7 @@ import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
 
 import { Images } from '../assets/images'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { useBridge } from '../contexts/FederationsContext'
 
 export type Props = NativeStackScreenProps<

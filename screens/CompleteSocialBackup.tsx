@@ -7,7 +7,7 @@ import { View, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { useBridge } from '../contexts/FederationsContext'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'

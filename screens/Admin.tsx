@@ -12,8 +12,7 @@ import {
 } from 'react-native'
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type { HomeTabsParamList } from './Home'
-import type { RootStackParamList } from '../Router'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import { Images } from '../assets/images'
 import {
     setUserIsGuardian,

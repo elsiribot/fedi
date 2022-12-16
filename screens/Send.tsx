@@ -6,7 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { Button } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 

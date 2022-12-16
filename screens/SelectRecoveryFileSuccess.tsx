@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import Success from '../components/ui/Success'
 
 export type Props = NativeStackScreenProps<

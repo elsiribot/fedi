@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import Success from '../components/ui/Success'
 
 export type Props = NativeStackScreenProps<

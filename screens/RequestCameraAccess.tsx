@@ -5,7 +5,7 @@ import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 import { Button, Icon, Image, Text, useTheme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<

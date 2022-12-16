@@ -7,7 +7,7 @@ import { dataToFrames } from 'qrloop'
 
 import { Images } from '../assets/images'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>

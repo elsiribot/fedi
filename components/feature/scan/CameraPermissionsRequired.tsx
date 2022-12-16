@@ -1,7 +1,10 @@
 import { useNavigation } from '@react-navigation/native'
 import React, { useEffect, useState } from 'react'
 import { Camera } from 'react-native-vision-camera'
-import { NavigationHook, RequestCameraAccessParams } from '../../../Router'
+import {
+    NavigationHook,
+    RequestCameraAccessParams,
+} from '../../../types/navigation'
 
 interface Props extends RequestCameraAccessParams {
     children: React.ReactNode

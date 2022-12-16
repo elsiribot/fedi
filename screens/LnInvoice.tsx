@@ -19,7 +19,7 @@ import {
     ReceivedLightningEvent,
     TFedimintEventEmitter,
 } from '../bridge'
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>

@@ -11,7 +11,7 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import { useNavigation } from '@react-navigation/native'
 
 import { Images } from '../../assets/images'
-import type { NavigationHook, RootStackParamList } from '../../Router'
+import type { NavigationHook, RootStackParamList } from '../../types/navigation'
 
 interface SuccessBase {
     iconImage?: ImageSourcePropType

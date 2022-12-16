@@ -8,18 +8,13 @@ import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import type { RootStackParamList } from '../Router'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
 import Wallet from './Wallet'
 import Header from '../components/ui/Header'
 import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
-
-export type HomeTabsParamList = {
-    Admin: undefined
-    Wallet: { offline: boolean }
-}
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>()
 

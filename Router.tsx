@@ -1,9 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import {
-    createNativeStackNavigator,
-    NativeStackNavigationProp,
-} from '@react-navigation/native-stack'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
 
@@ -65,68 +62,10 @@ import TransactionsHeader from './components/feature/transaction-history/Transac
 
 import { useFederationsContext } from './contexts/FederationsContext'
 
-import { TemporaryTransaction } from './bridge'
-
-export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
-export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
-export type RequestCameraAccessParams = {
-    alternativeActionButton: React.ReactNode | null
-    message: string | null
-    nextScreen: keyof RootStackParamList
-}
-export type RootStackParamList = {
-    ChooseBackupMethod: undefined
-    ChooseRecoveryMethod: undefined
-    CompleteSocialBackup: undefined
-    CompleteSocialRecovery: undefined
-    ConfirmSendLightning: { invoice: string }
-    ConfirmSendOnChain: { address: string }
-    ConfirmReceiveOffline: { ecash: string; amount: number }
-    ConnectedFederationsDrawer: undefined
-    FederationInvite: { inviteLink: string }
-    Home: undefined
-    LnInvoice: { invoice: string }
-    PersonalBackupSuccess: undefined
-    LocateSocialRecovery: undefined
-    ReceiveSuccess: { tx: TemporaryTransaction }
-    Receive: undefined
-    ReceiveOffline: undefined
-    RecoveryWords: undefined
-    RecoveryAssistConfirmation: undefined
-    RecoveryAssistSuccess: undefined
-    RecordBackupVideo: undefined
-    RequestCameraAccess: RequestCameraAccessParams
-    ScanFederationCode: undefined
-    ScanSocialRecoveryCode: undefined
-    SelectRecoveryFileSuccess: { fileName: string }
-    SelectRecoveryFileFailure: { fileName: string }
-    Send: undefined
-    SendOfflineAmount: undefined
-    SendOfflineQr: { ecash: string; amount: number }
-    Splash: undefined
-    StartPersonalBackup: undefined
-    StartRecoveryAssist: undefined
-    StartSocialBackup: undefined
-    SocialBackupCloudUpload: undefined
-    SocialBackupProcessing: undefined
-    SocialBackupSuccess: undefined
-    SocialRecoveryQrModal: undefined
-    SocialRecoverySuccess: undefined
-    SocialRecoveryFailure: undefined
-    Transactions: undefined
-}
-export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
+import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
-
-// This type declaration allows all instances of useNavigation
-// to be aware of type-safety from RootStackParamsList
-declare global {
-    namespace ReactNavigation {
-        interface RootParamList extends RootStackParamList {}
-    }
-}
 
 const MainNavigator = () => {
     const {
