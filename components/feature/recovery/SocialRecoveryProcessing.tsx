@@ -1,33 +1,13 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
-import { Images } from '../assets/images'
-import HoloCard from '../components/ui/HoloCard'
-import LineBreak from '../components/ui/LineBreak'
+import { Images } from '../../../assets/images'
 
-import type { RootStackParamList } from '../Router'
-
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'SocialBackupProcessing'
->
-
-const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
+// TODO: Render within wallet if social recovery is in progress
+const SocialRecoveryProcessing: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-
-    // TODO: Integrate bridge functions
-    useEffect(() => {
-        const simulateRecoveryFileCreation = () => {
-            setTimeout(() => {
-                navigation.navigate('SocialBackupCloudUpload')
-            }, 3000)
-        }
-
-        simulateRecoveryFileCreation()
-    }, [navigation])
 
     return (
         <View style={styles(theme).container}>
@@ -43,24 +23,6 @@ const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
                 <Text h3 h3Style={styles(theme).label}>
                     {t('feature.backup.creating-recovery-file')}
                 </Text>
-
-                <HoloCard
-                    body={
-                        <View>
-                            <Text>
-                                {t(
-                                    'feature.backup.social-backup-processing-info-1',
-                                )}
-                            </Text>
-                            <LineBreak />
-                            <Text>
-                                {t(
-                                    'feature.backup.social-backup-processing-info-2',
-                                )}
-                            </Text>
-                        </View>
-                    }
-                />
             </View>
         </View>
     )
@@ -75,16 +37,16 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.lg,
+            padding: 12,
         },
         label: {
             textAlign: 'center',
-            marginVertical: theme.spacing.xl,
-            paddingHorizontal: theme.spacing.xl,
+            marginVertical: 16,
+            paddingHorizontal: 24,
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: theme.spacing.xl,
+            paddingHorizontal: 24,
             fontWeight: '400',
         },
         holoCircle: {
@@ -100,6 +62,15 @@ const styles = (theme: Theme) =>
             height: theme.sizes.lg,
             width: theme.sizes.lg,
         },
+        roundedCardContainer: {
+            borderRadius: 16,
+            width: '100%',
+            marginHorizontal: 0,
+            padding: 0,
+        },
+        imageBackground: {
+            padding: 16,
+        },
     })
 
-export default SocialBackupProcessing
+export default SocialRecoveryProcessing

@@ -5,33 +5,32 @@ import { StyleSheet, View } from 'react-native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
-import amountUtils from '../utils/AmountUtils'
 import Success from '../components/ui/Success'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveSuccess'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'SelectRecoveryFileSuccess'
+>
 
-const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
+const SelectRecoveryFileSuccess: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { tx } = route.params
+    const { fileName } = route.params
 
     return (
         <Success
             message={
                 <View style={styles(theme).textContainer}>
-                    <Text h3>
-                        {t(
-                            tx.type === 'bitcoin'
-                                ? 'feature.receive.pending-transaction'
-                                : 'feature.receive.you-received',
-                        )}
+                    <Text h3 h3Style={styles(theme).successMessage}>
+                        {t('feature.recovery.successfully-opened-fedi-file')}
                     </Text>
-                    <Text h3>{`${amountUtils.millisToSats(tx.amount)} ${t(
-                        'words.sats',
-                    )}`}</Text>
+                    <Text h4 h4Style={styles(theme).fileNameText}>
+                        {fileName}
+                    </Text>
                 </View>
             }
-            buttonText={t('words.done')}
+            buttonText={t('words.okay')}
+            nextScreen={'CompleteSocialRecovery'}
         />
     )
 }
@@ -52,4 +51,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ReceiveSuccess
+export default SelectRecoveryFileSuccess

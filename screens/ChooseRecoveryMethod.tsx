@@ -1,0 +1,105 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
+
+import { Images } from '../assets/images'
+import HoloCard from '../components/ui/HoloCard'
+import LineBreak from '../components/ui/LineBreak'
+import { useFederationsContext } from '../contexts/FederationsContext'
+
+import type { RootStackParamList } from '../Router'
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'ChooseRecoveryMethod'
+>
+
+const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { selectedFederation } = useFederationsContext().state
+
+    return (
+        <View style={styles(theme).container}>
+            <Text h4 h4Style={styles(theme).instructionsText}>
+                {t('feature.recovery.choose-method-instructions', {
+                    federation: selectedFederation?.name,
+                })}
+            </Text>
+
+            <HoloCard
+                iconImage={Images.SocialPeople}
+                title={t('feature.recovery.social-recovery')}
+                body={
+                    <>
+                        <Text
+                            h4
+                            h4Style={styles(theme).recoveryMethodInstructions}>
+                            {t('feature.recovery.social-recovery-method')}
+                        </Text>
+                        <Button
+                            title={t('feature.recovery.start-social-recovery')}
+                            containerStyle={styles(theme).recoveryMethodButton}
+                            onPress={() =>
+                                navigation.navigate('LocateSocialRecovery')
+                            }
+                        />
+                    </>
+                }
+            />
+            <LineBreak />
+            <HoloCard
+                iconImage={Images.Note}
+                title={t('feature.recovery.personal-recovery')}
+                body={
+                    <>
+                        <Text
+                            h4
+                            h4Style={styles(theme).recoveryMethodInstructions}>
+                            {t('feature.recovery.personal-recovery-method')}
+                        </Text>
+                        <Button
+                            title={t(
+                                'feature.recovery.start-personal-recovery',
+                            )}
+                            containerStyle={styles(theme).recoveryMethodButton}
+                            onPress={() => {
+                                // navigation.navigate('StartPersonalRecovery')
+                            }}
+                            disabled
+                        />
+                    </>
+                }
+            />
+        </View>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: theme.spacing.xl,
+        },
+        instructionsText: {
+            textAlign: 'center',
+            marginBottom: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.lg,
+            fontWeight: '400',
+        },
+        recoveryMethodButton: {
+            width: '100%',
+            marginTop: theme.spacing.lg,
+        },
+        recoveryMethodInstructions: {
+            textAlign: 'center',
+            fontWeight: '400',
+            paddingVertical: theme.spacing.sm,
+        },
+    })
+
+export default ChooseRecoveryMethod

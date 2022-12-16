@@ -1,0 +1,91 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Text, Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import QRCode from 'react-native-qrcode-svg'
+import { Images } from '../assets/images'
+import HoloCard from '../components/ui/HoloCard'
+import { useBridge } from '../contexts/FederationsContext'
+import type { RootStackParamList } from '../Router'
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'SocialRecoveryQrModal'
+>
+
+const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
+
+const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+    const { backupQr } = useBridge()
+    const [recoveryQrCode, setRecoveryQrCode] = useState<string>('')
+
+    useEffect(() => {
+        const getRecoveryAssistCode = async () => {
+            const recoveryAssistCode = await backupQr()
+            console.log('recoveryAssistCode', recoveryAssistCode)
+            setRecoveryQrCode(recoveryAssistCode)
+        }
+
+        getRecoveryAssistCode()
+    }, [navigation, backupQr])
+
+    return (
+        <View style={styles(theme).container}>
+            <Pressable
+                style={[
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+                ]}
+                onPress={navigation.goBack}
+            />
+            <View style={styles(theme).qrCodeContainer}>
+                {recoveryQrCode ? (
+                    <QRCode
+                        value={recoveryQrCode}
+                        size={QR_CODE_SIZE}
+                        logo={Images.FediQrLogo}
+                    />
+                ) : null}
+            </View>
+            <View style={styles(theme).holoCardContainer}>
+                <HoloCard
+                    body={
+                        <Text h4 h4Style={styles(theme).instructionsText}>
+                            {t('feature.recovery.guardian-qr-instructions')}
+                        </Text>
+                    }
+                />
+            </View>
+        </View>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        holoCardContainer: {
+            paddingVertical: theme.spacing.lg,
+            width: '90%',
+        },
+        instructionsText: {
+            fontWeight: '400',
+            textAlign: 'center',
+        },
+        qrCodeContainer: {
+            borderRadius: 14,
+            padding: QR_CODE_SIZE * 0.05,
+            backgroundColor: theme.colors.white,
+            flexDirection: 'row',
+            justifyContent: 'center',
+        },
+    })
+
+export default SocialRecoveryQrModal

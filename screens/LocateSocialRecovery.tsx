@@ -1,0 +1,116 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { View, StyleSheet } from 'react-native'
+
+import { Images } from '../assets/images'
+import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecoveryFileButton'
+import HoloCard from '../components/ui/HoloCard'
+import LineBreak from '../components/ui/LineBreak'
+import { useFederationsContext } from '../contexts/FederationsContext'
+
+import type { RootStackParamList } from '../Router'
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'LocateSocialRecovery'
+>
+
+const LocateSocialRecovery: React.FC<Props> = () => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { selectedFederation } = useFederationsContext().state
+
+    return (
+        <View style={styles(theme).container}>
+            <Text style={styles(theme).instructionsText}>
+                {t('feature.recovery.social-recovery-instructions')}
+            </Text>
+            <HoloCard
+                iconImage={Images.FediFile}
+                title={t('feature.recovery.locate-social-recovery-file')}
+                body={
+                    <>
+                        <View style={styles(theme).textContainer}>
+                            <Text>
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-1',
+                                )}
+                            </Text>
+                            <LineBreak />
+                            <Text>
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-2',
+                                )}
+                            </Text>
+                            <Text>
+                                {'  \u2022 '}
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-check-1',
+                                )}
+                            </Text>
+                            <Text>
+                                {'  \u2022 '}
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-check-2',
+                                )}
+                            </Text>
+                            <Text>
+                                {'  \u2022 '}
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-check-3',
+                                )}
+                            </Text>
+                            <Text>
+                                {'  \u2022 '}
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-check-4',
+                                )}
+                            </Text>
+                            <LineBreak />
+                            <Text>
+                                {t(
+                                    'feature.recovery.locate-social-recovery-instructions-3',
+                                )}
+                            </Text>
+                            <Text style={styles(theme).boldText}>
+                                {t(
+                                    'feature.recovery.default-fedi-file-format',
+                                    {
+                                        federation: selectedFederation?.name,
+                                    },
+                                )}
+                            </Text>
+                            <LineBreak />
+                        </View>
+                        <SelectRecoveryFileButton />
+                    </>
+                }
+            />
+        </View>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: theme.spacing.xl,
+        },
+        boldText: {
+            fontWeight: '900',
+        },
+        instructionsText: {
+            textAlign: 'center',
+            paddingHorizontal: theme.spacing.xl,
+            fontWeight: '400',
+        },
+        textContainer: {
+            width: '100%',
+        },
+    })
+
+export default LocateSocialRecovery

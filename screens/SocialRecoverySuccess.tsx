@@ -7,13 +7,18 @@ import Success from '../components/ui/Success'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'SocialBackupSuccess'
+    'SocialRecoverySuccess'
 >
 
-const SocialBackupSuccess: React.FC<Props> = () => {
+const SocialRecoverySuccess: React.FC<Props> = () => {
     const { t } = useTranslation()
 
-    return <Success messageText={t('feature.backup.successfully-backed-up')} />
+    return (
+        <Success
+            messageText={t('feature.recovery.you-completed-social-recovery')}
+            buttonText={t('words.okay')}
+        />
+    )
 }
 
-export default SocialBackupSuccess
+export default SocialRecoverySuccess

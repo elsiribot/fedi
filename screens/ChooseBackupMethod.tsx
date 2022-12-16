@@ -1,10 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
+import HoloCard from '../components/ui/HoloCard'
+import LineBreak from '../components/ui/LineBreak'
 // import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../Router'
@@ -46,51 +48,48 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
             <Text h4 h4Style={styles(theme).instructionsText}>
                 {t('feature.backup.choose-method-instructions')}
             </Text>
-            <ImageBackground
-                source={Images.HoloBackground}
-                style={styles(theme).backupMethodContainer}
-                imageStyle={styles(theme).imageBackgroundBorder}>
-                <Image
-                    source={Images.SocialPeople}
-                    style={styles(theme).iconImage}
-                />
-                <Text h4 h4Style={styles(theme).backupMethodLabel}>
-                    {t('feature.backup.social-backup')}
-                </Text>
-                <Text h4 h4Style={styles(theme).backupMethodInstructions}>
-                    {t('feature.backup.social-backup-instructions')}
-                </Text>
-                <Button
-                    title={t('feature.backup.start-social-backup')}
-                    containerStyle={styles(theme).backupMethodButton}
-                    onPress={handleStartSocialBackup}
-                />
-            </ImageBackground>
-            <ImageBackground
-                source={Images.HoloBackground}
-                style={styles(theme).backupMethodContainer}
-                imageStyle={styles(theme).imageBackgroundBorder}>
-                <Image source={Images.Note} style={styles(theme).iconImage} />
-                <Text h4 h4Style={styles(theme).backupMethodLabel}>
-                    {t('feature.backup.personal-backup')}
-                </Text>
-                <Text h4 h4Style={styles(theme).backupMethodInstructions}>
-                    {t('feature.backup.personal-backup-instructions')}
-                </Text>
-                <Button
-                    title={t('feature.backup.start-personal-backup')}
-                    containerStyle={styles(theme).backupMethodButton}
-                    onPress={() => {
-                        navigation.navigate('StartPersonalBackup')
-                    }}
-                />
-            </ImageBackground>
+            <HoloCard
+                iconImage={Images.SocialPeople}
+                title={t('feature.backup.social-backup')}
+                body={
+                    <>
+                        <Text
+                            h4
+                            h4Style={styles(theme).backupMethodInstructions}>
+                            {t('feature.backup.social-backup-instructions')}
+                        </Text>
+                        <Button
+                            title={t('feature.backup.start-social-backup')}
+                            containerStyle={styles(theme).backupMethodButton}
+                            onPress={handleStartSocialBackup}
+                        />
+                    </>
+                }
+            />
+            <LineBreak />
+            <HoloCard
+                iconImage={Images.Note}
+                title={t('feature.backup.personal-backup')}
+                body={
+                    <>
+                        <Text
+                            h4
+                            h4Style={styles(theme).backupMethodInstructions}>
+                            {t('feature.backup.personal-backup-instructions')}
+                        </Text>
+                        <Button
+                            title={t('feature.backup.start-personal-backup')}
+                            containerStyle={styles(theme).backupMethodButton}
+                            onPress={() => {
+                                navigation.navigate('StartPersonalBackup')
+                            }}
+                        />
+                    </>
+                }
+            />
         </View>
     )
 }
-
-const WINDOW_WIDTH = Dimensions.get('window').width
-const CARD_WIDTH = WINDOW_WIDTH * 0.85
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
@@ -98,37 +97,21 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: 24,
+            padding: theme.spacing.xl,
         },
-        backupMethodContainer: {
-            width: CARD_WIDTH,
-            alignItems: 'center',
-            padding: 24,
-            marginVertical: 24,
-            justifyContent: 'space-between',
-        },
-        backupMethodLabel: {
-            paddingTop: 16,
+        backupMethodButton: {
+            width: '100%',
+            marginTop: theme.spacing.lg,
         },
         backupMethodInstructions: {
             textAlign: 'center',
             fontWeight: '400',
-            paddingTop: 16,
-        },
-        backupMethodButton: {
-            width: '100%',
-            marginTop: 16,
-        },
-        imageBackgroundBorder: {
-            borderRadius: 12,
-        },
-        iconImage: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
+            paddingVertical: theme.spacing.sm,
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            marginBottom: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.lg,
             fontWeight: '400',
         },
     })
