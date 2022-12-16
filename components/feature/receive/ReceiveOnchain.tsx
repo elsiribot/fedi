@@ -17,7 +17,7 @@ import { Images } from '../../../assets/images'
 import { TransactionEvent, TFedimintEventEmitter } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../types/navigation'
-import StringUtils from '../../../utils/StringUtils'
+import stringUtils from '../../../utils/StringUtils'
 
 type ReceiveOnchainNavigationProp =
     NativeStackNavigationProp<RootStackParamList>
@@ -102,7 +102,7 @@ const ReceiveOnchain: React.FC<{}> = () => {
                             <Text
                                 style={styles.addressString}
                                 numberOfLines={1}>
-                                {StringUtils.truncateMiddleOfString(address, 6)}
+                                {stringUtils.truncateMiddleOfString(address, 6)}
                             </Text>
                         </View>
                     </Card>

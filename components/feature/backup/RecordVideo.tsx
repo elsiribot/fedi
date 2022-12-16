@@ -5,7 +5,7 @@ import { View, StyleSheet, Pressable, Dimensions } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
 
-import DateUtils from '../../../utils/DateUtils'
+import dateUtils from '../../../utils/DateUtils'
 
 type RecordVideoProps = {
     saveVideo: (video: VideoFile) => {}
@@ -36,7 +36,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
         camera.current?.stopRecording()
     }
 
-    const todaysDate = DateUtils.formatTimestamp(
+    const todaysDate = dateUtils.formatTimestamp(
         Date.now() / 1000,
         'MMMM dd, yyyy',
     )

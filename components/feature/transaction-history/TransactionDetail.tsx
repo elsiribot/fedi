@@ -11,8 +11,8 @@ import {
 } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import amountUtils from '../../../utils/AmountUtils'
-import DateUtils from '../../../utils/DateUtils'
-import StringUtils from '../../../utils/StringUtils'
+import dateUtils from '../../../utils/dateUtils'
+import stringUtils from '../../../utils/StringUtils'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -78,7 +78,7 @@ const TransactionDetail = ({
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('words.time')}`}</Text>
-                    <Text>{`${DateUtils.formatTimestamp(
+                    <Text>{`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd yyyy, h:mmaaa',
                     )}`}</Text>
@@ -97,7 +97,7 @@ const TransactionDetail = ({
                     <View style={styles.detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
                         <Text>
-                            {StringUtils.truncateMiddleOfString(
+                            {stringUtils.truncateMiddleOfString(
                                 txn.lightning.invoice,
                                 5,
                             )}
@@ -108,7 +108,7 @@ const TransactionDetail = ({
                     <View style={styles.detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
                         <Text>
-                            {StringUtils.truncateMiddleOfString(
+                            {stringUtils.truncateMiddleOfString(
                                 txn.bitcoin.txid,
                                 5,
                             )}

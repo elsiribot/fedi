@@ -5,7 +5,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import { Transaction, TransactionDirection } from '../../../bridge'
 import amountUtils from '../../../utils/AmountUtils'
-import DateUtils from '../../../utils/DateUtils'
+import dateUtils from '../../../utils/DateUtils'
 
 type TransactionTileProps = {
     txn: Transaction
@@ -56,7 +56,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                         styles(theme).rightAlignedText,
                         styles(theme).subText,
                     ]}>
-                    {`${DateUtils.formatTimestamp(
+                    {`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd, h:mmaaa',
                     )}`}

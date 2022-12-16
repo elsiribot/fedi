@@ -7,8 +7,8 @@ import { StyleSheet, View } from 'react-native'
 import type { RootStackParamList } from '../types/navigation'
 import { decodeInvoice } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
-import InvoiceUtils from '../utils/InvoiceUtils'
-import StringUtils from '../utils/StringUtils'
+import invoiceUtils from '../utils/InvoiceUtils'
+import stringUtils from '../utils/StringUtils'
 import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 import amountUtils from '../utils/AmountUtils'
 
@@ -23,7 +23,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { invoice } = route.params
 
     const [invoicePaid, setInvoicePaid] = useState(false)
-    const [amount] = useState(InvoiceUtils.getAmountFromInvoice(invoice))
+    const [amount] = useState(invoiceUtils.getAmountFromInvoice(invoice))
     const [unit] = useState('sats')
     const [memo] = useState('Pineapple pizza slice')
     const [expiry] = useState(3600)
@@ -61,12 +61,12 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 <Text>{`${memo}`}</Text>
                 <Text>{''}</Text>
                 <Text>
-                    {`${StringUtils.truncateMiddleOfString(invoice, 14)}`}
+                    {`${stringUtils.truncateMiddleOfString(invoice, 14)}`}
                 </Text>
-                <Text>{`${t('phrases.expires-in')} ${InvoiceUtils.formatExpiry(
+                <Text>{`${t('phrases.expires-in')} ${invoiceUtils.formatExpiry(
                     expiry,
                 )}`}</Text>
-                <Text>{`${t('words.fee')}: ${InvoiceUtils.formatFee(
+                <Text>{`${t('words.fee')}: ${invoiceUtils.formatFee(
                     feeEstimate,
                 )}`}</Text>
             </View>
