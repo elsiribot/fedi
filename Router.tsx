@@ -57,6 +57,12 @@ import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
 import SocialRecoveryQrModal from './screens/SocialRecoveryQrModal'
 import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
+import StartRecoveryAssist from './screens/StartRecoveryAssist'
+import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
+import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
+import SocialRecoverySuccess from './screens/SocialRecoverySuccess'
+import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
+import RecoveryAssistConfirmation from './screens/RecoveryAssistConfirmation'
 
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
@@ -78,19 +84,24 @@ export type RootStackParamList = {
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
+    RecoveryAssistConfirmation: undefined
+    RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
+    ScanSocialRecoveryCode: undefined
     Send: undefined
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: number }
     Splash: undefined
     StartPersonalBackup: undefined
+    StartRecoveryAssist: undefined
     StartSocialBackup: undefined
     SocialBackupCloudUpload: undefined
     SocialBackupProcessing: undefined
     SocialBackupSuccess: undefined
     SocialRecoveryQrModal: undefined
+    SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
     Transactions: undefined
 }
@@ -104,7 +115,9 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Splash" id="MainStackNavigator">
+        <Stack.Navigator
+            initialRouteName="RecoveryAssistConfirmation"
+            id="MainStackNavigator">
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation
@@ -289,6 +302,46 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="SocialRecoveryFailure"
                                 component={SocialRecoveryFailure}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoverySuccess"
+                                component={SocialRecoverySuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="StartRecoveryAssist"
+                                component={StartRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanSocialRecoveryCode"
+                                component={ScanSocialRecoveryCode}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader
+                                            backButton
+                                            closeButton
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryAssistConfirmation"
+                                component={RecoveryAssistConfirmation}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryAssistSuccess"
+                                component={RecoveryAssistSuccess}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen

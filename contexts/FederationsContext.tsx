@@ -10,19 +10,20 @@ import React, {
 
 import {
     Federation,
-    backupQr as _backupQr,
-    generateAddress as _generateAddress,
-    generateEcash as _generateEcash,
-    generateInvoice as _generateInvoice,
-    generateMnemonic as _generateMnemonic,
-    locateRecoveryFile as _locateRecoveryFile,
-    listTransactions as _listTransactions,
-    payAddress as _payAddress,
-    payInvoice as _payInvoice,
-    receiveEcash as _receiveEcash,
-    uploadBackupFile as _uploadBackupFile,
-    validateBackupFile as _validateBackupFile,
-    validateEcash as _validateEcash,
+    authenticateGuardian,
+    backupQr,
+    generateAddress,
+    generateEcash,
+    generateInvoice,
+    generateMnemonic,
+    locateRecoveryFile,
+    listTransactions,
+    payAddress,
+    payInvoice,
+    receiveEcash,
+    uploadBackupFile,
+    validateBackupFile,
+    validateEcash,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
@@ -30,10 +31,12 @@ import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 interface FederationsContextState {
     connectedFederations: Federation[]
     selectedFederation: Federation | null
+    userIsGuardian: boolean
 }
 const initialState: FederationsContextState = {
     connectedFederations: [],
     selectedFederation: null,
+    userIsGuardian: false,
 }
 type AppState = typeof initialState
 
@@ -43,6 +46,7 @@ enum ActionType {
     CHANGE_SELECTED_FEDERATION = 'CHANGE_SELECTED_FEDERATION',
     CLEAR_CONNECTED_FEDERATIONS = 'CLEAR_CONNECTED_FEDERATIONS',
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
+    SET_USER_IS_GUARDIAN = 'SET_USER_IS_GUARDIAN',
     UPDATE_CONNECTED_FEDERATIONS = 'UPDATE_CONNECTED_FEDERATIONS',
 }
 interface Action {
@@ -80,6 +84,12 @@ export function resetFederationsState(): Action {
         type: ActionType.RESET_FEDERATIONS_STATE,
     }
 }
+export function setUserIsGuardian(isGuardian: boolean): Action {
+    return {
+        type: ActionType.SET_USER_IS_GUARDIAN,
+        payload: isGuardian,
+    }
+}
 export function updateConnectedFederations(federations: Federation[]): Action {
     return {
         type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
@@ -104,6 +114,11 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 selectedFederation: new Federation(action.payload),
+            }
+        case ActionType.SET_USER_IS_GUARDIAN:
+            return {
+                ...state,
+                userIsGuardian: action.payload,
             }
         case ActionType.UPDATE_CONNECTED_FEDERATIONS:
             return {
@@ -183,21 +198,27 @@ function useBridge() {
     const { selectedFederation } = state
 
     return {
+        authenticateGuardian: useCallback(
+            (secret: string) => {
+                return authenticateGuardian(selectedFederation!.name, secret)
+            },
+            [selectedFederation],
+        ),
         backupQr: useCallback(() => {
-            return _backupQr(selectedFederation!.name)
+            return backupQr(selectedFederation!.name)
         }, [selectedFederation]),
         generateAddress: useCallback(() => {
-            return _generateAddress(selectedFederation!.name)
+            return generateAddress(selectedFederation!.name)
         }, [selectedFederation]),
         generateEcash: useCallback(
             (amount: number) => {
-                return _generateEcash(amount, selectedFederation!.name)
+                return generateEcash(amount, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         generateInvoice: useCallback(
             (amount: number, description: string) => {
-                return _generateInvoice(
+                return generateInvoice(
                     amount,
                     description,
                     selectedFederation!.name,
@@ -206,50 +227,47 @@ function useBridge() {
             [selectedFederation],
         ),
         generateMnemonic: useCallback(() => {
-            return _generateMnemonic(selectedFederation!.name)
+            return generateMnemonic(selectedFederation!.name)
         }, [selectedFederation]),
         listTransactions: useCallback(() => {
-            return _listTransactions(selectedFederation!.name)
+            return listTransactions(selectedFederation!.name)
         }, [selectedFederation]),
         locateRecoveryFile: useCallback(() => {
-            return _locateRecoveryFile(selectedFederation!.name)
+            return locateRecoveryFile(selectedFederation!.name)
         }, [selectedFederation]),
         payInvoice: useCallback(
             (invoice: string) => {
-                return _payInvoice(invoice, selectedFederation!.name)
+                return payInvoice(invoice, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         payAddress: useCallback(
             (address: string, sats: number) => {
-                return _payAddress(address, sats, selectedFederation!.name)
+                return payAddress(address, sats, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         receiveEcash: useCallback(
             (ecash: string) => {
-                return _receiveEcash(ecash, selectedFederation!.name)
+                return receiveEcash(ecash, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         validateBackupFile: useCallback(
             (file: string) => {
-                return _validateBackupFile(file, selectedFederation!.name)
+                return validateBackupFile(file, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         validateEcash: useCallback(
             (ecash: string) => {
-                return _validateEcash(ecash, selectedFederation!.name)
+                return validateEcash(ecash, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
-                return _uploadBackupFile(
-                    selectedFederation!.name,
-                    videoFilePath,
-                )
+                return uploadBackupFile(selectedFederation!.name, videoFilePath)
             },
             [selectedFederation],
         ),

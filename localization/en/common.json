@@ -141,6 +141,7 @@
             "opening-backup-file-failed": "Opening backup file failed",
             "opening-backup-file-failed-instructions": "Backup file {{fileName}} failed to open. Please try and recover from another one of your shared locations.",
             "open-qr-code": "Open QR Code",
+            "paste-social-recovery-code": "Paste social recovery code",
             "personal-recovery": "Personal recovery",
             "personal-recovery-method": "If you wrote down 12 recovery words you can enter them again to recover your wallet",
             "recover-wallet": "Recover a wallet",

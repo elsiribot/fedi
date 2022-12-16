@@ -349,7 +349,7 @@ export async function validateBackupFile(
 // This string contains a public key and URL to video file
 export async function backupQr(_federationId: string): Promise<string> {
     return new Promise(resolve => {
-        resolve('TODO')
+        resolve('socialrecovery:pubkey:videourl')
     })
 }
 
@@ -358,9 +358,14 @@ export async function authenticateGuardian(
     _federationId: string,
     _secret: string,
 ): Promise<null> {
-    return new Promise(resolve => {
-        resolve(null)
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, secret })
+    // let response = await FedimintFfi.rpc('authenticateGuardian', payload)
+    // return handleRpcResponse<boolean>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<null>('{"result": "null"}')
+    // return handleRpcResponse<boolean>('{"error": "invalid secret"}')
 }
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
