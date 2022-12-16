@@ -23,16 +23,15 @@ const CameraPermissionsRequired: React.FC<Props> = ({
     useEffect(() => {
         const checkForPermissions = async () => {
             const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'denied') {
+            console.debug('checkForPermissions: ', status)
+            if (status === 'authorized') {
+                setPermissionGranted(true)
+            } else {
                 navigation.replace('RequestCameraAccess', {
                     alternativeActionButton,
                     message,
                     nextScreen,
                 })
-            }
-            if (status === 'authorized') {
-                setPermissionGranted(true)
             }
         }
 
