@@ -11,7 +11,7 @@ import {
 } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import amountUtils from '../../../utils/AmountUtils'
-import dateUtils from '../../../utils/dateUtils'
+import dateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'
 
 type TransactionDetailProps = {
