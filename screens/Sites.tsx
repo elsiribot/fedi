@@ -1,7 +1,7 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import { Text } from '@rneui/themed'
+import { Button } from '@rneui/themed'
 
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 
@@ -10,10 +10,13 @@ export type Props = BottomTabScreenProps<
     'Sites'
 >
 
-const Sites: React.FC<Props> = () => {
+const Sites: React.FC<Props> = ({ navigation }) => {
+    const onTest = () => {
+        navigation.navigate('Webview', { url: 'https://bitcoin.org' })
+    }
     return (
         <View style={styles.container}>
-            <Text>Sites</Text>
+            <Button title={'WeblnTest'} onPress={onTest} />
         </View>
     )
 }

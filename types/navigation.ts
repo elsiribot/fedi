@@ -65,4 +65,5 @@ export type RootStackParamList = {
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
     Transactions: undefined
+    Webview: { url: string }
 }

@@ -68,6 +68,7 @@ import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
+import Webview from './screens/Webview'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -365,6 +366,11 @@ const MainNavigator = () => {
                                 options={() => ({
                                     header: () => <ScanFederationCodeHeader />,
                                 })}
+                            />
+                            <Stack.Screen
+                                name="Webview"
+                                component={Webview}
+                                options={{ headerShown: false }}
                             />
                         </Stack.Group>
                         <Stack.Group screenOptions={{ presentation: 'modal' }}>
