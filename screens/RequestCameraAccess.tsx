@@ -1,4 +1,3 @@
-import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,7 +5,7 @@ import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 import { Button, Icon, Image, Text, useTheme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<
@@ -17,7 +16,7 @@ export type Props = NativeStackScreenProps<
 const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { nextScreen } = route.params
+    const { alternativeActionButton, message, nextScreen } = route.params
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -25,7 +24,7 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
             if (status === 'authorized') {
-                navigation.navigate(nextScreen)
+                navigation.replace(nextScreen)
             }
         }
 
@@ -36,7 +35,7 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
         const requestResult = await Camera.requestCameraPermission()
         console.log('requestResult: ', requestResult)
         if (requestResult === 'authorized') {
-            navigation.navigate(nextScreen)
+            navigation.replace(nextScreen)
         }
 
         const status = await Camera.getCameraPermissionStatus()
@@ -44,13 +43,6 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
         // User explicitly denied... link to Settings instead
         if (status === 'denied') {
             Linking.openSettings()
-        }
-    }
-
-    const checkClipboard = async () => {
-        const text = await Clipboard.getString()
-        if (text.startsWith('fedi:')) {
-            console.log('fedi qr code detected')
         }
     }
 
@@ -73,21 +65,13 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Text h3 style={styles.titleText}>
                     {t('phrases.allow-camera-access')}
                 </Text>
-                <Text style={styles.subtitleText}>
-                    {t('feature.federations.camera-access-information')}
-                </Text>
+                <Text style={styles.subtitleText}>{message}</Text>
             </View>
             <View style={styles.buttonsContainer}>
+                {alternativeActionButton}
                 <Button
                     title={t('phrases.allow-camera-access')}
                     onPress={requestPermission}
-                />
-                <Button
-                    title={t(
-                        'feature.federations.paste-federation-code-instead',
-                    )}
-                    onPress={checkClipboard}
-                    type="clear"
                 />
             </View>
         </View>

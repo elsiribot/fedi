@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, Pressable, Dimensions } from 'react-native'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import LineBreak from '../components/ui/LineBreak'
 
 export type Props = NativeStackScreenProps<

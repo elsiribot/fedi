@@ -11,7 +11,7 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import { useNavigation } from '@react-navigation/native'
 
 import { Images } from '../../assets/images'
-import type { RootStackParamList } from '../../Router'
+import type { NavigationHook, RootStackParamList } from '../../types/navigation'
 
 interface SuccessBase {
     iconImage?: ImageSourcePropType
@@ -48,7 +48,7 @@ const Success: React.FC<SuccessProps> = ({
 }: SuccessProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
 
     return (
         <ImageBackground
@@ -71,7 +71,7 @@ const Success: React.FC<SuccessProps> = ({
                     <Button
                         title={buttonText ? buttonText : t('words.done')}
                         onPress={() => {
-                            navigation.navigate(nextScreen)
+                            navigation.replace(nextScreen)
                         }}
                     />
                 )}

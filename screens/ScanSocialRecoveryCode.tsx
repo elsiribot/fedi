@@ -1,19 +1,14 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect } from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { useCameraDevices } from 'react-native-vision-camera'
 import { Button } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import {
-    changeSelectedFederation,
-    updateConnectedFederations,
-    useFederationsContext,
-} from '../contexts/FederationsContext'
-import { joinFederation, listFederations } from '../bridge'
+import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -22,39 +17,28 @@ export type Props = NativeStackScreenProps<
 
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const { state, dispatch } = useFederationsContext()
 
-    useEffect(() => {
-        const checkForPermissions = async () => {
-            const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'denied') {
-                navigation.navigate('RequestCameraAccess', {
-                    nextScreen: 'ScanSocialRecoveryCode',
-                })
+    const handleUserInput = useCallback(
+        async (input: string) => {
+            if (input.startsWith('socialrecovery:')) {
+                console.log('fedi social recovery detected', input)
+                const parts = input.split(':')
+                const pubkey = parts[1]
+                const videoUrl = parts[2]
+                console.log(pubkey, videoUrl)
+
+                navigation.navigate('RecoveryAssistConfirmation')
+            } else {
+                // TODO: display invalid social recovery error toast
             }
-        }
+        },
+        [navigation],
+    )
 
-        checkForPermissions()
-    }, [navigation])
-
-    async function handleUserInput(input: string) {
-        if (input.startsWith('socialrecovery:')) {
-            console.log('fedi social recovery detected', input)
-            const parts = input.split(':')
-            const pubkey = parts[1]
-            const videoUrl = parts[2]
-
-            navigation.navigate('RecoveryAssistConfirmation')
-        } else {
-            // TODO: display invalid social recovery error toast
-        }
-    }
-
-    const checkClipboard = async () => {
+    const checkClipboard = useCallback(async () => {
         const text = await Clipboard.getString()
         handleUserInput(text)
-    }
+    }, [handleUserInput])
 
     const devices = useCameraDevices()
     const device = devices.back
@@ -75,15 +59,28 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.cameraScannerContainer}>
-                {renderQrCodeScanner()}
+        <CameraPermissionsRequired
+            alternativeActionButton={
+                <Button
+                    title={t(
+                        'feature.recovery.paste-social-recovery-code-instead',
+                    )}
+                    onPress={checkClipboard}
+                    type="clear"
+                />
+            }
+            message={t('feature.recovery.camera-access-information')}
+            nextScreen={'ScanSocialRecoveryCode'}>
+            <View style={styles.container}>
+                <View style={styles.cameraScannerContainer}>
+                    {renderQrCodeScanner()}
+                </View>
+                <Button
+                    title={t('feature.recovery.paste-social-recovery-code')}
+                    onPress={checkClipboard}
+                />
             </View>
-            <Button
-                title={t('feature.recovery.paste-social-recovery-code')}
-                onPress={checkClipboard}
-            />
-        </View>
+        </CameraPermissionsRequired>
     )
 }
 

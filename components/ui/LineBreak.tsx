@@ -22,8 +22,10 @@ type LineBreakProps = {
 const LineBreak: React.FC<LineBreakProps> = ({ count = 1 }: LineBreakProps) => {
     return (
         <>
-            {new Array(count).fill(0).map(_ => (
-                <Text style={styles.default}>{'\n'}</Text>
+            {new Array(count).fill(0).map((_, i) => (
+                <Text key={`lb-${i}`} style={styles.default}>
+                    {'\n'}
+                </Text>
             ))}
         </>
     )

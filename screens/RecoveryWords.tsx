@@ -6,7 +6,7 @@ import { View, StyleSheet } from 'react-native'
 import { SeedWords } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RecoveryWords'>
 

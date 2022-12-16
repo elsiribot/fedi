@@ -62,60 +62,10 @@ import TransactionsHeader from './components/feature/transaction-history/Transac
 
 import { useFederationsContext } from './contexts/FederationsContext'
 
-import { TemporaryTransaction } from './bridge'
-
-export type RootStackParamList = {
-    ChooseBackupMethod: undefined
-    ChooseRecoveryMethod: undefined
-    CompleteSocialBackup: undefined
-    CompleteSocialRecovery: undefined
-    ConfirmSendLightning: { invoice: string }
-    ConfirmSendOnChain: { address: string }
-    ConfirmReceiveOffline: { ecash: string; amount: number }
-    ConnectedFederationsDrawer: undefined
-    FederationInvite: { inviteLink: string }
-    Home: undefined
-    LnInvoice: { invoice: string }
-    PersonalBackupSuccess: undefined
-    LocateSocialRecovery: undefined
-    ReceiveSuccess: { tx: TemporaryTransaction }
-    Receive: undefined
-    ReceiveOffline: undefined
-    RecoveryWords: undefined
-    RecoveryAssistConfirmation: undefined
-    RecoveryAssistSuccess: undefined
-    RecordBackupVideo: undefined
-    RequestCameraAccess: { nextScreen: keyof RootStackParamList }
-    ScanFederationCode: undefined
-    ScanSocialRecoveryCode: undefined
-    SelectRecoveryFileSuccess: { fileName: string }
-    SelectRecoveryFileFailure: { fileName: string }
-    Send: undefined
-    SendOfflineAmount: undefined
-    SendOfflineQr: { ecash: string; amount: number }
-    Splash: undefined
-    StartPersonalBackup: undefined
-    StartRecoveryAssist: undefined
-    StartSocialBackup: undefined
-    SocialBackupCloudUpload: undefined
-    SocialBackupProcessing: undefined
-    SocialBackupSuccess: undefined
-    SocialRecoveryQrModal: undefined
-    SocialRecoverySuccess: undefined
-    SocialRecoveryFailure: undefined
-    Transactions: undefined
-}
+import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
-
-// This type declaration allows all instances of useNavigation
-// to be aware of type-safety from RootStackParamsList
-declare global {
-    namespace ReactNavigation {
-        interface RootParamList extends RootStackParamList {}
-    }
-}
 
 const MainNavigator = () => {
     const {
@@ -123,7 +73,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Splash" id="MainStackNavigator">
+        <Stack.Navigator initialRouteName="Splash" id={MAIN_NAVIGATOR_ID}>
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation
@@ -374,7 +324,9 @@ const MainNavigator = () => {
                                 component={RequestCameraAccess}
                                 options={{ headerShown: false }}
                                 initialParams={{
+                                    alternativeActionButton: null,
                                     nextScreen: 'ScanFederationCode',
+                                    message: '',
                                 }}
                             />
                             <Stack.Screen
@@ -427,7 +379,9 @@ const MainNavigator = () => {
                             component={RequestCameraAccess}
                             options={{ headerShown: false }}
                             initialParams={{
+                                alternativeActionButton: null,
                                 nextScreen: 'ScanFederationCode',
+                                message: '',
                             }}
                         />
                         <Stack.Screen

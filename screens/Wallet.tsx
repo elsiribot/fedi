@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
 import type { Theme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
-import type { HomeTabsParamList } from './Home'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import { BalanceEvent, TFedimintEventEmitter } from '../bridge'
 import { useFederationsContext } from '../contexts/FederationsContext'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
@@ -41,7 +40,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { selectedFederation } = useFederationsContext().state
     const [btcBalance, setBtcBalance] = useState('')
     // TODO: Hoist state and listen to bridge for updates
-    const [recoveryInProgress, setRecoveryInProgress] = useState(false)
+    const [recoveryInProgress] = useState(false)
 
     // The balanceHandler should change whenever the selectedFederation changes
     const balanceHandler = useCallback(

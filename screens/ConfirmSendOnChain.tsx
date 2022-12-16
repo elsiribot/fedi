@@ -6,7 +6,7 @@ import { StyleSheet, TextInput, View } from 'react-native'
 import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 import { useBridge } from '../contexts/FederationsContext'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<

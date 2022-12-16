@@ -6,7 +6,7 @@ import { View, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { useFederationsContext } from '../contexts/FederationsContext'
 import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
