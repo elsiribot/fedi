@@ -1,5 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { TemporaryTransaction } from '../bridge'
+import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
@@ -36,7 +36,7 @@ export type RootStackParamList = {
     LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
     LocateSocialRecovery: undefined
-    ReceiveSuccess: { tx: TemporaryTransaction }
+    ReceiveSuccess: { tx: Transaction }
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
