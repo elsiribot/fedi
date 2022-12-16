@@ -69,6 +69,7 @@ import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import Webview from './screens/Webview'
+import SitesHeader from './components/feature/sites/SitesHeader'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -370,7 +371,9 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="Webview"
                                 component={Webview}
-                                options={{ headerShown: false }}
+                                options={{
+                                    header: SitesHeader,
+                                }}
                             />
                         </Stack.Group>
                         <Stack.Group screenOptions={{ presentation: 'modal' }}>
