@@ -12,7 +12,7 @@ export type Props = BottomTabScreenProps<
 
 const Sites: React.FC<Props> = ({ navigation }) => {
     const onTest = () => {
-        navigation.navigate('Webview', { url: 'https://bitcoin.org' })
+        navigation.navigate('Webview', { url: 'https://testfed.xyz/webln' })
     }
     return (
         <View style={styles.container}>
