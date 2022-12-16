@@ -270,6 +270,7 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				D026A273294B8652001006AD /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -451,6 +452,23 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FedimintReactNative-FedimintReactNativeTests/Pods-FedimintReactNative-FedimintReactNativeTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		D026A273294B8652001006AD /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../bridge\n./ios.sh\npopd\n";
 		};
 		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;

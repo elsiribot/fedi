@@ -31,6 +31,7 @@
         "sent": "Sent",
         "share": "Share",
         "skip": "Skip",
+        "status": "Status",
         "time": "Time",
         "transactions": "Transactions",
         "two": "two",
@@ -48,6 +49,7 @@
         "generate-invoice": "Generate invoice",
         "invalid-federation-code": "Invalid federation code",
         "lightning-request": "Lightning request",
+        "transaction-id": "Transaction ID",
         "no-transactions": "No transactions",
         "please-confirm": "Please confirm",
         "receive-bitcoin": "Receive bitcoin"

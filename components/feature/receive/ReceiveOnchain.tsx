@@ -14,10 +14,10 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 
-import { ReceivedBitcoinEvent, TFedimintEventEmitter } from '../../../bridge'
+import { TransactionEvent, TFedimintEventEmitter } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../types/navigation'
-import StringUtils from '../../../utils/StringUtils'
+import stringUtils from '../../../utils/StringUtils'
 
 type ReceiveOnchainNavigationProp =
     NativeStackNavigationProp<RootStackParamList>
@@ -39,22 +39,16 @@ const ReceiveOnchain: React.FC<{}> = () => {
     }, [generateAddress])
 
     useEffect(() => {
-        const receivedBitcoinHandler = (event: ReceivedBitcoinEvent) => {
-            console.log(`"receivedBitcoin" -> "${event.txid}"`)
-            // TODO: check txid against address? is event.address the sender?
-            if (event.address === address) {
-                // TODO: get amount from txid?
+        const transactionEventHandler = (event: TransactionEvent) => {
+            if (event.transaction.bitcoin?.address === address) {
                 navigation.navigate('ReceiveSuccess', {
-                    tx: {
-                        type: 'bitcoin',
-                        amount: 615000,
-                    },
+                    tx: event.transaction,
                 })
             }
         }
 
         const emitter = new TFedimintEventEmitter()
-        emitter.onReceivedBitcoin(receivedBitcoinHandler)
+        emitter.onTransaction(transactionEventHandler)
     }, [navigation, address])
 
     const copyToClipboard = () => {
@@ -108,7 +102,7 @@ const ReceiveOnchain: React.FC<{}> = () => {
                             <Text
                                 style={styles.addressString}
                                 numberOfLines={1}>
-                                {StringUtils.truncateMiddleOfString(address, 6)}
+                                {stringUtils.truncateMiddleOfString(address, 6)}
                             </Text>
                         </View>
                     </Card>

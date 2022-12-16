@@ -23,7 +23,9 @@ const Transactions: React.FC<Props> = () => {
             const fetchedTransactions = await listTransactions()
             console.log('fetchedTransactions', fetchedTransactions)
             setIsLoading(false)
-            setTransactionsList(fetchedTransactions)
+            setTransactionsList(
+                fetchedTransactions.map(tx => new Transaction(tx)),
+            )
         }
 
         getTransactionsList()

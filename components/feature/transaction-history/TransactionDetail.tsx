@@ -1,10 +1,17 @@
-import { Divider, Icon, Text, useTheme } from '@rneui/themed'
-import React from 'react'
+import { Divider, Icon, Input, Text, useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { Transaction } from '../../../bridge'
-import DateUtils from '../../../utils/DateUtils'
+import {
+    IncomingBitcoinTransactionStatus,
+    Transaction,
+    TransactionDirection,
+} from '../../../bridge'
+import { useBridge } from '../../../contexts/FederationsContext'
+import amountUtils from '../../../utils/AmountUtils'
+import dateUtils from '../../../utils/DateUtils'
+import stringUtils from '../../../utils/StringUtils'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -15,11 +22,14 @@ const TransactionDetail = ({
     txn,
     handleCloseModal,
 }: TransactionDetailProps) => {
+    const { updateTransactionNotes } = useBridge()
     const { theme } = useTheme()
     const { t } = useTranslation()
-
-    console.log(txn)
-
+    const [notes, setNotes] = useState(txn.notes)
+    const onChangeNotes = (updatedNotes: string) => {
+        setNotes(updatedNotes)
+        updateTransactionNotes(txn.id, updatedNotes)
+    }
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -33,42 +43,85 @@ const TransactionDetail = ({
                 color={theme.colors.orange}
                 size={theme.sizes.lg}
             />
-            <Text h3>{`${t('feature.receive.you-received')}`}</Text>
-            <Text h3>{`${txn.amountSats} ${t('words.sats')}`}</Text>
+            <Text>
+                {`${
+                    txn.direction === TransactionDirection.send
+                        ? t('feature.send.you-sent')
+                        : t('feature.receive.you-received')
+                }`}
+            </Text>
+            <Text h3>{`${amountUtils.millisToSats(txn.amount)} ${t(
+                'words.sats',
+            )}`}</Text>
             <View style={styles.detailItemsContainer}>
                 <Divider />
+                {txn.bitcoin?.incomingStatus && (
+                    <View>
+                        <View style={styles.detailItem}>
+                            <Text>{`${t('words.status')}`}</Text>
+                            {txn.bitcoin?.incomingStatus ===
+                            IncomingBitcoinTransactionStatus.complete ? (
+                                <Text>{`${t('words.complete')}`}</Text>
+                            ) : (
+                                <Text>{`${t('words.pending')}`}</Text>
+                            )}
+                        </View>
+                        <Divider />
+                    </View>
+                )}
                 <View style={styles.detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
-                    {/* TODO: Replace with actual memo*/}
-                    {/* <Text>{txn.memo}</Text> */}
-                    <Text>{'Memo here'}</Text>
+                    <Text>{txn.notes}</Text>
                 </View>
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('words.time')}`}</Text>
-                    <Text>{`${DateUtils.formatTimestamp(
+                    <Text>{`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd yyyy, h:mmaaa',
                     )}`}</Text>
                 </View>
                 <Divider />
-                <View style={styles.detailItem}>
-                    <Text>{`${t('words.fee')}`}</Text>
-                    {/* TODO: Replace with actual fee amount*/}
-                    {/* <Text>{txn.feeSats}</Text> */}
-                    <Text>{`${'~3 - 11'} ${t('words.sats')}`}</Text>
-                </View>
+                {txn.fee !== null && (
+                    <View style={styles.detailItem}>
+                        <Text>{`${t('words.fee')}`}</Text>
+                        <Text>{`${amountUtils.millisToSats(tx.fee)} ${t(
+                            'words.sats',
+                        )}`}</Text>
+                    </View>
+                )}
                 <Divider />
-                <View style={styles.detailItem}>
-                    <Text>{`${t('phrases.lightning-request')}`}</Text>
-                    {/* TODO: Replace with actual invoice string*/}
-                    {/* <Text>{StringUtils.truncateMiddleOfString(txn.invoice, 5)}</Text> */}
-                    <Text>{`${'lnbc1...o19n382x'}`}</Text>
-                </View>
+                {txn.lightning && (
+                    <View style={styles.detailItem}>
+                        <Text>{`${t('phrases.lightning-request')}`}</Text>
+                        <Text>
+                            {stringUtils.truncateMiddleOfString(
+                                txn.lightning.invoice,
+                                5,
+                            )}
+                        </Text>
+                    </View>
+                )}
+                {txn.bitcoin && (
+                    <View style={styles.detailItem}>
+                        <Text>{`${t('phrases.transaction-id')}`}</Text>
+                        <Text>
+                            {stringUtils.truncateMiddleOfString(
+                                txn.bitcoin.txid,
+                                5,
+                            )}
+                        </Text>
+                    </View>
+                )}
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('phrases.add-note')} +`}</Text>
-                    <Text>{`${'Optional'}`}</Text>
+                    {/* FIXME: this is terrible UX, probably shouldn't write on every keystroke */}
+                    <Input
+                        onChangeText={onChangeNotes}
+                        value={notes}
+                        returnKeyType="done"
+                    />
                 </View>
             </View>
         </View>

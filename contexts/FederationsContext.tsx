@@ -21,6 +21,7 @@ import {
     payAddress,
     payInvoice,
     receiveEcash,
+    updateTransactionNotes,
     uploadBackupFile,
     validateBackupFile,
     validateEcash,
@@ -232,6 +233,16 @@ function useBridge() {
         listTransactions: useCallback(() => {
             return listTransactions(selectedFederation!.name)
         }, [selectedFederation]),
+        updateTransactionNotes: useCallback(
+            (transactionId: string, notes: string) => {
+                return updateTransactionNotes(
+                    transactionId,
+                    notes,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
         locateRecoveryFile: useCallback(() => {
             return locateRecoveryFile(selectedFederation!.name)
         }, [selectedFederation]),

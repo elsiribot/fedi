@@ -3,8 +3,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { Transaction } from '../../../bridge'
-import DateUtils from '../../../utils/DateUtils'
+import { Transaction, TransactionDirection } from '../../../bridge'
+import amountUtils from '../../../utils/AmountUtils'
+import dateUtils from '../../../utils/DateUtils'
 
 type TransactionTileProps = {
     txn: Transaction
@@ -14,7 +15,6 @@ type TransactionTileProps = {
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
@@ -36,24 +36,27 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             <View style={styles(theme).centerContainer}>
                 <Text>
                     {`${
-                        txn.outgoing === true
+                        txn.direction === TransactionDirection.send
                             ? t('words.sent')
                             : t('words.received')
                     }`}
                 </Text>
-                <Text>{'Memo here'}</Text>
+                {/* TODO: truncate this */}
+                <Text>{txn.notes}</Text>
             </View>
 
             <View style={styles(theme).rightContainer}>
                 <Text style={styles(theme).rightAlignedText}>
-                    {`${txn.amountSats} ${t('words.sats').toUpperCase()}`}
+                    {`${amountUtils.millisToSats(txn.amount)} ${t(
+                        'words.sats',
+                    ).toUpperCase()}`}
                 </Text>
                 <Text
                     style={[
                         styles(theme).rightAlignedText,
                         styles(theme).subText,
                     ]}>
-                    {`${DateUtils.formatTimestamp(
+                    {`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd, h:mmaaa',
                     )}`}

@@ -24,15 +24,9 @@ export type BalanceEvent = {
     balance: number
 }
 
-export type ReceivedLightningEvent = {
+export type TransactionEvent = {
     federationId: string
-    paymentHash: string
-}
-
-export type ReceivedBitcoinEvent = {
-    federationId: string
-    txid: string
-    address: string
+    transaction: Transaction
 }
 
 export type ValidateEcashResponse = {
@@ -52,11 +46,53 @@ export type Invoice = {
     fee: null | number
 }
 
-// Temporary until transactions history bridge code gets merged
-export type TemporaryTransaction =
-    | { type: 'bitcoin'; amount: number }
-    | { type: 'lightning'; amount: number }
-    | { type: 'ecash'; amount: number }
+export enum TransactionDirection {
+    send = 'send',
+    receive = 'receive',
+}
+
+export enum TransactionType {
+    bitcoin = 'bitcoin',
+    lightning = 'lightning',
+}
+
+export enum IncomingBitcoinTransactionStatus {
+    pending = 'pending',
+    complete = 'complete',
+}
+
+export type LightningTransactionDetails = {
+    invoice: string
+    fee: number | null
+}
+
+export type BitcoinTransactionDetails = {
+    address: string
+    txid: string
+    fee: number | null
+    incomingStatus: IncomingBitcoinTransactionStatus | null
+}
+
+export type OfflineTransactionDetails = {
+    claimed: boolean
+}
+
+export class Transaction extends Base {
+    id: string
+    createdAt: number
+    direction: TransactionDirection
+    amount: number
+    notes: string
+    bitcoin: BitcoinTransactionDetails | null
+    lightning: LightningTransactionDetails | null
+    offline: OfflineTransactionDetails | null
+    get fee(): number | null {
+        if (this.bitcoin !== null) return this.bitcoin.fee
+        if (this.lightning !== null) return this.lightning.fee
+        if (this.offline !== null) return null
+        throw 'invalid transaction'
+    }
+}
 
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter
@@ -97,18 +133,11 @@ export class TFedimintEventEmitter {
         return this.addListener('balance', listener, context)
     }
 
-    onReceivedLightning = (
-        listener: (event: ReceivedLightningEvent) => void,
+    onTransaction = (
+        listener: (event: TransactionEvent) => void,
         context?: Object,
     ): EmitterSubscription => {
-        return this.addListener('receivedLightning', listener, context)
-    }
-
-    onReceivedBitcoin = (
-        listener: (event: ReceivedBitcoinEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.addListener('receivedBitcoin', listener, context)
+        return this.addListener('transaction', listener, context)
     }
 
     onSocialRecovery = (
@@ -141,14 +170,6 @@ export class Federation extends Base {
     }
 }
 
-export type Transaction = {
-    id: number
-    createdAt: number
-    outgoing: boolean
-    amountMillis: number
-    amountSats: number
-}
-
 function handleRpcResponse<Type>(json: string): Type {
     const parsed = JSON.parse(json)
     if (parsed.error) {
@@ -166,6 +187,16 @@ export async function listTransactions(
     })
     let response = await FedimintFfi.rpc('listTransactions', payload)
     return handleRpcResponse<Transaction[]>(response)
+}
+
+export async function updateTransactionNotes(
+    transactionId: string,
+    notes: string,
+    federationId: string,
+): Promise<null> {
+    let payload = JSON.stringify({ federationId, transactionId, notes })
+    let response = await FedimintFfi.rpc('updateTransactionNotes', payload)
+    return handleRpcResponse<null>(response)
 }
 
 export async function joinFederation(

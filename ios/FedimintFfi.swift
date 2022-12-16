@@ -29,7 +29,7 @@ class FedimintEventEmitter: RCTEventEmitter {
 
   override func supportedEvents() -> [String] {
     // FIXME: don't hard-code these
-    return ["log", "balance", "receivedLightning", "receivedBitcoin"]
+    return ["log", "balance", "transaction"]
   }
 }
 
