@@ -21,7 +21,7 @@ use mint_client::mint::SpendableNote;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
-use tx::Transaction;
+use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::FedimintFederation;
 
 use crate::event::EventSinkWrapper;
@@ -97,6 +97,26 @@ async fn handle_list_transactions(payload: String) -> anyhow::Result<String> {
     // FIXME: consider mapping from millisat to sat
     let transactions = federation.list_transactions();
     Ok(json!({ "result": transactions }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateTransactionNotePayload {
+    federation_id: String,
+    transaction_id: String,
+    notes: String,
+}
+
+async fn handle_update_transaction_notes(payload: String) -> anyhow::Result<String> {
+    let payload: UpdateTransactionNotePayload = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&payload.federation_id).await;
+    federation
+        .update_transaction_notes(payload.transaction_id, payload.notes)
+        .await?;
+    Ok(json!({ "result": () }).to_string())
 }
 
 #[derive(Debug, Deserialize)]
@@ -229,6 +249,12 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
         .collect();
     // TODO: this should be serialized with Encodable, not Serializable
     let ecash = serde_json::to_string(&ecash).unwrap();
+    federation
+        .save_transaction(&Transaction::offline(
+            tx::TransactionDirection::Send,
+            amount,
+        ))
+        .await;
     Ok(json!({ "result": ecash }).to_string())
 }
 
@@ -252,6 +278,12 @@ async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
     let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
     let tiered_multi = TieredMulti::from_iter(input);
     federation.client.reissue(tiered_multi.clone(), rng).await?;
+    federation
+        .save_transaction(&Transaction::offline(
+            tx::TransactionDirection::Receive,
+            tiered_multi.total_amount(),
+        ))
+        .await;
     Ok(json!({ "result": { "amount": tiered_multi.total_amount() } }).to_string())
 }
 
@@ -321,23 +353,33 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     let sats = bitcoin::Amount::from_sat(payload.sats);
     let peg_out = federation
         .client
-        .new_peg_out_with_fees(sats, address)
+        .new_peg_out_with_fees(sats, address.clone())
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
     let out_point = federation
         .client
-        .peg_out(peg_out, &mut rng)
+        .peg_out(peg_out.clone(), &mut rng)
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
-    federation
+    let txid = federation
         .client
         .wallet_client()
         .await_peg_out_outcome(out_point)
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
     federation.update_balance().await;
+    let fee = Some(fedimint_api::Amount::from(peg_out.fees.amount()));
+    let amount = fedimint_api::Amount::from(sats);
+    let outgoing_status = Some(IncomingBitcoinTransactionStatus::Pending);
     federation
-        .save_transaction(&Transaction::new(true, sats.to_sat() * 1000))
+        .save_transaction(&Transaction::bitcoin(
+            tx::TransactionDirection::Send,
+            amount,
+            fee,
+            address,
+            txid,
+            outgoing_status,
+        ))
         .await;
     Ok(json!({ "result": out_point.txid.to_string() }).to_string())
 }
@@ -346,6 +388,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
             "listTransactions" => handle_list_transactions(payload).await,
+            "updateTransactionNotes" => handle_update_transaction_notes(payload).await,
             "joinFederation" => handle_join_federation(payload).await,
             "listFederations" => handle_list_federations().await,
             "generateInvoice" => handle_generate_invoice(payload).await,

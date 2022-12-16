@@ -9,12 +9,15 @@ use std::{
 use crate::{
     event::Event,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
-    tx::{Transaction, TransactionKey, TransactionKeyPrefix},
-    types::hacky_millisat_to_sat,
+    tx::{
+        IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
+        TransactionKeyPrefix,
+    },
+    types::hacky_lightning_invoice_fee,
     EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
-use bitcoin::{hashes::sha256, Address, Script, Txid};
+use bitcoin::{hashes::sha256, Address, Script};
 use electrum_client::{Client, ElectrumApi};
 use fedimint_api::config::ClientConfig;
 use fedimint_api::db::DatabaseTransaction;
@@ -251,32 +254,76 @@ impl Federation {
                     .text()
                     .await
             {
-                // TODO: ignore pegins that we're already claimed or which don't have enough confirmations
+                // Skip if we've already claimed it
+                match self.fetch_transaction(item.tx_hash.to_string()) {
+                    None => (),
+                    Some(tx) => match tx.bitcoin {
+                        None => (),
+                        Some(details) => {
+                            if let Some(IncomingBitcoinTransactionStatus::Complete) =
+                                details.incoming_status
+                            {
+                                tracing::debug!("already pegged-in {}", &item.tx_hash);
+                                continue;
+                            }
+                        }
+                    },
+                };
+
                 let btc_transaction = electrum.transaction_get(&item.tx_hash)?;
                 let txout_proof: TxOutProof = from_hex(&raw_txout_proof)?;
                 let rng = rand::rngs::OsRng;
-                self.client
-                    .peg_in(txout_proof.clone(), btc_transaction.clone(), rng)
-                    .await?;
-                // TODO: save the transaction to db. if pegin succeeded, say "complete", otherwise say "pendin"
-
                 let address =
                     Address::from_script(script, self.client.wallet_client().config.network)
                         .unwrap();
-                tracing::info!("peg-in successful for {}", address);
-                self.update_balance().await;
-                self.send_received_on_chain_payment_event(&item.tx_hash, &address);
+                let fee = None;
                 // FIXME: there should be a simpler API to get the amount of a peg-in
-                let amount_millisat = self
+                let amount_sats = self
                     .client
                     .wallet_client()
-                    .create_pegin_input(txout_proof, btc_transaction)?
+                    .create_pegin_input(txout_proof.clone(), btc_transaction.clone())?
                     .1
                     .tx_output()
-                    .value
-                    * 1000;
-                self.save_transaction(&Transaction::new(false, amount_millisat))
-                    .await;
+                    .value;
+                let amount = fedimint_api::Amount::from_sat(amount_sats);
+                if let Err(_) = self
+                    .client
+                    .peg_in(txout_proof.clone(), btc_transaction.clone(), rng)
+                    .await
+                {
+                    // Save pending tx if we haven't already, move on to next one
+                    if self.fetch_transaction(item.tx_hash.to_string()).is_none() {
+                        self.save_transaction(&Transaction::bitcoin(
+                            TransactionDirection::Receive,
+                            amount,
+                            fee,
+                            address,
+                            item.tx_hash,
+                            Some(IncomingBitcoinTransactionStatus::Pending),
+                        ))
+                        .await;
+                    }
+                    continue;
+                }
+
+                tracing::info!("peg-in successful for {}", address);
+                self.update_balance().await;
+                // FIXME: helper to replace existing transaction
+                let mut tx = self.fetch_transaction(item.tx_hash.to_string()).unwrap_or(
+                    Transaction::bitcoin(
+                        TransactionDirection::Receive,
+                        amount,
+                        fee,
+                        address.clone(),
+                        item.tx_hash,
+                        Some(IncomingBitcoinTransactionStatus::Pending),
+                    ),
+                );
+                // FIXME: make a helper for this
+                let mut details = tx.bitcoin.expect("this should exist (fixme)");
+                details.incoming_status = Some(IncomingBitcoinTransactionStatus::Complete);
+                tx.bitcoin = Some(details);
+                self.save_transaction(&tx).await;
             }
         }
 
@@ -310,6 +357,7 @@ impl Federation {
 
         match self.pay_invoice_inner(&invoice).await {
             Ok(_) => {
+                let fee = Some(hacky_lightning_invoice_fee(invoice)?);
                 self.save_payment(&Payment::new(
                     invoice.clone(),
                     PaymentStatus::Paid,
@@ -317,11 +365,15 @@ impl Federation {
                 ))
                 .await;
                 self.update_balance().await;
-                self.save_transaction(&Transaction::new(
-                    true,
-                    invoice
-                        .amount_milli_satoshis()
-                        .expect("assuming invoice has amount"),
+                self.save_transaction(&Transaction::lightning(
+                    TransactionDirection::Send,
+                    fedimint_api::Amount::from_msat(
+                        invoice
+                            .amount_milli_satoshis()
+                            .expect("assuming invoice has amount"),
+                    ),
+                    fee,
+                    invoice.clone(),
                 ))
                 .await;
                 Ok(())
@@ -341,12 +393,32 @@ impl Federation {
     pub async fn save_transaction(&self, tx: &Transaction) {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx();
-        dbtx.insert_entry(&TransactionKey(tx.id), tx)
+        dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx)
             .await
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
+        // notify UI
+        self.transaction_event(&tx);
     }
 
+    pub fn fetch_transaction(&self, id: String) -> Option<Transaction> {
+        self.dbtx()
+            .get_value(&TransactionKey(id))
+            .expect("Db error")
+    }
+
+    pub async fn update_transaction_notes(&self, id: String, notes: String) -> Result<()> {
+        match self.fetch_transaction(id) {
+            Some(mut tx) => {
+                tx.notes = notes;
+                self.save_transaction(&tx).await;
+                Ok(())
+            }
+            None => Err(anyhow!("Transaction not found")),
+        }
+    }
+
+    // TODO: pagination
     pub fn list_transactions(&self) -> Vec<Transaction> {
         self.client
             .db()
@@ -408,22 +480,15 @@ impl Federation {
     }
 
     fn send_balance_notification(&self) {
-        let balance = hacky_millisat_to_sat(self.client.coins().total_amount().milli_sat);
+        let balance_millis = self.client.coins().total_amount().milli_sat;
         let federation_id = self.client.config().0.federation_name;
-        let event = Event::balance(federation_id.clone(), balance);
+        let event = Event::balance(federation_id.clone(), balance_millis);
         self.event_sink.event(&event);
     }
 
-    fn send_received_lightning_payment_event(&self, invoice: &Invoice) {
+    fn transaction_event(&self, tx: &Transaction) {
         let federation_id = self.client.config().0.federation_name;
-        let event =
-            Event::received_lightning(federation_id.clone(), invoice.payment_hash().to_string());
-        self.event_sink.event(&event);
-    }
-
-    fn send_received_on_chain_payment_event(&self, txid: &Txid, address: &Address) {
-        let federation_id = self.client.config().0.federation_name;
-        let event = Event::received_bitcoin(federation_id.clone(), txid, address);
+        let event = Event::transaction(federation_id.clone(), tx.clone());
         self.event_sink.event(&event);
     }
 
@@ -502,11 +567,19 @@ impl Federation {
                             fed.update_payment_status(payment_hash, PaymentStatus::Paid)
                                 .await;
                             fed.update_balance().await;
-                            fed.send_received_lightning_payment_event(&payment.invoice);
-                            let amount = payment.invoice.amount_milli_satoshis().expect(
-                                "assuming we only receive payments for invoices with amount",
+                            let amount = fedimint_api::Amount::from_msat(
+                                payment.invoice.amount_milli_satoshis().expect(
+                                    "assuming we only receive payments for invoices with amount",
+                                ),
                             );
-                            fed.save_transaction(&Transaction::new(false, amount)).await;
+                            let fee = None;
+                            let tx = Transaction::lightning(
+                                TransactionDirection::Receive,
+                                amount,
+                                fee,
+                                payment.invoice.clone(),
+                            );
+                            fed.save_transaction(&tx).await;
                         }
                     })
                     .collect::<FuturesUnordered<_>>()

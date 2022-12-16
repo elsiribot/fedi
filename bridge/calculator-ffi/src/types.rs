@@ -7,8 +7,16 @@ use serde::Serialize;
 
 use crate::bridge::Federation;
 
-pub fn hacky_millisat_to_sat(millisat: u64) -> u64 {
-    (millisat as f64 / 1000 as f64).round() as u64
+/// FIXME: probably shouldn't return option
+pub fn hacky_lightning_invoice_fee(
+    invoice: &lightning_invoice::Invoice,
+) -> anyhow::Result<fedimint_api::Amount> {
+    invoice
+        .amount_milli_satoshis()
+        .map(|msat| {
+            fedimint_api::Amount::from_msat(msat / 100) // FIXME: hard-coded 1% fee
+        })
+        .ok_or(anyhow!("Invoice missing amount"))
 }
 
 #[derive(Debug, Serialize)]
@@ -34,8 +42,8 @@ impl From<&Arc<Federation>> for FedimintFederation {
 #[serde(rename_all = "camelCase")]
 pub struct Invoice {
     pub payment_hash: String,
-    pub amount: u64,
-    pub fee: Option<u64>, // FIXME: probably shouldn't be option
+    pub amount: fedimint_api::Amount,
+    pub fee: fedimint_api::Amount,
     pub description: String,
     pub invoice: String,
 }
@@ -44,10 +52,10 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
     type Error = anyhow::Error;
 
     fn try_from(invoice: &lightning_invoice::Invoice) -> anyhow::Result<Self> {
-        let amount = invoice
+        let amount_msat = invoice
             .amount_milli_satoshis()
-            .map(|amount| hacky_millisat_to_sat(amount))
             .ok_or(anyhow!("Invoice missing amount"))?;
+        let amount = fedimint_api::Amount::from_msat(amount_msat);
 
         // We might get no description
         let description = match invoice.description() {
@@ -55,12 +63,7 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
             lightning_invoice::InvoiceDescription::Hash(_) => "".to_string(),
         };
 
-        let fee = invoice
-            .amount_milli_satoshis()
-            .map(|msat| {
-                msat / 100 // FIXME: hard-coded 1% fee
-            })
-            .map(|msat| hacky_millisat_to_sat(msat));
+        let fee = hacky_lightning_invoice_fee(invoice)?;
 
         Ok(Invoice {
             amount,
