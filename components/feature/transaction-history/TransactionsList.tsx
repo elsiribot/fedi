@@ -22,7 +22,7 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
             <TransactionTile
                 txn={item}
                 selectTransaction={(txn: Transaction) =>
-                    setSelectedTransaction(txn)
+                    setSelectedTransaction(new Transaction(txn))
                 }
             />
         )

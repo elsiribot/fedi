@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import {
-    getFee,
     IncomingBitcoinTransactionStatus,
     Transaction,
     TransactionDirection,
@@ -26,7 +25,6 @@ const TransactionDetail = ({
     const { updateTransactionNotes } = useBridge()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const fee = getFee(txn)
     const [notes, setNotes] = useState(txn.notes)
     const onChangeNotes = (updatedNotes: string) => {
         setNotes(updatedNotes)
@@ -84,10 +82,10 @@ const TransactionDetail = ({
                     )}`}</Text>
                 </View>
                 <Divider />
-                {fee !== null && (
+                {txn.fee !== null && (
                     <View style={styles.detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
-                        <Text>{`${amountUtils.millisToSats(fee)} ${t(
+                        <Text>{`${amountUtils.millisToSats(tx.fee)} ${t(
                             'words.sats',
                         )}`}</Text>
                     </View>
