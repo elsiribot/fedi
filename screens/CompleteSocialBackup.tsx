@@ -1,14 +1,16 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Card, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import Share from 'react-native-share'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { useBridge } from '../contexts/FederationsContext'
+import HoloCard from '../components/ui/HoloCard'
+import LineBreak from '../components/ui/LineBreak'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -43,7 +45,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
             return (
                 <Button
                     title={t('feature.backup.create-another-backup')}
-                    containerStyle={styles(theme).continueButton}
+                    containerStyle={styles(theme).createBackupButton}
                     onPress={() => {
                         createBackup()
                     }}
@@ -53,7 +55,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
             return (
                 <Button
                     title={t('feature.backup.create-second-backup')}
-                    containerStyle={styles(theme).continueButton}
+                    containerStyle={styles(theme).createBackupButton}
                     onPress={() => {
                         createBackup()
                     }}
@@ -63,7 +65,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
             return (
                 <Button
                     title={t('feature.backup.create-first-backup')}
-                    containerStyle={styles(theme).continueButton}
+                    containerStyle={styles(theme).createBackupButton}
                     onPress={() => {
                         createBackup()
                     }}
@@ -112,45 +114,41 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Card containerStyle={styles(theme).roundedCardContainer}>
-                <ImageBackground
-                    style={styles(theme).imageBackground}
-                    source={Images.HoloBackground}>
-                    <Image
-                        source={Images.FediFile}
-                        style={styles(theme).iconImage}
-                    />
-                    <Text h4>
-                        {'\n'}
-                        {t('feature.backup.backup-social-recovery-file')}
-                    </Text>
-                    <Text>
-                        {'\n'}
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions',
-                        )}
-                        {'\n'}
-                    </Text>
-                    <Text>
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions-1',
-                        )}
-                        {'\n'}
-                    </Text>
-                    <Text>
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions-2',
-                        )}
-                        {'\n'}
-                    </Text>
-                    <Text>
-                        {t(
-                            'feature.backup.backup-social-recovery-file-instructions-3',
-                        )}
-                    </Text>
-                    {renderCreateBackupButton()}
-                </ImageBackground>
-            </Card>
+            <HoloCard
+                iconImage={Images.FediFile}
+                title={t('feature.backup.backup-social-recovery-file')}
+                body={
+                    <>
+                        <View>
+                            <Text>
+                                {t(
+                                    'feature.backup.backup-social-recovery-file-instructions',
+                                )}
+                            </Text>
+                            <LineBreak />
+                            <Text>
+                                {t(
+                                    'feature.backup.backup-social-recovery-file-instructions-1',
+                                )}
+                            </Text>
+                            <LineBreak />
+                            <Text>
+                                {t(
+                                    'feature.backup.backup-social-recovery-file-instructions-2',
+                                )}
+                            </Text>
+                            <LineBreak />
+                            <Text>
+                                {t(
+                                    'feature.backup.backup-social-recovery-file-instructions-3',
+                                )}
+                            </Text>
+                            <LineBreak />
+                        </View>
+                        {renderCreateBackupButton()}
+                    </>
+                }
+            />
 
             <View style={styles(theme).backupsContainer}>
                 <View style={styles(theme).backupRow}>
@@ -192,19 +190,7 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 24,
-        },
-        label: {
-            textAlign: 'center',
-            marginVertical: 16,
-        },
-        hidden: {
-            opacity: 0,
-        },
-        instructionsText: {
-            textAlign: 'center',
-            paddingHorizontal: 24,
-            fontWeight: '400',
+            padding: theme.spacing.xl,
         },
         backupsContainer: {
             width: '100%',
@@ -221,24 +207,11 @@ const styles = (theme: Theme) =>
             width: '100%',
             marginTop: 'auto',
         },
-        continueButton: {
+        createBackupButton: {
             width: '100%',
-            marginVertical: 16,
         },
-        roundedCardContainer: {
-            borderRadius: 16,
-            width: '100%',
-            marginHorizontal: 0,
-            padding: 0,
-        },
-        imageBackground: {
-            paddingHorizontal: 16,
-            alignItems: 'center',
-        },
-        iconImage: {
-            marginTop: 16,
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
+        hidden: {
+            opacity: 0,
         },
     })
 

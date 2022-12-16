@@ -3,10 +3,8 @@ import { Button, Image } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, StyleSheet, View } from 'react-native'
-import { Camera } from 'react-native-vision-camera'
 
 import { joinFederation, listFederations } from '../bridge'
-import type { RootStackParamList } from '../Router'
 import { Images } from '../assets/images'
 import {
     changeSelectedFederation,
@@ -14,6 +12,7 @@ import {
     useFederationsContext,
 } from '../contexts/FederationsContext'
 import { TEST_FEDERATION } from '../constants'
+import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -32,19 +31,12 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         if (federations.length > 0) {
             dispatch(updateConnectedFederations(federations))
             dispatch(changeSelectedFederation(federations[0]))
-            navigation.getParent('MainStackNavigator').navigate('Home')
+            navigation.getParent(MAIN_NAVIGATOR_ID)?.navigate('Home')
         }
     }
 
     const handleJoinFederation = async () => {
-        const status = await Camera.getCameraPermissionStatus()
-        if (status === 'authorized') {
-            navigation.navigate('ScanFederationCode')
-        } else {
-            navigation.navigate('RequestCameraAccess', {
-                nextScreen: 'ScanFederationCode',
-            })
-        }
+        navigation.navigate('ScanFederationCode')
     }
 
     return (

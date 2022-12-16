@@ -52,7 +52,7 @@ const QrCodeScanner = ({
                 }
             }
         })
-    }, [barcodes, frames, onQrCodeDetected, setFrames])
+    }, [barcodes, frames, onProgress, onQrCodeDetected, setFrames])
 
     return (
         <Camera

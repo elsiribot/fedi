@@ -5,6 +5,9 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
+import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
+import CompleteSocialBackup from './screens/CompleteSocialBackup'
+import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
@@ -12,71 +15,54 @@ import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import LnInvoice from './screens/LnInvoice'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
+import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
+import RecoveryAssistConfirmation from './screens/RecoveryAssistConfirmation'
+import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
 import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
+import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
+import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
+import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
 import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
+import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
+import SocialBackupProcessing from './screens/SocialBackupProcessing'
+import SocialBackupSuccess from './screens/SocialBackupSuccess'
+import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
+import SocialRecoveryQrModal from './screens/SocialRecoveryQrModal'
+import SocialRecoverySuccess from './screens/SocialRecoverySuccess'
 import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
+import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
 import Transactions from './screens/Transactions'
 
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
-import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
-import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
-import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
-import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
+import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
+import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
+import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendHeader from './components/feature/send/SendHeader'
-import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
+import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
+import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
+import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
+import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
-import SocialBackupProcessing from './screens/SocialBackupProcessing'
-import CompleteSocialBackup from './screens/CompleteSocialBackup'
-import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
-import SocialBackupSuccess from './screens/SocialBackupSuccess'
 
-import { Transaction } from './bridge'
-
-export type RootStackParamList = {
-    ChooseBackupMethod: undefined
-    CompleteSocialBackup: undefined
-    ConfirmSendLightning: { invoice: string }
-    ConfirmSendOnChain: { address: string }
-    ConfirmReceiveOffline: { ecash: string; amount: number }
-    ConnectedFederationsDrawer: undefined
-    FederationInvite: { inviteLink: string }
-    Home: undefined
-    LnInvoice: { invoice: string }
-    ReceiveSuccess: { tx: Transaction }
-    Receive: undefined
-    ReceiveOffline: undefined
-    RecoveryWords: undefined
-    RecordBackupVideo: undefined
-    RequestCameraAccess: { nextScreen: keyof RootStackParamList }
-    ScanFederationCode: undefined
-    Send: undefined
-    SendOfflineAmount: undefined
-    SendOfflineQr: { ecash: string; amount: number }
-    Splash: undefined
-    StartPersonalBackup: undefined
-    StartSocialBackup: undefined
-    SocialBackupProcessing: undefined
-    SocialBackupCloudUpload: undefined
-    SocialBackupSuccess: undefined
-    Transactions: undefined
-}
+import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -87,7 +73,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Splash" id="MainStackNavigator">
+        <Stack.Navigator initialRouteName="Splash" id={MAIN_NAVIGATOR_ID}>
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation
@@ -105,13 +91,6 @@ const MainNavigator = () => {
                                             navigation={navigation}
                                         />
                                     ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChooseBackupMethod"
-                                component={ChooseBackupMethod}
-                                options={() => ({
-                                    header: () => <ChooseBackupMethodHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -183,6 +162,13 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
+                                name="ChooseBackupMethod"
+                                component={ChooseBackupMethod}
+                                options={() => ({
+                                    header: () => <ChooseBackupMethodHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="RecordBackupVideo"
                                 component={RecordBackupVideo}
                                 options={() => ({
@@ -233,6 +219,88 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
+                                name="ChooseRecoveryMethod"
+                                component={ChooseRecoveryMethod}
+                                options={() => ({
+                                    header: () => (
+                                        <ChooseRecoveryMethodHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LocateSocialRecovery"
+                                component={LocateSocialRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialRecoveryHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SelectRecoveryFileSuccess"
+                                component={SelectRecoveryFileSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="SelectRecoveryFileFailure"
+                                component={SelectRecoveryFileFailure}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="CompleteSocialRecovery"
+                                component={CompleteSocialRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialRecoveryHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoveryFailure"
+                                component={SocialRecoveryFailure}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoverySuccess"
+                                component={SocialRecoverySuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="StartRecoveryAssist"
+                                component={StartRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanSocialRecoveryCode"
+                                component={ScanSocialRecoveryCode}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader
+                                            backButton
+                                            closeButton
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryAssistConfirmation"
+                                component={RecoveryAssistConfirmation}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryAssistSuccess"
+                                component={RecoveryAssistSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
                                 name="StartPersonalBackup"
                                 component={StartPersonalBackup}
                                 options={() => ({
@@ -256,7 +324,9 @@ const MainNavigator = () => {
                                 component={RequestCameraAccess}
                                 options={{ headerShown: false }}
                                 initialParams={{
+                                    alternativeActionButton: null,
                                     nextScreen: 'ScanFederationCode',
+                                    message: '',
                                 }}
                             />
                             <Stack.Screen
@@ -282,6 +352,14 @@ const MainNavigator = () => {
                                     header: () => <TransactionsHeader />,
                                 })}
                             />
+                            <Stack.Screen
+                                name="SocialRecoveryQrModal"
+                                component={SocialRecoveryQrModal}
+                                options={{
+                                    presentation: 'transparentModal',
+                                    headerShown: false,
+                                }}
+                            />
                         </Stack.Group>
                     </Stack.Group>
                 ) : (
@@ -301,7 +379,9 @@ const MainNavigator = () => {
                             component={RequestCameraAccess}
                             options={{ headerShown: false }}
                             initialParams={{
+                                alternativeActionButton: null,
                                 nextScreen: 'ScanFederationCode',
+                                message: '',
                             }}
                         />
                         <Stack.Screen

@@ -12,9 +12,13 @@ import {
 } from 'react-native'
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type { HomeTabsParamList } from './Home'
-import type { RootStackParamList } from '../Router'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import { Images } from '../assets/images'
+import {
+    setUserIsGuardian,
+    useBridge,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -53,6 +57,17 @@ const SettingsItem = ({ imageSource, label, onPress }: SettingsItemProps) => {
 const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { authenticateGuardian } = useBridge()
+    const { state, dispatch } = useFederationsContext()
+
+    const simulateGuardianAuthentication = async () => {
+        try {
+            await authenticateGuardian('mocksecret')
+            dispatch(setUserIsGuardian(true))
+        } catch (error) {
+            dispatch(setUserIsGuardian(false))
+        }
+    }
 
     return (
         <View style={styles(theme).container}>
@@ -84,6 +99,22 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.federations.invite-members')}
                     onPress={() => {}}
                 />
+                {state.userIsGuardian ? (
+                    <SettingsItem
+                        imageSource={Images.SocialPeople}
+                        label={t('feature.recovery.recovery-assist')}
+                        onPress={() => {
+                            navigation.navigate('StartRecoveryAssist')
+                        }}
+                    />
+                ) : (
+                    <SettingsItem
+                        imageSource={Images.FediLogoIcon}
+                        label={'DEV: Activate Guardian Mode'}
+                        onPress={simulateGuardianAuthentication}
+                    />
+                )}
+
                 <SettingsItem
                     imageSource={Images.LeaveFederation}
                     label={t('feature.federations.leave-federation')}
@@ -101,8 +132,8 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <SettingsItem
                     imageSource={Images.Recovery}
-                    label={t('feature.backup.recover-wallet')}
-                    onPress={() => {}}
+                    label={t('feature.recovery.recover-wallet')}
+                    onPress={() => navigation.navigate('ChooseRecoveryMethod')}
                 />
             </View>
             <View>

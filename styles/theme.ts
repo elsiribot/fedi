@@ -12,6 +12,7 @@ const colors = {
     grey: '#D9D9D9',
     red: '#E00A00',
     white: '#FFFFFF',
+    black: '#0B1013',
 }
 
 const theme = createTheme({
@@ -69,6 +70,13 @@ const theme = createTheme({
         sm: 24,
         md: 32,
         lg: 48,
+    },
+    spacing: {
+        xs: 2,
+        sm: 4,
+        md: 8,
+        lg: 12,
+        xl: 24,
     },
 })
 

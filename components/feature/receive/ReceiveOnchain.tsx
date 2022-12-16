@@ -16,7 +16,7 @@ import { Images } from '../../../assets/images'
 
 import { TransactionEvent, TFedimintEventEmitter } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
-import { RootStackParamList } from '../../../Router'
+import { RootStackParamList } from '../../../types/navigation'
 import StringUtils from '../../../utils/StringUtils'
 
 type ReceiveOnchainNavigationProp =
