@@ -41,7 +41,7 @@ const TransactionDetail = ({
                     <Text>{`${t('words.memo')}`}</Text>
                     {/* TODO: Replace with actual memo*/}
                     {/* <Text>{txn.memo}</Text> */}
-                    <Text>{`Memo here`}</Text>
+                    <Text>{'Memo here'}</Text>
                 </View>
                 <Divider />
                 <View style={styles.detailItem}>

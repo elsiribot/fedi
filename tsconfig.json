@@ -6,5 +6,15 @@
 
     "strictPropertyInitialization": false,                                 
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
-  }
+  },
+  "include": [
+    "./**/*.tsx",
+    "./**/*.ts",
+  ],
+  "exclude": [
+    "node_modules",
+    "./node_modules",
+    "./node_modules/*",
+    "./node_modules/@types/node/index.d.ts",
+  ]
 }

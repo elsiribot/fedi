@@ -7,7 +7,6 @@ import { View, StyleSheet } from 'react-native'
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
-import { useFederationsContext } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
 

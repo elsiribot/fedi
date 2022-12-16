@@ -41,7 +41,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                             : t('words.received')
                     }`}
                 </Text>
-                <Text>{`Memo here`}</Text>
+                <Text>{'Memo here'}</Text>
             </View>
 
             <View style={styles(theme).rightContainer}>

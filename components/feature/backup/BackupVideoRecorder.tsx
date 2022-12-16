@@ -1,6 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
 import type { VideoFile } from 'react-native-vision-camera'
 
@@ -8,7 +7,6 @@ import RecordVideo from './RecordVideo'
 import ReviewVideo from './ReviewVideo'
 
 const BackupVideoRecorder = () => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const [videoFile, setVideoFile] = useState<VideoFile | null>(null)
 
@@ -36,7 +34,7 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            padding: 12,
+            padding: theme.spacing.lg,
             width: '100%',
         },
     })

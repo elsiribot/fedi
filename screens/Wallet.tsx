@@ -40,7 +40,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { selectedFederation } = useFederationsContext().state
     const [btcBalance, setBtcBalance] = useState('')
     // TODO: Hoist state and listen to bridge for updates
-    const [recoveryInProgress, setRecoveryInProgress] = useState(false)
+    const [recoveryInProgress] = useState(false)
 
     // The balanceHandler should change whenever the selectedFederation changes
     const balanceHandler = useCallback(
