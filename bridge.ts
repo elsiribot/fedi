@@ -166,6 +166,8 @@ export class Federation extends Base {
     nodes: Node[]
 
     get approvalsRequired(): number {
+        console.log(this.nodes)
+        console.log(this.name)
         const numNodes = this.nodes.length
         return numNodes - Math.floor((numNodes - 1) / 3)
     }
@@ -215,8 +217,6 @@ export async function joinFederation(
 export async function listFederations(): Promise<Federation[]> {
     let payload = JSON.stringify({}) // FIXME
     let response = await FedimintFfi.rpc('listFederations', payload)
-    console.log(response)
-    console.log(JSON.parse(response).result[0].nodes)
     return handleRpcResponse<Federation[]>(response)
 }
 
