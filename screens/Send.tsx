@@ -8,32 +8,41 @@ import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import { useBridge } from '../contexts/FederationsContext'
+import { AddressOrInvoice } from '../bridge'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
+    const { addressOrInvoice } = useBridge()
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
 
-    function handleUserInput(input: string) {
-        if (input.startsWith('lnbc')) {
-            console.log('sending ln')
-            setInvoice(input)
-        } else if (input.startsWith('bcrt')) {
-            console.log('sending btc')
-            setAddress(input)
-        } else {
-            console.log('no invoice detected')
-        }
-    }
+    const handleUserInput = useCallback(
+        async (input: string) => {
+            try {
+                let result = await addressOrInvoice(input)
+                if (result === AddressOrInvoice.address) {
+                    setAddress(input)
+                }
+                if (result === AddressOrInvoice.invoice) {
+                    setInvoice(input)
+                }
+            } catch (e) {
+                // TODO: show this error
+                console.error(e)
+            }
+        },
+        [addressOrInvoice],
+    )
 
     const checkClipboard = useCallback(async () => {
         const text = await Clipboard.getString()
         handleUserInput(text)
-    }, [])
+    }, [handleUserInput])
 
     // first check if user has granted camera permissions
     useEffect(() => {

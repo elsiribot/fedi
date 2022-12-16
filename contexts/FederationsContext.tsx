@@ -10,6 +10,7 @@ import React, {
 
 import {
     Federation,
+    addressOrInvoice,
     authenticateGuardian,
     backupQr,
     generateAddress,
@@ -199,6 +200,12 @@ function useBridge() {
     const { selectedFederation } = state
 
     return {
+        addressOrInvoice: useCallback(
+            (input: string) => {
+                return addressOrInvoice(input, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
         authenticateGuardian: useCallback(
             (secret: string) => {
                 return authenticateGuardian(selectedFederation!.name, secret)

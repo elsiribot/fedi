@@ -94,6 +94,11 @@ export class Transaction extends Base {
     }
 }
 
+export enum AddressOrInvoice {
+    address = 'address',
+    invoice = 'invoice',
+}
+
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter
 
@@ -233,6 +238,15 @@ export async function decodeInvoice(invoice: string): Promise<Invoice> {
     let payload = JSON.stringify({ invoice })
     let response = await FedimintFfi.rpc('decodeInvoice', payload)
     return handleRpcResponse<Invoice>(response)
+}
+
+export async function addressOrInvoice(
+    input: string,
+    federationId: string,
+): Promise<AddressOrInvoice> {
+    let payload = JSON.stringify({ federationId, input })
+    let response = await FedimintFfi.rpc('addressOrInvoice', payload)
+    return handleRpcResponse<AddressOrInvoice>(response)
 }
 
 export async function payInvoice(invoice: string, federationId: string) {
