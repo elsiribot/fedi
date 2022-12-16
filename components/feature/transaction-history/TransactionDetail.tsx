@@ -85,7 +85,7 @@ const TransactionDetail = ({
                 {txn.fee !== null && (
                     <View style={styles.detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
-                        <Text>{`${amountUtils.millisToSats(tx.fee)} ${t(
+                        <Text>{`${amountUtils.millisToSats(txn.fee)} ${t(
                             'words.sats',
                         )}`}</Text>
                     </View>
