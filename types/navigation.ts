@@ -21,6 +21,7 @@ export type RequestCameraAccessParams = {
 export type HomeTabsParamList = {
     Admin: undefined
     Wallet: { offline: boolean }
+    Sites: undefined
 }
 export type RootStackParamList = {
     ChooseBackupMethod: undefined

@@ -10,6 +10,7 @@ import { StyleSheet } from 'react-native'
 
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
+import Sites from './Sites'
 import Wallet from './Wallet'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 
@@ -48,6 +49,13 @@ const Home: React.FC<Props> = () => {
                                     color={color}
                                 />
                             )
+                        case 'Sites':
+                            return (
+                                <Image
+                                    style={styles(theme, insets).iconImage}
+                                    source={Images.Globe}
+                                />
+                            )
                         default:
                             return null
                     }
@@ -71,6 +79,13 @@ const Home: React.FC<Props> = () => {
                 {props => <Wallet {...props} offline={offline} />}
             </Tab.Screen>
             <Tab.Screen
+                name="Sites"
+                component={Sites}
+                options={{
+                    headerShown: false,
+                }}
+            />
+            <Tab.Screen
                 name="Admin"
                 component={Admin}
                 options={{
@@ -93,6 +108,10 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             width: 120,
             color: theme.colors.grey,
             resizeMode: 'contain',
+        },
+        iconImage: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
         },
         row: {
             flexDirection: 'row',
