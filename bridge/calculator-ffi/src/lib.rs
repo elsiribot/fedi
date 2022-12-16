@@ -7,6 +7,7 @@ pub mod types;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
+use bitcoin::Address;
 use event::EventSink;
 use fedimint_api::{Amount, TieredMulti};
 use lazy_static::lazy_static;
@@ -17,7 +18,7 @@ use anyhow::anyhow;
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use logging::init_logging;
-use mint_client::mint::SpendableNote;
+use mint_client::{mint::SpendableNote, utils::network_to_currency};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
@@ -78,6 +79,15 @@ fn rpc_error(description: &str) -> String {
 async fn get_federation(federation_id: &str) -> Arc<Federation> {
     let bridge = get_bridge().await.expect("there should be a federation");
     let lock = bridge.clients.lock().await;
+    tracing::info!("{}", federation_id);
+    let federations: Vec<String> = bridge
+        .clients
+        .lock()
+        .await
+        .values()
+        .map(|federation| federation.client.config().0.federation_name)
+        .collect();
+    tracing::info!("{:?}", federations);
     let federation = lock.get(federation_id).unwrap(); // FIXME: don't unwrap
     federation.clone() // FIXME: don't clone
 }
@@ -194,6 +204,55 @@ async fn handle_pay_invoice(payload: String) -> anyhow::Result<String> {
     let invoice: Invoice = payload.invoice.parse().unwrap();
     federation.pay_invoice(&invoice).await?;
     Ok(json!({ "result": () }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddressOrInvoicePayload {
+    federation_id: String,
+    input: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AddressOrInvoice {
+    Address,
+    Invoice,
+}
+
+async fn handle_address_or_invoice(payload: String) -> anyhow::Result<String> {
+    let AddressOrInvoicePayload {
+        federation_id,
+        input,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Ok(rpc_error("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    if let Ok(invoice) = input.parse::<Invoice>() {
+        if network_to_currency(federation.network()) != invoice.currency() {
+            return Err(anyhow!(format!(
+                "Wrong network. Expected {}, got {}",
+                network_to_currency(federation.network()),
+                invoice.currency()
+            )));
+        }
+        if federation.already_paid_invoice(&invoice) {
+            return Err(anyhow!("Already paid this invoice"));
+        }
+        return Ok(json!({ "result": AddressOrInvoice::Invoice }).to_string());
+    }
+    if let Ok(address) = input.parse::<Address>() {
+        if federation.network() != address.network {
+            return Err(anyhow!(format!(
+                "Wrong network. Expected {}, got {}",
+                federation.network(),
+                address.network
+            )));
+        }
+        return Ok(json!({ "result": AddressOrInvoice::Address }).to_string());
+    }
+    Err(anyhow!("Not an address or invoice"))
 }
 
 #[derive(Debug, Deserialize)]
@@ -399,6 +458,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "generateEcash" => handle_generate_ecash(payload).await,
             "receiveEcash" => handle_receive_ecash(payload).await,
             "validateEcash" => handle_validate_ecash(payload).await,
+            "addressOrInvoice" => handle_address_or_invoice(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other

@@ -126,6 +126,10 @@ impl Federation {
             .begin_transaction(ModuleRegistry::default())
     }
 
+    pub fn network(&self) -> bitcoin::Network {
+        self.client.wallet_client().config.network
+    }
+
     pub async fn join(
         connect_string: String,
         data_dir: PathBuf,
@@ -462,6 +466,14 @@ impl Federation {
             dbtx.commit_tx().await.expect("Db error");
         }
         // TODO: what to do if this payment doesn't exist?
+    }
+
+    pub fn already_paid_invoice(&self, invoice: &Invoice) -> bool {
+        self.list_payments()
+            .iter()
+            .filter(|payment| payment.outgoing() && &payment.invoice == invoice)
+            .next()
+            .is_some()
     }
 
     async fn block_height(&self) -> anyhow::Result<u64> {
