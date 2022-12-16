@@ -1,6 +1,6 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
@@ -22,7 +22,8 @@ export type Props = NativeStackScreenProps<
 
 const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const { state, dispatch } = useFederationsContext()
+    const { dispatch } = useFederationsContext()
+    const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
 
     useEffect(() => {
         const checkForPermissions = async () => {
@@ -41,10 +42,15 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     async function handleUserInput(input: string) {
         if (input.startsWith('{"members":')) {
             console.log('fedi qr code detected', input)
+
+            if (joiningFederation === true) return
+
             try {
+                setJoiningFederation(true)
                 var federation = await joinFederation(input)
             } catch (e) {
                 console.error('Failed to join federation', e)
+                setJoiningFederation(false)
                 return
             }
             const federations = await listFederations()
