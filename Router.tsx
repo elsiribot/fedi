@@ -109,6 +109,14 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
 
+// This type declaration allows all instances of useNavigation
+// to be aware of type-safety from RootStackParamsList
+declare global {
+    namespace ReactNavigation {
+        interface RootParamList extends RootStackParamList {}
+    }
+}
+
 const MainNavigator = () => {
     const {
         state: { selectedFederation },
