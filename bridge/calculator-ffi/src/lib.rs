@@ -79,15 +79,6 @@ fn rpc_error(description: &str) -> String {
 async fn get_federation(federation_id: &str) -> Arc<Federation> {
     let bridge = get_bridge().await.expect("there should be a federation");
     let lock = bridge.clients.lock().await;
-    tracing::info!("{}", federation_id);
-    let federations: Vec<String> = bridge
-        .clients
-        .lock()
-        .await
-        .values()
-        .map(|federation| federation.client.config().0.federation_name)
-        .collect();
-    tracing::info!("{:?}", federations);
     let federation = lock.get(federation_id).unwrap(); // FIXME: don't unwrap
     federation.clone() // FIXME: don't clone
 }
