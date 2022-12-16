@@ -164,7 +164,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                         : {},
                 ]}
                 onPress={() => {
-                    navigation.navigate('SocialBackupSuccess')
+                    navigation.navigate('SocialRecoverySuccess')
                 }}
             />
         </View>
