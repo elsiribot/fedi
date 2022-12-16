@@ -57,6 +57,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             if (federations.length > 0) {
                 dispatch(updateConnectedFederations(federations))
                 dispatch(changeSelectedFederation(federation))
+                setJoiningFederation(false)
                 navigation.navigate('Home')
             }
         } else {
@@ -73,7 +74,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const device = devices.back
 
     const renderQrCodeScanner = () => {
-        if (device == null) {
+        if (device == null || joiningFederation === true) {
             return <ActivityIndicator />
         } else {
             return (
