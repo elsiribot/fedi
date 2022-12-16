@@ -10,6 +10,7 @@ import React, {
 
 import {
     Federation,
+    addressOrInvoice as _addressOrInvoice,
     generateAddress as _generateAddress,
     generateEcash as _generateEcash,
     generateInvoice as _generateInvoice,
@@ -177,6 +178,12 @@ function useBridge() {
     const { selectedFederation } = state
 
     return {
+        addressOrInvoice: useCallback(
+            (input: string) => {
+                return _addressOrInvoice(input, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
         generateAddress: useCallback(() => {
             return _generateAddress(selectedFederation!.name)
         }, [selectedFederation]),
