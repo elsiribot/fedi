@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { ButtonGroup } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 
 import ReceiveLightning from '../components/feature/receive/ReceiveLightning'
 import ReceiveOnchain from '../components/feature/receive/ReceiveOnchain'

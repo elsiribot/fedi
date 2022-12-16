@@ -19,9 +19,9 @@ import {
     TransactionEvent,
     TFedimintEventEmitter,
 } from '../bridge'
-import type { RootStackParamList } from '../Router'
-import amountUtils from '../utils/AmountUtils'
+import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 

@@ -1,11 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Card, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
 import { Images } from '../assets/images'
+import HoloCard from '../components/ui/HoloCard'
+import LineBreak from '../components/ui/LineBreak'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -21,7 +23,7 @@ const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
         const simulateRecoveryFileCreation = () => {
             setTimeout(() => {
                 navigation.navigate('SocialBackupCloudUpload')
-            }, 2000)
+            }, 3000)
         }
 
         simulateRecoveryFileCreation()
@@ -42,23 +44,23 @@ const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
                     {t('feature.backup.creating-recovery-file')}
                 </Text>
 
-                <Card containerStyle={styles(theme).roundedCardContainer}>
-                    <ImageBackground
-                        style={styles(theme).imageBackground}
-                        source={Images.HoloBackground}>
-                        <Text>
-                            {t(
-                                'feature.backup.social-backup-processing-info-1',
-                            )}
-                            {'\n'}
-                        </Text>
-                        <Text>
-                            {t(
-                                'feature.backup.social-backup-processing-info-2',
-                            )}
-                        </Text>
-                    </ImageBackground>
-                </Card>
+                <HoloCard
+                    body={
+                        <View>
+                            <Text>
+                                {t(
+                                    'feature.backup.social-backup-processing-info-1',
+                                )}
+                            </Text>
+                            <LineBreak />
+                            <Text>
+                                {t(
+                                    'feature.backup.social-backup-processing-info-2',
+                                )}
+                            </Text>
+                        </View>
+                    }
+                />
             </View>
         </View>
     )
@@ -73,16 +75,16 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 12,
+            padding: theme.spacing.lg,
         },
         label: {
             textAlign: 'center',
-            marginVertical: 16,
-            paddingHorizontal: 24,
+            marginVertical: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
             fontWeight: '400',
         },
         holoCircle: {
@@ -97,15 +99,6 @@ const styles = (theme: Theme) =>
         holoIconImage: {
             height: theme.sizes.lg,
             width: theme.sizes.lg,
-        },
-        roundedCardContainer: {
-            borderRadius: 16,
-            width: '100%',
-            marginHorizontal: 0,
-            padding: 0,
-        },
-        imageBackground: {
-            padding: 16,
         },
     })
 

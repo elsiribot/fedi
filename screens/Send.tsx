@@ -1,15 +1,16 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import { Button } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useBridge } from '../contexts/FederationsContext'
 import { AddressOrInvoice } from '../bridge'
+import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
@@ -18,6 +19,30 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { addressOrInvoice } = useBridge()
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
+    const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
+
+    const handleUserInput = useCallback(
+        async (input: string) => {
+            try {
+                let result = await addressOrInvoice(input)
+                if (result === AddressOrInvoice.address) {
+                    setAddress(input)
+                }
+                if (result === AddressOrInvoice.invoice) {
+                    setInvoice(input)
+                }
+            } catch (e) {
+                // TODO: show this error
+                console.error(e)
+            }
+        },
+        [addressOrInvoice],
+    )
+
+    const checkClipboard = useCallback(async () => {
+        const text = await Clipboard.getString()
+        handleUserInput(text)
+    }, [handleUserInput])
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -25,14 +50,27 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
             if (status === 'denied') {
-                navigation.navigate('RequestCameraAccess', {
+                navigation.replace('RequestCameraAccess', {
+                    alternativeActionButton: (
+                        <Button
+                            title={t(
+                                'feature.recovery.paste-payment-request-instead',
+                            )}
+                            onPress={checkClipboard}
+                            type="clear"
+                        />
+                    ),
+                    message: t('feature.send.camera-access-information'),
                     nextScreen: 'Send',
                 })
+            }
+            if (status === 'authorized') {
+                setPermissionGranted(true)
             }
         }
 
         checkForPermissions()
-    }, [navigation])
+    }, [checkClipboard, navigation, t])
 
     // detect if invoice or address has been pasted or scanned
     useEffect(() => {
@@ -48,28 +86,10 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [invoice, address, navigation])
 
-    async function handleUserInput(input: string) {
-        try {
-            let result = await addressOrInvoice(input)
-            if (result === AddressOrInvoice.address) {
-                setAddress(input)
-            }
-            if (result === AddressOrInvoice.invoice) {
-                setInvoice(input)
-            }
-        } catch (e) {
-            // TODO: show this error
-            console.error(e)
-        }
-    }
-
-    const checkClipboard = async () => {
-        const text = await Clipboard.getString()
-        handleUserInput(text)
-    }
-
     const devices = useCameraDevices()
     const device = devices.back
+
+    if (permissionGranted === false) return null
 
     const renderQrCodeScanner = () => {
         if (device == null) {
@@ -87,19 +107,30 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.cameraScannerContainer}>
-                {renderQrCodeScanner()}
+        <CameraPermissionsRequired
+            alternativeActionButton={
+                <Button
+                    title={t('feature.recovery.paste-payment-request-instead')}
+                    onPress={checkClipboard}
+                    type="clear"
+                />
+            }
+            message={t('feature.send.camera-access-information')}
+            nextScreen={'Send'}>
+            <View style={styles.container}>
+                <View style={styles.cameraScannerContainer}>
+                    {renderQrCodeScanner()}
+                </View>
+                <Button
+                    title={t('feature.send.send-to-offline-user')}
+                    onPress={() => navigation.navigate('SendOfflineAmount')}
+                />
+                <Button
+                    title={t('feature.send.paste-payment-request')}
+                    onPress={checkClipboard}
+                />
             </View>
-            <Button
-                title={t('feature.send.send-to-offline-user')}
-                onPress={() => navigation.navigate('SendOfflineAmount')}
-            />
-            <Button
-                title={t('feature.send.paste-payment-request')}
-                onPress={checkClipboard}
-            />
-        </View>
+        </CameraPermissionsRequired>
     )
 }
 

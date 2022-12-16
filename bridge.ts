@@ -6,6 +6,15 @@ import {
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
+export default class Base {
+    constructor(data?: any) {
+        Object.keys(data).forEach((field: any) => {
+            // @ts-ignore
+            this[field] = data[field]
+        })
+    }
+}
+
 export type LogEvent = {
     log: string
 }
@@ -68,7 +77,7 @@ export type OfflineTransactionDetails = {
     claimed: boolean
 }
 
-export interface Transaction {
+export class Transaction extends Base {
     id: string
     createdAt: number
     direction: TransactionDirection
@@ -77,19 +86,17 @@ export interface Transaction {
     bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
     offline: OfflineTransactionDetails | null
+    get fee(): number | null {
+        if (this.bitcoin !== null) return this.bitcoin.fee
+        if (this.lightning !== null) return this.lightning.fee
+        if (this.offline !== null) return null
+        throw 'invalid transaction'
+    }
 }
 
 export enum AddressOrInvoice {
     address = 'address',
     invoice = 'invoice',
-}
-
-// TODO: make a transaction class or something
-export function getFee(tx: Transaction): number | null {
-    if (tx.bitcoin !== null) return tx.bitcoin.fee
-    if (tx.lightning !== null) return tx.lightning.fee
-    if (tx.offline !== null) return null
-    throw 'invalid transaction'
 }
 
 export class TFedimintEventEmitter {
@@ -137,12 +144,34 @@ export class TFedimintEventEmitter {
     ): EmitterSubscription => {
         return this.addListener('transaction', listener, context)
     }
+
+    onSocialRecovery = (
+        listener: (event: SocialRecoveryEvent) => void,
+        context?: Object,
+    ): EmitterSubscription => {
+        return this.addListener('socialRecovery', listener, context)
+    }
 }
 
-export type Federation = {
+export type Node = {
+    name: string
+    url: string
+}
+
+export class Federation extends Base {
     name: string
     connectInfo: {
         members: [number, string][]
+    }
+    nodes: Node[]
+
+    get approvalsRequired(): number {
+        const numNodes = this.nodes.length
+        return numNodes - Math.floor((numNodes - 1) / 3)
+    }
+    get denialThreshold(): number {
+        const numNodes = this.nodes.length
+        return Math.floor((numNodes - 1) / 3)
     }
 }
 
@@ -186,6 +215,8 @@ export async function joinFederation(
 export async function listFederations(): Promise<Federation[]> {
     let payload = JSON.stringify({}) // FIXME
     let response = await FedimintFfi.rpc('listFederations', payload)
+    console.log(response)
+    console.log(JSON.parse(response).result[0].nodes)
     return handleRpcResponse<Federation[]>(response)
 }
 
@@ -337,7 +368,7 @@ export async function locateRecoveryFile(
     _federationId: string,
 ): Promise<string> {
     // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId: _federationId })
+    // let payload = JSON.stringify({ federationId })
     // let response = await FedimintFfi.rpc('locateRecoveryFile', payload)
     // return handleRpcResponse<string>(response)
 
@@ -350,15 +381,20 @@ export async function validateBackupFile(
     _federationId: string,
     _contents: string,
 ): Promise<boolean> {
-    return new Promise(resolve => {
-        resolve(true)
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, contents })
+    // let response = await FedimintFfi.rpc('validateBackupFile', payload)
+    // return handleRpcResponse<boolean>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<boolean>('{"result": "true"}')
+    // return handleRpcResponse<boolean>('{"error": "invalid recovery file"}')
 }
 
 // This string contains a public key and URL to video file
 export async function backupQr(_federationId: string): Promise<string> {
     return new Promise(resolve => {
-        resolve('TODO')
+        resolve('socialrecovery:pubkey:videourl')
     })
 }
 
@@ -367,9 +403,14 @@ export async function authenticateGuardian(
     _federationId: string,
     _secret: string,
 ): Promise<null> {
-    return new Promise(resolve => {
-        resolve(null)
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, secret })
+    // let response = await FedimintFfi.rpc('authenticateGuardian', payload)
+    // return handleRpcResponse<boolean>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<null>('{"result": "null"}')
+    // return handleRpcResponse<boolean>('{"error": "invalid secret"}')
 }
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to

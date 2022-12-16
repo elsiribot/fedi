@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Text } from '@rneui/themed'
 
-import type { RootStackParamList } from '../Router'
+import type { RootStackParamList } from '../types/navigation'
 import { Transaction } from '../bridge'
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
 import { useBridge } from '../contexts/FederationsContext'
@@ -23,7 +23,9 @@ const Transactions: React.FC<Props> = () => {
             const fetchedTransactions = await listTransactions()
             console.log('fetchedTransactions', fetchedTransactions)
             setIsLoading(false)
-            setTransactionsList(fetchedTransactions)
+            setTransactionsList(
+                fetchedTransactions.map(tx => new Transaction(tx)),
+            )
         }
 
         getTransactionsList()

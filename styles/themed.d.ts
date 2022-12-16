@@ -17,6 +17,7 @@ declare module '@rneui/themed' {
             grey: string
             red: string
             white: string
+            black: string
             // @react-navigation requires these properties
             background: string
             card: string
@@ -25,6 +26,9 @@ declare module '@rneui/themed' {
             notification: string
         }
         sizes: {
+            [key: string]: number
+        }
+        spacing: {
             [key: string]: number
         }
     }

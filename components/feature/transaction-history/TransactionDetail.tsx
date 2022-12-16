@@ -4,15 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import {
-    getFee,
     IncomingBitcoinTransactionStatus,
     Transaction,
     TransactionDirection,
 } from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import amountUtils from '../../../utils/AmountUtils'
-import DateUtils from '../../../utils/DateUtils'
-import StringUtils from '../../../utils/StringUtils'
+import dateUtils from '../../../utils/DateUtils'
+import stringUtils from '../../../utils/StringUtils'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -26,7 +25,6 @@ const TransactionDetail = ({
     const { updateTransactionNotes } = useBridge()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const fee = getFee(txn)
     const [notes, setNotes] = useState(txn.notes)
     const onChangeNotes = (updatedNotes: string) => {
         setNotes(updatedNotes)
@@ -78,16 +76,16 @@ const TransactionDetail = ({
                 <Divider />
                 <View style={styles.detailItem}>
                     <Text>{`${t('words.time')}`}</Text>
-                    <Text>{`${DateUtils.formatTimestamp(
+                    <Text>{`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd yyyy, h:mmaaa',
                     )}`}</Text>
                 </View>
                 <Divider />
-                {fee !== null && (
+                {txn.fee !== null && (
                     <View style={styles.detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
-                        <Text>{`${amountUtils.millisToSats(fee)} ${t(
+                        <Text>{`${amountUtils.millisToSats(tx.fee)} ${t(
                             'words.sats',
                         )}`}</Text>
                     </View>
@@ -97,7 +95,7 @@ const TransactionDetail = ({
                     <View style={styles.detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
                         <Text>
-                            {StringUtils.truncateMiddleOfString(
+                            {stringUtils.truncateMiddleOfString(
                                 txn.lightning.invoice,
                                 5,
                             )}
@@ -108,7 +106,7 @@ const TransactionDetail = ({
                     <View style={styles.detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
                         <Text>
-                            {StringUtils.truncateMiddleOfString(
+                            {stringUtils.truncateMiddleOfString(
                                 txn.bitcoin.txid,
                                 5,
                             )}
