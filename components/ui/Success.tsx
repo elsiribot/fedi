@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native'
 
 import { Images } from '../../assets/images'
 import type { RootStackParamList } from '../../Router'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 interface SuccessBase {
     iconImage?: ImageSourcePropType
@@ -38,6 +39,8 @@ type SuccessProps =
     | SuccessWithCustomBody
     | SuccessWithCustomButton
 
+type NavigationHook = NativeStackNavigationProp<RootStackParamList>
+
 const Success: React.FC<SuccessProps> = ({
     message,
     messageText,
@@ -48,7 +51,7 @@ const Success: React.FC<SuccessProps> = ({
 }: SuccessProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
 
     return (
         <ImageBackground
@@ -71,7 +74,7 @@ const Success: React.FC<SuccessProps> = ({
                     <Button
                         title={buttonText ? buttonText : t('words.done')}
                         onPress={() => {
-                            navigation.navigate(nextScreen)
+                            navigation.replace(nextScreen)
                         }}
                     />
                 )}

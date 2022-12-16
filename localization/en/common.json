@@ -58,6 +58,7 @@
             "backup-wallet": "Backup your wallet",
             "backup-to-google-drive": "Backup to Google Drive",
             "backups-made": "Backups made",
+            "camera-access-information": "To create a social backup, you will need to allow Fedi access to your camera to record a verification video",
             "cloud-backup": "Cloud Backup",
             "cloud-backup-instructions": "Create a backup of your recovery file in your cloud storage. You will also be required to backup this file with two friends or family.",
             "choose-method": "Choose a backup method",
@@ -110,8 +111,10 @@
             "scan-federation-invite": "Scan a Federation Invite"
         },
         "send": {
+            "camera-access-information": "To send money, you will need to allow Fedi access to your camera to scan a payment request",
             "confirm-send": "Confirm Send",
             "paste-payment-request": "Paste payment request",
+            "paste-payment-request-instead": "Paste payment request instead",
             "scan-qr-code": "Scan a Lightning QR Code",
             "send-bitcoin": "Send bitcoin",
             "send-to-offline-user": "Send to an offline user",
@@ -119,6 +122,7 @@
             "you-sent": "You sent"
         },
         "recovery": {
+            "camera-access-information": "To assist with recovery, you will need to allow Fedi access to your camera to scan the social recovery code",
             "choose-method": "Choose a recovery method",
             "choose-method-instructions": "Choose the method you used to back up your wallet when you first joined {{federation}}",
             "complete-social-recovery": "Complete social recovery",
@@ -142,6 +146,7 @@
             "opening-backup-file-failed-instructions": "Backup file {{fileName}} failed to open. Please try and recover from another one of your shared locations.",
             "open-qr-code": "Open QR Code",
             "paste-social-recovery-code": "Paste social recovery code",
+            "paste-social-recovery-code-instead": "Paste social recovery code instead",
             "personal-recovery": "Personal recovery",
             "personal-recovery-method": "If you wrote down 12 recovery words you can enter them again to recover your wallet",
             "recover-wallet": "Recover a wallet",
@@ -175,6 +180,7 @@
             "you-completed-social-recovery": "You completed Social Recovery"
         },
         "receive": {
+            "camera-access-information": "To receive money offline, you will need to allow Fedi access to your camera to scan an offline payment code",
             "create-lightning-request": "Create lightning request",
             "instructions": "Enter how much you want to receive",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",

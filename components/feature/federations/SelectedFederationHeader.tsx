@@ -5,10 +5,9 @@ import Header from '../../ui/Header'
 import { useFederationsContext } from '../../../contexts/FederationsContext'
 import { Federation } from '../../../bridge'
 import { Images } from '../../../assets/images'
+import { DRAWER_NAVIGATION_ID } from '../../../Router'
 
 export type Props = { navigation: any }
-
-const DRAWER_NAVIGATION_ID = 'ConnectedFederationsDrawer'
 
 const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
     const { state } = useFederationsContext()

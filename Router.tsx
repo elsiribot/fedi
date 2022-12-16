@@ -64,6 +64,8 @@ import { useFederationsContext } from './contexts/FederationsContext'
 
 import { TemporaryTransaction } from './bridge'
 
+export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
+export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
@@ -85,7 +87,11 @@ export type RootStackParamList = {
     RecoveryAssistConfirmation: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    RequestCameraAccess: { nextScreen: keyof RootStackParamList }
+    RequestCameraAccess: {
+        alternativeActionButton: React.ReactNode | null
+        message: string | null
+        nextScreen: keyof RootStackParamList
+    }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }
@@ -123,7 +129,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Splash" id="MainStackNavigator">
+        <Stack.Navigator initialRouteName="Splash" id={MAIN_NAVIGATOR_ID}>
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation
@@ -374,7 +380,9 @@ const MainNavigator = () => {
                                 component={RequestCameraAccess}
                                 options={{ headerShown: false }}
                                 initialParams={{
+                                    alternativeActionButton: null,
                                     nextScreen: 'ScanFederationCode',
+                                    message: '',
                                 }}
                             />
                             <Stack.Screen
@@ -427,7 +435,9 @@ const MainNavigator = () => {
                             component={RequestCameraAccess}
                             options={{ headerShown: false }}
                             initialParams={{
+                                alternativeActionButton: null,
                                 nextScreen: 'ScanFederationCode',
+                                message: '',
                             }}
                         />
                         <Stack.Screen

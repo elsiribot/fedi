@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -12,13 +11,13 @@ import AnimatedQrCodeScanner from '../components/feature/scan/AnimatedQrCodeScan
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 
-const ReceiveOffline: React.FC<Props> = () => {
+const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { validateEcash } = useBridge()
-    const navigation = useNavigation()
     const [validating, setValidating] = useState(false)
     const [showingError, setShowingError] = useState(false)
     const [percent, setPercent] = useState(0)
+    const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
 
     // first check if user has granted camera permissions
     useEffect(() => {
@@ -26,17 +25,24 @@ const ReceiveOffline: React.FC<Props> = () => {
             const status = await Camera.getCameraPermissionStatus()
             console.log('checkForPermissions: ', status)
             if (status === 'denied') {
-                navigation.navigate('RequestCameraAccess', {
-                    nextScreen: 'Send',
+                navigation.replace('RequestCameraAccess', {
+                    alternativeActionButton: null,
+                    message: t('feature.receive.camera-access-information'),
+                    nextScreen: 'ReceiveOffline',
                 })
+            }
+            if (status === 'authorized') {
+                setPermissionGranted(true)
             }
         }
 
         checkForPermissions()
-    }, [navigation])
+    }, [navigation, t])
 
     const devices = useCameraDevices()
     const device = devices.back
+
+    if (permissionGranted === false) return null
 
     const renderQrCodeScanner = () => {
         if (device == null) {
