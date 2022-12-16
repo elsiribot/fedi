@@ -78,8 +78,6 @@ export type RootStackParamList = {
     LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
     LocateSocialRecovery: undefined
-    SelectRecoveryFileSuccess: { fileName: string }
-    SelectRecoveryFileFailure: { fileName: string }
     ReceiveSuccess: { tx: TemporaryTransaction }
     Receive: undefined
     ReceiveOffline: undefined
@@ -90,6 +88,8 @@ export type RootStackParamList = {
     RequestCameraAccess: { nextScreen: keyof RootStackParamList }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
+    SelectRecoveryFileSuccess: { fileName: string }
+    SelectRecoveryFileFailure: { fileName: string }
     Send: undefined
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: number }
@@ -115,9 +115,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator
-            initialRouteName="RecoveryAssistConfirmation"
-            id="MainStackNavigator">
+        <Stack.Navigator initialRouteName="Splash" id="MainStackNavigator">
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation

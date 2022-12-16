@@ -1,89 +1,53 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
-import { Button, Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { StyleSheet, View } from 'react-native'
+import { Text, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
-import { Images } from '../assets/images'
+import Success from '../components/ui/Success'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'SelectRecoveryFileSuccess'
 >
 
-const SelectRecoveryFileSuccess: React.FC<Props> = ({
-    navigation,
-    route,
-}: Props) => {
+const SelectRecoveryFileSuccess: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { fileName } = route.params
 
     return (
-        <ImageBackground
-            source={Images.HoloBackground}
-            style={styles(theme).container}>
-            <View style={styles(theme).detailsContainer}>
-                <Icon name="check" style={styles(theme).icon} />
-                <Text h3 h3Style={styles(theme).successMessage}>
-                    {t('feature.recovery.successfully-opened-fedi-file')}
-                    {'\n'}
-                </Text>
-                <Text>{fileName}</Text>
-            </View>
-            <View style={styles(theme).buttonContainer}>
-                <Button
-                    title={t('words.okay')}
-                    onPress={() => {
-                        navigation.navigate('CompleteSocialRecovery')
-                    }}
-                />
-            </View>
-        </ImageBackground>
+        <Success
+            message={
+                <View style={styles(theme).textContainer}>
+                    <Text h3 h3Style={styles(theme).successMessage}>
+                        {t('feature.recovery.successfully-opened-fedi-file')}
+                    </Text>
+                    <Text h4 h4Style={styles(theme).fileNameText}>
+                        {fileName}
+                    </Text>
+                </View>
+            }
+            buttonText={t('words.okay')}
+            nextScreen={'CompleteSocialRecovery'}
+        />
     )
 }
 
-const WINDOW_WIDTH = Dimensions.get('window').width
-const CIRCLE_SIZE = WINDOW_WIDTH * 0.85
-
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            flex: 1,
+        textContainer: {
+            marginVertical: theme.spacing.lg,
+            width: '80%',
             alignItems: 'center',
-            justifyContent: 'flex-end',
-        },
-        detailsContainer: {
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: theme.colors.secondary,
-            // for a perfect circle borderRadius should be half of
-            // height and width
-            height: CIRCLE_SIZE,
-            width: CIRCLE_SIZE,
-            borderRadius: CIRCLE_SIZE * 0.5,
-            shadowRadius: 1,
-            shadowOffset: {
-                width: 0,
-                height: 2,
-            },
-            elevation: 1,
-            shadowColor: theme.colors.primaryLight,
-        },
-        icon: {
-            marginVertical: 10,
         },
         successMessage: {
             textAlign: 'center',
-            marginHorizontal: 16,
+            marginBottom: theme.spacing.lg,
         },
-        buttonContainer: {
-            width: '90%',
-            height: '30%',
-            marginBottom: 50,
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
+        fileNameText: {
+            fontWeight: '400',
         },
     })
 
