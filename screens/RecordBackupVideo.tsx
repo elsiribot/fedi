@@ -1,50 +1,37 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { ActivityIndicator, View, StyleSheet } from 'react-native'
-import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { useCameraDevices } from 'react-native-vision-camera'
 
 import type { RootStackParamList } from '../Router'
 import BackupVideoRecorder from '../components/feature/backup/BackupVideoRecorder'
 import { useTranslation } from 'react-i18next'
+import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'RecordBackupVideo'
 >
 
-const RecordBackupVideo: React.FC<Props> = ({ navigation }: Props) => {
+const RecordBackupVideo: React.FC<Props> = () => {
     const { t } = useTranslation()
-    const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
-    // first check if user has granted camera permissions
-    useEffect(() => {
-        const checkForPermissions = async () => {
-            // TODO: request permission & handle navigation to update permissions page
-            const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'denied') {
-                navigation.replace('RequestCameraAccess', {
-                    alternativeActionButton: null,
-                    message: t('feature.backup.camera-access-information'),
-                    nextScreen: 'RecordBackupVideo',
-                })
-            }
-            if (status === 'authorized') {
-                setPermissionGranted(true)
-            }
-        }
-
-        checkForPermissions()
-    }, [navigation, t])
 
     const devices = useCameraDevices()
     const device = devices.front
 
-    if (permissionGranted === false) return null
-
     return (
-        <View style={styles.container}>
-            {device === null ? <ActivityIndicator /> : <BackupVideoRecorder />}
-        </View>
+        <CameraPermissionsRequired
+            alternativeActionButton={null}
+            message={t('feature.backup.camera-access-information')}
+            nextScreen={'RecordBackupVideo'}>
+            <View style={styles.container}>
+                {device === null ? (
+                    <ActivityIndicator />
+                ) : (
+                    <BackupVideoRecorder />
+                )}
+            </View>
+        </CameraPermissionsRequired>
     )
 }
 

@@ -1,13 +1,14 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { useCameraDevices } from 'react-native-vision-camera'
 import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -16,7 +17,6 @@ export type Props = NativeStackScreenProps<
 
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
         async (input: string) => {
@@ -40,37 +40,8 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
         handleUserInput(text)
     }, [handleUserInput])
 
-    useEffect(() => {
-        const checkForPermissions = async () => {
-            const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'denied') {
-                navigation.replace('RequestCameraAccess', {
-                    alternativeActionButton: (
-                        <Button
-                            title={t(
-                                'feature.recovery.paste-social-recovery-code-instead',
-                            )}
-                            onPress={checkClipboard}
-                            type="clear"
-                        />
-                    ),
-                    message: t('feature.recovery.camera-access-information'),
-                    nextScreen: 'ScanSocialRecoveryCode',
-                })
-            }
-            if (status === 'authorized') {
-                setPermissionGranted(true)
-            }
-        }
-
-        checkForPermissions()
-    }, [checkClipboard, navigation, t])
-
     const devices = useCameraDevices()
     const device = devices.back
-
-    if (permissionGranted === false) return null
 
     const renderQrCodeScanner = () => {
         if (device == null) {
@@ -88,15 +59,28 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.cameraScannerContainer}>
-                {renderQrCodeScanner()}
+        <CameraPermissionsRequired
+            alternativeActionButton={
+                <Button
+                    title={t(
+                        'feature.recovery.paste-social-recovery-code-instead',
+                    )}
+                    onPress={checkClipboard}
+                    type="clear"
+                />
+            }
+            message={t('feature.recovery.camera-access-information')}
+            nextScreen={'ScanSocialRecoveryCode'}>
+            <View style={styles.container}>
+                <View style={styles.cameraScannerContainer}>
+                    {renderQrCodeScanner()}
+                </View>
+                <Button
+                    title={t('feature.recovery.paste-social-recovery-code')}
+                    onPress={checkClipboard}
+                />
             </View>
-            <Button
-                title={t('feature.recovery.paste-social-recovery-code')}
-                onPress={checkClipboard}
-            />
-        </View>
+        </CameraPermissionsRequired>
     )
 }
 

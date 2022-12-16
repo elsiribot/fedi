@@ -11,8 +11,7 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import { useNavigation } from '@react-navigation/native'
 
 import { Images } from '../../assets/images'
-import type { RootStackParamList } from '../../Router'
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { NavigationHook, RootStackParamList } from '../../Router'
 
 interface SuccessBase {
     iconImage?: ImageSourcePropType
@@ -38,8 +37,6 @@ type SuccessProps =
     | SuccessBase
     | SuccessWithCustomBody
     | SuccessWithCustomButton
-
-type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 
 const Success: React.FC<SuccessProps> = ({
     message,

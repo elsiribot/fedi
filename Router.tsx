@@ -1,6 +1,9 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import {
+    createNativeStackNavigator,
+    NativeStackNavigationProp,
+} from '@react-navigation/native-stack'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
 
@@ -66,6 +69,11 @@ import { TemporaryTransaction } from './bridge'
 
 export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
+export type RequestCameraAccessParams = {
+    alternativeActionButton: React.ReactNode | null
+    message: string | null
+    nextScreen: keyof RootStackParamList
+}
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
@@ -87,11 +95,7 @@ export type RootStackParamList = {
     RecoveryAssistConfirmation: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    RequestCameraAccess: {
-        alternativeActionButton: React.ReactNode | null
-        message: string | null
-        nextScreen: keyof RootStackParamList
-    }
+    RequestCameraAccess: RequestCameraAccessParams
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }
@@ -111,6 +115,7 @@ export type RootStackParamList = {
     SocialRecoveryFailure: undefined
     Transactions: undefined
 }
+export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()

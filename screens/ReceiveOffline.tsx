@@ -1,13 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
-import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { useCameraDevices } from 'react-native-vision-camera'
 import { useBridge } from '../contexts/FederationsContext'
 import { RootStackParamList } from '../Router'
 
 import AnimatedQrCodeScanner from '../components/feature/scan/AnimatedQrCodeScanner'
+import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 
@@ -17,32 +18,9 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
     const [validating, setValidating] = useState(false)
     const [showingError, setShowingError] = useState(false)
     const [percent, setPercent] = useState(0)
-    const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
-
-    // first check if user has granted camera permissions
-    useEffect(() => {
-        const checkForPermissions = async () => {
-            const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'denied') {
-                navigation.replace('RequestCameraAccess', {
-                    alternativeActionButton: null,
-                    message: t('feature.receive.camera-access-information'),
-                    nextScreen: 'ReceiveOffline',
-                })
-            }
-            if (status === 'authorized') {
-                setPermissionGranted(true)
-            }
-        }
-
-        checkForPermissions()
-    }, [navigation, t])
 
     const devices = useCameraDevices()
     const device = devices.back
-
-    if (permissionGranted === false) return null
 
     const renderQrCodeScanner = () => {
         if (device == null) {
@@ -93,12 +71,17 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.cameraScannerContainer}>
-                {renderQrCodeScanner()}
+        <CameraPermissionsRequired
+            alternativeActionButton={null}
+            message={t('feature.receive.camera-access-information')}
+            nextScreen={'ReceiveOffline'}>
+            <View style={styles.container}>
+                <View style={styles.cameraScannerContainer}>
+                    {renderQrCodeScanner()}
+                </View>
+                <Text>{percent}</Text>
             </View>
-            <Text>{percent}</Text>
-        </View>
+        </CameraPermissionsRequired>
     )
 }
 

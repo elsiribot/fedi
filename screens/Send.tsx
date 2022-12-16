@@ -8,6 +8,7 @@ import { Button } from '@rneui/themed'
 
 import type { RootStackParamList } from '../Router'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
@@ -97,19 +98,30 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.cameraScannerContainer}>
-                {renderQrCodeScanner()}
+        <CameraPermissionsRequired
+            alternativeActionButton={
+                <Button
+                    title={t('feature.recovery.paste-payment-request-instead')}
+                    onPress={checkClipboard}
+                    type="clear"
+                />
+            }
+            message={t('feature.send.camera-access-information')}
+            nextScreen={'Send'}>
+            <View style={styles.container}>
+                <View style={styles.cameraScannerContainer}>
+                    {renderQrCodeScanner()}
+                </View>
+                <Button
+                    title={t('feature.send.send-to-offline-user')}
+                    onPress={() => navigation.navigate('SendOfflineAmount')}
+                />
+                <Button
+                    title={t('feature.send.paste-payment-request')}
+                    onPress={checkClipboard}
+                />
             </View>
-            <Button
-                title={t('feature.send.send-to-offline-user')}
-                onPress={() => navigation.navigate('SendOfflineAmount')}
-            />
-            <Button
-                title={t('feature.send.paste-payment-request')}
-                onPress={checkClipboard}
-            />
-        </View>
+        </CameraPermissionsRequired>
     )
 }
 
