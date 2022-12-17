@@ -8,12 +8,13 @@ import { RequestInvoiceArgs, KeysendArgs } from 'webln'
 import type { RootStackParamList } from '../types/navigation'
 import { useBridge } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
+import { decodeInvoice } from '../bridge'
 
 export type Props = BottomTabScreenProps<RootStackParamList, 'Webview'>
 
 const Webview: React.FC<Props> = ({ route }) => {
     const { url } = route.params
-    const { generateInvoice } = useBridge()
+    const { generateInvoice, payInvoice } = useBridge()
     // FIXME: is this type casting acceptable?
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState(false)
@@ -67,7 +68,6 @@ const Webview: React.FC<Props> = ({ route }) => {
                     )
                 })
 
-                console.log(amount, description)
                 const invoice = await generateInvoice(
                     amountUtils.satToMsat(amount),
                     description,
@@ -82,8 +82,40 @@ const Webview: React.FC<Props> = ({ route }) => {
             }
         },
         sendPayment: async (paymentRequest: string) => {
-            console.log('sendPayment', paymentRequest)
-            return { preimage: 'fixme' }
+            const invoice = await decodeInvoice(paymentRequest)
+            const amountSats = amountUtils.millisToSats(invoice.amount)
+
+            try {
+                // Wait for user to interact with alert
+                await new Promise((resolve, reject) => {
+                    Alert.alert(
+                        'Payment request',
+                        `Pay website ${amountSats} sats?`,
+                        [
+                            {
+                                text: 'Yes',
+                                style: 'default',
+                                onPress: () => resolve('Accepted'),
+                            },
+                            {
+                                text: 'No',
+                                style: 'default',
+                                onPress: () => reject('Denied'),
+                            },
+                        ],
+                    )
+                })
+
+                // Attempt to pay the invoice
+                await payInvoice(paymentRequest)
+
+                return {
+                    preimage: 'fixme',
+                }
+            } catch (e) {
+                console.error('sendPayment failed', e)
+                throw e
+            }
         },
         signMessage: async (message: string) => {
             console.log('signMessage', message)
