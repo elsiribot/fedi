@@ -151,7 +151,9 @@
             "paste-social-recovery-code-instead": "Paste social recovery code instead",
             "personal-recovery": "Personal recovery",
             "personal-recovery-method": "If you wrote down 12 recovery words you can enter them again to recover your wallet",
-            "recover-wallet": "Recover a wallet",
+            "personal-recovery-instructions": "Enter the 12 words you wrote down when you first backed up your FederationZ wallet",
+            "recover-a-wallet": "Recover a wallet",
+            "recover-wallet": "Recover wallet",
             "recovering-your-wallet": "Recovering your wallet, please check back later",
             "recovery-assist": "Recovery assist",
             "recovery-assist-description": "A member of your Federation is requesting your assistance in recovering their wallet",
@@ -179,6 +181,7 @@
             "start-social-recovery": "Start social recovery",
             "successfully-opened-fedi-file": "Successfully opened your Fedi File",
             "try-social-recovery-again": "Try social recovery again",
+            "you-completed-personal-recovery": "You completed Personal Recovery",
             "you-completed-social-recovery": "You completed Social Recovery"
         },
         "receive": {
