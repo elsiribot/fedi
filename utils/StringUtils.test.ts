@@ -21,5 +21,20 @@ describe('StringUtils', () => {
                 'aaaabbbb',
             )
         })
+        it('strips out all whitepspaces', () => {
+            expect(stringUtils.keepOnlyLowercaseLetters(' a b c d e ')).toEqual(
+                'abcde',
+            )
+        })
+        it('strips out capital letters and whitespaces', () => {
+            expect(stringUtils.keepOnlyLowercaseLetters('a B c D e')).toEqual(
+                'ace',
+            )
+        })
+        it('strips out special characters and whitespaces', () => {
+            expect(stringUtils.keepOnlyLowercaseLetters('a ! @ # e')).toEqual(
+                'ae',
+            )
+        })
     })
 })
