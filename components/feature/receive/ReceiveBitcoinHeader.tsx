@@ -12,7 +12,7 @@ const ReceiveBitcoinHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            headerCenter={<Text h4>{t('phrases.receive-bitcoin')}</Text>}
+            headerCenter={<Text bold>{t('phrases.receive-bitcoin')}</Text>}
             headerRight={
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name={'close'} />

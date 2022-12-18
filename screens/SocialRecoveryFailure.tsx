@@ -22,7 +22,7 @@ const SocialRecoveryFailure: React.FC<Props> = ({ navigation }: Props) => {
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
                 <Image source={Images.Error} style={styles(theme).iconImage} />
-                <Text h3 h3Style={styles(theme).failureMessage}>
+                <Text h2 h2Style={styles(theme).failureMessage}>
                     {t('feature.recovery.social-recovery-unsuccessful')}
                 </Text>
                 <Text style={styles(theme).failureDetails}>
@@ -86,14 +86,14 @@ const styles = (theme: Theme) =>
         },
         failureMessage: {
             textAlign: 'center',
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
         failureDetails: {
             textAlign: 'center',
-            paddingHorizontal: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.md,
         },
         backToAppButton: {
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
         },
         buttonContainer: {
             width: '90%',

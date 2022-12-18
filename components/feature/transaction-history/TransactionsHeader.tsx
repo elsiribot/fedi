@@ -12,7 +12,7 @@ const TransactionsHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            headerCenter={<Text h4>{t('words.transactions')}</Text>}
+            headerCenter={<Text bold>{t('words.transactions')}</Text>}
             headerRight={
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name={'close'} />

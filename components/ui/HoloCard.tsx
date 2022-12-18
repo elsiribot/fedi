@@ -31,7 +31,7 @@ const HoloCard: React.FC<HoloCardProps> = ({
                     <Image source={iconImage} style={styles(theme).iconImage} />
                 )}
                 {title && (
-                    <Text h4 h4Style={styles(theme).titleText}>
+                    <Text bold style={styles(theme).titleText}>
                         {title}
                     </Text>
                 )}
@@ -46,7 +46,7 @@ const styles = (theme: Theme) =>
         container: {
             width: '100%',
             alignItems: 'center',
-            marginVertical: theme.spacing.sm,
+            marginVertical: theme.spacing.xs,
         },
         iconImage: {
             height: theme.sizes.sm,
@@ -61,7 +61,7 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
         },
         titleText: {
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
     })
 

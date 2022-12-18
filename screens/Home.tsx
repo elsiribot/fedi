@@ -66,7 +66,7 @@ const Home: React.FC<Props> = () => {
                     header: () => (
                         <Header
                             headerLeft={
-                                <Text onPress={toggleOffline} h3>
+                                <Text onPress={toggleOffline} h2 medium>
                                     {t('words.wallet')}
                                 </Text>
                             }

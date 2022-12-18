@@ -68,8 +68,8 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
         },
         instructions: {
-            marginVertical: theme.spacing.lg,
-            fontSize: theme.sizes.xs,
+            marginVertical: theme.spacing.md,
+            fontSize: theme.sizes.xxs,
         },
         textInput: {
             width: '80%',

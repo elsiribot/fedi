@@ -74,7 +74,7 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                                     'feature.recovery.locate-social-recovery-instructions-3',
                                 )}
                             </Text>
-                            <Text style={styles(theme).boldText}>
+                            <Text bold>
                                 {t(
                                     'feature.recovery.default-fedi-file-format',
                                     {
@@ -100,13 +100,9 @@ const styles = (theme: Theme) =>
             justifyContent: 'flex-start',
             padding: theme.spacing.xl,
         },
-        boldText: {
-            fontWeight: '900',
-        },
         instructionsText: {
             textAlign: 'center',
             paddingHorizontal: theme.spacing.xl,
-            fontWeight: '400',
         },
         textContainer: {
             width: '100%',

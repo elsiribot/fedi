@@ -62,7 +62,7 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
                     source={Images.AllowCameraAccessIcon}
                     style={styles(theme).image}
                 />
-                <Text h3 style={styles(theme).titleText}>
+                <Text h2 style={styles(theme).titleText}>
                     {t('phrases.allow-camera-access')}
                 </Text>
                 <Text style={styles(theme).subtitleText}>{message}</Text>
@@ -109,7 +109,7 @@ const styles = (theme: Theme) =>
         },
         titleText: {
             fontWeight: '600',
-            margin: theme.spacing.lg,
+            margin: theme.spacing.md,
         },
         subtitleText: {
             textAlign: 'center',

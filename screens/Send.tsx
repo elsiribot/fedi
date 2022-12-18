@@ -114,7 +114,7 @@ const styles = (theme: Theme) =>
         cameraScannerContainer: {
             height: '80%',
             width: '100%',
-            margin: theme.spacing.lg,
+            margin: theme.spacing.md,
         },
     })
 

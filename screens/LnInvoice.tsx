@@ -154,7 +154,7 @@ const styles = (theme: Theme) =>
         },
         button: {
             width: '48%',
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
         invoiceTextContainer: {
             flexDirection: 'row',

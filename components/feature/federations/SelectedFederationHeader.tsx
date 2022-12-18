@@ -29,10 +29,14 @@ const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
                         style={styles(theme).image}
                         source={Images.FederationXIconXs}
                     />
-                    <Text h4 style={styles(theme).federationName}>
+                    <Text medium small style={styles(theme).federationName}>
                         {selectedFederation?.name}
                     </Text>
-                    <Icon name={'angle-right'} type="font-awesome" />
+                    <Icon
+                        name={'angle-right'}
+                        type="font-awesome"
+                        size={theme.sizes.xs}
+                    />
                 </TouchableOpacity>
             }
         />
@@ -47,7 +51,7 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
         },
         federationName: {
-            marginHorizontal: theme.spacing.md,
+            marginHorizontal: theme.spacing.sm,
         },
         image: {
             height: 20,

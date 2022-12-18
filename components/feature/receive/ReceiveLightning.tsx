@@ -74,7 +74,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
         },
         instructions: {
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
             fontSize: 14,
         },
         textInput: {

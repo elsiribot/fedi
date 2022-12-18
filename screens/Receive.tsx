@@ -51,7 +51,7 @@ const styles = (theme: Theme) =>
         },
         buttonGroupContainer: {
             borderRadius: 50,
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
     })
 

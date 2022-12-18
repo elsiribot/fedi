@@ -59,7 +59,7 @@ const Success: React.FC<SuccessProps> = ({
                 {message ? (
                     message
                 ) : (
-                    <Text h3 h3Style={styles(theme).successMessage}>
+                    <Text h2 h2Style={styles(theme).successMessage}>
                         {messageText}
                     </Text>
                 )}

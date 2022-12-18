@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { Text, useTheme } from '@rneui/themed'
+import { Text } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 import { Transaction } from '../bridge'
@@ -12,7 +12,6 @@ import { useBridge } from '../contexts/FederationsContext'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>
 
 const Transactions: React.FC<Props> = () => {
-    const { theme } = useTheme()
     const { t } = useTranslation()
     const { listTransactions } = useBridge()
     const [isLoading, setIsLoading] = useState(false)

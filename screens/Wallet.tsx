@@ -90,7 +90,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                             color={theme.colors.secondary}
                             size={theme.sizes.sm}
                         />
-                        <Text h4 style={styles(theme).titleText}>
+                        <Text medium style={styles(theme).titleText}>
                             {t('words.bitcoin')}
                         </Text>
                     </View>
@@ -138,7 +138,7 @@ const styles = (theme: Theme) =>
         cardContainer: {
             backgroundColor: theme.colors.orange,
             borderRadius: theme.borders.defaultRadius,
-            padding: theme.spacing.md,
+            padding: theme.spacing.sm,
             width: '88%',
             height: theme.sizes.expandedWalletCardHeight,
         },
@@ -150,11 +150,11 @@ const styles = (theme: Theme) =>
             textAlign: 'left',
             flexDirection: 'row',
             alignItems: 'center',
-            padding: theme.spacing.lg,
+            padding: theme.spacing.md,
         },
         titleText: {
             color: theme.colors.secondary,
-            paddingHorizontal: theme.spacing.md,
+            paddingHorizontal: theme.spacing.sm,
             flex: 1,
         },
         balanceText: {
@@ -162,7 +162,7 @@ const styles = (theme: Theme) =>
             color: theme.colors.secondary,
         },
         buttonsGroupContainer: {
-            margin: theme.spacing.md,
+            margin: theme.spacing.sm,
             flexDirection: 'row',
             justifyContent: 'space-between',
         },
@@ -170,7 +170,7 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.secondary,
         },
         buttonContainer: {
-            margin: theme.spacing.md,
+            margin: theme.spacing.sm,
             flex: 1,
         },
         buttonTitle: {

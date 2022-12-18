@@ -19,8 +19,8 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
     const { theme } = useTheme()
     return (
         <View style={styles(theme).wordContainer}>
-            <Text h4 h4Style={styles(theme).wordNumber}>{`${number}`}</Text>
-            <Text h4 h4Style={styles(theme).wordText}>
+            <Text bold style={styles(theme).wordNumber}>{`${number}`}</Text>
+            <Text bold style={styles(theme).wordText}>
                 {word}
             </Text>
         </View>
@@ -59,10 +59,10 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text h3 h3Style={styles(theme).label}>
+            <Text h2 h2Style={styles(theme).label}>
                 {t('feature.backup.recovery-words')}
             </Text>
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text bold style={styles(theme).instructionsText}>
                 {t('feature.backup.recovery-words-instructions')}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
@@ -95,7 +95,7 @@ const styles = (theme: Theme) =>
         },
         continueButton: {
             width: '100%',
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
             marginTop: 'auto',
         },
         instructionsText: {
@@ -103,7 +103,7 @@ const styles = (theme: Theme) =>
             fontWeight: '400',
         },
         label: {
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
         roundedCardContainer: {
             borderRadius: theme.borders.defaultRadius,
@@ -121,11 +121,11 @@ const styles = (theme: Theme) =>
         wordContainer: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginVertical: theme.spacing.md,
+            marginVertical: theme.spacing.sm,
         },
         wordNumber: {
             color: theme.colors.primaryVeryLight,
-            paddingHorizontal: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.md,
             width: '30%',
         },
         wordText: {

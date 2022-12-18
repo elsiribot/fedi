@@ -134,8 +134,8 @@ const styles = (theme: Theme) =>
         addressTextContainer: {
             flexDirection: 'row',
             width: '100%',
-            marginTop: theme.spacing.lg,
-            marginBottom: theme.spacing.md,
+            marginTop: theme.spacing.md,
+            marginBottom: theme.spacing.sm,
         },
         addressTitle: {
             flex: 1,

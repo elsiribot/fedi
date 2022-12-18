@@ -41,9 +41,7 @@ const SettingsItem = ({ imageSource, label, onPress }: SettingsItemProps) => {
                 source={imageSource}
                 style={styles(theme).settingsItemImage}
             />
-            <Text h4 h4Style={styles(theme).settingsItemLabel}>
-                {label}
-            </Text>
+            <Text style={styles(theme).settingsItemLabel}>{label}</Text>
             <Icon
                 name={'angle-right'}
                 type={'font-awesome'}
@@ -72,7 +70,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
-                <Text h4>{t('words.admin')}</Text>
+                <Text bold>{t('words.admin')}</Text>
                 {/*
                     TODO: Replace with username set during onboarding
                 */}
@@ -80,13 +78,13 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     source={Images.HoloBackground}
                     style={styles(theme).profileCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <Text h3>{'SN'}</Text>
+                    <Text h2>{'SN'}</Text>
                 </ImageBackground>
-                <Text h3>{'Satoshi Nakomoto'}</Text>
+                <Text h2>{'Satoshi Nakomoto'}</Text>
             </View>
 
             <View style={styles(theme).sectionContainer}>
-                <Text h4 h4Style={styles(theme).sectionTitle}>
+                <Text style={styles(theme).sectionTitle}>
                     {t('words.federation')}
                 </Text>
                 <SettingsItem
@@ -122,7 +120,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 />
             </View>
             <View>
-                <Text h4 h4Style={styles(theme).sectionTitle}>
+                <Text style={styles(theme).sectionTitle}>
                     {t('words.wallet')}
                 </Text>
                 <SettingsItem
@@ -137,7 +135,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 />
             </View>
             <View>
-                <Text h4 h4Style={styles(theme).sectionTitle}>
+                <Text style={styles(theme).sectionTitle}>
                     {t('words.general')}
                 </Text>
                 <SettingsItem
@@ -169,7 +167,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             marginTop: theme.spacing.xl,
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
         },
         circleBorder: {
             borderRadius: CIRCLE_SIZE * 0.5,
@@ -180,13 +178,12 @@ const styles = (theme: Theme) =>
         },
         sectionTitle: {
             color: theme.colors.primaryLight,
-            fontWeight: '400',
-            paddingVertical: theme.spacing.md,
+            paddingVertical: theme.spacing.sm,
         },
         settingsItemContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: theme.spacing.lg,
+            paddingVertical: theme.spacing.md,
             width: '100%',
         },
         settingsItemImage: {
@@ -196,8 +193,7 @@ const styles = (theme: Theme) =>
         settingsItemLabel: {
             flexGrow: 1,
             color: theme.colors.primary,
-            fontWeight: '400',
-            paddingHorizontal: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.md,
         },
         settingsItemArrow: {
             alignSelf: 'flex-end',

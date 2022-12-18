@@ -18,7 +18,7 @@ const ScanFederationCodeHeader: React.FC<{}> = () => {
                 </TouchableOpacity>
             }
             headerCenter={
-                <Text h4>
+                <Text bold>
                     {t('feature.federations.scan-federation-invite')}
                 </Text>
             }

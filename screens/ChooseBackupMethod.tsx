@@ -45,7 +45,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text bold style={styles(theme).instructionsText}>
                 {t('feature.backup.choose-method-instructions')}
             </Text>
             <HoloCard
@@ -54,8 +54,8 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                 body={
                     <>
                         <Text
-                            h4
-                            h4Style={styles(theme).backupMethodInstructions}>
+                            bold
+                            style={styles(theme).backupMethodInstructions}>
                             {t('feature.backup.social-backup-instructions')}
                         </Text>
                         <Button
@@ -73,8 +73,8 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                 body={
                     <>
                         <Text
-                            h4
-                            h4Style={styles(theme).backupMethodInstructions}>
+                            bold
+                            style={styles(theme).backupMethodInstructions}>
                             {t('feature.backup.personal-backup-instructions')}
                         </Text>
                         <Button
@@ -101,17 +101,17 @@ const styles = (theme: Theme) =>
         },
         backupMethodButton: {
             width: '100%',
-            marginTop: theme.spacing.lg,
+            marginTop: theme.spacing.md,
         },
         backupMethodInstructions: {
             textAlign: 'center',
             fontWeight: '400',
-            paddingVertical: theme.spacing.sm,
+            paddingVertical: theme.spacing.xs,
         },
         instructionsText: {
             textAlign: 'center',
             marginBottom: theme.spacing.xl,
-            paddingHorizontal: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.md,
             fontWeight: '400',
         },
     })

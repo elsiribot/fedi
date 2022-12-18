@@ -29,10 +29,10 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                         style={styles(theme).holoIconImage}
                     />
                 </ImageBackground>
-                <Text h3 h3Style={styles(theme).label}>
+                <Text h2 h2Style={styles(theme).label}>
                     {t('feature.backup.social-backup')}
                 </Text>
-                <Text h4 h4Style={styles(theme).instructionsText}>
+                <Text bold style={styles(theme).instructionsText}>
                     {t('feature.backup.start-social-backup-instructions')}
                 </Text>
             </View>
@@ -60,7 +60,7 @@ const styles = (theme: Theme) =>
         },
         label: {
             textAlign: 'center',
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
         instructionsText: {
             textAlign: 'center',
@@ -82,7 +82,7 @@ const styles = (theme: Theme) =>
         },
         continueButton: {
             width: '100%',
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
         },
     })
 

@@ -28,12 +28,30 @@ declare module '@rneui/themed' {
         sizes: {
             [key: string]: number
         }
-        spacing: {
-            [key: string]: number
-            xxl: number
-        }
         borders: {
             defaultRadius: number
         }
+    }
+
+    export interface TextProps {
+        bold?: boolean
+        medium?: boolean
+        caption?: boolean
+        small?: boolean
+        tiny?: boolean
+    }
+
+    export interface ComponentTheme {
+        Text: Partial<TextProps>
+    }
+
+    export interface ThemeSpacing {
+        xxs: number
+        xs: number
+        sm: number
+        md: number
+        lg: number
+        xl: number
+        xxl: number
     }
 }

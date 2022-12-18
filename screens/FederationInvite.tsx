@@ -45,7 +45,7 @@ const FederationInvite: React.FC<Props> = ({ route }: Props) => {
                         name="content-copy"
                         type="material"
                         color={theme.colors.primary}
-                        size={theme.sizes.xs}
+                        size={theme.sizes.xxs}
                     />
                     <Text style={styles(theme).copyText} numberOfLines={1}>
                         {t('words.copy')}
@@ -89,8 +89,8 @@ const styles = (theme: Theme) =>
             width: QR_CODE_SIZE * 1.1,
             backgroundColor: theme.colors.secondary,
             borderRadius: theme.borders.defaultRadius,
-            paddingHorizontal: theme.spacing.md,
-            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.sm,
+            paddingVertical: theme.spacing.md,
         },
         copyButtonContainer: {
             flexDirection: 'row',
@@ -100,16 +100,16 @@ const styles = (theme: Theme) =>
         inviteLinkText: {
             width: '85%',
             color: theme.colors.primaryLight,
-            fontSize: theme.sizes.xs,
+            fontSize: theme.sizes.xxs,
         },
         copyText: {
             color: theme.colors.primary,
-            fontSize: theme.sizes.xs,
-            paddingLeft: theme.spacing.sm,
+            fontSize: theme.sizes.xxs,
+            paddingLeft: theme.spacing.xs,
         },
         inviteLinkNotice: {
             color: theme.colors.secondary,
-            marginTop: theme.spacing.lg,
+            marginTop: theme.spacing.md,
             marginBottom: theme.spacing.xl,
         },
     })

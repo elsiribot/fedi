@@ -59,8 +59,8 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
                 />
             </View>
             <Text
-                h3
-                h3Style={[
+                h2
+                h2Style={[
                     styles(theme).instructionsText,
                     isRecording ? { color: theme.colors.primaryVeryLight } : {},
                 ]}>
@@ -109,7 +109,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            marginTop: theme.spacing.lg,
+            marginTop: theme.spacing.md,
         },
         playIconContainer: {
             position: 'absolute',

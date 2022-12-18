@@ -17,7 +17,7 @@ const SendBitcoinHeader: React.FC<{}> = () => {
                     <Icon name={'angle-left'} type="font-awesome" />
                 </TouchableOpacity>
             }
-            headerCenter={<Text h4>{t('feature.send.send-bitcoin')}</Text>}
+            headerCenter={<Text bold>{t('feature.send.send-bitcoin')}</Text>}
             centerContainerStyle={{
                 flex: 3,
             }}

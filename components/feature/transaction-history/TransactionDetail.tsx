@@ -50,7 +50,7 @@ const TransactionDetail = ({
                         : t('feature.receive.you-received')
                 }`}
             </Text>
-            <Text h3>{`${amountUtils.millisToSats(txn.amount)} ${t(
+            <Text h2>{`${amountUtils.millisToSats(txn.amount)} ${t(
                 'words.sats',
             )}`}</Text>
             <View style={styles(theme).detailItemsContainer}>
@@ -132,7 +132,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             alignItems: 'center',
-            margin: theme.spacing.lg,
+            margin: theme.spacing.md,
             width: 300,
         },
         closeIconContainer: {

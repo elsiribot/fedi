@@ -44,7 +44,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 source={Images.FederationXIconSm}
             />
             <View style={styles(theme).labelsContainer}>
-                <Text h4 numberOfLines={1}>
+                <Text bold numberOfLines={1}>
                     {federation.name}
                 </Text>
                 <Text style={styles(theme).subText}>
@@ -95,7 +95,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
             style={styles(theme).imageBackground}
             source={Images.HoloBackground}>
             <DrawerContentScrollView {...props} style={styles(theme).container}>
-                <Text h3 style={styles(theme).headerTitle}>
+                <Text h2 style={styles(theme).headerTitle}>
                     {t('words.federations')}
                 </Text>
                 {connectedFederations.map((f, i) => (
@@ -144,10 +144,10 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: theme.spacing.lg,
+            padding: theme.spacing.md,
         },
         addFederationText: {
-            paddingLeft: theme.spacing.sm,
+            paddingLeft: theme.spacing.xs,
         },
         drawerItem: {
             marginHorizontal: 0,
@@ -158,7 +158,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             width: '110%',
-            paddingHorizontal: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.xxs,
         },
         labelsContainer: {
             // Makes sure very long federation names do not overflow
@@ -174,7 +174,7 @@ const styles = (theme: Theme) =>
         image: {
             height: theme.sizes.lg,
             width: theme.sizes.lg,
-            marginHorizontal: theme.spacing.lg,
+            marginHorizontal: theme.spacing.md,
             resizeMode: 'contain',
         },
         imageBackground: {
@@ -183,11 +183,11 @@ const styles = (theme: Theme) =>
             resizeMode: 'cover',
         },
         subText: {
-            fontSize: theme.sizes.xs,
+            fontSize: theme.sizes.xxs,
         },
         headerTitle: {
             paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
+            paddingVertical: theme.spacing.md,
         },
     })
 

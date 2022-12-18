@@ -21,7 +21,7 @@ const SocialRecoveryHeader: React.FC<SocialRecoveryHeaderProps> = ({
     return (
         <Header
             headerCenter={
-                <Text h4>{t('feature.recovery.social-recovery')}</Text>
+                <Text bold>{t('feature.recovery.social-recovery')}</Text>
             }
             centerContainerStyle={{ flex: 3 }}
             {...(backButton

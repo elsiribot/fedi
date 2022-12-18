@@ -30,21 +30,33 @@ const theme = createTheme({
                 opacity: 0.7,
             },
         },
-        Text: {
+        Text: props => ({
             style: {
                 color: colors.primary,
                 fontFamily: 'AlbertSans-Regular',
-                fontWeight: '600',
-            },
-            h3Style: {
-                fontFamily: 'AlbertSans-Regular',
-                fontSize: 24,
-            },
-            h4Style: {
-                fontFamily: 'AlbertSans-Regular',
+                fontWeight: '400',
                 fontSize: 16,
+                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
+                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+                ...(props.caption ? { fontSize: 14 } : {}),
+                ...(props.small ? { fontSize: 12 } : {}),
+                ...(props.tiny ? { fontSize: 10 } : {}),
             },
-        },
+            h1Style: {
+                fontWeight: '400',
+                fontSize: 32,
+                fontFamily: 'AlbertSans-Regular',
+                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
+                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+            },
+            h2Style: {
+                fontWeight: '400',
+                fontSize: 24,
+                fontFamily: 'AlbertSans-Regular',
+                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
+                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+            },
+        }),
         Header: {
             containerStyle: {
                 paddingTop: 0,
@@ -66,18 +78,21 @@ const theme = createTheme({
         ...colors,
     },
     sizes: {
-        xs: 12,
+        xxs: 12,
+        xs: 16,
         sm: 24,
         md: 32,
         lg: 48,
         expandedWalletCardHeight: 325,
     },
     spacing: {
-        xs: 2,
-        sm: 4,
-        md: 8,
-        lg: 12,
+        xxs: 2,
+        xs: 4,
+        sm: 8,
+        md: 12,
+        lg: 16,
         xl: 24,
+        xxl: 48,
     },
     borders: {
         defaultRadius: 16,

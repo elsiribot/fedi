@@ -16,11 +16,9 @@ const SocialRecoveryProcessing: React.FC<{}> = () => {
                     source={Images.HoloBackground}
                     style={styles(theme).holoCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <Text h4 h4Style={styles(theme).instructionsText}>
-                        {'75%'}
-                    </Text>
+                    <Text style={styles(theme).instructionsText}>{'75%'}</Text>
                 </ImageBackground>
-                <Text h3 h3Style={styles(theme).label}>
+                <Text h2 h2Style={styles(theme).label}>
                     {t('feature.backup.creating-recovery-file')}
                 </Text>
             </View>
@@ -37,17 +35,16 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.lg,
+            padding: theme.spacing.md,
         },
         label: {
             textAlign: 'center',
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
             paddingHorizontal: theme.spacing.xl,
         },
         instructionsText: {
             textAlign: 'center',
             paddingHorizontal: theme.spacing.xl,
-            fontWeight: '400',
         },
         holoCircle: {
             height: CIRCLE_SIZE,
@@ -69,7 +66,7 @@ const styles = (theme: Theme) =>
             padding: 0,
         },
         imageBackground: {
-            padding: theme.spacing.lg,
+            padding: theme.spacing.md,
         },
     })
 

@@ -17,7 +17,7 @@ const ChooseBackupMethodHeader: React.FC<{}> = () => {
                     <Icon name={'angle-left'} type="font-awesome" />
                 </TouchableOpacity>
             }
-            headerCenter={<Text h4>{t('feature.backup.choose-method')}</Text>}
+            headerCenter={<Text bold>{t('feature.backup.choose-method')}</Text>}
             centerContainerStyle={{ flex: 3 }}
         />
     )

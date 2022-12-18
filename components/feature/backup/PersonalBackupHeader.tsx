@@ -17,7 +17,9 @@ const PersonalBackupHeader: React.FC<{}> = () => {
                     <Icon name={'angle-left'} type="font-awesome" />
                 </TouchableOpacity>
             }
-            headerCenter={<Text h4>{t('feature.backup.personal-backup')}</Text>}
+            headerCenter={
+                <Text bold>{t('feature.backup.personal-backup')}</Text>
+            }
             centerContainerStyle={{ flex: 3 }}
         />
     )
