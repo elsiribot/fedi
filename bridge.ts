@@ -314,22 +314,28 @@ export type SeedWords = string[]
 export async function generateMnemonic(
     _federationId: string,
 ): Promise<SeedWords> {
-    return new Promise(resolve => {
-        resolve([
-            'never',
-            'gonna',
-            'give',
-            'you',
-            'up',
-            'never',
-            'gonna',
-            'let',
-            'you',
-            'down',
-            'never',
-            'gonna',
-        ])
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId })
+    // let response = await FedimintFfi.rpc('generateMnemonic', payload)
+    // return handleRpcResponse<string>(response)
+
+    // Simulate recovery with success/failure modes
+    const MOCK_SEED = JSON.stringify([
+        'never',
+        'gonna',
+        'give',
+        'you',
+        'up',
+        'never',
+        'gonna',
+        'let',
+        'you',
+        'down',
+        'never',
+        'gonna',
+    ])
+    return handleRpcResponse<SeedWords>(`{"result": ${MOCK_SEED}}`)
+    // return handleRpcResponse<null>('{"error": "seed is invalid"}')
 }
 
 // progress reported via `SeedRecoveryEvent` events
