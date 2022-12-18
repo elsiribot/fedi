@@ -45,6 +45,11 @@ const theme = createTheme({
                 fontSize: 16,
             },
         },
+        Input: {
+            containerStyle: {
+                height: 60,
+            },
+        },
         Header: {
             containerStyle: {
                 paddingTop: 0,

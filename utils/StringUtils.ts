@@ -13,6 +13,12 @@ class StringUtils {
             numberOfCharacters,
         )} ... ${longString.slice(numberOfCharacters * -1)}`
     }
+    keepOnlyLowercaseLetters = (value: string): string => {
+        // Remove all characters except for lowercase letters
+        const seedWordValue = value.replace(/[^a-z]/g, '')
+
+        return seedWordValue
+    }
 }
 
 const stringUtils = new StringUtils()

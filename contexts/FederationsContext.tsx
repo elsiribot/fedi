@@ -22,6 +22,7 @@ import {
     payAddress,
     payInvoice,
     receiveEcash,
+    recoverFromMnemonic,
     updateTransactionNotes,
     uploadBackupFile,
     validateBackupFile,
@@ -268,6 +269,12 @@ function useBridge() {
         receiveEcash: useCallback(
             (ecash: string) => {
                 return receiveEcash(ecash, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        recoverFromMnemonic: useCallback(
+            (mnemonic: string[]) => {
+                return recoverFromMnemonic(mnemonic, selectedFederation!.name)
             },
             [selectedFederation],
         ),

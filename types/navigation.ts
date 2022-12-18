@@ -35,6 +35,8 @@ export type RootStackParamList = {
     Home: undefined
     LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
+    PersonalRecovery: undefined
+    PersonalRecoverySuccess: undefined
     LocateSocialRecovery: undefined
     ReceiveSuccess: { tx: Transaction }
     Receive: undefined
