@@ -91,11 +91,11 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'flex-start',
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         continueButton: {
             width: '100%',
-            marginBottom: 16,
+            marginBottom: theme.spacing.lg,
             marginTop: 'auto',
         },
         instructionsText: {
@@ -103,13 +103,13 @@ const styles = (theme: Theme) =>
             fontWeight: '400',
         },
         label: {
-            marginVertical: 16,
+            marginVertical: theme.spacing.lg,
         },
         roundedCardContainer: {
-            borderRadius: 16,
+            borderRadius: theme.borders.defaultRadius,
             width: '100%',
             marginHorizontal: 0,
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         seedWordsContainer: {
             flex: 1,
@@ -121,11 +121,11 @@ const styles = (theme: Theme) =>
         wordContainer: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginVertical: 6,
+            marginVertical: theme.spacing.md,
         },
         wordNumber: {
             color: theme.colors.primaryVeryLight,
-            paddingHorizontal: 10,
+            paddingHorizontal: theme.spacing.lg,
             width: '30%',
         },
         wordText: {

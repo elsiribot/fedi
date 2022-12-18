@@ -102,7 +102,7 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         confirmButton: {
-            marginTop: 12,
+            marginTop: theme.spacing.lg,
             width: '100%',
         },
         cameraContainer: {
@@ -116,7 +116,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            marginTop: 12,
+            marginTop: theme.spacing.lg,
         },
         playIconContainer: {
             position: 'absolute',

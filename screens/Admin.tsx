@@ -158,7 +158,7 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             justifyContent: 'space-evenly',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
         },
         profileHeader: {
             alignItems: 'center',
@@ -168,8 +168,8 @@ const styles = (theme: Theme) =>
             width: CIRCLE_SIZE,
             alignItems: 'center',
             justifyContent: 'center',
-            marginTop: 24,
-            marginBottom: 16,
+            marginTop: theme.spacing.xl,
+            marginBottom: theme.spacing.lg,
         },
         circleBorder: {
             borderRadius: CIRCLE_SIZE * 0.5,
@@ -181,12 +181,12 @@ const styles = (theme: Theme) =>
         sectionTitle: {
             color: theme.colors.primaryLight,
             fontWeight: '400',
-            paddingVertical: 6,
+            paddingVertical: theme.spacing.md,
         },
         settingsItemContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: 10,
+            paddingVertical: theme.spacing.lg,
             width: '100%',
         },
         settingsItemImage: {
@@ -197,7 +197,7 @@ const styles = (theme: Theme) =>
             flexGrow: 1,
             color: theme.colors.primary,
             fontWeight: '400',
-            paddingHorizontal: 12,
+            paddingHorizontal: theme.spacing.lg,
         },
         settingsItemArrow: {
             alignSelf: 'flex-end',

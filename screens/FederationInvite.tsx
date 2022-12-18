@@ -76,10 +76,10 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.primary,
         },
         qrCodeContainer: {
-            borderRadius: 14,
+            borderRadius: theme.borders.defaultRadius,
             backgroundColor: theme.colors.secondary,
             padding: QR_CODE_SIZE * 0.05,
-            marginVertical: 24,
+            marginVertical: theme.spacing.xl,
             flexDirection: 'row',
             justifyContent: 'center',
         },
@@ -88,9 +88,9 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             width: QR_CODE_SIZE * 1.1,
             backgroundColor: theme.colors.secondary,
-            borderRadius: 12,
-            paddingHorizontal: 10,
-            paddingVertical: 14,
+            borderRadius: theme.borders.defaultRadius,
+            paddingHorizontal: theme.spacing.md,
+            paddingVertical: theme.spacing.lg,
         },
         copyButtonContainer: {
             flexDirection: 'row',
@@ -100,17 +100,17 @@ const styles = (theme: Theme) =>
         inviteLinkText: {
             width: '85%',
             color: theme.colors.primaryLight,
-            fontSize: 14,
+            fontSize: theme.sizes.xs,
         },
         copyText: {
             color: theme.colors.primary,
-            fontSize: 12,
-            paddingLeft: 4,
+            fontSize: theme.sizes.xs,
+            paddingLeft: theme.spacing.sm,
         },
         inviteLinkNotice: {
             color: theme.colors.secondary,
-            marginTop: 16,
-            marginBottom: 48,
+            marginTop: theme.spacing.lg,
+            marginBottom: theme.spacing.xl,
         },
     })
 

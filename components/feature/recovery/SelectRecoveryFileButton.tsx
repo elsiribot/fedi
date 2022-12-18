@@ -53,7 +53,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
     return (
         <Button
             title={t('feature.recovery.search-files')}
-            containerStyle={styles.searchButton}
+            containerStyle={styles(theme).searchButton}
             onPress={openFileExplorer}
         />
     )

@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
-import { Button } from '@rneui/themed'
+import { Button, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
@@ -23,6 +23,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
@@ -99,8 +100,8 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             }
             message={t('feature.federations.camera-access-information')}
             nextScreen={'ScanFederationCode'}>
-            <View style={styles.container}>
-                <View style={styles.cameraScannerContainer}>
+            <View style={styles(theme).container}>
+                <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
                 <Button
@@ -112,17 +113,18 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cameraScannerContainer: {
-        height: '80%',
-        width: '100%',
-        margin: 16,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        cameraScannerContainer: {
+            height: '80%',
+            width: '100%',
+            margin: 16,
+        },
+    })
 
 export default ScanFederationCode

@@ -30,6 +30,10 @@ declare module '@rneui/themed' {
         }
         spacing: {
             [key: string]: number
+            xxl: number
+        }
+        borders: {
+            defaultRadius: number
         }
     }
 }

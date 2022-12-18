@@ -137,10 +137,10 @@ const styles = (theme: Theme) =>
         },
         cardContainer: {
             backgroundColor: theme.colors.orange,
-            borderRadius: 20,
-            padding: 8,
+            borderRadius: theme.borders.defaultRadius,
+            padding: theme.spacing.md,
             width: '88%',
-            height: 327,
+            height: theme.sizes.expandedWalletCardHeight,
         },
         cardWrapper: {
             flex: 1,
@@ -150,11 +150,11 @@ const styles = (theme: Theme) =>
             textAlign: 'left',
             flexDirection: 'row',
             alignItems: 'center',
-            padding: 16,
+            padding: theme.spacing.lg,
         },
         titleText: {
             color: theme.colors.secondary,
-            paddingHorizontal: 8,
+            paddingHorizontal: theme.spacing.md,
             flex: 1,
         },
         balanceText: {
@@ -162,7 +162,7 @@ const styles = (theme: Theme) =>
             color: theme.colors.secondary,
         },
         buttonsGroupContainer: {
-            margin: 8,
+            margin: theme.spacing.md,
             flexDirection: 'row',
             justifyContent: 'space-between',
         },
@@ -170,7 +170,7 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.secondary,
         },
         buttonContainer: {
-            margin: 8,
+            margin: theme.spacing.md,
             flex: 1,
         },
         buttonTitle: {

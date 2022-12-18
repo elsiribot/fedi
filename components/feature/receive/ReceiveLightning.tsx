@@ -1,4 +1,4 @@
-import { Button, Input, Text } from '@rneui/themed'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -13,6 +13,7 @@ type ReceiveLightningProps = {
 const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
     handleInvoice,
 }: ReceiveLightningProps) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const [amount, setAmount] = useState<string>('')
     const [amountIsValid, setAmountIsValid] = useState(false)
@@ -45,8 +46,8 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.instructions}>
+        <View style={styles(theme).container}>
+            <Text style={styles(theme).instructions}>
                 {t('feature.receive.instructions')}
             </Text>
             <Input
@@ -55,7 +56,7 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
                 keyboardType="numeric"
                 returnKeyType="done"
-                containerStyle={styles.textInput}
+                containerStyle={styles(theme).textInput}
             />
             <Button
                 title={t('feature.receive.create-lightning-request')}
@@ -66,19 +67,19 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-        alignItems: 'center',
-    },
-    instructions: {
-        marginTop: 16,
-        marginBottom: 16,
-        fontSize: 14,
-    },
-    textInput: {
-        width: '80%',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            width: '100%',
+            alignItems: 'center',
+        },
+        instructions: {
+            marginVertical: theme.spacing.lg,
+            fontSize: 14,
+        },
+        textInput: {
+            width: '80%',
+        },
+    })
 
 export default ReceiveLightning

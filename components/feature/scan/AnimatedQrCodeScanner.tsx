@@ -56,7 +56,7 @@ const QrCodeScanner = ({
 
     return (
         <Camera
-            style={styles.camera}
+            style={styles(theme).camera}
             device={device}
             isActive={true}
             frameProcessor={frameProcessor}

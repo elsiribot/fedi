@@ -51,13 +51,13 @@ const styles = (theme: Theme) =>
         modalText: {
             color: theme.colors.primary,
             fontSize: 30,
-            margin: 10,
+            margin: theme.spacing.lg,
         },
         buttonContainer: {
             width: '90%',
             flexDirection: 'row',
             justifyContent: 'space-evenly',
-            margin: 10,
+            margin: theme.spacing.lg,
         },
     })
 

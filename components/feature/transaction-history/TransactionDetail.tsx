@@ -1,4 +1,4 @@
-import { Divider, Icon, Input, Text, useTheme } from '@rneui/themed'
+import { Divider, Icon, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
@@ -31,9 +31,9 @@ const TransactionDetail = ({
         updateTransactionNotes(txn.id, updatedNotes)
     }
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <TouchableOpacity
-                style={styles.closeIconContainer}
+                style={styles(theme).closeIconContainer}
                 onPress={handleCloseModal}>
                 <Icon name="close" size={theme.sizes.md} />
             </TouchableOpacity>
@@ -53,11 +53,11 @@ const TransactionDetail = ({
             <Text h3>{`${amountUtils.millisToSats(txn.amount)} ${t(
                 'words.sats',
             )}`}</Text>
-            <View style={styles.detailItemsContainer}>
+            <View style={styles(theme).detailItemsContainer}>
                 <Divider />
                 {txn.bitcoin?.incomingStatus && (
                     <View>
-                        <View style={styles.detailItem}>
+                        <View style={styles(theme).detailItem}>
                             <Text>{`${t('words.status')}`}</Text>
                             {txn.bitcoin?.incomingStatus ===
                             IncomingBitcoinTransactionStatus.complete ? (
@@ -69,12 +69,12 @@ const TransactionDetail = ({
                         <Divider />
                     </View>
                 )}
-                <View style={styles.detailItem}>
+                <View style={styles(theme).detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
                     <Text>{txn.notes}</Text>
                 </View>
                 <Divider />
-                <View style={styles.detailItem}>
+                <View style={styles(theme).detailItem}>
                     <Text>{`${t('words.time')}`}</Text>
                     <Text>{`${dateUtils.formatTimestamp(
                         txn.createdAt,
@@ -83,7 +83,7 @@ const TransactionDetail = ({
                 </View>
                 <Divider />
                 {txn.fee !== null && (
-                    <View style={styles.detailItem}>
+                    <View style={styles(theme).detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
                         <Text>{`${amountUtils.millisToSats(txn.fee)} ${t(
                             'words.sats',
@@ -92,7 +92,7 @@ const TransactionDetail = ({
                 )}
                 <Divider />
                 {txn.lightning && (
-                    <View style={styles.detailItem}>
+                    <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
                         <Text>
                             {stringUtils.truncateMiddleOfString(
@@ -103,7 +103,7 @@ const TransactionDetail = ({
                     </View>
                 )}
                 {txn.bitcoin && (
-                    <View style={styles.detailItem}>
+                    <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
                         <Text>
                             {stringUtils.truncateMiddleOfString(
@@ -114,7 +114,7 @@ const TransactionDetail = ({
                     </View>
                 )}
                 <Divider />
-                <View style={styles.detailItem}>
+                <View style={styles(theme).detailItem}>
                     <Text>{`${t('phrases.add-note')} +`}</Text>
                     {/* FIXME: this is terrible UX, probably shouldn't write on every keystroke */}
                     <Input
@@ -128,25 +128,26 @@ const TransactionDetail = ({
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        margin: 10,
-        width: 300,
-    },
-    closeIconContainer: {
-        alignSelf: 'flex-end',
-    },
-    detailItemsContainer: {
-        marginTop: 20,
-        width: 250,
-    },
-    detailItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: 32,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            alignItems: 'center',
+            margin: theme.spacing.lg,
+            width: 300,
+        },
+        closeIconContainer: {
+            alignSelf: 'flex-end',
+        },
+        detailItemsContainer: {
+            marginTop: theme.spacing.xl,
+            width: 250,
+        },
+        detailItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 32,
+        },
+    })
 
 export default TransactionDetail

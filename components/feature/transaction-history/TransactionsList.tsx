@@ -1,4 +1,4 @@
-import { Overlay } from '@rneui/themed'
+import { Overlay, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -14,6 +14,7 @@ type TransactionsListProps = {
 const WINDOW_WIDTH = Dimensions.get('window').width
 
 const TransactionsList = ({ transactions }: TransactionsListProps) => {
+    const { theme } = useTheme()
     const [selectedTransaction, setSelectedTransaction] =
         useState<Transaction | null>(null)
 
@@ -29,7 +30,7 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles(theme).container}>
             <FlatList
                 data={transactions}
                 renderItem={renderTransaction}
@@ -44,7 +45,7 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
             />
             <Overlay
                 isVisible={selectedTransaction !== null}
-                overlayStyle={styles.overlayContainer}
+                overlayStyle={styles(theme).overlayContainer}
                 onBackdropPress={() => setSelectedTransaction(null)}>
                 {selectedTransaction && (
                     <TransactionDetail
@@ -57,14 +58,15 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    overlayContainer: {
-        borderRadius: 20,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+        },
+        overlayContainer: {
+            borderRadius: theme.borders.defaultRadius,
+        },
+    })
 
 export default TransactionsList

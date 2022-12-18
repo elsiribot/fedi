@@ -144,10 +144,10 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: 12,
+            padding: theme.spacing.lg,
         },
         addFederationText: {
-            paddingLeft: 4,
+            paddingLeft: theme.spacing.sm,
         },
         drawerItem: {
             marginHorizontal: 0,
@@ -158,7 +158,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             width: '110%',
-            paddingHorizontal: 2,
+            paddingHorizontal: theme.spacing.xs,
         },
         labelsContainer: {
             // Makes sure very long federation names do not overflow
@@ -174,7 +174,7 @@ const styles = (theme: Theme) =>
         image: {
             height: theme.sizes.lg,
             width: theme.sizes.lg,
-            marginHorizontal: 12,
+            marginHorizontal: theme.spacing.lg,
             resizeMode: 'contain',
         },
         imageBackground: {
@@ -186,8 +186,8 @@ const styles = (theme: Theme) =>
             fontSize: theme.sizes.xs,
         },
         headerTitle: {
-            paddingHorizontal: 24,
-            paddingVertical: 12,
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
         },
     })
 

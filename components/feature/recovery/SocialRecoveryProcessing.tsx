@@ -37,16 +37,16 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 12,
+            padding: theme.spacing.lg,
         },
         label: {
             textAlign: 'center',
-            marginVertical: 16,
-            paddingHorizontal: 24,
+            marginVertical: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.xl,
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
             fontWeight: '400',
         },
         holoCircle: {
@@ -63,13 +63,13 @@ const styles = (theme: Theme) =>
             width: theme.sizes.lg,
         },
         roundedCardContainer: {
-            borderRadius: 16,
+            borderRadius: theme.borders.defaultRadius,
             width: '100%',
             marginHorizontal: 0,
             padding: 0,
         },
         imageBackground: {
-            padding: 16,
+            padding: theme.spacing.lg,
         },
     })
 

@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { ActivityIndicator, View, StyleSheet } from 'react-native'
+import { Theme, useTheme } from '@rneui/themed'
 import { useCameraDevices } from 'react-native-vision-camera'
 
 import type { RootStackParamList } from '../types/navigation'
@@ -14,6 +15,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const RecordBackupVideo: React.FC<Props> = () => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
 
     const devices = useCameraDevices()
@@ -24,7 +26,7 @@ const RecordBackupVideo: React.FC<Props> = () => {
             alternativeActionButton={null}
             message={t('feature.backup.camera-access-information')}
             nextScreen={'RecordBackupVideo'}>
-            <View style={styles.container}>
+            <View style={styles(theme).container}>
                 {device === null ? (
                     <ActivityIndicator />
                 ) : (
@@ -35,12 +37,13 @@ const RecordBackupVideo: React.FC<Props> = () => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        padding: 24,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            padding: theme.spacing.xl,
+        },
+    })
 
 export default RecordBackupVideo

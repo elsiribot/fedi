@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { ButtonGroup } from '@rneui/themed'
+import { ButtonGroup, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -12,6 +12,7 @@ import ReceiveOnchain from '../components/feature/receive/ReceiveOnchain'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
 const Receive: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const [walletMode, setWalletMode] = useState<string>('lightning')
 
@@ -22,7 +23,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <ButtonGroup
                 selectedIndex={walletMode === 'lightning' ? 0 : 1}
                 onPress={index => {
@@ -30,7 +31,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                     if (index === 1) setWalletMode('onchain')
                 }}
                 buttons={[t('words.lightning'), t('words.onchain')]}
-                containerStyle={styles.buttonGroupContainer}
+                containerStyle={styles(theme).buttonGroupContainer}
             />
 
             {walletMode === 'lightning' ? (
@@ -42,16 +43,16 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonGroupContainer: {
-        borderRadius: 50,
-        marginTop: 16,
-        marginBottom: 16,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        buttonGroupContainer: {
+            borderRadius: 50,
+            marginVertical: theme.spacing.lg,
+        },
+    })
 
 export default Receive

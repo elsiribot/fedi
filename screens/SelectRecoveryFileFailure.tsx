@@ -66,7 +66,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             marginTop: 'auto',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
             backgroundColor: theme.colors.secondary,
             // for a perfect circle borderRadius should be half of
             // height and width
@@ -87,19 +87,19 @@ const styles = (theme: Theme) =>
         },
         failureMessage: {
             textAlign: 'center',
-            marginVertical: 10,
+            marginVertical: theme.spacing.lg,
         },
         failureDetails: {
             textAlign: 'center',
-            paddingHorizontal: 12,
+            paddingHorizontal: theme.spacing.lg,
         },
         backToAppButton: {
-            marginBottom: 16,
+            marginBottom: theme.spacing.lg,
         },
         buttonContainer: {
             width: '90%',
             marginTop: 'auto',
-            marginBottom: 50,
+            marginBottom: theme.spacing.xl,
             flexDirection: 'column',
             justifyContent: 'flex-end',
         },

@@ -109,7 +109,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            marginTop: 12,
+            marginTop: theme.spacing.lg,
         },
         playIconContainer: {
             position: 'absolute',
@@ -125,7 +125,7 @@ const styles = (theme: Theme) =>
             height: RECORD_CIRCLE_OUTER_SIZE,
             width: RECORD_CIRCLE_OUTER_SIZE,
             borderRadius: RECORD_CIRCLE_OUTER_SIZE / 2,
-            marginVertical: 48,
+            marginVertical: theme.sizes.lg,
         },
         recordingActive: {
             backgroundColor: theme.colors.red,
@@ -146,7 +146,7 @@ const styles = (theme: Theme) =>
             borderColor: theme.colors.secondary,
         },
         roundedCardContainer: {
-            borderRadius: 16,
+            borderRadius: theme.borders.defaultRadius,
             width: '100%',
             marginHorizontal: 0,
         },

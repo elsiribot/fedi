@@ -80,7 +80,7 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
         },
         qrCodeContainer: {
-            borderRadius: 14,
+            borderRadius: theme.borders.defaultRadius,
             padding: QR_CODE_SIZE * 0.05,
             backgroundColor: theme.colors.white,
             flexDirection: 'row',

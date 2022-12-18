@@ -194,7 +194,7 @@ const styles = (theme: Theme) =>
         },
         backupsContainer: {
             width: '100%',
-            marginVertical: 16,
+            marginVertical: theme.spacing.lg,
         },
         backupRow: {
             flexDirection: 'row',

@@ -70,6 +70,7 @@ const theme = createTheme({
         sm: 24,
         md: 32,
         lg: 48,
+        expandedWalletCardHeight: 325,
     },
     spacing: {
         xs: 2,
@@ -77,6 +78,9 @@ const theme = createTheme({
         md: 8,
         lg: 12,
         xl: 24,
+    },
+    borders: {
+        defaultRadius: 16,
     },
 })
 

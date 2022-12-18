@@ -16,6 +16,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
 
     const handleUserInput = useCallback(
@@ -71,8 +72,8 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
             }
             message={t('feature.recovery.camera-access-information')}
             nextScreen={'ScanSocialRecoveryCode'}>
-            <View style={styles.container}>
-                <View style={styles.cameraScannerContainer}>
+            <View style={styles(theme).container}>
+                <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
                 <Button

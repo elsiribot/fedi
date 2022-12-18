@@ -4,7 +4,7 @@ import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
-import { Button } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
@@ -15,6 +15,7 @@ import { AddressOrInvoice } from '../bridge'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
     const [invoice, setInvoice] = React.useState('')
@@ -86,8 +87,8 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
             }
             message={t('feature.send.camera-access-information')}
             nextScreen={'Send'}>
-            <View style={styles.container}>
-                <View style={styles.cameraScannerContainer}>
+            <View style={styles(theme).container}>
+                <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
                 <Button
@@ -103,17 +104,18 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cameraScannerContainer: {
-        height: '80%',
-        width: '100%',
-        margin: 16,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        cameraScannerContainer: {
+            height: '80%',
+            width: '100%',
+            margin: theme.spacing.lg,
+        },
+    })
 
 export default Send

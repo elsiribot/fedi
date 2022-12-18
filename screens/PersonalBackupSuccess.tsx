@@ -66,11 +66,11 @@ const styles = (theme: Theme) =>
             shadowColor: theme.colors.primaryLight,
         },
         icon: {
-            marginVertical: 10,
+            marginVertical: theme.spacing.lg,
         },
         successMessage: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
         },
         buttonContainer: {
             width: '90%',

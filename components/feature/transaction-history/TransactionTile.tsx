@@ -74,15 +74,15 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
             height: 48,
             backgroundColor: theme.colors.secondary,
-            paddingHorizontal: 24,
-            marginVertical: 10,
+            paddingHorizontal: theme.spacing.xl,
+            marginVertical: theme.spacing.lg,
         },
         leftContainer: {
             width: '10%',
         },
         centerContainer: {
             width: '60%',
-            paddingHorizontal: 8,
+            paddingHorizontal: theme.spacing.md,
             flexDirection: 'column',
         },
         rightContainer: {

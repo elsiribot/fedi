@@ -82,15 +82,15 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         label: {
             textAlign: 'center',
-            marginVertical: 16,
+            marginVertical: theme.spacing.lg,
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
             fontWeight: '400',
         },
         holoCircle: {
@@ -113,7 +113,7 @@ const styles = (theme: Theme) =>
         },
         continueButton: {
             width: '100%',
-            marginVertical: 16,
+            marginVertical: theme.spacing.lg,
         },
     })
 

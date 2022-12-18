@@ -58,7 +58,7 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.xl,
         },
         roundedBorder: {
-            borderRadius: 12,
+            borderRadius: theme.borders.defaultRadius,
         },
         titleText: {
             marginVertical: theme.spacing.lg,

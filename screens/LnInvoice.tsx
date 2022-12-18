@@ -1,6 +1,6 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Card, Text } from '@rneui/themed'
+import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -26,6 +26,7 @@ import amountUtils from '../utils/AmountUtils'
 export type Props = NativeStackScreenProps<RootStackParamList, 'LnInvoice'>
 
 const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { invoice } = route.params
     const [decodedInvoice, setDecodedInvoice] = useState<Invoice>({
@@ -101,21 +102,21 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <Text h2>{`${amountUtils.millisToSats(decodedInvoice.amount)} ${t(
                 'words.sats',
             )}`}</Text>
-            <Card containerStyle={styles.roundedCardContainer}>
+            <Card containerStyle={styles(theme).roundedCardContainer}>
                 <QRCode
                     value={decodedInvoice.invoice}
                     size={qrCodeSize}
                     logo={Images.FediQrLogo}
                 />
-                <View style={styles.invoiceTextContainer}>
-                    <Text style={styles.invoiceTitle}>
+                <View style={styles(theme).invoiceTextContainer}>
+                    <Text style={styles(theme).invoiceTitle}>
                         {t('phrases.lightning-request')}
                     </Text>
-                    <Text style={styles.invoiceString} numberOfLines={1}>
+                    <Text style={styles(theme).invoiceString} numberOfLines={1}>
                         {stringUtils.truncateMiddleOfString(
                             decodedInvoice.invoice,
                             6,
@@ -123,54 +124,55 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
                     </Text>
                 </View>
             </Card>
-            <View style={styles.buttonsContainer}>
+            <View style={styles(theme).buttonsContainer}>
                 <Button
                     title={t('words.share')}
                     onPress={openShareDialog}
-                    containerStyle={styles.button}
+                    containerStyle={styles(theme).button}
                 />
                 <Button
                     title={t('words.copy')}
                     onPress={copyToClipboard}
-                    containerStyle={styles.button}
+                    containerStyle={styles(theme).button}
                 />
             </View>
         </View>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonsContainer: {
-        width: '90%',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    button: {
-        width: '48%',
-        marginVertical: 16,
-    },
-    invoiceTextContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        marginTop: 16,
-        marginBottom: 8,
-    },
-    invoiceTitle: {
-        flex: 1,
-    },
-    invoiceString: {
-        flex: 1,
-        textAlign: 'right',
-    },
-    roundedCardContainer: {
-        borderRadius: 20,
-        width: '90%',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        buttonsContainer: {
+            width: '90%',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
+        button: {
+            width: '48%',
+            marginVertical: theme.spacing.lg,
+        },
+        invoiceTextContainer: {
+            flexDirection: 'row',
+            width: '100%',
+            marginTop: 16,
+            marginBottom: 8,
+        },
+        invoiceTitle: {
+            flex: 1,
+        },
+        invoiceString: {
+            flex: 1,
+            textAlign: 'right',
+        },
+        roundedCardContainer: {
+            borderRadius: 20,
+            width: '90%',
+        },
+    })
 
 export default LnInvoice
