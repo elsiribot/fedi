@@ -58,7 +58,6 @@ const SeedWordInput = ({
                 ref={(ref: any) => {
                     inputRef.current = ref
                 }}
-                // ref={inputRef}
                 value={word}
                 onChangeText={onInputUpdated}
                 autoCorrect={false}
