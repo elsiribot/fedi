@@ -68,7 +68,7 @@ import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
-import Webview from './screens/Webview'
+import SitesBrowser from './screens/SitesBrowser'
 import SitesHeader from './components/feature/sites/SitesHeader'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -80,7 +80,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Splash" id={MAIN_NAVIGATOR_ID}>
+        <Stack.Navigator initialRouteName="Home" id={MAIN_NAVIGATOR_ID}>
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation
@@ -369,8 +369,8 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="Webview"
-                                component={Webview}
+                                name="SitesBrowser"
+                                component={SitesBrowser}
                                 options={{
                                     header: SitesHeader,
                                 }}

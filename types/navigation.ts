@@ -1,4 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -65,5 +66,5 @@ export type RootStackParamList = {
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
     Transactions: undefined
-    Webview: { url: string }
+    SitesBrowser: { site: Site }
 }

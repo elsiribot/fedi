@@ -1,10 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Theme, useTheme } from '@rneui/themed'
+import { Image, Theme, useTheme } from '@rneui/themed'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StyleSheet } from 'react-native'
 
@@ -13,6 +12,7 @@ import Admin from './Admin'
 import Sites from './Sites'
 import Wallet from './Wallet'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
+import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
@@ -29,7 +29,7 @@ const Home: React.FC<Props> = () => {
 
     return (
         <Tab.Navigator
-            initialRouteName="Wallet"
+            initialRouteName="Sites"
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
                     switch (route.name) {

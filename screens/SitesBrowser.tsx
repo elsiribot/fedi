@@ -12,8 +12,8 @@ import { decodeInvoice } from '../bridge'
 
 export type Props = BottomTabScreenProps<RootStackParamList, 'Webview'>
 
-const Webview: React.FC<Props> = ({ route }) => {
-    const { url } = route.params
+const SitesBrowser: React.FC<Props> = ({ route }) => {
+    const { site } = route.params
     const { generateInvoice, payInvoice } = useBridge()
     // FIXME: is this type casting acceptable?
     const webview = useRef<WebView>() as MutableRefObject<WebView>
@@ -139,7 +139,7 @@ const Webview: React.FC<Props> = ({ route }) => {
         <View style={styles.container}>
             <WebView
                 ref={webview}
-                source={{ uri: url }}
+                source={{ uri: site.url }}
                 onLoadStart={() => setJsInjected(false)}
                 onLoadProgress={e => {
                     if (!jsInjected && e.nativeEvent.progress > 0.75) {
@@ -163,4 +163,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default Webview
+export default SitesBrowser
