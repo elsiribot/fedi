@@ -239,6 +239,7 @@ dependencies = [
  "fedimint-core",
  "fedimint-sled",
  "futures",
+ "hex",
  "lazy_static",
  "lightning-invoice",
  "mint-client",
