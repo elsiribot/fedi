@@ -15,6 +15,7 @@ import {
     useFederationsContext,
 } from '../contexts/FederationsContext'
 import { joinFederation, listFederations } from '../bridge'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -24,10 +25,16 @@ export type Props = NativeStackScreenProps<
 const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { dispatch } = useFederationsContext()
+    const { toast } = useEnvironmentContext().state
     const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
+    const [scannerProcessing, setScannerProcessing] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
         async (input: string) => {
+            // Provide a 500ms delay to throttle input from the scanner
+            setScannerProcessing(true)
+            setTimeout(() => setScannerProcessing(false), 500)
+
             if (input.startsWith('{"members":')) {
                 console.log('fedi qr code detected', input)
 
@@ -49,10 +56,10 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.navigate('Home')
                 }
             } else {
-                // TODO: display invalid federation code error toast
+                toast?.show('invalid federation code', 5000)
             }
         },
-        [dispatch, joiningFederation, navigation],
+        [dispatch, joiningFederation, navigation, toast],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -71,6 +78,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 <QrCodeScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
+                        if (scannerProcessing) return
                         handleUserInput(qrCodeData)
                     }}
                 />
