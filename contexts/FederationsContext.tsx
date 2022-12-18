@@ -27,8 +27,10 @@ import {
     uploadBackupFile,
     validateBackupFile,
     validateEcash,
+    lnurlSignMessage,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
+import { getToken } from '../utils/lnurl'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
@@ -241,6 +243,18 @@ function useBridge() {
         listTransactions: useCallback(() => {
             return listTransactions(selectedFederation!.name)
         }, [selectedFederation]),
+        lnurlSignMessage: useCallback(
+            (url: string) => {
+                return lnurlSignMessage(url, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
+        lnurlGetToken: useCallback(
+            (lnurl: string) => {
+                return getToken(lnurl, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return updateTransactionNotes(

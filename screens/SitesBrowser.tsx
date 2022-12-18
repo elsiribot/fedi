@@ -18,6 +18,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     // FIXME: is this type casting acceptable?
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState(false)
+    const [jwt, setJwt] = useState<string | null>(null)
+    const { lnurlGetToken } = useBridge()
 
     const onMessage = onMessageHandler(webview, {
         enable: async () => {
@@ -133,8 +135,37 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         // Called when an a-tag containing a `lightning:` uri is found on a page
         foundInvoice: async (paymentRequest: string) => {
             console.log('foundInvoice', paymentRequest)
+            if (paymentRequest.startsWith('LNURL')) {
+                Alert.alert('Login', `Login to ${site.title}?`, [
+                    {
+                        text: 'Yes',
+                        style: 'default',
+                        onPress: async () => {
+                            try {
+                                const token = await lnurlGetToken(
+                                    paymentRequest,
+                                )
+                                setJwt(token)
+                                console.log('FIXLN-URL auth successful', token)
+                            } catch (e) {
+                                // FIXME
+                                console.error('LNURL-Auth failed', e)
+                            }
+                        },
+                    },
+                    {
+                        text: 'No',
+                        style: 'default',
+                        onPress: () => console.error('Login denied'),
+                    },
+                ])
+            }
         },
     })
+
+    // FIXME: properly url-encode this
+    const uri = site.lnurlAuth ? `${site.url}?token=${jwt}` : site.url
+    console.log('uri: ', uri)
     return (
         <View style={styles.container}>
             <WebView
