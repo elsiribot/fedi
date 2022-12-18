@@ -80,7 +80,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         <CameraPermissionsRequired
             alternativeActionButton={
                 <Button
-                    title={t('feature.recovery.paste-payment-request-instead')}
+                    title={t('feature.send.paste-payment-request-instead')}
                     onPress={checkClipboard}
                     type="clear"
                 />
