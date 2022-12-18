@@ -17,6 +17,7 @@ const LnInvoiceHeader: React.FC<{}> = () => {
                     <Icon name={'angle-left'} type="font-awesome" />
                 </TouchableOpacity>
             }
+            centerContainerStyle={{ flex: 3 }}
             headerCenter={<Text bold>{t('phrases.receive-bitcoin')}</Text>}
             headerRight={
                 <TouchableOpacity onPress={() => navigation.navigate('Home')}>
