@@ -33,18 +33,8 @@ declare module '@rneui/themed' {
         }
     }
 
-    export interface TextProps {
-        bold?: boolean
-        medium?: boolean
-        caption?: boolean
-        small?: boolean
-        tiny?: boolean
-    }
-
-    export interface ComponentTheme {
-        Text: Partial<TextProps>
-    }
-
+    // theme.spacing properties must be defined here to override
+    // the default from RNE that only defines xs through xl
     export interface ThemeSpacing {
         xxs: number
         xs: number
@@ -53,5 +43,20 @@ declare module '@rneui/themed' {
         lg: number
         xl: number
         xxl: number
+    }
+
+    // This is an extension for the available props that can
+    // be passed to a <Text> component
+    export interface TextProps {
+        bold?: boolean
+        medium?: boolean
+        caption?: boolean
+        small?: boolean
+        tiny?: boolean
+    }
+
+    // Other RNE components can be extended similarly by defining them here
+    export interface ComponentTheme {
+        Text: Partial<TextProps>
     }
 }

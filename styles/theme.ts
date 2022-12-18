@@ -33,25 +33,30 @@ const theme = createTheme({
         Text: props => ({
             style: {
                 color: colors.primary,
-                fontFamily: 'AlbertSans-Regular',
-                fontWeight: '400',
                 fontSize: 16,
+                fontWeight: '400',
+                fontFamily: 'AlbertSans-Regular',
+                // Use fontFamily for bolding effects because the fontWeight
+                // value only has 2 distinct variants in AlbertSans-Regular
+                // whereas the design calls for a 3rd distinct variant (medium)
                 ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
                 ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+                // These props match the design spec and fontSize should rarely
+                // be anything different than these specific values
                 ...(props.caption ? { fontSize: 14 } : {}),
                 ...(props.small ? { fontSize: 12 } : {}),
                 ...(props.tiny ? { fontSize: 10 } : {}),
             },
             h1Style: {
-                fontWeight: '400',
                 fontSize: 32,
+                fontWeight: '400',
                 fontFamily: 'AlbertSans-Regular',
                 ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
                 ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
             },
             h2Style: {
-                fontWeight: '400',
                 fontSize: 24,
+                fontWeight: '400',
                 fontFamily: 'AlbertSans-Regular',
                 ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
                 ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
