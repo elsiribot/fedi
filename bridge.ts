@@ -166,8 +166,6 @@ export class Federation extends Base {
     nodes: Node[]
 
     get approvalsRequired(): number {
-        console.log(this.nodes)
-        console.log(this.name)
         const numNodes = this.nodes.length
         return numNodes - Math.floor((numNodes - 1) / 3)
     }
