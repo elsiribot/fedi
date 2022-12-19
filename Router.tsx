@@ -80,7 +80,7 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Home" id={MAIN_NAVIGATOR_ID}>
+        <Stack.Navigator initialRouteName="Splash" id={MAIN_NAVIGATOR_ID}>
             <>
                 {selectedFederation !== null ? (
                     // This group of screens relies on a non-null selectedFederation
