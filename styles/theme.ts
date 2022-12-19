@@ -18,9 +18,10 @@ const colors = {
 const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
-        Button: {
+        Button: props => ({
             containerStyle: {
                 borderRadius: 50,
+                ...(props.fullWidth ? { width: '100%' } : {}),
             },
             titleStyle: {
                 paddingLeft: 10,
@@ -29,7 +30,7 @@ const theme = createTheme({
             disabledStyle: {
                 opacity: 0.7,
             },
-        },
+        }),
         Text: props => ({
             style: {
                 color: colors.primary,

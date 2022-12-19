@@ -54,9 +54,13 @@ declare module '@rneui/themed' {
         small?: boolean
         tiny?: boolean
     }
+    export interface ButtonProps {
+        fullWidth?: boolean
+    }
 
     // Other RNE components can be extended similarly by defining them here
     export interface ComponentTheme {
+        Button: Partial<TextProps>
         Text: Partial<TextProps>
     }
 }
