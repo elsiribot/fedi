@@ -70,6 +70,7 @@ import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import SitesBrowser from './screens/SitesBrowser'
 import SitesHeader from './components/feature/sites/SitesHeader'
+import SendSuccess from './screens/SendSuccess'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -150,6 +151,12 @@ const MainNavigator = () => {
                                 options={() => ({
                                     header: () => <SendBitcoinOfflineHeader />,
                                 })}
+                            />
+                            <Stack.Screen
+                                name="SendSuccess"
+                                component={SendSuccess}
+                                initialParams={{ amount: 0, unit: 'sats' }}
+                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="Receive"

@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
+import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -9,7 +10,6 @@ import { decodeInvoice } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
 import invoiceUtils from '../utils/InvoiceUtils'
 import stringUtils from '../utils/StringUtils'
-import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
@@ -20,10 +20,10 @@ export type Props = NativeStackScreenProps<
 const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const navigation = useNavigation()
     const { payInvoice } = useBridge()
     const { invoice } = route.params
 
-    const [invoicePaid, setInvoicePaid] = useState(false)
     const [amount] = useState(invoiceUtils.getAmountFromInvoice(invoice))
     const [unit] = useState('sats')
     const [memo] = useState('Pineapple pizza slice')
@@ -48,7 +48,10 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             console.log('paying invoice', invoice)
             await payInvoice(invoice)
             console.log('invoice paid')
-            setInvoicePaid(true)
+            navigation.navigate('SendSuccess', {
+                amount: amountUtils.stringToSats(amount),
+                unit,
+            })
         } catch (error) {
             console.error(error)
         }
@@ -74,11 +77,6 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             <View style={styles(theme).buttonContainer}>
                 <Button title={t('words.send')} onPress={onSendBtc} />
             </View>
-            <SendConfirmationModal
-                visible={invoicePaid}
-                amount={amountUtils.stringToSats(amount)}
-                unit={unit}
-            />
         </View>
     )
 }

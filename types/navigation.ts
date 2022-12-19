@@ -55,6 +55,7 @@ export type RootStackParamList = {
     Send: undefined
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: number }
+    SendSuccess: { amount: number; unit: string }
     Splash: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined

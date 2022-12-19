@@ -1,25 +1,23 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { dataToFrames } from 'qrloop'
 
 import { Images } from '../assets/images'
 
 import type { RootStackParamList } from '../types/navigation'
-import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
 import { t } from 'i18next'
 import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 
-const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
+const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { ecash, amount } = route.params
     const qrCodeSize = Dimensions.get('window').width * 0.8
     const [index, setIndex] = useState(0)
-    const [showModal, setShowModal] = useState(false)
     const [unit] = useState('sats')
 
     const frames = dataToFrames(ecash)
@@ -48,14 +46,14 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
             <Button
                 fullWidth
                 title={t('feature.send.i-have-sent-payment')}
-                onLongPress={() => setShowModal(true)}
+                onLongPress={() => {
+                    navigation.navigate('SendSuccess', {
+                        amount,
+                        unit,
+                    })
+                }}
                 delayLongPress={500}
                 containerStyle={styles(theme).buttonContainer}
-            />
-            <SendConfirmationModal
-                visible={showModal}
-                amount={amountUtils.millisToSats(amount)}
-                unit={unit}
             />
         </View>
     )

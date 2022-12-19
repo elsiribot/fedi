@@ -1,9 +1,10 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TextInput, View } from 'react-native'
-import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
+
 import { useBridge } from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
@@ -17,10 +18,10 @@ export type Props = NativeStackScreenProps<
 const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const navigation = useNavigation()
     const { payAddress } = useBridge()
     const { address } = route.params
     const [amount, setAmount] = useState('')
-    const [showModal, setShowModal] = useState(false)
     const [unit] = useState('sats')
 
     const onSendBtc = async () => {
@@ -28,7 +29,10 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
             console.log('paying address', address, amount)
             await payAddress(address, amountUtils.stringToSats(amount))
             console.log('paid')
-            setShowModal(true)
+            navigation.navigate('SendSuccess', {
+                amount: amountUtils.stringToSats(amount),
+                unit,
+            })
         } catch (error) {
             console.error(error)
         }
@@ -52,11 +56,6 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 <View style={styles(theme).buttonContainer}>
                     <Button title={t('words.send')} onPress={onSendBtc} />
                 </View>
-                <SendConfirmationModal
-                    visible={showModal}
-                    amount={amountUtils.stringToSats(amount)}
-                    unit={unit}
-                />
             </View>
         </View>
     )
