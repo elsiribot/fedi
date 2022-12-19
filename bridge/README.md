@@ -19,6 +19,23 @@ export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
 ./build.sh
 ```
 
+## Troubleshooting
+
+If you see `ld: error: unable to find library -lgcc` error, create these 4 files:
+
+```
+~/Library/Android/sdk/ndk/<version>/toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.6/lib/linux/i386/libgcc.a
+~/Library/Android/sdk/ndk/<version>/toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.6/lib/linux/arm/libgcc.a
+~/Library/Android/sdk/ndk/<version>/toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.6/lib/linux/aarch64/libgcc.a
+~/Library/Android/sdk/ndk/<version>/toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.6/lib/linux/x86_64/libgcc.a
+```
+
+Inside them just put the following:
+
+```
+INPUT(-lunwind)
+```
+
 # Template README
 
 ## Build the library for Android
