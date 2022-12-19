@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
@@ -34,6 +34,10 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
+            <View style={styles(theme).amountContainer}>
+                <Text h2>{`${amountUtils.millisToSats(amount)} `}</Text>
+                <Text>{`${t('words.sats').toUpperCase()}`}</Text>
+            </View>
             <View style={styles(theme).qrContainer}>
                 <QRCode
                     value={frames[index]}
@@ -64,6 +68,10 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
+        },
+        amountContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
         },
         qrContainer: {
             marginTop: 'auto',
