@@ -57,6 +57,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { authenticateGuardian } = useBridge()
     const { state, dispatch } = useFederationsContext()
+    const { selectedFederation } = state
 
     const simulateGuardianAuthentication = async () => {
         try {
@@ -95,7 +96,13 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <SettingsItem
                     imageSource={Images.InviteMembers}
                     label={t('feature.federations.invite-members')}
-                    onPress={() => {}}
+                    onPress={() => {
+                        navigation.navigate('FederationInvite', {
+                            inviteLink: selectedFederation
+                                ? JSON.stringify(selectedFederation.connectInfo)
+                                : '',
+                        })
+                    }}
                 />
                 {state.userIsGuardian ? (
                     <SettingsItem
