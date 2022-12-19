@@ -3,6 +3,7 @@
         "admin": "Admin",
         "amount": "Amount",
         "backup": "Backup",
+        "balance": "Balance",
         "bitcoin": "Bitcoin",
         "complete": "Complete",
         "continue": "Continue",
@@ -51,7 +52,8 @@
         "lightning-request": "Lightning request",
         "transaction-id": "Transaction ID",
         "no-transactions": "No transactions",
-        "please-confirm": "Please confirm"
+        "please-confirm": "Please confirm",
+        "you-are-offline": "You are currently in offline mode"
     },
     "feature": {
         "backup": {
