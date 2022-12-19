@@ -26,6 +26,7 @@
         "pending": "pending",
         "receive": "Receive",
         "received": "Received",
+        "request": "Request",
         "required": "required",
         "sats": "sats",
         "send": "Send",

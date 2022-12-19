@@ -65,7 +65,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                     <Balance balance={selectedFederation!.balance} />
                     <View style={styles(theme).buttonsGroupContainer}>
                         <Button
-                            title={t('words.receive')}
+                            title={t('words.request')}
                             onPress={() =>
                                 navigation.navigate(
                                     offline ? 'ReceiveOffline' : 'Receive',
