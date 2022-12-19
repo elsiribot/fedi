@@ -63,6 +63,11 @@ const theme = createTheme({
                 ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
             },
         }),
+        Input: {
+            containerStyle: {
+                height: 60,
+            },
+        },
         Header: {
             containerStyle: {
                 paddingTop: 0,

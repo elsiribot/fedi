@@ -66,9 +66,8 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                             )}
                             containerStyle={styles(theme).recoveryMethodButton}
                             onPress={() => {
-                                // navigation.navigate('StartPersonalRecovery')
+                                navigation.navigate('PersonalRecovery')
                             }}
-                            disabled
                         />
                     </>
                 }

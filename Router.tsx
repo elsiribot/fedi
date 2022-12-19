@@ -65,6 +65,9 @@ import TransactionsHeader from './components/feature/transaction-history/Transac
 import { useFederationsContext } from './contexts/FederationsContext'
 
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
+import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
+import PersonalRecovery from './screens/PersonalRecovery'
+import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -323,6 +326,20 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="PersonalBackupSuccess"
                                 component={PersonalBackupSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="PersonalRecovery"
+                                component={PersonalRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <PersonalRecoveryHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="PersonalRecoverySuccess"
+                                component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
