@@ -12,22 +12,14 @@ const SendBitcoinOfflineHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            headerLeft={
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name={'angle-left'} type="font-awesome" />
-                </TouchableOpacity>
-            }
+            backButton
             headerCenter={
                 <Text bold>{t('feature.send.send-bitcoin-offline')}</Text>
             }
             centerContainerStyle={{
                 flex: 3,
             }}
-            headerRight={
-                <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                    <Icon name={'close'} />
-                </TouchableOpacity>
-            }
+            closeButton
         />
     )
 }

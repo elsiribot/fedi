@@ -188,6 +188,7 @@
             "instructions": "Enter how much you want to receive",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
             "pending-transaction": "pending transaction",
+            "request-bitcoin": "Request bitcoin",
             "receive-bitcoin": "Receive bitcoin",
             "receive-bitcoin-offline": "Receive bitcoin offline",
             "you-received": "You received"
