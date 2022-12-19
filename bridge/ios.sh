@@ -19,8 +19,8 @@ cargo +nightly build --package calculator-ffi --release -Z build-std --target aa
 
 mkdir -p target/lipo-ios-sim/release-smaller
 lipo target/aarch64-apple-ios-sim/release/libcalculatorffi.a target/x86_64-apple-ios/release-smaller/libcalculatorffi.a -create -output target/lipo-ios-sim/release-smaller/libcalculatorffi.a
-mkdir -p target/lipo-macos/release-smaller
-lipo target/aarch64-apple-darwin/release-smaller/libcalculatorffi.a target/x86_64-apple-darwin/release-smaller/libcalculatorffi.a -create -output target/lipo-macos/release-smaller/libcalculatorffi.a
+# mkdir -p target/lipo-macos/release-smaller
+# lipo target/aarch64-apple-darwin/release-smaller/libcalculatorffi.a target/x86_64-apple-darwin/release-smaller/libcalculatorffi.a -create -output target/lipo-macos/release-smaller/libcalculatorffi.a
 
 pushd calculator-swift
 mv Sources/Calculator/calculator.swift Sources/Calculator/Calculator.swift
@@ -29,7 +29,7 @@ cp Sources/Calculator/calculatorFFI.h calculatorFFI.xcframework/ios-arm64_x86_64
 cp Sources/Calculator/calculatorFFI.h calculatorFFI.xcframework/macos-arm64_x86_64/calculatorFFI.framework/Headers
 cp ../target/aarch64-apple-ios/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/ios-arm64/calculatorFFI.framework/calculatorFFI
 cp ../target/lipo-ios-sim/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/ios-arm64_x86_64-simulator/calculatorFFI.framework/calculatorFFI
-cp ../target/lipo-macos/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/macos-arm64_x86_64/calculatorFFI.framework/calculatorFFI
+# cp ../target/lipo-macos/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/macos-arm64_x86_64/calculatorFFI.framework/calculatorFFI
 rm Sources/Calculator/calculatorFFI.h
 rm Sources/Calculator/calculatorFFI.modulemap
 #rm calculatorFFI.xcframework.zip || true
