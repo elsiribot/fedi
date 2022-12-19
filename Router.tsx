@@ -146,6 +146,12 @@ const MainNavigator = () => {
                             />
                             {/* Wallet (Receive) */}
                             <Stack.Screen
+                                name="SendSuccess"
+                                component={SendSuccess}
+                                initialParams={{ amount: 0, unit: 'sats' }}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
                                 name="Receive"
                                 component={Receive}
                                 options={() => ({
