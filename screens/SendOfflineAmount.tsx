@@ -45,7 +45,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
-            <Button title={'send offline'} onPress={onGenerateEcash} />
+            <Button
+                fullWidth
+                title={t('words.next')}
+                onPress={onGenerateEcash}
+            />
         </View>
     )
 }
@@ -55,7 +59,8 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
         },
         textInput: {
             width: '80%',

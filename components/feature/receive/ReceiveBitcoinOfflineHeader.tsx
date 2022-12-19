@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const LnInvoiceHeader: React.FC<{}> = () => {
+const ReceiveBitcoinOfflineHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
     const navigation = useNavigation()
 
@@ -17,10 +17,12 @@ const LnInvoiceHeader: React.FC<{}> = () => {
                     <Icon name={'angle-left'} type="font-awesome" />
                 </TouchableOpacity>
             }
-            centerContainerStyle={{ flex: 3 }}
             headerCenter={
-                <Text bold>{t('feature.receive-bitcoin.receive-bitcoin')}</Text>
+                <Text bold>{t('feature.receive.receive-bitcoin-offline')}</Text>
             }
+            centerContainerStyle={{
+                flex: 3,
+            }}
             headerRight={
                 <TouchableOpacity onPress={() => navigation.navigate('Home')}>
                     <Icon name={'close'} />
@@ -30,4 +32,4 @@ const LnInvoiceHeader: React.FC<{}> = () => {
     )
 }
 
-export default LnInvoiceHeader
+export default ReceiveBitcoinOfflineHeader

@@ -13,7 +13,10 @@ export type Props = NativeStackScreenProps<
     'ConfirmReceiveOffline'
 >
 
-const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
+const ConfirmReceiveOffline: React.FC<Props> = ({
+    route,
+    navigation,
+}: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { receiveEcash } = useBridge()
@@ -76,4 +79,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ReceiveLightning
+export default ConfirmReceiveOffline
