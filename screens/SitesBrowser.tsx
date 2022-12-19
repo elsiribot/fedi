@@ -10,7 +10,7 @@ import { useBridge } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
 import { decodeInvoice } from '../bridge'
 
-export type Props = BottomTabScreenProps<RootStackParamList, 'Webview'>
+export type Props = BottomTabScreenProps<RootStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { site } = route.params

@@ -24,7 +24,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const Sites: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const onSelect = (site: Site) => {
-        navigation.navigate('Webview', { site })
+        navigation.navigate('SitesBrowser', { site })
     }
     const renderSite: ListRenderItem<Site> = ({ item }) => {
         return <SiteTile site={item} selectSite={onSelect} />
