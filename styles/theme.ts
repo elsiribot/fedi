@@ -19,6 +19,7 @@ const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
         Button: props => ({
+            size: 'lg',
             containerStyle: {
                 borderRadius: 50,
                 ...(props.fullWidth ? { width: '100%' } : {}),
@@ -29,6 +30,9 @@ const theme = createTheme({
             },
             disabledStyle: {
                 opacity: 0.7,
+            },
+            loadingStyle: {
+                ...(props.fullWidth ? { width: '100%' } : {}),
             },
         }),
         Text: props => ({

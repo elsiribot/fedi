@@ -71,7 +71,6 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                                     offline ? 'ReceiveOffline' : 'Receive',
                                 )
                             }
-                            size="lg"
                             containerStyle={styles(theme).buttonContainer}
                             titleStyle={styles(theme).buttonTitle}
                             buttonStyle={styles(theme).button}
@@ -83,7 +82,6 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                                     offline ? 'SendOfflineAmount' : 'Send',
                                 )
                             }
-                            size="lg"
                             containerStyle={styles(theme).buttonContainer}
                             titleStyle={styles(theme).buttonTitle}
                             buttonStyle={styles(theme).button}
