@@ -9,6 +9,9 @@ class AmountUtils {
     millisToSats = (millis: Millisats): Sats => {
         return Math.round(millis / 1000)
     }
+    satToMsat = (sats: Sats): Millisats => {
+        return sats * 1000
+    }
     stringToMillis = (number: string): number => {
         return parseInt(number, 10) * 1000
     }

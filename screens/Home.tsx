@@ -1,17 +1,18 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Theme, useTheme } from '@rneui/themed'
+import { Image, Theme, useTheme } from '@rneui/themed'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StyleSheet } from 'react-native'
 
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
+import Sites from './Sites'
 import Wallet from './Wallet'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
+import { Images } from '../assets/images'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
@@ -28,7 +29,7 @@ const Home: React.FC<Props> = () => {
 
     return (
         <Tab.Navigator
-            initialRouteName="Wallet"
+            initialRouteName="Sites"
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
                     switch (route.name) {
@@ -46,6 +47,13 @@ const Home: React.FC<Props> = () => {
                                     name={'gear'}
                                     size={size}
                                     color={color}
+                                />
+                            )
+                        case 'Sites':
+                            return (
+                                <Image
+                                    style={styles(theme, insets).iconImage}
+                                    source={Images.Globe}
                                 />
                             )
                         default:
@@ -71,6 +79,13 @@ const Home: React.FC<Props> = () => {
                 {props => <Wallet {...props} offline={offline} />}
             </Tab.Screen>
             <Tab.Screen
+                name="Sites"
+                component={Sites}
+                options={{
+                    headerShown: false,
+                }}
+            />
+            <Tab.Screen
                 name="Admin"
                 component={Admin}
                 options={{
@@ -93,6 +108,10 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             width: 120,
             color: theme.colors.grey,
             resizeMode: 'contain',
+        },
+        iconImage: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
         },
         row: {
             flexDirection: 'row',

@@ -58,15 +58,12 @@ const Header: React.FC<HeaderProps> = ({
 
     // This logic allows for custom UI in the left side of the Header
     // but the backButton prop overrides any custom headerLeft component
-    let leftComponent = (
-        <View style={{ backgroundColor: 'blue' }}>{headerLeft || null}</View>
-    )
+    let leftComponent = <View>{headerLeft || null}</View>
     if (backButton) {
         leftComponent = (
             <Pressable
                 onPress={() => navigation.goBack()}
                 style={{
-                    backgroundColor: 'yellow',
                     padding: theme.spacing.xs,
                 }}>
                 <Icon name={'close'} />
@@ -76,9 +73,7 @@ const Header: React.FC<HeaderProps> = ({
 
     // This logic allows for custom UI in the right side of the Header
     // but the closeButton prop overrides any custom headerRight component
-    let rightComponent = (
-        <View style={{ backgroundColor: 'green' }}>{headerRight || null}</View>
-    )
+    let rightComponent = <View>{headerRight || null}</View>
     if (closeButton) {
         rightComponent = (
             <Pressable
@@ -94,15 +89,10 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <HeaderRNE
             backgroundColor={
-                'purple'
-                // backgroundColor ? backgroundColor : theme.colors.secondary
+                backgroundColor ? backgroundColor : theme.colors.secondary
             }
             containerStyle={mergedContainerStyle}
-            centerComponent={
-                <View style={{ backgroundColor: 'red' }}>
-                    {headerCenter || null}
-                </View>
-            }
+            centerComponent={<View>{headerCenter || null}</View>}
             leftComponent={leftComponent}
             rightComponent={rightComponent}
             {...(leftContainerStyle ? { leftContainerStyle } : {})}

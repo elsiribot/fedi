@@ -1,4 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -21,6 +22,7 @@ export type RequestCameraAccessParams = {
 export type HomeTabsParamList = {
     Admin: undefined
     Wallet: { offline: boolean }
+    Sites: undefined
 }
 export type RootStackParamList = {
     ChooseBackupMethod: undefined
@@ -64,4 +66,5 @@ export type RootStackParamList = {
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
     Transactions: undefined
+    SitesBrowser: { site: Site }
 }
