@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
                 style={{
                     padding: theme.spacing.xs,
                 }}>
-                <Icon name={'close'} />
+                <Icon name={'angle-left'} type="font-awesome" />
             </Pressable>
         )
     }
