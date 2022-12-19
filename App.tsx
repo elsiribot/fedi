@@ -3,11 +3,13 @@ import React, { useEffect } from 'react'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { init, LogEvent, TFedimintEventEmitter } from './bridge'
 
+import { init, LogEvent, TFedimintEventEmitter } from './bridge'
 import { FederationsProvider } from './contexts/FederationsContext'
 import { BackupRecoveryProvider } from './contexts/BackupRecoveryContext'
+import { EnvironmentProvider } from './contexts/EnvironmentContext'
 import ProviderComposer from './contexts/ProviderComposer'
+import CustomToast from './components/ui/CustomToast'
 
 import Router from './Router'
 
@@ -40,8 +42,13 @@ const App = () => {
         <SafeAreaProvider>
             <ThemeProvider theme={theme}>
                 <ProviderComposer
-                    providers={[FederationsProvider, BackupRecoveryProvider]}>
+                    providers={[
+                        EnvironmentProvider,
+                        FederationsProvider,
+                        BackupRecoveryProvider,
+                    ]}>
                     <Router />
+                    <CustomToast />
                 </ProviderComposer>
             </ThemeProvider>
         </SafeAreaProvider>

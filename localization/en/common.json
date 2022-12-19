@@ -51,8 +51,7 @@
         "lightning-request": "Lightning request",
         "transaction-id": "Transaction ID",
         "no-transactions": "No transactions",
-        "please-confirm": "Please confirm",
-        "receive-bitcoin": "Receive bitcoin"
+        "please-confirm": "Please confirm"
     },
     "feature": {
         "backup": {
@@ -115,10 +114,12 @@
         "send": {
             "camera-access-information": "To send money, you will need to allow Fedi access to your camera to scan a payment request",
             "confirm-send": "Confirm Send",
+            "i-have-sent-payment": "I have sent payment",
             "paste-payment-request": "Paste payment request",
             "paste-payment-request-instead": "Paste payment request instead",
             "scan-qr-code": "Scan a Lightning QR Code",
             "send-bitcoin": "Send bitcoin",
+            "send-bitcoin-offline": "Send bitcoin offline",
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
             "you-sent": "You sent"
@@ -190,6 +191,9 @@
             "instructions": "Enter how much you want to receive",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
             "pending-transaction": "pending transaction",
+            "request-bitcoin": "Request bitcoin",
+            "receive-bitcoin": "Receive bitcoin",
+            "receive-bitcoin-offline": "Receive bitcoin offline",
             "you-received": "You received"
         }
     }

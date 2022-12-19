@@ -4,22 +4,20 @@ import { useTranslation } from 'react-i18next'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
 import Wallet from './Wallet'
-import Header from '../components/ui/Header'
-import { Images } from '../assets/images'
+import WalletHeader from '../components/feature/wallet/WalletHeader'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>()
 
 const Home: React.FC<Props> = () => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
@@ -62,30 +60,11 @@ const Home: React.FC<Props> = () => {
             <Tab.Screen
                 name="Wallet"
                 initialParams={{ offline }}
-                options={({ navigation }) => ({
+                options={() => ({
                     header: () => (
-                        <Header
-                            headerLeft={
-                                <Text onPress={toggleOffline} h3>
-                                    {t('words.wallet')}
-                                </Text>
-                            }
-                            headerRight={
-                                <View style={styles(theme, insets).row}>
-                                    {offline && (
-                                        <Image
-                                            source={Images.Offline}
-                                            style={styles(theme, insets).image}
-                                        />
-                                    )}
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            navigation.navigate('Transactions')
-                                        }>
-                                        <Icon name={'format-list-bulleted'} />
-                                    </TouchableOpacity>
-                                </View>
-                            }
+                        <WalletHeader
+                            toggleOffline={toggleOffline}
+                            offline={offline}
                         />
                     ),
                 })}>

@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image } from '@rneui/themed'
+import { Button, Image, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, StyleSheet, View } from 'react-native'
@@ -17,6 +17,7 @@ import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { dispatch } = useFederationsContext()
 
@@ -42,10 +43,10 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <ImageBackground
             resizeMode="cover"
-            style={styles.imageBackground}
+            style={styles(theme).imageBackground}
             source={Images.HoloBackground}>
-            <View style={styles.container}>
-                <Image source={Images.FediLogo} style={styles.image} />
+            <View style={styles(theme).container}>
+                <Image source={Images.FediLogo} style={styles(theme).image} />
                 <Button
                     title={t('feature.federations.join-federation')}
                     onPress={handleJoinFederation}
@@ -59,22 +60,24 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
         </ImageBackground>
     )
 }
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
-    },
-    imageBackground: {
-        height: '100%',
-        width: '100%',
-        resizeMode: 'cover',
-    },
-    image: {
-        height: 32,
-        width: 120,
-        resizeMode: 'contain',
-    },
-})
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+        },
+        imageBackground: {
+            height: '100%',
+            width: '100%',
+            resizeMode: 'cover',
+        },
+        image: {
+            height: 32,
+            width: 120,
+            resizeMode: 'contain',
+        },
+    })
 
 export default Splash

@@ -36,11 +36,11 @@ const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
                     source={Images.HoloBackground}
                     style={styles(theme).holoCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <Text h4 h4Style={styles(theme).instructionsText}>
+                    <Text bold style={styles(theme).instructionsText}>
                         {'75%'}
                     </Text>
                 </ImageBackground>
-                <Text h3 h3Style={styles(theme).label}>
+                <Text h2 h2Style={styles(theme).label}>
                     {t('feature.backup.creating-recovery-file')}
                 </Text>
 
@@ -75,7 +75,7 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.lg,
+            padding: theme.spacing.md,
         },
         label: {
             textAlign: 'center',

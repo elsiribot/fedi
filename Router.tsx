@@ -52,9 +52,11 @@ import SelectedFederationHeader from './components/feature/federations/SelectedF
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
+import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendHeader from './components/feature/send/SendHeader'
 import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
+import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
@@ -121,7 +123,9 @@ const MainNavigator = () => {
                                 name="ConfirmReceiveOffline"
                                 component={ConfirmReceiveOffline}
                                 options={() => ({
-                                    // header: () => <SendBitcoinHeader />,
+                                    header: () => (
+                                        <ReceiveBitcoinOfflineHeader />
+                                    ),
                                 })}
                             />
                             <Stack.Screen
@@ -135,14 +139,14 @@ const MainNavigator = () => {
                                 name="SendOfflineAmount"
                                 component={SendOfflineAmount}
                                 options={() => ({
-                                    // header: () => <LnInvoiceHeader />,
+                                    header: () => <SendBitcoinOfflineHeader />,
                                 })}
                             />
                             <Stack.Screen
                                 name="SendOfflineQr"
                                 component={SendOfflineQr}
                                 options={() => ({
-                                    // header: () => <LnInvoiceHeader />,
+                                    header: () => <SendBitcoinOfflineHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -156,7 +160,9 @@ const MainNavigator = () => {
                                 name="ReceiveOffline"
                                 component={ReceiveOffline}
                                 options={() => ({
-                                    // header: () => <ReceiveBitcoinHeader />,
+                                    header: () => (
+                                        <ReceiveBitcoinOfflineHeader />
+                                    ),
                                 })}
                             />
                             <Stack.Screen

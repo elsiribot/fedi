@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TextInput, View } from 'react-native'
@@ -15,6 +15,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { payAddress } = useBridge()
     const { address } = route.params
@@ -38,9 +39,9 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.detailsContainer}>
-                <Text style={styles.address}>{address}</Text>
+        <View style={styles(theme).container}>
+            <View style={styles(theme).detailsContainer}>
+                <Text style={styles(theme).address}>{address}</Text>
                 <TextInput
                     onChangeText={onChangeText}
                     value={amount}
@@ -48,7 +49,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     keyboardType="numeric"
                     returnKeyType="done"
                 />
-                <View style={styles.buttonContainer}>
+                <View style={styles(theme).buttonContainer}>
                     <Button title={t('words.send')} onPress={onSendBtc} />
                 </View>
                 <SendConfirmationModal
@@ -61,30 +62,31 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
-    },
-    detailsContainer: {
-        height: '50%',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonContainer: {
-        width: '90%',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        margin: 10,
-    },
-    text: {
-        fontSize: 30,
-        margin: 10,
-    },
-    address: {
-        color: 'white',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+        },
+        detailsContainer: {
+            height: '50%',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        buttonContainer: {
+            width: '90%',
+            flexDirection: 'row',
+            justifyContent: 'space-evenly',
+            margin: theme.spacing.md,
+        },
+        text: {
+            fontSize: theme.sizes.md,
+            margin: theme.spacing.md,
+        },
+        address: {
+            color: 'white',
+        },
+    })
 
 export default ConfirmSendOnChain

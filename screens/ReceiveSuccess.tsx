@@ -19,14 +19,14 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
         <Success
             message={
                 <View style={styles(theme).textContainer}>
-                    <Text h3>
+                    <Text h2>
                         {t(
                             tx.type === 'bitcoin'
                                 ? 'feature.receive.pending-transaction'
                                 : 'feature.receive.you-received',
                         )}
                     </Text>
-                    <Text h3>{`${amountUtils.millisToSats(tx.amount)} ${t(
+                    <Text h2>{`${amountUtils.millisToSats(tx.amount)} ${t(
                         'words.sats',
                     )}`}</Text>
                 </View>
@@ -39,13 +39,13 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         textContainer: {
-            marginVertical: theme.spacing.lg,
+            marginVertical: theme.spacing.md,
             width: '80%',
             alignItems: 'center',
         },
         successMessage: {
             textAlign: 'center',
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
         },
         fileNameText: {
             fontWeight: '400',

@@ -53,11 +53,11 @@ const RecoveryAssistConfirmation: React.FC<Props> = ({ navigation }: Props) => {
             </View>
 
             <LineBreak />
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text bold style={styles(theme).instructionsText}>
                 {t('feature.recovery.recovery-confirm-identity-instructions-1')}
             </Text>
             <LineBreak />
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text bold style={styles(theme).instructionsText}>
                 {t('feature.recovery.recovery-confirm-identity-instructions-2')}
             </Text>
             <LineBreak />

@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
-import { Button, Icon, Image, Text, useTheme } from '@rneui/themed'
+import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 import { Images } from '../assets/images'
@@ -47,9 +47,9 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <TouchableOpacity
-                style={styles.backIconContainer}
+                style={styles(theme).backIconContainer}
                 onPress={() => navigation.goBack()}>
                 <Icon
                     name="angle-left"
@@ -57,17 +57,17 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
                     type="font-awesome"
                 />
             </TouchableOpacity>
-            <View style={styles.instructions}>
+            <View style={styles(theme).instructions}>
                 <Image
                     source={Images.AllowCameraAccessIcon}
-                    style={styles.image}
+                    style={styles(theme).image}
                 />
-                <Text h3 style={styles.titleText}>
+                <Text h2 style={styles(theme).titleText}>
                     {t('phrases.allow-camera-access')}
                 </Text>
-                <Text style={styles.subtitleText}>{message}</Text>
+                <Text style={styles(theme).subtitleText}>{message}</Text>
             </View>
-            <View style={styles.buttonsContainer}>
+            <View style={styles(theme).buttonsContainer}>
                 {alternativeActionButton}
                 <Button
                     title={t('phrases.allow-camera-access')}
@@ -78,42 +78,43 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingBottom: 32,
-    },
-    backIconContainer: {
-        marginTop: 100,
-        paddingHorizontal: 24,
-        alignSelf: 'flex-start',
-    },
-    buttonsContainer: {
-        width: '100%',
-        height: 100,
-        paddingHorizontal: 24,
-        justifyContent: 'space-between',
-    },
-    image: {
-        height: 90,
-        width: 90,
-        resizeMode: 'contain',
-    },
-    instructions: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    titleText: {
-        fontWeight: '600',
-        margin: 16,
-    },
-    subtitleText: {
-        textAlign: 'center',
-        marginHorizontal: 32,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingBottom: theme.spacing.xl,
+        },
+        backIconContainer: {
+            marginTop: 100,
+            paddingHorizontal: theme.spacing.xl,
+            alignSelf: 'flex-start',
+        },
+        buttonsContainer: {
+            width: '100%',
+            height: 100,
+            paddingHorizontal: theme.spacing.xl,
+            justifyContent: 'space-between',
+        },
+        image: {
+            height: 90,
+            width: 90,
+            resizeMode: 'contain',
+        },
+        instructions: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        titleText: {
+            fontWeight: '600',
+            margin: theme.spacing.md,
+        },
+        subtitleText: {
+            textAlign: 'center',
+            marginHorizontal: theme.spacing.xl,
+        },
+    })
 
 export default RequestCameraAccess

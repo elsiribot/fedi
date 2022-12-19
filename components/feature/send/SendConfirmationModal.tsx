@@ -24,7 +24,7 @@ const SendConfirmationModal: React.FC<{
                 <Text style={styles(theme).modalText}>
                     {t('feature.send.you-sent')}
                 </Text>
-                <Text style={styles(theme).modalText}>
+                <Text h2 style={styles(theme).modalText}>
                     {`${amount} ${unit}`}
                 </Text>
                 <View style={styles(theme).buttonContainer}>
@@ -50,14 +50,13 @@ const styles = (theme: Theme) =>
         },
         modalText: {
             color: theme.colors.primary,
-            fontSize: 30,
-            margin: 10,
+            margin: theme.spacing.md,
         },
         buttonContainer: {
             width: '90%',
             flexDirection: 'row',
             justifyContent: 'space-evenly',
-            margin: 10,
+            margin: theme.spacing.md,
         },
     })
 

@@ -53,7 +53,7 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
             <View style={styles(theme).holoCardContainer}>
                 <HoloCard
                     body={
-                        <Text h4 h4Style={styles(theme).instructionsText}>
+                        <Text bold style={styles(theme).instructionsText}>
                             {t('feature.recovery.guardian-qr-instructions')}
                         </Text>
                     }
@@ -72,7 +72,7 @@ const styles = (theme: Theme) =>
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
         },
         holoCardContainer: {
-            paddingVertical: theme.spacing.lg,
+            paddingVertical: theme.spacing.md,
             width: '90%',
         },
         instructionsText: {
@@ -80,7 +80,7 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
         },
         qrCodeContainer: {
-            borderRadius: 14,
+            borderRadius: theme.borders.defaultRadius,
             padding: QR_CODE_SIZE * 0.05,
             backgroundColor: theme.colors.white,
             flexDirection: 'row',

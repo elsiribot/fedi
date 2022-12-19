@@ -74,10 +74,10 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     const renderGuardianApprovalStatus = () => {
         if (guardianApprovals === selectedFederation?.approvalsRequired) {
-            return <Text h4>{`(${t('words.complete')})`}</Text>
+            return <Text bold>{`(${t('words.complete')})`}</Text>
         } else {
             return (
-                <Text h4>
+                <Text bold>
                     {`(${
                         (selectedFederation?.approvalsRequired as number) -
                         guardianApprovals
@@ -147,7 +147,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
             <View style={styles(theme).guardiansContainer}>
                 <View style={styles(theme).guardianRow}>
-                    <Text h4>
+                    <Text bold>
                         {t('feature.recovery.guardian-approvals')}
                         {'\n'}
                     </Text>

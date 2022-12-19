@@ -74,15 +74,15 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
             height: 48,
             backgroundColor: theme.colors.secondary,
-            paddingHorizontal: 24,
-            marginVertical: 10,
+            paddingHorizontal: theme.spacing.xl,
+            marginVertical: theme.spacing.md,
         },
         leftContainer: {
             width: '10%',
         },
         centerContainer: {
             width: '60%',
-            paddingHorizontal: 8,
+            paddingHorizontal: theme.spacing.sm,
             flexDirection: 'column',
         },
         rightContainer: {
@@ -94,7 +94,7 @@ const styles = (theme: Theme) =>
             textAlign: 'right',
         },
         subText: {
-            fontSize: theme.sizes.xs,
+            fontSize: theme.sizes.xxs,
             opa: theme.colors.primaryLight,
         },
     })

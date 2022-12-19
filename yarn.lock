@@ -3164,7 +3164,7 @@
   "resolved" "https://registry.npmjs.org/depd/-/depd-2.0.0.tgz"
   "version" "2.0.0"
 
-"deprecated-react-native-prop-types@^2.2.0":
+"deprecated-react-native-prop-types@^2.2.0", "deprecated-react-native-prop-types@^2.3.0":
   "integrity" "sha512-pWD0voFtNYxrVqvBMYf5gq3NA2GCpfodS1yNynTPc93AYA/KEMGeWDqqeUB6R2Z9ZofVhks2aeJXiuQqKNpesA=="
   "resolved" "https://registry.npmjs.org/deprecated-react-native-prop-types/-/deprecated-react-native-prop-types-2.3.0.tgz"
   "version" "2.3.0"
@@ -6989,7 +6989,7 @@
   dependencies:
     "read" "1"
 
-"prop-types@*", "prop-types@^15.7.2", "prop-types@^15.8.1":
+"prop-types@*", "prop-types@^15.6.0", "prop-types@^15.7.2", "prop-types@^15.8.1":
   "integrity" "sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg=="
   "resolved" "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz"
   "version" "15.8.1"
@@ -7114,6 +7114,14 @@
   "version" "8.1.3"
   dependencies:
     "invariant" "^2.2.4"
+
+"react-native-easy-toast@^2.3.0":
+  "integrity" "sha512-+tn+6HyxudUtm+KPMidtHnheewDMS7i12HIKiRptk4M7R10jCvR4Tb6cVL8dYDA5ldWS97/kweSlLimPAb3Zyg=="
+  "resolved" "https://registry.npmjs.org/react-native-easy-toast/-/react-native-easy-toast-2.3.0.tgz"
+  "version" "2.3.0"
+  dependencies:
+    "deprecated-react-native-prop-types" "^2.3.0"
+    "prop-types" "^15.6.0"
 
 "react-native-fs@^2.20.0":
   "integrity" "sha512-VkTBzs7fIDUiy/XajOSNk0XazFE9l+QlMAce7lGuebZcag5CnjszB+u4BdqzwaQOdcYb5wsJIsqq4kxInIRpJQ=="

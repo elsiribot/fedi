@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input } from '@rneui/themed'
+import { Button, Input, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -15,6 +15,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const SendOfflineAmount: React.FC<Props> = () => {
+    const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()
     const [amount, setAmount] = useState<string>('')
@@ -35,29 +36,35 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <Input
                 onChangeText={onChangeText}
                 value={amount}
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
                 keyboardType="numeric"
                 returnKeyType="done"
-                containerStyle={styles.textInput}
+                containerStyle={styles(theme).textInput}
             />
-            <Button title={'send offline'} onPress={onGenerateEcash} />
+            <Button
+                fullWidth
+                title={t('words.next')}
+                onPress={onGenerateEcash}
+            />
         </View>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    textInput: {
-        width: '80%',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
+        },
+        textInput: {
+            width: '80%',
+        },
+    })
 
 export default SendOfflineAmount

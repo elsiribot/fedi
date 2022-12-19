@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
@@ -13,6 +13,7 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>
 
 const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { validateEcash } = useBridge()
     const [validating, setValidating] = useState(false)
@@ -75,8 +76,8 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
             alternativeActionButton={null}
             message={t('feature.receive.camera-access-information')}
             nextScreen={'ReceiveOffline'}>
-            <View style={styles.container}>
-                <View style={styles.cameraScannerContainer}>
+            <View style={styles(theme).container}>
+                <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
                 <Text>{percent}</Text>
@@ -85,17 +86,18 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cameraScannerContainer: {
-        height: '80%',
-        width: '100%',
-        margin: 16,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        cameraScannerContainer: {
+            height: '80%',
+            width: '100%',
+            margin: theme.spacing.md,
+        },
+    })
 
 export default ReceiveOffline

@@ -18,9 +18,10 @@ const colors = {
 const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
-        Button: {
+        Button: props => ({
             containerStyle: {
                 borderRadius: 50,
+                ...(props.fullWidth ? { width: '100%' } : {}),
             },
             titleStyle: {
                 paddingLeft: 10,
@@ -29,22 +30,39 @@ const theme = createTheme({
             disabledStyle: {
                 opacity: 0.7,
             },
-        },
-        Text: {
+        }),
+        Text: props => ({
             style: {
                 color: colors.primary,
-                fontFamily: 'AlbertSans-Regular',
-                fontWeight: '600',
-            },
-            h3Style: {
-                fontFamily: 'AlbertSans-Regular',
-                fontSize: 24,
-            },
-            h4Style: {
-                fontFamily: 'AlbertSans-Regular',
                 fontSize: 16,
+                fontWeight: '400',
+                fontFamily: 'AlbertSans-Regular',
+                // Use fontFamily for bolding effects because the fontWeight
+                // value only has 2 distinct variants in AlbertSans-Regular
+                // whereas the design calls for a 3rd distinct variant (medium)
+                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
+                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+                // These props match the design spec and fontSize should rarely
+                // be anything different than these specific values
+                ...(props.caption ? { fontSize: 14 } : {}),
+                ...(props.small ? { fontSize: 12 } : {}),
+                ...(props.tiny ? { fontSize: 10 } : {}),
             },
-        },
+            h1Style: {
+                fontSize: 32,
+                fontWeight: '400',
+                fontFamily: 'AlbertSans-Regular',
+                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
+                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+            },
+            h2Style: {
+                fontSize: 24,
+                fontWeight: '400',
+                fontFamily: 'AlbertSans-Regular',
+                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
+                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+            },
+        }),
         Input: {
             containerStyle: {
                 height: 60,
@@ -71,17 +89,24 @@ const theme = createTheme({
         ...colors,
     },
     sizes: {
-        xs: 12,
+        xxs: 12,
+        xs: 16,
         sm: 24,
         md: 32,
         lg: 48,
+        expandedWalletCardHeight: 325,
     },
     spacing: {
-        xs: 2,
-        sm: 4,
-        md: 8,
-        lg: 12,
+        xxs: 2,
+        xs: 4,
+        sm: 8,
+        md: 12,
+        lg: 16,
         xl: 24,
+        xxl: 48,
+    },
+    borders: {
+        defaultRadius: 16,
     },
 })
 

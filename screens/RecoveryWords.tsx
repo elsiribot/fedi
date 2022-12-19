@@ -19,8 +19,8 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
     const { theme } = useTheme()
     return (
         <View style={styles(theme).wordContainer}>
-            <Text h4 h4Style={styles(theme).wordNumber}>{`${number}`}</Text>
-            <Text h4 h4Style={styles(theme).wordText}>
+            <Text bold style={styles(theme).wordNumber}>{`${number}`}</Text>
+            <Text bold style={styles(theme).wordText}>
                 {word}
             </Text>
         </View>
@@ -59,10 +59,10 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text h3 h3Style={styles(theme).label}>
+            <Text h2 h2Style={styles(theme).label}>
                 {t('feature.backup.recovery-words')}
             </Text>
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text bold style={styles(theme).instructionsText}>
                 {t('feature.backup.recovery-words-instructions')}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
@@ -91,11 +91,11 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'flex-start',
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         continueButton: {
             width: '100%',
-            marginBottom: 16,
+            marginBottom: theme.spacing.md,
             marginTop: 'auto',
         },
         instructionsText: {
@@ -103,13 +103,13 @@ const styles = (theme: Theme) =>
             fontWeight: '400',
         },
         label: {
-            marginVertical: 16,
+            marginVertical: theme.spacing.md,
         },
         roundedCardContainer: {
-            borderRadius: 16,
+            borderRadius: theme.borders.defaultRadius,
             width: '100%',
             marginHorizontal: 0,
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         seedWordsContainer: {
             flex: 1,
@@ -121,11 +121,11 @@ const styles = (theme: Theme) =>
         wordContainer: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginVertical: 6,
+            marginVertical: theme.spacing.sm,
         },
         wordNumber: {
             color: theme.colors.primaryVeryLight,
-            paddingHorizontal: 10,
+            paddingHorizontal: theme.spacing.md,
             width: '30%',
         },
         wordText: {

@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -18,6 +18,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { payInvoice } = useBridge()
     const { invoice } = route.params
@@ -54,8 +55,8 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.detailsContainer}>
+        <View style={styles(theme).container}>
+            <View style={styles(theme).detailsContainer}>
                 <Text>{t('feature.send.you-are-sending')}</Text>
                 <Text>{`${amount} ${unit}`}</Text>
                 <Text>{`${memo}`}</Text>
@@ -70,7 +71,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                     feeEstimate,
                 )}`}</Text>
             </View>
-            <View style={styles.buttonContainer}>
+            <View style={styles(theme).buttonContainer}>
                 <Button title={t('words.send')} onPress={onSendBtc} />
             </View>
             <SendConfirmationModal
@@ -82,23 +83,24 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
-    },
-    detailsContainer: {
-        height: '50%',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonContainer: {
-        width: '90%',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        margin: 10,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+        },
+        detailsContainer: {
+            height: '50%',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        buttonContainer: {
+            width: '90%',
+            flexDirection: 'row',
+            justifyContent: 'space-evenly',
+            margin: theme.spacing.md,
+        },
+    })
 
 export default ConfirmSendLightning

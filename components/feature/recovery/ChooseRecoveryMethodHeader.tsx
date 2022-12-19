@@ -17,7 +17,9 @@ const ChooseRecoveryMethodHeader: React.FC<{}> = () => {
                     <Icon name={'angle-left'} type="font-awesome" />
                 </TouchableOpacity>
             }
-            headerCenter={<Text h4>{t('feature.recovery.choose-method')}</Text>}
+            headerCenter={
+                <Text bold>{t('feature.recovery.choose-method')}</Text>
+            }
             centerContainerStyle={{ flex: 4 }}
         />
     )

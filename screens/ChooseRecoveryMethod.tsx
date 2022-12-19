@@ -23,7 +23,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text bold style={styles(theme).instructionsText}>
                 {t('feature.recovery.choose-method-instructions', {
                     federation: selectedFederation?.name,
                 })}
@@ -35,8 +35,8 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                 body={
                     <>
                         <Text
-                            h4
-                            h4Style={styles(theme).recoveryMethodInstructions}>
+                            bold
+                            style={styles(theme).recoveryMethodInstructions}>
                             {t('feature.recovery.social-recovery-method')}
                         </Text>
                         <Button
@@ -56,8 +56,8 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                 body={
                     <>
                         <Text
-                            h4
-                            h4Style={styles(theme).recoveryMethodInstructions}>
+                            bold
+                            style={styles(theme).recoveryMethodInstructions}>
                             {t('feature.recovery.personal-recovery-method')}
                         </Text>
                         <Button
@@ -87,17 +87,17 @@ const styles = (theme: Theme) =>
         instructionsText: {
             textAlign: 'center',
             marginBottom: theme.spacing.xl,
-            paddingHorizontal: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.md,
             fontWeight: '400',
         },
         recoveryMethodButton: {
             width: '100%',
-            marginTop: theme.spacing.lg,
+            marginTop: theme.spacing.md,
         },
         recoveryMethodInstructions: {
             textAlign: 'center',
             fontWeight: '400',
-            paddingVertical: theme.spacing.sm,
+            paddingVertical: theme.spacing.xs,
         },
     })
 

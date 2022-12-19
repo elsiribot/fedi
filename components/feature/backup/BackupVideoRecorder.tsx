@@ -34,7 +34,7 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            padding: theme.spacing.lg,
+            padding: theme.spacing.md,
             width: '100%',
         },
     })

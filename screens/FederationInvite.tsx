@@ -45,7 +45,7 @@ const FederationInvite: React.FC<Props> = ({ route }: Props) => {
                         name="content-copy"
                         type="material"
                         color={theme.colors.primary}
-                        size={theme.sizes.xs}
+                        size={theme.sizes.xxs}
                     />
                     <Text style={styles(theme).copyText} numberOfLines={1}>
                         {t('words.copy')}
@@ -76,10 +76,10 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.primary,
         },
         qrCodeContainer: {
-            borderRadius: 14,
+            borderRadius: theme.borders.defaultRadius,
             backgroundColor: theme.colors.secondary,
             padding: QR_CODE_SIZE * 0.05,
-            marginVertical: 24,
+            marginVertical: theme.spacing.xl,
             flexDirection: 'row',
             justifyContent: 'center',
         },
@@ -88,9 +88,9 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             width: QR_CODE_SIZE * 1.1,
             backgroundColor: theme.colors.secondary,
-            borderRadius: 12,
-            paddingHorizontal: 10,
-            paddingVertical: 14,
+            borderRadius: theme.borders.defaultRadius,
+            paddingHorizontal: theme.spacing.sm,
+            paddingVertical: theme.spacing.md,
         },
         copyButtonContainer: {
             flexDirection: 'row',
@@ -100,17 +100,17 @@ const styles = (theme: Theme) =>
         inviteLinkText: {
             width: '85%',
             color: theme.colors.primaryLight,
-            fontSize: 14,
+            fontSize: theme.sizes.xxs,
         },
         copyText: {
             color: theme.colors.primary,
-            fontSize: 12,
-            paddingLeft: 4,
+            fontSize: theme.sizes.xxs,
+            paddingLeft: theme.spacing.xs,
         },
         inviteLinkNotice: {
             color: theme.colors.secondary,
-            marginTop: 16,
-            marginBottom: 48,
+            marginTop: theme.spacing.md,
+            marginBottom: theme.spacing.xl,
         },
     })
 

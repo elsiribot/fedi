@@ -45,10 +45,10 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
                         style={styles(theme).holoIconImage}
                     />
                 </ImageBackground>
-                <Text h3 h3Style={styles(theme).label}>
+                <Text h2 h2Style={styles(theme).label}>
                     {t('feature.backup.cloud-backup')}
                 </Text>
-                <Text h4 h4Style={styles(theme).instructionsText}>
+                <Text bold style={styles(theme).instructionsText}>
                     {t('feature.backup.cloud-backup-instructions')}
                 </Text>
             </View>
@@ -82,15 +82,15 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         label: {
             textAlign: 'center',
-            marginVertical: 16,
+            marginVertical: theme.spacing.md,
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
             fontWeight: '400',
         },
         holoCircle: {
@@ -113,7 +113,7 @@ const styles = (theme: Theme) =>
         },
         continueButton: {
             width: '100%',
-            marginVertical: 16,
+            marginVertical: theme.spacing.md,
         },
     })
 

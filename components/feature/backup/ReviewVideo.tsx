@@ -52,7 +52,7 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                 )}
             </View>
 
-            <Text h3 h3Style={styles(theme).instructionsText}>
+            <Text h2 h2Style={styles(theme).instructionsText}>
                 {t('feature.backup.please-review-backup-video')}
             </Text>
             <CheckBox
@@ -102,7 +102,7 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         confirmButton: {
-            marginTop: 12,
+            marginTop: theme.spacing.md,
             width: '100%',
         },
         cameraContainer: {
@@ -116,7 +116,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            marginTop: 12,
+            marginTop: theme.spacing.md,
         },
         playIconContainer: {
             position: 'absolute',

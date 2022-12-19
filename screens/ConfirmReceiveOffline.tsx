@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input } from '@rneui/themed'
+import { Button, Input, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
@@ -13,7 +13,11 @@ export type Props = NativeStackScreenProps<
     'ConfirmReceiveOffline'
 >
 
-const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
+const ConfirmReceiveOffline: React.FC<Props> = ({
+    route,
+    navigation,
+}: Props) => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const { receiveEcash } = useBridge()
     const [note, setNote] = useState('')
@@ -42,13 +46,13 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             <Input
                 onChangeText={e => setNote(e)}
                 value={note}
                 placeholder={t('phrases.add-note')}
                 returnKeyType="done"
-                containerStyle={styles.textInput}
+                containerStyle={styles(theme).textInput}
             />
             <Button
                 title={`${t('words.receive')} ${amountUtils.millisToSats(
@@ -60,19 +64,19 @@ const ReceiveLightning: React.FC<Props> = ({ route, navigation }: Props) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-        alignItems: 'center',
-    },
-    instructions: {
-        marginTop: 16,
-        marginBottom: 16,
-        fontSize: 14,
-    },
-    textInput: {
-        width: '80%',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            width: '100%',
+            alignItems: 'center',
+        },
+        instructions: {
+            marginVertical: theme.spacing.md,
+            fontSize: theme.sizes.xxs,
+        },
+        textInput: {
+            width: '80%',
+        },
+    })
 
-export default ReceiveLightning
+export default ConfirmReceiveOffline

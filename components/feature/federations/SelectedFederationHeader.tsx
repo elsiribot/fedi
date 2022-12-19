@@ -1,6 +1,6 @@
 import React from 'react'
 import { StyleSheet, TouchableOpacity } from 'react-native'
-import { Icon, Image, Text } from '@rneui/themed'
+import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import Header from '../../ui/Header'
 import { useFederationsContext } from '../../../contexts/FederationsContext'
 import { Federation } from '../../../bridge'
@@ -10,6 +10,7 @@ import { DRAWER_NAVIGATION_ID } from '../../../types/navigation'
 export type Props = { navigation: any }
 
 const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
+    const { theme } = useTheme()
     const { state } = useFederationsContext()
     const selectedFederation: Federation | null = state.selectedFederation
 
@@ -22,36 +23,41 @@ const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
             centerContainerStyle={{ flex: 10 }}
             headerCenter={
                 <TouchableOpacity
-                    style={styles.container}
+                    style={styles(theme).container}
                     onPress={openFederationsDrawer}>
                     <Image
-                        style={styles.image}
+                        style={styles(theme).image}
                         source={Images.FederationXIconXs}
                     />
-                    <Text h4 style={styles.federationName}>
+                    <Text medium small style={styles(theme).federationName}>
                         {selectedFederation?.name}
                     </Text>
-                    <Icon name={'angle-right'} type="font-awesome" />
+                    <Icon
+                        name={'angle-right'}
+                        type="font-awesome"
+                        size={theme.sizes.xs}
+                    />
                 </TouchableOpacity>
             }
         />
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    federationName: {
-        marginHorizontal: 6,
-    },
-    image: {
-        height: 20,
-        width: 20,
-        resizeMode: 'contain',
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        federationName: {
+            marginHorizontal: theme.spacing.sm,
+        },
+        image: {
+            height: 20,
+            width: 20,
+            resizeMode: 'contain',
+        },
+    })
 
 export default SelectedFederationHeader

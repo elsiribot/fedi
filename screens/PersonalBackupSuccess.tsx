@@ -22,7 +22,7 @@ const PersonalBackupSuccess: React.FC<Props> = ({ navigation }: Props) => {
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
                 <Icon name="check" style={styles(theme).icon} />
-                <Text h3 h3Style={styles(theme).successMessage}>
+                <Text h2 h2Style={styles(theme).successMessage}>
                     {t('feature.backup.backed-up-recovery-words')}
                 </Text>
             </View>
@@ -66,11 +66,11 @@ const styles = (theme: Theme) =>
             shadowColor: theme.colors.primaryLight,
         },
         icon: {
-            marginVertical: 10,
+            marginVertical: theme.spacing.md,
         },
         successMessage: {
             textAlign: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
         },
         buttonContainer: {
             width: '90%',

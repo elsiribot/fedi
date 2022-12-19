@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { Dimensions, StyleSheet, View } from 'react-native'
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { dataToFrames } from 'qrloop'
 
@@ -9,6 +9,8 @@ import { Images } from '../assets/images'
 
 import type { RootStackParamList } from '../types/navigation'
 import SendConfirmationModal from '../components/feature/send/SendConfirmationModal'
+import { t } from 'i18next'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 
@@ -32,15 +34,23 @@ const SendOfflineQr: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <QRCode
-                value={frames[index]}
-                size={qrCodeSize}
-                logo={Images.FediQrLogo}
+            <View style={styles(theme).qrContainer}>
+                <QRCode
+                    value={frames[index]}
+                    size={qrCodeSize}
+                    logo={Images.FediQrLogo}
+                />
+            </View>
+            <Button
+                fullWidth
+                title={t('feature.send.i-have-sent-payment')}
+                onLongPress={() => setShowModal(true)}
+                delayLongPress={500}
+                containerStyle={styles(theme).buttonContainer}
             />
-            <Button title={'done'} onPress={() => setShowModal(true)} />
             <SendConfirmationModal
                 visible={showModal}
-                amount={amount}
+                amount={amountUtils.millisToSats(amount)}
                 unit={unit}
             />
         </View>
@@ -53,23 +63,14 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
+            padding: theme.spacing.xl,
         },
-        modalContent: {
-            backgroundColor: theme.colors.secondary,
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        modalText: {
-            color: theme.colors.primary,
-            fontSize: 30,
-            margin: 10,
+        qrContainer: {
+            marginTop: 'auto',
         },
         buttonContainer: {
-            width: '90%',
-            flexDirection: 'row',
-            justifyContent: 'space-evenly',
-            margin: 10,
+            marginTop: 'auto',
+            marginVertical: theme.spacing.xl,
         },
     })
 

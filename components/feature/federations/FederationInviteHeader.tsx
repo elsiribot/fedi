@@ -18,7 +18,7 @@ const FederationInviteHeader: React.FC<{}> = () => {
                 borderBottomColor: theme.colors.primary,
             }}
             headerCenter={
-                <Text h4 h4Style={{ color: theme.colors.secondary }}>
+                <Text bold style={{ color: theme.colors.secondary }}>
                     {t('feature.federations.federation-invite')}
                 </Text>
             }

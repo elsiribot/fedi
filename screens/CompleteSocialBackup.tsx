@@ -76,10 +76,10 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
 
     const renderBackupsMadeStatus = () => {
         if (backupsCompleted === BACKUPS_REQUIRED) {
-            return <Text h4>{`(${t('words.complete')})`}</Text>
+            return <Text bold>{`(${t('words.complete')})`}</Text>
         } else {
             return (
-                <Text h4>
+                <Text bold>
                     {`(${BACKUPS_REQUIRED - backupsCompleted} ${t(
                         'words.required',
                     )})`}
@@ -152,7 +152,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
 
             <View style={styles(theme).backupsContainer}>
                 <View style={styles(theme).backupRow}>
-                    <Text h4>
+                    <Text bold>
                         {t('feature.backup.backups-made')}
                         {'\n'}
                     </Text>
@@ -194,7 +194,7 @@ const styles = (theme: Theme) =>
         },
         backupsContainer: {
             width: '100%',
-            marginVertical: 16,
+            marginVertical: theme.spacing.md,
         },
         backupRow: {
             flexDirection: 'row',
