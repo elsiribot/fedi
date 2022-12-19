@@ -59,10 +59,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { authenticateGuardian } = useBridge()
     const { state, dispatch } = useFederationsContext()
-
-    const inviteLink = state.selectedFederation
-        ? JSON.stringify(state.selectedFederation.connectInfo)
-        : ''
+    const { selectedFederation } = state
 
     const simulateGuardianAuthentication = async () => {
         try {
@@ -103,7 +100,9 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.federations.invite-members')}
                     onPress={() => {
                         navigation.navigate('FederationInvite', {
-                            inviteLink,
+                            inviteLink: selectedFederation
+                                ? JSON.stringify(selectedFederation.connectInfo)
+                                : '',
                         })
                     }}
                 />
