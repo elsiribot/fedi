@@ -135,7 +135,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         // Called when an a-tag containing a `lightning:` uri is found on a page
         foundInvoice: async (paymentRequest: string) => {
             console.log('foundInvoice', paymentRequest)
-            if (paymentRequest.startsWith('LNURL')) {
+            if (paymentRequest.toLowerCase().startsWith('lnurl')) {
                 Alert.alert('Login', `Login to ${site.title}?`, [
                     {
                         text: 'Yes',
@@ -164,7 +164,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     })
 
     // FIXME: properly url-encode this
-    const uri = site.lnurlAuth ? `${site.url}?token=${jwt}` : site.url
+    const uri = jwt ? `${site.url}?token=${jwt}` : site.url
     console.log('uri: ', uri)
     return (
         <View style={styles.container}>
