@@ -43,18 +43,23 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
                     logo={Images.FediQrLogo}
                 />
             </View>
-            <Button
-                fullWidth
-                title={t('feature.send.i-have-sent-payment')}
-                onLongPress={() => {
-                    navigation.navigate('SendSuccess', {
-                        amount,
-                        unit,
-                    })
-                }}
-                delayLongPress={500}
-                containerStyle={styles(theme).buttonContainer}
-            />
+            <View style={styles(theme).actionContainer}>
+                <Text small style={styles(theme).instructionsText}>
+                    {`${t('phrases.hold-to-confirm')}`}
+                </Text>
+                <Button
+                    fullWidth
+                    title={t('feature.send.i-have-sent-payment')}
+                    onLongPress={() => {
+                        navigation.navigate('SendSuccess', {
+                            amount,
+                            unit,
+                        })
+                    }}
+                    delayLongPress={500}
+                    containerStyle={styles(theme).buttonContainer}
+                />
+            </View>
         </View>
     )
 }
@@ -67,9 +72,17 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
             padding: theme.spacing.xl,
         },
+        actionContainer: {
+            marginTop: 'auto',
+            width: '100%',
+        },
         amountContainer: {
             flexDirection: 'row',
             alignItems: 'center',
+        },
+        instructionsText: {
+            textAlign: 'center',
+            marginVertical: theme.spacing.md,
         },
         qrContainer: {
             marginTop: 'auto',

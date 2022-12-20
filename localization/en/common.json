@@ -49,6 +49,7 @@
         "connect-to-federation": "Connect to test federation",
         "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
+        "hold-to-confirm": "Hold to confirm",
         "invalid-federation-code": "Invalid federation code",
         "lightning-request": "Lightning request",
         "transaction-id": "Transaction ID",
