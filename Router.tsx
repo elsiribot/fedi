@@ -131,6 +131,13 @@ const MainNavigator = () => {
                             />
                             {/* Wallet (Send Offline) */}
                             <Stack.Screen
+                                name="Send"
+                                component={Send}
+                                options={() => ({
+                                    header: () => <SendHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="SendOfflineAmount"
                                 component={SendOfflineAmount}
                                 options={() => ({
