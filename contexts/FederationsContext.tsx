@@ -9,7 +9,11 @@ import React, {
 } from 'react'
 
 import {
+    // Types
+    BalanceEvent,
     Federation,
+    TFedimintEventEmitter,
+    // Functions
     addressOrInvoice,
     authenticateGuardian,
     backupQr,
@@ -51,6 +55,7 @@ enum ActionType {
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
     SET_USER_IS_GUARDIAN = 'SET_USER_IS_GUARDIAN',
     UPDATE_CONNECTED_FEDERATIONS = 'UPDATE_CONNECTED_FEDERATIONS',
+    UPDATE_FEDERATION_BALANCE = 'UPDATE_FEDERATION_BALANCE',
 }
 interface Action {
     type: ActionType
@@ -99,6 +104,12 @@ export function updateConnectedFederations(federations: Federation[]): Action {
         payload: federations,
     }
 }
+export function updateFederationBalance(event: BalanceEvent): Action {
+    return {
+        type: ActionType.UPDATE_FEDERATION_BALANCE,
+        payload: event,
+    }
+}
 
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
@@ -129,6 +140,37 @@ export function reducer(state: AppState, action: Action): AppState {
                 connectedFederations: action.payload.map(
                     (f: Federation) => new Federation(f),
                 ),
+            }
+        case ActionType.UPDATE_FEDERATION_BALANCE:
+            // If the federation id matches, update the selectedFederation.balance
+            let updatedSelectedFederation = state.selectedFederation
+            if (
+                state.selectedFederation?.name === action.payload.federationId
+            ) {
+                updatedSelectedFederation = new Federation({
+                    ...state.selectedFederation,
+                    balance: action.payload.balance,
+                })
+            }
+
+            const updatedConnectedFederations = state.connectedFederations.map(
+                (f: Federation) => {
+                    // If the federation id matches, update the balance of that
+                    // single connectedFederation
+                    if (f.name === action.payload.federationId) {
+                        return new Federation({
+                            ...f,
+                            balance: action.payload.balance,
+                        })
+                    } else {
+                        return f
+                    }
+                },
+            )
+            return {
+                ...state,
+                connectedFederations: updatedConnectedFederations,
+                selectedFederation: updatedSelectedFederation,
             }
         case ActionType.RESET_FEDERATIONS_STATE:
             return { ...initialState }
@@ -179,6 +221,20 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
 
         restoreState()
     }, [])
+
+    useEffect(() => {
+        const emitter = new TFedimintEventEmitter()
+        const onBalanceUpdate = (event: BalanceEvent) => {
+            dispatch(updateFederationBalance(event))
+        }
+        emitter.onBalanceUpdate(onBalanceUpdate)
+
+        // This may be redundant if the event emitter already
+        // removes existing listeners
+        return () => {
+            emitter.removeListener('balance')
+        }
+    }, [state])
 
     useEffect(() => {
         if (state.selectedFederation !== null) {
