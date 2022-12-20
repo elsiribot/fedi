@@ -24,7 +24,8 @@ pub fn hacky_lightning_invoice_fee(
 pub struct FedimintFederation {
     pub name: String,
     pub connect_info: WsFederationConnect,
-    pub nodes: Vec<Node>
+    pub nodes: Vec<Node>,
+    pub balance: fedimint_api::Amount,
 }
 
 impl From<&Arc<Federation>> for FedimintFederation {
@@ -34,6 +35,7 @@ impl From<&Arc<Federation>> for FedimintFederation {
             name: client_config.federation_name.clone(),
             connect_info: WsFederationConnect::from(&client_config),
             nodes: client_config.nodes.clone(),
+            balance: federation.client.coins().total_amount(),
         }
     }
 }
