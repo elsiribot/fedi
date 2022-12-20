@@ -39,7 +39,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 // toast?.show('e', 5000)
             }
         },
-        [addressOrInvoice, toast],
+        [addressOrInvoice],
     )
 
     const checkClipboard = useCallback(async () => {
