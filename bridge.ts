@@ -38,6 +38,11 @@ export type ReceiveEcashResponse = {
     amount: number
 }
 
+export type LnurlSignedMessage = {
+    signature: string
+    pubkey: string
+}
+
 export type Invoice = {
     paymentHash: string
     amount: number
@@ -303,6 +308,15 @@ export async function validateEcash(
     let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
     let response = await FedimintFfi.rpc('validateEcash', payload)
     return handleRpcResponse<ValidateEcashResponse>(response)
+}
+
+export async function lnurlSignMessage(
+    message: string,
+    federationId: string,
+): Promise<LnurlSignedMessage> {
+    let payload = JSON.stringify({ message, federationId })
+    let response = await FedimintFfi.rpc('lnurlSignMessage', payload)
+    return handleRpcResponse<LnurlSignedMessage>(response)
 }
 
 /*
