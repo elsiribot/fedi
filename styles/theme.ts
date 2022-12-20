@@ -99,6 +99,8 @@ const theme = createTheme({
         md: 32,
         lg: 48,
         expandedWalletCardHeight: 325,
+        splashLogoHeight: 32,
+        splashLogoWidth: 120,
     },
     spacing: {
         xxs: 2,
