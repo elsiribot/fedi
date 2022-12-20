@@ -3,12 +3,11 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import type { RootStackParamList } from '../types/navigation'
-import { decodeInvoice } from '../bridge'
+import { NavigationHook, RootStackParamList } from '../types/navigation'
+import { decodeInvoice, Invoice } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
-import invoiceUtils from '../utils/InvoiceUtils'
 import stringUtils from '../utils/StringUtils'
 import amountUtils from '../utils/AmountUtils'
 
@@ -20,63 +19,85 @@ export type Props = NativeStackScreenProps<
 const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
     const { payInvoice } = useBridge()
     const { invoice } = route.params
 
+    const [isPayingInvoice, setIsPayingInvoice] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [amount] = useState(invoiceUtils.getAmountFromInvoice(invoice))
+    const [decodedInvoice, setDecodedInvoice] = useState<Invoice | null>(null)
     const [unit] = useState('sats')
-    const [memo] = useState('Pineapple pizza slice')
-    const [expiry] = useState(3600)
-    const [feeEstimate] = useState({
-        minimum: 3,
-        maximum: 11,
-        units: 'sats',
-    })
 
     useEffect(() => {
-        const _decodeInvoice = async () => {
-            const decoded = await decodeInvoice(invoice)
-            console.log('decoded invoice', decoded)
+        const getDecodedInvoice = async () => {
+            try {
+                setIsLoading(true)
+                const decoded = await decodeInvoice(invoice)
+                console.log('decoded invoice', decoded)
+                setDecodedInvoice(decoded)
+            } catch (error) {
+                console.error('getDecodedInvoice error')
+                console.error(error)
+            }
+            setIsLoading(false)
         }
 
-        _decodeInvoice()
+        getDecodedInvoice()
     }, [invoice])
 
     const onSendBtc = async () => {
         try {
+            if (isPayingInvoice) return
             console.log('paying invoice', invoice)
             setIsLoading(true)
+            setIsPayingInvoice(true)
             await payInvoice(invoice)
             console.log('invoice paid')
             setIsLoading(false)
-            navigation.navigate('SendSuccess', {
-                amount: amountUtils.stringToSats(amount),
+            setIsPayingInvoice(false)
+            navigation.replace('SendSuccess', {
+                amount: decodedInvoice?.amount!,
                 unit,
             })
         } catch (error) {
+            console.error('onSendBtc error')
             console.error(error)
             setIsLoading(false)
+            setIsPayingInvoice(false)
         }
     }
+
+    if (!decodedInvoice) return <ActivityIndicator />
 
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
                 <Text>{t('feature.send.you-are-sending')}</Text>
-                <Text>{`${amount} ${unit}`}</Text>
-                <Text>{`${memo}`}</Text>
+                <Text>
+                    {`${amountUtils.millisToSats(
+                        decodedInvoice.amount,
+                    )} ${unit}`}
+                </Text>
+                <Text>{`${decodedInvoice.description}`}</Text>
                 <Text>{''}</Text>
                 <Text>
                     {`${stringUtils.truncateMiddleOfString(invoice, 14)}`}
                 </Text>
-                <Text>{`${t('phrases.expires-in')} ${invoiceUtils.formatExpiry(
-                    expiry,
-                )}`}</Text>
-                <Text>{`${t('words.fee')}: ${invoiceUtils.formatFee(
-                    feeEstimate,
-                )}`}</Text>
+                {/* TODO: Uncomment if/when expiry is provided by decodeInvoice */}
+                {/* <Text>{`${t('phrases.expires-in')} ${invoiceUtils.formatExpiry(
+                    decodedInvoice?.expiryTime,
+                )}`}</Text> */}
+                {decodedInvoice.fee && (
+                    <Text>
+                        {`${t('words.fee')}: ${decodedInvoice.fee} ${unit}`}
+                    </Text>
+                    // TODO: Refactor if/when feeEstimate provides min/max/unit
+                    // <Text>
+                    //     {`${t('words.fee')}: ${invoiceUtils.formatFee(
+                    //         decodedInvoice?.feeEstimate,
+                    //     )}`}
+                    // </Text>
+                )}
             </View>
             <View style={styles(theme).buttonContainer}>
                 <Button

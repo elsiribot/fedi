@@ -11,6 +11,7 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useBridge } from '../contexts/FederationsContext'
 import { AddressOrInvoice } from '../bridge'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
@@ -18,6 +19,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
+    const { toast } = useEnvironmentContext().state
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
 
@@ -34,9 +36,10 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
             } catch (e) {
                 // TODO: show this error
                 console.error(e)
+                toast?.show(e as string, 5000)
             }
         },
-        [addressOrInvoice],
+        [addressOrInvoice, toast],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -91,14 +94,20 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
-                <Button
-                    title={t('feature.send.send-to-offline-user')}
-                    onPress={() => navigation.navigate('SendOfflineAmount')}
-                />
-                <Button
-                    title={t('feature.send.paste-payment-request')}
-                    onPress={checkClipboard}
-                />
+
+                <View style={styles(theme).buttonsContainer}>
+                    <Button
+                        fullWidth
+                        type="clear"
+                        title={t('feature.send.send-to-offline-user')}
+                        onPress={() => navigation.navigate('SendOfflineAmount')}
+                    />
+                    <Button
+                        fullWidth
+                        title={t('feature.send.paste-payment-request')}
+                        onPress={checkClipboard}
+                    />
+                </View>
             </View>
         </CameraPermissionsRequired>
     )
@@ -112,9 +121,15 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
         },
         cameraScannerContainer: {
-            height: '80%',
+            height: '75%',
             width: '100%',
             margin: theme.spacing.md,
+        },
+        buttonsContainer: {
+            height: '25%',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
+            width: '100%',
         },
     })
 
