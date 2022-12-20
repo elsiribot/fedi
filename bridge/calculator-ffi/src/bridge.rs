@@ -3,6 +3,7 @@ use std::{
     default::Default,
     fs::File,
     path::{Path, PathBuf},
+    str::FromStr,
     sync::Arc,
 };
 
@@ -17,7 +18,11 @@ use crate::{
     EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
-use bitcoin::{hashes::sha256, Address, Script};
+use bitcoin::{
+    hashes::sha256,
+    secp256k1::{ecdsa::Signature, Message, PublicKey, Secp256k1, SecretKey},
+    Address, Script,
+};
 use electrum_client::{Client, ElectrumApi};
 use fedimint_api::config::ClientConfig;
 use fedimint_api::db::DatabaseTransaction;
@@ -171,6 +176,24 @@ impl Federation {
         let client =
             UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
         Ok(Self::new(client, event_sink))
+    }
+
+    pub fn sign_with_node_privkey(&self, msg: &Message) -> Signature {
+        // TODO: don't hardcode
+        let secret_key =
+            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
+                .unwrap();
+        let secp = Secp256k1::new();
+        secp.sign_ecdsa(&msg, &secret_key)
+    }
+
+    pub fn node_pubkey(&self) -> PublicKey {
+        // TODO: don't hardcode
+        let secret_key =
+            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
+                .unwrap();
+        let secp = Secp256k1::new();
+        secret_key.public_key(&secp)
     }
 
     pub async fn generate_address(&self) -> Address {

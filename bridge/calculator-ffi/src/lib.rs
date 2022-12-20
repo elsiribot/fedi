@@ -7,7 +7,7 @@ pub mod types;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
-use bitcoin::Address;
+use bitcoin::{secp256k1::Message, Address};
 use event::EventSink;
 use fedimint_api::{Amount, TieredMulti};
 use lazy_static::lazy_static;
@@ -434,6 +434,31 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": out_point.txid.to_string() }).to_string())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LnurlSignMessagePayload {
+    /// hex-encoded message
+    message: String,
+    federation_id: String,
+}
+
+async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
+    let LnurlSignMessagePayload {
+        message,
+        federation_id,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Ok(rpc_error("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let message = Message::from_slice(&hex::decode(message)?)?;
+    let signature = federation.sign_with_node_privkey(&message);
+    Ok(
+        json!({ "result": { "signature": signature, "pubkey": federation.node_pubkey() } })
+            .to_string(),
+    )
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
@@ -450,6 +475,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "receiveEcash" => handle_receive_ecash(payload).await,
             "validateEcash" => handle_validate_ecash(payload).await,
             "addressOrInvoice" => handle_address_or_invoice(payload).await,
+            "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
