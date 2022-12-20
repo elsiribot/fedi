@@ -117,6 +117,8 @@ const styles = (theme: Theme) =>
         offlineContainer: {
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
         },
         offlineIcon: {
             height: theme.sizes.sm,
