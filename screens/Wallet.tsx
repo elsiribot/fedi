@@ -9,7 +9,6 @@ import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import { useFederationsContext } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
-import { createIconSetFromFontello } from 'react-native-vector-icons'
 
 export type Props =
     | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {
@@ -43,7 +42,6 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { selectedFederation } = useFederationsContext().state
     // TODO: Hoist state and listen to bridge for updates
     const [recoveryInProgress] = useState(false)
-    console.log(' .  selected', selectedFederation)
 
     return (
         <View style={styles(theme).container}>
