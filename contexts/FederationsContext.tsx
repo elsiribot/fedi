@@ -30,7 +30,7 @@ import {
     lnurlSignMessage,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
-import { getToken } from '../utils/lnurl'
+import lnurlUtils from '../utils/LNURLUtils'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
@@ -251,7 +251,7 @@ function useBridge() {
         ),
         lnurlGetToken: useCallback(
             (lnurl: string) => {
-                return getToken(lnurl, selectedFederation!.name)
+                return lnurlUtils.getToken(lnurl, selectedFederation!.name)
             },
             [selectedFederation],
         ),

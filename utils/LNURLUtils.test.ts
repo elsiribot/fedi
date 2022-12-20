@@ -1,16 +1,16 @@
-import { getK1, urlFromLnurl } from './lnurl'
+import lnurlUtils from './LNURLUtils'
 
 describe('lnurl', () => {
     describe('decode', () => {
         it('getString', () => {
             const string =
                 'LNURL1DP68GURN8GHJ7CTSDYHXKMMVD35KGETJ9EU8J730WCCJ7CT4W35Z7MRWTAKX7EMFDCLHGCT884KX7EMFDCNXKVFA8PJXVVESXVMNZC3HV9JXXVNZXSENGDE58PJNXVTPXVCR2DMZVSEKZCMXVE3NZDP5VYCX2E3EVSUNGVE4VGUKXC3HXGUN2WFSVYURYCGAR0GSF'
-            urlFromLnurl(string)
+            lnurlUtils.urlFromLnurl(string)
         })
         it('getK1', () => {
             const string =
                 'LNURL1DP68GURN8GHJ7CTSDYHXKMMVD35KGETJ9EU8J730WCCJ7CT4W35Z7MRWTAKX7EMFDCLHGCT884KX7EMFDCNXKVFA8PJXVVESXVMNZC3HV9JXXVNZXSENGDE58PJNXVTPXVCR2DMZVSEKZCMXVE3NZDP5VYCX2E3EVSUNGVE4VGUKXC3HXGUN2WFSVYURYCGAR0GSF'
-            const k1 = getK1(string)
+            const k1 = lnurlUtils.getK1(string)
             expect(k1).toEqual(
                 '8df30371b7adc2b434748e31a3057bd3acffc144a0ef9d9435b9cb729590a82a',
             )
