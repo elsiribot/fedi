@@ -60,7 +60,7 @@ const QrCodeScanner = ({
             device={device}
             isActive={true}
             frameProcessor={frameProcessor}
-            frameProcessorFps={5}
+            frameProcessorFps={'auto'}
         />
     )
 }
