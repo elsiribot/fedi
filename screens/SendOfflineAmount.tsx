@@ -21,7 +21,7 @@ export type Props = NativeStackScreenProps<
 const SendOfflineAmount: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation()
-    const { currentBalance } = useFederationsContext().state
+    const { selectedFederation } = useFederationsContext().state
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<string>('')
@@ -48,7 +48,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(currentBalance)} `}
+                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <Input
