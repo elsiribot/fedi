@@ -56,11 +56,6 @@ export enum TransactionDirection {
     receive = 'receive',
 }
 
-export enum TransactionType {
-    bitcoin = 'bitcoin',
-    lightning = 'lightning',
-}
-
 export enum IncomingBitcoinTransactionStatus {
     pending = 'pending',
     complete = 'complete',
