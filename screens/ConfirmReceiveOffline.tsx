@@ -1,8 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
+import { Images } from '../assets/images'
 import { Transaction } from '../bridge'
 
 import { useBridge } from '../contexts/FederationsContext'
@@ -31,6 +32,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
             setReceiving(true)
             try {
                 await receiveEcash(ecash)
+                setReceiving(false)
                 navigation.navigate('ReceiveSuccess', {
                     tx: new Transaction({
                         offline: { claimed: true },
@@ -51,6 +53,13 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     return (
         <View style={styles(theme).container}>
+            <View style={styles(theme).offlineContainer}>
+                <Image
+                    source={Images.Offline}
+                    style={styles(theme).offlineIcon}
+                />
+                <Text caption>{t('phrases.you-are-offline')}</Text>
+            </View>
             <View style={styles(theme).amountContainer}>
                 <Text h2>{`${amountUtils.millisToSats(amount)} `}</Text>
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
@@ -63,7 +72,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 containerStyle={styles(theme).textInput}
             />
             <View style={styles(theme).actionContainer}>
-                <Text caption style={styles(theme).offlineNotice}>
+                <Text caption style={styles(theme).offlineSpendNotice}>
                     {`${t('feature.receive.balance-not-spendable-offline')}`}
                 </Text>
                 <Button
@@ -100,10 +109,19 @@ const styles = (theme: Theme) =>
         buttonContainer: {
             marginTop: 'auto',
         },
-        offlineNotice: {
+        offlineSpendNotice: {
             marginVertical: theme.spacing.xl,
             paddingHorizontal: theme.spacing.xl,
             textAlign: 'center',
+        },
+        offlineContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        offlineIcon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+            marginRight: theme.spacing.md,
         },
         textInput: {
             width: '80%',
