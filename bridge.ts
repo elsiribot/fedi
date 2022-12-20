@@ -118,6 +118,9 @@ export class TFedimintEventEmitter {
         listener: (event: any) => void,
         context?: Object,
     ): EmitterSubscription => {
+        // Remove any existing listeners of this eventType before adding
+        this.removeListener(eventType)
+
         return this.emitter.addListener(
             eventType,
             (serializedEvent: string) => listener(JSON.parse(serializedEvent)),
