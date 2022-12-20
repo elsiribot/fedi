@@ -48,6 +48,7 @@ const styles = (theme: Theme) =>
         container: {
             alignItems: 'center',
             justifyContent: 'center',
+            padding: theme.spacing.xl,
         },
         buttonGroupContainer: {
             borderRadius: 50,

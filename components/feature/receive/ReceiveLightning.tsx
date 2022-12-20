@@ -16,6 +16,7 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [amount, setAmount] = useState<string>('')
+    const [isLoading, setIsLoading] = useState(false)
     const [amountIsValid, setAmountIsValid] = useState(false)
     const { generateInvoice } = useBridge()
 
@@ -35,11 +36,13 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
 
     const onGenerateInvoice = async () => {
         try {
+            setIsLoading(true)
             const newInvoice = await generateInvoice(
                 amountUtils.stringToMillis(amount),
                 'test memo',
             )
             handleInvoice(newInvoice)
+            setIsLoading(false)
         } catch (error) {
             console.log(error)
         }
@@ -62,6 +65,8 @@ const ReceiveLightning: React.FC<ReceiveLightningProps> = ({
                 title={t('feature.receive.create-lightning-request')}
                 onPress={onGenerateInvoice}
                 disabled={!amountIsValid}
+                loading={isLoading}
+                fullWidth
             />
         </View>
     )
