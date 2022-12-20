@@ -33,10 +33,10 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 if (result === AddressOrInvoice.invoice) {
                     setInvoice(input)
                 }
-            } catch (e) {
+            } catch (e: any) {
                 // TODO: show this error
                 console.error(e)
-                toast?.show(e as string, 5000)
+                // toast?.show('e', 5000)
             }
         },
         [addressOrInvoice, toast],
