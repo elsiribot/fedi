@@ -101,18 +101,12 @@ const MainNavigator = () => {
                                     ),
                                 })}
                             />
+                            {/* Wallet (Send & Receive) */}
                             <Stack.Screen
                                 name="ConfirmSendLightning"
                                 component={ConfirmSendLightning}
                                 options={() => ({
                                     header: () => <SendBitcoinHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="FederationInvite"
-                                component={FederationInvite}
-                                options={() => ({
-                                    header: () => <FederationInviteHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -136,6 +130,13 @@ const MainNavigator = () => {
                                 component={LnInvoice}
                                 options={() => ({
                                     header: () => <LnInvoiceHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="Send"
+                                component={Send}
+                                options={() => ({
+                                    header: () => <SendHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -179,6 +180,22 @@ const MainNavigator = () => {
                                 component={ReceiveSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Federations */}
+                            <Stack.Screen
+                                name="FederationInvite"
+                                component={FederationInvite}
+                                options={() => ({
+                                    header: () => <FederationInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanFederationCode"
+                                component={ScanFederationCode}
+                                options={() => ({
+                                    header: () => <ScanFederationCodeHeader />,
+                                })}
+                            />
+                            {/* Backup & Recovery */}
                             <Stack.Screen
                                 name="ChooseBackupMethod"
                                 component={ChooseBackupMethod}
@@ -186,6 +203,17 @@ const MainNavigator = () => {
                                     header: () => <ChooseBackupMethodHeader />,
                                 })}
                             />
+                            <Stack.Screen
+                                name="ChooseRecoveryMethod"
+                                component={ChooseRecoveryMethod}
+                                options={() => ({
+                                    header: () => (
+                                        <ChooseRecoveryMethodHeader />
+                                    ),
+                                })}
+                            />
+                            {/* Social Backup */}
+                            {/* Personal Backup + Recovery */}
                             <Stack.Screen
                                 name="RecordBackupVideo"
                                 component={RecordBackupVideo}
@@ -236,15 +264,7 @@ const MainNavigator = () => {
                                 component={SocialBackupSuccess}
                                 options={{ headerShown: false }}
                             />
-                            <Stack.Screen
-                                name="ChooseRecoveryMethod"
-                                component={ChooseRecoveryMethod}
-                                options={() => ({
-                                    header: () => (
-                                        <ChooseRecoveryMethodHeader />
-                                    ),
-                                })}
-                            />
+                            {/* Social Recovery */}
                             <Stack.Screen
                                 name="LocateSocialRecovery"
                                 component={LocateSocialRecovery}
@@ -283,6 +303,7 @@ const MainNavigator = () => {
                                 component={SocialRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Recovery Assist (Guardians) */}
                             <Stack.Screen
                                 name="StartRecoveryAssist"
                                 component={StartRecoveryAssist}
@@ -318,6 +339,7 @@ const MainNavigator = () => {
                                 component={RecoveryAssistSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Personal Backup */}
                             <Stack.Screen
                                 name="StartPersonalBackup"
                                 component={StartPersonalBackup}
@@ -337,6 +359,7 @@ const MainNavigator = () => {
                                 component={PersonalBackupSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Personal Recovery */}
                             <Stack.Screen
                                 name="PersonalRecovery"
                                 component={PersonalRecovery}
@@ -360,20 +383,6 @@ const MainNavigator = () => {
                                     nextScreen: 'ScanFederationCode',
                                     message: '',
                                 }}
-                            />
-                            <Stack.Screen
-                                name="Send"
-                                component={Send}
-                                options={() => ({
-                                    header: () => <SendHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ScanFederationCode"
-                                component={ScanFederationCode}
-                                options={() => ({
-                                    header: () => <ScanFederationCodeHeader />,
-                                })}
                             />
                             <Stack.Screen
                                 name="SitesBrowser"
