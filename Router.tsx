@@ -101,7 +101,14 @@ const MainNavigator = () => {
                                     ),
                                 })}
                             />
-                            {/* Wallet (Send & Receive) */}
+                            {/* Wallet (Send) */}
+                            <Stack.Screen
+                                name="Send"
+                                component={Send}
+                                options={() => ({
+                                    header: () => <SendHeader />,
+                                })}
+                            />
                             <Stack.Screen
                                 name="ConfirmSendLightning"
                                 component={ConfirmSendLightning}
@@ -117,28 +124,12 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ConfirmReceiveOffline"
-                                component={ConfirmReceiveOffline}
-                                options={() => ({
-                                    header: () => (
-                                        <ReceiveBitcoinOfflineHeader />
-                                    ),
-                                })}
+                                name="SendSuccess"
+                                component={SendSuccess}
+                                initialParams={{ amount: 0, unit: 'sats' }}
+                                options={{ headerShown: false }}
                             />
-                            <Stack.Screen
-                                name="LnInvoice"
-                                component={LnInvoice}
-                                options={() => ({
-                                    header: () => <LnInvoiceHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="Send"
-                                component={Send}
-                                options={() => ({
-                                    header: () => <SendHeader />,
-                                })}
-                            />
+                            {/* Wallet (Send Offline) */}
                             <Stack.Screen
                                 name="SendOfflineAmount"
                                 component={SendOfflineAmount}
@@ -153,12 +144,7 @@ const MainNavigator = () => {
                                     header: () => <SendBitcoinOfflineHeader />,
                                 })}
                             />
-                            <Stack.Screen
-                                name="SendSuccess"
-                                component={SendSuccess}
-                                initialParams={{ amount: 0, unit: 'sats' }}
-                                options={{ headerShown: false }}
-                            />
+                            {/* Wallet (Receive) */}
                             <Stack.Screen
                                 name="Receive"
                                 component={Receive}
@@ -166,6 +152,19 @@ const MainNavigator = () => {
                                     header: () => <ReceiveBitcoinHeader />,
                                 })}
                             />
+                            <Stack.Screen
+                                name="LnInvoice"
+                                component={LnInvoice}
+                                options={() => ({
+                                    header: () => <LnInvoiceHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveSuccess"
+                                component={ReceiveSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Wallet (Receive Offline) */}
                             <Stack.Screen
                                 name="ReceiveOffline"
                                 component={ReceiveOffline}
@@ -176,9 +175,13 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ReceiveSuccess"
-                                component={ReceiveSuccess}
-                                options={{ headerShown: false }}
+                                name="ConfirmReceiveOffline"
+                                component={ConfirmReceiveOffline}
+                                options={() => ({
+                                    header: () => (
+                                        <ReceiveBitcoinOfflineHeader />
+                                    ),
+                                })}
                             />
                             {/* Federations */}
                             <Stack.Screen
@@ -213,7 +216,6 @@ const MainNavigator = () => {
                                 })}
                             />
                             {/* Social Backup */}
-                            {/* Personal Backup + Recovery */}
                             <Stack.Screen
                                 name="RecordBackupVideo"
                                 component={RecordBackupVideo}
