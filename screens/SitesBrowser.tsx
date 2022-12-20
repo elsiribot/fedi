@@ -164,7 +164,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     })
 
     // FIXME: properly url-encode this
-    const uri = site.lnurlAuth ? `${site.url}?token=${jwt}` : site.url
+    const uri = jwt ? `${site.url}?token=${jwt}` : site.url
     console.log('uri: ', uri)
     return (
         <View style={styles.container}>

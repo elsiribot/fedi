@@ -21,7 +21,6 @@ export const SITES = [
         url: 'https://light.kollider.xyz/auth/login',
         description:
             'Like cash in hand, pass physical bitcoin along multiple times',
-        lnurlAuth: 'https://api.kollider.xyz/v1/auth/external/lnurl_auth',
     },
     {
         title: 'BTCMAP',
