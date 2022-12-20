@@ -23,16 +23,20 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const navigation = useNavigation()
     const { currentBalance } = useFederationsContext().state
     const { t } = useTranslation()
+    const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<string>('')
     const { generateEcash } = useBridge()
 
     const onGenerateEcash = async () => {
         try {
+            setIsLoading(true)
             const millis = amountUtils.stringToMillis(amount)
             const ecash = await generateEcash(millis)
+            setIsLoading(false)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
         } catch (error) {
             console.log(error)
+            setIsLoading(false)
         }
     }
 
@@ -66,6 +70,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 fullWidth
                 title={t('words.next')}
                 onPress={onGenerateEcash}
+                loading={isLoading}
             />
         </View>
     )

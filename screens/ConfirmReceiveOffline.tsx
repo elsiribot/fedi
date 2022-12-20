@@ -1,8 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
+import { Transaction } from '../bridge'
 
 import { useBridge } from '../contexts/FederationsContext'
 import { RootStackParamList } from '../types/navigation'
@@ -20,8 +21,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { receiveEcash } = useBridge()
-    const [note, setNote] = useState('')
     const { amount, ecash } = route.params
+    const [note, setNote] = useState('')
     const [receiving, setReceiving] = useState(false)
 
     const onReceive = async () => {
@@ -31,7 +32,10 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
             try {
                 await receiveEcash(ecash)
                 navigation.navigate('ReceiveSuccess', {
-                    tx: { type: 'ecash', amount },
+                    tx: new Transaction({
+                        offline: { claimed: true },
+                        amount,
+                    }),
                 })
             } catch (e: any) {
                 // FIXME: how can we type our error messages better?
@@ -47,6 +51,10 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     return (
         <View style={styles(theme).container}>
+            <View style={styles(theme).amountContainer}>
+                <Text h2>{`${amountUtils.millisToSats(amount)} `}</Text>
+                <Text>{`${t('words.sats').toUpperCase()}`}</Text>
+            </View>
             <Input
                 onChangeText={e => setNote(e)}
                 value={note}
@@ -54,12 +62,20 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
-            <Button
-                title={`${t('words.receive')} ${amountUtils.millisToSats(
-                    amount,
-                )}`}
-                onPress={onReceive}
-            />
+            <View style={styles(theme).actionContainer}>
+                <Text caption style={styles(theme).offlineNotice}>
+                    {`${t('feature.receive.balance-not-spendable-offline')}`}
+                </Text>
+                <Button
+                    fullWidth
+                    title={`${t('words.receive')} ${amountUtils.millisToSats(
+                        amount,
+                    )} ${t('words.sats').toUpperCase()}`}
+                    onPress={onReceive}
+                    loading={receiving}
+                    containerStyle={styles(theme).buttonContainer}
+                />
+            </View>
         </View>
     )
 }
@@ -67,12 +83,27 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            width: '100%',
+            flex: 1,
             alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
         },
-        instructions: {
-            marginVertical: theme.spacing.md,
-            fontSize: theme.sizes.xxs,
+        actionContainer: {
+            marginTop: 'auto',
+            width: '100%',
+        },
+        amountContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: theme.spacing.xxl,
+        },
+        buttonContainer: {
+            marginTop: 'auto',
+        },
+        offlineNotice: {
+            marginVertical: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
+            textAlign: 'center',
         },
         textInput: {
             width: '80%',

@@ -14,7 +14,11 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 
-import { TransactionEvent, TFedimintEventEmitter } from '../../../bridge'
+import {
+    TransactionEvent,
+    TFedimintEventEmitter,
+    Transaction,
+} from '../../../bridge'
 import { useBridge } from '../../../contexts/FederationsContext'
 import { RootStackParamList } from '../../../types/navigation'
 import stringUtils from '../../../utils/StringUtils'
@@ -43,7 +47,7 @@ const ReceiveOnchain: React.FC<{}> = () => {
         const transactionEventHandler = (event: TransactionEvent) => {
             if (event.transaction.bitcoin?.address === address) {
                 navigation.navigate('ReceiveSuccess', {
-                    tx: event.transaction,
+                    tx: new Transaction(event.transaction),
                 })
             }
         }

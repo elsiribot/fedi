@@ -21,20 +21,24 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation()
     const { payAddress } = useBridge()
     const { address } = route.params
+    const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState('')
     const [unit] = useState('sats')
 
     const onSendBtc = async () => {
         try {
             console.log('paying address', address, amount)
+            setIsLoading(true)
             await payAddress(address, amountUtils.stringToSats(amount))
             console.log('paid')
+            setIsLoading(false)
             navigation.navigate('SendSuccess', {
                 amount: amountUtils.stringToSats(amount),
                 unit,
             })
         } catch (error) {
             console.error(error)
+            setIsLoading(false)
         }
     }
 
@@ -54,7 +58,12 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     returnKeyType="done"
                 />
                 <View style={styles(theme).buttonContainer}>
-                    <Button title={t('words.send')} onPress={onSendBtc} />
+                    <Button
+                        title={t('words.send')}
+                        onPress={onSendBtc}
+                        loading={isLoading}
+                        fullWidth
+                    />
                 </View>
             </View>
         </View>

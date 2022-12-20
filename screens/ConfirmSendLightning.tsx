@@ -24,6 +24,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { payInvoice } = useBridge()
     const { invoice } = route.params
 
+    const [isLoading, setIsLoading] = useState(false)
     const [amount] = useState(invoiceUtils.getAmountFromInvoice(invoice))
     const [unit] = useState('sats')
     const [memo] = useState('Pineapple pizza slice')
@@ -46,14 +47,17 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const onSendBtc = async () => {
         try {
             console.log('paying invoice', invoice)
+            setIsLoading(true)
             await payInvoice(invoice)
             console.log('invoice paid')
+            setIsLoading(false)
             navigation.navigate('SendSuccess', {
                 amount: amountUtils.stringToSats(amount),
                 unit,
             })
         } catch (error) {
             console.error(error)
+            setIsLoading(false)
         }
     }
 
@@ -75,7 +79,12 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 )}`}</Text>
             </View>
             <View style={styles(theme).buttonContainer}>
-                <Button title={t('words.send')} onPress={onSendBtc} />
+                <Button
+                    title={t('words.send')}
+                    onPress={onSendBtc}
+                    loading={isLoading}
+                    fullWidth
+                />
             </View>
         </View>
     )

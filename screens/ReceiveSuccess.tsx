@@ -21,7 +21,7 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
                 <View style={styles(theme).textContainer}>
                     <Text h2>
                         {t(
-                            tx.type === 'bitcoin'
+                            tx.bitcoin !== null
                                 ? 'feature.receive.pending-transaction'
                                 : 'feature.receive.you-received',
                         )}

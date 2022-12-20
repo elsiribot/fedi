@@ -18,6 +18,7 @@ import {
     Invoice,
     TransactionEvent,
     TFedimintEventEmitter,
+    Transaction,
 } from '../bridge'
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
@@ -80,10 +81,7 @@ const LnInvoice: React.FC<Props> = ({ route, navigation }: Props) => {
         (event: TransactionEvent) => {
             if (event.transaction.lightning?.invoice === decodedInvoice.invoice)
                 navigation.navigate('ReceiveSuccess', {
-                    tx: {
-                        type: 'lightning',
-                        amount: decodedInvoice.amount,
-                    },
+                    tx: new Transaction(event.transaction),
                 })
         },
         [navigation, decodedInvoice],
