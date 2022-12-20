@@ -30,7 +30,9 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
             return (
                 <AnimatedQrCodeScanner
                     device={device}
-                    onProgress={(p: number) => setPercent(p)}
+                    onProgress={(p: number) => {
+                        if (p > percent) setPercent(p)
+                    }}
                     onQrCodeDetected={onResult}
                 />
             )
@@ -45,7 +47,7 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
             try {
                 const { valid, amount } = await validateEcash(ecash)
                 if (valid) {
-                    navigation.navigate('ConfirmReceiveOffline', {
+                    navigation.replace('ConfirmReceiveOffline', {
                         amount,
                         ecash,
                     })
@@ -80,7 +82,7 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
-                <Text>{percent}</Text>
+                <Text>{`${(percent * 100).toFixed(2)}%`}</Text>
             </View>
         </CameraPermissionsRequired>
     )
