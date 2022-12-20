@@ -21,6 +21,7 @@ import {
 } from '../../../contexts/FederationsContext'
 import { Federation, listFederations } from '../../../bridge'
 import { Images } from '../../../assets/images'
+import amountUtils from '../../../utils/AmountUtils'
 
 type Props = {
     federation: Federation
@@ -30,10 +31,6 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()
-
-    // TODO: Get balance from federation
-    // const balance = federation.balance
-    const balance = 0
 
     const inviteLink = JSON.stringify(federation.connectInfo)
 
@@ -48,7 +45,9 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     {federation.name}
                 </Text>
                 <Text style={styles(theme).subText}>
-                    {`${balance} ${t('words.sats')}`}
+                    {`${amountUtils.millisToSats(federation.balance)} ${t(
+                        'words.sats',
+                    )}`}
                 </Text>
             </View>
 

@@ -164,6 +164,7 @@ export class Federation extends Base {
         members: [number, string][]
     }
     nodes: Node[]
+    balance: number
 
     get approvalsRequired(): number {
         const numNodes = this.nodes.length

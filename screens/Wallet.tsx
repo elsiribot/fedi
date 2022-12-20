@@ -1,15 +1,15 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Button, Card, Icon, Text, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import type { Theme } from '@rneui/themed'
 
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
-import { BalanceEvent, TFedimintEventEmitter } from '../bridge'
 import { useFederationsContext } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import { createIconSetFromFontello } from 'react-native-vector-icons'
 
 export type Props =
     | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {
@@ -41,39 +41,9 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
-    const [balance, setBalance] = useState<number | null>(null)
     // TODO: Hoist state and listen to bridge for updates
     const [recoveryInProgress] = useState(false)
-
-    // The balanceHandler should change whenever the selectedFederation changes
-    const balanceHandler = useCallback(
-        (event: BalanceEvent) => {
-            // Ignore all events not from the selectedFederation
-            if (selectedFederation!.name !== event.federationId) {
-                return
-            }
-            console.log(
-                'OS:',
-                Platform.OS,
-                `| federation -> "${event.federationId}"`,
-                `| Wallet: balance -> "${event.balance}"`,
-            )
-            setBalance(event.balance)
-        },
-        [selectedFederation],
-    )
-
-    // As the balanceHandler changes when switching federations, we make sure
-    // to clean up the event listener for balance updates
-    // TODO: Consider not using a new TFedimintEventEmitter each time?
-    useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
-        emitter.onBalanceUpdate(balanceHandler)
-
-        return () => {
-            emitter.removeListener('balance')
-        }
-    }, [balanceHandler])
+    console.log(' .  selected', selectedFederation)
 
     return (
         <View style={styles(theme).container}>
@@ -94,7 +64,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                             {t('words.bitcoin')}
                         </Text>
                     </View>
-                    <Balance balance={balance} />
+                    <Balance balance={selectedFederation!.balance} />
                     <View style={styles(theme).buttonsGroupContainer}>
                         <Button
                             title={t('words.receive')}
@@ -119,7 +89,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                             containerStyle={styles(theme).buttonContainer}
                             titleStyle={styles(theme).buttonTitle}
                             buttonStyle={styles(theme).button}
-                            disabled={!(Number(balance) > 0)}
+                            disabled={!(selectedFederation!.balance > 0)}
                         />
                     </View>
                 </Card>

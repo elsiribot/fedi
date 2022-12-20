@@ -27,6 +27,8 @@ import {
     uploadBackupFile,
     validateBackupFile,
     validateEcash,
+    TFedimintEventEmitter,
+    BalanceEvent,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 
@@ -179,6 +181,29 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
 
         restoreState()
     }, [])
+
+    useEffect(() => {
+        const emitter = new TFedimintEventEmitter()
+        const onBalanceUpdate = (event: BalanceEvent) => {
+            console.log('before', state.connectedFederations)
+            let updatedFederations = state.connectedFederations.map(
+                (fed: Federation) => {
+                    // If the federation id matches, update the balance
+                    return fed.name === event.federationId
+                        ? ({ ...fed, balance: event.balance } as Federation)
+                        : fed
+                },
+            )
+            dispatch(updateConnectedFederations(updatedFederations))
+            // dispatch(changeSelectedFederation(event.federation))
+            console.log('after', updatedFederations)
+        }
+        emitter.onBalanceUpdate(onBalanceUpdate)
+
+        return () => {
+            emitter.removeListener('federation')
+        }
+    }, [state])
 
     useEffect(() => {
         if (state.selectedFederation !== null) {
