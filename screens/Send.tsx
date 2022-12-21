@@ -1,6 +1,6 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
@@ -11,6 +11,8 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useBridge } from '../contexts/FederationsContext'
 import { AddressOrInvoice } from '../bridge'
+import { normalizePaymentRequest } from '../utils/UriUtils'
+import { BitcoinOrLightning, BtcLnUri } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
@@ -19,26 +21,36 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
     // const { toast } = useEnvironmentContext().state
-    const [invoice, setInvoice] = React.useState('')
-    const [address, setAddress] = React.useState('')
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [paymentRequestUri, setPaymentRequestUri] = useState<BtcLnUri | null>(
+        null,
+    )
 
     const handleUserInput = useCallback(
         async (input: string) => {
+            if (isLoading) return
+            console.log('input', input)
+            setIsLoading(true)
+            const normalized = normalizePaymentRequest(input)
+            console.log('normalized', normalized)
             try {
-                let result = await addressOrInvoice(input)
+                let result = await addressOrInvoice(normalized.body)
                 if (result === AddressOrInvoice.address) {
-                    setAddress(input)
+                    normalized.type = BitcoinOrLightning.bitcoin
+                    setPaymentRequestUri(normalized)
                 }
                 if (result === AddressOrInvoice.invoice) {
-                    setInvoice(input)
+                    normalized.type = BitcoinOrLightning.lightning
+                    setPaymentRequestUri(normalized)
                 }
             } catch (e: any) {
                 // TODO: show this error
                 console.error(e)
                 // toast?.show('e', 5000)
             }
+            setIsLoading(false)
         },
-        [addressOrInvoice],
+        [addressOrInvoice, isLoading],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -48,17 +60,20 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
 
     // detect if invoice or address has been pasted or scanned
     useEffect(() => {
-        if (invoice.length > 0) {
+        if (!paymentRequestUri?.body) return
+
+        if (paymentRequestUri?.type === BitcoinOrLightning.lightning) {
+            console.log(paymentRequestUri)
             navigation.navigate('ConfirmSendLightning', {
-                invoice,
+                lightningUri: paymentRequestUri,
             })
         }
-        if (address.length > 0) {
+        if (paymentRequestUri?.type === BitcoinOrLightning.bitcoin) {
             navigation.navigate('ConfirmSendOnChain', {
-                address,
+                bitcoinUri: paymentRequestUri,
             })
         }
-    }, [invoice, address, navigation])
+    }, [paymentRequestUri, navigation])
 
     const devices = useCameraDevices()
     const device = devices.back

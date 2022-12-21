@@ -7,9 +7,13 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 import { decodeInvoice, Invoice } from '../bridge'
-import { useBridge } from '../contexts/FederationsContext'
+import {
+    useBridge,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
 import stringUtils from '../utils/StringUtils'
 import amountUtils from '../utils/AmountUtils'
+import LineBreak from '../components/ui/LineBreak'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -20,19 +24,26 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
+    const { selectedFederation } = useFederationsContext().state
     const { payInvoice } = useBridge()
-    const { invoice } = route.params
+    const { lightningUri } = route.params
 
     const [isPayingInvoice, setIsPayingInvoice] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [decodedInvoice, setDecodedInvoice] = useState<Invoice | null>(null)
+    const [decodedInvoice, setDecodedInvoice] = useState<Invoice>({
+        paymentHash: '',
+        amount: 0,
+        description: '',
+        invoice: '',
+        fee: null,
+    })
     const [unit] = useState('sats')
 
     useEffect(() => {
         const getDecodedInvoice = async () => {
             try {
                 setIsLoading(true)
-                const decoded = await decodeInvoice(invoice)
+                const decoded = await decodeInvoice(lightningUri.body)
                 console.log('decoded invoice', decoded)
                 setDecodedInvoice(decoded)
             } catch (error) {
@@ -43,15 +54,15 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         }
 
         getDecodedInvoice()
-    }, [invoice])
+    }, [lightningUri])
 
     const onSendBtc = async () => {
         try {
             if (isPayingInvoice) return
-            console.log('paying invoice', invoice)
+            console.log('paying invoice', decodedInvoice?.invoice)
             setIsLoading(true)
             setIsPayingInvoice(true)
-            await payInvoice(invoice)
+            await payInvoice(decodedInvoice?.invoice)
             console.log('invoice paid')
             setIsLoading(false)
             setIsPayingInvoice(false)
@@ -67,41 +78,41 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         }
     }
 
-    if (!decodedInvoice) return <ActivityIndicator />
+    if (!decodedInvoice.amount) return <ActivityIndicator />
 
     return (
         <View style={styles(theme).container}>
+            <Text caption>
+                {`${t('words.balance')}: `}
+                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${t('words.sats').toUpperCase()}`}
+            </Text>
             <View style={styles(theme).detailsContainer}>
-                <Text>{t('feature.send.you-are-sending')}</Text>
-                <Text>
-                    {`${amountUtils.millisToSats(
+                {decodedInvoice.amount && (
+                    <Text h2>{`${amountUtils.millisToSats(
                         decodedInvoice.amount,
-                    )} ${unit}`}
-                </Text>
-                <Text>{`${decodedInvoice.description}`}</Text>
-                <Text>{''}</Text>
-                <Text>
-                    {`${stringUtils.truncateMiddleOfString(invoice, 14)}`}
-                </Text>
-                {/* TODO: Uncomment if/when expiry is provided by decodeInvoice */}
-                {/* <Text>{`${t('phrases.expires-in')} ${invoiceUtils.formatExpiry(
-                    decodedInvoice?.expiryTime,
-                )}`}</Text> */}
-                {decodedInvoice.fee && (
-                    <Text>
-                        {`${t('words.fee')}: ${decodedInvoice.fee} ${unit}`}
-                    </Text>
-                    // TODO: Refactor if/when feeEstimate provides min/max/unit
-                    // <Text>
-                    //     {`${t('words.fee')}: ${invoiceUtils.formatFee(
-                    //         decodedInvoice?.feeEstimate,
-                    //     )}`}
-                    // </Text>
+                    )} ${t('words.sats').toUpperCase()}`}</Text>
                 )}
+                {decodedInvoice.description && (
+                    <Text small>{decodedInvoice.description}</Text>
+                )}
+                <LineBreak />
+                <Text>
+                    {`${stringUtils.truncateMiddleOfString(
+                        decodedInvoice.invoice,
+                        14,
+                    )}`}
+                </Text>
             </View>
             <View style={styles(theme).buttonContainer}>
                 <Button
-                    title={t('words.send')}
+                    title={`${t('words.send')}${
+                        decodedInvoice.amount
+                            ? ` ${amountUtils.millisToSats(
+                                  decodedInvoice.amount,
+                              )} `
+                            : ' '
+                    }${t('words.sats').toUpperCase()}`}
                     onPress={onSendBtc}
                     loading={isLoading}
                     fullWidth
@@ -116,12 +127,12 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'space-evenly',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
         },
         detailsContainer: {
-            height: '50%',
             alignItems: 'center',
-            justifyContent: 'center',
+            paddingVertical: theme.spacing.xl,
         },
         buttonContainer: {
             width: '90%',

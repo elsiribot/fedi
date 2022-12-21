@@ -1,5 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { Site } from '.'
+import { BtcLnUri, Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -30,8 +30,8 @@ export type RootStackParamList = {
     ChooseRecoveryMethod: undefined
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
-    ConfirmSendLightning: { invoice: string }
-    ConfirmSendOnChain: { address: string }
+    ConfirmSendLightning: { lightningUri: BtcLnUri }
+    ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConfirmReceiveOffline: { ecash: string; amount: number }
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }

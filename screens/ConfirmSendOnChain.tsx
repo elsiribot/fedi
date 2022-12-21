@@ -1,14 +1,18 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, TextInput, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { useBridge } from '../contexts/FederationsContext'
+import {
+    useBridge,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
+import stringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -19,18 +23,29 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
+    const { selectedFederation } = useFederationsContext().state
     const { payAddress } = useBridge()
-    const { address } = route.params
-    const [isLoading, setIsLoading] = useState(false)
-    const [amount, setAmount] = useState('')
+    const { bitcoinUri } = route.params
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [amount, setAmount] = useState<string>('')
     const [unit] = useState('sats')
+
+    useEffect(() => {
+        console.log(bitcoinUri)
+        console.log(bitcoinUri.queryParams)
+        if (bitcoinUri.queryParams?.amount) {
+            const amountInSats = amountUtils.btcToSat(
+                Number(bitcoinUri.queryParams?.amount),
+            )
+            setAmount(String(amountInSats))
+        }
+    }, [bitcoinUri])
 
     const onSendBtc = async () => {
         try {
-            console.log('paying address', address, amount)
+            console.log('paying address', bitcoinUri.body, amount)
             setIsLoading(true)
-            await payAddress(address, amountUtils.stringToSats(amount))
-            console.log('paid')
+            await payAddress(bitcoinUri.body, amountUtils.stringToSats(amount))
             setIsLoading(false)
             navigation.navigate('SendSuccess', {
                 amount: amountUtils.stringToSats(amount),
@@ -46,26 +61,39 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         setAmount(updatedValue)
     }
 
+    if (!bitcoinUri.body) return <ActivityIndicator />
+
     return (
         <View style={styles(theme).container}>
+            <Text caption>
+                {`${t('words.balance')}: `}
+                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${t('words.sats').toUpperCase()}`}
+            </Text>
             <View style={styles(theme).detailsContainer}>
-                <Text style={styles(theme).address}>{address}</Text>
-                <TextInput
+                <Input
                     onChangeText={onChangeText}
                     value={amount}
                     placeholder={`${t('words.amount')} (${t('words.sats')})`}
                     keyboardType="numeric"
                     returnKeyType="done"
+                    containerStyle={styles(theme).textInput}
                 />
-                <View style={styles(theme).buttonContainer}>
-                    <Button
-                        title={t('words.send')}
-                        onPress={onSendBtc}
-                        loading={isLoading}
-                        fullWidth
-                    />
-                </View>
+                <Text>
+                    {`${stringUtils.truncateMiddleOfString(
+                        bitcoinUri.body,
+                        14,
+                    )}`}
+                </Text>
             </View>
+            <Button
+                title={`${t('words.send')}${
+                    amount ? ` ${amount} ${t('words.sats').toUpperCase()}` : ''
+                }`}
+                onPress={onSendBtc}
+                loading={isLoading}
+                fullWidth
+            />
         </View>
     )
 }
@@ -75,25 +103,19 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'space-evenly',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
+        },
+        button: {
+            marginTop: 'auto',
         },
         detailsContainer: {
-            height: '50%',
             alignItems: 'center',
-            justifyContent: 'center',
+            width: '100%',
         },
-        buttonContainer: {
+        textInput: {
             width: '90%',
-            flexDirection: 'row',
-            justifyContent: 'space-evenly',
-            margin: theme.spacing.md,
-        },
-        text: {
-            fontSize: theme.sizes.md,
-            margin: theme.spacing.md,
-        },
-        address: {
-            color: 'white',
+            marginTop: 'auto',
         },
     })
 

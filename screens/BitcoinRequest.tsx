@@ -33,8 +33,8 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const [requestNote, setRequestNote] = useState<string | null>(null)
     const [decodedUri, setDecodedUri] = useState<BtcLnUri>(
         new BtcLnUri({
-        type: BitcoinOrLightning.lightning,
-        body: '',
+            type: BitcoinOrLightning.lightning,
+            body: '',
             paramsString: null,
         }),
     )
@@ -61,8 +61,8 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         }
         setDecodedUri(
             new BtcLnUri({
-            type: prefix as BitcoinOrLightning,
-            body,
+                type: prefix as BitcoinOrLightning,
+                body,
                 paramsString: params,
             }),
         )
@@ -181,20 +181,17 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                     uri={
                         requestType === BitcoinOrLightning.lightning
                             ? decodedUri
-                            : {
+                            : new BtcLnUri({
                                   type: BitcoinOrLightning.bitcoin,
                                   body: onchainAddress,
-                                  params: `amount=${requestAmount}&message=${requestNote}`,
-                                  fullString: `${
-                                      BitcoinOrLightning.bitcoin
-                                  }:${onchainAddress}?amount=${amountUtils.millisToBtc(
-                                      requestAmount!,
+                                  paramsString: `amount=${amountUtils.millisToBtcString(
+                                      requestAmount as number,
                                   )}${
                                       requestNote
                                           ? `&message=${requestNote}`
                                           : ''
                                   }`,
-                              }
+                              })
                     }
                     type={requestType}
                 />
