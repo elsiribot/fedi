@@ -21,6 +21,7 @@ const QrCodeScanner = ({
     onQrCodeDetected,
     onProgress,
 }: QrCodeScanner) => {
+    const [sendingResult, setSendingResult] = useState<boolean>(false)
     const [frameProcessor, barcodes] = useScanBarcodes(
         [BarcodeFormat.QR_CODE],
         {
@@ -43,16 +44,28 @@ const QrCodeScanner = ({
             // To prevent infinite loops ...
             if (progressOfFrames(frames) !== updatedProgress) {
                 setFrames(updatedFrames)
-                if (areFramesComplete(updatedFrames)) {
-                    onQrCodeDetected(framesToData(updatedFrames).toString())
-                    // reset frames once we've found a hit ...
-                    setFrames(null)
+                if (areFramesComplete(updatedFrames) && !sendingResult) {
+                    setSendingResult(true)
+                    setTimeout(() => {
+                        onQrCodeDetected(framesToData(updatedFrames).toString())
+
+                        // reset frames once we've found a hit ...
+                        setFrames(null)
+                        setSendingResult(false)
+                    }, 50)
                 } else {
                     console.log('Progress:', progressOfFrames(updatedFrames))
                 }
             }
         })
-    }, [barcodes, frames, onProgress, onQrCodeDetected, setFrames])
+    }, [
+        barcodes,
+        frames,
+        onProgress,
+        onQrCodeDetected,
+        sendingResult,
+        setFrames,
+    ])
 
     return (
         <Camera
