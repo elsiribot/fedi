@@ -30,7 +30,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const onGenerateEcash = async () => {
         try {
             setIsLoading(true)
-            const millis = amountUtils.stringToMillis(amount)
+            const millis = amountUtils.stringToMsat(amount)
             const ecash = await generateEcash(millis)
             setIsLoading(false)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
@@ -48,7 +48,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <Input

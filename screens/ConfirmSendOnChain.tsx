@@ -45,10 +45,10 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         try {
             console.log('paying address', bitcoinUri.body, amount)
             setIsLoading(true)
-            await payAddress(bitcoinUri.body, amountUtils.stringToSats(amount))
+            await payAddress(bitcoinUri.body, Number(amount))
             setIsLoading(false)
             navigation.navigate('SendSuccess', {
-                amount: amountUtils.stringToSats(amount),
+                amount: Number(amount),
                 unit,
             })
         } catch (error) {
@@ -67,7 +67,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <View style={styles(theme).detailsContainer}>

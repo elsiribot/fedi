@@ -168,7 +168,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             </Pressable>
             <View style={styles(theme).detailsContainer}>
                 {requestAmount && (
-                    <Text h2>{`${amountUtils.millisToSats(requestAmount)} ${t(
+                    <Text h2>{`${amountUtils.msatToSat(requestAmount)} ${t(
                         'words.sats',
                     ).toUpperCase()}`}</Text>
                 )}
@@ -184,7 +184,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                             : new BtcLnUri({
                                   type: BitcoinOrLightning.bitcoin,
                                   body: onchainAddress,
-                                  paramsString: `amount=${amountUtils.millisToBtcString(
+                                  paramsString: `amount=${amountUtils.msatToBtcString(
                                       requestAmount as number,
                                   )}${
                                       requestNote

@@ -14,6 +14,7 @@ export class BtcLnUri extends Base {
     paramsString: string | null
     get queryParams(): QueryParams | null {
         if (this.paramsString == null) return null
+
         const result: QueryParams = {}
         this.paramsString.split('&').forEach(p => {
             const [key, value] = p.split('=')
