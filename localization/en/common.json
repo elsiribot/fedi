@@ -3,6 +3,7 @@
         "admin": "Admin",
         "amount": "Amount",
         "backup": "Backup",
+        "balance": "Balance",
         "bitcoin": "Bitcoin",
         "complete": "Complete",
         "continue": "Continue",
@@ -25,6 +26,7 @@
         "pending": "pending",
         "receive": "Receive",
         "received": "Received",
+        "request": "Request",
         "required": "required",
         "sats": "sats",
         "send": "Send",
@@ -47,11 +49,14 @@
         "connect-to-federation": "Connect to test federation",
         "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
+        "hold-to-confirm": "Hold to confirm",
         "invalid-federation-code": "Invalid federation code",
         "lightning-request": "Lightning request",
-        "transaction-id": "Transaction ID",
         "no-transactions": "No transactions",
-        "please-confirm": "Please confirm"
+        "onchain-address": "On-chain address",
+        "please-confirm": "Please confirm",
+        "transaction-id": "Transaction ID",
+        "you-are-offline": "You are currently in offline mode"
     },
     "feature": {
         "backup": {
@@ -186,6 +191,8 @@
             "you-completed-social-recovery": "You completed Social Recovery"
         },
         "receive": {
+            "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
+            "bitcoin-request": "Bitcoin request",
             "camera-access-information": "To receive money offline, you will need to allow Fedi access to your camera to scan an offline payment code",
             "create-lightning-request": "Create lightning request",
             "instructions": "Enter how much you want to receive",

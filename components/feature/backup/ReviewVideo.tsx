@@ -24,11 +24,7 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
 
     return (
         <View style={styles(theme).container}>
-            <View
-                style={[
-                    styles(theme).cameraContainer,
-                    styles(theme).recordingInactive,
-                ]}>
+            <View style={styles(theme).cameraContainer}>
                 <Video
                     source={{ uri: videoFile?.path }} // Can be a URL or a local file.
                     style={styles(theme).video}
@@ -93,6 +89,7 @@ const CAMERA_SIZE = Dimensions.get('window').width * 0.9
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             alignItems: 'center',
             width: '100%',
         },
@@ -109,6 +106,8 @@ const styles = (theme: Theme) =>
             height: CAMERA_SIZE,
             width: CAMERA_SIZE,
             borderWidth: 3,
+            backgroundColor: theme.colors.primary,
+            borderColor: theme.colors.primary,
         },
         camera: {
             height: '100%',
@@ -126,14 +125,6 @@ const styles = (theme: Theme) =>
             bottom: 0,
             left: 0,
             right: 0,
-        },
-        recordingActive: {
-            backgroundColor: theme.colors.red,
-            borderColor: theme.colors.red,
-        },
-        recordingInactive: {
-            backgroundColor: theme.colors.primary,
-            borderColor: theme.colors.primary,
         },
         video: {
             height: '100%',

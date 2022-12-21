@@ -5,7 +5,7 @@ import { Icon } from '@rneui/themed'
 
 import Header from '../../ui/Header'
 
-const LnInvoiceHeader: React.FC<{}> = () => {
+const SitesHeader: React.FC<{}> = () => {
     const navigation = useNavigation()
 
     return (
@@ -49,4 +49,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default LnInvoiceHeader
+export default SitesHeader

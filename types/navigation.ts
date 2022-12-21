@@ -1,5 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { Site } from '.'
+import { BtcLnUri, Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -25,17 +25,17 @@ export type HomeTabsParamList = {
     Sites: undefined
 }
 export type RootStackParamList = {
+    BitcoinRequest: { uri: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
-    ConfirmSendLightning: { invoice: string }
-    ConfirmSendOnChain: { address: string }
+    ConfirmSendLightning: { lightningUri: BtcLnUri }
+    ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConfirmReceiveOffline: { ecash: string; amount: number }
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
-    LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
@@ -55,6 +55,7 @@ export type RootStackParamList = {
     Send: undefined
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: number }
+    SendSuccess: { amount: number; unit: string }
     Splash: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined

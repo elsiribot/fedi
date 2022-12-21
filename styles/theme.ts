@@ -19,6 +19,7 @@ const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
         Button: props => ({
+            size: 'lg',
             containerStyle: {
                 borderRadius: 50,
                 ...(props.fullWidth ? { width: '100%' } : {}),
@@ -29,6 +30,9 @@ const theme = createTheme({
             },
             disabledStyle: {
                 opacity: 0.7,
+            },
+            loadingStyle: {
+                ...(props.fullWidth ? { width: '100%' } : {}),
             },
         }),
         Text: props => ({
@@ -95,6 +99,8 @@ const theme = createTheme({
         md: 32,
         lg: 48,
         expandedWalletCardHeight: 325,
+        splashLogoHeight: 32,
+        splashLogoWidth: 120,
     },
     spacing: {
         xxs: 2,

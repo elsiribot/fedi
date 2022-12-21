@@ -13,7 +13,6 @@ import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
-import LnInvoice from './screens/LnInvoice'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import Receive from './screens/Receive'
@@ -54,7 +53,6 @@ import FederationInviteHeader from './components/feature/federations/FederationI
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendHeader from './components/feature/send/SendHeader'
-import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
@@ -70,6 +68,9 @@ import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import SitesBrowser from './screens/SitesBrowser'
 import SitesHeader from './components/feature/sites/SitesHeader'
+import SendSuccess from './screens/SendSuccess'
+import BitcoinRequest from './screens/BitcoinRequest'
+import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -100,18 +101,19 @@ const MainNavigator = () => {
                                     ),
                                 })}
                             />
+                            {/* Wallet (Send) */}
+                            <Stack.Screen
+                                name="Send"
+                                component={Send}
+                                options={() => ({
+                                    header: () => <SendHeader />,
+                                })}
+                            />
                             <Stack.Screen
                                 name="ConfirmSendLightning"
                                 component={ConfirmSendLightning}
                                 options={() => ({
                                     header: () => <SendBitcoinHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="FederationInvite"
-                                component={FederationInvite}
-                                options={() => ({
-                                    header: () => <FederationInviteHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -122,21 +124,12 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ConfirmReceiveOffline"
-                                component={ConfirmReceiveOffline}
-                                options={() => ({
-                                    header: () => (
-                                        <ReceiveBitcoinOfflineHeader />
-                                    ),
-                                })}
+                                name="SendSuccess"
+                                component={SendSuccess}
+                                initialParams={{ amount: 0, unit: 'sats' }}
+                                options={{ headerShown: false }}
                             />
-                            <Stack.Screen
-                                name="LnInvoice"
-                                component={LnInvoice}
-                                options={() => ({
-                                    header: () => <LnInvoiceHeader />,
-                                })}
-                            />
+                            {/* Wallet (Send Offline) */}
                             <Stack.Screen
                                 name="SendOfflineAmount"
                                 component={SendOfflineAmount}
@@ -151,6 +144,7 @@ const MainNavigator = () => {
                                     header: () => <SendBitcoinOfflineHeader />,
                                 })}
                             />
+                            {/* Wallet (Receive) */}
                             <Stack.Screen
                                 name="Receive"
                                 component={Receive}
@@ -158,6 +152,19 @@ const MainNavigator = () => {
                                     header: () => <ReceiveBitcoinHeader />,
                                 })}
                             />
+                            <Stack.Screen
+                                name="BitcoinRequest"
+                                component={BitcoinRequest}
+                                options={() => ({
+                                    header: () => <BitcoinRequestHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveSuccess"
+                                component={ReceiveSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Wallet (Receive Offline) */}
                             <Stack.Screen
                                 name="ReceiveOffline"
                                 component={ReceiveOffline}
@@ -168,10 +175,30 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ReceiveSuccess"
-                                component={ReceiveSuccess}
-                                options={{ headerShown: false }}
+                                name="ConfirmReceiveOffline"
+                                component={ConfirmReceiveOffline}
+                                options={() => ({
+                                    header: () => (
+                                        <ReceiveBitcoinOfflineHeader />
+                                    ),
+                                })}
                             />
+                            {/* Federations */}
+                            <Stack.Screen
+                                name="FederationInvite"
+                                component={FederationInvite}
+                                options={() => ({
+                                    header: () => <FederationInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanFederationCode"
+                                component={ScanFederationCode}
+                                options={() => ({
+                                    header: () => <ScanFederationCodeHeader />,
+                                })}
+                            />
+                            {/* Backup & Recovery */}
                             <Stack.Screen
                                 name="ChooseBackupMethod"
                                 component={ChooseBackupMethod}
@@ -179,6 +206,16 @@ const MainNavigator = () => {
                                     header: () => <ChooseBackupMethodHeader />,
                                 })}
                             />
+                            <Stack.Screen
+                                name="ChooseRecoveryMethod"
+                                component={ChooseRecoveryMethod}
+                                options={() => ({
+                                    header: () => (
+                                        <ChooseRecoveryMethodHeader />
+                                    ),
+                                })}
+                            />
+                            {/* Social Backup */}
                             <Stack.Screen
                                 name="RecordBackupVideo"
                                 component={RecordBackupVideo}
@@ -229,15 +266,7 @@ const MainNavigator = () => {
                                 component={SocialBackupSuccess}
                                 options={{ headerShown: false }}
                             />
-                            <Stack.Screen
-                                name="ChooseRecoveryMethod"
-                                component={ChooseRecoveryMethod}
-                                options={() => ({
-                                    header: () => (
-                                        <ChooseRecoveryMethodHeader />
-                                    ),
-                                })}
-                            />
+                            {/* Social Recovery */}
                             <Stack.Screen
                                 name="LocateSocialRecovery"
                                 component={LocateSocialRecovery}
@@ -276,6 +305,7 @@ const MainNavigator = () => {
                                 component={SocialRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Recovery Assist (Guardians) */}
                             <Stack.Screen
                                 name="StartRecoveryAssist"
                                 component={StartRecoveryAssist}
@@ -311,6 +341,7 @@ const MainNavigator = () => {
                                 component={RecoveryAssistSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Personal Backup */}
                             <Stack.Screen
                                 name="StartPersonalBackup"
                                 component={StartPersonalBackup}
@@ -330,6 +361,7 @@ const MainNavigator = () => {
                                 component={PersonalBackupSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Personal Recovery */}
                             <Stack.Screen
                                 name="PersonalRecovery"
                                 component={PersonalRecovery}
@@ -353,20 +385,6 @@ const MainNavigator = () => {
                                     nextScreen: 'ScanFederationCode',
                                     message: '',
                                 }}
-                            />
-                            <Stack.Screen
-                                name="Send"
-                                component={Send}
-                                options={() => ({
-                                    header: () => <SendHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ScanFederationCode"
-                                component={ScanFederationCode}
-                                options={() => ({
-                                    header: () => <ScanFederationCodeHeader />,
-                                })}
                             />
                             <Stack.Screen
                                 name="SitesBrowser"

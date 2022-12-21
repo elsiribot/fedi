@@ -56,11 +56,6 @@ export enum TransactionDirection {
     receive = 'receive',
 }
 
-export enum TransactionType {
-    bitcoin = 'bitcoin',
-    lightning = 'lightning',
-}
-
 export enum IncomingBitcoinTransactionStatus {
     pending = 'pending',
     complete = 'complete',
@@ -118,6 +113,9 @@ export class TFedimintEventEmitter {
         listener: (event: any) => void,
         context?: Object,
     ): EmitterSubscription => {
+        // Remove any existing listeners of this eventType before adding
+        this.removeListener(eventType)
+
         return this.emitter.addListener(
             eventType,
             (serializedEvent: string) => listener(JSON.parse(serializedEvent)),

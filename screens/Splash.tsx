@@ -74,8 +74,8 @@ const styles = (theme: Theme) =>
             resizeMode: 'cover',
         },
         image: {
-            height: 32,
-            width: 120,
+            height: theme.sizes.splashLogoHeight,
+            width: theme.sizes.splashLogoWidth,
             resizeMode: 'contain',
         },
     })

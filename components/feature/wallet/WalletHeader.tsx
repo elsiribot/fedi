@@ -28,39 +28,41 @@ const WalletHeader: React.FC<SocialBackupHeaderProps> = ({
                 </Text>
             }
             headerRight={
-                <View style={styles(theme).rightContainer}>
+                <View style={styles(theme).iconsContainer}>
                     {offline && (
                         <Image
                             source={Images.Offline}
-                            style={styles(theme).image}
+                            style={styles(theme).offlineIcon}
                         />
                     )}
                     <Pressable
-                        style={styles(theme).iconContainer}
                         onPress={() => navigation.navigate('Transactions')}>
                         <Icon name={'format-list-bulleted'} />
                     </Pressable>
                 </View>
             }
+            rightContainerStyle={styles(theme).rightContainer}
         />
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        image: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
+        offlineIcon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
             color: theme.colors.grey,
             marginRight: theme.spacing.xl,
             resizeMode: 'contain',
         },
-        rightContainer: {
+        iconsContainer: {
             flexDirection: 'row',
             alignItems: 'flex-end',
         },
-        iconContainer: {
-            // paddingHorizontal: theme.spacing.xs,
+        rightContainer: {
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
         },
     })
 

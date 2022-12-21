@@ -21,14 +21,16 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
                 <View style={styles(theme).textContainer}>
                     <Text h2>
                         {t(
-                            tx.type === 'bitcoin'
+                            tx.bitcoin
                                 ? 'feature.receive.pending-transaction'
                                 : 'feature.receive.you-received',
                         )}
                     </Text>
-                    <Text h2>{`${amountUtils.millisToSats(tx.amount)} ${t(
-                        'words.sats',
-                    )}`}</Text>
+                    <Text h2>
+                        {`${amountUtils.millisToSats(tx.amount)} ${t(
+                            'words.sats',
+                        ).toUpperCase()}`}
+                    </Text>
                 </View>
             }
             buttonText={t('words.done')}

@@ -41,17 +41,22 @@ interface FederationsContextState {
     connectedFederations: Federation[]
     selectedFederation: Federation | null
     userIsGuardian: boolean
+    // TODO: Refactor to get balances from selectedFederation
+    // and connectedFederations instead
+    currentBalance: number
 }
 const initialState: FederationsContextState = {
     connectedFederations: [],
     selectedFederation: null,
     userIsGuardian: false,
+    currentBalance: 0,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
     ADD_TO_CONNECTED_FEDERATIONS = 'ADD_TO_CONNECTED_FEDERATIONS',
+    CHANGE_CURRENT_BALANCE = 'CHANGE_CURRENT_BALANCE',
     CHANGE_SELECTED_FEDERATION = 'CHANGE_SELECTED_FEDERATION',
     CLEAR_CONNECTED_FEDERATIONS = 'CLEAR_CONNECTED_FEDERATIONS',
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
@@ -76,6 +81,12 @@ export function addToConnectedFederations(federation: Federation): Action {
     return {
         type: ActionType.ADD_TO_CONNECTED_FEDERATIONS,
         payload: federation,
+    }
+}
+export function changeCurrentBalance(balance: number): Action {
+    return {
+        type: ActionType.CHANGE_CURRENT_BALANCE,
+        payload: balance,
     }
 }
 export function changeSelectedFederation(federation: Federation): Action {
@@ -124,13 +135,13 @@ export function reducer(state: AppState, action: Action): AppState {
                     new Federation(action.payload),
                 ],
             }
-        case ActionType.CLEAR_CONNECTED_FEDERATIONS:
-            return { ...state, connectedFederations: [] }
         case ActionType.CHANGE_SELECTED_FEDERATION:
             return {
                 ...state,
                 selectedFederation: new Federation(action.payload),
             }
+        case ActionType.CLEAR_CONNECTED_FEDERATIONS:
+            return { ...state, connectedFederations: [] }
         case ActionType.SET_USER_IS_GUARDIAN:
             return {
                 ...state,

@@ -1,44 +1,76 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { ButtonGroup, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 
-import ReceiveLightning from '../components/feature/receive/ReceiveLightning'
-import ReceiveOnchain from '../components/feature/receive/ReceiveOnchain'
+import { useBridge } from '../contexts/FederationsContext'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
 const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const [walletMode, setWalletMode] = useState<string>('lightning')
+    const [amount, setAmount] = useState<string>('')
+    // TODO integrate memo
+    const [memo] = useState<string>('')
+    const [isLoading, setIsLoading] = useState(false)
+    const [amountIsValid, setAmountIsValid] = useState(false)
+    const { generateInvoice } = useBridge()
 
-    const showInvoice = (invoice: string) => {
-        navigation.navigate('LnInvoice', {
-            invoice,
-        })
+    useEffect(() => {
+        const isNumeric = /^-?\d+$/.test(amount)
+
+        if (amount === '' || amount === '0' || isNumeric === false) {
+            setAmountIsValid(false)
+        } else {
+            setAmountIsValid(true)
+        }
+    }, [amount])
+
+    const onChangeText = (updatedValue: string) => {
+        setAmount(updatedValue)
+    }
+
+    const createAndShowInvoice = async () => {
+        try {
+            setIsLoading(true)
+            const newInvoice = await generateInvoice(
+                amountUtils.stringToMillis(amount),
+                memo,
+            )
+            navigation.navigate('BitcoinRequest', {
+                uri: `lightning:${newInvoice}`,
+            })
+        } catch (error) {
+            console.log(error)
+        }
+        setIsLoading(false)
     }
 
     return (
         <View style={styles(theme).container}>
-            <ButtonGroup
-                selectedIndex={walletMode === 'lightning' ? 0 : 1}
-                onPress={index => {
-                    if (index === 0) setWalletMode('lightning')
-                    if (index === 1) setWalletMode('onchain')
-                }}
-                buttons={[t('words.lightning'), t('words.onchain')]}
-                containerStyle={styles(theme).buttonGroupContainer}
+            <Input
+                onChangeText={onChangeText}
+                value={amount}
+                placeholder={`${t('words.amount')} (${t('words.sats')})`}
+                keyboardType="numeric"
+                returnKeyType="done"
+                containerStyle={styles(theme).textInput}
             />
-
-            {walletMode === 'lightning' ? (
-                <ReceiveLightning handleInvoice={showInvoice} />
-            ) : (
-                <ReceiveOnchain />
-            )}
+            <Button
+                fullWidth
+                title={`${t('words.request')}${amount ? ` ${amount} ` : ' '}${t(
+                    'words.sats',
+                ).toUpperCase()}`}
+                onPress={createAndShowInvoice}
+                disabled={!amountIsValid}
+                loading={isLoading}
+                containerStyle={styles(theme).button}
+            />
         </View>
     )
 }
@@ -46,12 +78,17 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
+            padding: theme.spacing.xl,
         },
-        buttonGroupContainer: {
-            borderRadius: 50,
-            marginVertical: theme.spacing.md,
+        button: {
+            marginTop: 'auto',
+        },
+        textInput: {
+            width: '80%',
+            marginTop: 'auto',
         },
     })
 
