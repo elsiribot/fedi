@@ -4,23 +4,28 @@ import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import { init, LogEvent, TFedimintEventEmitter } from './bridge'
+import {
+    init,
+    LogEvent,
+    TFedimintEventEmitter,
+    TransactionEvent,
+} from './bridge'
 import { FederationsProvider } from './contexts/FederationsContext'
 import { BackupRecoveryProvider } from './contexts/BackupRecoveryContext'
 import { EnvironmentProvider } from './contexts/EnvironmentContext'
 import ProviderComposer from './contexts/ProviderComposer'
 import CustomToast from './components/ui/CustomToast'
 
-import Router from './Router'
+import notifee from '@notifee/react-native'
 
 import theme from './styles/theme'
+import Router from './Router'
 
 const App = () => {
     // const [federationIsReady, setFederationIsReady] = useState<boolean>(false)
     // const scheme = useColorScheme()
 
-    // Initializes the connection to the federation
-    async function initialize() {
+    async function initializeBridge() {
         console.log('initializing connection to federation')
         const start = Date.now()
         await init(RNFS.DocumentDirectoryPath)
@@ -28,14 +33,45 @@ const App = () => {
         console.log('initialized:', stop - start, 'ms OS:', Platform.OS)
     }
 
-    const logHandler = (event: LogEvent) => {
-        console.log('OS:', Platform.OS, `": log" -> "${event.log}"`)
+    async function requestPushNotificationPermissions() {
+        await notifee.requestPermission()
     }
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
+
+        // Initialize logger
+        const logHandler = (event: LogEvent) => {
+            console.log('OS:', Platform.OS, `": log" -> "${event.log}"`)
+        }
         emitter.onLog(logHandler)
-        initialize()
+
+        // Initialize push notification sender
+        async function onDisplayNotification(event: TransactionEvent) {
+            // Create a channel (required for Android)
+            const channelId = await notifee.createChannel({
+                id: 'transactions',
+                name: 'Transactions Channel',
+            })
+
+            // Display a notification
+            // TODO: if on-chain, replace existing notification if there is one
+            await notifee.displayNotification({
+                title: 'Transaction received',
+                body: `Amount = ${event.transaction.amount}`,
+                android: {
+                    channelId,
+                    // pressAction is needed if you want the notification to open the app when pressed
+                    pressAction: {
+                        id: 'transactions',
+                    },
+                },
+            })
+        }
+        emitter.onTransaction(onDisplayNotification)
+
+        initializeBridge()
+        requestPushNotificationPermissions()
     }, [])
 
     return (
