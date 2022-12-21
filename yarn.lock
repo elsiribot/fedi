@@ -1121,6 +1121,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     "fastq" "^1.6.0"
 
+"@notifee/react-native@^7.3.0":
+  "integrity" "sha512-bAZjmc08I+skS3gRCl/7KXE95N6sIiu3/8EnP9USMt2guWsvxTdoLceWl8uJ5ghP4S9VQiBJUWS29hAKhKHC/A=="
+  "resolved" "https://registry.npmjs.org/@notifee/react-native/-/react-native-7.3.0.tgz"
+  "version" "7.3.0"
+
 "@npmcli/arborist@^6.1.4":
   "version" "6.1.4"
   dependencies:
