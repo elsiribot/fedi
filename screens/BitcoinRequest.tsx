@@ -14,19 +14,11 @@ import {
 } from '../bridge'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
-import ReceiveQr, {
-    BitcoinOrLightning,
-} from '../components/feature/receive/ReceiveQr'
+import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import { useBridge } from '../contexts/FederationsContext'
+import { BitcoinOrLightning, BtcLnUri } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
-
-export type BtcLnUri = {
-    type: BitcoinOrLightning
-    body: string
-    params: string | null
-    fullString: string
-}
 
 const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const { theme } = useTheme()
@@ -39,12 +31,13 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     )
     const [requestAmount, setRequestAmount] = useState<number | null>(null)
     const [requestNote, setRequestNote] = useState<string | null>(null)
-    const [decodedUri, setDecodedUri] = useState<BtcLnUri>({
+    const [decodedUri, setDecodedUri] = useState<BtcLnUri>(
+        new BtcLnUri({
         type: BitcoinOrLightning.lightning,
         body: '',
-        params: null,
-        fullString: '',
-    })
+            paramsString: null,
+        }),
+    )
     const [onchainAddress, setOnchainAddress] = useState<string>('')
     const [invoice, setInvoice] = useState<Invoice>({
         paymentHash: '',
@@ -66,12 +59,13 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             body = uri.substring(prefixIndex + 1, paramsIndex)
             params = uri.substring(paramsIndex + 1)
         }
-        setDecodedUri({
+        setDecodedUri(
+            new BtcLnUri({
             type: prefix as BitcoinOrLightning,
             body,
-            params,
-            fullString: uri,
-        })
+                paramsString: params,
+            }),
+        )
     }, [uri])
 
     // Decodes the URI (bitcoin:xxx or lighting:xxx) passed as params

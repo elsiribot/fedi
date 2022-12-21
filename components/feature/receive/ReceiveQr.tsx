@@ -5,13 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
-import { BtcLnUri } from '../../../screens/BitcoinRequest'
+import { BitcoinOrLightning, BtcLnUri } from '../../../types'
 import stringUtils from '../../../utils/StringUtils'
-
-export enum BitcoinOrLightning {
-    bitcoin = 'bitcoin',
-    lightning = 'lightning',
-}
 
 export type ReceiveQrProps = {
     uri: BtcLnUri
@@ -25,14 +20,14 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const { t } = useTranslation()
 
     const copyToClipboard = () => {
-        Clipboard.setString(uri.fullString)
+        Clipboard.setString(uri.fullString!)
     }
 
     const openShareDialog = async () => {
         // open share dialog
         try {
             const result = await Share.share({
-                message: uri.fullString,
+                message: uri.fullString!,
             })
             console.log(result)
             if (result.action === Share.sharedAction) {
@@ -56,7 +51,7 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <QRCode
-                    value={uri.fullString}
+                    value={uri.fullString!}
                     size={QR_CODE_SIZE}
                     logo={Images.FediQrLogo}
                 />
