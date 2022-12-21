@@ -23,6 +23,8 @@ export const Images: ImagesMap = {
     Offline: require('./offline.png'),
     Recovery: require('./recovery.png'),
     SocialPeople: require('./social-people.png'),
+    SwitchLeft: require('./switch-left.png'),
+    SwitchRight: require('./switch-right.png'),
     Wallet: require('./wallet.png'),
     WordList: require('./word-list.png'),
 }

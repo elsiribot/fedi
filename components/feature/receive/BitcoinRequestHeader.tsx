@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const LnInvoiceHeader: React.FC<{}> = () => {
+const BitcoinRequestHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
@@ -12,11 +12,11 @@ const LnInvoiceHeader: React.FC<{}> = () => {
             backButton
             centerContainerStyle={{ flex: 3 }}
             headerCenter={
-                <Text bold>{t('feature.receive.request-bitcoin')}</Text>
+                <Text bold>{t('feature.receive.bitcoin-request')}</Text>
             }
             closeButton
         />
     )
 }
 
-export default LnInvoiceHeader
+export default BitcoinRequestHeader

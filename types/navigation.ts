@@ -25,6 +25,7 @@ export type HomeTabsParamList = {
     Sites: undefined
 }
 export type RootStackParamList = {
+    BitcoinRequest: { uri: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
     CompleteSocialBackup: undefined
@@ -35,7 +36,6 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
-    LnInvoice: { invoice: string }
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined

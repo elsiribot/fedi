@@ -13,7 +13,6 @@ import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
-import LnInvoice from './screens/LnInvoice'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import Receive from './screens/Receive'
@@ -54,7 +53,6 @@ import FederationInviteHeader from './components/feature/federations/FederationI
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendHeader from './components/feature/send/SendHeader'
-import LnInvoiceHeader from './components/feature/receive/LnInvoiceHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
@@ -71,6 +69,8 @@ import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecove
 import SitesBrowser from './screens/SitesBrowser'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import SendSuccess from './screens/SendSuccess'
+import BitcoinRequest from './screens/BitcoinRequest'
+import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -131,14 +131,6 @@ const MainNavigator = () => {
                             />
                             {/* Wallet (Send Offline) */}
                             <Stack.Screen
-                                name="Send"
-                                component={Send}
-                                options={() => ({
-                                    header: () => <SendHeader />,
-                                })}
-                            />
-                            {/* Wallet (Send Offline) */}
-                            <Stack.Screen
                                 name="SendOfflineAmount"
                                 component={SendOfflineAmount}
                                 options={() => ({
@@ -154,12 +146,6 @@ const MainNavigator = () => {
                             />
                             {/* Wallet (Receive) */}
                             <Stack.Screen
-                                name="SendSuccess"
-                                component={SendSuccess}
-                                initialParams={{ amount: 0, unit: 'sats' }}
-                                options={{ headerShown: false }}
-                            />
-                            <Stack.Screen
                                 name="Receive"
                                 component={Receive}
                                 options={() => ({
@@ -167,10 +153,10 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="LnInvoice"
-                                component={LnInvoice}
+                                name="BitcoinRequest"
+                                component={BitcoinRequest}
                                 options={() => ({
-                                    header: () => <LnInvoiceHeader />,
+                                    header: () => <BitcoinRequestHeader />,
                                 })}
                             />
                             <Stack.Screen

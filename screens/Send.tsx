@@ -11,7 +11,6 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useBridge } from '../contexts/FederationsContext'
 import { AddressOrInvoice } from '../bridge'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
@@ -19,7 +18,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    // const { toast } = useEnvironmentContext().state
     const [invoice, setInvoice] = React.useState('')
     const [address, setAddress] = React.useState('')
 

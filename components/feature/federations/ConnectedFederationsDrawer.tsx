@@ -87,8 +87,6 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
         refreshFederations()
     }, [dispatch])
 
-    console.log('connectedFederations', connectedFederations)
-
     return (
         <ImageBackground
             style={styles(theme).imageBackground}
