@@ -69,6 +69,7 @@ import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import SendSuccess from './screens/SendSuccess'
 import SitesBrowser from './screens/SitesBrowser'
+import DeveloperSettings from './screens/DeveloperSettings'
 import { MSats } from './types'
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 
@@ -386,6 +387,15 @@ const MainNavigator = () => {
                                 options={{
                                     header: SitesHeader,
                                 }}
+                            />
+                            <Stack.Screen
+                                name="DeveloperSettings"
+                                component={DeveloperSettings}
+                                // options={
+                                //     {
+                                //         // header: SitesHeader,
+                                //     }
+                                // }
                             />
                         </Stack.Group>
                         {/* Put all Overlay/Modal screens here */}
