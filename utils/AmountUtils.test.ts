@@ -1,3 +1,4 @@
+// @ts-nocheck
 import amountUtils from './AmountUtils'
 
 describe('AmountUtils', () => {

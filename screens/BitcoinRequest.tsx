@@ -16,7 +16,7 @@ import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import { useBridge } from '../contexts/FederationsContext'
-import { BitcoinOrLightning, BtcLnUri } from '../types'
+import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
 
@@ -29,7 +29,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
         BitcoinOrLightning.lightning,
     )
-    const [requestAmount, setRequestAmount] = useState<number | null>(null)
+    const [requestAmount, setRequestAmount] = useState<MSats | null>(null)
     const [requestNote, setRequestNote] = useState<string | null>(null)
     const [decodedUri, setDecodedUri] = useState<BtcLnUri>(
         new BtcLnUri({
@@ -41,7 +41,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const [onchainAddress, setOnchainAddress] = useState<string>('')
     const [invoice, setInvoice] = useState<Invoice>({
         paymentHash: '',
-        amount: 0,
+        amount: 0 as MSats,
         description: '',
         invoice: '',
         fee: null,
@@ -185,7 +185,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                                   type: BitcoinOrLightning.bitcoin,
                                   body: onchainAddress,
                                   paramsString: `amount=${amountUtils.msatToBtcString(
-                                      requestAmount as number,
+                                      requestAmount as MSats,
                                   )}${
                                       requestNote
                                           ? `&message=${requestNote}`

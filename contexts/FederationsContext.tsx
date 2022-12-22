@@ -34,6 +34,7 @@ import {
     lnurlSignMessage,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
+import { MSats, Sats } from '../types'
 import lnurlUtils from '../utils/LNURLUtils'
 
 // Define the structure of this Context and its initial state
@@ -278,13 +279,13 @@ function useBridge() {
             return generateAddress(selectedFederation!.name)
         }, [selectedFederation]),
         generateEcash: useCallback(
-            (amount: number) => {
+            (amount: MSats) => {
                 return generateEcash(amount, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         generateInvoice: useCallback(
-            (amount: number, description: string) => {
+            (amount: MSats, description: string) => {
                 return generateInvoice(
                     amount,
                     description,
@@ -331,7 +332,7 @@ function useBridge() {
             [selectedFederation],
         ),
         payAddress: useCallback(
-            (address: string, sats: number) => {
+            (address: string, sats: Sats) => {
                 return payAddress(address, sats, selectedFederation!.name)
             },
             [selectedFederation],

@@ -70,6 +70,7 @@ import SitesHeader from './components/feature/sites/SitesHeader'
 import SendSuccess from './screens/SendSuccess'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
+import { MSats } from './types'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -125,7 +126,10 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="SendSuccess"
                                 component={SendSuccess}
-                                initialParams={{ amount: 0, unit: 'sats' }}
+                                initialParams={{
+                                    amount: 0 as MSats,
+                                    unit: 'sats',
+                                }}
                                 options={{ headerShown: false }}
                             />
                             {/* Wallet (Send Offline) */}
