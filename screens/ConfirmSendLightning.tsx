@@ -84,12 +84,12 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <View style={styles(theme).detailsContainer}>
                 {decodedInvoice.amount && (
-                    <Text h2>{`${amountUtils.millisToSats(
+                    <Text h2>{`${amountUtils.msatToSat(
                         decodedInvoice.amount,
                     )} ${t('words.sats').toUpperCase()}`}</Text>
                 )}
@@ -108,7 +108,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 <Button
                     title={`${t('words.send')}${
                         decodedInvoice.amount
-                            ? ` ${amountUtils.millisToSats(
+                            ? ` ${amountUtils.msatToSat(
                                   decodedInvoice.amount,
                               )} `
                             : ' '

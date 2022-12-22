@@ -50,7 +50,7 @@ const TransactionDetail = ({
                         : t('feature.receive.you-received')
                 }`}
             </Text>
-            <Text h2>{`${amountUtils.millisToSats(txn.amount)} ${t(
+            <Text h2>{`${amountUtils.msatToSat(txn.amount)} ${t(
                 'words.sats',
             )}`}</Text>
             <View style={styles(theme).detailItemsContainer}>
@@ -85,7 +85,7 @@ const TransactionDetail = ({
                 {txn.fee !== null && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
-                        <Text>{`${amountUtils.millisToSats(txn.fee)} ${t(
+                        <Text>{`${amountUtils.msatToSat(txn.fee)} ${t(
                             'words.sats',
                         )}`}</Text>
                     </View>

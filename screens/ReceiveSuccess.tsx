@@ -27,7 +27,7 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
                         )}
                     </Text>
                     <Text h2>
-                        {`${amountUtils.millisToSats(tx.amount)} ${t(
+                        {`${amountUtils.msatToSat(tx.amount)} ${t(
                             'words.sats',
                         ).toUpperCase()}`}
                     </Text>

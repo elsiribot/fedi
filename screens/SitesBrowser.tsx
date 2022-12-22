@@ -85,7 +85,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         },
         sendPayment: async (paymentRequest: string) => {
             const invoice = await decodeInvoice(paymentRequest)
-            const amountSats = amountUtils.millisToSats(invoice.amount)
+            const amountSats = amountUtils.msatToSat(invoice.amount)
 
             try {
                 // Wait for user to interact with alert

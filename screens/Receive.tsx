@@ -39,7 +39,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         try {
             setIsLoading(true)
             const newInvoice = await generateInvoice(
-                amountUtils.stringToMillis(amount),
+                amountUtils.satToMsat(Number(amount)),
                 memo,
             )
             navigation.navigate('BitcoinRequest', {
