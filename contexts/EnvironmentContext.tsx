@@ -29,8 +29,6 @@ export const EnvironmentContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
 export function initializeToastRef(toastRef: any): Action {
-    console.log('toastRef', toastRef)
-
     return {
         type: ActionType.INITIALIZE_TOAST_REF,
         payload: toastRef,

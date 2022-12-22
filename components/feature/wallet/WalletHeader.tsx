@@ -29,12 +29,14 @@ const WalletHeader: React.FC<SocialBackupHeaderProps> = ({
             }
             headerRight={
                 <View style={styles(theme).iconsContainer}>
-                    {offline && (
-                        <Image
-                            source={Images.Offline}
-                            style={styles(theme).offlineIcon}
-                        />
-                    )}
+                    <Image
+                        source={Images.Offline}
+                        style={[
+                            styles(theme).offlineIcon,
+                            offline ? { opacity: 1 } : { opacity: 0.1 },
+                        ]}
+                        onPress={toggleOffline}
+                    />
                     <Pressable
                         onPress={() => navigation.navigate('Transactions')}>
                         <Icon name={'format-list-bulleted'} />
