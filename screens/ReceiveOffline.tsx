@@ -76,8 +76,7 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <CameraPermissionsRequired
             alternativeActionButton={null}
-            message={t('feature.receive.camera-access-information')}
-            nextScreen={'ReceiveOffline'}>
+            message={t('feature.receive.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}

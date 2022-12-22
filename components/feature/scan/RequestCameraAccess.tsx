@@ -1,49 +1,33 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type {
-    NavigationHook,
-    RootStackParamList,
-} from '../../../types/navigation'
+import type { NavigationHook } from '../../../types/navigation'
 import { Images } from '../../../assets/images'
 import { useNavigation } from '@react-navigation/native'
 
 export type RequestCameraAccessProps = {
     alternativeActionButton: React.ReactNode | null
     message: string | null
-    nextScreen: keyof RootStackParamList
+    onAccessGranted?: () => void | null
 }
 
 const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
     alternativeActionButton,
     message,
-    nextScreen,
+    onAccessGranted,
 }: RequestCameraAccessProps) => {
     const navigation = useNavigation<NavigationHook>()
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    // first check if user has granted camera permissions
-    useEffect(() => {
-        const checkForPermissions = async () => {
-            const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'authorized') {
-                navigation.replace(nextScreen)
-            }
-        }
-
-        checkForPermissions()
-    }, [navigation, nextScreen])
-
     const requestPermission = async () => {
         const requestResult = await Camera.requestCameraPermission()
         console.log('requestResult: ', requestResult)
         if (requestResult === 'authorized') {
-            navigation.replace(nextScreen)
+            onAccessGranted && onAccessGranted()
         }
 
         const status = await Camera.getCameraPermissionStatus()

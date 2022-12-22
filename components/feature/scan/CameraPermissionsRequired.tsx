@@ -6,12 +6,13 @@ import RequestCameraAccess, {
 
 interface Props extends RequestCameraAccessProps {
     children: React.ReactNode
+    onPermissionGranted?: () => void | null
 }
 
 const CameraPermissionsRequired: React.FC<Props> = ({
     alternativeActionButton,
     message,
-    nextScreen,
+    onPermissionGranted,
     children,
 }: Props) => {
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
@@ -34,7 +35,10 @@ const CameraPermissionsRequired: React.FC<Props> = ({
             <RequestCameraAccess
                 alternativeActionButton={alternativeActionButton}
                 message={message}
-                nextScreen={nextScreen}
+                onAccessGranted={() => {
+                    setPermissionGranted(true)
+                    onPermissionGranted && onPermissionGranted()
+                }}
             />
         )
 

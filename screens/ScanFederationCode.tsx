@@ -98,8 +98,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                 />
             }
-            message={t('feature.federations.camera-access-information')}
-            nextScreen={'ScanFederationCode'}>
+            message={t('feature.federations.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}

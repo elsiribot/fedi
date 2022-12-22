@@ -107,8 +107,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                 />
             }
-            message={t('feature.send.camera-access-information')}
-            nextScreen={'Send'}>
+            message={t('feature.send.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}

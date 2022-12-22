@@ -70,8 +70,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                 />
             }
-            message={t('feature.recovery.camera-access-information')}
-            nextScreen={'ScanSocialRecoveryCode'}>
+            message={t('feature.recovery.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
