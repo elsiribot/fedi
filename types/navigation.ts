@@ -14,11 +14,6 @@ export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
 export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 
-export type RequestCameraAccessParams = {
-    alternativeActionButton: React.ReactNode | null
-    message: string | null
-    nextScreen: keyof RootStackParamList
-}
 export type HomeTabsParamList = {
     Admin: undefined
     Wallet: { offline: boolean }
@@ -47,7 +42,6 @@ export type RootStackParamList = {
     RecoveryAssistConfirmation: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    RequestCameraAccess: RequestCameraAccessParams
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }

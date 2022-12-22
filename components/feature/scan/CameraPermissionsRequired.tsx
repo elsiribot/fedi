@@ -1,12 +1,10 @@
-import { useNavigation } from '@react-navigation/native'
 import React, { useEffect, useState } from 'react'
 import { Camera } from 'react-native-vision-camera'
-import {
-    NavigationHook,
-    RequestCameraAccessParams,
-} from '../../../types/navigation'
+import RequestCameraAccess, {
+    RequestCameraAccessProps,
+} from './RequestCameraAccess'
 
-interface Props extends RequestCameraAccessParams {
+interface Props extends RequestCameraAccessProps {
     children: React.ReactNode
 }
 
@@ -16,7 +14,6 @@ const CameraPermissionsRequired: React.FC<Props> = ({
     nextScreen,
     children,
 }: Props) => {
-    const navigation = useNavigation<NavigationHook>()
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
 
     // first check if user has granted camera permissions
@@ -26,19 +23,20 @@ const CameraPermissionsRequired: React.FC<Props> = ({
             console.debug('checkForPermissions: ', status)
             if (status === 'authorized') {
                 setPermissionGranted(true)
-            } else {
-                navigation.replace('RequestCameraAccess', {
-                    alternativeActionButton,
-                    message,
-                    nextScreen,
-                })
             }
         }
 
         checkForPermissions()
-    }, [alternativeActionButton, message, nextScreen, navigation])
+    }, [])
 
-    if (permissionGranted === false) return null
+    if (permissionGranted === false)
+        return (
+            <RequestCameraAccess
+                alternativeActionButton={alternativeActionButton}
+                message={message}
+                nextScreen={nextScreen}
+            />
+        )
 
     return <>{children}</>
 }

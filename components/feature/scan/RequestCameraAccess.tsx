@@ -1,22 +1,30 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../types/navigation'
-import { Images } from '../assets/images'
-
-export type Props = NativeStackScreenProps<
+import type {
+    NavigationHook,
     RootStackParamList,
-    'RequestCameraAccess'
->
+} from '../../../types/navigation'
+import { Images } from '../../../assets/images'
+import { useNavigation } from '@react-navigation/native'
 
-const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
+export type RequestCameraAccessProps = {
+    alternativeActionButton: React.ReactNode | null
+    message: string | null
+    nextScreen: keyof RootStackParamList
+}
+
+const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
+    alternativeActionButton,
+    message,
+    nextScreen,
+}: RequestCameraAccessProps) => {
+    const navigation = useNavigation<NavigationHook>()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { alternativeActionButton, message, nextScreen } = route.params
 
     // first check if user has granted camera permissions
     useEffect(() => {

@@ -22,7 +22,6 @@ import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistConfirmation from './screens/RecoveryAssistConfirmation'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
-import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
@@ -377,16 +376,6 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
-                                name="RequestCameraAccess"
-                                component={RequestCameraAccess}
-                                options={{ headerShown: false }}
-                                initialParams={{
-                                    alternativeActionButton: null,
-                                    nextScreen: 'ScanFederationCode',
-                                    message: '',
-                                }}
-                            />
-                            <Stack.Screen
                                 name="SitesBrowser"
                                 component={SitesBrowser}
                                 options={{
@@ -422,16 +411,6 @@ const MainNavigator = () => {
                             component={Splash}
                             options={{
                                 headerShown: false,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="RequestCameraAccess"
-                            component={RequestCameraAccess}
-                            options={{ headerShown: false }}
-                            initialParams={{
-                                alternativeActionButton: null,
-                                nextScreen: 'ScanFederationCode',
-                                message: '',
                             }}
                         />
                         <Stack.Screen
