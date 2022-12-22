@@ -32,7 +32,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 <Text h2 h2Style={styles(theme).label}>
                     {t('feature.backup.social-backup')}
                 </Text>
-                <Text bold style={styles(theme).instructionsText}>
+                <Text style={styles(theme).instructionsText}>
                     {t('feature.backup.start-social-backup-instructions')}
                 </Text>
             </View>

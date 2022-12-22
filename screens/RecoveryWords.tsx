@@ -19,10 +19,8 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
     const { theme } = useTheme()
     return (
         <View style={styles(theme).wordContainer}>
-            <Text bold style={styles(theme).wordNumber}>{`${number}`}</Text>
-            <Text bold style={styles(theme).wordText}>
-                {word}
-            </Text>
+            <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
+            <Text style={styles(theme).wordText}>{word}</Text>
         </View>
     )
 }
@@ -62,7 +60,7 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
             <Text h2 h2Style={styles(theme).label}>
                 {t('feature.backup.recovery-words')}
             </Text>
-            <Text bold style={styles(theme).instructionsText}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.backup.recovery-words-instructions')}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>

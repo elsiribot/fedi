@@ -98,11 +98,12 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
         },
         instructionsText: {
             textAlign: 'center',
             paddingHorizontal: theme.spacing.xl,
+            marginVertical: theme.spacing.lg,
         },
         textContainer: {
             width: '100%',
