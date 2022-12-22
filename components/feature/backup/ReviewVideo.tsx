@@ -29,6 +29,7 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                     source={{ uri: videoFile?.path }} // Can be a URL or a local file.
                     style={styles(theme).video}
                     paused={isPaused}
+                    ignoreSilentSwitch={'ignore'}
                     onError={error => {
                         console.error(error)
                     }}

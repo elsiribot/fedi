@@ -56,6 +56,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
                     device={device as CameraDevice}
                     isActive={true}
                     video={true}
+                    audio={true}
                 />
             </View>
             <Text
