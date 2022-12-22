@@ -30,7 +30,7 @@ const CustomToast = () => {
             ref={(ref: any) => {
                 toastRef.current = ref
             }}
-            position="bottom"
+            position="top"
             positionValue={200}
             fadeInDuration={150}
             fadeOutDuration={150}

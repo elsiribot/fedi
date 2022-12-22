@@ -13,6 +13,7 @@ import Sites from './Sites'
 import Wallet from './Wallet'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { Images } from '../assets/images'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
@@ -22,8 +23,14 @@ const Home: React.FC<Props> = () => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
+    const { toast } = useEnvironmentContext().state
 
     const toggleOffline = () => {
+        if (!offline) {
+            toast?.show('Simulating offline mode ON', 3000)
+        } else {
+            toast?.show('Simulating offline mode OFF', 3000)
+        }
         setOffline(!offline)
     }
 
