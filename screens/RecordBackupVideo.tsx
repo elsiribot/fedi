@@ -23,6 +23,7 @@ const RecordBackupVideo: React.FC<Props> = () => {
 
     return (
         <CameraPermissionsRequired
+            requireMicrophone
             alternativeActionButton={null}
             message={t('feature.backup.camera-access-information')}>
             <View style={styles(theme).container}>
