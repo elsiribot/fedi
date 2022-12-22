@@ -3,7 +3,7 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
-import { MSats } from './types'
+import { MSats, Sats } from './types'
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
@@ -266,7 +266,7 @@ export async function generateAddress(federationId: string): Promise<string> {
 
 export async function payAddress(
     address: string,
-    sats: number,
+    sats: Sats,
     federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({
