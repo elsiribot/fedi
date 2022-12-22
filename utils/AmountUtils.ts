@@ -1,12 +1,4 @@
-// TODO: use these types everywhere
-// FIXME: if I pass Millis where I'm supposed to pass Sats, typescript doesn't complain
-
-type Btc = number
-type Sats = number
-type MSats = number
-type BtcString = string
-type SatsString = string
-type MsatsString = string
+import { Btc, BtcString, MSats, MsatsString, Sats, SatsString } from '../types'
 
 class AmountUtils {
     static BTC_MAX_DECIMAL_PLACES = 8

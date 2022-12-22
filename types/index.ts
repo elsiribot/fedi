@@ -34,3 +34,10 @@ export type Site = {
     title: string
     description: string
 }
+
+export type Btc = number
+export type Sats = number
+export type MSats = number
+export type BtcString = string
+export type SatsString = string
+export type MsatsString = string
