@@ -236,6 +236,10 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
         const onBalanceUpdate = (event: BalanceEvent) => {
+            // Prevents a state update on the off-chance we get an event
+            // before the selectedFederation state is initialized
+            if (state.selectedFederation == null) return
+
             dispatch(updateFederationBalance(event))
         }
         emitter.onBalanceUpdate(onBalanceUpdate)
