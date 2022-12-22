@@ -1,6 +1,6 @@
 {
-    "name": "FedimintReactNative",
-    "version": "0.0.1",
+    "name": "fedi-react-native",
+    "version": "0.2.1",
     "private": true,
     "scripts": {
         "android": "sh scripts/run-android.sh",

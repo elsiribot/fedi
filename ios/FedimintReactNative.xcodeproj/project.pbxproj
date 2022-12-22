@@ -632,7 +632,7 @@
 				DEVELOPMENT_TEAM = 4JUZY29459;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = FedimintReactNative/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Fedimint;
+				INFOPLIST_KEY_CFBundleDisplayName = Fedi;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -666,7 +666,7 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4JUZY29459;
 				INFOPLIST_FILE = FedimintReactNative/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Fedimint;
+				INFOPLIST_KEY_CFBundleDisplayName = Fedi;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
