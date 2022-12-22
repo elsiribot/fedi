@@ -200,7 +200,7 @@ const styles = (theme: Theme) =>
         instructionsText: {
             textAlign: 'center',
             paddingHorizontal: theme.spacing.xl,
-            fontWeight: '400',
+            marginBottom: theme.spacing.lg,
         },
         openButton: {
             width: '100%',

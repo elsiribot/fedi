@@ -1,20 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import {
-    Button,
-    Card,
-    Input,
-    InputProps,
-    Text,
-    Theme,
-    useTheme,
-} from '@rneui/themed'
-import React, {
-    PropsWithChildren,
-    Ref,
-    RefObject,
-    useRef,
-    useState,
-} from 'react'
+import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet, Pressable, TextInput } from 'react-native'
 import { SeedWords } from '../bridge'
@@ -53,7 +39,7 @@ const SeedWordInput = ({
                 const current: TextInput = inputRef.current
                 current.focus()
             }}>
-            <Text h4 h4Style={styles(theme).wordNumber}>{`${number}`}</Text>
+            <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
             <Input
                 ref={(ref: any) => {
                     inputRef.current = ref
@@ -125,7 +111,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text h4 h4Style={styles(theme).instructionsText}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.personal-recovery-instructions')}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
@@ -162,22 +148,21 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'flex-start',
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         continueButton: {
             width: '100%',
-            marginBottom: 16,
+            marginBottom: theme.spacing.lg,
             marginTop: 'auto',
         },
         instructionsText: {
             textAlign: 'left',
-            fontWeight: '400',
         },
         roundedCardContainer: {
-            borderRadius: 16,
+            borderRadius: theme.borders.defaultRadius,
             width: '100%',
             marginHorizontal: 0,
-            padding: 24,
+            padding: theme.spacing.xl,
         },
         seedWordsContainer: {
             flex: 1,
@@ -190,7 +175,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            marginVertical: 2,
+            marginVertical: theme.spacing.xxs,
         },
         wordNumber: {
             color: theme.colors.primaryVeryLight,
@@ -211,7 +196,7 @@ const styles = (theme: Theme) =>
         },
         focusedInputInnerContainer: {
             borderBottomColor: theme.colors.primary,
-            marginBottom: 12,
+            marginBottom: theme.spacing.md,
         },
         focusedInput: {
             marginBottom: 0,

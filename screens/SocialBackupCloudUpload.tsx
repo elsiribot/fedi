@@ -48,7 +48,7 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
                 <Text h2 h2Style={styles(theme).label}>
                     {t('feature.backup.cloud-backup')}
                 </Text>
-                <Text bold style={styles(theme).instructionsText}>
+                <Text style={styles(theme).instructionsText}>
                     {t('feature.backup.cloud-backup-instructions')}
                 </Text>
             </View>
@@ -86,12 +86,11 @@ const styles = (theme: Theme) =>
         },
         label: {
             textAlign: 'center',
-            marginVertical: theme.spacing.md,
+            marginVertical: theme.spacing.lg,
         },
         instructionsText: {
             textAlign: 'center',
             paddingHorizontal: theme.spacing.xl,
-            fontWeight: '400',
         },
         holoCircle: {
             height: CIRCLE_SIZE,

@@ -45,7 +45,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text bold style={styles(theme).instructionsText}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.backup.choose-method-instructions')}
             </Text>
             <HoloCard
@@ -53,9 +53,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.backup.social-backup')}
                 body={
                     <>
-                        <Text
-                            bold
-                            style={styles(theme).backupMethodInstructions}>
+                        <Text style={styles(theme).backupMethodInstructions}>
                             {t('feature.backup.social-backup-instructions')}
                         </Text>
                         <Button
@@ -72,9 +70,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.backup.personal-backup')}
                 body={
                     <>
-                        <Text
-                            bold
-                            style={styles(theme).backupMethodInstructions}>
+                        <Text style={styles(theme).backupMethodInstructions}>
                             {t('feature.backup.personal-backup-instructions')}
                         </Text>
                         <Button

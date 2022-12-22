@@ -52,14 +52,20 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                 {t('feature.backup.please-review-backup-video')}
             </Text>
             <CheckBox
-                center
-                title={t('feature.backup.review-face-confirmation')}
+                title={
+                    <Text style={styles(theme).checkboxText}>
+                        {t('feature.backup.review-face-confirmation')}
+                    </Text>
+                }
                 checked={confirmFaceChecked}
                 onPress={() => setFaceConfirmChecked(!confirmFaceChecked)}
             />
             <CheckBox
-                center
-                title={t('feature.backup.review-voice-confirmation')}
+                title={
+                    <Text style={styles(theme).checkboxText}>
+                        {t('feature.backup.review-voice-confirmation')}
+                    </Text>
+                }
                 checked={confirmVoiceChecked}
                 onPress={() => setConfirmVoiceChecked(!confirmVoiceChecked)}
             />
@@ -113,9 +119,13 @@ const styles = (theme: Theme) =>
             height: '100%',
             width: '100%',
         },
+        checkboxText: {
+            paddingHorizontal: theme.spacing.md,
+            textAlign: 'left',
+        },
         instructionsText: {
             textAlign: 'center',
-            marginTop: theme.spacing.md,
+            marginVertical: theme.spacing.lg,
         },
         playIconContainer: {
             position: 'absolute',

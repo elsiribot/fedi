@@ -23,7 +23,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text bold style={styles(theme).instructionsText}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.choose-method-instructions', {
                     federation: selectedFederation?.name,
                 })}
@@ -34,9 +34,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.recovery.social-recovery')}
                 body={
                     <>
-                        <Text
-                            bold
-                            style={styles(theme).recoveryMethodInstructions}>
+                        <Text style={styles(theme).recoveryMethodInstructions}>
                             {t('feature.recovery.social-recovery-method')}
                         </Text>
                         <Button
@@ -55,9 +53,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.recovery.personal-recovery')}
                 body={
                     <>
-                        <Text
-                            bold
-                            style={styles(theme).recoveryMethodInstructions}>
+                        <Text style={styles(theme).recoveryMethodInstructions}>
                             {t('feature.recovery.personal-recovery-method')}
                         </Text>
                         <Button
@@ -88,7 +84,6 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
             marginBottom: theme.spacing.xl,
             paddingHorizontal: theme.spacing.md,
-            fontWeight: '400',
         },
         recoveryMethodButton: {
             width: '100%',
@@ -96,7 +91,6 @@ const styles = (theme: Theme) =>
         },
         recoveryMethodInstructions: {
             textAlign: 'center',
-            fontWeight: '400',
             paddingVertical: theme.spacing.xs,
         },
     })

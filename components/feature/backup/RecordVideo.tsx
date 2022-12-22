@@ -67,7 +67,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
                 {t('feature.backup.hold-record-button')}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
-                <Text>
+                <Text medium>
                     {t('feature.backup.social-backup-video-prompt', {
                         date: todaysDate,
                     })}
@@ -95,6 +95,7 @@ const RECORD_CIRCLE_INNER_SIZE = 56
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             alignItems: 'center',
             width: '100%',
         },
@@ -109,7 +110,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            marginTop: theme.spacing.md,
+            marginTop: theme.spacing.xl,
         },
         playIconContainer: {
             position: 'absolute',
@@ -125,7 +126,7 @@ const styles = (theme: Theme) =>
             height: RECORD_CIRCLE_OUTER_SIZE,
             width: RECORD_CIRCLE_OUTER_SIZE,
             borderRadius: RECORD_CIRCLE_OUTER_SIZE / 2,
-            marginVertical: theme.sizes.lg,
+            marginTop: 'auto',
         },
         recordingActive: {
             backgroundColor: theme.colors.red,
