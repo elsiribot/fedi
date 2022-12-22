@@ -9,11 +9,12 @@ import DocumentPicker, {
 } from 'react-native-document-picker'
 
 import { useBridge } from '../../../contexts/FederationsContext'
+import { NavigationHook } from '../../../types/navigation'
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { validateBackupFile } = useBridge()
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
     const [result, setResult] = useState<
         DocumentPickerResponse | undefined | null
     >()
@@ -35,11 +36,11 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
         const checkForValidFile = async () => {
             try {
                 await validateBackupFile(result!.uri)
-                navigation.navigate('SelectRecoveryFileSuccess', {
+                navigation.replace('SelectRecoveryFileSuccess', {
                     fileName: result!.name as string,
                 })
             } catch (error) {
-                navigation.navigate('SelectRecoveryFileFailure', {
+                navigation.replace('SelectRecoveryFileFailure', {
                     fileName: result!.name as string,
                 })
             }
