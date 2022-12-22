@@ -379,6 +379,7 @@ const MainNavigator = () => {
                                 component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Sites */}
                             <Stack.Screen
                                 name="SitesBrowser"
                                 component={SitesBrowser}
@@ -387,6 +388,7 @@ const MainNavigator = () => {
                                 }}
                             />
                         </Stack.Group>
+                        {/* Put all Overlay/Modal screens here */}
                         <Stack.Group screenOptions={{ presentation: 'modal' }}>
                             <Stack.Screen
                                 name="Transactions"

@@ -145,15 +145,23 @@ export function reducer(state: AppState, action: Action): AppState {
                 ),
             }
         case ActionType.UPDATE_FEDERATION_BALANCE:
-            // If the federation id matches, update the selectedFederation.balance
+            // If the federation id matches, check if selectedFederation.balance
+            // has changed
             let updatedSelectedFederation = state.selectedFederation
             if (
                 state.selectedFederation?.name === action.payload.federationId
             ) {
-                updatedSelectedFederation = new Federation({
-                    ...state.selectedFederation,
-                    balance: action.payload.balance,
-                })
+                // If balance is unchanged and the BalanceEvent is from the
+                // selectedFederation, we can return a completely unchanged state
+                // to prevent re-renders
+                // Otherwise update the balance and proceed
+                if (
+                    state.selectedFederation?.balance === action.payload.balance
+                ) {
+                    return state
+                } else {
+                    updatedSelectedFederation!.balance = action.payload.balance
+                }
             }
 
             const updatedConnectedFederations = state.connectedFederations.map(
@@ -228,6 +236,10 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
         const onBalanceUpdate = (event: BalanceEvent) => {
+            // Prevents a state update on the off-chance we get an event
+            // before the selectedFederation state is initialized
+            if (state.selectedFederation == null) return
+
             dispatch(updateFederationBalance(event))
         }
         emitter.onBalanceUpdate(onBalanceUpdate)
