@@ -447,12 +447,16 @@ impl Federation {
 
     // TODO: pagination
     pub fn list_transactions(&self) -> Vec<Transaction> {
-        self.client
+        let mut transactions: Vec<Transaction> = self
+            .client
             .db()
             .begin_transaction(ModuleRegistry::default())
             .find_by_prefix(&TransactionKeyPrefix)
             .map(|res| res.expect("Db error").1)
-            .collect()
+            .collect();
+        // Sort by timestamp, descending
+        transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        transactions
     }
 
     pub async fn save_payment(&self, payment: &Payment) {
