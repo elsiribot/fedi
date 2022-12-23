@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
-use types::FedimintFederation;
+use types::{BridgeLightningGateway, FedimintFederation};
 
 use crate::event::EventSinkWrapper;
 
@@ -139,6 +139,27 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
             bridge.event_sink.clone(),
         )
         .await?,
+    );
+
+    // switch to justin's node if it exists
+    let active_gateways = federation.client.fetch_registered_gateways().await?;
+    for gateway in active_gateways {
+        if gateway.node_pub_key
+            == bitcoin::secp256k1::PublicKey::from_str(
+                "033cb5cdd3d72c6c1069f25d9063f6a7c997597e56eb0966e1afe011d8d1bbbb5d",
+            )
+            .expect("hard-coded pubkey")
+        {
+            federation
+                .client
+                .switch_active_gateway(Some(gateway.node_pub_key))
+                .await?;
+        }
+    }
+
+    tracing::info!(
+        "active gateway {:?}",
+        federation.client.fetch_active_gateway().await
     );
 
     bridge.join_federation(federation.clone()).await;
@@ -459,6 +480,58 @@ async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
     )
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListGatewaysPayload {
+    federation_id: String,
+}
+
+async fn handle_list_gateways(payload: String) -> anyhow::Result<String> {
+    let ListGatewaysPayload { federation_id } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let gateways = federation.client.fetch_registered_gateways().await?;
+    let active_gateway = match federation.client.fetch_active_gateway().await {
+        Ok(gw) => Some(gw),
+        Err(_) => None,
+    };
+    let bridge_gateways: Vec<BridgeLightningGateway> = gateways
+        .into_iter()
+        .map(|gw| BridgeLightningGateway {
+            api: gw.api.to_string(),
+            node_pub_key: gw.node_pub_key,
+            mint_pub_key: gw.mint_pub_key,
+            active: active_gateway == Some(gw),
+        })
+        .collect();
+    Ok(json!({ "result": bridge_gateways }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwitchGatewayPayload {
+    federation_id: String,
+    node_pubkey: bitcoin::secp256k1::PublicKey,
+}
+
+async fn handle_switch_gateway(payload: String) -> anyhow::Result<String> {
+    let SwitchGatewayPayload {
+        federation_id,
+        node_pubkey,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    federation
+        .client
+        .switch_active_gateway(Some(node_pubkey))
+        .await?;
+    Ok(json!({ "result": () }).to_string())
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
@@ -476,6 +549,8 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "validateEcash" => handle_validate_ecash(payload).await,
             "addressOrInvoice" => handle_address_or_invoice(payload).await,
             "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
+            "listGateways" => handle_list_gateways(payload).await,
+            "switchGateway" => handle_switch_gateway(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
