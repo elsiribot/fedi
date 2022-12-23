@@ -65,11 +65,11 @@ import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHea
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import BitcoinRequest from './screens/BitcoinRequest'
+import DeveloperSettings from './screens/DeveloperSettings'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import SendSuccess from './screens/SendSuccess'
 import SitesBrowser from './screens/SitesBrowser'
-import DeveloperSettings from './screens/DeveloperSettings'
 import { MSats } from './types'
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 
@@ -391,11 +391,7 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="DeveloperSettings"
                                 component={DeveloperSettings}
-                                // options={
-                                //     {
-                                //         // header: SitesHeader,
-                                //     }
-                                // }
+                                options={{ headerShown: false }}
                             />
                         </Stack.Group>
                         {/* Put all Overlay/Modal screens here */}

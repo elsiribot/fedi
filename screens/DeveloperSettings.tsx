@@ -1,31 +1,31 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { RootStackParamList } from '../types/navigation'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { LightningGateway } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
-import { ActivityIndicator } from 'react-native'
+import { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'SendSuccess'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'DeveloperSettings'
+>
 
-const DeveloperSettings: React.FC<Props> = ({ route }: Props) => {
-    // const { t } = useTranslation()
+const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
-    // const { amount, unit } = route.params
     const { listGateways, switchGateway } = useBridge()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
 
     useEffect(() => {
-        const getTransactionsList = async () => {
+        const getGatewaysList = async () => {
             setIsLoading(true)
             const _gateways = await listGateways()
             setIsLoading(false)
             setGateways(_gateways)
         }
 
-        getTransactionsList()
+        getGatewaysList()
     }, [listGateways])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
