@@ -57,7 +57,7 @@ async fn get_federations(
                 let cfg: UserClientConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
-                let client = UserClient::new(cfg.clone(), db.into(), Default::default()).await;
+                let client = UserClient::new(cfg.clone(), db.into(), Default::default());
                 let federation = Arc::new(Federation::new(client, event_sink.clone()));
                 federations.insert(cfg.0.federation_name, federation);
             }
@@ -173,8 +173,7 @@ impl Federation {
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
         let db = SledDb::open(db_path, "client")?;
-        let client =
-            UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
+        let client = UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default());
         Ok(Self::new(client, event_sink))
     }
 
@@ -421,7 +420,6 @@ impl Federation {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx();
         dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx)
-            .await
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         // notify UI
@@ -460,7 +458,6 @@ impl Federation {
         tracing::info!("saving payment");
         let mut dbtx = self.dbtx();
         dbtx.insert_entry(&PaymentKey(payment.invoice.payment_hash().clone()), payment)
-            .await
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         tracing::info!("saved payment");
@@ -484,7 +481,6 @@ impl Federation {
             payment.status = status;
             let mut dbtx = self.dbtx();
             dbtx.insert_entry(&PaymentKey(*payment_hash), &payment)
-                .await
                 .expect("Db error");
             dbtx.commit_tx().await.expect("Db error");
         }

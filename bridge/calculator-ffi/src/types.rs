@@ -40,6 +40,15 @@ impl From<&Arc<Federation>> for FedimintFederation {
     }
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BridgeLightningGateway {
+    pub mint_pub_key: bitcoin::secp256k1::XOnlyPublicKey,
+    pub node_pub_key: bitcoin::secp256k1::PublicKey,
+    pub api: String, // TODO: url::Ur;
+    pub active: bool,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Invoice {
