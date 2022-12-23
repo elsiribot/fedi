@@ -150,6 +150,11 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('phrases.app-settings-security')}
                     onPress={() => {}}
                 />
+                <SettingsItem
+                    imageSource={Images.FediLogoIcon}
+                    label={'Developer Settings'}
+                    onPress={() => navigation.navigate('DeveloperSettings')}
+                />
             </View>
         </View>
     )

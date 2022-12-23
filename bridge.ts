@@ -52,6 +52,13 @@ export type Invoice = {
     fee: null | MSats
 }
 
+export type LightningGateway = {
+    mintPubKey: string
+    nodePubKey: string
+    api: string
+    active: boolean
+}
+
 export enum TransactionDirection {
     send = 'send',
     receive = 'receive',
@@ -316,6 +323,27 @@ export async function lnurlSignMessage(
     let payload = JSON.stringify({ message, federationId })
     let response = await FedimintFfi.rpc('lnurlSignMessage', payload)
     return handleRpcResponse<LnurlSignedMessage>(response)
+}
+
+export async function listGateways(
+    federationId: string,
+): Promise<LightningGateway[]> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('listGateways', payload)
+    return handleRpcResponse<LightningGateway[]>(response)
+}
+
+export async function switchGateway(
+    gateway: LightningGateway,
+    federationId: string,
+): Promise<null> {
+    // FIXME: annoying how nodePubkey has 2 different forms of casing ...
+    let payload = JSON.stringify({
+        federationId,
+        nodePubkey: gateway.nodePubKey,
+    })
+    let response = await FedimintFfi.rpc('switchGateway', payload)
+    return handleRpcResponse<null>(response)
 }
 
 /*
