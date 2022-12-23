@@ -21,7 +21,7 @@ use anyhow::{anyhow, Result};
 use bitcoin::{
     hashes::sha256,
     secp256k1::{ecdsa::Signature, Message, PublicKey, Secp256k1, SecretKey},
-    Address, Script,
+    Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
 use fedimint_api::config::ClientConfig;
@@ -122,6 +122,31 @@ impl Federation {
         Self {
             client: Arc::new(client),
             event_sink,
+        }
+    }
+
+    fn txout_proof_url(&self, txid: &Txid) -> Result<String> {
+        match self.network() {
+            Network::Regtest => Ok(format!("https://testfed.xyz/proof/{}", txid)),
+            Network::Bitcoin => Ok(format!(
+                "https://blockstream.info/api/tx/{}/merkleblock-proof",
+                txid
+            )),
+            network => Err(anyhow!(
+                "on-chain deposts not supported on this {}",
+                network
+            )),
+        }
+    }
+
+    fn electrum_url(&self) -> Result<String> {
+        match self.network() {
+            Network::Regtest => Ok("188.166.55.8:60401".into()),
+            Network::Bitcoin => Ok("tcp://electrum.blockstream.info:50001".into()),
+            network => Err(anyhow!(
+                "on-chain deposts not supported on this {}",
+                network
+            )),
         }
     }
 
@@ -269,17 +294,11 @@ impl Federation {
     }
 
     pub async fn pegin_script(&self, script: &Script) -> Result<()> {
-        let electrum = Client::new("188.166.55.8:60401")?;
+        let electrum = Client::new(&self.electrum_url()?)?;
         let history = electrum.script_get_history(&script)?;
-        println!("history: {:?}", history);
-
         for item in history {
-            if let Ok(raw_txout_proof) =
-                reqwest::get(format!("https://testfed.xyz/proof/{}", item.tx_hash))
-                    .await?
-                    .text()
-                    .await
-            {
+            let url = self.txout_proof_url(&item.tx_hash)?;
+            if let Ok(raw_txout_proof) = reqwest::get(url).await?.text().await {
                 // Skip if we've already claimed it
                 match self.fetch_transaction(item.tx_hash.to_string()) {
                     None => (),
