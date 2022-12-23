@@ -9,6 +9,7 @@ import type { RootStackParamList } from '../types/navigation'
 import { useBridge } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
 import { decodeInvoice } from '../bridge'
+import { Sats } from '../types'
 
 export type Props = BottomTabScreenProps<RootStackParamList, 'SitesBrowser'>
 
@@ -33,19 +34,19 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
             console.log('makeinvoice', data)
             // FIXME: copied from blixt
-            let amount: number
+            let amount: Sats
             let description = ''
             if (typeof data === 'string') {
-                amount = Number.parseInt(data, 10)
+                amount = Number.parseInt(data, 10) as Sats
             } else if (typeof data === 'number') {
-                amount = data
+                amount = data as Sats
             } else {
                 if (typeof data.amount === 'string') {
-                    amount = Number.parseInt(data.amount, 10)
+                    amount = Number.parseInt(data.amount, 10) as Sats
                 } else if (typeof data.amount === 'number') {
-                    amount = data.amount
+                    amount = data.amount as Sats
                 } else {
-                    amount = 0
+                    amount = 0 as Sats
                 }
                 description = data.defaultMemo || ''
             }
@@ -85,7 +86,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         },
         sendPayment: async (paymentRequest: string) => {
             const invoice = await decodeInvoice(paymentRequest)
-            const amountSats = amountUtils.millisToSats(invoice.amount)
+            const amountSats = amountUtils.msatToSat(invoice.amount)
 
             try {
                 // Wait for user to interact with alert

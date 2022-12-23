@@ -1,44 +1,60 @@
-import { useNavigation } from '@react-navigation/native'
 import React, { useEffect, useState } from 'react'
 import { Camera } from 'react-native-vision-camera'
-import {
-    NavigationHook,
-    RequestCameraAccessParams,
-} from '../../../types/navigation'
+import RequestCameraAccess, {
+    RequestCameraAccessProps,
+} from './RequestCameraAccess'
 
-interface Props extends RequestCameraAccessParams {
+interface Props extends RequestCameraAccessProps {
     children: React.ReactNode
+    onPermissionGranted?: () => void | null
 }
 
 const CameraPermissionsRequired: React.FC<Props> = ({
     alternativeActionButton,
     message,
-    nextScreen,
+    onPermissionGranted,
+    requireMicrophone = false,
     children,
 }: Props) => {
-    const navigation = useNavigation<NavigationHook>()
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false)
 
     // first check if user has granted camera permissions
     useEffect(() => {
         const checkForPermissions = async () => {
-            const status = await Camera.getCameraPermissionStatus()
-            console.debug('checkForPermissions: ', status)
-            if (status === 'authorized') {
-                setPermissionGranted(true)
-            } else {
-                navigation.replace('RequestCameraAccess', {
-                    alternativeActionButton,
-                    message,
-                    nextScreen,
-                })
+            const cameraStatus = await Camera.getCameraPermissionStatus()
+            const microphoneStatus =
+                await Camera.getMicrophonePermissionStatus()
+            console.info('cameraStatus: ', cameraStatus)
+            console.info('microphoneStatus: ', microphoneStatus)
+
+            if (cameraStatus === 'authorized') {
+                if (
+                    (requireMicrophone === true &&
+                        cameraStatus === 'authorized' &&
+                        microphoneStatus === 'authorized') ||
+                    (requireMicrophone === false &&
+                        cameraStatus === 'authorized')
+                ) {
+                    setPermissionGranted(true)
+                }
             }
         }
 
         checkForPermissions()
-    }, [alternativeActionButton, message, nextScreen, navigation])
+    }, [requireMicrophone])
 
-    if (permissionGranted === false) return null
+    if (permissionGranted === false)
+        return (
+            <RequestCameraAccess
+                alternativeActionButton={alternativeActionButton}
+                message={message}
+                requireMicrophone={requireMicrophone}
+                onAccessGranted={() => {
+                    setPermissionGranted(true)
+                    onPermissionGranted && onPermissionGranted()
+                }}
+            />
+        )
 
     return <>{children}</>
 }

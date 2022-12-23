@@ -14,6 +14,7 @@ export class BtcLnUri extends Base {
     paramsString: string | null
     get queryParams(): QueryParams | null {
         if (this.paramsString == null) return null
+
         const result: QueryParams = {}
         this.paramsString.split('&').forEach(p => {
             const [key, value] = p.split('=')
@@ -33,3 +34,14 @@ export type Site = {
     title: string
     description: string
 }
+
+// This is an implementation of an opaque type
+// since they are not natively supported in Typescript
+type BitcoinUnit<K, T> = K & { _: T }
+
+export type Btc = BitcoinUnit<number, 'Btc'>
+export type Sats = BitcoinUnit<number, 'Sats'>
+export type MSats = BitcoinUnit<number, 'MSats'>
+export type BtcString = BitcoinUnit<string, 'BtcString'>
+export type SatsString = BitcoinUnit<string, 'SatsString'>
+export type MsatsString = BitcoinUnit<string, 'MsatsString'>

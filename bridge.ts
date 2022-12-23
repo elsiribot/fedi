@@ -3,6 +3,7 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
+import { MSats, Sats } from './types'
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
@@ -21,7 +22,7 @@ export type LogEvent = {
 
 export type BalanceEvent = {
     federationId: string
-    balance: number
+    balance: MSats
 }
 
 export type TransactionEvent = {
@@ -30,12 +31,12 @@ export type TransactionEvent = {
 }
 
 export type ValidateEcashResponse = {
-    amount: number
+    amount: MSats
     valid: boolean
 }
 
 export type ReceiveEcashResponse = {
-    amount: number
+    amount: MSats
 }
 
 export type LnurlSignedMessage = {
@@ -45,10 +46,10 @@ export type LnurlSignedMessage = {
 
 export type Invoice = {
     paymentHash: string
-    amount: number
+    amount: MSats
     description: string
     invoice: string
-    fee: null | number
+    fee: null | MSats
 }
 
 export enum TransactionDirection {
@@ -63,13 +64,13 @@ export enum IncomingBitcoinTransactionStatus {
 
 export type LightningTransactionDetails = {
     invoice: string
-    fee: number | null
+    fee: MSats | null
 }
 
 export type BitcoinTransactionDetails = {
     address: string
     txid: string
-    fee: number | null
+    fee: MSats | null
     incomingStatus: IncomingBitcoinTransactionStatus | null
 }
 
@@ -81,12 +82,12 @@ export class Transaction extends Base {
     id: string
     createdAt: number
     direction: TransactionDirection
-    amount: number
+    amount: MSats
     notes: string
     bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
     offline: OfflineTransactionDetails | null
-    get fee(): number | null {
+    get fee(): MSats | null {
         if (this.bitcoin !== null) return this.bitcoin.fee
         if (this.lightning !== null) return this.lightning.fee
         if (this.offline !== null) return null
@@ -167,7 +168,7 @@ export class Federation extends Base {
         members: [number, string][]
     }
     nodes: Node[]
-    balance: number
+    balance: MSats
 
     get approvalsRequired(): number {
         const numNodes = this.nodes.length
@@ -223,7 +224,7 @@ export async function listFederations(): Promise<Federation[]> {
 }
 
 export async function generateInvoice(
-    amount: number,
+    amount: MSats,
     description: string,
     federationId: string,
 ): Promise<string> {
@@ -265,7 +266,7 @@ export async function generateAddress(federationId: string): Promise<string> {
 
 export async function payAddress(
     address: string,
-    sats: number,
+    sats: Sats,
     federationId: string,
 ): Promise<string> {
     let payload = JSON.stringify({

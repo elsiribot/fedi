@@ -1,5 +1,5 @@
-import { NavigationContainer } from '@react-navigation/native'
 import { createDrawerNavigator } from '@react-navigation/drawer'
+import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
@@ -13,8 +13,8 @@ import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
-import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
@@ -22,11 +22,10 @@ import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistConfirmation from './screens/RecoveryAssistConfirmation'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
-import RequestCameraAccess from './screens/RequestCameraAccess'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
-import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
+import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
 import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
@@ -46,31 +45,32 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
-import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
-import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
-import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
-import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
-import SendHeader from './components/feature/send/SendHeader'
+import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
+import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
-import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
+import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
+import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
+import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
+import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
 
-import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
-import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
-import PersonalRecovery from './screens/PersonalRecovery'
-import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
-import SitesBrowser from './screens/SitesBrowser'
-import SitesHeader from './components/feature/sites/SitesHeader'
-import SendSuccess from './screens/SendSuccess'
-import BitcoinRequest from './screens/BitcoinRequest'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
+import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
+import SitesHeader from './components/feature/sites/SitesHeader'
+import BitcoinRequest from './screens/BitcoinRequest'
+import PersonalRecovery from './screens/PersonalRecovery'
+import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
+import SendSuccess from './screens/SendSuccess'
+import SitesBrowser from './screens/SitesBrowser'
+import { MSats } from './types'
+import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -126,7 +126,10 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="SendSuccess"
                                 component={SendSuccess}
-                                initialParams={{ amount: 0, unit: 'sats' }}
+                                initialParams={{
+                                    amount: 0 as MSats,
+                                    unit: 'sats',
+                                }}
                                 options={{ headerShown: false }}
                             />
                             {/* Wallet (Send Offline) */}
@@ -376,16 +379,7 @@ const MainNavigator = () => {
                                 component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
-                            <Stack.Screen
-                                name="RequestCameraAccess"
-                                component={RequestCameraAccess}
-                                options={{ headerShown: false }}
-                                initialParams={{
-                                    alternativeActionButton: null,
-                                    nextScreen: 'ScanFederationCode',
-                                    message: '',
-                                }}
-                            />
+                            {/* Sites */}
                             <Stack.Screen
                                 name="SitesBrowser"
                                 component={SitesBrowser}
@@ -394,6 +388,7 @@ const MainNavigator = () => {
                                 }}
                             />
                         </Stack.Group>
+                        {/* Put all Overlay/Modal screens here */}
                         <Stack.Group screenOptions={{ presentation: 'modal' }}>
                             <Stack.Screen
                                 name="Transactions"
@@ -425,16 +420,6 @@ const MainNavigator = () => {
                             }}
                         />
                         <Stack.Screen
-                            name="RequestCameraAccess"
-                            component={RequestCameraAccess}
-                            options={{ headerShown: false }}
-                            initialParams={{
-                                alternativeActionButton: null,
-                                nextScreen: 'ScanFederationCode',
-                                message: '',
-                            }}
-                        />
-                        <Stack.Screen
                             name="ScanFederationCode"
                             component={ScanFederationCode}
                             options={() => ({
@@ -448,11 +433,77 @@ const MainNavigator = () => {
     )
 }
 
+const linking = {
+    prefixes: ['fedi://', 'lightning:', 'bitcoin:'],
+    config: {
+        screens: {
+            MainNavigator: {
+                screens: {
+                    Home: 'home',
+                    // Wallet (Send)
+                    Send: 'send',
+                    ConfirmSendLightning: 'confirm-send-lightning',
+                    ConfirmSendOnChain: 'confirm-send-on-chain',
+                    ConfirmReceiveOnChain: 'confirm-receive-on-chain',
+                    SendSuccess: 'send-success',
+                    SendOfflineAmount: 'send-offline-amount',
+                    SendOfflineQr: 'send-offline-qr',
+                    // Wallet (Send)
+                    Receive: 'receive',
+                    BitcoinRequest: 'bitcoin-request',
+                    ReceiveSuccess: 'receive-success',
+                    ReceiveOffline: 'receive-offline',
+                    ConfirmReceiveOffline: 'confirm-receive-offline',
+                    // Federations
+                    FederationInvite: 'federation-invite',
+                    ScanFederationCode: 'scan-federation-code',
+                    // Backup & Recovery
+                    ChooseBackupMethod: 'choose-backup-method',
+                    ChooseRecoveryMethod: 'choose-recovery-method',
+                    // Social Backup
+                    RecordBackupVideo: 'record-backup-video',
+                    StartSocialBackup: 'start-social-backup',
+                    SocialBackupProcessing: 'social-backup-processing',
+                    SocialBackupCloudUpload: 'social-backup-cloud-upload',
+                    CompleteSocialBackup: 'complete-social-backup',
+                    SocialBackupSuccess: 'social-backup-success',
+                    // Social Recovery
+                    LocateSocialRecovery: 'locate-social-recovery',
+                    SelectRecoveryFileSuccess: 'select-recovery-file-success',
+                    SelectRecoveryFileFailure: 'select-recovery-file-failure',
+                    CompleteSocialRecovery: 'complete-social-recovery',
+                    SocialRecoveryFailure: 'social-recovery-failure',
+                    SocialRecoverySuccess: 'social-recovery-success',
+                    SocialRecoveryAssist: 'social-recovery-assist',
+                    ScanSocialRecoveryCode: 'scan-social-recovery-code',
+                    RecoveryAssistConfirmation: 'recovery-assist-confirmation',
+                    RecoveryAssistSuccess: 'recovery-assist-success',
+                    // Personal Backup
+                    StartPersonalBackup: 'start-personal-backup',
+                    RecoveryWords: 'recovery-words',
+                    PersonalBackupSuccess: 'personal-backup-success',
+                    // Personal Recovery
+                    PersonalRecovery: 'personal-recovery',
+                    PersonalRecoverySuccess: 'personal-recovery-success',
+                    RequestCameraAccess: 'request-camera-access',
+                    // Sites
+                    SitesBrowser: 'sites-browser',
+                    // Modals
+                    Transactions: 'transactions',
+                    SocialRecoveryQrModal: 'social-recovery-qr-modal',
+                    // No federation
+                    Splash: 'splash',
+                },
+            },
+        },
+    },
+}
+
 const Router = () => {
     const { theme } = useTheme()
 
     return (
-        <NavigationContainer theme={theme}>
+        <NavigationContainer theme={theme} linking={linking}>
             <Drawer.Navigator
                 id="ConnectedFederationsDrawer"
                 drawerContent={ConnectedFederationsDrawer}>

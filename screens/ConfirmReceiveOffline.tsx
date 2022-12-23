@@ -61,7 +61,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>
             <View style={styles(theme).amountContainer}>
-                <Text h2>{`${amountUtils.millisToSats(amount)} `}</Text>
+                <Text h2>{`${amountUtils.msatToSat(amount)} `}</Text>
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
             <Input
@@ -77,7 +77,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 </Text>
                 <Button
                     fullWidth
-                    title={`${t('words.receive')} ${amountUtils.millisToSats(
+                    title={`${t('words.receive')} ${amountUtils.msatToSat(
                         amount,
                     )} ${t('words.sats').toUpperCase()}`}
                     onPress={onReceive}

@@ -32,9 +32,12 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
             console.log('input', input)
             setIsLoading(true)
             const normalized = normalizePaymentRequest(input)
-            console.log('normalized', normalized)
             try {
+                console.log('normalized', normalized)
                 let result = await addressOrInvoice(normalized.body)
+                console.log('result', result)
+                console.log(result === AddressOrInvoice.address)
+                console.log(result === AddressOrInvoice.invoice)
                 if (result === AddressOrInvoice.address) {
                     normalized.type = BitcoinOrLightning.bitcoin
                     setPaymentRequestUri(normalized)
@@ -55,11 +58,13 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
 
     const checkClipboard = useCallback(async () => {
         const text = await Clipboard.getString()
+        console.log(text)
         handleUserInput(text)
     }, [handleUserInput])
 
     // detect if invoice or address has been pasted or scanned
     useEffect(() => {
+        console.log('useEffect')
         if (!paymentRequestUri?.body) return
 
         if (paymentRequestUri?.type === BitcoinOrLightning.lightning) {
@@ -102,8 +107,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                 />
             }
-            message={t('feature.send.camera-access-information')}
-            nextScreen={'Send'}>
+            message={t('feature.send.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}

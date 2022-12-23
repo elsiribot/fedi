@@ -34,6 +34,7 @@ import {
     lnurlSignMessage,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
+import { MSats, Sats } from '../types'
 import lnurlUtils from '../utils/LNURLUtils'
 
 // Define the structure of this Context and its initial state
@@ -41,22 +42,17 @@ interface FederationsContextState {
     connectedFederations: Federation[]
     selectedFederation: Federation | null
     userIsGuardian: boolean
-    // TODO: Refactor to get balances from selectedFederation
-    // and connectedFederations instead
-    currentBalance: number
 }
 const initialState: FederationsContextState = {
     connectedFederations: [],
     selectedFederation: null,
     userIsGuardian: false,
-    currentBalance: 0,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
     ADD_TO_CONNECTED_FEDERATIONS = 'ADD_TO_CONNECTED_FEDERATIONS',
-    CHANGE_CURRENT_BALANCE = 'CHANGE_CURRENT_BALANCE',
     CHANGE_SELECTED_FEDERATION = 'CHANGE_SELECTED_FEDERATION',
     CLEAR_CONNECTED_FEDERATIONS = 'CLEAR_CONNECTED_FEDERATIONS',
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
@@ -81,12 +77,6 @@ export function addToConnectedFederations(federation: Federation): Action {
     return {
         type: ActionType.ADD_TO_CONNECTED_FEDERATIONS,
         payload: federation,
-    }
-}
-export function changeCurrentBalance(balance: number): Action {
-    return {
-        type: ActionType.CHANGE_CURRENT_BALANCE,
-        payload: balance,
     }
 }
 export function changeSelectedFederation(federation: Federation): Action {
@@ -155,15 +145,23 @@ export function reducer(state: AppState, action: Action): AppState {
                 ),
             }
         case ActionType.UPDATE_FEDERATION_BALANCE:
-            // If the federation id matches, update the selectedFederation.balance
+            // If the federation id matches, check if selectedFederation.balance
+            // has changed
             let updatedSelectedFederation = state.selectedFederation
             if (
                 state.selectedFederation?.name === action.payload.federationId
             ) {
-                updatedSelectedFederation = new Federation({
-                    ...state.selectedFederation,
-                    balance: action.payload.balance,
-                })
+                // If balance is unchanged and the BalanceEvent is from the
+                // selectedFederation, we can return a completely unchanged state
+                // to prevent re-renders
+                // Otherwise update the balance and proceed
+                if (
+                    state.selectedFederation?.balance === action.payload.balance
+                ) {
+                    return state
+                } else {
+                    updatedSelectedFederation!.balance = action.payload.balance
+                }
             }
 
             const updatedConnectedFederations = state.connectedFederations.map(
@@ -238,6 +236,10 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
         const onBalanceUpdate = (event: BalanceEvent) => {
+            // Prevents a state update on the off-chance we get an event
+            // before the selectedFederation state is initialized
+            if (state.selectedFederation == null) return
+
             dispatch(updateFederationBalance(event))
         }
         emitter.onBalanceUpdate(onBalanceUpdate)
@@ -289,13 +291,13 @@ function useBridge() {
             return generateAddress(selectedFederation!.name)
         }, [selectedFederation]),
         generateEcash: useCallback(
-            (amount: number) => {
+            (amount: MSats) => {
                 return generateEcash(amount, selectedFederation!.name)
             },
             [selectedFederation],
         ),
         generateInvoice: useCallback(
-            (amount: number, description: string) => {
+            (amount: MSats, description: string) => {
                 return generateInvoice(
                     amount,
                     description,
@@ -342,7 +344,7 @@ function useBridge() {
             [selectedFederation],
         ),
         payAddress: useCallback(
-            (address: string, sats: number) => {
+            (address: string, sats: Sats) => {
                 return payAddress(address, sats, selectedFederation!.name)
             },
             [selectedFederation],

@@ -8,13 +8,14 @@ import type { RootStackParamList } from '../types/navigation'
 
 import { useBridge } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
+import { Sats, SatsString } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
 const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const [amount, setAmount] = useState<string>('')
+    const [amount, setAmount] = useState<SatsString | string>('')
     // TODO integrate memo
     const [memo] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
@@ -31,7 +32,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [amount])
 
-    const onChangeText = (updatedValue: string) => {
+    const onChangeText = (updatedValue: SatsString) => {
         setAmount(updatedValue)
     }
 
@@ -39,7 +40,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         try {
             setIsLoading(true)
             const newInvoice = await generateInvoice(
-                amountUtils.stringToMillis(amount),
+                amountUtils.satToMsat(Number(amount) as Sats),
                 memo,
             )
             navigation.navigate('BitcoinRequest', {
@@ -54,7 +55,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <Input
-                onChangeText={onChangeText}
+                onChangeText={onChangeText as (_: string) => any}
                 value={amount}
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
                 keyboardType="numeric"

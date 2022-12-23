@@ -1,48 +1,83 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../types/navigation'
-import { Images } from '../assets/images'
+import type { NavigationHook } from '../../../types/navigation'
+import { Images } from '../../../assets/images'
+import { useNavigation } from '@react-navigation/native'
+import { useEffect } from 'react'
+import { useState } from 'react'
 
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'RequestCameraAccess'
->
+export type RequestCameraAccessProps = {
+    alternativeActionButton: React.ReactNode | null
+    message: string | null
+    onAccessGranted?: () => void | null
+    requireMicrophone?: boolean
+}
 
-const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
+const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
+    alternativeActionButton,
+    message,
+    onAccessGranted,
+    requireMicrophone = false,
+}: RequestCameraAccessProps) => {
+    const navigation = useNavigation<NavigationHook>()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { alternativeActionButton, message, nextScreen } = route.params
+    const [permissionsGranted, setPermissionsGranted] = useState<string[]>([])
 
-    // first check if user has granted camera permissions
     useEffect(() => {
-        const checkForPermissions = async () => {
-            const status = await Camera.getCameraPermissionStatus()
-            console.log('checkForPermissions: ', status)
-            if (status === 'authorized') {
-                navigation.replace(nextScreen)
-            }
+        if (
+            requireMicrophone === true &&
+            permissionsGranted.includes('CAMERA') &&
+            permissionsGranted.includes('MICROPHONE')
+        ) {
+            onAccessGranted && onAccessGranted()
         }
+        if (
+            requireMicrophone === false &&
+            permissionsGranted.includes('CAMERA')
+        ) {
+            onAccessGranted && onAccessGranted()
+        }
+    }, [onAccessGranted, permissionsGranted, requireMicrophone])
 
-        checkForPermissions()
-    }, [navigation, nextScreen])
-
-    const requestPermission = async () => {
+    const requestCameraPermission = async () => {
         const requestResult = await Camera.requestCameraPermission()
-        console.log('requestResult: ', requestResult)
+        console.info('cameraRequestResult: ', requestResult)
         if (requestResult === 'authorized') {
-            navigation.replace(nextScreen)
+            setPermissionsGranted([...permissionsGranted, 'CAMERA'])
         }
 
         const status = await Camera.getCameraPermissionStatus()
-        console.log('status:', status)
+        console.info('cameraRequestResult:', status)
         // User explicitly denied... link to Settings instead
         if (status === 'denied') {
             Linking.openSettings()
+        }
+    }
+
+    const requestMicrophonePermission = async () => {
+        const requestResult = await Camera.requestMicrophonePermission()
+        console.info('microphoneRequestResult: ', requestResult)
+        if (requestResult === 'authorized') {
+            setPermissionsGranted([...permissionsGranted, 'MICROPHONE'])
+        }
+
+        const status = await Camera.getMicrophonePermissionStatus()
+        console.info('microphoneRequestResult:', status)
+        // User explicitly denied... link to Settings instead
+        if (status === 'denied') {
+            Linking.openSettings()
+        }
+    }
+
+    const requestPermissions = async () => {
+        await requestCameraPermission()
+        if (requireMicrophone === true) {
+            await requestMicrophonePermission()
         }
     }
 
@@ -71,7 +106,7 @@ const RequestCameraAccess: React.FC<Props> = ({ navigation, route }: Props) => {
                 {alternativeActionButton}
                 <Button
                     title={t('phrases.allow-camera-access')}
-                    onPress={requestPermission}
+                    onPress={requestPermissions}
                 />
             </View>
         </View>

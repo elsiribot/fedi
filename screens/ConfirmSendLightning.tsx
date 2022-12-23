@@ -14,6 +14,7 @@ import {
 import stringUtils from '../utils/StringUtils'
 import amountUtils from '../utils/AmountUtils'
 import LineBreak from '../components/ui/LineBreak'
+import { MSats } from '../types'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -32,7 +33,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const [isLoading, setIsLoading] = useState(false)
     const [decodedInvoice, setDecodedInvoice] = useState<Invoice>({
         paymentHash: '',
-        amount: 0,
+        amount: 0 as MSats,
         description: '',
         invoice: '',
         fee: null,
@@ -84,12 +85,12 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <View style={styles(theme).detailsContainer}>
                 {decodedInvoice.amount && (
-                    <Text h2>{`${amountUtils.millisToSats(
+                    <Text h2>{`${amountUtils.msatToSat(
                         decodedInvoice.amount,
                     )} ${t('words.sats').toUpperCase()}`}</Text>
                 )}
@@ -108,7 +109,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 <Button
                     title={`${t('words.send')}${
                         decodedInvoice.amount
-                            ? ` ${amountUtils.millisToSats(
+                            ? ` ${amountUtils.msatToSat(
                                   decodedInvoice.amount,
                               )} `
                             : ' '

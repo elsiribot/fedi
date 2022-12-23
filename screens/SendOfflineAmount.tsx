@@ -9,6 +9,7 @@ import {
     useBridge,
     useFederationsContext,
 } from '../contexts/FederationsContext'
+import { Sats, SatsString } from '../types'
 
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -24,13 +25,13 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const { selectedFederation } = useFederationsContext().state
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
-    const [amount, setAmount] = useState<string>('')
+    const [amount, setAmount] = useState<SatsString>('' as SatsString)
     const { generateEcash } = useBridge()
 
     const onGenerateEcash = async () => {
         try {
             setIsLoading(true)
-            const millis = amountUtils.stringToMillis(amount)
+            const millis = amountUtils.satToMsat(Number(amount) as Sats)
             const ecash = await generateEcash(millis)
             setIsLoading(false)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
@@ -40,7 +41,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
         }
     }
 
-    const onChangeText = (updatedValue: string) => {
+    const onChangeText = (updatedValue: SatsString) => {
         setAmount(updatedValue)
     }
 
@@ -48,11 +49,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <Input
-                onChangeText={onChangeText}
+                onChangeText={onChangeText as (_: string) => any}
                 value={amount}
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
                 keyboardType="numeric"

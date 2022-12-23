@@ -9,6 +9,7 @@ import {
     useBridge,
     useFederationsContext,
 } from '../contexts/FederationsContext'
+import { Btc, Sats, SatsString } from '../types'
 
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -27,28 +28,26 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { payAddress } = useBridge()
     const { bitcoinUri } = route.params
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [amount, setAmount] = useState<string>('')
+    const [amount, setAmount] = useState<SatsString>('' as SatsString)
     const [unit] = useState('sats')
 
     useEffect(() => {
-        console.log(bitcoinUri)
-        console.log(bitcoinUri.queryParams)
         if (bitcoinUri.queryParams?.amount) {
             const amountInSats = amountUtils.btcToSat(
-                Number(bitcoinUri.queryParams?.amount),
+                Number(bitcoinUri.queryParams?.amount) as Btc,
             )
-            setAmount(String(amountInSats))
+            setAmount(String(amountInSats) as SatsString)
         }
     }, [bitcoinUri])
 
     const onSendBtc = async () => {
         try {
-            console.log('paying address', bitcoinUri.body, amount)
+            console.info('paying address', bitcoinUri.body, amount)
             setIsLoading(true)
-            await payAddress(bitcoinUri.body, amountUtils.stringToSats(amount))
+            await payAddress(bitcoinUri.body, Number(amount) as Sats)
             setIsLoading(false)
             navigation.navigate('SendSuccess', {
-                amount: amountUtils.stringToSats(amount),
+                amount: amountUtils.satToMsat(Number(amount) as Sats),
                 unit,
             })
         } catch (error) {
@@ -57,7 +56,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         }
     }
 
-    const onChangeText = (updatedValue: string) => {
+    const onChangeText = (updatedValue: SatsString) => {
         setAmount(updatedValue)
     }
 
@@ -67,12 +66,12 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.millisToSats(selectedFederation?.balance!)} `}
+                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <View style={styles(theme).detailsContainer}>
                 <Input
-                    onChangeText={onChangeText}
+                    onChangeText={onChangeText as (_: string) => any}
                     value={amount}
                     placeholder={`${t('words.amount')} (${t('words.sats')})`}
                     keyboardType="numeric"

@@ -9,6 +9,7 @@ import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import { useFederationsContext } from '../contexts/FederationsContext'
 import amountUtils from '../utils/AmountUtils'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import { MSats } from '../types'
 
 export type Props =
     | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {
@@ -16,7 +17,7 @@ export type Props =
       }
 
 type BalanceProps = {
-    balance: number | null
+    balance: MSats | null
 }
 
 const Balance = ({ balance }: BalanceProps) => {
@@ -27,7 +28,7 @@ const Balance = ({ balance }: BalanceProps) => {
         return (
             <Text
                 h2
-                style={styles(theme).balanceText}>{`${amountUtils.millisToSats(
+                style={styles(theme).balanceText}>{`${amountUtils.msatToSat(
                 balance,
             )} ${t('words.sats')}`}</Text>
         )

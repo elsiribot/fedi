@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
-import { Button, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 
 import type { RootStackParamList } from '../types/navigation'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
@@ -98,8 +98,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                 />
             }
-            message={t('feature.federations.camera-access-information')}
-            nextScreen={'ScanFederationCode'}>
+            message={t('feature.federations.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}

@@ -33,7 +33,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).amountContainer}>
-                <Text h2>{`${amountUtils.millisToSats(amount)} `}</Text>
+                <Text h2>{`${amountUtils.msatToSat(amount)} `}</Text>
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
             <View style={styles(theme).qrContainer}>
