@@ -32,6 +32,9 @@ import {
     validateBackupFile,
     validateEcash,
     lnurlSignMessage,
+    listGateways,
+    switchGateway,
+    LightningGateway,
 } from '../bridge'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 import { MSats, Sats } from '../types'
@@ -331,6 +334,15 @@ function useBridge() {
                     notes,
                     selectedFederation!.name,
                 )
+            },
+            [selectedFederation],
+        ),
+        listGateways: useCallback(() => {
+            return listGateways(selectedFederation!.name)
+        }, [selectedFederation]),
+        switchGateway: useCallback(
+            (gateway: LightningGateway) => {
+                return switchGateway(gateway, selectedFederation!.name)
             },
             [selectedFederation],
         ),

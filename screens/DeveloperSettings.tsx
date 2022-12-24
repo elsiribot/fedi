@@ -1,0 +1,74 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { CheckBox, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { LightningGateway } from '../bridge'
+import { useBridge } from '../contexts/FederationsContext'
+import { RootStackParamList } from '../types/navigation'
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'DeveloperSettings'
+>
+
+const DeveloperSettings: React.FC<Props> = () => {
+    const { theme } = useTheme()
+    const { listGateways, switchGateway } = useBridge()
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [gateways, setGateways] = useState<LightningGateway[]>([])
+
+    useEffect(() => {
+        const getGatewaysList = async () => {
+            setIsLoading(true)
+            const _gateways = await listGateways()
+            setIsLoading(false)
+            setGateways(_gateways)
+        }
+
+        getGatewaysList()
+    }, [listGateways])
+
+    const handleSelectGateway = async (gateway: LightningGateway) => {
+        await switchGateway(gateway)
+        const updatedGateways = gateways.map((gw: LightningGateway) => {
+            gw.active = gateway.nodePubKey === gw.nodePubKey
+            return gw
+        })
+        setGateways(updatedGateways)
+    }
+
+    if (isLoading) return <ActivityIndicator />
+    return (
+        <View style={styles(theme).container}>
+            <Text>Change your lightning gateway</Text>
+            {gateways.map((gw: LightningGateway) => (
+                <View>
+                    <CheckBox
+                        title={
+                            <Text style={styles(theme).checkboxText}>
+                                {gw.api}
+                            </Text>
+                        }
+                        checked={gw.active}
+                        onPress={() => handleSelectGateway(gw)}
+                    />
+                </View>
+            ))}
+        </View>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        checkboxText: {
+            paddingHorizontal: theme.spacing.md,
+            textAlign: 'left',
+        },
+    })
+
+export default DeveloperSettings
