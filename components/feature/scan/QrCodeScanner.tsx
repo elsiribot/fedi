@@ -1,7 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { Camera, CameraDevice } from 'react-native-vision-camera'
 import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
+
+const usePrevious = <T extends unknown>(value: T): T | undefined => {
+    const ref = useRef<T>()
+    useEffect(() => {
+        ref.current = value
+    })
+    return ref.current
+}
 
 type QrCodeScanner = {
     device: CameraDevice
@@ -9,6 +17,8 @@ type QrCodeScanner = {
 }
 
 const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
+    const [detectedQrData, setDetectedQrData] = useState<string>('')
+    const previousQrData = usePrevious(detectedQrData)
     const [frameProcessor, barcodes] = useScanBarcodes(
         [BarcodeFormat.QR_CODE],
         {
@@ -18,9 +28,16 @@ const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
 
     useEffect(() => {
         barcodes.map(b => {
-            onQrCodeDetected(b.content?.data)
+            setDetectedQrData(b.content?.data as string)
+            // Only call the detection function if QR data is different
+            // but retry after a few seconds... essentially a throttling function
+            // in case some error occurs
+            if (detectedQrData !== '' && detectedQrData !== previousQrData) {
+                onQrCodeDetected(b.content?.data)
+                setTimeout(() => setDetectedQrData(''), 5000)
+            }
         })
-    }, [barcodes, onQrCodeDetected])
+    }, [barcodes, detectedQrData, onQrCodeDetected, previousQrData])
 
     return (
         <Camera
@@ -28,7 +45,7 @@ const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
             device={device}
             isActive={true}
             frameProcessor={frameProcessor}
-            frameProcessorFps={5}
+            frameProcessorFps={2}
         />
     )
 }
