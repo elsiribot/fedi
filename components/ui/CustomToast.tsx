@@ -1,7 +1,8 @@
+import { useTheme } from '@rneui/themed'
 import React, { useEffect, useRef } from 'react'
 import { ViewStyle } from 'react-native'
-import { useTheme } from '@rneui/themed'
 import Toast, { ToastComponentProps } from 'react-native-easy-toast'
+
 import {
     initializeToastRef,
     useEnvironmentContext,

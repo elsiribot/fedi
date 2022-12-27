@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
-import React from 'react'
-import { TouchableOpacity } from 'react-native'
 import { Icon, Text, useTheme } from '@rneui/themed'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { TouchableOpacity } from 'react-native'
 
 import Header from '../../ui/Header'
 

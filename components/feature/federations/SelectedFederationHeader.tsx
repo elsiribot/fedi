@@ -1,11 +1,12 @@
+import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, TouchableOpacity } from 'react-native'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
-import Header from '../../ui/Header'
-import { useFederationsContext } from '../../../contexts/FederationsContext'
-import { Federation } from '../../../bridge'
+
 import { Images } from '../../../assets/images'
+import { Federation } from '../../../bridge'
+import { useFederationsContext } from '../../../contexts/FederationsContext'
 import { DRAWER_NAVIGATION_ID } from '../../../types/navigation'
+import Header from '../../ui/Header'
 
 export type Props = { navigation: any }
 

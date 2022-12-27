@@ -1,5 +1,5 @@
-import { lightColors, createTheme } from '@rneui/themed'
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
+import { createTheme, lightColors } from '@rneui/themed'
 
 const colors = {
     ...lightColors,

@@ -1,3 +1,4 @@
+import { Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
     ImageBackground,
@@ -5,7 +6,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+
 import { Images } from '../../assets/images'
 
 type HoloCardProps = {

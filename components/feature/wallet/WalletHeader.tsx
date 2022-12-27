@@ -1,11 +1,11 @@
-import React from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
 
-import Header from '../../ui/Header'
 import { useNavigation } from '@react-navigation/native'
 import { Images } from '../../../assets/images'
+import Header from '../../ui/Header'
 
 type SocialBackupHeaderProps = {
     toggleOffline?: () => void

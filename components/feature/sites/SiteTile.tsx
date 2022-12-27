@@ -1,6 +1,7 @@
 import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
+
 import { Site } from '../../../types'
 
 type SiteTileProps = {

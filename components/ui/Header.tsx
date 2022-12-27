@@ -1,7 +1,8 @@
+import { useNavigation } from '@react-navigation/native'
+import { Header as HeaderRNE, Icon, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, View, ViewStyle } from 'react-native'
-import { Header as HeaderRNE, Icon, useTheme } from '@rneui/themed'
-import { useNavigation } from '@react-navigation/native'
+
 import { NavigationHook } from '../../types/navigation'
 
 interface HeaderBase {

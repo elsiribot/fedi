@@ -1,4 +1,7 @@
+import { useNavigation } from '@react-navigation/native'
+import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import {
     Dimensions,
     ImageBackground,
@@ -6,9 +9,6 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import { useTranslation } from 'react-i18next'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
-import { useNavigation } from '@react-navigation/native'
 
 import { Images } from '../../assets/images'
 import type { NavigationHook, RootStackParamList } from '../../types/navigation'
