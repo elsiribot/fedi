@@ -1,14 +1,14 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
-import { Button, Theme, useTheme } from '@rneui/themed'
 
-import type { RootStackParamList } from '../types/navigation'
-import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
+import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

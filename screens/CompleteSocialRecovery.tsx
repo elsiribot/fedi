@@ -2,14 +2,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
-
-import type { RootStackParamList } from '../types/navigation'
-import { useFederationsContext } from '../contexts/FederationsContext'
 import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
+import { useFederationsContext } from '../contexts/FederationsContext'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

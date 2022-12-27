@@ -2,13 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
 
 import { Images } from '../assets/images'
-
-import type { RootStackParamList } from '../types/navigation'
 import { useBridge } from '../contexts/FederationsContext'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

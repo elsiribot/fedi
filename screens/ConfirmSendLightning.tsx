@@ -1,20 +1,20 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { NavigationHook, RootStackParamList } from '../types/navigation'
 import { decodeInvoice, Invoice } from '../bridge'
+import LineBreak from '../components/ui/LineBreak'
 import {
     useBridge,
     useFederationsContext,
 } from '../contexts/FederationsContext'
-import stringUtils from '../utils/StringUtils'
-import amountUtils from '../utils/AmountUtils'
-import LineBreak from '../components/ui/LineBreak'
 import { MSats } from '../types'
+import { NavigationHook, RootStackParamList } from '../types/navigation'
+import amountUtils from '../utils/AmountUtils'
+import stringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

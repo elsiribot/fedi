@@ -5,8 +5,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { Images } from '../assets/images'
 
+import { Images } from '../assets/images'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

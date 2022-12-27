@@ -2,10 +2,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, Pressable, TextInput } from 'react-native'
+import { Pressable, StyleSheet, TextInput, View } from 'react-native'
+
 import { SeedWords } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
-
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
 

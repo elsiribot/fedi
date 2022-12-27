@@ -2,10 +2,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
-
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

@@ -3,9 +3,9 @@ import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
+
 import { Images } from '../assets/images'
 import { Transaction } from '../bridge'
-
 import { useBridge } from '../contexts/FederationsContext'
 import { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'

@@ -4,13 +4,13 @@ import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+
 import { Images } from '../assets/images'
 import {
     useBridge,
     useFederationsContext,
 } from '../contexts/FederationsContext'
 import { Sats, SatsString } from '../types'
-
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 

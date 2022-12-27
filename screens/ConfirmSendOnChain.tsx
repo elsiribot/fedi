@@ -10,7 +10,6 @@ import {
     useFederationsContext,
 } from '../contexts/FederationsContext'
 import { Btc, Sats, SatsString } from '../types'
-
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 import stringUtils from '../utils/StringUtils'

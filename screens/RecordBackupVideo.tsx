@@ -1,13 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React from 'react'
-import { ActivityIndicator, View, StyleSheet } from 'react-native'
 import { Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
 
-import type { RootStackParamList } from '../types/navigation'
 import BackupVideoRecorder from '../components/feature/backup/BackupVideoRecorder'
-import { useTranslation } from 'react-i18next'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

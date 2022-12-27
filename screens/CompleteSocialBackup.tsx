@@ -1,16 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
-import Share from 'react-native-share'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import Share from 'react-native-share'
 
 import { Images } from '../assets/images'
-
-import type { RootStackParamList } from '../types/navigation'
-import { useBridge } from '../contexts/FederationsContext'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import { useBridge } from '../contexts/FederationsContext'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

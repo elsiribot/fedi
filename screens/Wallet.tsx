@@ -1,15 +1,15 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import type { Theme } from '@rneui/themed'
 import { Button, Card, Icon, Text, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import type { Theme } from '@rneui/themed'
 
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
-import { useFederationsContext } from '../contexts/FederationsContext'
-import amountUtils from '../utils/AmountUtils'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import { useFederationsContext } from '../contexts/FederationsContext'
 import { MSats } from '../types'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props =
     | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {

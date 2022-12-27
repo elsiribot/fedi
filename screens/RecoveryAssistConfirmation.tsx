@@ -1,12 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import Video from 'react-native-video'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, Pressable, Dimensions } from 'react-native'
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import Video from 'react-native-video'
 
-import type { RootStackParamList } from '../types/navigation'
 import LineBreak from '../components/ui/LineBreak'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
