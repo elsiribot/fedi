@@ -4,14 +4,14 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, StyleSheet, View } from 'react-native'
 
-import { joinFederation, listFederations } from '../bridge'
 import { Images } from '../assets/images'
+import { joinFederation, listFederations } from '../bridge'
+import { TEST_FEDERATION } from '../constants'
 import {
     changeSelectedFederation,
     updateConnectedFederations,
     useFederationsContext,
 } from '../contexts/FederationsContext'
-import { TEST_FEDERATION } from '../constants'
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
@@ -69,9 +69,7 @@ const styles = (theme: Theme) =>
             justifyContent: 'space-evenly',
         },
         imageBackground: {
-            height: '100%',
-            width: '100%',
-            resizeMode: 'cover',
+            ...theme.styles.h100w100,
         },
         image: {
             height: theme.sizes.splashLogoHeight,

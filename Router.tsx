@@ -15,6 +15,7 @@ import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import DeveloperSettings from './screens/DeveloperSettings'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
+import Initializing from './screens/Initializing'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -55,21 +56,20 @@ import ConnectedFederationsDrawer from './components/feature/federations/Connect
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
+import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
+import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendHeader from './components/feature/send/SendHeader'
+import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import { useFederationsContext } from './contexts/FederationsContext'
-
-import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
-import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
-import SitesHeader from './components/feature/sites/SitesHeader'
 import { MSats } from './types'
 import {
     MAIN_NAVIGATOR_ID,
@@ -86,13 +86,13 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Splash" id={MAIN_NAVIGATOR_ID}>
+        <Stack.Navigator initialRouteName="Initializing" id={MAIN_NAVIGATOR_ID}>
             <>
-                {selectedFederation !== null ? (
-                    // This group of screens relies on a non-null selectedFederation
-                    // in the FederationsContext because they contain API calls to the
-                    // FFI NativeModule. Since it is possible to store multiple federation
-                    // connections in-app, each call requires a Federation to be specified
+                {/* This group of screens relies on a non-null selectedFederation
+                in the FederationsContext because they contain API calls to the
+                FFI NativeModule. Since it is possible to store multiple federation
+                connections in-app, each call requires a Federation to be specified */}
+                {selectedFederation !== null && (
                     <Stack.Group>
                         <Stack.Group>
                             <Stack.Screen
@@ -104,6 +104,8 @@ const MainNavigator = () => {
                                             navigation={navigation}
                                         />
                                     ),
+                                    animation: 'fade',
+                                    animationDuration: 300,
                                 })}
                             />
                             {/* Wallet (Send) */}
@@ -197,13 +199,6 @@ const MainNavigator = () => {
                                 component={FederationInvite}
                                 options={() => ({
                                     header: () => <FederationInviteHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ScanFederationCode"
-                                component={ScanFederationCode}
-                                options={() => ({
-                                    header: () => <ScanFederationCodeHeader />,
                                 })}
                             />
                             {/* Backup & Recovery */}
@@ -417,27 +412,36 @@ const MainNavigator = () => {
                             />
                         </Stack.Group>
                     </Stack.Group>
-                ) : (
-                    // This group of screens does not assume any federation connections
-                    // have been established and are used primarily for onboarding the
-                    // user to connect to at least 1 federation
-                    <Stack.Group>
-                        <Stack.Screen
-                            name="Splash"
-                            component={Splash}
-                            options={{
-                                headerShown: false,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="ScanFederationCode"
-                            component={ScanFederationCode}
-                            options={() => ({
-                                header: () => <ScanFederationCodeHeader />,
-                            })}
-                        />
-                    </Stack.Group>
                 )}
+                {/* This group of screens may render regardless of the value of
+                 selectedFederation */}
+                <Stack.Group>
+                    <Stack.Screen
+                        name="Splash"
+                        component={Splash}
+                        options={{
+                            headerShown: false,
+                            animation: 'fade',
+                            animationDuration: 300,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="Initializing"
+                        component={Initializing}
+                        options={{
+                            headerShown: false,
+                            animation: 'fade',
+                            animationDuration: 300,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="ScanFederationCode"
+                        component={ScanFederationCode}
+                        options={() => ({
+                            header: () => <ScanFederationCodeHeader />,
+                        })}
+                    />
+                </Stack.Group>
             </>
         </Stack.Navigator>
     )
