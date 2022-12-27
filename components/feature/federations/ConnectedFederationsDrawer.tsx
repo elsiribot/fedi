@@ -13,14 +13,15 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+
+import { Images } from '../../../assets/images'
+import { Federation, listFederations } from '../../../bridge'
 import {
     changeSelectedFederation,
     resetFederationsState,
     updateConnectedFederations,
     useFederationsContext,
 } from '../../../contexts/FederationsContext'
-import { Federation, listFederations } from '../../../bridge'
-import { Images } from '../../../assets/images'
 import amountUtils from '../../../utils/AmountUtils'
 
 type Props = {

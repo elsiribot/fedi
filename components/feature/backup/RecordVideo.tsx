@@ -1,9 +1,9 @@
 import { Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, Pressable, Dimensions } from 'react-native'
-import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
+import { Camera, useCameraDevices } from 'react-native-vision-camera'
 
 import dateUtils from '../../../utils/DateUtils'
 

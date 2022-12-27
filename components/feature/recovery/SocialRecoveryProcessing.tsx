@@ -1,7 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+
+import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import { Images } from '../../../assets/images'
 
 // TODO: Render within wallet if social recovery is in progress

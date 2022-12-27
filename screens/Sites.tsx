@@ -1,4 +1,5 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
     Dimensions,
@@ -8,11 +9,10 @@ import {
     View,
 } from 'react-native'
 
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import SiteTile from '../components/feature/sites/SiteTile'
-import { Site } from '../types'
 import { SITES } from '../constants'
-import { Theme, useTheme } from '@rneui/themed'
+import { Site } from '../types'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,

@@ -1,14 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { Button, Input, Theme, useTheme } from '@rneui/themed'
-
-import type { RootStackParamList } from '../types/navigation'
 
 import { useBridge } from '../contexts/FederationsContext'
-import amountUtils from '../utils/AmountUtils'
 import { Sats, SatsString } from '../types'
+import type { RootStackParamList } from '../types/navigation'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 

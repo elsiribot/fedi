@@ -1,14 +1,13 @@
+import { useNavigation } from '@react-navigation/native'
+import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
-import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type { NavigationHook } from '../../../types/navigation'
+import { useEffect, useState } from 'react'
 import { Images } from '../../../assets/images'
-import { useNavigation } from '@react-navigation/native'
-import { useEffect } from 'react'
-import { useState } from 'react'
+import type { NavigationHook } from '../../../types/navigation'
 
 export type RequestCameraAccessProps = {
     alternativeActionButton: React.ReactNode | null

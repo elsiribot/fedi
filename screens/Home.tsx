@@ -1,19 +1,19 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useState } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Image, Theme, useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
+import { StyleSheet } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
 import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
-import { Image, Theme, useTheme } from '@rneui/themed'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StyleSheet } from 'react-native'
 
+import { Images } from '../assets/images'
+import WalletHeader from '../components/feature/wallet/WalletHeader'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
 import Sites from './Sites'
 import Wallet from './Wallet'
-import WalletHeader from '../components/feature/wallet/WalletHeader'
-import { Images } from '../assets/images'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 

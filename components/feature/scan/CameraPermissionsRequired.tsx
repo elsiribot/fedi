@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Camera } from 'react-native-vision-camera'
+
 import RequestCameraAccess, {
     RequestCameraAccessProps,
 } from './RequestCameraAccess'

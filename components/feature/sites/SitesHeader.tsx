@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
+import { Icon } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
-import { Icon } from '@rneui/themed'
 
 import Header from '../../ui/Header'
 

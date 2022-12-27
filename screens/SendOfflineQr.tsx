@@ -1,14 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
+import { dataToFrames } from 'qrloop'
 import React, { useEffect, useState } from 'react'
 import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { dataToFrames } from 'qrloop'
 
 import { Images } from '../assets/images'
-
 import type { RootStackParamList } from '../types/navigation'
-import { t } from 'i18next'
 import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>

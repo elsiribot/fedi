@@ -1,4 +1,5 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -10,15 +11,14 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import { Images } from '../assets/images'
 import {
     setUserIsGuardian,
     useBridge,
     useFederationsContext,
 } from '../contexts/FederationsContext'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,

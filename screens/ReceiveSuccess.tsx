@@ -1,12 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { Text, Theme, useTheme } from '@rneui/themed'
 
+import Success from '../components/ui/Success'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
-import Success from '../components/ui/Success'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveSuccess'>
 

@@ -3,20 +3,20 @@ import { Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
-import { Images } from '../assets/images'
 
+import { Images } from '../assets/images'
 import {
     decodeInvoice,
     Invoice,
-    TransactionEvent,
     TFedimintEventEmitter,
     Transaction,
+    TransactionEvent,
 } from '../bridge'
-import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import { useBridge } from '../contexts/FederationsContext'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
+import type { RootStackParamList } from '../types/navigation'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
 

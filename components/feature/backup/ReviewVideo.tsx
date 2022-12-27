@@ -1,11 +1,10 @@
+import { useNavigation } from '@react-navigation/native'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, Pressable, Dimensions } from 'react-native'
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 import type { VideoFile } from 'react-native-vision-camera'
-
-import { useNavigation } from '@react-navigation/native'
 
 type ReviewVideoProps = {
     videoFile: VideoFile

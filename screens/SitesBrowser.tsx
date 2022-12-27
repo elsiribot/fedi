@@ -1,15 +1,15 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import React, { MutableRefObject, useRef, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
-import { WebView } from 'react-native-webview'
 import { injectJs, onMessageHandler } from 'react-native-webln'
+import { WebView } from 'react-native-webview'
+import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
-import { RequestInvoiceArgs, KeysendArgs } from 'webln'
-import type { RootStackParamList } from '../types/navigation'
-import { useBridge } from '../contexts/FederationsContext'
-import amountUtils from '../utils/AmountUtils'
 import { decodeInvoice } from '../bridge'
+import { useBridge } from '../contexts/FederationsContext'
 import { Sats } from '../types'
+import type { RootStackParamList } from '../types/navigation'
+import amountUtils from '../utils/AmountUtils'
 
 export type Props = BottomTabScreenProps<RootStackParamList, 'SitesBrowser'>
 

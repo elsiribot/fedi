@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+
 import { LightningGateway } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
 import { RootStackParamList } from '../types/navigation'

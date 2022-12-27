@@ -2,11 +2,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, StyleSheet, ImageBackground, Dimensions } from 'react-native'
+import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
+
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
-
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

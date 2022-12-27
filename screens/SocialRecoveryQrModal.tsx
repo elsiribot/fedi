@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
+
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import { useBridge } from '../contexts/FederationsContext'
