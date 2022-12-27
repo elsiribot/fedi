@@ -71,7 +71,11 @@ import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHea
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import { MSats } from './types'
-import { MAIN_NAVIGATOR_ID, RootStackParamList } from './types/navigation'
+import {
+    MAIN_NAVIGATOR_ID,
+    NavigationLinkingConfig,
+    RootStackParamList,
+} from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator()
@@ -439,7 +443,7 @@ const MainNavigator = () => {
     )
 }
 
-const linking = {
+const linking: NavigationLinkingConfig = {
     prefixes: ['fedi://', 'lightning:', 'bitcoin:'],
     config: {
         screens: {
