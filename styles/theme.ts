@@ -114,6 +114,12 @@ const theme = createTheme({
     borders: {
         defaultRadius: 16,
     },
+    styles: {
+        h100w100: {
+            height: '100%',
+            width: '100%',
+        },
+    },
 })
 
 export default theme
