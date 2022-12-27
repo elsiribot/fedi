@@ -86,8 +86,39 @@ const MainNavigator = () => {
     } = useFederationsContext()
 
     return (
-        <Stack.Navigator initialRouteName="Initializing" id={MAIN_NAVIGATOR_ID}>
+        <Stack.Navigator
+            initialRouteName={'Initializing'}
+            id={MAIN_NAVIGATOR_ID}>
             <>
+                {/* This group of screens may render regardless of the value of
+                 selectedFederation */}
+                <Stack.Group>
+                    <Stack.Screen
+                        name="Splash"
+                        component={Splash}
+                        options={{
+                            headerShown: false,
+                            animation: 'fade',
+                            animationDuration: 300,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="Initializing"
+                        component={Initializing}
+                        options={{
+                            headerShown: false,
+                            animation: 'fade',
+                            animationDuration: 300,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="ScanFederationCode"
+                        component={ScanFederationCode}
+                        options={() => ({
+                            header: () => <ScanFederationCodeHeader />,
+                        })}
+                    />
+                </Stack.Group>
                 {/* This group of screens relies on a non-null selectedFederation
                 in the FederationsContext because they contain API calls to the
                 FFI NativeModule. Since it is possible to store multiple federation
@@ -413,35 +444,6 @@ const MainNavigator = () => {
                         </Stack.Group>
                     </Stack.Group>
                 )}
-                {/* This group of screens may render regardless of the value of
-                 selectedFederation */}
-                <Stack.Group>
-                    <Stack.Screen
-                        name="Splash"
-                        component={Splash}
-                        options={{
-                            headerShown: false,
-                            animation: 'fade',
-                            animationDuration: 300,
-                        }}
-                    />
-                    <Stack.Screen
-                        name="Initializing"
-                        component={Initializing}
-                        options={{
-                            headerShown: false,
-                            animation: 'fade',
-                            animationDuration: 300,
-                        }}
-                    />
-                    <Stack.Screen
-                        name="ScanFederationCode"
-                        component={ScanFederationCode}
-                        options={() => ({
-                            header: () => <ScanFederationCodeHeader />,
-                        })}
-                    />
-                </Stack.Group>
             </>
         </Stack.Navigator>
     )

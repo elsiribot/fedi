@@ -1,11 +1,17 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { ActivityIndicator, ImageBackground, StyleSheet } from 'react-native'
+import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
-import { useFederationsContext } from '../contexts/FederationsContext'
+import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
+import {
+    changeSelectedFederation,
+    updateConnectedFederations,
+    useFederationsContext,
+} from '../contexts/FederationsContext'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
@@ -13,25 +19,46 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const {
-        state: { selectedFederation },
-    } = useFederationsContext()
+    const { dispatch } = useFederationsContext()
 
+    // this useEffect checks async storage to restore
+    // federations state on a fresh app load
     useEffect(() => {
-        if (selectedFederation !== null) {
-            navigation.replace('Home')
-        } else {
+        const restoreState = async () => {
+            try {
+                const savedFederationsStateJson = await AsyncStorage.getItem(
+                    FEDERATIONS_PERSISTENCE_KEY,
+                )
+
+                const savedFederationsState = savedFederationsStateJson
+                    ? JSON.parse(savedFederationsStateJson)
+                    : null
+
+                console.info('savedFederationsState', savedFederationsState)
+
+                if (savedFederationsState !== null) {
+                    const { selectedFederation, connectedFederations } =
+                        savedFederationsState
+
+                    dispatch(changeSelectedFederation(selectedFederation))
+                    dispatch(updateConnectedFederations(connectedFederations))
+                    return navigation.replace('Home')
+                }
+            } catch (error) {
+                console.error(error)
+            }
             navigation.replace('Splash')
         }
-    }, [navigation, selectedFederation])
+
+        restoreState()
+    }, [dispatch, navigation])
 
     return (
         <ImageBackground
             resizeMode="cover"
             style={styles(theme).imageBackground}
-            source={Images.HoloBackground}>
-            <ActivityIndicator />
-        </ImageBackground>
+            source={Images.HoloBackground}
+        />
     )
 }
 
