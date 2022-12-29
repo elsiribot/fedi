@@ -551,6 +551,7 @@ dependencies = [
 [[package]]
 name = "fedimint-api"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -579,6 +580,7 @@ dependencies = [
 [[package]]
 name = "fedimint-bitcoind"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -593,6 +595,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -621,6 +624,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
@@ -631,6 +635,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -657,6 +662,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -682,6 +688,7 @@ dependencies = [
 [[package]]
 name = "fedimint-sled"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -694,6 +701,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1072,6 +1080,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hkdf"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "bitcoin_hashes",
 ]
@@ -1182,9 +1191,9 @@ checksum = "cb56e1aa765b4b4f3aadfab769793b7087bb03a4ea4920644a6d238e2df5b9ed"
 
 [[package]]
 name = "impl-tools"
-version = "0.5.2"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbc403c862b3c7dfde41c8a0d1393ce649618cb63adcc53e0608e4106adf4169"
+checksum = "a4d56ebe13f3d5813c3ae38877ff81a32ebfd1de27dc61965a0f30387bebf842"
 dependencies = [
  "autocfg",
  "impl-tools-lib",
@@ -1194,9 +1203,9 @@ dependencies = [
 
 [[package]]
 name = "impl-tools-lib"
-version = "0.5.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bbefd85b83792dddecb36da8b90620c163fcbd669dfd45554b99b1b023a53ef"
+checksum = "d09116ba92fc101c59d4f1d4353e43e5962abcdb5348dcb5adb053a1e9af0329"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -1483,6 +1492,7 @@ dependencies = [
 [[package]]
 name = "mint-client"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2394,6 +2404,7 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 [[package]]
 name = "tbs"
 version = "0.1.0"
+source = "git+https://github.com/fedimint/fedimint?rev=0b97c298a88da037e5b87bfe0b2203773251b610#0b97c298a88da037e5b87bfe0b2203773251b610"
 dependencies = [
  "bls12_381",
  "ff",
