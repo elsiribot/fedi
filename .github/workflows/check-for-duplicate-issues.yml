@@ -1,6 +1,8 @@
 name: Check Issues for potential duplicates
 # This workflow runs every time an Issue is opened, or reopened
-on: pull_request
+on:
+  issues:
+    types: [opened, reopened]
 
 jobs:
   build:
