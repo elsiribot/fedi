@@ -204,36 +204,6 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         [state, dispatch],
     )
 
-    // this useEffect checks async storage to restore
-    // federations state on a fresh app load
-    useEffect(() => {
-        const restoreState = async () => {
-            try {
-                const savedFederationsStateJson = await AsyncStorage.getItem(
-                    FEDERATIONS_PERSISTENCE_KEY,
-                )
-
-                const savedFederationsState = savedFederationsStateJson
-                    ? JSON.parse(savedFederationsStateJson)
-                    : null
-
-                console.log('savedFederationsState', savedFederationsState)
-
-                if (savedFederationsState === null) return
-
-                const { selectedFederation, connectedFederations } =
-                    savedFederationsState
-
-                dispatch(changeSelectedFederation(selectedFederation))
-                dispatch(updateConnectedFederations(connectedFederations))
-            } catch (error) {
-                console.error(error)
-            }
-        }
-
-        restoreState()
-    }, [])
-
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
         const onBalanceUpdate = (event: BalanceEvent) => {

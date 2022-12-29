@@ -1,3 +1,4 @@
+import { LinkingOptions } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { BtcLnUri, MSats, Site } from '.'
 import { Transaction } from '../bridge'
@@ -12,8 +13,14 @@ declare global {
 
 export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
-export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 
+export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
+export type NavigationLinkingConfig = LinkingOptions<
+    RootStackParamList | MainNavigatorDrawerParamList
+>
+export type MainNavigatorDrawerParamList = {
+    MainNavigator: undefined
+}
 export type HomeTabsParamList = {
     Admin: undefined
     Wallet: { offline: boolean }
@@ -31,6 +38,7 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
+    Initializing: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined

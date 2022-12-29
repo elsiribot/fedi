@@ -1,5 +1,6 @@
+import notifee from '@notifee/react-native'
 import { ThemeProvider } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -10,25 +11,22 @@ import {
     TFedimintEventEmitter,
     TransactionEvent,
 } from './bridge'
-import { FederationsProvider } from './contexts/FederationsContext'
+import CustomToast from './components/ui/CustomToast'
 import { BackupRecoveryProvider } from './contexts/BackupRecoveryContext'
 import { EnvironmentProvider } from './contexts/EnvironmentContext'
+import { FederationsProvider } from './contexts/FederationsContext'
 import ProviderComposer from './contexts/ProviderComposer'
-import CustomToast from './components/ui/CustomToast'
-
-import notifee from '@notifee/react-native'
-
-import theme from './styles/theme'
 import Router from './Router'
+import theme from './styles/theme'
 
 const App = () => {
-    // const [federationIsReady, setFederationIsReady] = useState<boolean>(false)
-    // const scheme = useColorScheme()
+    const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
 
     async function initializeBridge() {
         console.log('initializing connection to federation')
         const start = Date.now()
         await init(RNFS.DocumentDirectoryPath)
+        setBridgeIsReady(true)
         const stop = Date.now()
         console.log('initialized:', stop - start, 'ms OS:', Platform.OS)
     }
@@ -83,7 +81,7 @@ const App = () => {
                         FederationsProvider,
                         BackupRecoveryProvider,
                     ]}>
-                    <Router />
+                    {bridgeIsReady && <Router />}
                     <CustomToast />
                 </ProviderComposer>
             </ThemeProvider>
