@@ -58,6 +58,8 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             </View>
             <View style={styles(theme).slidesContainer}>
                 <OnboardingSlides
+                    // When the slide changes, the page state is updated to provide
+                    // the new page value to the ProgressBar
                     onSlideChanged={(slideNumber: number) =>
                         setPage(slideNumber)
                     }

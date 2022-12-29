@@ -3,6 +3,7 @@ import { EventMapBase, NavigationState } from '@react-navigation/native'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageSourcePropType } from 'react-native'
+
 import { Images } from '../../../assets/images'
 import HoloGuidance from '../../ui/HoloGuidance'
 
@@ -11,6 +12,7 @@ type OnboardingSlideProps = {
     message: string
     iconImage: ImageSourcePropType
 }
+
 const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
     title,
     message,
@@ -20,12 +22,14 @@ const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
         <HoloGuidance iconImage={iconImage} title={title} message={message} />
     )
 }
+
 export type OnboardingSlidesParamList = {
     Slide1: OnboardingSlideProps
     Slide2: OnboardingSlideProps
     Slide3: OnboardingSlideProps
     Slide4: OnboardingSlideProps
 }
+
 const Tab = createMaterialTopTabNavigator<OnboardingSlidesParamList>()
 
 export type Props = {

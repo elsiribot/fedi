@@ -52,21 +52,29 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
     return (
         <View style={styles(theme).container}>
+            {/*
+                Each section animates between 0% width to 50% to 100%
+                depending on which page is selected
+
+                The delay is provided to make sure each section waits a bit
+                for the previous section to finish animating before starting
+                its own animation so it looks smoother overall
+            */}
             <ProgressSection
                 targetValue={page === 1 ? 0.5 : 1}
-                delay={page === 1 ? 0 : 0}
+                delay={page === 1 ? 100 : 0}
             />
             <ProgressSection
                 targetValue={page < 2 ? 0 : page === 2 ? 0.5 : 1}
-                delay={page < 2 ? 0 : page === 2 ? 100 : 0}
+                delay={page === 2 ? 100 : 0}
             />
             <ProgressSection
                 targetValue={page < 3 ? 0 : page === 3 ? 0.5 : 1}
-                delay={page < 3 ? 0 : page === 3 ? 100 : 0}
+                delay={page === 3 ? 100 : 0}
             />
             <ProgressSection
                 targetValue={page < 4 ? 0 : page === 4 ? 0.5 : 1}
-                delay={page < 4 ? 0 : page === 4 ? 100 : 0}
+                delay={page === 4 ? 100 : 0}
             />
         </View>
     )
