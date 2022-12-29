@@ -29,6 +29,7 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                     style={styles(theme).video}
                     paused={isPaused}
                     ignoreSilentSwitch={'ignore'}
+                    resizeMode={'contain'}
                     onError={error => {
                         console.error(error)
                     }}

@@ -64,6 +64,8 @@ const RecoveryAssistConfirmation: React.FC<Props> = ({
                         isPaused ? styles(theme).shaded : {},
                     ]}
                     paused={isPaused}
+                    resizeMode={'contain'}
+                    ignoreSilentSwitch={'ignore'}
                     onError={error => {
                         console.error(error)
                     }}
