@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { LightningGateway } from '../bridge'
@@ -14,8 +15,10 @@ export type Props = NativeStackScreenProps<
 
 const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
+    const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
 
     useEffect(() => {
@@ -38,6 +41,10 @@ const DeveloperSettings: React.FC<Props> = () => {
         setGateways(updatedGateways)
     }
 
+    useEffect(() => {
+        i18n.changeLanguage(selectedLanguage)
+    }, [i18n, selectedLanguage])
+
     if (isLoading) return <ActivityIndicator />
     return (
         <View style={styles(theme).container}>
@@ -55,6 +62,27 @@ const DeveloperSettings: React.FC<Props> = () => {
                     />
                 </View>
             ))}
+            <Text>Change your language</Text>
+            <View>
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>
+                            {'English'}
+                        </Text>
+                    }
+                    checked={selectedLanguage === 'en'}
+                    onPress={() => setSelectedLanguage('en')}
+                />
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>
+                            {'Spanish'}
+                        </Text>
+                    }
+                    checked={selectedLanguage === 'es'}
+                    onPress={() => setSelectedLanguage('es')}
+                />
+            </View>
         </View>
     )
 }
