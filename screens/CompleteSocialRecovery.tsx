@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
@@ -42,10 +42,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
-        emitter.onSocialRecovery(socialRecoveryHandler)
+        console.info(emitter)
+        // emitter.onSocialRecovery(socialRecoveryHandler)
 
         return () => {
-            emitter.removeListener('socialRecovery')
+            // emitter.removeListener('socialRecovery')
         }
     }, [navigation, socialRecoveryHandler])
 
@@ -109,7 +110,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.guardian-approval-instructions')}
             </Text>
@@ -167,14 +168,13 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.navigate('SocialRecoverySuccess')
                 }}
             />
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,

@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
@@ -21,7 +21,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { selectedFederation } = useFederationsContext().state
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.choose-method-instructions', {
                     federation: selectedFederation?.name,
@@ -67,14 +67,13 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                     </>
                 }
             />
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
             justifyContent: 'flex-start',
             padding: theme.spacing.xl,

@@ -1,8 +1,17 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, TextInput, View } from 'react-native'
+import {
+    Keyboard,
+    KeyboardEvent,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    View,
+} from 'react-native'
 
 import { SeedWords } from '../bridge'
 import { useBridge } from '../contexts/FederationsContext'
@@ -73,6 +82,28 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )
+    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+
+    useEffect(() => {
+        const keyboardShownListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e: KeyboardEvent) => {
+                console.info(e.endCoordinates)
+                setKeyboardHeight(e.endCoordinates.height)
+            },
+        )
+        const keyboardHiddenListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => {
+                setKeyboardHeight(0)
+            },
+        )
+
+        return () => {
+            keyboardShownListener.remove()
+            keyboardHiddenListener.remove()
+        }
+    }, [])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
         const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)
@@ -110,7 +141,13 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView
+            contentContainerStyle={[
+                styles(theme).container,
+                keyboardHeight > 0 && Platform.OS === 'ios'
+                    ? { paddingBottom: keyboardHeight + theme.spacing.xl }
+                    : {},
+            ]}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.personal-recovery-instructions')}
             </Text>
@@ -139,21 +176,19 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 }}
                 disabled={isLoading || seedWords.some(s => s.length === 0)}
             />
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'flex-start',
             padding: theme.spacing.xl,
         },
         continueButton: {
             width: '100%',
-            marginBottom: theme.spacing.lg,
-            marginTop: 'auto',
+            marginTop: theme.spacing.xl,
         },
         instructionsText: {
             textAlign: 'left',

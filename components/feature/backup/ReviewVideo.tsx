@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 import type { VideoFile } from 'react-native-vision-camera'
 
@@ -52,24 +52,26 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
             <Text h2 h2Style={styles(theme).instructionsText}>
                 {t('feature.backup.please-review-backup-video')}
             </Text>
-            <CheckBox
-                title={
-                    <Text style={styles(theme).checkboxText}>
-                        {t('feature.backup.review-face-confirmation')}
-                    </Text>
-                }
-                checked={confirmFaceChecked}
-                onPress={() => setFaceConfirmChecked(!confirmFaceChecked)}
-            />
-            <CheckBox
-                title={
-                    <Text style={styles(theme).checkboxText}>
-                        {t('feature.backup.review-voice-confirmation')}
-                    </Text>
-                }
-                checked={confirmVoiceChecked}
-                onPress={() => setConfirmVoiceChecked(!confirmVoiceChecked)}
-            />
+            <View style={styles(theme).confirmationContainer}>
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>
+                            {t('feature.backup.review-face-confirmation')}
+                        </Text>
+                    }
+                    checked={confirmFaceChecked}
+                    onPress={() => setFaceConfirmChecked(!confirmFaceChecked)}
+                />
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>
+                            {t('feature.backup.review-voice-confirmation')}
+                        </Text>
+                    }
+                    checked={confirmVoiceChecked}
+                    onPress={() => setConfirmVoiceChecked(!confirmVoiceChecked)}
+                />
+            </View>
 
             <View style={styles(theme).buttonsContainer}>
                 <Button
@@ -93,13 +95,12 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
     )
 }
 
-const CAMERA_SIZE = Dimensions.get('window').width * 0.9
-
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
+            justifyContent: 'space-evenly',
             width: '100%',
         },
         buttonsContainer: {
@@ -112,8 +113,8 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         cameraContainer: {
-            height: CAMERA_SIZE,
-            width: CAMERA_SIZE,
+            height: theme.sizes.socialBackupCameraHeight,
+            width: theme.sizes.socialBackupCameraWidth,
             borderWidth: 3,
             backgroundColor: theme.colors.primary,
             borderColor: theme.colors.primary,
@@ -122,13 +123,19 @@ const styles = (theme: Theme) =>
             height: '100%',
             width: '100%',
         },
+        confirmationContainer: {
+            flex: 1,
+            alignItems: 'flex-start',
+            paddingHorizontal: 0,
+            marginHorizontal: 0,
+        },
         checkboxText: {
             paddingHorizontal: theme.spacing.md,
             textAlign: 'left',
         },
         instructionsText: {
             textAlign: 'center',
-            marginVertical: theme.spacing.lg,
+            marginTop: theme.spacing.lg,
         },
         playIconContainer: {
             position: 'absolute',

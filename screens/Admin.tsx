@@ -3,10 +3,10 @@ import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    Dimensions,
     GestureResponderEvent,
     ImageBackground,
     ImageSourcePropType,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -69,7 +69,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
                 <Text bold>{t('words.admin')}</Text>
                 {/*
@@ -83,7 +83,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 </ImageBackground>
                 <Text h2>{'Satoshi Nakomoto'}</Text>
             </View>
-
+            {/* TODO: Add offline status indicator here */}
             <View style={styles(theme).sectionContainer}>
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.federation')}
@@ -156,33 +156,30 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => navigation.navigate('DeveloperSettings')}
                 />
             </View>
-        </View>
+        </ScrollView>
     )
 }
-
-const WINDOW_WIDTH = Dimensions.get('window').width
-const CIRCLE_SIZE = WINDOW_WIDTH * 0.25
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             justifyContent: 'space-evenly',
-            paddingHorizontal: theme.spacing.xl,
+            padding: theme.spacing.xl,
         },
         profileHeader: {
             alignItems: 'center',
+            paddingBottom: theme.spacing.lg,
         },
         profileCircle: {
-            height: CIRCLE_SIZE,
-            width: CIRCLE_SIZE,
+            height: theme.sizes.adminProfileCircle,
+            width: theme.sizes.adminProfileCircle,
             alignItems: 'center',
             justifyContent: 'center',
             marginTop: theme.spacing.xl,
             marginBottom: theme.spacing.md,
         },
         circleBorder: {
-            borderRadius: CIRCLE_SIZE * 0.5,
+            borderRadius: theme.sizes.adminProfileCircle * 0.5,
         },
         sectionContainer: {
             flexDirection: 'column',

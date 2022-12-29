@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
@@ -44,7 +44,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.backup.choose-method-instructions')}
             </Text>
@@ -83,14 +83,13 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                     </>
                 }
             />
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
             justifyContent: 'flex-start',
             padding: theme.spacing.xl,
@@ -107,7 +106,7 @@ const styles = (theme: Theme) =>
         instructionsText: {
             textAlign: 'center',
             marginBottom: theme.spacing.xl,
-            paddingHorizontal: theme.spacing.md,
+            paddingHorizontal: theme.spacing.lg,
             fontWeight: '400',
         },
     })
