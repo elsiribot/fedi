@@ -102,7 +102,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.md,
             marginVertical: theme.spacing.lg,
         },
         textContainer: {
