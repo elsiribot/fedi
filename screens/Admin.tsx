@@ -6,6 +6,7 @@ import {
     GestureResponderEvent,
     ImageBackground,
     ImageSourcePropType,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -68,7 +69,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
                 <Text bold>{t('words.admin')}</Text>
                 {/*
@@ -82,7 +83,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 </ImageBackground>
                 <Text h2>{'Satoshi Nakomoto'}</Text>
             </View>
-
+            {/* TODO: Add offline status indicator here */}
             <View style={styles(theme).sectionContainer}>
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.federation')}
@@ -155,19 +156,19 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => navigation.navigate('DeveloperSettings')}
                 />
             </View>
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             justifyContent: 'space-evenly',
-            paddingHorizontal: theme.spacing.xl,
+            padding: theme.spacing.xl,
         },
         profileHeader: {
             alignItems: 'center',
+            paddingBottom: theme.spacing.lg,
         },
         profileCircle: {
             height: theme.sizes.adminProfileCircle,
