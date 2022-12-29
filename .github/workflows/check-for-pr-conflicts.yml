@@ -1,6 +1,9 @@
 name: Check PRs for potential conflicts
 # This workflow runs every time a Pull Request is opened, updated, or reopened
-on: pull_request
+on: 
+  workflow_dispatch:
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
