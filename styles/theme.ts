@@ -109,6 +109,8 @@ const theme = createTheme({
         expandedWalletCardHeight: 325,
         splashLogoHeight: 32,
         splashLogoWidth: 120,
+        holoGuidanceCircle: 180,
+        progressBarHeight: 6,
     },
     spacing: {
         xxs: 2,
@@ -121,6 +123,7 @@ const theme = createTheme({
     },
     borders: {
         defaultRadius: 16,
+        progressBarRadius: 4,
     },
     styles: {
         h100w100: {
