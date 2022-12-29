@@ -209,7 +209,7 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.xl,
         },
         detailsContainer: {
-            paddingVertical: theme.spacing.xl,
+            paddingVertical: theme.spacing.md,
         },
         switchContainer: {
             flexDirection: 'row',
