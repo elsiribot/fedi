@@ -1,7 +1,14 @@
 import { Divider, Icon, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import {
+    Keyboard,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 
 import {
     IncomingBitcoinTransactionStatus,
@@ -16,25 +23,38 @@ import stringUtils from '../../../utils/StringUtils'
 type TransactionDetailProps = {
     txn: Transaction
     handleCloseModal: () => void
+    refreshTransactions: () => void
 }
 
 const TransactionDetail = ({
     txn,
     handleCloseModal,
+    refreshTransactions,
 }: TransactionDetailProps) => {
+    const inputRef = useRef<TextInput | null>(null)
     const { updateTransactionNotes } = useBridge()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [notes, setNotes] = useState(txn.notes)
-    const onChangeNotes = (updatedNotes: string) => {
-        setNotes(updatedNotes)
-        updateTransactionNotes(txn.id, updatedNotes)
+    const [isFocused, setIsFocused] = useState(false)
+
+    const onNotesInputChanged = (input: string) => {
+        setNotes(input)
     }
+
+    const submitUpdatedNote = async () => {
+        await updateTransactionNotes(txn.id, notes)
+        refreshTransactions()
+    }
+
     return (
-        <View style={styles(theme).container}>
+        <Pressable style={styles(theme).container} onPress={Keyboard.dismiss}>
             <TouchableOpacity
                 style={styles(theme).closeIconContainer}
-                onPress={handleCloseModal}>
+                onPress={() => {
+                    submitUpdatedNote()
+                    handleCloseModal()
+                }}>
                 <Icon name="close" size={theme.sizes.md} />
             </TouchableOpacity>
             <Icon
@@ -71,6 +91,7 @@ const TransactionDetail = ({
                 )}
                 <View style={styles(theme).detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
+                    {/* TODO: Refactor notes to be distinct from memo */}
                     <Text>{txn.notes}</Text>
                 </View>
                 <Divider />
@@ -114,17 +135,42 @@ const TransactionDetail = ({
                     </View>
                 )}
                 <Divider />
-                <View style={styles(theme).detailItem}>
+                <Pressable
+                    style={styles(theme).detailItem}
+                    onPress={() => {
+                        if (!inputRef.current) return
+                        const current: TextInput = inputRef.current
+                        current.focus()
+                    }}>
                     <Text>{`${t('phrases.add-note')} +`}</Text>
-                    {/* FIXME: this is terrible UX, probably shouldn't write on every keystroke */}
                     <Input
-                        onChangeText={onChangeNotes}
+                        ref={(ref: any) => {
+                            inputRef.current = ref
+                        }}
+                        onChangeText={onNotesInputChanged}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => {
+                            setIsFocused(false)
+                            submitUpdatedNote()
+                        }}
                         value={notes}
+                        placeholder={t('words.optional')}
                         returnKeyType="done"
+                        containerStyle={styles(theme).inputOuterContainer}
+                        inputContainerStyle={[
+                            styles(theme).inputInnerContainer,
+                            isFocused
+                                ? styles(theme).focusedInputInnerContainer
+                                : {},
+                        ]}
+                        inputStyle={[
+                            styles(theme).input,
+                            isFocused ? styles(theme).focusedInput : {},
+                        ]}
                     />
-                </View>
+                </Pressable>
             </View>
-        </View>
+        </Pressable>
     )
 }
 
@@ -133,20 +179,42 @@ const styles = (theme: Theme) =>
         container: {
             alignItems: 'center',
             margin: theme.spacing.md,
-            width: 300,
+            width: '100%',
         },
         closeIconContainer: {
             alignSelf: 'flex-end',
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
-            width: 250,
+            width: '90%',
         },
         detailItem: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            height: 32,
+            height: 36,
+        },
+        inputOuterContainer: {
+            width: '70%',
+            height: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingRight: 0,
+        },
+        inputInnerContainer: {
+            borderBottomColor: 'transparent',
+            height: '100%',
+            width: '100%',
+        },
+        focusedInputInnerContainer: {
+            borderBottomColor: theme.colors.primary,
+        },
+        input: {
+            fontSize: 14,
+            textAlign: 'right',
+        },
+        focusedInput: {
+            // marginBottom: 0,
         },
     })
 

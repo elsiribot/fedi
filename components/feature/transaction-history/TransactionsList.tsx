@@ -9,11 +9,15 @@ import TransactionTile from './TransactionTile'
 
 type TransactionsListProps = {
     transactions: Transaction[]
+    refreshTransactions: () => void
 }
 
 const WINDOW_WIDTH = Dimensions.get('window').width
 
-const TransactionsList = ({ transactions }: TransactionsListProps) => {
+const TransactionsList = ({
+    transactions,
+    refreshTransactions,
+}: TransactionsListProps) => {
     const { theme } = useTheme()
     const [selectedTransaction, setSelectedTransaction] =
         useState<Transaction | null>(null)
@@ -51,6 +55,7 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
                     <TransactionDetail
                         txn={selectedTransaction}
                         handleCloseModal={() => setSelectedTransaction(null)}
+                        refreshTransactions={refreshTransactions}
                     />
                 )}
             </Overlay>
@@ -66,6 +71,8 @@ const styles = (theme: Theme) =>
         },
         overlayContainer: {
             borderRadius: theme.borders.defaultRadius,
+            width: '90%',
+            alignItems: 'center',
         },
     })
 
