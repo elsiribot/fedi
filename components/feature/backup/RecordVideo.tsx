@@ -1,7 +1,7 @@
 import { Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 
@@ -89,20 +89,17 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
     )
 }
 
-const CAMERA_SIZE = Dimensions.get('window').width * 0.9
-const RECORD_CIRCLE_OUTER_SIZE = 68
-const RECORD_CIRCLE_INNER_SIZE = 56
-
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             width: '100%',
+            paddingHorizontal: theme.spacing.md,
         },
         cameraContainer: {
-            height: CAMERA_SIZE,
-            width: CAMERA_SIZE,
+            height: theme.sizes.socialBackupCameraHeight,
+            width: theme.sizes.socialBackupCameraWidth,
             borderWidth: 3,
         },
         camera: {
@@ -124,9 +121,9 @@ const styles = (theme: Theme) =>
         },
         recordButton: {
             textAlign: 'center',
-            height: RECORD_CIRCLE_OUTER_SIZE,
-            width: RECORD_CIRCLE_OUTER_SIZE,
-            borderRadius: RECORD_CIRCLE_OUTER_SIZE / 2,
+            height: theme.sizes.recordButtonOuter,
+            width: theme.sizes.recordButtonOuter,
+            borderRadius: theme.sizes.recordButtonOuter / 2,
             marginTop: 'auto',
         },
         recordingActive: {
@@ -139,11 +136,17 @@ const styles = (theme: Theme) =>
         },
         innerRecordButton: {
             alignItems: 'center',
-            top: (RECORD_CIRCLE_OUTER_SIZE - RECORD_CIRCLE_INNER_SIZE) / 2,
-            left: (RECORD_CIRCLE_OUTER_SIZE - RECORD_CIRCLE_INNER_SIZE) / 2,
-            height: RECORD_CIRCLE_INNER_SIZE,
-            width: RECORD_CIRCLE_INNER_SIZE,
-            borderRadius: RECORD_CIRCLE_INNER_SIZE / 2,
+            top:
+                (theme.sizes.recordButtonOuter -
+                    theme.sizes.recordButtonInner) /
+                2,
+            left:
+                (theme.sizes.recordButtonOuter -
+                    theme.sizes.recordButtonInner) /
+                2,
+            height: theme.sizes.recordButtonInner,
+            width: theme.sizes.recordButtonInner,
+            borderRadius: theme.sizes.recordButtonInner / 2,
             borderWidth: 3,
             borderColor: theme.colors.secondary,
         },

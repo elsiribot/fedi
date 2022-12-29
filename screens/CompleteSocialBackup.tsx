@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
 import { Images } from '../assets/images'
@@ -112,7 +112,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <HoloCard
                 iconImage={Images.FediFile}
                 title={t('feature.backup.backup-social-recovery-file')}
@@ -179,21 +179,20 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.navigate('SocialBackupSuccess')
                 }}
             />
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
         },
         backupsContainer: {
             width: '100%',
-            marginVertical: theme.spacing.md,
+            marginVertical: theme.spacing.lg,
         },
         backupRow: {
             flexDirection: 'row',
@@ -204,7 +203,7 @@ const styles = (theme: Theme) =>
         },
         completeButton: {
             width: '100%',
-            marginTop: 'auto',
+            marginTop: theme.spacing.xl,
         },
         createBackupButton: {
             width: '100%',

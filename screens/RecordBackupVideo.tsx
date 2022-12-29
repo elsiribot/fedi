@@ -2,7 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet } from 'react-native'
+import { ScrollView } from 'react-native-gesture-handler'
 import { useCameraDevices } from 'react-native-vision-camera'
 
 import BackupVideoRecorder from '../components/feature/backup/BackupVideoRecorder'
@@ -26,13 +27,13 @@ const RecordBackupVideo: React.FC<Props> = () => {
             requireMicrophone
             alternativeActionButton={null}
             message={t('feature.backup.camera-access-information')}>
-            <View style={styles(theme).container}>
+            <ScrollView contentContainerStyle={styles(theme).container}>
                 {device === null ? (
                     <ActivityIndicator />
                 ) : (
                     <BackupVideoRecorder />
                 )}
-            </View>
+            </ScrollView>
         </CameraPermissionsRequired>
     )
 }
@@ -42,7 +43,7 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            padding: theme.spacing.xl,
+            paddingVertical: theme.spacing.xl,
         },
     })
 
