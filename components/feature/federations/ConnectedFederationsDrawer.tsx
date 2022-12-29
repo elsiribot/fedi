@@ -18,10 +18,10 @@ import { Images } from '../../../assets/images'
 import { Federation, listFederations } from '../../../bridge'
 import {
     changeSelectedFederation,
-    resetFederationsState,
     updateConnectedFederations,
     useFederationsContext,
-} from '../../../contexts/FederationsContext'
+} from '../../../state/contexts/FederationsContext'
+import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
 
 type Props = {
@@ -72,7 +72,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     props: DrawerContentComponentProps,
 ) => {
     const { t } = useTranslation()
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { state, dispatch } = useFederationsContext()
     const { selectedFederation, connectedFederations } = state
@@ -126,7 +126,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 title={'Reset Federations State'}
                 type="clear"
                 onPress={() => {
-                    dispatch(resetFederationsState())
+                    navigation.navigate('Initializing', {
+                        reset: true,
+                    })
                 }}
             />
         </ImageBackground>

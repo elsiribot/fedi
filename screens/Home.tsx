@@ -9,7 +9,7 @@ import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
 
 import { Images } from '../assets/images'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
 import Sites from './Sites'

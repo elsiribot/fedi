@@ -8,7 +8,7 @@ import Share from 'react-native-share'
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
-import { useBridge } from '../contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

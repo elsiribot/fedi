@@ -7,8 +7,8 @@ import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
-import { useBridge } from '../contexts/FederationsContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

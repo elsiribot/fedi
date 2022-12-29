@@ -1,15 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { Camera, CameraDevice } from 'react-native-vision-camera'
 import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
-
-const usePrevious = <T extends unknown>(value: T): T | undefined => {
-    const ref = useRef<T>()
-    useEffect(() => {
-        ref.current = value
-    })
-    return ref.current
-}
+import { usePrevious } from '../../../state/hooks'
 
 type QrCodeScanner = {
     device: CameraDevice

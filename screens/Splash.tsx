@@ -12,7 +12,7 @@ import {
     changeSelectedFederation,
     updateConnectedFederations,
     useFederationsContext,
-} from '../contexts/FederationsContext'
+} from '../state/contexts/FederationsContext'
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>

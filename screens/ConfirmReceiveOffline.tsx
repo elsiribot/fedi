@@ -6,7 +6,7 @@ import { Alert, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import { Transaction } from '../bridge'
-import { useBridge } from '../contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 

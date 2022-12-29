@@ -4,7 +4,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native'
 
 import { Images } from '../../../assets/images'
 import { Federation } from '../../../bridge'
-import { useFederationsContext } from '../../../contexts/FederationsContext'
+import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { DRAWER_NAVIGATION_ID } from '../../../types/navigation'
 import Header from '../../ui/Header'
 

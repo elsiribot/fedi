@@ -15,9 +15,9 @@ import {
 import { Images } from '../assets/images'
 import {
     setUserIsGuardian,
-    useBridge,
     useFederationsContext,
-} from '../contexts/FederationsContext'
+} from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<

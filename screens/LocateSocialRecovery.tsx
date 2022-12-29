@@ -8,7 +8,7 @@ import { Images } from '../assets/images'
 import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecoveryFileButton'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
-import { useFederationsContext } from '../contexts/FederationsContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
 

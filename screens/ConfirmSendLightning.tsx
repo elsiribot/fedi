@@ -7,10 +7,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { decodeInvoice, Invoice } from '../bridge'
 import LineBreak from '../components/ui/LineBreak'
-import {
-    useBridge,
-    useFederationsContext,
-} from '../contexts/FederationsContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import { MSats } from '../types'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'

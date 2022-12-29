@@ -13,7 +13,7 @@ import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
-import { useBridge } from '../contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

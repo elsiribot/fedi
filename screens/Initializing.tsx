@@ -9,16 +9,18 @@ import { Images } from '../assets/images'
 import { FEDERATIONS_PERSISTENCE_KEY } from '../constants'
 import {
     changeSelectedFederation,
+    resetFederationsState,
     updateConnectedFederations,
     useFederationsContext,
-} from '../contexts/FederationsContext'
+} from '../state/contexts/FederationsContext'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
-const Initializing: React.FC<Props> = () => {
+const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
+    const { reset } = route.params
     const { dispatch } = useFederationsContext()
 
     // this useEffect checks async storage to restore
@@ -50,8 +52,13 @@ const Initializing: React.FC<Props> = () => {
             navigation.replace('Splash')
         }
 
-        restoreState()
-    }, [dispatch, navigation])
+        if (reset === true) {
+            dispatch(resetFederationsState())
+            navigation.navigate('Splash')
+        } else {
+            restoreState()
+        }
+    }, [dispatch, navigation, reset])
 
     return (
         <ImageBackground

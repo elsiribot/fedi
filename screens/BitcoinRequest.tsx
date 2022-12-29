@@ -13,7 +13,7 @@ import {
     TransactionEvent,
 } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
-import { useBridge } from '../contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'

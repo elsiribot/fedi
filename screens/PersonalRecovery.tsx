@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 
 import { SeedWords } from '../bridge'
-import { useBridge } from '../contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
 

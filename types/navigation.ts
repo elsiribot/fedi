@@ -38,7 +38,7 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
-    Initializing: undefined
+    Initializing: { reset: boolean }
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined

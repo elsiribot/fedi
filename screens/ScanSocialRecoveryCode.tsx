@@ -8,7 +8,7 @@ import { useCameraDevices } from 'react-native-vision-camera'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
