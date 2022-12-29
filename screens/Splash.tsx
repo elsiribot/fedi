@@ -90,6 +90,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'space-evenly',
             padding: theme.spacing.lg,
+            marginTop: theme.spacing.xl,
         },
         progressBarContainer: {
             height: '5%',
