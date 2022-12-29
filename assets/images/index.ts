@@ -6,6 +6,7 @@ interface ImagesMap {
 
 export const Images: ImagesMap = {
     AllowCameraAccessIcon: require('./allow-camera-access-icon.png'),
+    Cash: require('./cash.png'),
     Done: require('./done.png'),
     Error: require('./error.png'),
     Federation: require('./federation.png'),
@@ -14,6 +15,7 @@ export const Images: ImagesMap = {
     FediFile: require('./fedi-file.png'),
     FediLogo: require('./fedi-logo.png'),
     FediLogoIcon: require('./fedi-logo-icon.png'),
+    Fedimint: require('./fedimint.png'),
     FediQrLogo: require('./fedi-qr-logo.png'),
     Globe: require('./globe.png'),
     HoloBackground: require('./holo-background.jpg'),
