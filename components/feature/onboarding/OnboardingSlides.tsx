@@ -1,4 +1,5 @@
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
+import { EventMapBase, NavigationState } from '@react-navigation/native'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageSourcePropType } from 'react-native'
@@ -67,10 +68,9 @@ const OnboardingSlides: React.FC<Props> = ({ onSlideChanged }: Props) => {
             id="SplashTabs"
             screenListeners={{
                 state: e => {
-                    // Do something with the state
-                    console.log('state changed', e.data)
-                    console.log('state changed', e.data?.state.index)
-                    onSlideChanged(e.data?.state.index + 1)
+                    const eventData = e.data as EventMapBase
+                    const state = eventData.state as NavigationState
+                    onSlideChanged(state.index + 1)
                 },
             }}
             screenOptions={() => ({
