@@ -69,7 +69,7 @@ import SendHeader from './components/feature/send/SendHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
-import { useFederationsContext } from './contexts/FederationsContext'
+import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
     MAIN_NAVIGATOR_ID,
@@ -85,6 +85,7 @@ const MainNavigator = () => {
         state: { selectedFederation },
     } = useFederationsContext()
 
+    console.info('MainNavigator')
     return (
         <Stack.Navigator
             initialRouteName={'Initializing'}
@@ -105,6 +106,7 @@ const MainNavigator = () => {
                     <Stack.Screen
                         name="Initializing"
                         component={Initializing}
+                        initialParams={{ reset: false }}
                         options={{
                             headerShown: false,
                             animation: 'fade',

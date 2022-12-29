@@ -12,11 +12,11 @@ import {
     TransactionEvent,
 } from './bridge'
 import CustomToast from './components/ui/CustomToast'
-import { BackupRecoveryProvider } from './contexts/BackupRecoveryContext'
-import { EnvironmentProvider } from './contexts/EnvironmentContext'
-import { FederationsProvider } from './contexts/FederationsContext'
-import ProviderComposer from './contexts/ProviderComposer'
 import Router from './Router'
+import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
+import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
+import { FederationsProvider } from './state/contexts/FederationsContext'
+import ProviderComposer from './state/contexts/ProviderComposer'
 import theme from './styles/theme'
 
 const App = () => {

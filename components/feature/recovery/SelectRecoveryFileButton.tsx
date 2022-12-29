@@ -8,8 +8,8 @@ import DocumentPicker, {
     types,
 } from 'react-native-document-picker'
 
-import { useEnvironmentContext } from '../../../contexts/EnvironmentContext'
-import { useBridge } from '../../../contexts/FederationsContext'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useBridge } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {

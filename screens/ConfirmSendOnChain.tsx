@@ -5,10 +5,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import {
-    useBridge,
-    useFederationsContext,
-} from '../contexts/FederationsContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import { Btc, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'

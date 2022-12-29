@@ -6,7 +6,7 @@ import Toast, { ToastComponentProps } from 'react-native-easy-toast'
 import {
     initializeToastRef,
     useEnvironmentContext,
-} from '../../contexts/EnvironmentContext'
+} from '../../state/contexts/EnvironmentContext'
 
 interface Props extends ToastComponentProps {
     style?: ViewStyle

@@ -15,7 +15,7 @@ import {
     Transaction,
     TransactionDirection,
 } from '../../../bridge'
-import { useBridge } from '../../../contexts/FederationsContext'
+import { useBridge } from '../../../state/hooks'
 import amountUtils from '../../../utils/AmountUtils'
 import dateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'

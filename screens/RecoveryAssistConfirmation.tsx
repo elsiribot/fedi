@@ -6,8 +6,8 @@ import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
 import LineBreak from '../components/ui/LineBreak'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
-import { useBridge } from '../contexts/FederationsContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

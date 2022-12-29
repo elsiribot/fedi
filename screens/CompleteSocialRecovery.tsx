@@ -7,7 +7,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { Images } from '../assets/images'
 import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
-import { useFederationsContext } from '../contexts/FederationsContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

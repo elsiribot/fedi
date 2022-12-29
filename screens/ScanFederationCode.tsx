@@ -9,12 +9,12 @@ import { useCameraDevices } from 'react-native-vision-camera'
 import { joinFederation, listFederations } from '../bridge'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import { useEnvironmentContext } from '../contexts/EnvironmentContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     changeSelectedFederation,
     updateConnectedFederations,
     useFederationsContext,
-} from '../contexts/FederationsContext'
+} from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

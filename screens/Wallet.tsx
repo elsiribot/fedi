@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
-import { useFederationsContext } from '../contexts/FederationsContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { MSats } from '../types'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
