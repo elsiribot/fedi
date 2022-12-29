@@ -39,7 +39,7 @@ export type RootStackParamList = {
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
-    RecoveryAssistConfirmation: undefined
+    RecoveryAssistConfirmation: { userPublicKey: string; videoUrl: string }
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
     ScanFederationCode: undefined

@@ -8,12 +8,14 @@ import DocumentPicker, {
     types,
 } from 'react-native-document-picker'
 
+import { useEnvironmentContext } from '../../../contexts/EnvironmentContext'
 import { useBridge } from '../../../contexts/FederationsContext'
 import { NavigationHook } from '../../../types/navigation'
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { validateBackupFile } = useBridge()
+    const { toast } = useEnvironmentContext().state
     const navigation = useNavigation<NavigationHook>()
     const [result, setResult] = useState<
         DocumentPickerResponse | undefined | null
@@ -24,11 +26,13 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             const response = await DocumentPicker.pickSingle({
                 type: types.allFiles,
             })
-            console.log(response)
+            console.info(response)
 
             setResult(response)
         } catch (error) {
-            console.log('DocumentPicker Error: ', error)
+            const typedError = error as Error
+            console.error('DocumentPicker Error: ', typedError)
+            toast?.show(typedError?.message, 3000)
         }
     }
 

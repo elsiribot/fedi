@@ -8,6 +8,7 @@ import { useCameraDevices } from 'react-native-vision-camera'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,22 +19,26 @@ export type Props = NativeStackScreenProps<
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { toast } = useEnvironmentContext().state
 
     const handleUserInput = useCallback(
         async (input: string) => {
             if (input.startsWith('socialrecovery:')) {
-                console.log('fedi social recovery detected', input)
-                const parts = input.split(':')
-                const pubkey = parts[1]
+                console.info('fedi social recovery detected', input)
+                const parts = input.split('::')
+                const userPublicKey = parts[1]
                 const videoUrl = parts[2]
-                console.log(pubkey, videoUrl)
+                console.info(userPublicKey, videoUrl)
 
-                navigation.navigate('RecoveryAssistConfirmation')
+                navigation.navigate('RecoveryAssistConfirmation', {
+                    userPublicKey,
+                    videoUrl,
+                })
             } else {
-                // TODO: display invalid social recovery error toast
+                toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
         },
-        [navigation],
+        [navigation, toast, t],
     )
 
     const checkClipboard = useCallback(async () => {
