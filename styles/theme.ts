@@ -1,5 +1,6 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
 import { createTheme, lightColors } from '@rneui/themed'
+import { Dimensions } from 'react-native'
 
 const colors = {
     ...lightColors,
@@ -14,6 +15,9 @@ const colors = {
     white: '#FFFFFF',
     black: '#0B1013',
 }
+const WINDOW = Dimensions.get('window')
+const WINDOW_WIDTH = WINDOW.width
+const WINDOW_HEIGHT = WINDOW.height
 
 const theme = createTheme({
     ...NavigationDefaultTheme,
@@ -98,6 +102,7 @@ const theme = createTheme({
         sm: 24,
         md: 32,
         lg: 48,
+        adminProfileCircle: 90,
         expandedWalletCardHeight: 325,
         splashLogoHeight: 32,
         splashLogoWidth: 120,

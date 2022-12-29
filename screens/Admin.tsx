@@ -3,7 +3,6 @@ import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    Dimensions,
     GestureResponderEvent,
     ImageBackground,
     ImageSourcePropType,
@@ -160,9 +159,6 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const WINDOW_WIDTH = Dimensions.get('window').width
-const CIRCLE_SIZE = WINDOW_WIDTH * 0.25
-
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
@@ -174,15 +170,15 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
         },
         profileCircle: {
-            height: CIRCLE_SIZE,
-            width: CIRCLE_SIZE,
+            height: theme.sizes.adminProfileCircle,
+            width: theme.sizes.adminProfileCircle,
             alignItems: 'center',
             justifyContent: 'center',
             marginTop: theme.spacing.xl,
             marginBottom: theme.spacing.md,
         },
         circleBorder: {
-            borderRadius: CIRCLE_SIZE * 0.5,
+            borderRadius: theme.sizes.adminProfileCircle * 0.5,
         },
         sectionContainer: {
             flexDirection: 'column',
