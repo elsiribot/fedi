@@ -29,6 +29,7 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                     style={styles(theme).video}
                     paused={isPaused}
                     ignoreSilentSwitch={'ignore'}
+                    resizeMode={'contain'}
                     onError={error => {
                         console.error(error)
                     }}
@@ -80,7 +81,9 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                 <Button
                     title={t('feature.backup.confirm-backup-video')}
                     onPress={() => {
-                        navigation.navigate('SocialBackupProcessing')
+                        navigation.navigate('SocialBackupProcessing', {
+                            videoFilePath: videoFile?.path,
+                        })
                     }}
                     disabled={!confirmFaceChecked || !confirmVoiceChecked}
                     containerStyle={styles(theme).confirmButton}

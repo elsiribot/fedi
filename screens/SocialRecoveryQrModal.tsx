@@ -2,7 +2,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Dimensions,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
@@ -26,7 +32,7 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const getRecoveryAssistCode = async () => {
             const recoveryAssistCode = await backupQr()
-            console.log('recoveryAssistCode', recoveryAssistCode)
+            console.info('recoveryAssistCode', recoveryAssistCode)
             setRecoveryQrCode(recoveryAssistCode)
         }
 
@@ -49,7 +55,9 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
                         size={QR_CODE_SIZE}
                         logo={Images.FediQrLogo}
                     />
-                ) : null}
+                ) : (
+                    <ActivityIndicator />
+                )}
             </View>
             <View style={styles(theme).holoCardContainer}>
                 <HoloCard

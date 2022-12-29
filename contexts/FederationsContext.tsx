@@ -10,9 +10,11 @@ import React, {
 
 import {
     addressOrInvoice,
+    approveSocialRecoveryRequest,
     authenticateGuardian,
     backupQr,
     BalanceEvent,
+    denySocialRecoveryRequest,
     Federation,
     generateAddress,
     generateEcash,
@@ -249,9 +251,18 @@ function useBridge() {
             },
             [selectedFederation],
         ),
+        approveSocialRecoveryRequest: useCallback(
+            (userPublicKey: string) => {
+                return approveSocialRecoveryRequest(
+                    userPublicKey,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
         authenticateGuardian: useCallback(
             (secret: string) => {
-                return authenticateGuardian(selectedFederation!.name, secret)
+                return authenticateGuardian(secret, selectedFederation!.name)
             },
             [selectedFederation],
         ),
@@ -341,6 +352,15 @@ function useBridge() {
             },
             [selectedFederation],
         ),
+        denySocialRecoveryRequest: useCallback(
+            (userPublicKey: string) => {
+                return denySocialRecoveryRequest(
+                    userPublicKey,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
         validateBackupFile: useCallback(
             (file: string) => {
                 return validateBackupFile(file, selectedFederation!.name)
@@ -355,7 +375,7 @@ function useBridge() {
         ),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
-                return uploadBackupFile(selectedFederation!.name, videoFilePath)
+                return uploadBackupFile(videoFilePath, selectedFederation!.name)
             },
             [selectedFederation],
         ),

@@ -142,6 +142,7 @@
             "guardian-approval-step-3": "3. They will view your video and check your identity",
             "guardian-approval-step-4": "4. If they confirm, your money will be recovered to your wallet",
             "guardian-qr-instructions": "Guardians will need to scan this QR code to begin the social recovery process",
+            "invalid-qr-code": "Invalid social recovery code",
             "locate-social-recovery-file": "Locate your Social recovery file",
             "locate-social-recovery-instructions-1": "Please locate this file from your friends or personal storage and open it to start recovery",
             "locate-social-recovery-instructions-2": "Some places to check are...",

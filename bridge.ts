@@ -408,12 +408,17 @@ export type SeedRecoveryEvent =
  */
 
 export async function uploadBackupFile(
-    _federationId: string,
     _contents: string,
+    _federationId: string,
 ): Promise<string> {
-    return new Promise(resolve => {
-        resolve('/path/to/backup.fedi')
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, contents })
+    // let response = await FedimintFfi.rpc('uploadBackupFile', payload)
+    // return handleRpcResponse<string>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<string>('{"result": "/path/to/backup.fedi"}')
+    // return handleRpcResponse<string>('{"error": "error creating social backup file"}')
 }
 
 export async function locateRecoveryFile(
@@ -430,8 +435,8 @@ export async function locateRecoveryFile(
 }
 
 export async function validateBackupFile(
-    _federationId: string,
     _contents: string,
+    _federationId: string,
 ): Promise<boolean> {
     // TODO: Replace mocked function when bridge is ready
     // let payload = JSON.stringify({ federationId, contents })
@@ -445,15 +450,24 @@ export async function validateBackupFile(
 
 // This string contains a public key and URL to video file
 export async function backupQr(_federationId: string): Promise<string> {
-    return new Promise(resolve => {
-        resolve('socialrecovery:pubkey:videourl')
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId })
+    // let response = await FedimintFfi.rpc('backupQr', payload)
+    // return handleRpcResponse<string>(response)
+
+    // Simulate success/failure modes
+    const SAMPLE_VIDEO_URL =
+        'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
+    return handleRpcResponse<string>(
+        `{"result": "socialrecovery::pubkey::${SAMPLE_VIDEO_URL}"}`,
+    )
+    // return handleRpcResponse<string>('{"error": "no social backup QR code found"}')
 }
 
 // guardian fetches `_secret` (somehow) from federation admin web UI
 export async function authenticateGuardian(
-    _federationId: string,
     _secret: string,
+    _federationId: string,
 ): Promise<null> {
     // TODO: Replace mocked function when bridge is ready
     // let payload = JSON.stringify({ federationId, secret })
@@ -466,23 +480,33 @@ export async function authenticateGuardian(
 }
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
-export async function rejectSocialRecoveryRequest(
-    _federationId: string,
+export async function denySocialRecoveryRequest(
     _userPublicKey: string,
+    _federationId: string,
 ): Promise<null> {
-    return new Promise(resolve => {
-        resolve(null)
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, userPublicKey })
+    // let response = await FedimintFfi.rpc('denySocialRecoveryRequest', payload)
+    // return handleRpcResponse<null>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<null>('{"result": "null"}')
+    // return handleRpcResponse<null>('{"error": "social recovery denial failed"}')
 }
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
 export async function approveSocialRecoveryRequest(
-    _federationId: string,
     _userPublicKey: string,
+    _federationId: string,
 ): Promise<null> {
-    return new Promise(resolve => {
-        resolve(null)
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, userPublicKey })
+    // let response = await FedimintFfi.rpc('approveSocialRecoveryRequest', payload)
+    // return handleRpcResponse<null>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<null>('{"result": "null"}')
+    // return handleRpcResponse<null>('{"error": "social recovery approval failed"}')
 }
 
 /*

@@ -56,10 +56,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }, [guardianDenials, selectedFederation?.denialThreshold, navigation])
 
     const showQrCode = () => {
-        // Mock guardian approvals 5s after every QR code display
         navigation.navigate('SocialRecoveryQrModal')
 
+        // TODO: Remove simulated approval when bridge is emitting events
         setTimeout(() => {
+            // Mock guardian approvals 5s after every QR code display
             setGuardianApprovals(
                 Math.min(
                     selectedFederation?.approvalsRequired as number,

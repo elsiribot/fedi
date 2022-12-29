@@ -6,6 +6,8 @@ import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
 import LineBreak from '../components/ui/LineBreak'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
+import { useBridge } from '../contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -13,26 +15,57 @@ export type Props = NativeStackScreenProps<
     'RecoveryAssistConfirmation'
 >
 
-const RecoveryAssistConfirmation: React.FC<Props> = ({ navigation }: Props) => {
+const RecoveryAssistConfirmation: React.FC<Props> = ({
+    navigation,
+    route,
+}: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { approveSocialRecoveryRequest, denySocialRecoveryRequest } =
+        useBridge()
+    const { toast } = useEnvironmentContext().state
+    const { userPublicKey, videoUrl } = route.params
     const [isPaused, setIsPaused] = useState(true)
     const [approvalSelected, setApprovalSelected] = useState(false)
     const [denialSelected, setDenialSelected] = useState(false)
 
-    const sampleVideo =
-        'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
+    console.info('userPublicKey', userPublicKey)
+
+    const handleGuardianApproval = async () => {
+        try {
+            await approveSocialRecoveryRequest(userPublicKey)
+            navigation.navigate('RecoveryAssistSuccess')
+        } catch (error) {
+            const typedError = error as Error
+            console.error(typedError)
+            toast?.show(typedError?.message, 3000)
+        }
+    }
+
+    const handleGuardianDenial = async () => {
+        try {
+            await denySocialRecoveryRequest(userPublicKey)
+            // TODO: Go to denial screen once design is provided
+            navigation.navigate('RecoveryAssistSuccess')
+        } catch (error) {
+            const typedError = error as Error
+            console.error(typedError)
+            toast?.show(typedError?.message, 3000)
+        }
+    }
 
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
                 <Video
-                    source={{ uri: sampleVideo }} // Can be a URL or a local file.
+                    source={{ uri: videoUrl }} // Can be a URL or a local file.
                     style={[
                         styles(theme).video,
                         isPaused ? styles(theme).shaded : {},
                     ]}
                     paused={isPaused}
+                    resizeMode={'contain'}
+                    ignoreSilentSwitch={'ignore'}
                     onError={error => {
                         console.error(error)
                     }}
@@ -88,10 +121,9 @@ const RecoveryAssistConfirmation: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('words.continue')}
                 onPress={() => {
                     if (approvalSelected) {
-                        navigation.navigate('RecoveryAssistSuccess')
+                        handleGuardianApproval()
                     } else {
-                        // TODO: Go to denial screen
-                        navigation.navigate('RecoveryAssistSuccess')
+                        handleGuardianDenial()
                     }
                 }}
                 disabled={approvalSelected && denialSelected}
