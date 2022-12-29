@@ -7,6 +7,8 @@ import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import { useEnvironmentContext } from '../contexts/EnvironmentContext'
+import { useBridge } from '../contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -14,20 +16,35 @@ export type Props = NativeStackScreenProps<
     'SocialBackupProcessing'
 >
 
-const SocialBackupProcessing: React.FC<Props> = ({ navigation }: Props) => {
+const SocialBackupProcessing: React.FC<Props> = ({
+    navigation,
+    route,
+}: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { uploadBackupFile } = useBridge()
+    const { toast } = useEnvironmentContext().state
+    const { videoFilePath } = route.params
 
-    // TODO: Integrate bridge functions
     useEffect(() => {
-        const simulateRecoveryFileCreation = () => {
-            setTimeout(() => {
+        const startBackupFileUpload = async () => {
+            try {
+                await uploadBackupFile(videoFilePath)
+
                 navigation.navigate('SocialBackupCloudUpload')
-            }, 3000)
+            } catch (error) {
+                const typedError = error as Error
+                console.error(typedError)
+                toast?.show(typedError?.message, 3000)
+            }
         }
 
-        simulateRecoveryFileCreation()
-    }, [navigation])
+        // TODO: Uncomment below and remove simulated timeout when bridge is ready
+        // startBackupFileUpload()
+        setTimeout(() => {
+            startBackupFileUpload()
+        }, 5000)
+    }, [navigation, toast, uploadBackupFile, videoFilePath])
 
     return (
         <View style={styles(theme).container}>

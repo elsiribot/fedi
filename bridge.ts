@@ -411,9 +411,14 @@ export async function uploadBackupFile(
     _federationId: string,
     _contents: string,
 ): Promise<string> {
-    return new Promise(resolve => {
-        resolve('/path/to/backup.fedi')
-    })
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, contents })
+    // let response = await FedimintFfi.rpc('uploadBackupFile', payload)
+    // return handleRpcResponse<string>(response)
+
+    // Simulate success/failure modes
+    return handleRpcResponse<string>('{"result": "/path/to/backup.fedi"}')
+    // return handleRpcResponse<string>('{"error": "error creating social backup file"}')
 }
 
 export async function locateRecoveryFile(

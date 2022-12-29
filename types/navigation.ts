@@ -55,7 +55,7 @@ export type RootStackParamList = {
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined
     SocialBackupCloudUpload: undefined
-    SocialBackupProcessing: undefined
+    SocialBackupProcessing: { videoFilePath: string }
     SocialBackupSuccess: undefined
     SocialRecoveryQrModal: undefined
     SocialRecoverySuccess: undefined

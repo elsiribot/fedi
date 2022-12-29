@@ -80,7 +80,9 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
                 <Button
                     title={t('feature.backup.confirm-backup-video')}
                     onPress={() => {
-                        navigation.navigate('SocialBackupProcessing')
+                        navigation.navigate('SocialBackupProcessing', {
+                            videoFilePath: videoFile?.path,
+                        })
                     }}
                     disabled={!confirmFaceChecked || !confirmVoiceChecked}
                     containerStyle={styles(theme).confirmButton}
