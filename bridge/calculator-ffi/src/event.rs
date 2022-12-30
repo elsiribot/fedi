@@ -18,6 +18,20 @@ pub struct TransactionEvent {
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct SocialRecoveryEvent {
+    pub federation_id: String,
+    // TODO: add payload
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoveryFileCreationEvent {
+    pub federation_id: String,
+    // TODO: add payload
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct LogEvent {
     pub log: String,
 }
@@ -26,6 +40,8 @@ pub struct LogEvent {
 pub enum Event {
     Balance { event: BalanceEvent },
     Transaction { event: TransactionEvent },
+    SocialRecovery { event: SocialRecoveryEvent },
+    RecoveryFileCreation { event: RecoveryFileCreationEvent },
     Log { event: LogEvent },
 }
 
@@ -43,6 +59,20 @@ impl Event {
             event: TransactionEvent {
                 federation_id,
                 transaction,
+            },
+        }
+    }
+    pub fn social_recovery(federation_id: String) -> Self {
+        Self::SocialRecovery {
+            event: SocialRecoveryEvent {
+                federation_id,
+            },
+        }
+    }
+    pub fn recovery_file_creation(federation_id: String) -> Self {
+        Self::RecoveryFileCreation {
+            event: RecoveryFileCreationEvent {
+                federation_id,
             },
         }
     }
@@ -75,6 +105,14 @@ impl EventSinkWrapper {
             Event::Transaction { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 self.event_sink.event("transaction".into(), body);
+            }
+            Event::SocialRecovery { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("socialRecovery".into(), body);
+            }
+            Event::RecoveryFileCreation { event } => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                self.event_sink.event("recoveryFileCreation".into(), body);
             }
             Event::Log { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
