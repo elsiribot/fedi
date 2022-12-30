@@ -1,11 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Image, Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
 import React, { useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import FaIcon from 'react-native-vector-icons/FontAwesome'
-import Fa5Icon from 'react-native-vector-icons/FontAwesome5'
 
 import { Images } from '../assets/images'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
@@ -42,10 +42,9 @@ const Home: React.FC<Props> = () => {
                     switch (route.name) {
                         case 'Wallet':
                             return (
-                                <Fa5Icon
-                                    name={'wallet'}
-                                    size={size}
-                                    color={color}
+                                <Image
+                                    source={Images.Wallet}
+                                    style={{ height: size, width: size }}
                                 />
                             )
                         case 'Admin':
@@ -76,6 +75,7 @@ const Home: React.FC<Props> = () => {
                 name="Wallet"
                 initialParams={{ offline }}
                 options={() => ({
+                    title: t('words.wallet'),
                     header: () => (
                         <WalletHeader
                             toggleOffline={toggleOffline}
@@ -89,6 +89,7 @@ const Home: React.FC<Props> = () => {
                 name="Sites"
                 component={Sites}
                 options={{
+                    title: t('words.sites'),
                     headerShown: false,
                 }}
             />
@@ -96,6 +97,7 @@ const Home: React.FC<Props> = () => {
                 name="Admin"
                 component={Admin}
                 options={{
+                    title: t('words.admin'),
                     headerShown: false,
                 }}
             />
