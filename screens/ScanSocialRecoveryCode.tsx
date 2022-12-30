@@ -82,7 +82,13 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 </View>
                 <Button
                     title={t('feature.recovery.paste-social-recovery-code')}
-                    onPress={checkClipboard}
+                    // TODO: Swap commented code when bridge is ready
+                    // onPress={checkClipboard}
+                    onPress={() =>
+                        handleUserInput(
+                            'socialrecovery::pubkey::http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                        )
+                    }
                 />
             </View>
         </CameraPermissionsRequired>
