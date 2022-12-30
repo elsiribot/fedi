@@ -162,6 +162,13 @@ export class TFedimintEventEmitter {
     ): EmitterSubscription => {
         return this.addListener('socialRecovery', listener, context)
     }
+
+    onRecoveryFileCreation = (
+        listener: (event: RecoveryFileCreationEvent) => void,
+        context?: Object,
+    ): EmitterSubscription => {
+        return this.addListener('recoveryFileCreation', listener, context)
+    }
 }
 
 export type Node = {
@@ -538,3 +545,8 @@ export type SocialRecoveryEvent = {
     approvals: GuardianApproval[]
     status: SocialRecoveryStatus
 }
+
+export type RecoveryFileCreationEvent =
+    | { type: 'progress'; percentComplete: number }
+    | { type: 'failed'; errorCode: string }
+    | { type: 'complete' }
