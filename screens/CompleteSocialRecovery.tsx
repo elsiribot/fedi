@@ -42,11 +42,10 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
-        console.info(emitter)
-        // emitter.onSocialRecovery(socialRecoveryHandler)
+        emitter.onSocialRecovery(socialRecoveryHandler)
 
         return () => {
-            // emitter.removeListener('socialRecovery')
+            emitter.removeListener('socialRecovery')
         }
     }, [navigation, socialRecoveryHandler])
 
