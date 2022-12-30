@@ -39,7 +39,7 @@ const StartPersonalBackup: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
-                    navigation.navigate('RecoveryWords')
+                    navigation.navigate('PersonalBackupGuidance')
                 }}
             />
         </View>

@@ -41,6 +41,7 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     Home: undefined
     Initializing: { reset: boolean }
+    PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
@@ -64,6 +65,7 @@ export type RootStackParamList = {
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined
     SocialBackupCloudUpload: undefined
+    SocialBackupGuidance: undefined
     SocialBackupProcessing: { videoFilePath: string }
     SocialBackupSuccess: undefined
     SocialRecoveryQrModal: undefined

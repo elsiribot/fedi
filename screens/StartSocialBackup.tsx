@@ -39,7 +39,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('words.next')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
-                    navigation.navigate('RecordBackupVideo')
+                    navigation.navigate('SocialBackupGuidance')
                 }}
             />
         </View>
@@ -63,7 +63,7 @@ const styles = (theme: Theme) =>
         },
         instructionsText: {
             textAlign: 'center',
-            paddingHorizontal: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.lg,
             fontWeight: '400',
         },
         holoCircle: {

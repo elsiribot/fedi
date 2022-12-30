@@ -9,20 +9,19 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'ConfirmRecoveryAssist'
+    'PersonalBackupGuidance'
 >
 
-const ConfirmRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
+const PersonalBackupGuidance: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [memberSafetyConfirmed, setMemberSafetyConfirmed] = useState(false)
-    const [surroundingsSafetyConfirmed, setSurroundingsSafetyConfirmed] =
-        useState(false)
+    const [checkbox1, setCheckbox1] = useState(false)
+    const [checkbox2, setCheckbox2] = useState(false)
 
     return (
         <View style={styles(theme).container}>
             <Text h2 style={styles(theme).instructionsText}>
-                {t('phrases.please-confirm')}
+                {t('phrases.how-it-works')}
             </Text>
             <LineBreak />
             <View style={styles(theme).confirmationContainer}>
@@ -30,40 +29,36 @@ const ConfirmRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                     title={
                         <Text caption medium style={styles(theme).checkboxText}>
                             {t(
-                                'feature.recovery.recovery-assist-confirm-check-1',
+                                'feature.backup.personal-backup-guidance-check-1',
                             )}
                         </Text>
                     }
-                    checked={memberSafetyConfirmed}
+                    checked={checkbox1}
                     onPress={() => {
-                        setMemberSafetyConfirmed(!memberSafetyConfirmed)
+                        setCheckbox1(!checkbox1)
                     }}
                 />
                 <CheckBox
                     title={
                         <Text caption medium style={styles(theme).checkboxText}>
                             {t(
-                                'feature.recovery.recovery-assist-confirm-check-2',
+                                'feature.backup.personal-backup-guidance-check-2',
                             )}
                         </Text>
                     }
-                    checked={surroundingsSafetyConfirmed}
+                    checked={checkbox2}
                     onPress={() => {
-                        setSurroundingsSafetyConfirmed(
-                            !surroundingsSafetyConfirmed,
-                        )
+                        setCheckbox2(!checkbox2)
                     }}
                 />
             </View>
 
             <Button
-                title={t('words.continue')}
+                title={t('phrases.i-understand')}
                 onPress={() => {
-                    navigation.replace('ScanSocialRecoveryCode')
+                    navigation.replace('RecoveryWords')
                 }}
-                disabled={
-                    !surroundingsSafetyConfirmed || !memberSafetyConfirmed
-                }
+                disabled={!checkbox1 || !checkbox2}
                 containerStyle={styles(theme).confirmButton}
             />
         </View>
@@ -99,4 +94,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ConfirmRecoveryAssist
+export default PersonalBackupGuidance

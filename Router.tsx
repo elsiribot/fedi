@@ -19,6 +19,7 @@ import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
@@ -38,6 +39,7 @@ import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
 import SitesBrowser from './screens/SitesBrowser'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
+import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
 import SocialBackupSuccess from './screens/SocialBackupSuccess'
 import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
@@ -271,6 +273,15 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="SocialBackupGuidance"
+                                component={SocialBackupGuidance}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
                                 name="SocialBackupProcessing"
                                 component={SocialBackupProcessing}
                                 options={() => ({
@@ -390,6 +401,13 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="StartPersonalBackup"
                                 component={StartPersonalBackup}
+                                options={() => ({
+                                    header: () => <PersonalBackupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="PersonalBackupGuidance"
+                                component={PersonalBackupGuidance}
                                 options={() => ({
                                     header: () => <PersonalBackupHeader />,
                                 })}

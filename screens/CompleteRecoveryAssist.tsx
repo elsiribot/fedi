@@ -96,8 +96,13 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
             <LineBreak />
             <View style={styles(theme).confirmationContainer}>
                 <CheckBox
-                    center
-                    title={t('feature.recovery.recovery-confirm-identity-yes')}
+                    title={
+                        <Text caption medium style={styles(theme).checkboxText}>
+                            {t(
+                                'feature.recovery.recovery-confirm-identity-yes',
+                            )}
+                        </Text>
+                    }
                     checkedIcon="dot-circle-o"
                     uncheckedIcon="circle-o"
                     checked={approvalSelected}
@@ -107,8 +112,11 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                     }}
                 />
                 <CheckBox
-                    center
-                    title={t('feature.recovery.recovery-confirm-identity-no')}
+                    title={
+                        <Text caption medium style={styles(theme).checkboxText}>
+                            {t('feature.recovery.recovery-confirm-identity-no')}
+                        </Text>
+                    }
                     checkedIcon="dot-circle-o"
                     uncheckedIcon="circle-o"
                     checked={denialSelected}
@@ -150,6 +158,10 @@ const styles = (theme: Theme) =>
         camera: {
             height: '100%',
             width: '100%',
+        },
+        checkboxText: {
+            paddingHorizontal: theme.spacing.md,
+            textAlign: 'left',
         },
         confirmButton: {
             marginTop: theme.spacing.lg,
