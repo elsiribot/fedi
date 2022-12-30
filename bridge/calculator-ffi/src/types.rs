@@ -14,7 +14,7 @@ pub fn hacky_lightning_invoice_fee(
     invoice
         .amount_milli_satoshis()
         .map(|msat| {
-            fedimint_api::Amount::from_msat(msat / 100) // FIXME: hard-coded 1% fee
+            fedimint_api::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
         })
         .ok_or(anyhow!("Invoice missing amount"))
 }
@@ -28,15 +28,14 @@ pub struct FedimintFederation {
     pub balance: fedimint_api::Amount,
 }
 
-impl From<&Arc<Federation>> for FedimintFederation {
-    fn from(federation: &Arc<Federation>) -> Self {
-        let client_config = federation.client.config().0;
-        Self {
-            name: client_config.federation_name.clone(),
-            connect_info: WsFederationConnect::from(&client_config),
-            nodes: client_config.nodes.clone(),
-            balance: federation.client.coins().total_amount(),
-        }
+// FIXME: this used to be a From implementation, but total_amount needed async
+pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
+    let client_config = federation.client.config().0;
+    FedimintFederation {
+        name: client_config.federation_name.clone(),
+        connect_info: WsFederationConnect::from(&client_config),
+        nodes: client_config.nodes.clone(),
+        balance: federation.client.coins().await.total_amount(),
     }
 }
 
@@ -66,7 +65,7 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
         let amount_msat = invoice
             .amount_milli_satoshis()
             .ok_or(anyhow!("Invoice missing amount"))?;
-        let amount = fedimint_api::Amount::from_msat(amount_msat);
+        let amount = fedimint_api::Amount::from_msats(amount_msat);
 
         // We might get no description
         let description = match invoice.description() {

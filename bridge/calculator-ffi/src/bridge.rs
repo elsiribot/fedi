@@ -24,10 +24,9 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
-use fedimint_api::config::ClientConfig;
 use fedimint_api::db::DatabaseTransaction;
-use fedimint_api::encoding::ModuleRegistry;
 use fedimint_api::NumPeers;
+use fedimint_api::{config::ClientConfig, module::registry::ModuleDecoderRegistry};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
 use fedimint_sled::SledDb;
@@ -150,10 +149,11 @@ impl Federation {
         }
     }
 
-    fn dbtx(&self) -> DatabaseTransaction<'_> {
+    async fn dbtx(&self) -> DatabaseTransaction<'_> {
         self.client
             .db()
-            .begin_transaction(ModuleRegistry::default())
+            .begin_transaction(ModuleDecoderRegistry::default())
+            .await
     }
 
     pub fn network(&self) -> bitcoin::Network {
@@ -276,17 +276,20 @@ impl Federation {
     }
 
     // TODO: make sure we aren't trying to pay invoices twice ...
-    pub fn can_pay(&self, invoice: &Invoice) -> bool {
+    pub async fn can_pay(&self, invoice: &Invoice) -> bool {
         self.list_payments()
+            .await
             .iter()
             .filter(|payment| payment.outgoing() && &payment.invoice == invoice)
             .next()
             .is_none()
     }
 
-    pub fn list_scripts(&self) -> Vec<Script> {
+    pub async fn list_scripts(&self) -> Vec<Script> {
         self.dbtx()
+            .await
             .find_by_prefix(&PegInPrefixKey)
+            .await
             .map(|res| {
                 let (key, _) = res.expect("DB error");
                 key.peg_in_script
@@ -301,7 +304,7 @@ impl Federation {
             let url = self.txout_proof_url(&item.tx_hash)?;
             if let Ok(raw_txout_proof) = reqwest::get(url).await?.text().await {
                 // Skip if we've already claimed it
-                match self.fetch_transaction(item.tx_hash.to_string()) {
+                match self.fetch_transaction(item.tx_hash.to_string()).await {
                     None => (),
                     Some(tx) => match tx.bitcoin {
                         None => (),
@@ -327,18 +330,23 @@ impl Federation {
                 let amount_sats = self
                     .client
                     .wallet_client()
-                    .create_pegin_input(txout_proof.clone(), btc_transaction.clone())?
+                    .create_pegin_input(txout_proof.clone(), btc_transaction.clone())
+                    .await?
                     .1
                     .tx_output()
                     .value;
-                let amount = fedimint_api::Amount::from_sat(amount_sats);
+                let amount = fedimint_api::Amount::from_sats(amount_sats);
                 if let Err(_) = self
                     .client
                     .peg_in(txout_proof.clone(), btc_transaction.clone(), rng)
                     .await
                 {
                     // Save pending tx if we haven't already, move on to next one
-                    if self.fetch_transaction(item.tx_hash.to_string()).is_none() {
+                    if self
+                        .fetch_transaction(item.tx_hash.to_string())
+                        .await
+                        .is_none()
+                    {
                         self.save_transaction(&Transaction::bitcoin(
                             TransactionDirection::Receive,
                             amount,
@@ -355,16 +363,17 @@ impl Federation {
                 tracing::info!("peg-in successful for {}", address);
                 self.update_balance().await;
                 // FIXME: helper to replace existing transaction
-                let mut tx = self.fetch_transaction(item.tx_hash.to_string()).unwrap_or(
-                    Transaction::bitcoin(
+                let mut tx = self
+                    .fetch_transaction(item.tx_hash.to_string())
+                    .await
+                    .unwrap_or(Transaction::bitcoin(
                         TransactionDirection::Receive,
                         amount,
                         fee,
                         address.clone(),
                         item.tx_hash,
                         Some(IncomingBitcoinTransactionStatus::Pending),
-                    ),
-                );
+                    ));
                 // FIXME: make a helper for this
                 let mut details = tx.bitcoin.expect("this should exist (fixme)");
                 details.incoming_status = Some(IncomingBitcoinTransactionStatus::Complete);
@@ -376,10 +385,10 @@ impl Federation {
         Ok(())
     }
 
-    pub fn attempt_pegins(&self) {
+    pub async fn attempt_pegins(&self) {
         tracing::info!("attempting pegins");
         let fed = self.clone();
-        let scripts = fed.list_scripts();
+        let scripts = fed.list_scripts().await;
         for script in scripts.iter() {
             let f = fed.clone();
             let s = script.clone();
@@ -397,7 +406,7 @@ impl Federation {
     }
 
     pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        if !self.can_pay(&invoice) {
+        if !self.can_pay(&invoice).await {
             return Err(anyhow!("Can't pay invoice twice"));
         }
 
@@ -413,7 +422,7 @@ impl Federation {
                 self.update_balance().await;
                 self.save_transaction(&Transaction::lightning(
                     TransactionDirection::Send,
-                    fedimint_api::Amount::from_msat(
+                    fedimint_api::Amount::from_msats(
                         invoice
                             .amount_milli_satoshis()
                             .expect("assuming invoice has amount"),
@@ -438,7 +447,7 @@ impl Federation {
 
     pub async fn save_transaction(&self, tx: &Transaction) {
         // TODO: need to expose the database
-        let mut dbtx = self.dbtx();
+        let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx)
             .await
             .expect("Db error");
@@ -447,14 +456,16 @@ impl Federation {
         self.transaction_event(&tx);
     }
 
-    pub fn fetch_transaction(&self, id: String) -> Option<Transaction> {
+    pub async fn fetch_transaction(&self, id: String) -> Option<Transaction> {
         self.dbtx()
+            .await
             .get_value(&TransactionKey(id))
+            .await
             .expect("Db error")
     }
 
     pub async fn update_transaction_notes(&self, id: String, notes: String) -> Result<()> {
-        match self.fetch_transaction(id) {
+        match self.fetch_transaction(id).await {
             Some(mut tx) => {
                 tx.notes = notes;
                 self.save_transaction(&tx).await;
@@ -465,12 +476,12 @@ impl Federation {
     }
 
     // TODO: pagination
-    pub fn list_transactions(&self) -> Vec<Transaction> {
+    pub async fn list_transactions(&self) -> Vec<Transaction> {
         let mut transactions: Vec<Transaction> = self
-            .client
-            .db()
-            .begin_transaction(ModuleRegistry::default())
+            .dbtx()
+            .await
             .find_by_prefix(&TransactionKeyPrefix)
+            .await
             .map(|res| res.expect("Db error").1)
             .collect();
         // Sort by timestamp, descending
@@ -481,7 +492,7 @@ impl Federation {
     pub async fn save_payment(&self, payment: &Payment) {
         // TODO: need to expose the database
         tracing::info!("saving payment");
-        let mut dbtx = self.dbtx();
+        let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&PaymentKey(payment.invoice.payment_hash().clone()), payment)
             .await
             .expect("Db error");
@@ -489,23 +500,27 @@ impl Federation {
         tracing::info!("saved payment");
     }
 
-    pub fn list_payments(&self) -> Vec<Payment> {
+    pub async fn list_payments(&self) -> Vec<Payment> {
         self.dbtx()
+            .await
             .find_by_prefix(&PaymentKeyPrefix)
+            .await
             .map(|res| res.expect("Db error").1)
             .collect()
     }
 
-    pub fn fetch_payment(&self, payment_hash: &sha256::Hash) -> Option<Payment> {
+    pub async fn fetch_payment(&self, payment_hash: &sha256::Hash) -> Option<Payment> {
         self.dbtx()
+            .await
             .get_value(&PaymentKey(payment_hash.clone()))
+            .await
             .expect("Db error")
     }
 
     pub async fn update_payment_status(&self, payment_hash: &sha256::Hash, status: PaymentStatus) {
-        if let Some(mut payment) = self.fetch_payment(&payment_hash) {
+        if let Some(mut payment) = self.fetch_payment(&payment_hash).await {
             payment.status = status;
-            let mut dbtx = self.dbtx();
+            let mut dbtx = self.dbtx().await;
             dbtx.insert_entry(&PaymentKey(*payment_hash), &payment)
                 .await
                 .expect("Db error");
@@ -514,8 +529,9 @@ impl Federation {
         // TODO: what to do if this payment doesn't exist?
     }
 
-    pub fn already_paid_invoice(&self, invoice: &Invoice) -> bool {
+    pub async fn already_paid_invoice(&self, invoice: &Invoice) -> bool {
         self.list_payments()
+            .await
             .iter()
             .filter(|payment| payment.outgoing() && &payment.invoice == invoice)
             .next()
@@ -534,11 +550,11 @@ impl Federation {
 
     pub async fn update_balance(&self) {
         self.client.fetch_all_coins().await;
-        self.send_balance_notification();
+        self.send_balance_notification().await;
     }
 
-    fn send_balance_notification(&self) {
-        let balance_millis = self.client.coins().total_amount().milli_sat;
+    async fn send_balance_notification(&self) {
+        let balance_millis = self.client.coins().await.total_amount().msats;
         let federation_id = self.client.config().0.federation_name;
         let event = Event::balance(federation_id.clone(), balance_millis);
         self.event_sink.event(&event);
@@ -565,7 +581,7 @@ impl Federation {
             loop {
                 let current_block_height = fed.block_height().await.ok();
                 if last_consensus_block_height != current_block_height {
-                    fed.attempt_pegins();
+                    fed.attempt_pegins().await;
                     last_consensus_block_height = current_block_height;
                 }
                 fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
@@ -592,6 +608,7 @@ impl Federation {
             loop {
                 let pending_payments: Vec<Payment> = fed
                     .list_payments()
+                    .await
                     .into_iter()
                     // TODO: should we filter
                     .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
@@ -625,7 +642,7 @@ impl Federation {
                             fed.update_payment_status(payment_hash, PaymentStatus::Paid)
                                 .await;
                             fed.update_balance().await;
-                            let amount = fedimint_api::Amount::from_msat(
+                            let amount = fedimint_api::Amount::from_msats(
                                 payment.invoice.amount_milli_satoshis().expect(
                                     "assuming we only receive payments for invoices with amount",
                                 ),
@@ -659,7 +676,8 @@ impl Federation {
                 let contracts = fed
                     .client
                     .ln_client()
-                    .refundable_outgoing_contracts(consensus_block_height);
+                    .refundable_outgoing_contracts(consensus_block_height)
+                    .await;
                 tracing::info!("looking for refunds...");
                 contracts
                     .iter()
