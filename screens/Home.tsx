@@ -5,7 +5,6 @@ import { t } from 'i18next'
 import React, { useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import FaIcon from 'react-native-vector-icons/FontAwesome'
 
 import { Images } from '../assets/images'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
@@ -38,21 +37,13 @@ const Home: React.FC<Props> = () => {
         <Tab.Navigator
             initialRouteName="Wallet"
             screenOptions={({ route }) => ({
-                tabBarIcon: ({ color, size }) => {
+                tabBarIcon: () => {
                     switch (route.name) {
                         case 'Wallet':
                             return (
                                 <Image
+                                    style={styles(theme, insets).iconImage}
                                     source={Images.Wallet}
-                                    style={{ height: size, width: size }}
-                                />
-                            )
-                        case 'Admin':
-                            return (
-                                <FaIcon
-                                    name={'gear'}
-                                    size={size}
-                                    color={color}
                                 />
                             )
                         case 'Sites':
@@ -60,6 +51,13 @@ const Home: React.FC<Props> = () => {
                                 <Image
                                     style={styles(theme, insets).iconImage}
                                     source={Images.Globe}
+                                />
+                            )
+                        case 'Admin':
+                            return (
+                                <Image
+                                    style={styles(theme, insets).iconImage}
+                                    source={Images.Cog}
                                 />
                             )
                         default:
