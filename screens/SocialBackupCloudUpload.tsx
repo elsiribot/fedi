@@ -1,11 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
+import { Dimensions, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
 import { Images } from '../assets/images'
+import HoloGuidance from '../components/ui/HoloGuidance'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -34,24 +35,11 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <View style={styles(theme).container}>
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).holoCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <Image
-                        source={Images.WordList}
-                        style={styles(theme).holoIconImage}
-                    />
-                </ImageBackground>
-                <Text h2 h2Style={styles(theme).label}>
-                    {t('feature.backup.cloud-backup')}
-                </Text>
-                <Text style={styles(theme).instructionsText}>
-                    {t('feature.backup.cloud-backup-instructions')}
-                </Text>
-            </View>
-
+            <HoloGuidance
+                iconImage={Images.GoogleDrive}
+                title={t('feature.backup.cloud-backup')}
+                message={t('feature.backup.cloud-backup-instructions')}
+            />
             <View style={styles(theme).buttonsContainer}>
                 <Button
                     title={t('words.skip')}

@@ -30,15 +30,18 @@ export type RootStackParamList = {
     BitcoinRequest: { uri: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
+    CompleteRecoveryAssist: { userPublicKey: string; videoUrl: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
+    ConfirmReceiveOffline: { ecash: string; amount: MSats }
+    ConfirmRecoveryAssist: undefined
     ConfirmSendLightning: { lightningUri: BtcLnUri }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
-    ConfirmReceiveOffline: { ecash: string; amount: MSats }
     ConnectedFederationsDrawer: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
     Initializing: { reset: boolean }
+    PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
@@ -47,7 +50,6 @@ export type RootStackParamList = {
     Receive: undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
-    RecoveryAssistConfirmation: { userPublicKey: string; videoUrl: string }
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
     ScanFederationCode: undefined
@@ -63,6 +65,7 @@ export type RootStackParamList = {
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined
     SocialBackupCloudUpload: undefined
+    SocialBackupGuidance: undefined
     SocialBackupProcessing: { videoFilePath: string }
     SocialBackupSuccess: undefined
     SocialRecoveryQrModal: undefined

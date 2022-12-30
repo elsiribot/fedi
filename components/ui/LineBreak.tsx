@@ -31,6 +31,10 @@ const LineBreak: React.FC<LineBreakProps> = ({ count = 1 }: LineBreakProps) => {
     )
 }
 
-const styles = StyleSheet.create({ default: { lineHeight: 0 } })
+// Be careful if changing these value since there is some inconsistent
+// behavior on smaller screens, be sure to test on a few screen sizes
+const styles = StyleSheet.create({
+    default: { lineHeight: 8, fontSize: 8 },
+})
 
 export default LineBreak

@@ -18,6 +18,7 @@ export const Images: ImagesMap = {
     FediLogoIcon: require('./fedi-logo-icon.png'),
     Fedimint: require('./fedimint.png'),
     FediQrLogo: require('./fedi-qr-logo.png'),
+    GoogleDrive: require('./google-drive.png'),
     Globe: require('./globe.png'),
     HoloBackground: require('./holo-background.jpg'),
     InviteMembers: require('./invite-members.png'),

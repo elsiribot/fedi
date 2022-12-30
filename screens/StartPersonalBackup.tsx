@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
+import { Dimensions, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import HoloGuidance from '../components/ui/HoloGuidance'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,28 +19,16 @@ const StartPersonalBackup: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <View style={styles(theme).container}>
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).holoCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <Image
-                        source={Images.WordList}
-                        style={styles(theme).holoIconImage}
-                    />
-                </ImageBackground>
-                <Text h2 h2Style={styles(theme).label}>
-                    {t('feature.backup.personal-backup')}
-                </Text>
-                <Text style={styles(theme).instructionsText}>
-                    {t('feature.backup.start-personal-backup-instructions')}
-                </Text>
-            </View>
+            <HoloGuidance
+                iconImage={Images.WordList}
+                title={t('feature.backup.personal-backup')}
+                message={t('feature.backup.start-personal-backup-instructions')}
+            />
             <Button
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
-                    navigation.navigate('RecoveryWords')
+                    navigation.navigate('PersonalBackupGuidance')
                 }}
             />
         </View>

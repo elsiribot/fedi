@@ -7,9 +7,11 @@ import React from 'react'
 import BitcoinRequest from './screens/BitcoinRequest'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
+import CompleteRecoveryAssist from './screens/CompleteRecoveryAssist'
 import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
+import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import DeveloperSettings from './screens/DeveloperSettings'
@@ -17,6 +19,7 @@ import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
@@ -24,7 +27,6 @@ import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
-import RecoveryAssistConfirmation from './screens/RecoveryAssistConfirmation'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
 import ScanFederationCode from './screens/ScanFederationCode'
@@ -37,6 +39,7 @@ import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
 import SitesBrowser from './screens/SitesBrowser'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
+import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
 import SocialBackupSuccess from './screens/SocialBackupSuccess'
 import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
@@ -85,7 +88,6 @@ const MainNavigator = () => {
         state: { selectedFederation },
     } = useFederationsContext()
 
-    console.info('MainNavigator')
     return (
         <Stack.Navigator
             initialRouteName={'Initializing'}
@@ -271,6 +273,15 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="SocialBackupGuidance"
+                                component={SocialBackupGuidance}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
                                 name="SocialBackupProcessing"
                                 component={SocialBackupProcessing}
                                 options={() => ({
@@ -352,6 +363,15 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="ConfirmRecoveryAssist"
+                                component={ConfirmRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
                                 name="ScanSocialRecoveryCode"
                                 component={ScanSocialRecoveryCode}
                                 options={() => ({
@@ -364,8 +384,8 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="RecoveryAssistConfirmation"
-                                component={RecoveryAssistConfirmation}
+                                name="CompleteRecoveryAssist"
+                                component={CompleteRecoveryAssist}
                                 options={() => ({
                                     header: () => (
                                         <RecoveryAssistHeader backButton />
@@ -381,6 +401,13 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="StartPersonalBackup"
                                 component={StartPersonalBackup}
+                                options={() => ({
+                                    header: () => <PersonalBackupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="PersonalBackupGuidance"
+                                component={PersonalBackupGuidance}
                                 options={() => ({
                                     header: () => <PersonalBackupHeader />,
                                 })}
@@ -494,7 +521,7 @@ const linking: NavigationLinkingConfig = {
                     SocialRecoverySuccess: 'social-recovery-success',
                     SocialRecoveryAssist: 'social-recovery-assist',
                     ScanSocialRecoveryCode: 'scan-social-recovery-code',
-                    RecoveryAssistConfirmation: 'recovery-assist-confirmation',
+                    CompleteRecoveryAssist: 'recovery-assist-confirmation',
                     RecoveryAssistSuccess: 'recovery-assist-success',
                     // Personal Backup
                     StartPersonalBackup: 'start-personal-backup',
