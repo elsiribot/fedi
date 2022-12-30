@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
 import LineBreak from '../components/ui/LineBreak'
@@ -34,7 +34,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const handleGuardianApproval = async () => {
         try {
             await approveSocialRecoveryRequest(userPublicKey)
-            navigation.navigate('RecoveryAssistSuccess')
+            navigation.replace('RecoveryAssistSuccess')
         } catch (error) {
             const typedError = error as Error
             console.error(typedError)
@@ -46,7 +46,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         try {
             await denySocialRecoveryRequest(userPublicKey)
             // TODO: Go to denial screen once design is provided
-            navigation.navigate('RecoveryAssistSuccess')
+            navigation.replace('RecoveryAssistSuccess')
         } catch (error) {
             const typedError = error as Error
             console.error(typedError)
@@ -55,7 +55,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
                 <Video
                     source={{ uri: videoUrl }} // Can be a URL or a local file.
@@ -94,28 +94,30 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 {t('feature.recovery.recovery-confirm-identity-instructions-2')}
             </Text>
             <LineBreak />
-            <CheckBox
-                center
-                title={t('feature.recovery.recovery-confirm-identity-yes')}
-                checkedIcon="dot-circle-o"
-                uncheckedIcon="circle-o"
-                checked={approvalSelected}
-                onPress={() => {
-                    setApprovalSelected(true)
-                    setDenialSelected(false)
-                }}
-            />
-            <CheckBox
-                center
-                title={t('feature.recovery.recovery-confirm-identity-no')}
-                checkedIcon="dot-circle-o"
-                uncheckedIcon="circle-o"
-                checked={denialSelected}
-                onPress={() => {
-                    setApprovalSelected(false)
-                    setDenialSelected(true)
-                }}
-            />
+            <View style={styles(theme).confirmationContainer}>
+                <CheckBox
+                    center
+                    title={t('feature.recovery.recovery-confirm-identity-yes')}
+                    checkedIcon="dot-circle-o"
+                    uncheckedIcon="circle-o"
+                    checked={approvalSelected}
+                    onPress={() => {
+                        setApprovalSelected(true)
+                        setDenialSelected(false)
+                    }}
+                />
+                <CheckBox
+                    center
+                    title={t('feature.recovery.recovery-confirm-identity-no')}
+                    checkedIcon="dot-circle-o"
+                    uncheckedIcon="circle-o"
+                    checked={denialSelected}
+                    onPress={() => {
+                        setApprovalSelected(false)
+                        setDenialSelected(true)
+                    }}
+                />
+            </View>
 
             <Button
                 title={t('words.continue')}
@@ -126,38 +128,43 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                         handleGuardianDenial()
                     }
                 }}
-                disabled={approvalSelected && denialSelected}
+                disabled={!approvalSelected && !denialSelected}
                 containerStyle={styles(theme).confirmButton}
             />
-        </View>
+        </ScrollView>
     )
 }
-
-const CAMERA_SIZE = Dimensions.get('window').width * 0.9
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             alignItems: 'center',
-            width: '100%',
-        },
-        confirmButton: {
-            marginTop: theme.spacing.xl,
-            width: '90%',
+            paddingVertical: theme.spacing.xl,
         },
         cameraContainer: {
-            height: CAMERA_SIZE,
-            width: CAMERA_SIZE,
-            borderWidth: 3,
+            height: theme.sizes.socialBackupCameraHeight,
+            width: theme.sizes.socialBackupCameraWidth,
+            borderWidth: 1,
         },
         camera: {
             height: '100%',
             width: '100%',
         },
-        instructionsText: {
-            textAlign: 'left',
-            fontWeight: '400',
+        confirmButton: {
+            marginTop: theme.spacing.lg,
             width: '90%',
+        },
+        confirmationContainer: {
+            flex: 1,
+            alignItems: 'flex-start',
+            paddingHorizontal: theme.spacing.md,
+            marginHorizontal: 0,
+        },
+        instructionsText: {
+            alignSelf: 'flex-start',
+            textAlign: 'left',
+            paddingHorizontal: theme.spacing.xl,
         },
         playIconContainer: {
             position: 'absolute',

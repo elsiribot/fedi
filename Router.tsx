@@ -11,6 +11,7 @@ import CompleteRecoveryAssist from './screens/CompleteRecoveryAssist'
 import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
+import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import DeveloperSettings from './screens/DeveloperSettings'
@@ -85,7 +86,6 @@ const MainNavigator = () => {
         state: { selectedFederation },
     } = useFederationsContext()
 
-    console.info('MainNavigator')
     return (
         <Stack.Navigator
             initialRouteName={'Initializing'}
@@ -345,6 +345,15 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="StartRecoveryAssist"
                                 component={StartRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmRecoveryAssist"
+                                component={ConfirmRecoveryAssist}
                                 options={() => ({
                                     header: () => (
                                         <RecoveryAssistHeader backButton />
