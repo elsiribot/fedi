@@ -31,8 +31,6 @@ const LineBreak: React.FC<LineBreakProps> = ({ count = 1 }: LineBreakProps) => {
     )
 }
 
-// For some reason, smaller iOS screens create a large space when
-// lineHeight is 0 so make sure this is non-zero
-const styles = StyleSheet.create({ default: { lineHeight: 1 } })
+const styles = StyleSheet.create({ default: { lineHeight: 0 } })
 
 export default LineBreak
