@@ -7,6 +7,7 @@ import React from 'react'
 import BitcoinRequest from './screens/BitcoinRequest'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
+import CompleteRecoveryAssist from './screens/CompleteRecoveryAssist'
 import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
@@ -24,7 +25,6 @@ import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
-import RecoveryAssistConfirmation from './screens/RecoveryAssistConfirmation'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
 import ScanFederationCode from './screens/ScanFederationCode'
@@ -364,8 +364,8 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="RecoveryAssistConfirmation"
-                                component={RecoveryAssistConfirmation}
+                                name="CompleteRecoveryAssist"
+                                component={CompleteRecoveryAssist}
                                 options={() => ({
                                     header: () => (
                                         <RecoveryAssistHeader backButton />
@@ -494,7 +494,7 @@ const linking: NavigationLinkingConfig = {
                     SocialRecoverySuccess: 'social-recovery-success',
                     SocialRecoveryAssist: 'social-recovery-assist',
                     ScanSocialRecoveryCode: 'scan-social-recovery-code',
-                    RecoveryAssistConfirmation: 'recovery-assist-confirmation',
+                    CompleteRecoveryAssist: 'recovery-assist-confirmation',
                     RecoveryAssistSuccess: 'recovery-assist-success',
                     // Personal Backup
                     StartPersonalBackup: 'start-personal-backup',

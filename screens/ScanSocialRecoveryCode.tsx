@@ -30,7 +30,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 const videoUrl = parts[2]
                 console.info(userPublicKey, videoUrl)
 
-                navigation.navigate('RecoveryAssistConfirmation', {
+                navigation.navigate('CompleteRecoveryAssist', {
                     userPublicKey,
                     videoUrl,
                 })

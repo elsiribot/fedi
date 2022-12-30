@@ -12,10 +12,10 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'RecoveryAssistConfirmation'
+    'CompleteRecoveryAssist'
 >
 
-const RecoveryAssistConfirmation: React.FC<Props> = ({
+const CompleteRecoveryAssist: React.FC<Props> = ({
     navigation,
     route,
 }: Props) => {
@@ -177,4 +177,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RecoveryAssistConfirmation
+export default CompleteRecoveryAssist
