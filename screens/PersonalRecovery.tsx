@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 
 import { SeedWords } from '../bridge'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
@@ -78,6 +79,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { recoverFromMnemonic } = useBridge()
+    const { selectedFederation } = useFederationsContext().state
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
@@ -149,7 +151,9 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     : {},
             ]}>
             <Text style={styles(theme).instructionsText}>
-                {t('feature.recovery.personal-recovery-instructions')}
+                {t('feature.recovery.personal-recovery-instructions', {
+                    federation: selectedFederation?.name,
+                })}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).twoColumnContainer}>
