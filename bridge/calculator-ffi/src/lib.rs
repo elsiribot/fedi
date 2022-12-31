@@ -561,3 +561,15 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
         return result.unwrap_or_else(|e| rpc_error(&e.to_string()));
     })
 }
+
+// TODO: Generate these dynamically from the
+// Event enum/impl in event.rs?
+pub fn fedimint_get_supported_events() -> Vec<String> {
+    return vec![
+        String::from("balance"),
+        String::from("transaction"),
+        String::from("socialRecovery"),
+        String::from("recoveryFileCreation"),
+        String::from("log"),
+    ]
+}
