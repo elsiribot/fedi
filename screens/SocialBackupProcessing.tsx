@@ -66,6 +66,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
     // TODO: Remove this simulation when bridge is emitting events
     useEffect(() => {
         if (percentComplete === 100) {
+            // setPercentComplete(0)
             navigation.replace('SocialBackupCloudUpload')
         }
         const interval = setInterval(() => {

@@ -105,7 +105,7 @@ const theme = createTheme({
         expandedWalletCardHeight: 325,
         holoGuidanceCircle: 180,
         progressBarHeight: 6,
-        progressCircleThickness: 6,
+        progressCircleThickness: 3,
         progressCircle: dimensions.height * 0.25,
         progressInnerCircle: dimensions.height * 0.25 - 10,
         recordButtonOuter: 68,

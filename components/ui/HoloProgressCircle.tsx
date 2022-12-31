@@ -45,7 +45,7 @@ const HoloProgressCircle: React.FC<Props> = ({ percentComplete }: Props) => {
                     thickness={theme.sizes.progressCircleThickness}
                     size={theme.sizes.progressCircle}
                     // borderWidth hides the circle showing unfilled progress
-                    borderWidth={0}
+                    borderWidth={1}
                 />
             </View>
             <View style={styles(theme).percentLabelContainer}>
