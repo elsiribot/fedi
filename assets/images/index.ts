@@ -21,6 +21,7 @@ export const Images: ImagesMap = {
     GoogleDrive: require('./google-drive.png'),
     Globe: require('./globe.png'),
     HoloBackground: require('./holo-background.jpg'),
+    HoloBackgroundStrong: require('./holo-background-strong-900.png'),
     InviteMembers: require('./invite-members.png'),
     LeaveFederation: require('./leave-federation.png'),
     Note: require('./note.png'),

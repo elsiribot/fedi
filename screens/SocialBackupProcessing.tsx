@@ -1,11 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
+import { RecoveryFileCreationEvent, TFedimintEventEmitter } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
+import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
@@ -25,13 +26,33 @@ const SocialBackupProcessing: React.FC<Props> = ({
     const { uploadBackupFile } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { videoFilePath } = route.params
+    const [percentComplete, setPercentComplete] = useState<number>(0)
+
+    // Registers an event handler listening for recovery file creation events
+    useEffect(() => {
+        const emitter = new TFedimintEventEmitter()
+        emitter.onRecoveryFileCreation((event: RecoveryFileCreationEvent) => {
+            console.info(event)
+            if (event.type === 'progress') {
+                setPercentComplete(event.percentComplete)
+            } else if (event.type === 'complete') {
+                navigation.replace('SocialBackupCloudUpload')
+            } else if (event.type === 'failed') {
+                // TODO: Implement localized errors
+                // getError(event.errorCode)
+                toast?.show('Recovery file creation failed', 3000)
+            }
+        })
+
+        return () => {
+            emitter.removeListener('recoveryFileCreation')
+        }
+    }, [navigation, toast])
 
     useEffect(() => {
         const startBackupFileUpload = async () => {
             try {
                 await uploadBackupFile(videoFilePath)
-
-                navigation.navigate('SocialBackupCloudUpload')
             } catch (error) {
                 const typedError = error as Error
                 console.error(typedError)
@@ -39,52 +60,49 @@ const SocialBackupProcessing: React.FC<Props> = ({
             }
         }
 
-        // TODO: Uncomment below and remove simulated timeout when bridge is ready
-        // startBackupFileUpload()
-        setTimeout(() => {
-            startBackupFileUpload()
-        }, 5000)
+        startBackupFileUpload()
     }, [navigation, toast, uploadBackupFile, videoFilePath])
+
+    // TODO: Remove this simulation when bridge is emitting events
+    useEffect(() => {
+        if (percentComplete === 100) {
+            // setPercentComplete(0)
+            navigation.replace('SocialBackupCloudUpload')
+        }
+        const interval = setInterval(() => {
+            setPercentComplete(percentComplete + 1)
+        }, 50)
+
+        return () => clearInterval(interval)
+    }, [navigation, percentComplete])
 
     return (
         <View style={styles(theme).container}>
-            <View style={styles(theme).container}>
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).holoCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <Text bold style={styles(theme).instructionsText}>
-                        {'75%'}
-                    </Text>
-                </ImageBackground>
-                <Text h2 h2Style={styles(theme).label}>
-                    {t('feature.backup.creating-recovery-file')}
-                </Text>
+            <HoloProgressCircle percentComplete={percentComplete} />
+            <Text h2 h2Style={styles(theme).label}>
+                {t('feature.backup.creating-recovery-file')}
+            </Text>
 
-                <HoloCard
-                    body={
-                        <View>
-                            <Text>
-                                {t(
-                                    'feature.backup.social-backup-processing-info-1',
-                                )}
-                            </Text>
-                            <LineBreak />
-                            <Text>
-                                {t(
-                                    'feature.backup.social-backup-processing-info-2',
-                                )}
-                            </Text>
-                        </View>
-                    }
-                />
-            </View>
+            <HoloCard
+                body={
+                    <View>
+                        <Text caption>
+                            {t(
+                                'feature.backup.social-backup-processing-info-1',
+                            )}
+                        </Text>
+                        <LineBreak />
+                        <Text caption>
+                            {t(
+                                'feature.backup.social-backup-processing-info-2',
+                            )}
+                        </Text>
+                    </View>
+                }
+            />
         </View>
     )
 }
-
-const WINDOW_WIDTH = Dimensions.get('window').width
-const CIRCLE_SIZE = WINDOW_WIDTH * 0.45
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
@@ -92,30 +110,12 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.md,
+            padding: theme.spacing.xl,
         },
         label: {
             textAlign: 'center',
             marginVertical: theme.spacing.xl,
             paddingHorizontal: theme.spacing.xl,
-        },
-        instructionsText: {
-            textAlign: 'center',
-            paddingHorizontal: theme.spacing.xl,
-            fontWeight: '400',
-        },
-        holoCircle: {
-            height: CIRCLE_SIZE,
-            width: CIRCLE_SIZE,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        circleBorder: {
-            borderRadius: CIRCLE_SIZE * 0.5,
-        },
-        holoIconImage: {
-            height: theme.sizes.lg,
-            width: theme.sizes.lg,
         },
     })
 
