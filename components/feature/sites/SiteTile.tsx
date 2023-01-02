@@ -1,7 +1,7 @@
 import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
-
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { SiteImages } from '../../../assets/images'
 import { Site } from '../../../types'
 
 type SiteTileProps = {
@@ -11,31 +11,43 @@ type SiteTileProps = {
 
 const SiteTile = ({ site, selectSite }: SiteTileProps) => {
     const { theme } = useTheme()
+    const siteImage = SiteImages[site.id]
     return (
         <TouchableOpacity
             onPress={() => selectSite(site)}
             style={styles(theme).container}>
-            {/* TODO: show the right icon */}
             <View style={styles(theme).leftContainer}>
-                <Icon
-                    style={styles(theme).icon}
-                    name="bitcoin"
-                    type="material-community"
-                    color={theme.colors.orange}
-                    size={theme.sizes.md}
-                />
+                {siteImage ? (
+                    <Image
+                        style={styles(theme).icon}
+                        source={siteImage}
+                        resizeMode="contain"
+                    />
+                ) : (
+                    <Icon
+                        style={styles(theme).icon}
+                        name="web-box"
+                        type="material-community"
+                        color={theme.colors.orange}
+                        size={32}
+                    />
+                )}
             </View>
             <View style={styles(theme).centerContainer}>
                 <View style={styles(theme).siteTitle}>
-                    <Text>{site.title}</Text>
+                    <Text caption medium style={styles(theme).siteTitleText}>
+                        {site.title}
+                    </Text>
                     <Icon
-                        name="check"
-                        type="font-awesome"
-                        color={theme.colors.orange}
-                        size={theme.sizes.sm}
+                        name="shield-check"
+                        type="material-community"
+                        color={theme.colors.primary}
+                        size={14}
                     />
                 </View>
-                <Text>{site.description}</Text>
+                <Text small style={styles(theme).description}>
+                    {site.description}
+                </Text>
             </View>
         </TouchableOpacity>
     )
@@ -49,22 +61,32 @@ const styles = (theme: Theme) =>
             justifyContent: 'flex-start',
             backgroundColor: theme.colors.secondary,
             width: '100%',
-            marginVertical: 4,
+            marginBottom: theme.spacing.xl,
         },
         leftContainer: {
-            width: '15%',
+            width: 32,
+            flexShrink: 0,
         },
-        icon: {},
+        icon: {
+            width: 32,
+            height: 32,
+            overflow: 'hidden',
+            borderRadius: 4,
+        },
         centerContainer: {
-            width: '85%',
+            flex: 1,
             alignItems: 'flex-start',
-            paddingHorizontal: 8,
+            paddingHorizontal: theme.spacing.md,
             flexDirection: 'column',
         },
         siteTitle: {
             flexDirection: 'row',
             justifyContent: 'flex-start',
             alignItems: 'center',
+            paddingBottom: theme.spacing.xs,
+        },
+        siteTitleText: {
+            paddingRight: theme.spacing.xs,
         },
         rightContainer: {
             width: '30%',
@@ -77,6 +99,9 @@ const styles = (theme: Theme) =>
         subText: {
             fontSize: theme.sizes.xs,
             opa: theme.colors.primaryLight,
+        },
+        description: {
+            color: theme.colors.primaryLight,
         },
     })
 

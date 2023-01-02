@@ -1,14 +1,8 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
 import React from 'react'
-import {
-    Dimensions,
-    FlatList,
-    ListRenderItem,
-    StyleSheet,
-    View,
-} from 'react-native'
-
+import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import SiteTile from '../components/feature/sites/SiteTile'
 import { SITES } from '../constants'
 import { Site } from '../types'
@@ -18,8 +12,6 @@ export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
     'Sites'
 >
-
-const WINDOW_WIDTH = Dimensions.get('window').width
 
 const Sites: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
@@ -31,17 +23,13 @@ const Sites: React.FC<Props> = ({ navigation }) => {
     }
     return (
         <View style={styles(theme).container}>
+            <Text h2 medium h2Style={styles(theme).title}>
+                {t('words.sites')}
+            </Text>
             <FlatList
                 data={SITES}
                 renderItem={renderSite}
-                keyExtractor={(item: Site) => `${item.url}`}
-                // optimization that allows skipping the measurement of dynamic content
-                // for fixed-size list items
-                getItemLayout={(data, index) => ({
-                    length: WINDOW_WIDTH,
-                    offset: 48 * index,
-                    index,
-                })}
+                keyExtractor={(item: Site) => item.id}
             />
         </View>
     )
@@ -52,6 +40,9 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             paddingHorizontal: theme.spacing.xl,
+        },
+        title: {
+            marginBottom: theme.spacing.lg,
         },
     })
 
