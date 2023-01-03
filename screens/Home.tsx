@@ -49,18 +49,18 @@ const Home: React.FC<Props> = () => {
                                     source={Images.Wallet}
                                 />
                             )
-                        case 'Sites':
-                            return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Globe}
-                                />
-                            )
                         case 'Community':
                             return (
                                 <Image
                                     style={styles(theme, insets).iconImage}
                                     source={Images.FediLogoIcon}
+                                />
+                            )
+                        case 'Sites':
+                            return (
+                                <Image
+                                    style={styles(theme, insets).iconImage}
+                                    source={Images.Globe}
                                 />
                             )
                         case 'Admin':
