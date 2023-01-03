@@ -12,49 +12,58 @@ export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 
 export const SITES = [
     {
+        id: 'testfed',
         title: 'testfed',
         url: 'https://testfed.xyz/webln',
         description: 'A regtest playground',
     },
     {
+        id: 'kollider',
         title: 'Kollider',
         url: 'https://light.kollider.xyz/auth/login',
         description:
             'Like cash in hand, pass physical bitcoin along multiple times',
     },
     {
+        id: 'btcmap',
         title: 'BTCMAP',
         url: 'https://btcmap.org',
         description: 'See where bitcoin is being used all over the world',
     },
     {
+        id: 'wavlake',
         title: 'WavLake',
         url: 'https://wavlake.com',
         description: 'Listen to music',
     },
     {
+        id: 'ibex',
         title: 'Ibex Pay',
         url: 'https://ibexmercado.com',
         description:
             'Easiest way for businesses to receive instant bitcoin payments via Lightning',
     },
     {
+        id: 'stackernews',
         title: 'Stacker.News',
         url: 'https://stacker.news',
         description: 'Read about the latest bitcoin news',
     },
     {
+        id: 'geyser',
         title: 'Geyser Fund',
         url: 'https://geyser.fund',
         description: 'Crowdfunding with bitcoin',
     },
     {
+        id: 'lookingglass',
         title: 'The Looking Glass Education',
         url: 'https://lookingglasseducation.com/',
         description:
             'Developing global educational content that highlights the ingenuity and potential of bitcoin',
     },
     {
+        id: 'satscard',
         title: 'Satscard',
         url: 'https://satscard.com',
         description:

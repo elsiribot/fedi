@@ -33,3 +33,14 @@ export const Images: ImagesMap = {
     Wallet: require('./wallet.png'),
     WordList: require('./word-list.png'),
 }
+
+export const SiteImages: ImagesMap = {
+    btcmap: require('./sites/btcmap.png'),
+    geyser: require('./sites/geyser.png'),
+    ibex: require('./sites/ibex.png'),
+    kollider: require('./sites/kollider.png'),
+    lookingglass: require('./sites/lookingglass.png'),
+    satscard: require('./sites/satscard.png'),
+    stackernews: require('./sites/stackernews.png'),
+    wavlake: require('./sites/wavlake.png'),
+}

@@ -30,6 +30,7 @@ export class BtcLnUri extends Base {
 }
 
 export type Site = {
+    id: string
     url: string
     title: string
     description: string
