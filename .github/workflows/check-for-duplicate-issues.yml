@@ -1,6 +1,7 @@
 name: Check Issues for potential duplicates
 # This workflow runs every time an Issue is opened, or reopened
 on:
+  workflow_dispatch:
   issues:
     types: [opened, reopened]
 
