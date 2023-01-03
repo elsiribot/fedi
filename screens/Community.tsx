@@ -1,11 +1,10 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import { Theme, useTheme } from '@rneui/themed'
 
-import type { HomeTabsParamList } from './Home'
-import type { RootStackParamList } from '../Router'
 import RoomsList from '../components/feature/community/RoomsList'
+import { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -26,7 +25,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            paddingHorizontal: 24,
+            paddingHorizontal: theme.spacing.xl,
         },
     })
 

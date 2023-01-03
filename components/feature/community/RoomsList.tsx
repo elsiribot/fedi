@@ -1,5 +1,5 @@
+import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import {
     Dimensions,
     FlatList,
@@ -9,7 +9,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 
 import { Images } from '../../../assets/images'
 import DateUtils from '../../../utils/DateUtils'

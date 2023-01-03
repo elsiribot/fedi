@@ -1,12 +1,13 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Image, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React, { useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
+import CommunityHeader from '../components/feature/community/CommunityHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
@@ -16,8 +17,6 @@ import Sites from './Sites'
 import Wallet from './Wallet'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
-
-import Header from '../components/ui/Header'
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>()
 
@@ -105,16 +104,7 @@ const Home: React.FC<Props> = () => {
                 name="Community"
                 component={Community}
                 options={() => ({
-                    header: () => (
-                        <Header
-                            headerLeft={
-                                <Text h2 medium>
-                                    {t('words.community')}
-                                </Text>
-                            }
-                            leftContainerStyle={{ flex: 3 }}
-                        />
-                    ),
+                    header: () => <CommunityHeader />,
                 })}
             />
             <Tab.Screen
