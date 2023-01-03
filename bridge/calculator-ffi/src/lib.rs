@@ -1,6 +1,7 @@
 pub mod bridge;
 pub mod event;
 pub mod logging;
+pub mod mnemonic;
 pub mod payment;
 pub mod tx;
 pub mod types;
@@ -571,5 +572,5 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
         String::from("socialRecovery"),
         String::from("recoveryFileCreation"),
         String::from("log"),
-    ]
+    ];
 }

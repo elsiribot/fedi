@@ -9,6 +9,7 @@ use std::{
 
 use crate::{
     event::Event,
+    mnemonic::UserSeedPhrase,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     tx::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
@@ -71,6 +72,7 @@ pub struct Bridge {
     pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
     pub pollers: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    pub user_seed_phrase: UserSeedPhrase,
 }
 
 impl Bridge {
@@ -90,6 +92,8 @@ impl Bridge {
             clients: Arc::new(Mutex::new(federations)),
             pollers: Arc::new(Mutex::new(pollers)),
             event_sink,
+            // TODO: read from disk
+            user_seed_phrase: UserSeedPhrase::new(),
         };
         // TODO: this should start pollers for all federations ...
         // or instantiating `Federation` should do so ...
