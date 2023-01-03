@@ -9,15 +9,15 @@ name = "calculatorffi"
 
 
 [dependencies]
-mint-client = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-fedimint-api = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-fedimint-core = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-fedimint-sled = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+# mint-client = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+# fedimint-api = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+# fedimint-core = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+# fedimint-sled = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
 
-# mint-client = { path = "../../fedimint/client/client-lib" }
-# fedimint-api = { path = "../../fedimint/fedimint-api" }
-# fedimint-core = { path = "../../fedimint/fedimint-core" }
-# fedimint-sled = { path = "../../fedimint/fedimint-sled" }
+mint-client = { path = "../../fedimint/client/client-lib" }
+fedimint-api = { path = "../../fedimint/fedimint-api" }
+fedimint-core = { path = "../../fedimint/fedimint-core" }
+fedimint-sled = { path = "../../fedimint/fedimint-sled" }
 
 # FIXME: do we want unicode-normalization?
 bip39 = { version = "1.0.1", default-features = false, features=[] }
