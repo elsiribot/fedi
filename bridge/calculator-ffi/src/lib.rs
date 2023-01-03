@@ -25,7 +25,7 @@ use tokio::sync::Mutex;
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
-use crate::event::EventSinkWrapper;
+use crate::{event::EventSinkWrapper, types::federation_to_fedimint_federation};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -96,7 +96,7 @@ async fn handle_list_transactions(payload: String) -> anyhow::Result<String> {
     };
     let federation = get_federation(&payload.federation_id).await;
     // FIXME: consider mapping from millisat to sat
-    let transactions = federation.list_transactions();
+    let transactions = federation.list_transactions().await;
     Ok(json!({ "result": transactions }).to_string())
 }
 
@@ -164,19 +164,21 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
 
     bridge.join_federation(federation.clone()).await;
 
-    let fedimint_federation = FedimintFederation::from(&federation);
+    let fedimint_federation = federation_to_fedimint_federation(&federation).await;
     Ok(json!({ "result": fedimint_federation }).to_string())
 }
 
 async fn handle_list_federations() -> anyhow::Result<String> {
     let bridge = get_bridge().await.expect("bridge not initialized");
-    let federations: Vec<FedimintFederation> = bridge
-        .clients
-        .lock()
-        .await
-        .values()
-        .map(|federation| FedimintFederation::from(federation))
-        .collect();
+    let federations: Vec<FedimintFederation> = futures::future::join_all(
+        bridge
+            .clients
+            .lock()
+            .await
+            .values()
+            .map(|federation| federation_to_fedimint_federation(federation)),
+    )
+    .await;
     Ok(json!({ "result": federations }).to_string())
 }
 
@@ -249,7 +251,7 @@ async fn handle_address_or_invoice(payload: String) -> anyhow::Result<String> {
                 invoice.currency()
             )));
         }
-        if federation.already_paid_invoice(&invoice) {
+        if federation.already_paid_invoice(&invoice).await {
             return Err(anyhow!("Already paid this invoice"));
         }
         return Ok(json!({ "result": AddressOrInvoice::Invoice }).to_string());

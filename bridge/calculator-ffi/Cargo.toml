@@ -9,20 +9,16 @@ name = "calculatorffi"
 
 
 [dependencies]
-#mint-client = { git = "https://github.com/fedimint/fedimint" }
-#fedimint-api = { git = "https://github.com/fedimint/fedimint" }
-#fedimint-core = { git = "https://github.com/fedimint/fedimint" }
-#fedimint-sled = { git = "https://github.com/fedimint/fedimint" }
-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
-fedimint-api = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
-fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
-fedimint-sled = { git = "https://github.com/fedimint/fedimint", rev = "0b97c298a88da037e5b87bfe0b2203773251b610" }
+mint-client = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+fedimint-api = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+fedimint-core = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
+fedimint-sled = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
 
 anyhow = "1"
 serde = { version = "1.0.142", features = [ "derive" ] }
 serde_json = "1.0.79"
 rand = "0.8.5"
-bitcoin = "0.29.1"
+bitcoin = "0.29.2"
 lazy_static = "1.4.0"
 lightning-invoice = "0.20.0"
 futures = "0.3"
