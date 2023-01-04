@@ -158,7 +158,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                 //         ? setRequestType(BitcoinOrLightning.bitcoin)
                 //         : setRequestType(BitcoinOrLightning.lightning)
                 // }>
-                style={[styles(theme).switchContainer, { opacity: 0.2 }]}
+                style={[styles(theme).switchContainer, { opacity: 0 }]}
                 onPress={() =>
                     toast?.show(
                         'Onchain deposits are currently disabled. Please check back soon',
