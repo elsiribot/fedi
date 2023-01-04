@@ -29,15 +29,13 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const handleUserInput = useCallback(
         async (input: string) => {
             if (isLoading) return
-            console.log('input', input)
+            console.info('input', input)
             setIsLoading(true)
             const normalized = normalizePaymentRequest(input)
             try {
-                console.log('normalized', normalized)
+                console.info('normalized', normalized)
                 let result = await addressOrInvoice(normalized.body)
-                console.log('result', result)
-                console.log(result === AddressOrInvoice.address)
-                console.log(result === AddressOrInvoice.invoice)
+                console.info('result', result)
                 if (result === AddressOrInvoice.address) {
                     normalized.type = BitcoinOrLightning.bitcoin
                     setPaymentRequestUri(normalized)
@@ -58,7 +56,6 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
 
     const checkClipboard = useCallback(async () => {
         const text = await Clipboard.getString()
-        console.log(text)
         handleUserInput(text)
     }, [handleUserInput])
 
