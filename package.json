@@ -21,6 +21,8 @@
         "@react-navigation/native-stack": "^6.9.1",
         "@rneui/base": "^4.0.0-rc.7",
         "@rneui/themed": "^4.0.0-rc.7",
+        "@xmpp/client": "^0.13.1",
+        "@xmpp/debug": "^0.13.0",
         "bech32": "^2.0.0",
         "date-fns": "^2.29.3",
         "i18next": "^22.0.4",
@@ -49,7 +51,8 @@
         "react-native-vision-camera": "^2.15.2",
         "react-native-webln": "^0.1.11",
         "react-native-webview": "^11.26.0",
-        "vision-camera-code-scanner": "^0.2.0"
+        "vision-camera-code-scanner": "^0.2.0",
+        "websocket": "^1.0.34"
     },
     "devDependencies": {
         "@babel/core": "^7.12.9",
@@ -62,6 +65,8 @@
         "@types/react-native-vector-icons": "^6.4.12",
         "@types/react-native-video": "^5.0.14",
         "@types/react-test-renderer": "^18.0.0",
+        "@types/xmpp__client": "^0.13.0",
+        "@types/xmpp__debug": "^0.13.0",
         "@typescript-eslint/eslint-plugin": "^5.37.0",
         "@typescript-eslint/parser": "^5.37.0",
         "babel-jest": "^26.6.3",
