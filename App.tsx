@@ -14,6 +14,7 @@ import {
 import CustomToast from './components/ui/CustomToast'
 import Router from './Router'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
+import { CommunityProvider } from './state/contexts/CommunityContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
@@ -79,6 +80,7 @@ const App = () => {
                     providers={[
                         EnvironmentProvider,
                         FederationsProvider,
+                        CommunityProvider,
                         BackupRecoveryProvider,
                     ]}>
                     {bridgeIsReady && <Router />}
