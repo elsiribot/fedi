@@ -11,8 +11,10 @@ export const Images: ImagesMap = {
     Done: require('./done.png'),
     Error: require('./error.png'),
     Federation: require('./federation.png'),
+    // TODO: Refactor FederationXIcon sizes to use scalable SVGs
     FederationXIconXs: require('./federationx-icon-xs.png'),
     FederationXIconSm: require('./federationx-icon-sm.png'),
+    FederationXIconLg: require('./federationx-icon-lg.png'),
     FediFile: require('./fedi-file.png'),
     FediLogo: require('./fedi-logo.png'),
     FediLogoIcon: require('./fedi-logo-icon.png'),

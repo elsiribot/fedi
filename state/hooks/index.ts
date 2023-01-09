@@ -1,3 +1,4 @@
+import { xml } from '@xmpp/client'
 import { useCallback, useEffect, useRef } from 'react'
 import {
     addressOrInvoice,
@@ -26,6 +27,11 @@ import {
 } from '../../bridge'
 import { MSats, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
+import {
+    useCommunityContext,
+    XMPP_DOMAIN,
+    XMPP_MOCK_PASSWORD,
+} from '../contexts/CommunityContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -174,6 +180,50 @@ export const useBridge = () => {
                 return uploadBackupFile(videoFilePath, selectedFederation!.name)
             },
             [selectedFederation],
+        ),
+    }
+}
+
+type OutgoingMessage = {
+    text: string
+    toUser: string
+}
+export const useXmpp = () => {
+    const { state } = useCommunityContext()
+    const { xmppClient } = state
+
+    return {
+        sendMessage: useCallback(
+            async ({ text, toUser }: OutgoingMessage) => {
+                await xmppClient?.send(
+                    xml(
+                        'message',
+                        {
+                            type: 'chat',
+                            to: toUser,
+                        },
+                        xml('body', { xmlns: 'jabber:client' }, text),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
+        registerUser: useCallback(
+            async (username: string) => {
+                await xmppClient?.send(
+                    xml(
+                        'iq',
+                        { type: 'set', to: XMPP_DOMAIN, id: 'register' },
+                        xml(
+                            'query',
+                            { xmlns: 'jabber:iq:register' },
+                            xml('username', {}, username),
+                            xml('password', {}, XMPP_MOCK_PASSWORD),
+                        ),
+                    ),
+                )
+            },
+            [xmppClient],
         ),
     }
 }

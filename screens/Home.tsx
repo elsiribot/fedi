@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Image, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -10,6 +10,7 @@ import { Images } from '../assets/images'
 import CommunityHeader from '../components/feature/community/CommunityHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
 import Community from './Community'
@@ -20,11 +21,12 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>()
 
-const Home: React.FC<Props> = () => {
+const Home: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
+    const { selectedFederation } = useFederationsContext().state
 
     const toggleOffline = () => {
         if (!offline) {
@@ -34,6 +36,12 @@ const Home: React.FC<Props> = () => {
         }
         setOffline(!offline)
     }
+
+    useEffect(() => {
+        if (!selectedFederation?.username) {
+            navigation.replace('FederationWelcome')
+        }
+    }, [navigation, selectedFederation, selectedFederation?.username])
 
     return (
         <Tab.Navigator

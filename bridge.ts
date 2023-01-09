@@ -183,6 +183,10 @@ export class Federation extends Base {
     }
     nodes: Node[]
     balance: MSats
+    // Leaving this on the federation object for now
+    // until/unless we find a better place...
+    // used for XMPP login for chat/community features
+    username?: string | null
 
     get approvalsRequired(): number {
         const numNodes = this.nodes.length
@@ -550,3 +554,18 @@ export type RecoveryFileCreationEvent =
     | { type: 'progress'; percentComplete: number }
     | { type: 'failed'; errorCode: string }
     | { type: 'complete' }
+
+// For the Community feature, the user needs to authenticate with
+// a password automatically derived from their seed/privkey
+export async function generateCommunitySecret(
+    _federationId: string,
+    _username: string,
+): Promise<string> {
+    // TODO: Replace mocked function when bridge is ready
+    // let payload = JSON.stringify({ federationId, username })
+    // let response = await FedimintFfi.rpc('generateCommunitySecret', payload)
+    // return handleRpcResponse<string>(response)
+
+    return handleRpcResponse<string>('{"result": "abcdefg1234567"}')
+    // return handleRpcResponse<null>('{"error": "error generating secret"}')
+}

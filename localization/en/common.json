@@ -40,6 +40,7 @@
         "time": "Time",
         "transactions": "Transactions",
         "two": "two",
+        "username": "Username",
         "wallet": "Wallet"
     },
     "phrases": {
@@ -58,6 +59,7 @@
         "invalid-federation-code": "Invalid federation code",
         "lightning-request": "Lightning request",
         "no-transactions": "No transactions",
+        "new-member": "New member",
         "onchain-address": "On-chain address",
         "please-confirm": "Please confirm",
         "transaction-id": "Transaction ID",
@@ -68,12 +70,23 @@
         "onboarding": {
             "by-clicking-you-agree": "By clicking 'Join a Federation' you agree to the",
             "community-first": "Community first",
+            "continue-to-fedi": "Continue to Fedi",
+            "create-username": "Create username",
+            "create-your-username": "Create your username",
             "earn-and-save": "Earn and Save",
+            "enter-username": "Enter username",
+            "join-returning-member": "I am a returning member",
+            "join-new-member": "Join as a new member",
+            "greeting-instructions": "Now you will be able to send money, communicate with your community, and more with Fedi.",
             "guidance-1": "A place to communicate and manage your money simply and privately with the ones you trust the most.",
             "guidance-2": "Fedi uses your community to make it easy to backup and secure your money, change to local money or get help.",
             "guidance-3": "With Fedi you have private balances, payments and communication by default, without the effort.",
             "guidance-4": "Fedi uses bitcoin and lightning network to connect you to global opportunities to earn money online on your own terms.",
+            "nice-to-meet-you": "Nice to meet you, {{username}}",
             "simple-and-private": "Simple and private",
+            "username-instructions": "Your username will be how other FederationZ members will identify you.",
+            "welcome-instructions": "New members receive a fresh wallet. Returning members will be prompted to recover their wallet.",
+            "welcome-to-federation": "Welcome to {{federation}}",
             "welcome-to-fedi": "Welcome to Fedi"
         },
         "backup": {

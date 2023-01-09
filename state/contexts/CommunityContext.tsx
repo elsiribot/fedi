@@ -1,4 +1,4 @@
-import { client, xml } from '@xmpp/client'
+import { Client, client, Options, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
 import React, {
     createContext,
@@ -7,22 +7,30 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+import Base from '../../bridge'
+import { useEnvironmentContext } from './EnvironmentContext'
+import {
+    resetFederationUsername,
+    useFederationsContext,
+} from './FederationsContext'
 
-type User = {
-    name: string
-}
 // Define the structure of this Context and its initial state
 interface CommunityContextState {
-    loggedInUser: User | null
+    xmppClient: Client | null
+    username: string | null
+    userIsOnline: boolean
 }
 const initialState: CommunityContextState = {
-    loggedInUser: null,
+    xmppClient: null,
+    username: null,
+    userIsOnline: false,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
-    CHANGE_LOGGED_IN_USER = 'CHANGE_LOGGED_IN_USER',
+    CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
+    SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
 }
 interface Action {
@@ -38,10 +46,16 @@ type BaseContext = {
 export const CommunityContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
-export function changeLoggedInUser(user: User): Action {
+export function changeUserIsOnline(online: boolean): Action {
     return {
-        type: ActionType.CHANGE_LOGGED_IN_USER,
-        payload: user,
+        type: ActionType.CHANGE_USER_IS_ONLINE,
+        payload: online,
+    }
+}
+export function setXmppClient(xmpp: Client): Action {
+    return {
+        type: ActionType.SET_XMPP_CLIENT,
+        payload: xmpp,
     }
 }
 export function resetCommunityState(): Action {
@@ -53,10 +67,22 @@ export function resetCommunityState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case ActionType.CHANGE_LOGGED_IN_USER:
+        case ActionType.CHANGE_USER_IS_ONLINE:
             return {
                 ...state,
-                loggedInUser: action.payload,
+                userIsOnline: action.payload,
+            }
+        case ActionType.SET_XMPP_CLIENT:
+            // Stop the existing xmppClient before overwriting it
+            try {
+                state.xmppClient?.stop()
+            } catch (error) {
+                console.error(error)
+            }
+
+            return {
+                ...state,
+                xmppClient: action.payload,
             }
         case ActionType.RESET_COMMUNITY_STATE:
             return { ...initialState }
@@ -65,7 +91,56 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 }
 
+// const XMPP_SERVICE = 'ws://xmpp.dev.fedibtc.com:5280/xmpp-websocket'
+// const XMPP_SERVICE = 'xmpps://xmpp.dev.fedibtc.com:5281/http-bind'
+export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
+export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
+// export const XMPP_SERVICE = 'wss://jabber.hot-chilli.net:5281/xmpp-websocket'
+export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
+const XMPP_CONNECTION_OPTIONS: Options = {
+    service: XMPP_SERVICE,
+    resource: 'community',
+}
+
+export class XmppManager extends Base {
+    client: Client
+
+    constructor(props: any) {
+        super(props)
+        this.client.on('error', err => {
+            console.error(err)
+        })
+
+        this.client.on('connect', () => {
+            console.info('xmpp connected')
+        })
+
+        this.client.on('offline', () => {
+            console.info('xmpp offline')
+        })
+
+        this.client.on('online', async _address => {
+            console.info('xmpp online')
+            // Send a presence message
+            await this.client.send(xml('presence'))
+        })
+
+        this.client.on('stanza', async stanza => {
+            console.info('xmpp stanza', stanza)
+            if (stanza.is('message')) {
+                console.info('stanza', stanza)
+            }
+        })
+
+        this.client.start().catch(console.error)
+    }
+}
+
 function CommunityProvider(props: React.PropsWithChildren<{}>) {
+    const { state: environmentState } = useEnvironmentContext()
+    const { state: federationsState, dispatch: federationsDispatch } =
+        useFederationsContext()
+    const { selectedFederation } = federationsState
     const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
         reducer,
         initialState,
@@ -79,54 +154,67 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     )
 
     useEffect(() => {
-        // const DOMAIN = 'fedi-xmpp.local'
+        // Only attempt XMPP connection if there is a selectedFederation
+        // and a username has been created for it
+        if (selectedFederation === null) return
+        if (!selectedFederation?.username) return
 
-        const xmpp = client({
-            // service: 'ws://fedi-xmpp.local:5280/xmpp-websocket',
+        const xmppConnectionOptions = XMPP_CONNECTION_OPTIONS
+        // Try to connect if we have a username, otherwise wait for the user
+        // to create one later
+        if (selectedFederation?.username) {
+            xmppConnectionOptions.username = selectedFederation.username
+            // TODO: get password from bridge
+            xmppConnectionOptions.password = XMPP_MOCK_PASSWORD
+        }
+        console.info('xmppConnectionOptions', xmppConnectionOptions)
 
-            // service: 'wss://jabber.calyxinstitute.org:5281/xmpp-websocket',
-            // service: 'wss://fedi-xmpp.local:5281/xmpp-websocket',
-            service: 'wss://fedi-xmpp.local:5281/xmpp-websocket',
-            // domain: 'fedi-xmpp.local',
-            resource: 'example-fedi',
-            username: 'oz21m',
-            password: 'oz21m',
-        })
-
-        console.debug('useEffect')
-
+        const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
 
-        xmpp.on('error', err => {
-            console.error(err)
+        xmpp.on('offline', () => {
+            dispatch(changeUserIsOnline(false))
         })
 
-        xmpp.on('offline', () => {
-            console.log('offline')
+        xmpp.on('online', async _address => {
+            // Send a presence message
+            await xmpp.send(xml('presence'))
+
+            dispatch(changeUserIsOnline(true))
         })
 
         xmpp.on('stanza', async stanza => {
+            if (stanza.is('iq')) {
+                if (
+                    stanza.getAttr('id') === 'register' &&
+                    stanza.getAttr('type') === 'result'
+                ) {
+                    console.info('registration successful')
+                }
+            }
             if (stanza.is('message')) {
-                await xmpp.send(xml('presence', { type: 'unavailable' }))
-                await xmpp.stop()
+                const body = stanza.getChild('body')?.getText()
+                environmentState.toast?.show(body, 5000)
             }
         })
 
-        xmpp.on('online', async address => {
-            // Makes itself available
-            await xmpp.send(xml('presence'))
-
-            // Sends a chat message to itself
-            const message = xml(
-                'message',
-                { type: 'chat', to: address },
-                xml('body', {}, 'hello world'),
-            )
-            await xmpp.send(message)
+        xmpp.start().catch(err => {
+            console.error(err)
+            if (
+                err.message.includes('not-authorized') &&
+                selectedFederation?.username !== null
+            ) {
+                federationsDispatch(resetFederationUsername())
+            }
         })
 
-        xmpp.start().catch(console.error)
-    }, [])
+        dispatch(setXmppClient(xmpp))
+    }, [
+        federationsDispatch,
+        environmentState,
+        selectedFederation,
+        selectedFederation?.username,
+    ])
 
     return <CommunityContext.Provider value={providerValue} {...props} />
 }

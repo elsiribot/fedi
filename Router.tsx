@@ -14,9 +14,12 @@ import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
+import CreateUsername from './screens/CreateUsername'
 import DeveloperSettings from './screens/DeveloperSettings'
 import Eula from './screens/Eula'
+import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
+import FederationWelcome from './screens/FederationWelcome'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
@@ -60,6 +63,8 @@ import ConnectedFederationsDrawer from './components/feature/federations/Connect
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
+import EulaHeader from './components/feature/onboarding/EulaHeader'
+import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
@@ -73,7 +78,6 @@ import SendHeader from './components/feature/send/SendHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
-import EulaHeader from './components/feature/onboarding/EulaHeader'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -132,10 +136,13 @@ const MainNavigator = () => {
                         }}
                     />
                 </Stack.Group>
-                {/* This group of screens relies on a non-null selectedFederation
-                in the FederationsContext because they contain API calls to the
-                FFI NativeModule. Since it is possible to store multiple federation
-                connections in-app, each call requires a Federation to be specified */}
+                {/*
+                    This group of screens relies on a non-null selectedFederation
+                    in the FederationsContext because they contain API calls to
+                    the FFI NativeModule. Since it is possible to store multiple
+                    federation connections in-app, each call requires a
+                    Federation to be specified
+                */}
                 {selectedFederation !== null && (
                     <Stack.Group>
                         <Stack.Group
@@ -153,6 +160,41 @@ const MainNavigator = () => {
                                         />
                                     ),
                                 })}
+                            />
+                            {/* Federation Onboarding */}
+                            <Stack.Screen
+                                name="FederationWelcome"
+                                component={FederationWelcome}
+                                options={({ navigation }) => ({
+                                    header: () => (
+                                        <SelectedFederationHeader
+                                            navigation={navigation}
+                                        />
+                                    ),
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CreateUsername"
+                                component={CreateUsername}
+                                options={({ navigation }) => ({
+                                    header: () => (
+                                        <>
+                                            <SelectedFederationHeader
+                                                navigation={navigation}
+                                            />
+                                            <NewMemberHeader />
+                                        </>
+                                    ),
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationGreeting"
+                                component={FederationGreeting}
+                                options={{ headerShown: false }}
                             />
                             {/* Wallet (Send) */}
                             <Stack.Screen
