@@ -8,17 +8,23 @@ declare module '@rneui/themed' {
         dark: boolean
         components: any
         colors: {
-            // Add new colors here
+            // Add new color labels here
+            link: string
             primary: string
             primaryLight: string
             primaryVeryLight: string
             secondary: string
             success: string
+            // Add new colors here
+            green: string
             orange: string
             grey: string
+            lightGrey: string
+            veryLightGrey: string
             red: string
             white: string
             black: string
+            blue: string
             // @react-navigation requires these properties
             background: string
             card: string
