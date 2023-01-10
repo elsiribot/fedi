@@ -59,11 +59,13 @@
         "no-transactions": "No hay transacciones",
         "onchain-address": "Dirección en cadena",
         "please-confirm": "Por favor, confirma",
+        "user-agreement": "Acuerdo de usuario",
         "transaction-id": "ID de transacción",
         "you-are-offline": "Actualmente estás en modo fuera de línea"
     },
     "feature": {
         "onboarding": {
+            "by-clicking-you-agree": "Al hacer clic en 'Unirse a una nueva federación', acepta el",
             "community-first": "Primero la comunidad",
             "earn-and-save": "Gana y ahorra",
             "guidance-1": "Un lugar para comunicarse y gestionar su dinero de manera sencilla y privada con las personas en las que más confía.",

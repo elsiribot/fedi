@@ -60,10 +60,12 @@
         "onchain-address": "On-chain address",
         "please-confirm": "Please confirm",
         "transaction-id": "Transaction ID",
+        "user-agreement": "User Agreement",
         "you-are-offline": "You are currently in offline mode"
     },
     "feature": {
         "onboarding": {
+            "by-clicking-you-agree": "By clicking 'Join a Federation' you agree to the",
             "community-first": "Community first",
             "earn-and-save": "Earn and Save",
             "guidance-1": "A place to communicate and manage your money simply and privately with the ones you trust the most.",
