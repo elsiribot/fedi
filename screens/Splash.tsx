@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -80,6 +80,16 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     containerStyle={styles(theme).button}
                     onPress={handleJoinFederation}
                 />
+                <Text style={styles(theme).agreementText}>
+                    {t('feature.onboarding.by-clicking-you-agree')}
+                    <Text
+                        style={styles(theme).agreementLink}
+                        onPress={() => {
+                            navigation.navigate('Eula')
+                        }}>
+                        {` ${t('phrases.user-agreement')}`}
+                    </Text>
+                </Text>
             </View>
         </View>
     )
@@ -101,11 +111,11 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
         },
         slidesContainer: {
-            height: '75%',
+            height: '70%',
             width: '100%',
         },
         buttonsContainer: {
-            height: '20%',
+            height: '25%',
             width: '100%',
             alignItems: 'center',
             justifyContent: 'space-evenly',
@@ -116,6 +126,13 @@ const styles = (theme: Theme) =>
         imageBackground: {
             ...theme.styles.h100w100,
             display: 'none',
+        },
+        agreementLink: {
+            color: theme.colors.link,
+        },
+        agreementText: {
+            textAlign: 'center',
+            marginVertical: theme.spacing.xl,
         },
     })
 
