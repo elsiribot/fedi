@@ -104,11 +104,11 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
         },
         slidesContainer: {
-            height: '70%',
+            height: '75%',
             width: '100%',
         },
         buttonsContainer: {
-            height: '25%',
+            height: '20%',
             width: '100%',
             alignItems: 'center',
             justifyContent: 'space-evenly',
