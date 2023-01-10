@@ -4,4 +4,4 @@ pushd ../bridge
 popd
 
 # launch android
-npx react-native run-android
+npx react-native run-android --variant=ProductionDebug

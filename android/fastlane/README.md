@@ -23,13 +23,53 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Runs all the tests
 
-### android build
+### android increment_version_code
 
 ```sh
-[bundle exec] fastlane android build
+[bundle exec] fastlane android increment_version_code
 ```
 
-Build a new app bundle (but do not upload)
+Increment the versionCode in build.gradle
+
+### android build_production
+
+```sh
+[bundle exec] fastlane android build_production
+```
+
+Build a new app bundle to release for production
+
+### android build_bitcoin_lake
+
+```sh
+[bundle exec] fastlane android build_bitcoin_lake
+```
+
+Build a new app bundle to release for special deployment (Bitcoin Lake)
+
+### android upload_internal_build
+
+```sh
+[bundle exec] fastlane android upload_internal_build
+```
+
+Upload a build for internal testing
+
+### android upload_beta_build_production
+
+```sh
+[bundle exec] fastlane android upload_beta_build_production
+```
+
+Upload a build for beta testing
+
+### android upload_beta_build_bitcoin_lake
+
+```sh
+[bundle exec] fastlane android upload_beta_build_bitcoin_lake
+```
+
+Upload a build for special deployment (Bitcoin Lake)
 
 ### android internal
 
@@ -39,21 +79,21 @@ Build a new app bundle (but do not upload)
 
 Submit a new internal build
 
-### android internalUploadOnly
-
-```sh
-[bundle exec] fastlane android internalUploadOnly
-```
-
-Upload a build for internal testing
-
 ### android beta
 
 ```sh
 [bundle exec] fastlane android beta
 ```
 
+Submit a new Beta Build
 
+### android beta_bitcoin_lake
+
+```sh
+[bundle exec] fastlane android beta_bitcoin_lake
+```
+
+Submit a new Beta Build (Bitcoin Lake)
 
 ----
 
