@@ -69,13 +69,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             <View style={styles(theme).buttonsContainer}>
                 <Button
                     fullWidth
-                    title={t('phrases.connect-to-federation')}
-                    onPress={connectToTestFederation}
-                    containerStyle={styles(theme).button}
-                    type="clear"
-                />
-                <Button
-                    fullWidth
                     title={t('feature.federations.join-federation')}
                     containerStyle={styles(theme).button}
                     onPress={handleJoinFederation}
