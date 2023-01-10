@@ -4,39 +4,16 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { joinFederation, listFederations } from '../bridge'
 import OnboardingSlides from '../components/feature/onboarding/OnboardingSlides'
 import ProgressBar from '../components/feature/onboarding/ProgressBar'
-import { TEST_FEDERATION } from '../constants'
-import {
-    changeSelectedFederation,
-    updateConnectedFederations,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
+import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { dispatch } = useFederationsContext()
     const [page, setPage] = useState<number>(1)
-
-    const connectToTestFederation = async () => {
-        try {
-            await joinFederation(TEST_FEDERATION)
-        } catch (e) {
-            console.error('Failed to join federation', e)
-            return
-        }
-        const federations = await listFederations()
-        if (federations.length > 0) {
-            dispatch(updateConnectedFederations(federations))
-            dispatch(changeSelectedFederation(federations[0]))
-            navigation.getParent(MAIN_NAVIGATOR_ID)?.navigate('Home')
-        }
-    }
 
     const handleJoinFederation = async () => {
         navigation.navigate('ScanFederationCode')
