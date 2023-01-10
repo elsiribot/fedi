@@ -3698,6 +3698,8 @@
   "version" "5.0.1"
 
 "events@^3.3.0":
+  "integrity" "sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q=="
+  "resolved" "https://registry.npmjs.org/events/-/events-3.3.0.tgz"
   "version" "3.3.0"
 
 "exec-sh@^0.3.2":
@@ -7426,6 +7428,8 @@
     "util-deprecate" "^1.0.1"
 
 "readable-stream@^3.6.0":
+  "integrity" "sha512-BViHy7LKeTz4oNnkcLJ+lVSL6vpiFeX6/d3oSH8zCW7UxP2onchk+vTGB143xuFjHS3deTgkKoXXymXqymiIdA=="
+  "resolved" "https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.0.tgz"
   "version" "3.6.0"
   dependencies:
     "inherits" "^2.0.3"

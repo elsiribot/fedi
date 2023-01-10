@@ -21,52 +21,83 @@ platform :android do
     gradle(task: "test")
   end
 
-  desc "Build a new app bundle (but do not upload)"
-  lane :build do
+  desc "Increment the versionCode in build.gradle"
+  lane :increment_version_code do
     android_set_version_code(
       gradle_file: './app/build.gradle'
     )
+  end
+
+  desc "Build a new app bundle to release for production"
+  lane :build_production do
     gradle(task: 'clean')
-    gradle(task: 'bundleRelease')
+    gradle(
+      task: 'bundle',
+      flavor: 'production',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Build a new app bundle to release for special deployment (Bitcoin Lake)"
+  lane :build_bitcoin_lake do
+    gradle(task: 'clean')
+    gradle(
+      task: 'bundle',
+      flavor: 'bitcoinlake',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Upload the latest build for internal testing"
+  lane :upload_internal_build do
+    upload_to_play_store(
+      track: 'internal',
+      package_name: 'com.fedimintreactnative',
+      aab: './app/build/outputs/bundle/productionRelease/app-production-release.aab',
+      release_status: 'draft',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Upload the latest build for beta testing"
+  lane :upload_beta_build_production do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative',
+      aab: './app/build/outputs/bundle/productionRelease/app-production-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Upload the latest build for special deployment (Bitcoin Lake)"
+  lane :upload_beta_build_bitcoin_lake do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative.bitcoinlake',
+      aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
+      skip_upload_apk: true
+    )
   end
 
   desc "Submit a new internal build"
   lane :internal do
-    android_set_version_code(
-      gradle_file: './app/build.gradle'
-    )
-    gradle(task: 'clean')
-    gradle(task: 'bundleRelease')
-    upload_to_play_store(
-      track: 'internal',
-      aab: './app/build/outputs/bundle/release/app-release.aab',
-      release_status: 'draft',
-      skip_upload_apk: true
-    )
+    increment_version_code
+    build_production
+    upload_internal_build
   end
 
-  desc "Upload a build for internal testing"
-  lane :internalUploadOnly do
-    upload_to_play_store(
-      track: 'internal',
-      aab: './app/build/outputs/bundle/release/app-release.aab',
-      release_status: 'draft',
-      skip_upload_apk: true
-    )
-  end
-
-  # desc "Submit a new Beta Build"
+  desc "Submit a new beta build"
   lane :beta do
-    android_set_version_code(
-      gradle_file: './app/build.gradle'
-    )
-    gradle(task: 'clean')
-    gradle(task: 'bundleRelease')
-    upload_to_play_store(
-      track: 'beta',
-      aab: './app/build/outputs/bundle/release/app-release.aab',
-      skip_upload_apk: true
-    )
+    increment_version_code
+    build_production
+    upload_beta_build_production
+  end
+
+  desc "Submit a new beta build for special deployment (Bitcoin Lake)"
+  lane :beta_bitcoin_lake do
+    increment_version_code
+    build_bitcoin_lake
+    upload_beta_build_bitcoin_lake
   end
 
   # desc "Deploy a new version to the Google Play"
