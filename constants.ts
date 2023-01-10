@@ -11,11 +11,19 @@ export const TEST_FEDERATION = FEDERATION_ALPHA
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 
 export const SITES = [
+    // TODO: Show only for regtest federations
+    // shouldn't be used on mainnet
+    // {
+    //     id: 'testfed',
+    //     title: 'testfed',
+    //     url: 'https://testfed.xyz/webln',
+    //     description: 'A regtest playground',
+    // },
     {
-        id: 'testfed',
-        title: 'testfed',
-        url: 'https://testfed.xyz/webln',
-        description: 'A regtest playground',
+        id: 'bitrefill',
+        title: 'Bitrefill',
+        url: 'https://bitrefill.com',
+        description: 'Pay for your daily needs with Bitcoin',
     },
     {
         id: 'kollider',
