@@ -1,42 +1,19 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { joinFederation, listFederations } from '../bridge'
 import OnboardingSlides from '../components/feature/onboarding/OnboardingSlides'
 import ProgressBar from '../components/feature/onboarding/ProgressBar'
-import { TEST_FEDERATION } from '../constants'
-import {
-    changeSelectedFederation,
-    updateConnectedFederations,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
+import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { dispatch } = useFederationsContext()
     const [page, setPage] = useState<number>(1)
-
-    const connectToTestFederation = async () => {
-        try {
-            await joinFederation(TEST_FEDERATION)
-        } catch (e) {
-            console.error('Failed to join federation', e)
-            return
-        }
-        const federations = await listFederations()
-        if (federations.length > 0) {
-            dispatch(updateConnectedFederations(federations))
-            dispatch(changeSelectedFederation(federations[0]))
-            navigation.getParent(MAIN_NAVIGATOR_ID)?.navigate('Home')
-        }
-    }
 
     const handleJoinFederation = async () => {
         navigation.navigate('ScanFederationCode')
@@ -69,17 +46,20 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             <View style={styles(theme).buttonsContainer}>
                 <Button
                     fullWidth
-                    title={t('phrases.connect-to-federation')}
-                    onPress={connectToTestFederation}
-                    containerStyle={styles(theme).button}
-                    type="clear"
-                />
-                <Button
-                    fullWidth
                     title={t('feature.federations.join-federation')}
                     containerStyle={styles(theme).button}
                     onPress={handleJoinFederation}
                 />
+                <Text style={styles(theme).agreementText}>
+                    {t('feature.onboarding.by-clicking-you-agree')}
+                    <Text
+                        style={styles(theme).agreementLink}
+                        onPress={() => {
+                            navigation.navigate('Eula')
+                        }}>
+                        {` ${t('phrases.user-agreement')}`}
+                    </Text>
+                </Text>
             </View>
         </View>
     )
@@ -116,6 +96,13 @@ const styles = (theme: Theme) =>
         imageBackground: {
             ...theme.styles.h100w100,
             display: 'none',
+        },
+        agreementLink: {
+            color: theme.colors.link,
+        },
+        agreementText: {
+            textAlign: 'center',
+            marginVertical: theme.spacing.xl,
         },
     })
 

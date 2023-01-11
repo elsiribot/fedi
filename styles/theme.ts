@@ -2,18 +2,27 @@ import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native
 import { createTheme, lightColors } from '@rneui/themed'
 import { Dimensions } from 'react-native'
 
-const colors = {
-    ...lightColors,
-    primary: '#0B1013',
-    primaryLight: '#6D7071',
-    primaryVeryLight: '#D3D4DB',
-    success: '#00A829',
-    secondary: '#FFFFFF',
+const HEX_COLORS = {
+    green: '#00A829',
     orange: '#DF7B00',
     grey: '#D9D9D9',
+    lightGrey: '#6D7071',
+    veryLightGrey: '#D3D4DB',
     red: '#E00A00',
     white: '#FFFFFF',
     black: '#0B1013',
+    blue: '#0277F2',
+}
+
+const colors = {
+    ...lightColors,
+    link: HEX_COLORS.blue,
+    primary: HEX_COLORS.black,
+    primaryLight: HEX_COLORS.lightGrey,
+    primaryVeryLight: HEX_COLORS.veryLightGrey,
+    success: HEX_COLORS.green,
+    secondary: HEX_COLORS.white,
+    ...HEX_COLORS,
 }
 
 const dimensions = Dimensions.get('window')

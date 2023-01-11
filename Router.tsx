@@ -15,6 +15,7 @@ import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import DeveloperSettings from './screens/DeveloperSettings'
+import Eula from './screens/Eula'
 import FederationInvite from './screens/FederationInvite'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
@@ -72,6 +73,7 @@ import SendHeader from './components/feature/send/SendHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
+import EulaHeader from './components/feature/onboarding/EulaHeader'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -121,6 +123,15 @@ const MainNavigator = () => {
                         options={() => ({
                             header: () => <ScanFederationCodeHeader />,
                         })}
+                    />
+                    <Stack.Screen
+                        name="Eula"
+                        component={Eula}
+                        options={{
+                            header: () => <EulaHeader />,
+                            animation: 'fade',
+                            animationDuration: 300,
+                        }}
                     />
                 </Stack.Group>
                 {/* This group of screens relies on a non-null selectedFederation

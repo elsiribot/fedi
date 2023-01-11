@@ -21,7 +21,7 @@ const Sites: React.FC<Props> = ({ navigation }) => {
     const renderSite: ListRenderItem<Site> = ({ item }) => {
         return <SiteTile site={item} selectSite={onSelect} />
     }
-    
+
     // TODO: Add offline state as part of #53
     return (
         <View style={styles(theme).container}>

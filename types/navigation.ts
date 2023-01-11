@@ -38,6 +38,7 @@ export type RootStackParamList = {
     ConfirmSendLightning: { lightningUri: BtcLnUri }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConnectedFederationsDrawer: undefined
+    Eula: undefined
     FederationInvite: { inviteLink: string }
     Home: undefined
     Initializing: { reset: boolean }
