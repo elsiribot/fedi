@@ -6,6 +6,7 @@
         "android": "sh scripts/run-android.sh",
         "ios": "sh scripts/run-ios.sh",
         "start": "react-native start",
+        "postinstall": "cd ios && pod install && cd ..",
         "test": "jest",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
     },
