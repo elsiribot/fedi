@@ -13,7 +13,6 @@ const RecoveryWordsHeader: React.FC<{}> = () => {
             headerCenter={
                 <Text bold>{t('feature.backup.personal-backup')}</Text>
             }
-            centerContainerStyle={{ flex: 3 }}
             closeButton
         />
     )

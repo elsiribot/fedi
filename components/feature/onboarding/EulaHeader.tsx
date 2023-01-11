@@ -8,9 +8,6 @@ const EulaHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            centerContainerStyle={{
-                flex: 3,
-            }}
             headerCenter={
                 <Image
                     style={{ width: 100, height: 20 }}

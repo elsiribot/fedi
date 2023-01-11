@@ -19,7 +19,6 @@ const SocialBackupHeader: React.FC<SocialBackupHeaderProps> = ({
         <Header
             backButton={backButton}
             headerCenter={<Text bold>{t('feature.backup.social-backup')}</Text>}
-            centerContainerStyle={{ flex: 3 }}
             closeButton={closeButton}
         />
     )

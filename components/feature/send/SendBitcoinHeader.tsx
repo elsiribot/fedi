@@ -11,9 +11,6 @@ const SendBitcoinHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={<Text bold>{t('feature.send.send-bitcoin')}</Text>}
-            centerContainerStyle={{
-                flex: 3,
-            }}
             closeButton
         />
     )

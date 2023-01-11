@@ -13,7 +13,6 @@ const TransactionsHeader: React.FC<{}> = () => {
     return (
         <Header
             headerCenter={<Text bold>{t('words.transactions')}</Text>}
-            centerContainerStyle={{ flex: 3 }}
             headerRight={
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name={'close'} />

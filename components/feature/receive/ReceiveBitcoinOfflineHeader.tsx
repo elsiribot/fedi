@@ -13,9 +13,6 @@ const ReceiveBitcoinOfflineHeader: React.FC<{}> = () => {
             headerCenter={
                 <Text bold>{t('feature.receive.receive-bitcoin-offline')}</Text>
             }
-            centerContainerStyle={{
-                flex: 3,
-            }}
             closeButton
         />
     )

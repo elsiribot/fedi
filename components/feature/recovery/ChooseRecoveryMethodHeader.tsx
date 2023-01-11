@@ -13,7 +13,6 @@ const ChooseRecoveryMethodHeader: React.FC<{}> = () => {
             headerCenter={
                 <Text bold>{t('feature.recovery.choose-method')}</Text>
             }
-            centerContainerStyle={{ flex: 4 }}
         />
     )
 }

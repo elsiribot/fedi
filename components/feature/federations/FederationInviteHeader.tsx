@@ -23,7 +23,6 @@ const FederationInviteHeader: React.FC<{}> = () => {
                 </Text>
             }
             centerContainerStyle={{
-                flex: 3,
                 borderBottomColor: theme.colors.primary,
             }}
             headerRight={

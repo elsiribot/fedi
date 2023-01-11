@@ -13,7 +13,6 @@ const PersonalBackupHeader: React.FC<{}> = () => {
             headerCenter={
                 <Text bold>{t('feature.backup.personal-backup')}</Text>
             }
-            centerContainerStyle={{ flex: 3 }}
         />
     )
 }

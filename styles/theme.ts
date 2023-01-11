@@ -94,7 +94,10 @@ const theme = createTheme({
                 flex: 1,
             },
             centerContainerStyle: {
-                flex: 1,
+                flex: 4,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
             },
             rightContainerStyle: {
                 flex: 1,

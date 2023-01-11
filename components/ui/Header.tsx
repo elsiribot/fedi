@@ -87,6 +87,25 @@ const Header: React.FC<HeaderProps> = ({
         )
     }
 
+    // Merge default container styles defined in theme with prop overrides
+    const {
+        leftContainerStyle: defaultLeftContainerStyle,
+        centerContainerStyle: defaultCenterContainerStyle,
+        rightContainerStyle: defaultRightContainerStyle,
+    } = theme.components.Header
+    const mergedLeftContainerStyle = {
+        ...defaultLeftContainerStyle,
+        ...(leftContainerStyle ? leftContainerStyle : {}),
+    }
+    const mergedCenterContainerStyle = {
+        ...defaultCenterContainerStyle,
+        ...(centerContainerStyle ? centerContainerStyle : {}),
+    }
+    const mergedRightContainerStyle = {
+        ...defaultRightContainerStyle,
+        ...(rightContainerStyle ? rightContainerStyle : {}),
+    }
+
     return (
         <HeaderRNE
             backgroundColor={
@@ -96,9 +115,9 @@ const Header: React.FC<HeaderProps> = ({
             centerComponent={<View>{headerCenter || null}</View>}
             leftComponent={leftComponent}
             rightComponent={rightComponent}
-            {...(leftContainerStyle ? { leftContainerStyle } : {})}
-            {...(centerContainerStyle ? { centerContainerStyle } : {})}
-            {...(rightContainerStyle ? { rightContainerStyle } : {})}
+            leftContainerStyle={mergedLeftContainerStyle}
+            centerContainerStyle={mergedCenterContainerStyle}
+            rightContainerStyle={mergedRightContainerStyle}
         />
     )
 }

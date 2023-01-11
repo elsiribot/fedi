@@ -21,7 +21,6 @@ const RecoveryAssistHeader: React.FC<RecoveryAssistHeaderProps> = ({
             headerCenter={
                 <Text bold>{t('feature.recovery.recovery-assist')}</Text>
             }
-            centerContainerStyle={{ flex: 3 }}
             closeButton={closeButton}
         />
     )
