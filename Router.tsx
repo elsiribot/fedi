@@ -97,14 +97,16 @@ const MainNavigator = () => {
             <>
                 {/* This group of screens may render regardless of the value of
                  selectedFederation */}
-                <Stack.Group>
+                <Stack.Group
+                    screenOptions={{
+                        animation: 'fade',
+                        animationDuration: 250,
+                    }}>
                     <Stack.Screen
                         name="Splash"
                         component={Splash}
                         options={{
                             headerShown: false,
-                            animation: 'fade',
-                            animationDuration: 300,
                         }}
                     />
                     <Stack.Screen
@@ -113,8 +115,6 @@ const MainNavigator = () => {
                         initialParams={{ reset: false }}
                         options={{
                             headerShown: false,
-                            animation: 'fade',
-                            animationDuration: 300,
                         }}
                     />
                     <Stack.Screen
@@ -129,8 +129,6 @@ const MainNavigator = () => {
                         component={Eula}
                         options={{
                             header: () => <EulaHeader />,
-                            animation: 'fade',
-                            animationDuration: 300,
                         }}
                     />
                 </Stack.Group>
@@ -140,7 +138,11 @@ const MainNavigator = () => {
                 connections in-app, each call requires a Federation to be specified */}
                 {selectedFederation !== null && (
                     <Stack.Group>
-                        <Stack.Group>
+                        <Stack.Group
+                            screenOptions={{
+                                animation: 'fade',
+                                animationDuration: 250,
+                            }}>
                             <Stack.Screen
                                 name="Home"
                                 component={Home}
@@ -150,8 +152,6 @@ const MainNavigator = () => {
                                             navigation={navigation}
                                         />
                                     ),
-                                    animation: 'fade',
-                                    animationDuration: 300,
                                 })}
                             />
                             {/* Wallet (Send) */}
