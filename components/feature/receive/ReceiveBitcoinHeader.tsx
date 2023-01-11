@@ -10,7 +10,6 @@ const ReceiveBitcoinHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            centerContainerStyle={{ flex: 3 }}
             headerCenter={
                 <Text bold>{t('feature.receive.request-bitcoin')}</Text>
             }

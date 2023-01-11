@@ -15,9 +15,6 @@ const ScanFederationCodeHeader: React.FC<{}> = () => {
                     {t('feature.federations.scan-federation-invite')}
                 </Text>
             }
-            centerContainerStyle={{
-                flex: 3,
-            }}
         />
     )
 }

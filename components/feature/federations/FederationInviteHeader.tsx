@@ -2,14 +2,15 @@ import { useNavigation } from '@react-navigation/native'
 import { Icon, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { TouchableOpacity } from 'react-native'
+import { Pressable } from 'react-native'
+import { NavigationHook } from '../../../types/navigation'
 
 import Header from '../../ui/Header'
 
 const FederationInviteHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
 
     return (
         <Header
@@ -23,13 +24,16 @@ const FederationInviteHeader: React.FC<{}> = () => {
                 </Text>
             }
             centerContainerStyle={{
-                flex: 3,
                 borderBottomColor: theme.colors.primary,
             }}
             headerRight={
-                <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+                <Pressable
+                    onPress={() => navigation.replace('Home')}
+                    style={{
+                        padding: theme.spacing.sm,
+                    }}>
                     <Icon name={'close'} color={theme.colors.secondary} />
-                </TouchableOpacity>
+                </Pressable>
             }
         />
     )

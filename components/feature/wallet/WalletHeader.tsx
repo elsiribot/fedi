@@ -29,21 +29,31 @@ const WalletHeader: React.FC<SocialBackupHeaderProps> = ({
             }
             headerRight={
                 <View style={styles(theme).iconsContainer}>
-                    <Image
-                        source={Images.Offline}
-                        style={[
-                            styles(theme).offlineIcon,
-                            offline ? { opacity: 1 } : { opacity: 0.1 },
-                        ]}
-                        onPress={toggleOffline}
-                    />
                     <Pressable
-                        onPress={() => navigation.navigate('Transactions')}>
+                        onPress={toggleOffline}
+                        style={{
+                            padding: theme.spacing.sm,
+                        }}>
+                        <Image
+                            source={Images.Offline}
+                            style={[
+                                styles(theme).offlineIcon,
+                                offline ? { opacity: 1 } : { opacity: 0.1 },
+                            ]}
+                        />
+                    </Pressable>
+                    <Pressable
+                        onPress={() => navigation.navigate('Transactions')}
+                        style={{
+                            padding: theme.spacing.sm,
+                        }}>
                         <Icon name={'format-list-bulleted'} />
                     </Pressable>
                 </View>
             }
             rightContainerStyle={styles(theme).rightContainer}
+            // Needed to make more room for Wallet title in headerLeft
+            centerContainerStyle={{ flex: 1 }}
         />
     )
 }
@@ -54,7 +64,6 @@ const styles = (theme: Theme) =>
             height: theme.sizes.sm,
             width: theme.sizes.sm,
             color: theme.colors.grey,
-            marginRight: theme.spacing.xl,
             resizeMode: 'contain',
         },
         iconsContainer: {

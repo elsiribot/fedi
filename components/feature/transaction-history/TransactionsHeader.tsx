@@ -1,23 +1,27 @@
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Text } from '@rneui/themed'
+import { Icon, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { TouchableOpacity } from 'react-native'
+import { Pressable } from 'react-native'
 
 import Header from '../../ui/Header'
 
 const TransactionsHeader: React.FC<{}> = () => {
+    const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
 
     return (
         <Header
             headerCenter={<Text bold>{t('words.transactions')}</Text>}
-            centerContainerStyle={{ flex: 3 }}
             headerRight={
-                <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    style={{
+                        padding: theme.spacing.sm,
+                    }}>
                     <Icon name={'close'} />
-                </TouchableOpacity>
+                </Pressable>
             }
         />
     )

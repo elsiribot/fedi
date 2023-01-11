@@ -19,7 +19,6 @@ const PersonalRecoveryHeader: React.FC<PersonalRecoveryHeaderProps> = ({
             headerCenter={
                 <Text>{t('feature.recovery.personal-recovery')}</Text>
             }
-            centerContainerStyle={{ flex: 3 }}
         />
     )
 }
