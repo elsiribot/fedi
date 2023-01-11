@@ -53,7 +53,7 @@ Build a new app bundle to release for special deployment (Bitcoin Lake)
 [bundle exec] fastlane android upload_internal_build
 ```
 
-Upload a build for internal testing
+Upload the latest build for internal testing
 
 ### android upload_beta_build_production
 
@@ -61,7 +61,7 @@ Upload a build for internal testing
 [bundle exec] fastlane android upload_beta_build_production
 ```
 
-Upload a build for beta testing
+Upload the latest build for beta testing
 
 ### android upload_beta_build_bitcoin_lake
 
@@ -69,7 +69,7 @@ Upload a build for beta testing
 [bundle exec] fastlane android upload_beta_build_bitcoin_lake
 ```
 
-Upload a build for special deployment (Bitcoin Lake)
+Upload the latest build for special deployment (Bitcoin Lake)
 
 ### android internal
 
@@ -85,7 +85,7 @@ Submit a new internal build
 [bundle exec] fastlane android beta
 ```
 
-Submit a new Beta Build
+Submit a new beta build
 
 ### android beta_bitcoin_lake
 
@@ -93,7 +93,7 @@ Submit a new Beta Build
 [bundle exec] fastlane android beta_bitcoin_lake
 ```
 
-Submit a new Beta Build (Bitcoin Lake)
+Submit a new beta build for special deployment (Bitcoin Lake)
 
 ----
 
