@@ -65,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
             <Pressable
                 onPress={() => navigation.goBack()}
                 style={{
-                    padding: theme.spacing.xs,
+                    padding: theme.spacing.sm,
                 }}>
                 <Icon name={'angle-left'} type="font-awesome" />
             </Pressable>

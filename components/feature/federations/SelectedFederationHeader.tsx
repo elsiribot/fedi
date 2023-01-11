@@ -1,6 +1,6 @@
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 
 import { Images } from '../../../assets/images'
 import { Federation } from '../../../bridge'
@@ -23,7 +23,7 @@ const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
         <Header
             centerContainerStyle={{ flex: 10 }}
             headerCenter={
-                <TouchableOpacity
+                <Pressable
                     style={styles(theme).container}
                     onPress={openFederationsDrawer}>
                     <Image
@@ -38,7 +38,7 @@ const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
                         type="font-awesome"
                         size={theme.sizes.xs}
                     />
-                </TouchableOpacity>
+                </Pressable>
             }
         />
     )
@@ -50,6 +50,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
+            padding: theme.spacing.sm,
         },
         federationName: {
             marginHorizontal: theme.spacing.sm,
