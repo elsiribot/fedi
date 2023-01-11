@@ -43,5 +43,6 @@ export const SiteImages: ImagesMap = {
     lookingglass: require('./sites/lookingglass.png'),
     satscard: require('./sites/satscard.png'),
     stackernews: require('./sites/stackernews.png'),
+    stakwork: require('./sites/stakwork.png'),
     wavlake: require('./sites/wavlake.png'),
 }

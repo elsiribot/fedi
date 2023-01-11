@@ -20,6 +20,12 @@ export const SITES = [
     //     description: 'A regtest playground',
     // },
     {
+        id: 'stakwork',
+        title: 'Stakwork',
+        url: 'https://jobs.stakwork.com/workers',
+        description: 'Earn bitcoin for completing microtasks',
+    },
+    {
         id: 'bitrefill',
         title: 'Bitrefill',
         url: 'https://bitrefill.com',
