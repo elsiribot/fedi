@@ -64,17 +64,6 @@
         "you-are-offline": "Actualmente estás en modo fuera de línea"
     },
     "feature": {
-        "onboarding": {
-            "by-clicking-you-agree": "Al hacer clic en 'Unirse a una nueva federación', acepta el",
-            "community-first": "Primero la comunidad",
-            "earn-and-save": "Gana y ahorra",
-            "guidance-1": "Un lugar para comunicarse y gestionar su dinero de manera sencilla y privada con las personas en las que más confía.",
-            "guidance-2": "Fedi utiliza su comunidad para facilitar la copia de seguridad y proteger su dinero, cambiar a dinero local o obtener ayuda.",
-            "guidance-3": "Con Fedi, tiene saldos, pagos y comunicación privados de forma predeterminada, sin esfuerzo.",
-            "guidance-4": "Fedi utiliza bitcoin y la red Lightning para conectarte a oportunidades globales para ganar dinero en línea en tus propios términos.",
-            "simple-and-private": "Sencillo y privado",
-            "welcome-to-fedi": "Bienvenido a Fedi"
-        },
         "backup": {
             "backed-up-recovery-words": "Has hecho una copia de seguridad de tu cartera con 12 palabras de recuperación",
             "backup-social-recovery-file": "Hacer una copia de seguridad de tu archivo de recuperación social",
@@ -137,6 +126,17 @@
             "paste-federation-code-instead": "Pegar en su lugar el código de federación",
             "paste-federation-code": "Pegar código de federación",
             "scan-federation-invite": "Escanear una invitación a la Federación"
+        },
+        "onboarding": {
+            "by-clicking-you-agree": "Al hacer clic en 'Unirse a una nueva federación', acepta el",
+            "community-first": "Primero la comunidad",
+            "earn-and-save": "Gana y ahorra",
+            "guidance-1": "Un lugar para comunicarse y gestionar su dinero de manera sencilla y privada con las personas en las que más confía.",
+            "guidance-2": "Fedi utiliza su comunidad para facilitar la copia de seguridad y proteger su dinero, cambiar a dinero local o obtener ayuda.",
+            "guidance-3": "Con Fedi, tiene saldos, pagos y comunicación privados de forma predeterminada, sin esfuerzo.",
+            "guidance-4": "Fedi utiliza bitcoin y la red Lightning para conectarte a oportunidades globales para ganar dinero en línea en tus propios términos.",
+            "simple-and-private": "Sencillo y privado",
+            "welcome-to-fedi": "Bienvenido a Fedi"
         },
         "send": {
             "camera-access-information": "Para enviar dinero, necesitarás permitir a Fedi acceder a tu cámara para escanear una solicitud de pago",
