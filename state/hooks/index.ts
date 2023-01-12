@@ -226,7 +226,7 @@ export const useXmpp = () => {
                             type: 'chat',
                             to: toUser,
                         },
-                        xml('body', { xmlns: 'jabber:client' }, text),
+                        xml('body', { xmlns: 'jabber:client' }, text as string),
                     ),
                 )
             },
