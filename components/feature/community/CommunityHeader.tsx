@@ -9,7 +9,7 @@ const CommunityHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            leftContainerStyle={{ flex: 3 }}
+            leftContainerStyle={{ flex: 6 }}
             headerLeft={
                 <Text h2 medium>
                     {t('words.community')}
