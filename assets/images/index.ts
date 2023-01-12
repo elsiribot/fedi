@@ -9,6 +9,7 @@ export const Images: ImagesMap = {
     Cash: require('./cash.png'),
     Cog: require('./cog.png'),
     Done: require('./done.png'),
+    Edit: require('./edit.png'),
     Error: require('./error.png'),
     Federation: require('./federation.png'),
     // TODO: Refactor FederationXIcon sizes to use scalable SVGs

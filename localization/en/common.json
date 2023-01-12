@@ -61,6 +61,7 @@
         "no-transactions": "No transactions",
         "new-member": "New member",
         "onchain-address": "On-chain address",
+        "paste-from-clipboard": "Paste from clipboard",
         "please-confirm": "Please confirm",
         "transaction-id": "Transaction ID",
         "user-agreement": "User Agreement",
@@ -116,6 +117,15 @@
             "start-social-backup-instructions": "Social backups allow you to safely backup your wallet with friends and family and have Federation guardians assist you recover it if you lose access",
             "successfully-backed-up": "You successfully backed up your Fedi wallet",
             "stop-recording": "Stop recording"
+        },
+        "community": {
+            "camera-access-information": "To join a room, you will need to allow Fedi access to your camera to scan a room invite link",
+            "create-a-room": "Create a room",
+            "invalid-room": "This is not a valid community room",
+            "invite-link-notice": "Anyone with this link can join this room. Link is valid for 2 hours.",
+            "join-a-room": "Join a room",
+            "room-invite": "Room invite",
+            "view-room": "View room"
         },
         "federations": {
             "add-federation": "Add a Federation",

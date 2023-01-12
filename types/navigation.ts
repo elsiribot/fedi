@@ -46,6 +46,7 @@ export type RootStackParamList = {
     FederationWelcome: undefined
     Home: undefined
     Initializing: { reset: boolean }
+    JoinRoom: undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
@@ -57,6 +58,7 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
+    RoomInvite: { roomLink: string }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }

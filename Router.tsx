@@ -22,6 +22,7 @@ import FederationInvite from './screens/FederationInvite'
 import FederationWelcome from './screens/FederationWelcome'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
+import JoinRoom from './screens/JoinRoom'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
@@ -33,6 +34,7 @@ import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
+import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
@@ -59,6 +61,8 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
+import RoomInviteHeader from './components/feature/community/RoomInviteHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
@@ -195,6 +199,21 @@ const MainNavigator = () => {
                                 name="FederationGreeting"
                                 component={FederationGreeting}
                                 options={{ headerShown: false }}
+                            />
+                            {/* Community */}
+                            <Stack.Screen
+                                name="JoinRoom"
+                                component={JoinRoom}
+                                options={() => ({
+                                    header: () => <JoinRoomHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RoomInvite"
+                                component={RoomInvite}
+                                options={() => ({
+                                    header: () => <RoomInviteHeader />,
+                                })}
                             />
                             {/* Wallet (Send) */}
                             <Stack.Screen
