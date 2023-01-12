@@ -185,14 +185,38 @@ export const useBridge = () => {
 }
 
 type OutgoingMessage = {
-    text: string
-    toUser: string
+    text?: string
+    fromUser?: string
+    toUser?: string
 }
+// This is the XMPP Multi-User-Chat (MUC) domain defined
+// in prosody.config.lua on the XMPP server
+// https://prosody.im/doc/modules/mod_muc
+const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
+
 export const useXmpp = () => {
     const { state } = useCommunityContext()
     const { xmppClient } = state
 
     return {
+        getUniqueRoomName: useCallback(
+            async ({ fromUser }: OutgoingMessage) => {
+                await xmppClient?.send(
+                    xml(
+                        'iq',
+                        {
+                            type: 'get',
+                            from: fromUser,
+                            to: XMPP_MUC_DOMAIN,
+                        },
+                        xml('unique', {
+                            xmlns: 'http://jabber.org/protocol/muc#unique',
+                        }),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
         sendMessage: useCallback(
             async ({ text, toUser }: OutgoingMessage) => {
                 await xmppClient?.send(
