@@ -37,11 +37,15 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
         setOffline(!offline)
     }
 
+    // Make sure all users have a username and push them to the
+    // FederationWelcome screen if they don't have one
     useEffect(() => {
         if (!selectedFederation?.username) {
             navigation.replace('FederationWelcome')
         }
     }, [navigation, selectedFederation, selectedFederation?.username])
+
+    // Check xmpp auth and listen for new messages here
 
     return (
         <Tab.Navigator

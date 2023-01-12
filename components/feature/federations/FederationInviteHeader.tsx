@@ -3,8 +3,8 @@ import { Icon, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
-import { NavigationHook } from '../../../types/navigation'
 
+import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 
 const FederationInviteHeader: React.FC<{}> = () => {
