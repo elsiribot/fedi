@@ -27,14 +27,17 @@ export const Images: ImagesMap = {
     HoloBackgroundStrong: require('./holo-background-strong-900.png'),
     InviteMembers: require('./invite-members.png'),
     LeaveFederation: require('./leave-federation.png'),
+    NewRoom: require('./new-room.png'),
     Note: require('./note.png'),
     Offline: require('./offline.png'),
+    Phone: require('./phone.png'),
     Recovery: require('./recovery.png'),
     SocialPeople: require('./social-people.png'),
     SwitchLeft: require('./switch-left.png'),
     SwitchRight: require('./switch-right.png'),
     Wallet: require('./wallet.png'),
     WordList: require('./word-list.png'),
+    Video: require('./video.png'),
 }
 
 export const SiteImages: ImagesMap = {
