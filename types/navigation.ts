@@ -1,4 +1,4 @@
-import { LinkingOptions } from '@react-navigation/native'
+import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { BtcLnUri, MSats, Site } from '.'
 import { Transaction } from '../bridge'
@@ -14,6 +14,7 @@ declare global {
 export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
 
+export type RouteHook = RouteProp<RootStackParamList>
 export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 export type NavigationLinkingConfig = LinkingOptions<
     RootStackParamList | MainNavigatorDrawerParamList
@@ -58,6 +59,7 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
+    Room: { roomLink: string }
     RoomInvite: { roomLink: string }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined

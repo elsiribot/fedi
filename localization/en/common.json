@@ -20,6 +20,7 @@
         "important": "Important",
         "lightning": "Lightning",
         "memo": "Memo",
+        "message": "Message",
         "next": "Next",
         "okay": "Okay",
         "one": "one",
@@ -124,6 +125,7 @@
             "invalid-room": "This is not a valid community room",
             "invite-link-notice": "Anyone with this link can join this room. Link is valid for 2 hours.",
             "join-a-room": "Join a room",
+            "new-room": "New room",
             "room-invite": "Room invite",
             "view-room": "View room"
         },

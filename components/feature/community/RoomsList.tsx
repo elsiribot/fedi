@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
@@ -11,6 +12,8 @@ import {
 } from 'react-native'
 
 import { Images } from '../../../assets/images'
+import Base from '../../../bridge'
+import { NavigationHook } from '../../../types/navigation'
 import DateUtils from '../../../utils/DateUtils'
 
 // Mock Data Types for Community features
@@ -56,18 +59,18 @@ type RoomSettings = {
     showMessageHistory: boolean
 }
 
-type Member = {
+export class Member extends Base {
     username: string
     pubkey?: string
 }
 
-type Message = {
-    id: string
+export class Message extends Base {
+    id?: string
     content: string
-    sentAt: number
-    receivedAt: number
-    sentBy: Member
-    sentIn: Room
+    sentAt?: number
+    receivedAt?: number
+    sentBy?: Member
+    sentIn?: Room
     actions?: MessageAction[]
     payment?: Payment
 }
@@ -173,14 +176,17 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 // const CIRCLE_SIZE = WINDOW_WIDTH * 0.25
 
 const RoomsList: React.FC<{}> = () => {
+    const navigation = useNavigation<NavigationHook>()
+
     const renderRoom: ListRenderItem<Room> = ({ item }) => {
         return (
             <RoomTile
                 room={item}
                 selectRoom={(room: Room) => {
                     console.log('go to room detail', room.id)
-                    // setSelectedRoom(room)
-                    // navigation.navigate('RoomMessages')
+                    navigation.navigate('Room', {
+                        roomLink: 'fedi:room:abcdefg',
+                    })
                 }}
             />
         )
