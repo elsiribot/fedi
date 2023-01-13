@@ -1,13 +1,17 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import {
+    registerXmppUser,
+    useCommunityContext,
+} from '../state/contexts/CommunityContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationUsername,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
-import { useXmpp } from '../state/hooks'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -17,18 +21,28 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [username, setUsername] = useState<string>('')
-    const { dispatch } = useFederationsContext()
-    const { registerUser } = useXmpp()
+    const { state, dispatch } = useFederationsContext()
+    const { xmppClient } = useCommunityContext().state
+    const { toast } = useEnvironmentContext().state
 
     const handleSubmit = async () => {
         try {
-            await registerUser(username)
-            dispatch(updateFederationUsername(username))
-            navigation.replace('FederationGreeting')
+            const success = await registerXmppUser(username)
+            if (success) {
+                dispatch(updateFederationUsername(username))
+            }
         } catch (error) {
-            console.log(error)
+            toast?.show(error as string, 3000)
         }
     }
+
+    // if we have a successfully authed xmppClient and username set
+    // continue to the FederationGreeting screen
+    useEffect(() => {
+        if (xmppClient && state.selectedFederation?.username) {
+            navigation.replace('FederationGreeting')
+        }
+    }, [navigation, state.selectedFederation?.username, xmppClient])
 
     return (
         <View style={styles(theme).container}>

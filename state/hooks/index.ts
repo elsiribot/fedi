@@ -1,4 +1,5 @@
 import { xml } from '@xmpp/client'
+import { Element } from 'ltx'
 import { useCallback, useEffect, useRef } from 'react'
 import {
     addressOrInvoice,
@@ -27,11 +28,7 @@ import {
 } from '../../bridge'
 import { MSats, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
-import {
-    useCommunityContext,
-    XMPP_DOMAIN,
-    XMPP_MOCK_PASSWORD,
-} from '../contexts/CommunityContext'
+import { useCommunityContext } from '../contexts/CommunityContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -199,24 +196,46 @@ export const useXmpp = () => {
     const { xmppClient } = state
 
     return {
-        getUniqueRoomName: useCallback(
-            async ({ fromUser }: OutgoingMessage) => {
-                await xmppClient?.send(
+        getUniqueRoomName: useCallback((): Promise<string> => {
+            return new Promise(resolve => {
+                // Make sure the stream is open before sending the
+                // registration request
+                const uniqueRoomListener = async (stanza: Element) => {
+                    console.log(stanza)
+                    // Receive a registration response from the server
+                    if (
+                        stanza.is('iq') &&
+                        stanza.getAttr('id') === 'get-unique-room-name'
+                    ) {
+                        xmppClient?.removeListener('stanza', uniqueRoomListener)
+                        // Resolve or reject the promise based on registration response
+                        if (stanza.getAttr('type') === 'result') {
+                            console.log(stanza.getChild('unique'))
+                            const roomName = stanza.getChildText(
+                                'unique',
+                            ) as string
+
+                            resolve(roomName)
+                        }
+                    }
+                }
+                xmppClient?.on('stanza', uniqueRoomListener)
+
+                xmppClient?.send(
                     xml(
                         'iq',
                         {
                             type: 'get',
-                            from: fromUser,
                             to: XMPP_MUC_DOMAIN,
+                            id: 'get-unique-room-name',
                         },
                         xml('unique', {
                             xmlns: 'http://jabber.org/protocol/muc#unique',
                         }),
                     ),
                 )
-            },
-            [xmppClient],
-        ),
+            })
+        }, [xmppClient]),
         sendMessage: useCallback(
             async ({ text, toUser }: OutgoingMessage) => {
                 await xmppClient?.send(
@@ -227,23 +246,6 @@ export const useXmpp = () => {
                             to: toUser,
                         },
                         xml('body', { xmlns: 'jabber:client' }, text as string),
-                    ),
-                )
-            },
-            [xmppClient],
-        ),
-        registerUser: useCallback(
-            async (username: string) => {
-                await xmppClient?.send(
-                    xml(
-                        'iq',
-                        { type: 'set', to: XMPP_DOMAIN, id: 'register' },
-                        xml(
-                            'query',
-                            { xmlns: 'jabber:iq:register' },
-                            xml('username', {}, username),
-                            xml('password', {}, XMPP_MOCK_PASSWORD),
-                        ),
                     ),
                 )
             },

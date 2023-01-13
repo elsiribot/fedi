@@ -8,6 +8,7 @@ import React, {
     useReducer,
 } from 'react'
 import Base from '../../bridge'
+import i18n from '../../localization/i18n'
 import { useEnvironmentContext } from './EnvironmentContext'
 import {
     resetFederationUsername,
@@ -74,11 +75,12 @@ export function reducer(state: AppState, action: Action): AppState {
             }
         case ActionType.SET_XMPP_CLIENT:
             // Stop the existing xmppClient before overwriting it
-            try {
-                state.xmppClient?.stop()
-            } catch (error) {
-                console.error(error)
-            }
+            // This may not be necessary???
+            // try {
+            //     state.xmppClient?.stop()
+            // } catch (error) {
+            //     console.error(error)
+            // }
 
             return {
                 ...state,
@@ -136,6 +138,63 @@ export class XmppManager extends Base {
     }
 }
 
+// Creates an ephemeral XMPP client used solely for registration
+// that opens thes stream and terminates on success or failure
+export const registerXmppUser = async (username: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        // Connect to XMPP server without credentials to establish
+        // a session for registration
+        const xmppConnectionOptions = XMPP_CONNECTION_OPTIONS
+        console.info(
+            'registerXmppUser: xmppConnectionOptions',
+            xmppConnectionOptions,
+        )
+
+        const xmpp = client(xmppConnectionOptions)
+        debug(xmpp, true)
+
+        // Send the registration request when the stream is opened
+        xmpp.on('open', () => {
+            xmpp.send(
+                xml(
+                    'iq',
+                    { type: 'set', to: XMPP_DOMAIN, id: 'register' },
+                    xml(
+                        'query',
+                        { xmlns: 'jabber:iq:register' },
+                        xml('username', {}, username),
+                        xml('password', {}, XMPP_MOCK_PASSWORD),
+                    ),
+                ),
+            )
+        })
+
+        // Listen for successful registration
+        xmpp.on('stanza', async stanza => {
+            // Receive a registration response from the server
+            if (stanza.is('iq') && stanza.getAttr('id') === 'register') {
+                // Shutdown the XMPP client (to be reinstantiated later)
+                await xmpp.stop()
+                xmpp.removeAllListeners()
+
+                // Resolve or reject the promise based on registration response
+                if (stanza.getAttr('type') === 'result') {
+                    resolve(true)
+                } else if (stanza.getAttr('type') === 'error') {
+                    // TODO: Localize this error
+                    const errorMessage =
+                        stanza.getChild('error')?.getChildText('text') ||
+                        i18n.t('errors.unknown-error')
+
+                    reject(errorMessage)
+                }
+            }
+        })
+
+        xmpp.start().catch(console.error)
+    })
+}
+
 function CommunityProvider(props: React.PropsWithChildren<{}>) {
     const { state: environmentState } = useEnvironmentContext()
     const { state: federationsState, dispatch: federationsDispatch } =
@@ -159,29 +218,15 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         if (selectedFederation === null) return
         if (!selectedFederation?.username) return
 
-        const xmppConnectionOptions = XMPP_CONNECTION_OPTIONS
-        // Try to connect if we have a username, otherwise wait for the user
-        // to create one later
-        if (selectedFederation?.username) {
-            xmppConnectionOptions.username = selectedFederation.username
-            // TODO: get password from bridge
-            xmppConnectionOptions.password = XMPP_MOCK_PASSWORD
+        const xmppConnectionOptions = {
+            ...XMPP_CONNECTION_OPTIONS,
+            username: selectedFederation.username,
+            password: XMPP_MOCK_PASSWORD,
         }
         console.info('xmppConnectionOptions', xmppConnectionOptions)
 
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
-
-        xmpp.on('offline', () => {
-            dispatch(changeUserIsOnline(false))
-        })
-
-        xmpp.on('online', async _address => {
-            // Send a presence message
-            await xmpp.send(xml('presence'))
-
-            dispatch(changeUserIsOnline(true))
-        })
 
         xmpp.on('stanza', async stanza => {
             if (stanza.is('iq')) {
@@ -196,6 +241,16 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                 const body = stanza.getChild('body')?.getText()
                 environmentState.toast?.show(body, 5000)
             }
+        })
+
+        xmpp.on('offline', () => {
+            dispatch(changeUserIsOnline(false))
+        })
+        xmpp.on('online', async _address => {
+            // Send a presence message
+            await xmpp.send(xml('presence'))
+
+            dispatch(changeUserIsOnline(true))
         })
 
         xmpp.start().catch(err => {

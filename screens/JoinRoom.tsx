@@ -10,6 +10,7 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useXmpp } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'JoinRoom'>
@@ -18,11 +19,13 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
+    const { getUniqueRoomName } = useXmpp()
 
     const handleUserInput = useCallback(
         async (input: string) => {
             if (input.startsWith('fedi:room:')) {
                 console.info('fedi community room detected', input)
+                navigation.replace('Room', { roomLink: input })
             } else {
                 toast?.show(t('feature.community.invalid-room'), 3000)
             }
@@ -35,17 +38,11 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
         handleUserInput(text)
     }, [handleUserInput])
 
-    const createRoomInvite = () => {
-        const char =
-            'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890'
-        const random = Array.from(
-            { length: 20 },
-            () => char[Math.floor(Math.random() * char.length)],
-        )
-        const roomCode = random.join('')
+    const createRoomInvite = async () => {
+        const roomCode = await getUniqueRoomName()
         const roomLink = `fedi:room:${roomCode}`
         // TODO: room link should be a deep link with app download fallback
-        navigation.navigate('RoomInvite', { roomLink })
+        navigation.replace('RoomInvite', { roomLink })
     }
 
     const devices = useCameraDevices()

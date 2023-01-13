@@ -68,6 +68,9 @@
         "user-agreement": "User Agreement",
         "you-are-offline": "You are currently in offline mode"
     },
+    "errors": {
+        "unknown-error": "An unknown error occurred"
+    },
     "feature": {
         "backup": {
             "backed-up-recovery-words": "You backed up your wallet with 12 recovery words",
