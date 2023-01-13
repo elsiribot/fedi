@@ -49,7 +49,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <Tab.Navigator
-            initialRouteName="Community"
+            initialRouteName="Wallet"
             screenOptions={({ route }) => ({
                 tabBarIcon: () => {
                     switch (route.name) {
