@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Image, Text, useTheme } from '@rneui/themed'
+import { Icon, Image, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
@@ -19,7 +19,19 @@ const RoomInviteHeader: React.FC<{}> = () => {
             containerStyle={{
                 borderBottomColor: theme.colors.primary,
             }}
-            backButton
+            headerLeft={
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    style={{
+                        padding: theme.spacing.sm,
+                    }}>
+                    <Icon
+                        name={'angle-left'}
+                        type="font-awesome"
+                        color={theme.colors.secondary}
+                    />
+                </Pressable>
+            }
             headerCenter={
                 <Text bold style={{ color: theme.colors.secondary }}>
                     {t('feature.community.room-invite')}
@@ -27,7 +39,7 @@ const RoomInviteHeader: React.FC<{}> = () => {
             }
             headerRight={
                 <Pressable
-                    onPress={() => navigation.navigate('EditRoom')}
+                    // onPress={() => navigation.navigate('EditRoom')}
                     style={{
                         padding: theme.spacing.sm,
                     }}>
