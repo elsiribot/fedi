@@ -115,7 +115,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
             data={messages}
             renderItem={renderMessage}
             keyExtractor={(item: Message) => `${item.id}`}
-            // contentContainerStyle={styles(theme).messagesListContainer}
             style={styles(theme).messagesListContainer}
         />
     )
