@@ -1862,6 +1862,11 @@
     "@types/koa-compose" "*"
     "@types/node" "*"
 
+"@types/lodash@^4.14.191":
+  "integrity" "sha512-BdZ5BCCvho3EIXw6wUCXHe7rS53AIDPLE+JzwgT+OsJk53oBfbSmZZ7CX4VaRoN78N+TJpFi9QPlfIVNmJYWxQ=="
+  "resolved" "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.191.tgz"
+  "version" "4.14.191"
+
 "@types/ltx@*":
   "integrity" "sha512-A/f5iJ5vkD5n4z7VWGhpq25mxKmxkWF52uxsbS8M6Et8ck4BU35Soew+q6Mg+MuviYFOyeZgb/rRiS2zDShsAQ=="
   "resolved" "https://registry.npmjs.org/@types/ltx/-/ltx-3.0.2.tgz"

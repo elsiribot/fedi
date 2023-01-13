@@ -1,5 +1,6 @@
 import { Client, client, Options, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
+import { isEqual } from 'lodash'
 import React, {
     createContext,
     useContext,
@@ -7,32 +8,43 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
-import Base from '../../bridge'
+
 import i18n from '../../localization/i18n'
+import { Member, Message, Room } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
-import {
-    resetFederationUsername,
-    useFederationsContext,
-} from './FederationsContext'
+import { useFederationsContext } from './FederationsContext'
 
 // Define the structure of this Context and its initial state
 interface CommunityContextState {
     xmppClient: Client | null
     username: string | null
     userIsOnline: boolean
+    messages: Message[]
+    rooms: Room[]
+    membersSeen: Member[]
 }
 const initialState: CommunityContextState = {
     xmppClient: null,
     username: null,
     userIsOnline: false,
+    messages: [],
+    rooms: [],
+    membersSeen: [],
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
+    ADD_TO_MESSAGES = 'ADD_TO_MESSAGES',
+    ADD_TO_ROOMS = 'ADD_TO_ROOMS',
     CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
-    SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
+    RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
+    SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
+    UPDATE_ROOM = 'UPDATE_ROOM',
+    UPDATE_MEMBER = 'UPDATE_MEMBER',
+    UPDATE_MESSAGE = 'UPDATE_MESSAGE',
+    UPDATE_MEMBERS_SEEN = 'UPDATE_MEMBERS_SEEN',
 }
 interface Action {
     type: ActionType
@@ -47,10 +59,28 @@ type BaseContext = {
 export const CommunityContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
+export function addToMessages(message: Message): Action {
+    return {
+        type: ActionType.ADD_TO_MESSAGES,
+        payload: message,
+    }
+}
+export function addToRooms(room: Room): Action {
+    return {
+        type: ActionType.ADD_TO_MESSAGES,
+        payload: room,
+    }
+}
 export function changeUserIsOnline(online: boolean): Action {
     return {
         type: ActionType.CHANGE_USER_IS_ONLINE,
         payload: online,
+    }
+}
+export function receiveMessages(messages: Message[]): Action {
+    return {
+        type: ActionType.RECEIVE_MESSAGES,
+        payload: messages,
     }
 }
 export function setXmppClient(xmpp: Client): Action {
@@ -68,6 +98,27 @@ export function resetCommunityState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
+        case ActionType.ADD_TO_MESSAGES:
+            console.log(state.messages)
+            const messageIndex = state.messages.findIndex(
+                (m: Message) => m.id === action.payload.id,
+            )
+
+            if (messageIndex === -1) {
+                // New messages get added
+                return {
+                    ...state,
+                    messages: [...state.messages, new Message(action.payload)],
+                }
+            } else if (isEqual(action.payload, state.messages[messageIndex])) {
+                // Avoid re-render, this message is already added
+                // and has not changed
+                return state
+            } else {
+                // message is already added but has changed...
+                // add conflict resolution logic here?
+                return state
+            }
         case ActionType.CHANGE_USER_IS_ONLINE:
             return {
                 ...state,
@@ -93,49 +144,12 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 }
 
-// const XMPP_SERVICE = 'ws://xmpp.dev.fedibtc.com:5280/xmpp-websocket'
-// const XMPP_SERVICE = 'xmpps://xmpp.dev.fedibtc.com:5281/http-bind'
 export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
 export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
-// export const XMPP_SERVICE = 'wss://jabber.hot-chilli.net:5281/xmpp-websocket'
 export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
-const XMPP_CONNECTION_OPTIONS: Options = {
+export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
     resource: 'community',
-}
-
-export class XmppManager extends Base {
-    client: Client
-
-    constructor(props: any) {
-        super(props)
-        this.client.on('error', err => {
-            console.error(err)
-        })
-
-        this.client.on('connect', () => {
-            console.info('xmpp connected')
-        })
-
-        this.client.on('offline', () => {
-            console.info('xmpp offline')
-        })
-
-        this.client.on('online', async _address => {
-            console.info('xmpp online')
-            // Send a presence message
-            await this.client.send(xml('presence'))
-        })
-
-        this.client.on('stanza', async stanza => {
-            console.info('xmpp stanza', stanza)
-            if (stanza.is('message')) {
-                console.info('stanza', stanza)
-            }
-        })
-
-        this.client.start().catch(console.error)
-    }
 }
 
 // Creates an ephemeral XMPP client used solely for registration
@@ -228,21 +242,15 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
 
+        // For debugging purposes
         xmpp.on('stanza', async stanza => {
-            if (stanza.is('iq')) {
-                if (
-                    stanza.getAttr('id') === 'register' &&
-                    stanza.getAttr('type') === 'result'
-                ) {
-                    console.info('registration successful')
-                }
-            }
             if (stanza.is('message')) {
                 const body = stanza.getChild('body')?.getText()
                 environmentState.toast?.show(body, 5000)
             }
         })
 
+        // For updating the user's online status
         xmpp.on('offline', () => {
             dispatch(changeUserIsOnline(false))
         })
@@ -253,15 +261,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             dispatch(changeUserIsOnline(true))
         })
 
-        xmpp.start().catch(err => {
-            console.error(err)
-            if (
-                err.message.includes('not-authorized') &&
-                selectedFederation?.username !== null
-            ) {
-                federationsDispatch(resetFederationUsername())
-            }
-        })
+        xmpp.start().catch(console.error)
 
         dispatch(setXmppClient(xmpp))
     }, [
