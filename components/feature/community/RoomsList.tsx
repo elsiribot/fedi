@@ -4,7 +4,6 @@ import React from 'react'
 import {
     Dimensions,
     FlatList,
-    ImageSourcePropType,
     ListRenderItem,
     StyleSheet,
     TouchableOpacity,
@@ -12,88 +11,9 @@ import {
 } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import Base from '../../../bridge'
+import { Room } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import DateUtils from '../../../utils/DateUtils'
-
-// Mock Data Types for Community features
-type Room = {
-    id: string
-    icon: ImageSourcePropType
-    name: string
-    description?: string
-    hasNewMessages: boolean
-    pinned: boolean
-    settings?: RoomSettings
-    // TODO: What exactly is encoded in this invitationCode?
-    invitationCode?: string
-
-    // Consider MessagePreview type:
-    lastMessage?: MessagePreview
-    // or simplify:
-    messagePreview?: string
-    lastReceivedTimestamp?: number
-}
-
-// The only other use case I can imagine for this
-// would be for very large Messages where a MessagePreview
-// could be sent first before "expanding" it and requesting
-// the full Message?
-type MessagePreview = {
-    text: string
-    timestamp: number
-    messageId?: string
-}
-
-// Consider combining members and admins?
-type RoomSettings = {
-    members: Member[]
-    // What can admins do that members can't (if anything)?
-    // Enable payments? Show message history?
-    // Consider instead a "creator: Member" field here
-    admins: Member[]
-    paymentsEnabled: boolean
-    // Consider instead a shareMessageHistory boolean
-    // because each Member would request and store any Messages
-    // from other Members upon joining a Room
-    showMessageHistory: boolean
-}
-
-export class Member extends Base {
-    username: string
-    pubkey?: string
-}
-
-export class Message extends Base {
-    id?: string
-    content: string
-    sentAt?: number
-    receivedAt?: number
-    sentBy?: Member
-    sentIn?: Room
-    actions?: MessageAction[]
-    payment?: Payment
-}
-
-// This is for embedding action buttons within messages
-// May need to make stricter types for this...
-type MessageAction = {
-    text: string
-    handler: () => {}
-}
-
-type Payment = {
-    amount: number
-    status: PaymentStatus
-    token?: string
-}
-
-enum PaymentStatus {
-    requested,
-    canceled,
-    rejected,
-    paid,
-}
 
 const MOCKED_ROOMS: Room[] = [
     {
@@ -185,7 +105,7 @@ const RoomsList: React.FC<{}> = () => {
                 selectRoom={(room: Room) => {
                     console.log('go to room detail', room.id)
                     navigation.navigate('Room', {
-                        roomLink: 'fedi:room:abcdefg',
+                        roomLink: `fedi:room:mockedroom::${room.id}`,
                     })
                 }}
             />
