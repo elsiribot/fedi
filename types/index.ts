@@ -51,7 +51,7 @@ export type MsatsString = BitcoinUnit<string, 'MsatsString'>
 // Community features
 export type FediRoomLink = string
 
-export type Room = {
+export class Room extends Base {
     id: string
     icon: ImageSourcePropType
     name: string

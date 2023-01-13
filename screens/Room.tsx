@@ -13,6 +13,8 @@ import { Member, Message } from '../types'
 
 import type { RootStackParamList } from '../types/navigation'
 
+import { Room as RoomType } from '../types'
+
 export type Props = NativeStackScreenProps<RootStackParamList, 'Room'>
 
 const randomId = () => {
@@ -24,13 +26,26 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { roomLink } = route.params
     const { state, dispatch } = useCommunityContext()
+    const roomLinkContents = roomLink.split('fedi:room:')[1]
+    const [roomId, roomName] = roomLinkContents.split('::')
+    const currentRoom = new RoomType({
+        id: roomId,
+        name: roomName,
+        invitationCode: roomLink,
+    })
+
+    const messagesInRoom = state.messages.filter(
+        m => m.sentIn?.id === currentRoom.id,
+    )
+
+    console.log(state.messages)
 
     // Subscribe to new messages
     // Fetch any unreceived messages
 
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={state.messages} />
+            <MessagesList messages={messagesInRoom} />
             <MessageInput
                 onMessageSubmitted={messageText => {
                     console.info('send message')
@@ -41,6 +56,8 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
                                 id: randomId(),
                                 content: messageText,
                                 sentBy: new Member({ username: 'me' }),
+                                sentIn: currentRoom,
+                                sentAt: Date.now(),
                             }),
                         ),
                     )

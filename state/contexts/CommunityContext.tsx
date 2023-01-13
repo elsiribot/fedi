@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, Options, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
 import { isEqual } from 'lodash'
@@ -8,6 +9,7 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+import { COMMUNITY_PERSISTENCE_KEY } from '../../constants'
 
 import i18n from '../../localization/i18n'
 import { Member, Message, Room } from '../../types'
@@ -116,13 +118,26 @@ export function reducer(state: AppState, action: Action): AppState {
                 return state
             } else {
                 // message is already added but has changed...
-                // add conflict resolution logic here?
-                return state
+                const updatedMessage = {
+                    ...state.messages[messageIndex],
+                    ...action.payload,
+                }
+                return {
+                    ...state,
+                    messages: state.messages.map((m: Message, i) =>
+                        i === messageIndex ? updatedMessage : m,
+                    ),
+                }
             }
         case ActionType.CHANGE_USER_IS_ONLINE:
             return {
                 ...state,
                 userIsOnline: action.payload,
+            }
+        case ActionType.RECEIVE_MESSAGES:
+            return {
+                ...state,
+                messages: [...action.payload],
             }
         case ActionType.SET_XMPP_CLIENT:
             // Stop the existing xmppClient before overwriting it
@@ -270,6 +285,17 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         selectedFederation,
         selectedFederation?.username,
     ])
+
+    useEffect(() => {
+        if (state.messages.length > 0) {
+            const { messages } = state
+
+            AsyncStorage.setItem(
+                COMMUNITY_PERSISTENCE_KEY,
+                JSON.stringify({ messages }),
+            )
+        }
+    }, [state])
 
     return <CommunityContext.Provider value={providerValue} {...props} />
 }
