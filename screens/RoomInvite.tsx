@@ -59,7 +59,7 @@ const RoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                 buttonStyle={styles(theme).button}
                 title={t('feature.community.view-room')}
                 onPress={() => {
-                    // navigation.navigate('Room', { roomLink })
+                    navigation.navigate('Room', { roomLink })
                 }}
             />
         </View>

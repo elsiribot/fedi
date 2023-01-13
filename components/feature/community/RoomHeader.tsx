@@ -15,11 +15,11 @@ const RoomHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const route = useRoute<RoomRouteProp>()
     const { roomLink } = route.params
-    // Mocked roomLink format: fedi:room:uniqueRoomId-userDefinedRoomName
+    // Mocked roomLink format: fedi:room:uniqueRoomId::userDefinedRoomName
     const roomId = roomLink.split('fedi:room:')[1]
     // If userDefinedRoomName is not provided, assume it is a new room
     // TODO: Determine if this is a 1on1 chat and show other username instead
-    const roomName = roomId.split('-')[1] || t('feature.community.new-room')
+    const roomName = roomId.split('::')[1] || t('feature.community.new-room')
 
     return (
         <Header
