@@ -105,7 +105,7 @@ const RoomsList: React.FC<{}> = () => {
                 selectRoom={(room: Room) => {
                     console.log('go to room detail', room.id)
                     navigation.navigate('Room', {
-                        roomLink: `fedi:room:mockedroom::${room.id}`,
+                        roomLink: `fedi:room:${room.id}::${room.name}`,
                     })
                 }}
             />
