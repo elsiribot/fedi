@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     event::Event,
-    mnemonic::UserSeedPhrase,
+    mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     tx::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
@@ -72,7 +72,8 @@ pub struct Bridge {
     pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
     pub pollers: Arc<Mutex<Vec<JoinHandle<()>>>>,
-    pub user_seed_phrase: UserSeedPhrase,
+    // TODO: have one mnemonic for all federations
+    // pub mnemonic: Mnemonic,
 }
 
 impl Bridge {
@@ -92,8 +93,7 @@ impl Bridge {
             clients: Arc::new(Mutex::new(federations)),
             pollers: Arc::new(Mutex::new(pollers)),
             event_sink,
-            // TODO: read from disk
-            user_seed_phrase: UserSeedPhrase::new(),
+            // mnemonic: Mnemonic::new(),
         };
         // TODO: this should start pollers for all federations ...
         // or instantiating `Federation` should do so ...
@@ -568,6 +568,12 @@ impl Federation {
         let federation_id = self.client.config().0.federation_name;
         let event = Event::transaction(federation_id.clone(), tx.clone());
         self.event_sink.event(&event);
+    }
+
+    pub async fn get_mnemonic(&self) -> Mnemonic {
+        let client_secret = self.client.get_client_secret().await;
+        // FIXME: use all the entropy
+        Mnemonic::from_entropy(&client_secret.entropy()[0..16])
     }
 
     pub async fn event_loop(&self) {

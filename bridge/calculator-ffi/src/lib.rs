@@ -535,6 +535,23 @@ async fn handle_switch_gateway(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": () }).to_string())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetMnemonicPayload {
+    federation_id: String,
+}
+
+async fn handle_get_mnemonic(payload: String) -> anyhow::Result<String> {
+    let GetMnemonicPayload { federation_id } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let mnemonic = federation.get_mnemonic().await;
+    // let mnemonic = Mnemonic::from_entropy(&[0;64]);
+    Ok(json!({ "result": mnemonic.serialize() }).to_string())
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
@@ -554,6 +571,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
             "listGateways" => handle_list_gateways(payload).await,
             "switchGateway" => handle_switch_gateway(payload).await,
+            "getMnemonic" => handle_get_mnemonic(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
