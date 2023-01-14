@@ -12,7 +12,7 @@ import {
     generateAddress,
     generateEcash,
     generateInvoice,
-    generateMnemonic,
+    getMnemonic,
     LightningGateway,
     listGateways,
     listTransactions,
@@ -90,8 +90,8 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        generateMnemonic: useCallback(() => {
-            return generateMnemonic(selectedFederation!.name)
+        getMnemonic: useCallback(() => {
+            return getMnemonic(selectedFederation!.name)
         }, [selectedFederation]),
         listTransactions: useCallback(() => {
             return listTransactions(selectedFederation!.name)
