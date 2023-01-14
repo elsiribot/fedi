@@ -10,41 +10,10 @@ import {
     View,
 } from 'react-native'
 
-import { Images } from '../../../assets/images'
+import { useCommunityContext } from '../../../state/contexts/CommunityContext'
 import { Room } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import DateUtils from '../../../utils/DateUtils'
-
-const MOCKED_ROOMS: Room[] = [
-    {
-        id: 'r1',
-        icon: Images.FediLogoIcon,
-        name: 'Fedi',
-        pinned: true,
-        hasNewMessages: true,
-        lastReceivedTimestamp: Date.now() / 1000 - 172800, // 2 days ago
-        messagePreview:
-            'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
-        lastMessage: {
-            timestamp: Date.now() / 1000 - 172800, // 2 days ago
-            text: 'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app such as:<br><br>- Federation health checks<br>- Scam awareness<br>- Security checks<br>- App updates<br>- Tips & tricks<br>- Education',
-        },
-    },
-    {
-        id: 'r2',
-        icon: Images.Recovery,
-        name: 'Recovery Support',
-        pinned: false,
-        hasNewMessages: false,
-        lastReceivedTimestamp: Date.now() / 1000,
-        messagePreview:
-            'Could someone please help me get in touch with a guardian so I can',
-        lastMessage: {
-            timestamp: Date.now() / 1000,
-            text: 'Could someone please help me get in touch with a guardian so I can recover my funds??? My phone was stolen it is urgent!',
-        },
-    },
-]
 
 // UI
 
@@ -97,6 +66,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 
 const RoomsList: React.FC<{}> = () => {
     const navigation = useNavigation<NavigationHook>()
+    const { rooms } = useCommunityContext().state
 
     const renderRoom: ListRenderItem<Room> = ({ item }) => {
         return (
@@ -114,7 +84,7 @@ const RoomsList: React.FC<{}> = () => {
 
     return (
         <FlatList
-            data={MOCKED_ROOMS}
+            data={rooms}
             renderItem={renderRoom}
             keyExtractor={(item: Room) => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content

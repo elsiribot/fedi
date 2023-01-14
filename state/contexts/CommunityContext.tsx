@@ -9,12 +9,44 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+import { Images } from '../../assets/images'
 import { COMMUNITY_PERSISTENCE_KEY } from '../../constants'
 
 import i18n from '../../localization/i18n'
 import { Member, Message, Room } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
+
+const MOCKED_ROOMS: Room[] = [
+    {
+        id: 'fedi-general-channel',
+        icon: Images.FediLogoIcon,
+        name: 'Fedi',
+        pinned: true,
+        hasNewMessages: true,
+        lastReceivedTimestamp: Date.now() / 1000 - 172800, // 2 days ago
+        messagePreview:
+            'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
+        lastMessage: {
+            timestamp: Date.now() / 1000 - 172800, // 2 days ago
+            text: 'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app such as:<br><br>- Federation health checks<br>- Scam awareness<br>- Security checks<br>- App updates<br>- Tips & tricks<br>- Education',
+        },
+    },
+    {
+        id: 'fedi-recovery-support',
+        icon: Images.Recovery,
+        name: 'Recovery Support',
+        pinned: false,
+        hasNewMessages: false,
+        lastReceivedTimestamp: Date.now() / 1000,
+        messagePreview:
+            'Could someone please help me get in touch with a guardian so I can',
+        lastMessage: {
+            timestamp: Date.now() / 1000,
+            text: 'Could someone please help me get in touch with a guardian so I can recover my funds??? My phone was stolen it is urgent!',
+        },
+    },
+]
 
 // Define the structure of this Context and its initial state
 interface CommunityContextState {
@@ -30,7 +62,7 @@ const initialState: CommunityContextState = {
     username: null,
     userIsOnline: false,
     messages: [],
-    rooms: [],
+    rooms: MOCKED_ROOMS,
     membersSeen: [],
 }
 type AppState = typeof initialState

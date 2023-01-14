@@ -87,6 +87,12 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
                 </View>
                 <Button
                     containerStyle={styles(theme).button}
+                    title={t('phrases.paste-from-clipboard')}
+                    onPress={checkClipboard}
+                    type="clear"
+                />
+                <Button
+                    containerStyle={styles(theme).button}
                     title={t('feature.community.create-a-room')}
                     onPress={createRoomInvite}
                 />
@@ -101,15 +107,16 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            // paddingVertical: theme.spacing.xl,
+            paddingBottom: theme.spacing.lg,
         },
         cameraScannerContainer: {
-            height: '80%',
+            height: '75%',
             width: '100%',
             margin: theme.spacing.lg,
         },
         button: {
             width: '90%',
+            marginBottom: theme.spacing.md,
         },
     })
 
