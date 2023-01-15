@@ -40,7 +40,6 @@ use mint_client::{
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tokio::task::JoinHandle;
 use tracing::{error, info};
 
 type FederationId = String;
@@ -50,6 +49,7 @@ const GAP_LIMIT: usize = 100;
 async fn get_federations(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
+    task_group: &TaskGroup,
 ) -> HashMap<FederationId, Arc<Federation>> {
     let mut federations = HashMap::new();
     for element in data_dir.read_dir().unwrap() {
@@ -61,8 +61,12 @@ async fn get_federations(
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
                 let client = UserClient::new(cfg.clone(), db.into(), Default::default()).await;
-                let federation = Arc::new(Federation::new(client, event_sink.clone()));
-                federations.insert(cfg.0.federation_name, federation);
+                let mut federation =
+                    Federation::new(client, event_sink.clone(), task_group.make_subgroup().await);
+                // FIXME: calling these here because I have a mutable reference to federatino
+                // but this seems very error prone
+                federation.start_pollers().await;
+                federations.insert(cfg.0.federation_name, Arc::new(federation));
             }
         }
     }
@@ -75,7 +79,7 @@ pub struct Bridge {
     // FIXME: call this `federations`
     pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
-    pub pollers: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    pub task_group: TaskGroup,
     // TODO: have one mnemonic for all federations
     // pub mnemonic: Mnemonic,
 }
@@ -83,19 +87,13 @@ pub struct Bridge {
 impl Bridge {
     // TODO: initialize all clients in data_dir
     pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
-        let federations = get_federations(&data_dir, event_sink.clone()).await;
-
-        // spawn pollers
-        let mut pollers = vec![];
-        for fed in federations.clone().into_values() {
-            let poller = tokio::spawn(async move { fed.event_loop().await });
-            pollers.push(poller);
-        }
+        let task_group = TaskGroup::new();
+        let federations = get_federations(&data_dir, event_sink.clone(), &task_group).await;
 
         let bridge = Self {
             data_dir,
             clients: Arc::new(Mutex::new(federations)),
-            pollers: Arc::new(Mutex::new(pollers)),
+            task_group,
             event_sink,
             // mnemonic: Mnemonic::new(),
         };
@@ -104,42 +102,28 @@ impl Bridge {
         bridge
     }
 
-    pub async fn stop_pollers(&self) {
-        let mut pollers = self.pollers.lock().await;
-        for poller in pollers.iter() {
-            poller.abort();
-        }
-        *pollers = vec![];
-    }
-
-    pub async fn start_pollers(&self) {
-        let mut new_pollers = vec![];
-        let feds = self.clients.lock().await;
-        for fed in feds.clone().into_values() {
-            let poller = tokio::spawn(async move { fed.event_loop().await });
-            new_pollers.push(poller);
-        }
-
-        // update pollers in state
-        let mut pollers = self.pollers.lock().await;
-        *pollers = new_pollers;
+    pub async fn stop_pollers(&self) -> Result<()> {
+        // FIXME: don't clone
+        self.task_group.clone().shutdown_join_all().await
     }
 
     /// Adds federation to "clients" and starts polling (if we haven't already joined)
-    pub async fn join_federation(&self, federation: Arc<Federation>) -> Result<()> {
-        let federation_name = federation.client.config().0.federation_name;
+    pub async fn join_federation(&self, connect_string: String) -> Result<Federation> {
+        let mut federation = Federation::join(
+            connect_string,
+            self.data_dir.clone(),
+            self.event_sink.clone(),
+            self.task_group.make_subgroup().await,
+        )
+        .await?;
         let mut clients = self.clients.lock().await;
+        let federation_name = federation.name();
         if !clients.contains_key(&federation_name) {
-            clients.insert(federation_name, federation.clone());
-            let federation_clone = federation.clone();
-            let poller = tokio::spawn(async move {
-                federation_clone.event_loop().await;
-            });
-            self.pollers.lock().await.push(poller);
-        }
-        // Make initial ecash backup
-        // FIXME: shouldn't be necessary, but https://github.com/fedimint/fedimint/issues/1333
-        federation.back_up_ecash_to_federation().await
+            federation.start_pollers().await;
+            federation.back_up_ecash_to_federation().await?;
+            clients.insert(federation_name, Arc::new(federation.clone()));
+        };
+        Ok(federation)
     }
 
     pub async fn recover_from_mnemonic(
@@ -147,7 +131,7 @@ impl Bridge {
         federation_id: &str,
         mnemonic: &Mnemonic,
     ) -> Result<()> {
-        self.stop_pollers().await;
+        self.stop_pollers().await?;
 
         let entropy = mnemonic.to_entropy();
         let entropy: [u8; 16] = entropy[0..16]
@@ -173,16 +157,15 @@ impl Bridge {
             let new_client = UserClient::new(config, db.clone(), secp).await;
             fed.client = Arc::new(new_client);
 
+            // start pollers
+            fed.start_pollers().await;
+
             feds.insert(federation_id.to_string(), Arc::new(fed.clone()));
             fed
         };
 
         // recover ecash tokens
         fed.restore_ecash_from_federation().await?;
-
-        // restart pollers
-        // FIXME: we shouldn't restart all pollers ... just the ones associated with this federation
-        self.start_pollers().await;
 
         Ok(())
     }
@@ -212,14 +195,24 @@ impl Bridge {
 pub struct Federation {
     pub client: Arc<UserClient>,
     pub event_sink: Arc<EventSinkWrapper>,
+    pub task_group: TaskGroup,
 }
 
 impl Federation {
-    pub fn new(client: UserClient, event_sink: Arc<EventSinkWrapper>) -> Self {
+    pub fn new(
+        client: UserClient,
+        event_sink: Arc<EventSinkWrapper>,
+        task_group: TaskGroup,
+    ) -> Self {
         Self {
             client: Arc::new(client),
             event_sink,
+            task_group,
         }
+    }
+
+    pub fn name(&self) -> String {
+        self.client.config().0.federation_name.clone()
     }
 
     fn txout_proof_url(&self, txid: &Txid) -> Result<String> {
@@ -262,6 +255,7 @@ impl Federation {
         connect_string: String,
         data_dir: PathBuf,
         event_sink: Arc<EventSinkWrapper>,
+        task_group: TaskGroup,
     ) -> Result<Self> {
         // Download federation config
         let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
@@ -297,7 +291,7 @@ impl Federation {
         let db = SledDb::open(db_path, "client")?;
         let client =
             UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
-        Ok(Self::new(client, event_sink))
+        Ok(Self::new(client, event_sink, task_group))
     }
 
     pub fn sign_with_node_privkey(&self, msg: &Message) -> Signature {
@@ -687,163 +681,190 @@ impl Federation {
         Ok(())
     }
 
-    pub async fn event_loop(&self) {
-        self.poll_ecash_backup();
-        self.poll_balance();
-        self.poll_peg_ins();
-        self.poll_incoming_ln();
-        self.poll_ln_refunds();
+    pub async fn start_pollers(&mut self) {
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ecash backup poller", self.name()),
+                |_handle| async move {
+                    fed.poll_ecash_backup().await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ecash backup poller", self.name()),
+                |_handle| async move {
+                    fed.poll_balance().await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ecash backup poller", self.name()),
+                |_handle| async move {
+                    fed.poll_peg_ins().await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ecash backup poller", self.name()),
+                |_handle| async move {
+                    fed.poll_incoming_ln().await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ecash backup poller", self.name()),
+                |_handle| async move {
+                    fed.poll_ln_refunds().await;
+                },
+            )
+            .await;
     }
 
     /// Make an ecash backup once every minute
-    pub fn poll_ecash_backup(&self) {
-        let fed = self.clone();
-        tokio::spawn(async move {
-            loop {
-                match fed.back_up_ecash_to_federation().await {
-                    Ok(_) => info!("ecash backup complete"),
-                    Err(_) => error!("ecash backup failed"),
-                }
-                fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
+    pub async fn poll_ecash_backup(&self) {
+        loop {
+            match self.back_up_ecash_to_federation().await {
+                Ok(_) => info!("ecash backup complete"),
+                Err(_) => error!("ecash backup failed"),
             }
-        });
+            fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
+        }
     }
 
     /// Checks for peg-ins every second
-    pub fn poll_peg_ins(&self) {
-        let fed = self.clone();
-        tokio::spawn(async move {
-            let mut last_consensus_block_height = None;
-            loop {
-                let current_block_height = fed.block_height().await.ok();
-                if last_consensus_block_height != current_block_height {
-                    fed.attempt_pegins().await;
-                    last_consensus_block_height = current_block_height;
-                }
-                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+    pub async fn poll_peg_ins(&self) {
+        let mut last_consensus_block_height = None;
+        loop {
+            let current_block_height = self.block_height().await.ok();
+            if last_consensus_block_height != current_block_height {
+                self.attempt_pegins().await;
+                last_consensus_block_height = current_block_height;
             }
-        });
+            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+        }
     }
 
     /// Announces balance to event emitter every second
-    pub fn poll_balance(&self) {
-        let fed = self.clone();
-        tokio::spawn(async move {
-            loop {
-                fed.update_balance().await;
-                tracing::debug!("poll balance");
-                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
-            }
-        });
+    pub async fn poll_balance(&self) {
+        loop {
+            self.update_balance().await;
+            tracing::debug!("poll balance");
+            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+        }
     }
 
     /// Checks for incoming payments every second
-    pub fn poll_incoming_ln(&self) {
+    pub async fn poll_incoming_ln(&self) {
         let fed = self.clone();
-        tokio::spawn(async move {
-            loop {
-                let pending_payments: Vec<Payment> = fed
-                    .list_payments()
-                    .await
-                    .into_iter()
-                    // TODO: should we filter
-                    .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
-                    .collect();
+        loop {
+            let pending_payments: Vec<Payment> = fed
+                .list_payments()
+                .await
+                .into_iter()
+                // TODO: should we filter
+                .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
+                .collect();
 
-                // Try to complete incoming payments
-                pending_payments
-                    .iter()
-                    .map(|payment| async {
-                        // FIXME: don't create rng in here ...
-                        let invoice_expired = payment.invoice.is_expired();
-                        let rng = rand::rngs::OsRng;
-                        let payment_hash = payment.invoice.payment_hash();
-                        tracing::debug!("fetching incoming contract {:?}", &payment_hash);
-                        let result = &fed
-                            .client
-                            .claim_incoming_contract(
-                                ContractId::from_hash(payment_hash.clone()),
-                                rng.clone(),
-                            )
-                            .await;
-                        if let Err(_) = result {
-                            tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
-                            // Mark it "expired" in db if we couldn't claim it and invoice is expired
-                            if invoice_expired {
-                                fed.update_payment_status(payment_hash, PaymentStatus::Expired)
-                                    .await;
-                            }
-                        } else {
-                            tracing::info!("completed payment: {:?}", &payment_hash);
-                            fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+            // Try to complete incoming payments
+            pending_payments
+                .iter()
+                .map(|payment| async {
+                    // FIXME: don't create rng in here ...
+                    let invoice_expired = payment.invoice.is_expired();
+                    let rng = rand::rngs::OsRng;
+                    let payment_hash = payment.invoice.payment_hash();
+                    tracing::debug!("fetching incoming contract {:?}", &payment_hash);
+                    let result = &fed
+                        .client
+                        .claim_incoming_contract(
+                            ContractId::from_hash(payment_hash.clone()),
+                            rng.clone(),
+                        )
+                        .await;
+                    if let Err(_) = result {
+                        tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
+                        // Mark it "expired" in db if we couldn't claim it and invoice is expired
+                        if invoice_expired {
+                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
                                 .await;
-                            fed.update_balance().await;
-                            let amount = fedimint_api::Amount::from_msats(
-                                payment.invoice.amount_milli_satoshis().expect(
-                                    "assuming we only receive payments for invoices with amount",
-                                ),
-                            );
-                            let fee = None;
-                            let tx = Transaction::lightning(
-                                TransactionDirection::Receive,
-                                amount,
-                                fee,
-                                payment.invoice.clone(),
-                            );
-                            fed.save_transaction(&tx).await;
                         }
-                    })
-                    .collect::<FuturesUnordered<_>>()
-                    .collect::<Vec<()>>()
-                    .await;
+                    } else {
+                        tracing::info!("completed payment: {:?}", &payment_hash);
+                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                            .await;
+                        fed.update_balance().await;
+                        let amount = fedimint_api::Amount::from_msats(
+                            payment.invoice.amount_milli_satoshis().expect(
+                                "assuming we only receive payments for invoices with amount",
+                            ),
+                        );
+                        let fee = None;
+                        let tx = Transaction::lightning(
+                            TransactionDirection::Receive,
+                            amount,
+                            fee,
+                            payment.invoice.clone(),
+                        );
+                        fed.save_transaction(&tx).await;
+                    }
+                })
+                .collect::<FuturesUnordered<_>>()
+                .collect::<Vec<()>>()
+                .await;
 
-                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
-            }
-        });
+            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+        }
     }
 
     /// Attempts lightning refunds every minute
-    pub fn poll_ln_refunds(&self) {
+    pub async fn poll_ln_refunds(&self) {
         let fed = self.clone();
 
-        tokio::spawn(async move {
-            loop {
-                let consensus_block_height = fed.block_height().await.unwrap_or(0);
-                let contracts = fed
-                    .client
-                    .ln_client()
-                    .refundable_outgoing_contracts(consensus_block_height)
-                    .await;
-                tracing::info!("looking for refunds...");
-                contracts
-                    .iter()
-                    .map(|contract| async {
-                        tracing::info!(
-                            "attempting to get refund {:?}",
+        loop {
+            let consensus_block_height = fed.block_height().await.unwrap_or(0);
+            let contracts = fed
+                .client
+                .ln_client()
+                .refundable_outgoing_contracts(consensus_block_height)
+                .await;
+            tracing::info!("looking for refunds...");
+            contracts
+                .iter()
+                .map(|contract| async {
+                    tracing::info!(
+                        "attempting to get refund {:?}",
+                        contract.contract_account.contract.contract_id(),
+                    );
+                    match fed
+                        .client
+                        .try_refund_outgoing_contract(
                             contract.contract_account.contract.contract_id(),
-                        );
-                        match fed
-                            .client
-                            .try_refund_outgoing_contract(
-                                contract.contract_account.contract.contract_id(),
-                                rand::rngs::OsRng,
-                            )
-                            .await
-                        {
-                            Ok(_) => {
-                                tracing::info!("got refund");
-                                fed.update_balance().await;
-                            }
-                            Err(e) => tracing::info!("refund failed {:?}", e),
-                        };
-                    })
-                    .collect::<FuturesUnordered<_>>()
-                    .collect::<Vec<()>>()
-                    .await;
+                            rand::rngs::OsRng,
+                        )
+                        .await
+                    {
+                        Ok(_) => {
+                            tracing::info!("got refund");
+                            fed.update_balance().await;
+                        }
+                        Err(e) => tracing::info!("refund failed {:?}", e),
+                    };
+                })
+                .collect::<FuturesUnordered<_>>()
+                .collect::<Vec<()>>()
+                .await;
 
-                // once per minute
-                fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
-            }
-        });
+            // once per minute
+            fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
+        }
     }
 }

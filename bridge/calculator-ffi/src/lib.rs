@@ -46,10 +46,8 @@ lazy_static! {
 async fn set_bridge(bridge: Bridge) {
     tracing::info!("resetting bridge");
     if let Some(b) = BRIDGE.lock().await.clone() {
-        let pollers = b.pollers.lock().await;
-        for poller in pollers.iter() {
-            poller.abort();
-        }
+        // FIXME: don't panic
+        b.stop_pollers().await.expect("couldn't stop pollers")
     }
     *BRIDGE.lock().await = Some(Arc::new(bridge));
     tracing::info!("reset bridge");
@@ -129,23 +127,15 @@ pub struct JoinFederationPayload {
 }
 
 async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
-    let payload: JoinFederationPayload = match serde_json::from_str(&payload) {
+    let JoinFederationPayload { connect_string } = match serde_json::from_str(&payload) {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
     let bridge = get_bridge().await.expect("bridge not initialized");
-    let federation = Arc::new(
-        Federation::join(
-            payload.connect_string,
-            bridge.data_dir.clone(),
-            bridge.event_sink.clone(),
-        )
-        .await?,
-    );
 
-    bridge.join_federation(federation.clone()).await?;
+    let federation = bridge.join_federation(connect_string).await?;
 
-    let fedimint_federation = federation_to_fedimint_federation(&federation).await;
+    let fedimint_federation = federation_to_fedimint_federation(&Arc::new(federation)).await;
     Ok(json!({ "result": fedimint_federation }).to_string())
 }
 
