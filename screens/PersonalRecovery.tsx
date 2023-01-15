@@ -185,6 +185,8 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                         toast?.show((error as Error)?.message, 3000)
                     }
                 }}
+                // TODO: separate loading screen as per designs
+                loading={isLoading}
                 disabled={isLoading || seedWords.some(s => !isValidSeedWord(s))}
             />
         </ScrollView>
