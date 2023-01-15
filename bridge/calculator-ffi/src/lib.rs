@@ -78,7 +78,7 @@ fn rpc_error(description: &str) -> String {
 
 async fn get_federation(federation_id: &str) -> Arc<Federation> {
     let bridge = get_bridge().await.expect("there should be a bridge");
-    let lock = bridge.clients.lock().await;
+    let lock = bridge.federations.lock().await;
     let federation = lock.get(federation_id).unwrap(); // FIXME: don't unwrap
     federation.clone() // FIXME: don't clone
 }
@@ -143,7 +143,7 @@ async fn handle_list_federations() -> anyhow::Result<String> {
     let bridge = get_bridge().await.expect("bridge not initialized");
     let federations: Vec<FedimintFederation> = futures::future::join_all(
         bridge
-            .clients
+            .federations
             .lock()
             .await
             .values()

@@ -46,12 +46,12 @@ type FederationId = String;
 
 const GAP_LIMIT: usize = 100;
 
-async fn get_federations(
+async fn load_federations_from_disk(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
     task_group: &TaskGroup,
-) -> HashMap<FederationId, Arc<Federation>> {
-    let mut federations = HashMap::new();
+) -> Vec<Federation> {
+    let mut federations = vec![];
     for element in data_dir.read_dir().unwrap() {
         let mut path = element.unwrap().path();
         if let Some(extension) = path.extension() {
@@ -61,12 +61,9 @@ async fn get_federations(
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
                 let client = UserClient::new(cfg.clone(), db.into(), Default::default()).await;
-                let mut federation =
+                let federation =
                     Federation::new(client, event_sink.clone(), task_group.make_subgroup().await);
-                // FIXME: calling these here because I have a mutable reference to federatino
-                // but this seems very error prone
-                federation.start_pollers().await;
-                federations.insert(cfg.0.federation_name, Arc::new(federation));
+                federations.push(federation)
             }
         }
     }
@@ -76,29 +73,31 @@ async fn get_federations(
 pub struct Bridge {
     /// Where dbs & configs are stored. Result of calling getApplicationDocumentsDirectory() in Dart.
     pub data_dir: PathBuf,
-    // FIXME: call this `federations`
-    pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
+    pub federations: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
     pub task_group: TaskGroup,
-    // TODO: have one mnemonic for all federations
-    // pub mnemonic: Mnemonic,
 }
 
 impl Bridge {
-    // TODO: initialize all clients in data_dir
     pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
+        // load federations from disk
         let task_group = TaskGroup::new();
-        let federations = get_federations(&data_dir, event_sink.clone(), &task_group).await;
+        let mut federations_map = HashMap::new();
+        let federations_vec =
+            load_federations_from_disk(&data_dir, event_sink.clone(), &task_group).await;
+
+        // start pollers
+        for mut federation in federations_vec.into_iter() {
+            federation.start_pollers().await;
+            federations_map.insert(federation.name(), Arc::new(federation));
+        }
 
         let bridge = Self {
             data_dir,
-            clients: Arc::new(Mutex::new(federations)),
+            federations: Arc::new(Mutex::new(federations_map)),
             task_group,
             event_sink,
-            // mnemonic: Mnemonic::new(),
         };
-        // TODO: this should start pollers for all federations ...
-        // or instantiating `Federation` should do so ...
         bridge
     }
 
@@ -107,7 +106,7 @@ impl Bridge {
         self.task_group.clone().shutdown_join_all().await
     }
 
-    /// Adds federation to "clients" and starts polling (if we haven't already joined)
+    /// Adds federation to "federations" and starts polling (if we haven't already joined)
     pub async fn join_federation(&self, connect_string: String) -> Result<Federation> {
         let mut federation = Federation::join(
             connect_string,
@@ -116,12 +115,12 @@ impl Bridge {
             self.task_group.make_subgroup().await,
         )
         .await?;
-        let mut clients = self.clients.lock().await;
+        let mut federations = self.federations.lock().await;
         let federation_name = federation.name();
-        if !clients.contains_key(&federation_name) {
+        if !federations.contains_key(&federation_name) {
             federation.start_pollers().await;
             federation.back_up_ecash_to_federation().await?;
-            clients.insert(federation_name, Arc::new(federation.clone()));
+            federations.insert(federation_name, Arc::new(federation.clone()));
         };
         Ok(federation)
     }
@@ -140,7 +139,7 @@ impl Bridge {
 
         // update client secret in memory
         let fed = {
-            let mut feds = self.clients.lock().await;
+            let mut feds = self.federations.lock().await;
             let fed_arc = feds
                 .get(federation_id)
                 .ok_or(anyhow!("Federation not found"))?;
