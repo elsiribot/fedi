@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     default::Default,
-    fs::File,
+    fs::{self, File},
     path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
@@ -111,6 +111,24 @@ impl Bridge {
             self.pollers.lock().await.push(poller);
         }
     }
+    /// Deletes federation client database and config
+    /// only use this in development
+    /// TODO: actually make sure we're not running in production
+    pub async fn dangerous_leave_federation(&self, federation_id: String) -> anyhow::Result<()> {
+        let files = fs::read_dir(&self.data_dir).unwrap();
+        for file in files {
+            tracing::info!("{:?}", file);
+        }
+        let json_path = Path::new(&self.data_dir)
+            .join(&federation_id)
+            .with_extension("json");
+        let db_path = Path::new(&self.data_dir)
+            .join(&federation_id)
+            .with_extension("db");
+        // fs::remove_file(json_path)?;
+        fs::remove_dir_all(db_path)?;
+        Ok(())
+    }
 }
 
 /// Should this have the poller reference?
@@ -194,7 +212,6 @@ impl Federation {
         // Save config
         let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         tracing::info!("saving file to {}", cfg_path.display());
-        let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         let file = File::create(cfg_path) // FIXME: this should probably use tokio's `File`
             .expect("Could not create cfg file");
         serde_json::to_writer_pretty(file, &cfg).expect("Could not write gateway cfg");
