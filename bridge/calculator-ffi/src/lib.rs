@@ -143,7 +143,7 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
         .await?,
     );
 
-    bridge.join_federation(federation.clone()).await;
+    bridge.join_federation(federation.clone()).await?;
 
     let fedimint_federation = federation_to_fedimint_federation(&federation).await;
     Ok(json!({ "result": fedimint_federation }).to_string())
@@ -546,11 +546,14 @@ async fn handle_recover_from_mnemonic(payload: String) -> anyhow::Result<String>
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+
+    let bridge = BRIDGE.lock().await.clone().unwrap();
     let mnemonic_string = mnemonic.join(" ");
     // FIXME: should this happen inside bridge module?
     let mnemonic = Mnemonic::parse(mnemonic_string)?;
-    federation.recover_from_mnemonic(&mnemonic).await?;
+    bridge
+        .recover_from_mnemonic(&federation_id, &mnemonic)
+        .await?;
     Ok(json!({ "result": () }).to_string())
 }
 

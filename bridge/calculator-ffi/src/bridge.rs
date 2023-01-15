@@ -36,11 +36,12 @@ use lightning_invoice::Invoice;
 use mint_client::{
     api::{WsFederationApi, WsFederationConnect},
     query::CurrentConsensus,
-    ClientSecret, UserClient, UserClientConfig,
+    UserClient, UserClientConfig,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
+use tracing::{error, info};
 
 type FederationId = String;
 
@@ -71,6 +72,7 @@ async fn get_federations(
 pub struct Bridge {
     /// Where dbs & configs are stored. Result of calling getApplicationDocumentsDirectory() in Dart.
     pub data_dir: PathBuf,
+    // FIXME: call this `federations`
     pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
     pub pollers: Arc<Mutex<Vec<JoinHandle<()>>>>,
@@ -101,18 +103,90 @@ impl Bridge {
         // or instantiating `Federation` should do so ...
         bridge
     }
+
+    pub async fn stop_pollers(&self) {
+        let mut pollers = self.pollers.lock().await;
+        for poller in pollers.iter() {
+            poller.abort();
+        }
+        *pollers = vec![];
+    }
+
+    pub async fn start_pollers(&self) {
+        let mut new_pollers = vec![];
+        let feds = self.clients.lock().await;
+        for fed in feds.clone().into_values() {
+            let poller = tokio::spawn(async move { fed.event_loop().await });
+            new_pollers.push(poller);
+        }
+
+        // update pollers in state
+        let mut pollers = self.pollers.lock().await;
+        *pollers = new_pollers;
+    }
+
     /// Adds federation to "clients" and starts polling (if we haven't already joined)
-    pub async fn join_federation(&self, federation: Arc<Federation>) {
+    pub async fn join_federation(&self, federation: Arc<Federation>) -> Result<()> {
         let federation_name = federation.client.config().0.federation_name;
         let mut clients = self.clients.lock().await;
         if !clients.contains_key(&federation_name) {
             clients.insert(federation_name, federation.clone());
+            let federation_clone = federation.clone();
             let poller = tokio::spawn(async move {
-                federation.event_loop().await;
+                federation_clone.event_loop().await;
             });
             self.pollers.lock().await.push(poller);
         }
+        // Make initial ecash backup
+        // FIXME: shouldn't be necessary, but https://github.com/fedimint/fedimint/issues/1333
+        federation.back_up_ecash_to_federation().await
     }
+
+    pub async fn recover_from_mnemonic(
+        &self,
+        federation_id: &str,
+        mnemonic: &Mnemonic,
+    ) -> Result<()> {
+        self.stop_pollers().await;
+
+        let entropy = mnemonic.to_entropy();
+        let entropy: [u8; 16] = entropy[0..16]
+            .try_into()
+            .expect("mnemonic entropy array of wrong size");
+
+        // update client secret in memory
+        let fed = {
+            let mut feds = self.clients.lock().await;
+            let fed_arc = feds
+                .get(federation_id)
+                .ok_or(anyhow!("Federation not found"))?;
+            let mut fed = (**fed_arc).clone();
+
+            // write client secret to db
+            fed.client.dangerous_save_client_secret(entropy).await;
+
+            // HACK
+            // create a new client which will load updated client secret from db
+            let config = fed.client.config();
+            let db = fed.client.db();
+            let secp = Secp256k1::new();
+            let new_client = UserClient::new(config, db.clone(), secp).await;
+            fed.client = Arc::new(new_client);
+
+            feds.insert(federation_id.to_string(), Arc::new(fed.clone()));
+            fed
+        };
+
+        // recover ecash tokens
+        fed.restore_ecash_from_federation().await?;
+
+        // restart pollers
+        // FIXME: we shouldn't restart all pollers ... just the ones associated with this federation
+        self.start_pollers().await;
+
+        Ok(())
+    }
+
     /// Deletes federation client database and config
     /// only use this in development
     /// TODO: actually make sure we're not running in production
@@ -595,12 +669,7 @@ impl Federation {
         Mnemonic::from_entropy(&client_secret.entropy())
     }
 
-    pub async fn recover_from_mnemonic(&self, mnemonic: &Mnemonic) -> Result<()> {
-        let entropy = mnemonic.to_entropy();
-        let entropy: [u8; 16] = entropy[0..16]
-            .try_into()
-            .expect("mnemonic entropy array of wrong size");
-        self.client.dangerous_set_client_secret(entropy).await;
+    pub async fn restore_ecash_from_federation(&self) -> Result<()> {
         let mut task_group = TaskGroup::new();
         self.client
             .mint_client()
@@ -610,11 +679,34 @@ impl Federation {
         Ok(())
     }
 
+    pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
+        self.client
+            .mint_client()
+            .back_up_ecash_to_federation()
+            .await?;
+        Ok(())
+    }
+
     pub async fn event_loop(&self) {
+        self.poll_ecash_backup();
         self.poll_balance();
         self.poll_peg_ins();
         self.poll_incoming_ln();
         self.poll_ln_refunds();
+    }
+
+    /// Make an ecash backup once every minute
+    pub fn poll_ecash_backup(&self) {
+        let fed = self.clone();
+        tokio::spawn(async move {
+            loop {
+                match fed.back_up_ecash_to_federation().await {
+                    Ok(_) => info!("ecash backup complete"),
+                    Err(_) => error!("ecash backup failed"),
+                }
+                fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
+            }
+        });
     }
 
     /// Checks for peg-ins every second
