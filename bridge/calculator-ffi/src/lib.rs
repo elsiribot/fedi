@@ -143,27 +143,6 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
         .await?,
     );
 
-    // switch to justin's node if it exists
-    let active_gateways = federation.client.fetch_registered_gateways().await?;
-    for gateway in active_gateways {
-        if gateway.node_pub_key
-            == bitcoin::secp256k1::PublicKey::from_str(
-                "033cb5cdd3d72c6c1069f25d9063f6a7c997597e56eb0966e1afe011d8d1bbbb5d",
-            )
-            .expect("hard-coded pubkey")
-        {
-            federation
-                .client
-                .switch_active_gateway(Some(gateway.node_pub_key))
-                .await?;
-        }
-    }
-
-    tracing::info!(
-        "active gateway {:?}",
-        federation.client.fetch_active_gateway().await
-    );
-
     bridge.join_federation(federation.clone()).await;
 
     let fedimint_federation = federation_to_fedimint_federation(&federation).await;
