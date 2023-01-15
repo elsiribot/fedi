@@ -25,9 +25,9 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
-use fedimint_api::db::DatabaseTransaction;
 use fedimint_api::NumPeers;
 use fedimint_api::{config::ClientConfig, module::registry::ModuleDecoderRegistry};
+use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
 use fedimint_sled::SledDb;
@@ -36,13 +36,15 @@ use lightning_invoice::Invoice;
 use mint_client::{
     api::{WsFederationApi, WsFederationConnect},
     query::CurrentConsensus,
-    UserClient, UserClientConfig,
+    ClientSecret, UserClient, UserClientConfig,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 type FederationId = String;
+
+const GAP_LIMIT: usize = 100;
 
 async fn get_federations(
     data_dir: &PathBuf,
@@ -125,7 +127,7 @@ impl Bridge {
         let db_path = Path::new(&self.data_dir)
             .join(&federation_id)
             .with_extension("db");
-        // fs::remove_file(json_path)?;
+        fs::remove_file(json_path)?;
         fs::remove_dir_all(db_path)?;
         Ok(())
     }
@@ -590,7 +592,22 @@ impl Federation {
     pub async fn get_mnemonic(&self) -> Mnemonic {
         let client_secret = self.client.get_client_secret().await;
         // FIXME: use all the entropy
-        Mnemonic::from_entropy(&client_secret.entropy()[0..16])
+        Mnemonic::from_entropy(&client_secret.entropy())
+    }
+
+    pub async fn recover_from_mnemonic(&self, mnemonic: &Mnemonic) -> Result<()> {
+        let entropy = mnemonic.to_entropy();
+        let entropy: [u8; 16] = entropy[0..16]
+            .try_into()
+            .expect("mnemonic entropy array of wrong size");
+        self.client.dangerous_set_client_secret(entropy).await;
+        let mut task_group = TaskGroup::new();
+        self.client
+            .mint_client()
+            .restore_ecash_from_federation(GAP_LIMIT, &mut task_group)
+            .await??;
+        self.update_balance().await;
+        Ok(())
     }
 
     pub async fn event_loop(&self) {

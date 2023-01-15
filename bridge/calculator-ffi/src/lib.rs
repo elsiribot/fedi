@@ -20,6 +20,7 @@ use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use logging::init_logging;
 use mint_client::{mint::SpendableNote, utils::network_to_currency};
+use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
@@ -78,7 +79,7 @@ fn rpc_error(description: &str) -> String {
 }
 
 async fn get_federation(federation_id: &str) -> Arc<Federation> {
-    let bridge = get_bridge().await.expect("there should be a federation");
+    let bridge = get_bridge().await.expect("there should be a bridge");
     let lock = bridge.clients.lock().await;
     let federation = lock.get(federation_id).unwrap(); // FIXME: don't unwrap
     federation.clone() // FIXME: don't clone
@@ -548,8 +549,30 @@ async fn handle_get_mnemonic(payload: String) -> anyhow::Result<String> {
     };
     let federation = get_federation(&federation_id).await;
     let mnemonic = federation.get_mnemonic().await;
-    // let mnemonic = Mnemonic::from_entropy(&[0;64]);
     Ok(json!({ "result": mnemonic.serialize() }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoverFromMnemonicPayload {
+    federation_id: String,
+    mnemonic: Vec<String>,
+}
+
+async fn handle_recover_from_mnemonic(payload: String) -> anyhow::Result<String> {
+    let RecoverFromMnemonicPayload {
+        federation_id,
+        mnemonic,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let mnemonic_string = mnemonic.join(" ");
+    // FIXME: should this happen inside bridge module?
+    let mnemonic = Mnemonic::parse(mnemonic_string)?;
+    federation.recover_from_mnemonic(&mnemonic).await?;
+    Ok(json!({ "result": () }).to_string())
 }
 
 #[derive(Debug, Deserialize)]
@@ -588,6 +611,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "listGateways" => handle_list_gateways(payload).await,
             "switchGateway" => handle_switch_gateway(payload).await,
             "getMnemonic" => handle_get_mnemonic(payload).await,
+            "recoverFromMnemonic" => handle_recover_from_mnemonic(payload).await,
             "dangerousLeaveFederation" => handle_dangerous_leave_federation(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",

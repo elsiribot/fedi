@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 pub struct Mnemonic(bip39::Mnemonic);
 
 impl Mnemonic {
@@ -24,5 +26,13 @@ impl Mnemonic {
         // FIXME: where is a better place to ensure this?
         assert!(serialized.len() == 12, "invalid mnemonic length");
         serialized
+    }
+
+    pub fn parse<'a, S: Into<Cow<'a, str>>>(s: S) -> Result<Self, anyhow::Error> {
+        Ok(Self(bip39::Mnemonic::parse(s)?))
+    }
+
+    pub fn to_entropy(&self) -> Vec<u8> {
+        self.0.to_entropy()
     }
 }
