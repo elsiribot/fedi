@@ -8,6 +8,7 @@ import {
     approveSocialRecoveryRequest,
     authenticateGuardian,
     backupQr,
+    dangerousLeaveFederation,
     denySocialRecoveryRequest,
     generateAddress,
     generateEcash,
@@ -70,6 +71,9 @@ export const useBridge = () => {
         ),
         backupQr: useCallback(() => {
             return backupQr(selectedFederation!.name)
+        }, [selectedFederation]),
+        dangerousLeaveFederation: useCallback(() => {
+            return dangerousLeaveFederation(selectedFederation!.name)
         }, [selectedFederation]),
         generateAddress: useCallback(() => {
             return generateAddress(selectedFederation!.name)

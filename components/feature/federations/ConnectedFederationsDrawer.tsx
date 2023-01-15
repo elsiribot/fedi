@@ -21,6 +21,7 @@ import {
     updateConnectedFederations,
     useFederationsContext,
 } from '../../../state/contexts/FederationsContext'
+import { useBridge } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
 
@@ -74,6 +75,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
+    const { dangerousLeaveFederation } = useBridge()
     const { state, dispatch } = useFederationsContext()
     const { selectedFederation, connectedFederations } = state
 
@@ -125,7 +127,8 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
             <Button
                 title={'Reset Federations State'}
                 type="clear"
-                onPress={() => {
+                onPress={async () => {
+                    await dangerousLeaveFederation()
                     navigation.navigate('Initializing', {
                         reset: true,
                     })
