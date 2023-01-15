@@ -381,18 +381,12 @@ export async function getMnemonic(federationId: string): Promise<SeedWords> {
 
 // progress reported via `SeedRecoveryEvent` events
 export async function recoverFromMnemonic(
-    _mnemonic: string[],
-    _federationId: string,
+    mnemonic: string[],
+    federationId: string,
 ): Promise<null> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ mnemonic, federationId })
-    // let response = await FedimintFfi.rpc('recoverFromMnemonic', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate recovery with success/failure modes
-    await new Promise(r => setTimeout(r, 2000))
-    return handleRpcResponse<null>('{"result": "null"}')
-    // return handleRpcResponse<null>('{"error": "seed is invalid"}')
+    let payload = JSON.stringify({ mnemonic, federationId })
+    let response = await FedimintFfi.rpc('recoverFromMnemonic', payload)
+    return handleRpcResponse<null>(response)
 }
 
 /*
