@@ -403,17 +403,14 @@ export type SeedRecoveryEvent =
  */
 
 export async function uploadBackupFile(
-    _contents: string,
-    _federationId: string,
-): Promise<string> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, contents })
-    // let response = await FedimintFfi.rpc('uploadBackupFile', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate success/failure modes
-    return handleRpcResponse<string>('{"result": "/path/to/backup.fedi"}')
-    // return handleRpcResponse<string>('{"error": "error creating social backup file"}')
+    videoFilePath: string,
+    federationId: string,
+): Promise<null> {
+    // FIXME: for some reason rust can't read the file if it has `file://` prefix ...
+    videoFilePath = videoFilePath.replace('file://', '')
+    let payload = JSON.stringify({ federationId, videoFilePath })
+    let response = await FedimintFfi.rpc('uploadBackupFile', payload)
+    return handleRpcResponse<null>(response)
 }
 
 export async function locateRecoveryFile(
