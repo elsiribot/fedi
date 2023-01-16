@@ -18,6 +18,7 @@ mint-client = { path = "../../fedimint/client/client-lib" }
 fedimint-api = { path = "../../fedimint/fedimint-api" }
 fedimint-core = { path = "../../fedimint/fedimint-core" }
 fedimint-sled = { path = "../../fedimint/fedimint-sled" }
+fedi-social = { path = "../../fedimint/modules/fedi-social" }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"
