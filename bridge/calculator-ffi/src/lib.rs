@@ -16,7 +16,7 @@ use lazy_static::lazy_static;
 uniffi_macros::include_scaffolding!("calculator");
 
 use anyhow::anyhow;
-use bridge::{Bridge, Federation};
+use bridge::{Bridge, Federation, RECOVERY_FILENAME};
 use lightning_invoice::Invoice;
 use logging::init_logging;
 use mint_client::{mint::SpendableNote, utils::network_to_currency};
@@ -563,6 +563,36 @@ async fn handle_dangerous_leave_federation(payload: String) -> anyhow::Result<St
     Ok(json!({ "result": () }).to_string())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadBackupFilePayload {
+    federation_id: String,
+    video_file_path: PathBuf,
+}
+
+async fn handle_upload_backup_file(payload: String) -> anyhow::Result<String> {
+    let UploadBackupFilePayload {
+        video_file_path,
+        federation_id,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let datadir = { get_bridge().await.unwrap().data_dir.clone() };
+    let federation = get_federation(&federation_id).await;
+    let recovery_file_path = federation
+        .upload_backup_file(&video_file_path, &datadir)
+        .await?;
+    Ok(json!({ "result": recovery_file_path }).to_string())
+}
+
+// This method is a bit of a stopgap ...
+async fn handle_locate_recovery_file(_payload: String) -> anyhow::Result<String> {
+    let datadir = get_bridge().await.unwrap().data_dir.clone();
+    let recovery_file_path = datadir.join(RECOVERY_FILENAME);
+    Ok(json!({ "result": recovery_file_path }).to_string())
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
@@ -585,6 +615,9 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "getMnemonic" => handle_get_mnemonic(payload).await,
             "recoverFromMnemonic" => handle_recover_from_mnemonic(payload).await,
             "dangerousLeaveFederation" => handle_dangerous_leave_federation(payload).await,
+            // social recovery
+            "uploadBackupFile" => handle_upload_backup_file(payload).await,
+            "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other

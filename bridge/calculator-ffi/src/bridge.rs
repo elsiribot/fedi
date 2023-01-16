@@ -25,6 +25,7 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
+use fedi_social::common::VerificationDocument;
 use fedimint_api::NumPeers;
 use fedimint_api::{config::ClientConfig, module::registry::ModuleDecoderRegistry};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
@@ -36,15 +37,16 @@ use lightning_invoice::Invoice;
 use mint_client::{
     api::{WsFederationApi, WsFederationConnect},
     query::CurrentConsensus,
-    UserClient, UserClientConfig,
+    UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 type FederationId = String;
 
 const GAP_LIMIT: usize = 100;
+pub const RECOVERY_FILENAME: &str = "backup.fedi";
 
 async fn load_federations_from_disk(
     data_dir: &PathBuf,
@@ -678,6 +680,32 @@ impl Federation {
             .back_up_ecash_to_federation()
             .await?;
         Ok(())
+    }
+
+    pub async fn upload_backup_file(
+        &self,
+        video_file_path: &PathBuf,
+        datadir: &PathBuf,
+    ) -> Result<PathBuf> {
+        debug!("uploading backup file {:?}", video_file_path);
+        let file_contents = fs::read(video_file_path)?;
+        let verification_doc = VerificationDocument::from_raw(&file_contents);
+        // FIXME: two different forms of seed phrase
+        let seed_phrase = UserSeedPhrase::from(self.get_mnemonic().await.to_string());
+        let backup_client = self.client.social_backup();
+        let recovery_file =
+            backup_client.prepare_recovery_file(verification_doc.clone(), seed_phrase.clone());
+        backup_client
+            .upload_backup_to_federation(&recovery_file)
+            .await?;
+        debug!("backup file uploaded");
+        fs::remove_file(video_file_path)?;
+        debug!("original video file removed");
+        // FIXME: is this a good filename?
+        let recovery_file_path = datadir.join(RECOVERY_FILENAME);
+        fs::write(&recovery_file_path, recovery_file.to_bytes())?;
+        debug!("recovery file saved");
+        Ok(recovery_file_path)
     }
 
     pub async fn start_pollers(&mut self) {

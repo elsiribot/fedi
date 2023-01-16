@@ -28,6 +28,10 @@ impl Mnemonic {
         serialized
     }
 
+    pub fn to_string(&self) -> String {
+        self.serialize().join(" ")
+    }
+
     pub fn parse<'a, S: Into<Cow<'a, str>>>(s: S) -> Result<Self, anyhow::Error> {
         Ok(Self(bip39::Mnemonic::parse(s)?))
     }
