@@ -74,6 +74,8 @@ const styles = (theme: Theme) =>
             height: theme.sizes.md,
             width: theme.sizes.md,
             marginLeft: theme.spacing.md,
+            // Disabled
+            opacity: 0.25,
         },
         textInputInner: {
             borderBottomWidth: 0,

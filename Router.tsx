@@ -35,6 +35,7 @@ import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
 import Room from './screens/Room'
+import RoomAdmin from './screens/RoomAdmin'
 import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -63,6 +64,7 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
+import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
 import RoomHeader from './components/feature/community/RoomHeader'
 import RoomInviteHeader from './components/feature/community/RoomInviteHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
@@ -222,6 +224,13 @@ const MainNavigator = () => {
                                 component={Room}
                                 options={() => ({
                                     header: () => <RoomHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RoomAdmin"
+                                component={RoomAdmin}
+                                options={() => ({
+                                    header: () => <RoomAdminHeader />,
                                 })}
                             />
                             {/* Wallet (Send) */}

@@ -1,0 +1,145 @@
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
+
+import { Images } from '../assets/images'
+import SettingsItem from '../components/feature/admin/SettingsItem'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
+import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+
+export type Props = BottomTabScreenProps<
+    HomeTabsParamList & RootStackParamList,
+    'RoomAdmin'
+>
+
+const RoomAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { state, dispatch } = useFederationsContext()
+    const { room } = route.params
+    const { selectedFederation } = state
+
+    return (
+        <ScrollView contentContainerStyle={styles(theme).container}>
+            <View style={styles(theme).profileHeader}>
+                <ImageBackground
+                    source={Images.HoloBackground}
+                    style={styles(theme).profileCircle}
+                    imageStyle={styles(theme).circleBorder}>
+                    <Image
+                        style={styles(theme).roomIcon}
+                        source={Images.Room}
+                    />
+                </ImageBackground>
+                <Text h2 style={styles(theme).roomNameText}>
+                    {room.name}
+                </Text>
+            </View>
+            <View style={styles(theme).sectionContainer}>
+                <Text style={styles(theme).sectionTitle}>
+                    {t('words.room')}
+                </Text>
+                <SettingsItem
+                    disabled
+                    imageSource={Images.SocialPeople}
+                    label={t('words.members')}
+                    onPress={() => {}}
+                />
+                <SettingsItem
+                    imageSource={Images.Room}
+                    label={t('feature.community.invite-to-room')}
+                    onPress={() => {
+                        navigation.navigate('RoomInvite', {
+                            room,
+                        })
+                    }}
+                />
+                <SettingsItem
+                    disabled
+                    imageSource={Images.LeaveRoom}
+                    label={t('feature.community.leave-room')}
+                    onPress={() => {}}
+                />
+                <SettingsItem
+                    disabled
+                    imageSource={Images.InviteMembers}
+                    label={t('feature.community.broadcast-only')}
+                    onPress={() => {}}
+                />
+            </View>
+            <View>
+                <Text style={styles(theme).sectionTitle}>
+                    {t('words.messages')}
+                </Text>
+                <SettingsItem
+                    disabled
+                    imageSource={Images.Alarm}
+                    label={t('feature.community.disappearing-messages')}
+                    onPress={() => {}}
+                />
+                <SettingsItem
+                    disabled
+                    imageSource={Images.ChatHistory}
+                    label={t('feature.community.show-history-to-new-members')}
+                    onPress={() => {}}
+                />
+                <SettingsItem
+                    disabled
+                    imageSource={Images.Photo}
+                    label={t('feature.community.view-shared-media')}
+                    onPress={() => {}}
+                />
+                <SettingsItem
+                    disabled
+                    imageSource={Images.Cash}
+                    label={t('words.payments')}
+                    onPress={() => {}}
+                />
+            </View>
+        </ScrollView>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            justifyContent: 'space-evenly',
+            padding: theme.spacing.xl,
+        },
+        profileHeader: {
+            alignItems: 'center',
+            paddingBottom: theme.spacing.lg,
+        },
+        profileCircle: {
+            height: theme.sizes.adminProfileCircle,
+            width: theme.sizes.adminProfileCircle,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: theme.spacing.md,
+        },
+        circleBorder: {
+            borderRadius: theme.sizes.adminProfileCircle * 0.5,
+        },
+        roomNameText: {
+            textAlign: 'center',
+        },
+        roomIcon: {
+            height: theme.sizes.md,
+            width: theme.sizes.md,
+        },
+        sectionContainer: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+        },
+        sectionTitle: {
+            color: theme.colors.primaryLight,
+            paddingVertical: theme.spacing.sm,
+        },
+        settingsItemArrow: {
+            alignSelf: 'flex-end',
+        },
+    })
+
+export default RoomAdmin

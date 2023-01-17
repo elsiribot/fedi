@@ -10,6 +10,7 @@ import {
     View,
 } from 'react-native'
 import { Images } from '../../../assets/images'
+import { DEFAULT_ROOM_NAME } from '../../../constants'
 
 import { useCommunityContext } from '../../../state/contexts/CommunityContext'
 import { Room } from '../../../types'
@@ -38,7 +39,7 @@ const RoomTile = ({ room, selectRoom }: RoomTileProps) => {
             </View>
             <View style={styles(theme).tileContents}>
                 <View style={styles(theme).topRow}>
-                    <Text bold>{room.name || 'New Room'}</Text>
+                    <Text bold>{room.name || DEFAULT_ROOM_NAME}</Text>
                     {room.lastReceivedTimestamp && (
                         <Text small>
                             {DateUtils.formatRoomTileTimestamp(

@@ -9,6 +9,7 @@ import { useCameraDevices } from 'react-native-vision-camera'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
+import { DEFAULT_ROOM_NAME } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useXmpp } from '../state/hooks'
 import { Room } from '../types'
@@ -43,7 +44,7 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
 
     const createRoomInvite = async () => {
         const roomCode = await getUniqueRoomName()
-        const roomName = 'New Room'
+        const roomName = DEFAULT_ROOM_NAME
         const roomLink = Room.encodeInvitationLink(roomCode, roomName)
 
         // TODO: room link should be a deep link with app download fallback

@@ -1,5 +1,6 @@
 import { ImageSourcePropType } from 'react-native'
 import Base from '../bridge'
+import { DEFAULT_ROOM_NAME } from '../constants'
 import i18n from '../localization/i18n'
 
 export enum BitcoinOrLightning {
@@ -82,7 +83,7 @@ export class Room extends Base {
 
         // TODO: Harden this encoding scheme (use standard URL params?)
         const id = contents.split('::')[0]
-        const name = contents.split('::')[1] || 'New Room'
+        const name = contents.split('::')[1] || DEFAULT_ROOM_NAME
 
         return new Room({
             id,
