@@ -6,7 +6,7 @@ pub mod payment;
 pub mod tx;
 pub mod types;
 
-use std::{path::PathBuf, str::FromStr, sync::Arc};
+use std::{fs, path::PathBuf, str::FromStr, sync::Arc};
 
 use bitcoin::{secp256k1::Message, Address};
 use event::EventSink;
@@ -19,11 +19,12 @@ use anyhow::anyhow;
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};
 use lightning_invoice::Invoice;
 use logging::init_logging;
-use mint_client::{mint::SpendableNote, utils::network_to_currency};
+use mint_client::{mint::SpendableNote, social::RecoveryFile, utils::network_to_currency};
 use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
+use tracing::info;
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
@@ -593,6 +594,27 @@ async fn handle_locate_recovery_file(_payload: String) -> anyhow::Result<String>
     Ok(json!({ "result": recovery_file_path }).to_string())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidateRecoveryFilePayload {
+    federation_id: String,
+    path: PathBuf,
+}
+
+async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String> {
+    let ValidateRecoveryFilePayload {
+        path,
+        federation_id,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let contents = fs::read(path)?;
+    // TODO: check that the federation matches and everything
+    let valid = RecoveryFile::from_bytes(&contents).is_ok();
+    Ok(json!({ "result": valid }).to_string())
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
@@ -618,6 +640,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             // social recovery
             "uploadBackupFile" => handle_upload_backup_file(payload).await,
             "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
+            "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other

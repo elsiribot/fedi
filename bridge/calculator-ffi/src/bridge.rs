@@ -273,11 +273,18 @@ impl Federation {
             .await?;
         tracing::info!("config {:?}", &cfg);
 
-        // tracing::info!("config {}", &cfg_string);
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).unwrap();
-        cfg_string = cfg_string.replace("localhost", "10.0.2.2");
-        cfg_string = cfg_string.replace("127.0.0.1", "10.0.2.2");
+        if std::env::consts::OS == "android" {
+            info!("android hacks");
+            cfg_string = cfg_string.replace("localhost", "10.0.2.2");
+            cfg_string = cfg_string.replace("127.0.0.1", "10.0.2.2");
+        };
+        if std::env::consts::OS == "ios" {
+            // I haven't tested this
+            info!("ios hacks");
+            cfg_string = cfg_string.replace("127.0.0.1", "localhost");
+        };
         let cfg: ClientConfig = serde_json::from_str(&cfg_string)?;
 
         // Save config
