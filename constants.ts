@@ -20,10 +20,10 @@ export const SITES = [
     //     description: 'A regtest playground',
     // },
     {
-        id: 'stakwork',
-        title: 'Stakwork',
-        url: 'https://jobs.stakwork.com/workers',
-        description: 'Earn bitcoin for completing microtasks',
+        id: 'geyser',
+        title: 'Geyser Fund',
+        url: 'https://geyser.fund',
+        description: 'Crowdfunding with bitcoin',
     },
     {
         id: 'bitrefill',
@@ -32,17 +32,29 @@ export const SITES = [
         description: 'Pay for your daily needs with Bitcoin',
     },
     {
-        id: 'kollider',
-        title: 'Kollider',
-        url: 'https://light.kollider.xyz/auth/login',
-        description:
-            'Like cash in hand, pass physical bitcoin along multiple times',
+        id: 'stakwork',
+        title: 'Stakwork',
+        url: 'https://jobs.stakwork.com/workers',
+        description: 'Earn bitcoin for completing microtasks',
+    },
+    {
+        id: 'stackernews',
+        title: 'Stacker.News',
+        url: 'https://stacker.news',
+        description: 'Read about the latest bitcoin news',
     },
     {
         id: 'btcmap',
         title: 'BTCMAP',
         url: 'https://btcmap.org',
         description: 'See where bitcoin is being used all over the world',
+    },
+    {
+        id: 'kollider',
+        title: 'Kollider',
+        url: 'https://light.kollider.xyz/auth/login',
+        description:
+            'Like cash in hand, pass physical bitcoin along multiple times',
     },
     {
         id: 'wavlake',
@@ -56,18 +68,6 @@ export const SITES = [
         url: 'https://ibexmercado.com',
         description:
             'Easiest way for businesses to receive instant bitcoin payments via Lightning',
-    },
-    {
-        id: 'stackernews',
-        title: 'Stacker.News',
-        url: 'https://stacker.news',
-        description: 'Read about the latest bitcoin news',
-    },
-    {
-        id: 'geyser',
-        title: 'Geyser Fund',
-        url: 'https://geyser.fund',
-        description: 'Crowdfunding with bitcoin',
     },
     {
         id: 'lookingglass',
