@@ -7,7 +7,8 @@ import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 import {
-    COMMUNITY_PERSISTENCE_KEY,
+    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    COMMUNITY_ROOMS_PERSISTENCE_KEY,
     FEDERATIONS_PERSISTENCE_KEY,
 } from '../constants'
 import {
@@ -65,26 +66,53 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 navigation.replace('Splash')
             }
 
-            const restoreCommunityState = async () => {
+            const restoreMessages = async () => {
                 try {
-                    const savedCommunityStateJson = await AsyncStorage.getItem(
-                        COMMUNITY_PERSISTENCE_KEY,
-                    )
+                    const savedCommunityMessagesJson =
+                        await AsyncStorage.getItem(
+                            COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                        )
 
-                    const savedCommunityState = savedCommunityStateJson
-                        ? JSON.parse(savedCommunityStateJson)
+                    const savedCommunityMessages = savedCommunityMessagesJson
+                        ? JSON.parse(savedCommunityMessagesJson)
                         : null
 
-                    console.info('savedCommunityState', savedCommunityState)
+                    console.info(
+                        'savedCommunityMessages',
+                        savedCommunityMessages,
+                    )
 
-                    if (savedCommunityState !== null) {
-                        const { messages, rooms } = savedCommunityState
+                    if (savedCommunityMessages !== null) {
+                        const { messages } = savedCommunityMessages
 
-                        console.log('recovering')
+                        console.log('recovering messages')
 
                         if (messages) {
                             communityDispatch(receiveMessages(messages))
                         }
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
+            }
+
+            const restoreRooms = async () => {
+                try {
+                    const savedCommunityRoomsJson = await AsyncStorage.getItem(
+                        COMMUNITY_ROOMS_PERSISTENCE_KEY,
+                    )
+
+                    const savedCommunityRooms = savedCommunityRoomsJson
+                        ? JSON.parse(savedCommunityRoomsJson)
+                        : null
+
+                    console.info('savedCommunityRooms', savedCommunityRooms)
+
+                    if (savedCommunityRooms !== null) {
+                        const { rooms } = savedCommunityRooms
+
+                        console.log('recovering rooms')
+
                         if (rooms) {
                             communityDispatch(receiveRooms(rooms))
                         }
@@ -92,6 +120,11 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 } catch (error) {
                     console.error(error)
                 }
+            }
+
+            const restoreCommunityState = async () => {
+                restoreMessages()
+                restoreRooms()
             }
 
             restoreFederationsState()

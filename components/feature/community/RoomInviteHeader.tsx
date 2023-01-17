@@ -40,8 +40,11 @@ const RoomInviteHeader: React.FC<{}> = () => {
             headerRight={
                 <Pressable
                     // onPress={() => navigation.navigate('EditRoom')}
+                    disabled
                     style={{
                         padding: theme.spacing.sm,
+                        // Disabled
+                        opacity: 0.25,
                     }}>
                     <Image
                         style={{

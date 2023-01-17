@@ -11,13 +11,16 @@ import React, {
 } from 'react'
 
 import { Images } from '../../assets/images'
-import { COMMUNITY_PERSISTENCE_KEY } from '../../constants'
+import {
+    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    COMMUNITY_ROOMS_PERSISTENCE_KEY,
+} from '../../constants'
 import i18n from '../../localization/i18n'
 import { Member, Message, Room } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
 
-const MOCKED_ROOMS: Room[] = [
+export const MOCKED_ROOMS: Room[] = [
     {
         id: 'fedi-general-channel',
         icon: Images.FediLogoIcon,
@@ -490,47 +493,25 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when rooms are added
     useEffect(() => {
-        console.log('useEffect:state.rooms', state.rooms)
-        const updateStoredRooms = async () => {
-            console.log('storing', state.rooms.length, 'rooms')
-            const savedCommunityStateJson = await AsyncStorage.getItem(
-                COMMUNITY_PERSISTENCE_KEY,
-            )
-            const savedCommunityState = savedCommunityStateJson
-                ? JSON.parse(savedCommunityStateJson)
-                : null
-
-            AsyncStorage.setItem(
-                COMMUNITY_PERSISTENCE_KEY,
-                JSON.stringify({ ...savedCommunityState, rooms: state.rooms }),
-            )
-        }
+        console.log('useEffect: rooms')
         if (state.rooms.length > MOCKED_ROOMS.length) {
-            updateStoredRooms()
+            console.log('storing', state.rooms.length, 'rooms')
+            AsyncStorage.setItem(
+                COMMUNITY_ROOMS_PERSISTENCE_KEY,
+                JSON.stringify({ rooms: state.rooms }),
+            )
         }
     }, [state.rooms])
 
     // Update async storage when messages are added
     useEffect(() => {
-        const updateStoredMessages = async () => {
-            console.log('storing', state.messages.length, 'messages')
-            const savedCommunityStateJson = await AsyncStorage.getItem(
-                COMMUNITY_PERSISTENCE_KEY,
-            )
-            const savedCommunityState = savedCommunityStateJson
-                ? JSON.parse(savedCommunityStateJson)
-                : null
-
-            AsyncStorage.setItem(
-                COMMUNITY_PERSISTENCE_KEY,
-                JSON.stringify({
-                    ...savedCommunityState,
-                    messages: state.messages,
-                }),
-            )
-        }
+        console.log('useEffect: messages')
         if (state.messages.length > 0) {
-            updateStoredMessages()
+            console.log('storing', state.messages.length, 'messages')
+            AsyncStorage.setItem(
+                COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                JSON.stringify({ messages: state.messages }),
+            )
         }
     }, [state.messages])
 

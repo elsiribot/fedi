@@ -6,8 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { LightningGateway } from '../bridge'
-import { COMMUNITY_PERSISTENCE_KEY } from '../constants'
 import {
+    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    COMMUNITY_ROOMS_PERSISTENCE_KEY,
+} from '../constants'
+import {
+    MOCKED_ROOMS,
     receiveMessages,
     receiveRooms,
     useCommunityContext,
@@ -101,10 +105,14 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title={'Delete all rooms & messages'}
                 onPress={() => {
                     communityDispatch(receiveMessages([]))
-                    communityDispatch(receiveRooms([]))
+                    communityDispatch(receiveRooms(MOCKED_ROOMS))
                     AsyncStorage.setItem(
-                        COMMUNITY_PERSISTENCE_KEY,
-                        JSON.stringify({ messages: [], rooms: [] }),
+                        COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                        JSON.stringify({ messages: [] }),
+                    )
+                    AsyncStorage.setItem(
+                        COMMUNITY_ROOMS_PERSISTENCE_KEY,
+                        JSON.stringify({ rooms: MOCKED_ROOMS }),
                     )
                 }}
             />

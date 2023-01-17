@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
+import { orderBy } from 'lodash'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -23,8 +24,7 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
     const messagesInRoom = state.messages.filter(
         m => m.sentIn?.id === currentRoom.id,
     )
-
-    console.log(state.messages)
+    const sortedMessages = orderBy(messagesInRoom, 'receivedAt', 'asc')
 
     // Subscribe to new messages
     // Fetch any unreceived messages
@@ -36,7 +36,7 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={messagesInRoom} />
+            <MessagesList messages={sortedMessages} />
             <MessageInput
                 onMessageSubmitted={messageText => {
                     console.info('send message')
