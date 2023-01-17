@@ -28,6 +28,8 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
             onRecordingError: error => {
                 console.log(error)
             },
+            // FIXME: will this always be available?
+            fileType: 'mp4',
         })
     }
 
