@@ -5,11 +5,15 @@ interface ImagesMap {
 }
 
 export const Images: ImagesMap = {
+    Alarm: require('./alarm.png'),
     AllowCameraAccessIcon: require('./allow-camera-access-icon.png'),
     Cash: require('./cash.png'),
+    ChatHistory: require('./chat-history.png'),
     Cog: require('./cog.png'),
     Done: require('./done.png'),
     Edit: require('./edit.png'),
+    // TODO: Refactor to use 1 colorable SVG file instead of 2 PNGs
+    EditBlack: require('./edit-black.png'),
     Error: require('./error.png'),
     Federation: require('./federation.png'),
     // TODO: Refactor FederationXIcon sizes to use scalable SVGs
@@ -27,13 +31,17 @@ export const Images: ImagesMap = {
     HoloBackgroundStrong: require('./holo-background-strong-900.png'),
     InviteMembers: require('./invite-members.png'),
     LeaveFederation: require('./leave-federation.png'),
+    LeaveRoom: require('./leave-room.png'),
     NewRoom: require('./new-room.png'),
     Note: require('./note.png'),
     Offline: require('./offline.png'),
     Phone: require('./phone.png'),
+    Photo: require('./photo.png'),
     Recovery: require('./recovery.png'),
+    Room: require('./room.png'),
     Search: require('./search.png'),
     SocialPeople: require('./social-people.png'),
+    SpeakerPhone: require('./speakerphone.png'),
     SwitchLeft: require('./switch-left.png'),
     SwitchRight: require('./switch-right.png'),
     Wallet: require('./wallet.png'),

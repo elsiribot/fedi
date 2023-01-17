@@ -1,18 +1,11 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    GestureResponderEvent,
-    ImageBackground,
-    ImageSourcePropType,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import SettingsItem from '../components/feature/admin/SettingsItem'
 import {
     setUserIsGuardian,
     useFederationsContext,
@@ -24,33 +17,6 @@ export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
     'Admin'
 >
-
-type SettingsItemProps = {
-    imageSource: ImageSourcePropType
-    label: string
-    onPress: (event: GestureResponderEvent) => void
-}
-
-const SettingsItem = ({ imageSource, label, onPress }: SettingsItemProps) => {
-    const { theme } = useTheme()
-    return (
-        <TouchableOpacity
-            style={styles(theme).settingsItemContainer}
-            onPress={onPress}>
-            <Image
-                source={imageSource}
-                style={styles(theme).settingsItemImage}
-            />
-            <Text style={styles(theme).settingsItemLabel}>{label}</Text>
-            <Icon
-                name={'angle-right'}
-                type={'font-awesome'}
-                color={theme.colors.primaryLight}
-                containerStyle={styles(theme).settingsItemArrow}
-            />
-        </TouchableOpacity>
-    )
-}
 
 const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
@@ -89,6 +55,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     {t('words.federation')}
                 </Text>
                 <SettingsItem
+                    disabled
                     imageSource={Images.Federation}
                     label={t('feature.federations.federation-details')}
                     onPress={() => {}}
@@ -121,6 +88,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 )}
 
                 <SettingsItem
+                    disabled
                     imageSource={Images.LeaveFederation}
                     label={t('feature.federations.leave-federation')}
                     onPress={() => {}}
@@ -146,6 +114,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     {t('words.general')}
                 </Text>
                 <SettingsItem
+                    disabled
                     imageSource={Images.FediLogoIcon}
                     label={t('phrases.app-settings-security')}
                     onPress={() => {}}
@@ -188,24 +157,6 @@ const styles = (theme: Theme) =>
         sectionTitle: {
             color: theme.colors.primaryLight,
             paddingVertical: theme.spacing.sm,
-        },
-        settingsItemContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: theme.spacing.md,
-            width: '100%',
-        },
-        settingsItemImage: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
-        },
-        settingsItemLabel: {
-            flexGrow: 1,
-            color: theme.colors.primary,
-            paddingHorizontal: theme.spacing.md,
-        },
-        settingsItemArrow: {
-            alignSelf: 'flex-end',
         },
     })
 
