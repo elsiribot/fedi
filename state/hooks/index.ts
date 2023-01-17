@@ -1,6 +1,8 @@
 import { xml } from '@xmpp/client'
+import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
 import { useCallback, useEffect, useRef } from 'react'
+import uuid from 'react-native-uuid'
 import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
@@ -26,9 +28,12 @@ import {
     validateBackupFile,
     validateEcash,
 } from '../../bridge'
-import { MSats, Sats } from '../../types'
+import { MSats, Room, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
-import { useCommunityContext } from '../contexts/CommunityContext'
+import {
+    useCommunityContext,
+    XMPP_MUC_DOMAIN,
+} from '../contexts/CommunityContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -186,16 +191,107 @@ type OutgoingMessage = {
     fromUser?: string
     toUser?: string
 }
-// This is the XMPP Multi-User-Chat (MUC) domain defined
-// in prosody.config.lua on the XMPP server
-// https://prosody.im/doc/modules/mod_muc
-const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
-
+type OutgoingGroupMessage = {
+    text?: string
+    fromUser?: string
+    toRoom?: string
+}
 export const useXmpp = () => {
     const { state } = useCommunityContext()
     const { xmppClient } = state
 
     return {
+        // subscribeToMessages(room)
+        //      addToMembers
+        // subscribeToMembers(room)
+        //      addToMembers
+        // subscribeToRosterUpdates
+        //      addToMembers
+        // unsubscribeFromRoomMessages
+        // unsubscribeFromRoomMembers
+
+        /*
+            - add easy uuid generation for messages
+            - improve debug logs
+                - add platform
+                - add newlines to XML
+            - exiting a room, clean up and unsubscribe?
+
+            - fetch rooms (server defined)
+            - determine rooms from stored messages
+                - subscribe to all rooms to receive new messages + store them
+            - determine rooms from stored members
+                - subscribe to all rooms to receive new members + store them
+            - subscribe to universal room to enable search
+              by username? performance concerns?
+
+        */
+        enterMucRoom: useCallback(
+            async (room: Room) => {
+                const { local, domain, resource } = xmppClient?.jid as JID
+                const fromUser = `${local}@${domain}/${resource}`
+                const onStanzaReceived = async (stanza: Element) => {
+                    console.info(stanza)
+                    // Receive a registration response from the server
+                    if (
+                        stanza.is('presence') &&
+                        stanza.getAttr('id') === 'enter-muc-room'
+                    ) {
+                        xmppClient?.removeListener('stanza', onStanzaReceived)
+                        // Make sure the owner of a room send an instant room
+                        // configuration query after seeing self-presence
+                        console.info(stanza.getChild('x'))
+                        if (
+                            stanza
+                                .getChild('x')
+                                ?.getChild('item')
+                                ?.getAttr('affiliation') === 'owner' &&
+                            stanza
+                                .getChild('x')
+                                ?.getChild('status')
+                                ?.getAttr('code') === '110'
+                        ) {
+                            console.info('sending instant room')
+                            await xmppClient?.send(
+                                xml(
+                                    'iq',
+                                    {
+                                        from: fromUser,
+                                        to: `${room.id}@${XMPP_MUC_DOMAIN}`,
+                                        id: 'create-instant-muc-room',
+                                        type: 'set',
+                                    },
+                                    xml(
+                                        'query',
+                                        {
+                                            xmlns: 'http://jabber.org/protocol/muc#owner',
+                                        },
+                                        xml('x', {
+                                            xmlns: 'jabber:x:data',
+                                            type: 'submit',
+                                        }),
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+                xmppClient?.on('stanza', onStanzaReceived)
+
+                await xmppClient?.send(
+                    xml(
+                        'presence',
+                        {
+                            from: fromUser,
+                            to: `${room.id}@${XMPP_MUC_DOMAIN}/${local}`,
+                            id: 'enter-muc-room',
+                        },
+                        xml('x', { xmlns: 'http://jabber.org/protocol/muc' }),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
         getUniqueRoomName: useCallback((): Promise<string> => {
             return new Promise(resolve => {
                 // Make sure the stream is open before sending the
@@ -251,5 +347,59 @@ export const useXmpp = () => {
             },
             [xmppClient],
         ),
+        sendGroupMessage: useCallback(
+            async ({ text, toRoom }: OutgoingGroupMessage) => {
+                const { local, domain, resource } = xmppClient?.jid as JID
+                const fromUser = `${local}@${domain}/${resource}`
+                const to = `${toRoom}@${XMPP_MUC_DOMAIN}`
+
+                await xmppClient?.send(
+                    xml(
+                        'message',
+                        {
+                            from: fromUser,
+                            type: 'groupchat',
+                            id: uuid.v4(),
+                            to,
+                        },
+                        xml('body', { xmlns: 'jabber:client' }, text as string),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
+        sendTestXml: useCallback(async () => {
+            const { local, domain, resource } = xmppClient?.jid as JID
+            const fromUser = `${local}@${domain}/${resource}`
+            await xmppClient?.send(
+                xml(
+                    'iq',
+                    {
+                        from: fromUser,
+                        id: 'testxml',
+                        to: `fedi-general-channel@${XMPP_MUC_DOMAIN}`,
+                        type: 'get',
+                    },
+                    xml('query', {
+                        xmlns: 'http://jabber.org/protocol/disco#items',
+                        node: 'x-roomuser-item',
+                    }),
+                ),
+            )
+            // await xmppClient?.send(
+            //     xml(
+            //         'iq',
+            //         {
+            //             from: fromUser,
+            //             id: 'testxml',
+            //             to: `fedi-general-channel@${XMPP_MUC_DOMAIN}`,
+            //             type: 'get',
+            //         },
+            //         xml('query', {
+            //             xmlns: 'http://jabber.org/protocol/disco#items',
+            //         }),
+            //     ),
+            // )
+        }, [xmppClient]),
     }
 }
