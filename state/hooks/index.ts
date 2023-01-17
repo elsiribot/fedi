@@ -233,15 +233,11 @@ export const useXmpp = () => {
                 const { local, domain, resource } = xmppClient?.jid as JID
                 const fromUser = `${local}@${domain}/${resource}`
                 const onStanzaReceived = async (stanza: Element) => {
-                    console.info(stanza)
                     // Receive a registration response from the server
                     if (
                         stanza.is('presence') &&
                         stanza.getAttr('id') === 'enter-muc-room'
                     ) {
-                        xmppClient?.removeListener('stanza', onStanzaReceived)
-                        console.info(stanza.getChild('x'))
-
                         // add this room to context if we get a self-presence
                         // message which confirms occupancy in room
                         if (
@@ -250,6 +246,10 @@ export const useXmpp = () => {
                                 ?.getChild('status')
                                 ?.getAttr('code') === '110'
                         ) {
+                            xmppClient?.removeListener(
+                                'stanza',
+                                onStanzaReceived,
+                            )
                             dispatch(addToRooms(room))
 
                             // if this is the owner of the room, send an "Instant Room"

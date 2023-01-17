@@ -360,7 +360,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
             if (stanza.is('message')) {
-                const body = stanza.getChild('body')?.getText()
                 if (
                     stanza.getAttr('type') === 'chat' ||
                     stanza.getAttr('type') === 'groupchat'
@@ -375,7 +374,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     console.info(sender)
                     console.info(bodyText)
                     if (bodyText) {
-                        environmentState.toast?.show(body, 5000)
+                        // environmentState.toast?.show(body, 5000)
                         const newMessage = new Message({
                             id: stanza.attr('id'),
                             content: bodyText,
