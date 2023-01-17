@@ -33,6 +33,7 @@ import lnurlUtils from '../../utils/LNURLUtils'
 import {
     addToRooms,
     useCommunityContext,
+    XMPP_DOMAIN,
     XMPP_MUC_DOMAIN,
 } from '../contexts/CommunityContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
@@ -351,12 +352,18 @@ export const useXmpp = () => {
         }, [xmppClient]),
         sendMessage: useCallback(
             async ({ text, toUser }: OutgoingMessage) => {
+                const { local, domain, resource } = xmppClient?.jid as JID
+                const fromUser = `${local}@${domain}/${resource}`
+                const to = `${toUser}@${XMPP_DOMAIN}`
+
                 await xmppClient?.send(
                     xml(
                         'message',
                         {
+                            id: uuid.v4(),
+                            from: fromUser,
                             type: 'chat',
-                            to: toUser,
+                            to,
                         },
                         xml('body', { xmlns: 'jabber:client' }, text as string),
                     ),
@@ -374,9 +381,9 @@ export const useXmpp = () => {
                     xml(
                         'message',
                         {
+                            id: uuid.v4(),
                             from: fromUser,
                             type: 'groupchat',
-                            id: uuid.v4(),
                             to,
                         },
                         xml('body', { xmlns: 'jabber:client' }, text as string),
