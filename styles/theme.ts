@@ -5,8 +5,8 @@ import { Dimensions } from 'react-native'
 const HEX_COLORS = {
     green: '#00A829',
     orange: '#DF7B00',
+    darkGrey: '#6D7071',
     grey: '#D9D9D9',
-    semiLightGrey: '#6D7071',
     lightGrey: '#D3D4DB',
     keyboardGrey: '#E8EAED',
     red: '#E00A00',
@@ -19,7 +19,7 @@ const colors = {
     ...lightColors,
     link: HEX_COLORS.blue,
     primary: HEX_COLORS.black,
-    primaryLight: HEX_COLORS.semiLightGrey,
+    primaryLight: HEX_COLORS.darkGrey,
     primaryVeryLight: HEX_COLORS.lightGrey,
     success: HEX_COLORS.green,
     secondary: HEX_COLORS.white,

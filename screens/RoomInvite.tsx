@@ -16,24 +16,29 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 const RoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { roomLink } = route.params
+    const { room } = route.params
 
     const copyToClipboard = () => {
-        Clipboard.setString(roomLink)
+        Clipboard.setString(room.invitationCode as string)
+    }
+
+    const viewRoom = () => {
+        console.info(room)
+        navigation.navigate('Room', { room })
     }
 
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).qrCodeContainer}>
                 <QRCode
-                    value={roomLink}
+                    value={room.invitationCode}
                     size={QR_CODE_SIZE}
                     logo={Images.FediQrLogo}
                 />
             </View>
             <View style={styles(theme).copyInviteLinkContainer}>
                 <Text style={styles(theme).inviteLinkText} numberOfLines={1}>
-                    {roomLink}
+                    {room.invitationCode}
                 </Text>
                 <TouchableOpacity
                     style={styles(theme).copyButtonContainer}
@@ -58,9 +63,7 @@ const RoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                 titleStyle={styles(theme).buttonTitle}
                 buttonStyle={styles(theme).button}
                 title={t('feature.community.view-room')}
-                onPress={() => {
-                    navigation.navigate('Room', { roomLink })
-                }}
+                onPress={viewRoom}
             />
         </View>
     )

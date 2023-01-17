@@ -32,6 +32,7 @@ export const Images: ImagesMap = {
     Offline: require('./offline.png'),
     Phone: require('./phone.png'),
     Recovery: require('./recovery.png'),
+    Search: require('./search.png'),
     SocialPeople: require('./social-people.png'),
     SwitchLeft: require('./switch-left.png'),
     SwitchRight: require('./switch-right.png'),

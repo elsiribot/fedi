@@ -1,14 +1,10 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
-import { Button, FAB, Theme, useTheme } from '@rneui/themed'
+import { FAB, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import RoomsList from '../components/feature/community/RoomsList'
-import {
-    resetFederationUsername,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
 import {
     HomeTabsParamList,
     NavigationHook,
@@ -22,20 +18,12 @@ export type Props = BottomTabScreenProps<
 
 const Community: React.FC<Props> = () => {
     const { theme } = useTheme()
-    const { dispatch } = useFederationsContext()
     const navigation = useNavigation<NavigationHook>()
 
     return (
         <View style={styles(theme).container}>
             <RoomsList />
 
-            <Button
-                onPress={() => {
-                    dispatch(resetFederationUsername())
-                }}
-                title="DEV: Reset username"
-                type="clear"
-            />
             <FAB
                 icon={{ name: 'add', color: theme.colors.secondary }}
                 color={theme.colors.primary}

@@ -1,6 +1,6 @@
 import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { BtcLnUri, MSats, Site } from '.'
+import { BtcLnUri, MSats, Room, Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -59,8 +59,8 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    Room: { roomLink: string }
-    RoomInvite: { roomLink: string }
+    Room: { room: Room }
+    RoomInvite: { room: Room }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }
