@@ -238,29 +238,14 @@ export const useXmpp = () => {
                         stanza.is('presence') &&
                         stanza.getAttr('id') === 'enter-muc-room'
                     ) {
-                        // add this room to context if we get a self-presence
-                        // message which confirms occupancy in room
-                        if (
-                            stanza
-                                .getChild('x')
-                                ?.getChild('status')
-                                ?.getAttr('code') === '110'
-                        ) {
-                            xmppClient?.removeListener(
-                                'stanza',
-                                onStanzaReceived,
-                            )
-                            dispatch(addToRooms(room))
+                        const result = stanza.getChild('x')
+                        const statusResults = result?.getChildren('status')
 
-                            // if this is the owner of the room, send an "Instant Room"
+                        statusResults?.map(async sr => {
+                            // status 201 = configuration required, send an "Instant Room"
                             // configuration query to allow others to join
                             // https://xmpp.org/extensions/xep-0045.html#createroom-instant
-                            if (
-                                stanza
-                                    .getChild('x')
-                                    ?.getChild('item')
-                                    ?.getAttr('affiliation') === 'owner'
-                            ) {
+                            if (sr?.getAttr('code') === '201') {
                                 await xmppClient?.send(
                                     xml(
                                         'iq',
@@ -283,7 +268,16 @@ export const useXmpp = () => {
                                     ),
                                 )
                             }
-                        }
+                            // status 110 = self-presence message which confirms
+                            // occupancy in room to be added to context
+                            if (sr?.getAttr('code') === '110') {
+                                xmppClient?.removeListener(
+                                    'stanza',
+                                    onStanzaReceived,
+                                )
+                                dispatch(addToRooms(room))
+                            }
+                        })
                     }
                 }
                 xmppClient?.on('stanza', onStanzaReceived)
@@ -292,7 +286,7 @@ export const useXmpp = () => {
                 // and this callback gets re-run? count listeners to monitor this
                 console.info(
                     'xmppClient has',
-                    xmppClient?.listenerCount,
+                    xmppClient?.listenerCount('stanza'),
                     'listeners',
                 )
 

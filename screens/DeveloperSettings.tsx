@@ -9,6 +9,7 @@ import { LightningGateway } from '../bridge'
 import { COMMUNITY_PERSISTENCE_KEY } from '../constants'
 import {
     receiveMessages,
+    receiveRooms,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
@@ -97,12 +98,13 @@ const DeveloperSettings: React.FC<Props> = () => {
                 />
             </View>
             <Button
-                title={'Delete all messages'}
+                title={'Delete all rooms & messages'}
                 onPress={() => {
                     communityDispatch(receiveMessages([]))
+                    communityDispatch(receiveRooms([]))
                     AsyncStorage.setItem(
                         COMMUNITY_PERSISTENCE_KEY,
-                        JSON.stringify({ messages: [] }),
+                        JSON.stringify({ messages: [], rooms: [] }),
                     )
                 }}
             />
