@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
+import { DEFAULT_ROOM_NAME } from '../../../constants'
 
 import { useCommunityContext } from '../../../state/contexts/CommunityContext'
 import { Room } from '../../../types'
@@ -26,7 +27,10 @@ const RoomsList: React.FC<{}> = () => {
                         room: new Room({
                             id: room.id,
                             name: room.name,
-                            invitationCode: `fedi:room:${room.id}::${room.name}`,
+                            invitationCode: Room.encodeInvitationLink(
+                                room.id,
+                                room.name || DEFAULT_ROOM_NAME,
+                            ),
                         }),
                     })
                 }}
