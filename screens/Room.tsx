@@ -17,14 +17,10 @@ import { Room as RoomType } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Room'>
 
-const randomId = () => {
-    return Math.floor(Math.random() * (1000 - 1 + 1) + 1)
-}
-
 const Room: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { roomLink } = route.params
+    const { room: currentRoom } = route.params
     const { state, dispatch } = useCommunityContext()
     const roomLinkContents = roomLink.split('fedi:room:')[1]
     const [roomId, roomName] = roomLinkContents.split('::')

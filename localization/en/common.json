@@ -69,7 +69,8 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
-        "unknown-error": "An unknown error occurred"
+        "unknown-error": "An unknown error occurred",
+        "invalid-room-code": "This is not a valid room code"
     },
     "feature": {
         "backup": {
@@ -127,9 +128,12 @@
             "create-a-room": "Create a room",
             "invalid-room": "This is not a valid community room",
             "invite-link-notice": "Anyone with this link can join this room. Link is valid for 2 hours.",
+            "invite-to-room": "Invite to room",
             "join-a-room": "Join a room",
             "new-room": "New room",
+            "no-one-is-in-this-room": "No one is in this room yet.",
             "room-invite": "Room invite",
+            "try-inviting-someone": "Try inviting someone.",
             "view-room": "View room"
         },
         "federations": {

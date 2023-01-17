@@ -3,6 +3,7 @@ import React from 'react'
 import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { Message } from '../../../types'
+import EmptyRoomNotice from './EmptyRoomNotice'
 import MessageItem from './MessageItem'
 
 type MessagesListProps = {
@@ -23,6 +24,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             renderItem={renderMessage}
             keyExtractor={(item: Message) => `${item.id}`}
             style={styles(theme).container}
+            ListEmptyComponent={<EmptyRoomNotice />}
         />
     )
 }

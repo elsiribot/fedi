@@ -1,5 +1,6 @@
 import { ImageSourcePropType } from 'react-native'
 import Base from '../bridge'
+import i18n from '../localization/i18n'
 
 export enum BitcoinOrLightning {
     bitcoin = 'bitcoin',
@@ -53,11 +54,11 @@ export type FediRoomLink = string
 
 export class Room extends Base {
     id: string
-    icon: ImageSourcePropType
-    name: string
+    icon?: ImageSourcePropType
+    name?: string
     description?: string
-    hasNewMessages: boolean
-    pinned: boolean
+    hasNewMessages?: boolean
+    pinned?: boolean
     settings?: RoomSettings
     // TODO: What exactly is encoded in this invitationCode?
     invitationCode?: FediRoomLink
@@ -67,6 +68,28 @@ export class Room extends Base {
     // or simplify:
     messagePreview?: string
     lastReceivedTimestamp?: number
+
+    constructor(data: any) {
+        super(data)
+    }
+
+    static encodeInvitationLink(id: string, name: string): string {
+        return `fedi:room:${id}::${name}`
+    }
+    static decodeInvitationLink(link: string): Room {
+        const contents = link.split('fedi:room:')[1]
+        if (!contents) throw new Error(i18n.t('errors.unknown-error'))
+
+        // TODO: Harden this encoding scheme (use standard URL params?)
+        const id = contents.split('::')[0]
+        const name = contents.split('::')[1] || 'New Room'
+
+        return new Room({
+            id,
+            name,
+            invitationCode: link,
+        })
+    }
 }
 
 // The only other use case I can imagine for this
