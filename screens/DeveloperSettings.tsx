@@ -15,7 +15,7 @@ import {
     resetFederationUsername,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useBridge, useXmpp } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -29,6 +29,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { listGateways, switchGateway } = useBridge()
     const { dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
+    const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
@@ -109,6 +110,12 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title="Reset username"
                 onPress={() => {
                     federationsDispatch(resetFederationUsername())
+                }}
+            />
+            <Button
+                title="Send XML"
+                onPress={() => {
+                    sendTestXml()
                 }}
             />
         </View>
