@@ -7,6 +7,7 @@ import DocumentPicker, {
     DocumentPickerResponse,
     types,
 } from 'react-native-document-picker'
+import RNFS from 'react-native-fs'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useBridge } from '../../../state/hooks'
@@ -14,7 +15,7 @@ import { NavigationHook } from '../../../types/navigation'
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
-    const { validateBackupFile } = useBridge()
+    const { validateRecoveryFile } = useBridge()
     const { toast } = useEnvironmentContext().state
     const navigation = useNavigation<NavigationHook>()
     const [result, setResult] = useState<
@@ -38,14 +39,21 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
 
     useEffect(() => {
         const checkForValidFile = async () => {
+            // copy file to tmp directory so rust can read it
+            const filename = Math.random().toString(20)
+            const dest = `${RNFS.TemporaryDirectoryPath}/${filename}.fedi`
+            await RNFS.copyFile(result!.uri, dest)
+            // validate file
             try {
-                await validateBackupFile(result!.uri)
+                await validateRecoveryFile(dest)
                 navigation.replace('SelectRecoveryFileSuccess', {
-                    fileName: result!.name as string,
+                    // fileName: result!.name as string,
+                    fileName: dest,
                 })
             } catch (error) {
                 navigation.replace('SelectRecoveryFileFailure', {
-                    fileName: result!.name as string,
+                    // fileName: result!.name as string,
+                    fileName: dest,
                 })
             }
         }
@@ -53,7 +61,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
         if (result?.uri && result?.name) {
             checkForValidFile()
         }
-    }, [navigation, result, validateBackupFile])
+    }, [navigation, result, validateRecoveryFile])
 
     return (
         <Button

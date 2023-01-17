@@ -3,6 +3,7 @@ import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
+import RNFS from 'react-native-fs'
 import Video from 'react-native-video'
 import type { VideoFile } from 'react-native-vision-camera'
 
@@ -82,10 +83,19 @@ const ReviewVideo = ({ videoFile, onRecordAgain }: ReviewVideoProps) => {
 
                 <Button
                     title={t('feature.backup.confirm-backup-video')}
-                    onPress={() => {
-                        navigation.navigate('SocialBackupProcessing', {
-                            videoFilePath: videoFile?.path,
-                        })
+                    onPress={async () => {
+                        try {
+                            // Copy file to our temp directory so rust can read it
+                            const filename = Math.random().toString(20)
+                            const dest = `${RNFS.TemporaryDirectoryPath}/${filename}.mp4`
+                            await RNFS.copyFile(videoFile?.path, dest)
+                            navigation.navigate('SocialBackupProcessing', {
+                                videoFilePath: dest,
+                            })
+                        } catch (e) {
+                            console.log('copy failed', e)
+                            return
+                        }
                     }}
                     disabled={!confirmFaceChecked || !confirmVoiceChecked}
                     containerStyle={styles(theme).confirmButton}

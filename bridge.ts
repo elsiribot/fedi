@@ -408,6 +408,7 @@ export async function uploadBackupFile(
 ): Promise<null> {
     // FIXME: for some reason rust can't read the file if it has `file://` prefix ...
     videoFilePath = videoFilePath.replace('file://', '')
+    console.log('upload video file', videoFilePath)
     let payload = JSON.stringify({ federationId, videoFilePath })
     let response = await FedimintFfi.rpc('uploadBackupFile', payload)
     return handleRpcResponse<null>(response)
@@ -421,18 +422,14 @@ export async function locateRecoveryFile(
     return handleRpcResponse<string>(response)
 }
 
-export async function validateBackupFile(
-    _contents: string,
-    _federationId: string,
+export async function validateRecoveryFile(
+    path: string,
+    federationId: string,
 ): Promise<boolean> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, contents })
-    // let response = await FedimintFfi.rpc('validateBackupFile', payload)
-    // return handleRpcResponse<boolean>(response)
-
-    // Simulate success/failure modes
-    return handleRpcResponse<boolean>('{"result": "true"}')
-    // return handleRpcResponse<boolean>('{"error": "invalid recovery file"}')
+    console.log('backup file path', path)
+    let payload = JSON.stringify({ federationId, path })
+    let response = await FedimintFfi.rpc('validateRecoveryFile', payload)
+    return handleRpcResponse<boolean>(response)
 }
 
 // This string contains a public key and URL to video file

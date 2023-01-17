@@ -26,8 +26,8 @@ import {
     switchGateway,
     updateTransactionNotes,
     uploadBackupFile,
-    validateBackupFile,
     validateEcash,
+    validateRecoveryFile,
 } from '../../bridge'
 import { XMPP_MUC_DOMAIN } from '../../constants'
 import { Member, Message, MSats, Room, Sats } from '../../types'
@@ -167,9 +167,9 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        validateBackupFile: useCallback(
+        validateRecoveryFile: useCallback(
             (file: string) => {
-                return validateBackupFile(file, selectedFederation!.name)
+                return validateRecoveryFile(file, selectedFederation!.name)
             },
             [selectedFederation],
         ),

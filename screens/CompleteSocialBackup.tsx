@@ -28,8 +28,8 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
         try {
             const recoveryFilePath = await locateRecoveryFile()
             const result = await Share.open({
-                // FIXME: this needs file:// prefix ... should do this with a util
-                title: 'You Fedi Backup File',
+                title: 'Your Fedi Backup File',
+                // FIXME: this needs file:// prefix ... should do this with a util?
                 url: `file://${recoveryFilePath}`,
             })
             console.log(result)
