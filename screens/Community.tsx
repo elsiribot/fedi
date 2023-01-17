@@ -41,7 +41,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            paddingHorizontal: theme.spacing.xl,
         },
     })
 

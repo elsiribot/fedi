@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, Options, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
+import { isEqual } from 'lodash'
 import React, {
     createContext,
     useContext,
@@ -8,9 +9,9 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+
 import { Images } from '../../assets/images'
 import { COMMUNITY_PERSISTENCE_KEY } from '../../constants'
-
 import i18n from '../../localization/i18n'
 import { Member, Message, Room } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
@@ -76,6 +77,7 @@ enum ActionType {
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_ROOM = 'UPDATE_ROOM',
+    UPDATE_ROOM_MESSAGE_PREVIEW = 'UPDATE_ROOM_MESSAGE_PREVIEW',
     UPDATE_MEMBER = 'UPDATE_MEMBER',
     UPDATE_MESSAGE = 'UPDATE_MESSAGE',
     UPDATE_MEMBERS_SEEN = 'UPDATE_MEMBERS_SEEN',
@@ -129,6 +131,18 @@ export function setXmppClient(xmpp: Client): Action {
         payload: xmpp,
     }
 }
+export function updateRoomMessagePreview(message: Message): Action {
+    return {
+        type: ActionType.UPDATE_ROOM_MESSAGE_PREVIEW,
+        payload: message,
+    }
+}
+export function updateRoom(room: Room): Action {
+    return {
+        type: ActionType.UPDATE_ROOM,
+        payload: room,
+    }
+}
 export function resetCommunityState(): Action {
     return {
         type: ActionType.RESET_COMMUNITY_STATE,
@@ -138,8 +152,7 @@ export function resetCommunityState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case ActionType.ADD_TO_ROOMS:
-            console.info('state.rooms', state.rooms)
+        case ActionType.ADD_TO_ROOMS: {
             const roomIndex = state.rooms.findIndex(
                 (r: Room) => r.id === action.payload.id,
             )
@@ -171,8 +184,8 @@ export function reducer(state: AppState, action: Action): AppState {
                     ),
                 }
             }
+        }
         case ActionType.ADD_TO_MESSAGES:
-            console.log(state.messages)
             const messageIndex = state.messages.findIndex(
                 (m: Message) => m.id === action.payload.id,
             )
@@ -233,6 +246,69 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 xmppClient: action.payload,
             }
+        case ActionType.UPDATE_ROOM_MESSAGE_PREVIEW: {
+            const newMessage = action.payload as Message
+            const roomIndex = state.rooms.findIndex(
+                (r: Room) => r.id === newMessage.sentIn?.id,
+            )
+
+            if (roomIndex === -1) {
+                // Room not found, no state change
+                return state
+            } else {
+                let updatedRoom = state.rooms[roomIndex]
+
+                if (
+                    !updatedRoom.lastReceivedTimestamp ||
+                    updatedRoom.lastReceivedTimestamp < newMessage.receivedAt!
+                ) {
+                    // update preview if this is the first message received or
+                    // if there this is a newer message
+                    updatedRoom = {
+                        ...updatedRoom,
+                        lastReceivedTimestamp: newMessage.receivedAt,
+                        messagePreview: newMessage.content,
+                    }
+                    return {
+                        ...state,
+                        rooms: state.rooms.map((r: Room, i) =>
+                            i === roomIndex ? updatedRoom : r,
+                        ),
+                    }
+                } else {
+                    // Already has latest message preview, no state change
+                    return state
+                }
+            }
+        }
+        case ActionType.UPDATE_ROOM: {
+            const roomIndex = state.rooms.findIndex(
+                (r: Room) => r.id === action.payload.id,
+            )
+
+            if (roomIndex === -1) {
+                // New rooms get added
+                return {
+                    ...state,
+                    rooms: [...state.rooms, new Room(action.payload)],
+                }
+            } else if (isEqual(action.payload, state.rooms[roomIndex])) {
+                // Avoid re-render, this room has not changed
+                return state
+            } else {
+                // room needs an update...
+                const updatedRoom = {
+                    ...state.rooms[roomIndex],
+                    ...action.payload,
+                }
+                return {
+                    ...state,
+                    rooms: state.rooms.map((r: Room, i) =>
+                        i === roomIndex ? updatedRoom : r,
+                    ),
+                }
+            }
+        }
         case ActionType.RESET_COMMUNITY_STATE:
             return { ...initialState }
         default:
@@ -340,7 +416,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         console.info('xmppConnectionOptions', xmppConnectionOptions)
 
         const xmpp = client(xmppConnectionOptions)
-        debug(xmpp, true)
+        // debug(xmpp, true)
 
         // debug(xmpp, true, `OS=${Platform.OS}`)
         // This ^ helps debug when testing with both ios + android emulators
@@ -378,14 +454,14 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         const newMessage = new Message({
                             id: stanza.attr('id'),
                             content: bodyText,
-                            receivedAt: Date.now(),
+                            receivedAt: Date.now() / 1000,
                             sentIn: new Room({
                                 id: room,
                             }),
                             sentBy: new Member({ username: sender }),
                         })
-                        console.info(newMessage)
                         dispatch(addToMessages(newMessage))
+                        dispatch(updateRoomMessagePreview(newMessage))
                     }
                 }
             }
@@ -412,7 +488,9 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         selectedFederation?.username,
     ])
 
+    // Update async storage when rooms are added
     useEffect(() => {
+        console.log('useEffect:state.rooms', state.rooms)
         const updateStoredRooms = async () => {
             console.log('storing', state.rooms.length, 'rooms')
             const savedCommunityStateJson = await AsyncStorage.getItem(
@@ -432,6 +510,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         }
     }, [state.rooms])
 
+    // Update async storage when messages are added
     useEffect(() => {
         const updateStoredMessages = async () => {
             console.log('storing', state.messages.length, 'messages')

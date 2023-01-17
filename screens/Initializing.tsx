@@ -82,8 +82,12 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
                         console.log('recovering')
 
-                        communityDispatch(receiveMessages(messages))
-                        communityDispatch(receiveRooms(rooms))
+                        if (messages) {
+                            communityDispatch(receiveMessages(messages))
+                        }
+                        if (rooms) {
+                            communityDispatch(receiveRooms(rooms))
+                        }
                     }
                 } catch (error) {
                     console.error(error)
