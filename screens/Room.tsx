@@ -1,19 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import MessageInput from '../components/feature/community/MessageInput'
 import MessagesList from '../components/feature/community/MessagesList'
-import {
-    addToMessages,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
-import { Member, Message } from '../types'
+import { useCommunityContext } from '../state/contexts/CommunityContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
-import { Room as RoomType } from '../types'
+import { useXmpp } from '../state/hooks'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Room'>
 
@@ -22,13 +18,7 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { room: currentRoom } = route.params
     const { state, dispatch } = useCommunityContext()
-    const roomLinkContents = roomLink.split('fedi:room:')[1]
-    const [roomId, roomName] = roomLinkContents.split('::')
-    const currentRoom = new RoomType({
-        id: roomId,
-        name: roomName,
-        invitationCode: roomLink,
-    })
+    const { enterMucRoom, sendGroupMessage } = useXmpp()
 
     const messagesInRoom = state.messages.filter(
         m => m.sentIn?.id === currentRoom.id,
@@ -39,6 +29,11 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
     // Subscribe to new messages
     // Fetch any unreceived messages
 
+    useEffect(() => {
+        // announce presence
+        enterMucRoom(currentRoom)
+    }, [currentRoom, enterMucRoom])
+
     return (
         <View style={styles(theme).container}>
             <MessagesList messages={messagesInRoom} />
@@ -46,17 +41,23 @@ const Room: React.FC<Props> = ({ navigation, route }: Props) => {
                 onMessageSubmitted={messageText => {
                     console.info('send message')
                     console.info(messageText)
-                    dispatch(
-                        addToMessages(
-                            new Message({
-                                id: randomId(),
-                                content: messageText,
-                                sentBy: new Member({ username: 'me' }),
-                                sentIn: currentRoom,
-                                sentAt: Date.now(),
-                            }),
-                        ),
-                    )
+                    sendGroupMessage({
+                        toRoom: currentRoom.id,
+                        text: messageText,
+                    })
+                    // TODO: add message locally and validate later
+                    // when server confirms sent message (smoother UX)
+                    // dispatch(
+                    //     addToMessages(
+                    //         new Message({
+                    //             id: randomId(),
+                    //             content: messageText,
+                    //             sentBy: new Member({ username: 'me' }),
+                    //             sentIn: currentRoom,
+                    //             sentAt: Date.now(),
+                    //         }),
+                    //     ),
+                    // )
                 }}
             />
         </View>

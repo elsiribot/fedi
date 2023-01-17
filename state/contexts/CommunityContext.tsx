@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, Options, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
-import { isEqual } from 'lodash'
 import React, {
     createContext,
     useContext,
@@ -73,6 +72,7 @@ enum ActionType {
     ADD_TO_ROOMS = 'ADD_TO_ROOMS',
     CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
+    RECEIVE_ROOMS = 'RECEIVE_ROOMS',
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_ROOM = 'UPDATE_ROOM',
@@ -101,7 +101,7 @@ export function addToMessages(message: Message): Action {
 }
 export function addToRooms(room: Room): Action {
     return {
-        type: ActionType.ADD_TO_MESSAGES,
+        type: ActionType.ADD_TO_ROOMS,
         payload: room,
     }
 }
@@ -115,6 +115,12 @@ export function receiveMessages(messages: Message[]): Action {
     return {
         type: ActionType.RECEIVE_MESSAGES,
         payload: messages,
+    }
+}
+export function receiveRooms(rooms: Room[]): Action {
+    return {
+        type: ActionType.RECEIVE_ROOMS,
+        payload: rooms,
     }
 }
 export function setXmppClient(xmpp: Client): Action {
@@ -132,6 +138,39 @@ export function resetCommunityState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
+        case ActionType.ADD_TO_ROOMS:
+            console.info('state.rooms', state.rooms)
+            const roomIndex = state.rooms.findIndex(
+                (r: Room) => r.id === action.payload.id,
+            )
+
+            if (roomIndex === -1) {
+                // New rooms get added
+                return {
+                    ...state,
+                    rooms: [...state.rooms, new Room(action.payload)],
+                }
+            } else if (
+                // Should we deep compare or just use ID?
+                // isEqual(action.payload, state.rooms[roomIndex])
+                action.payload.id === state.rooms[roomIndex].id
+            ) {
+                // Avoid re-render, this room is already added
+                // and has not changed
+                return state
+            } else {
+                // room is already added but has changed...
+                const updatedRoom = {
+                    ...state.rooms[roomIndex],
+                    ...action.payload,
+                }
+                return {
+                    ...state,
+                    rooms: state.rooms.map((r: Room, i) =>
+                        i === roomIndex ? updatedRoom : r,
+                    ),
+                }
+            }
         case ActionType.ADD_TO_MESSAGES:
             console.log(state.messages)
             const messageIndex = state.messages.findIndex(
@@ -144,7 +183,11 @@ export function reducer(state: AppState, action: Action): AppState {
                     ...state,
                     messages: [...state.messages, new Message(action.payload)],
                 }
-            } else if (isEqual(action.payload, state.messages[messageIndex])) {
+            } else if (
+                // Should we deep compare or just use ID?
+                // isEqual(action.payload, state.messages[messageIndex])
+                action.payload.id === state.messages[messageIndex].id
+            ) {
                 // Avoid re-render, this message is already added
                 // and has not changed
                 return state
@@ -171,6 +214,12 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 messages: [...action.payload],
             }
+        case ActionType.RECEIVE_ROOMS:
+            console.info('RECEIVE_ROOMS.rooms', action.payload)
+            return {
+                ...state,
+                rooms: [...action.payload],
+            }
         case ActionType.SET_XMPP_CLIENT:
             // Stop the existing xmppClient before overwriting it
             // This may not be necessary???
@@ -192,6 +241,10 @@ export function reducer(state: AppState, action: Action): AppState {
 }
 
 export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
+// This is the XMPP Multi-User-Chat (MUC) domain defined
+// in prosody.config.lua on the XMPP server
+// https://prosody.im/doc/modules/mod_muc
+export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
 export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
 export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
 export const XMPP_CONNECTION_OPTIONS: Options = {
@@ -289,11 +342,53 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
 
-        // For debugging purposes
+        // debug(xmpp, true, `OS=${Platform.OS}`)
+        // This ^ helps debug when testing with both ios + android emulators
+        // simultaneously to know which stanzas are coming from which device
+
+        // requires that you edit @xmpp/debug/index.js in your
+        // node_modules to accept a 3rd parameter and intercept the logs
+        // you want to debug... for example:
+
+        // @xmpp/debug/index.js
+        // module.exports = function debug(entity, force, tag) {
+        //     if (process.env.XMPP_DEBUG || force === true) {
+        //       entity.on("element", (data) => {
+        //         console.debug(`IN (${tag})\n${format(data)}`);
+        //      ...
+
+        // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
             if (stanza.is('message')) {
                 const body = stanza.getChild('body')?.getText()
-                environmentState.toast?.show(body, 5000)
+                if (
+                    stanza.getAttr('type') === 'chat' ||
+                    stanza.getAttr('type') === 'groupchat'
+                ) {
+                    const from = stanza.getAttr('from')
+                    const room = from.split('@')[0]
+                    const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
+                    const bodyText = stanza.getChildText('body') as string
+
+                    console.info(from)
+                    console.info(room)
+                    console.info(sender)
+                    console.info(bodyText)
+                    if (bodyText) {
+                        environmentState.toast?.show(body, 5000)
+                        const newMessage = new Message({
+                            id: stanza.attr('id'),
+                            content: bodyText,
+                            receivedAt: Date.now(),
+                            sentIn: new Room({
+                                id: room,
+                            }),
+                            sentBy: new Member({ username: sender }),
+                        })
+                        console.info(newMessage)
+                        dispatch(addToMessages(newMessage))
+                    }
+                }
             }
         })
 
@@ -319,15 +414,47 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     ])
 
     useEffect(() => {
-        if (state.messages.length > 0) {
-            const { messages } = state
+        const updateStoredRooms = async () => {
+            console.log('storing', state.rooms.length, 'rooms')
+            const savedCommunityStateJson = await AsyncStorage.getItem(
+                COMMUNITY_PERSISTENCE_KEY,
+            )
+            const savedCommunityState = savedCommunityStateJson
+                ? JSON.parse(savedCommunityStateJson)
+                : null
 
             AsyncStorage.setItem(
                 COMMUNITY_PERSISTENCE_KEY,
-                JSON.stringify({ messages }),
+                JSON.stringify({ ...savedCommunityState, rooms: state.rooms }),
             )
         }
-    }, [state])
+        if (state.rooms.length > MOCKED_ROOMS.length) {
+            updateStoredRooms()
+        }
+    }, [state.rooms])
+
+    useEffect(() => {
+        const updateStoredMessages = async () => {
+            console.log('storing', state.messages.length, 'messages')
+            const savedCommunityStateJson = await AsyncStorage.getItem(
+                COMMUNITY_PERSISTENCE_KEY,
+            )
+            const savedCommunityState = savedCommunityStateJson
+                ? JSON.parse(savedCommunityStateJson)
+                : null
+
+            AsyncStorage.setItem(
+                COMMUNITY_PERSISTENCE_KEY,
+                JSON.stringify({
+                    ...savedCommunityState,
+                    messages: state.messages,
+                }),
+            )
+        }
+        if (state.messages.length > 0) {
+            updateStoredMessages()
+        }
+    }, [state.messages])
 
     return <CommunityContext.Provider value={providerValue} {...props} />
 }

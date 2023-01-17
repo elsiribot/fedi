@@ -31,6 +31,7 @@ import {
 import { MSats, Room, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
 import {
+    addToRooms,
     useCommunityContext,
     XMPP_MUC_DOMAIN,
 } from '../contexts/CommunityContext'
@@ -197,7 +198,7 @@ type OutgoingGroupMessage = {
     toRoom?: string
 }
 export const useXmpp = () => {
-    const { state } = useCommunityContext()
+    const { state, dispatch } = useCommunityContext()
     const { xmppClient } = state
 
     return {
@@ -238,45 +239,61 @@ export const useXmpp = () => {
                         stanza.getAttr('id') === 'enter-muc-room'
                     ) {
                         xmppClient?.removeListener('stanza', onStanzaReceived)
-                        // Make sure the owner of a room send an instant room
-                        // configuration query after seeing self-presence
                         console.info(stanza.getChild('x'))
+
+                        // add this room to context if we get a self-presence
+                        // message which confirms occupancy in room
                         if (
-                            stanza
-                                .getChild('x')
-                                ?.getChild('item')
-                                ?.getAttr('affiliation') === 'owner' &&
                             stanza
                                 .getChild('x')
                                 ?.getChild('status')
                                 ?.getAttr('code') === '110'
                         ) {
-                            console.info('sending instant room')
-                            await xmppClient?.send(
-                                xml(
-                                    'iq',
-                                    {
-                                        from: fromUser,
-                                        to: `${room.id}@${XMPP_MUC_DOMAIN}`,
-                                        id: 'create-instant-muc-room',
-                                        type: 'set',
-                                    },
+                            dispatch(addToRooms(room))
+
+                            // if this is the owner of the room, send an "Instant Room"
+                            // configuration query to allow others to join
+                            // https://xmpp.org/extensions/xep-0045.html#createroom-instant
+                            if (
+                                stanza
+                                    .getChild('x')
+                                    ?.getChild('item')
+                                    ?.getAttr('affiliation') === 'owner'
+                            ) {
+                                await xmppClient?.send(
                                     xml(
-                                        'query',
+                                        'iq',
                                         {
-                                            xmlns: 'http://jabber.org/protocol/muc#owner',
+                                            from: fromUser,
+                                            to: `${room.id}@${XMPP_MUC_DOMAIN}`,
+                                            id: 'create-instant-muc-room',
+                                            type: 'set',
                                         },
-                                        xml('x', {
-                                            xmlns: 'jabber:x:data',
-                                            type: 'submit',
-                                        }),
+                                        xml(
+                                            'query',
+                                            {
+                                                xmlns: 'http://jabber.org/protocol/muc#owner',
+                                            },
+                                            xml('x', {
+                                                xmlns: 'jabber:x:data',
+                                                type: 'submit',
+                                            }),
+                                        ),
                                     ),
-                                ),
-                            )
+                                )
+                            }
                         }
                     }
                 }
                 xmppClient?.on('stanza', onStanzaReceived)
+
+                // do we need to clean up listeners if dependencies change
+                // and this callback gets re-run? count listeners to monitor this
+                console.info(
+                    'xmppClient has',
+                    xmppClient?.listenerCount,
+                    'listeners',
+                )
 
                 await xmppClient?.send(
                     xml(
@@ -290,7 +307,7 @@ export const useXmpp = () => {
                     ),
                 )
             },
-            [xmppClient],
+            [dispatch, xmppClient],
         ),
         getUniqueRoomName: useCallback((): Promise<string> => {
             return new Promise(resolve => {

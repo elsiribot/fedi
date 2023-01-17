@@ -1,6 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
+import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 
 import { Message } from '../../../types'
 
@@ -12,8 +13,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
     message,
 }: MessageItemProps) => {
     const { theme } = useTheme()
+    const { selectedFederation } = useFederationsContext().state
 
-    const sentByMe = message.sentBy?.username === 'me'
+    const sentByMe = message.sentBy?.username === selectedFederation?.username
 
     return (
         <View

@@ -12,6 +12,7 @@ import {
 } from '../constants'
 import {
     receiveMessages,
+    receiveRooms,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
@@ -77,9 +78,12 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     console.info('savedCommunityState', savedCommunityState)
 
                     if (savedCommunityState !== null) {
-                        const { messages } = savedCommunityState
+                        const { messages, rooms } = savedCommunityState
+
+                        console.log('recovering')
 
                         communityDispatch(receiveMessages(messages))
+                        communityDispatch(receiveRooms(rooms))
                     }
                 } catch (error) {
                     console.error(error)
