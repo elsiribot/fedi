@@ -1,5 +1,5 @@
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { Images } from '../../../assets/images'
@@ -18,6 +18,10 @@ const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
     const openFederationsDrawer = () => {
         navigation.getParent(DRAWER_NAVIGATION_ID).openDrawer()
     }
+
+    useEffect(() => {
+        navigation.getParent(DRAWER_NAVIGATION_ID).closeDrawer()
+    }, [navigation, selectedFederation])
 
     return (
         <Header
