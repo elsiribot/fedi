@@ -26,8 +26,8 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::VerificationDocument;
-use fedimint_api::NumPeers;
-use fedimint_api::{config::ClientConfig, module::registry::ModuleDecoderRegistry};
+use fedimint_api::config::ClientConfig;
+use fedimint_api::{db::Database, NumPeers};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
@@ -36,6 +36,7 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
     api::{WsFederationApi, WsFederationConnect},
+    module_decode_stubs,
     query::CurrentConsensus,
     UserClient, UserClientConfig, UserSeedPhrase,
 };
@@ -62,7 +63,8 @@ async fn load_federations_from_disk(
                 let cfg: UserClientConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
-                let client = UserClient::new(cfg.clone(), db.into(), Default::default()).await;
+                let db = Database::new(db, module_decode_stubs());
+                let client = UserClient::new(cfg.clone(), db, Default::default()).await;
                 let federation =
                     Federation::new(client, event_sink.clone(), task_group.make_subgroup().await);
                 federations.push(federation)
@@ -242,10 +244,7 @@ impl Federation {
     }
 
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.client
-            .db()
-            .begin_transaction(ModuleDecoderRegistry::default())
-            .await
+        self.client.db().begin_transaction().await
     }
 
     pub fn network(&self) -> bitcoin::Network {
@@ -296,9 +295,9 @@ impl Federation {
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
-        let db = SledDb::open(db_path, "client")?;
-        let client =
-            UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
+        let db = SledDb::open(db_path, "client").unwrap(); // FIXME: don't unwrap
+        let db = Database::new(db, module_decode_stubs());
+        let client = UserClient::new(UserClientConfig(cfg.clone()), db, Default::default()).await;
         Ok(Self::new(client, event_sink, task_group))
     }
 

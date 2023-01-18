@@ -131,6 +131,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ea22880d78093b0cbe17c89f64a7d457941e65759157ec6cb31a31d652b05e5"
 
 [[package]]
+name = "base64-compat"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a8d4d2746f89841e49230dd26917df1876050f95abafafbe34f47cb534b88d7"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "bech32"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -190,6 +199,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90064b8dee6815a6470d60bad07bbbaee885c0e12d04177138fa3291a01b7bc4"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "bitcoincore-rpc"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0261b2bb7617e0c91b452a837bbd1291fd34ad6990cb8e3ffc28239cc045b5ca"
+dependencies = [
+ "bitcoincore-rpc-json",
+ "jsonrpc",
+ "log",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "bitcoincore-rpc-json"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c231bea28e314879c5aef240f6052e8a72a369e3c9f9b20d9bfbb33ad18029b2"
+dependencies = [
+ "bitcoin",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -647,11 +680,12 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bitcoin",
+ "bitcoincore-rpc",
  "fedimint-api",
  "rand",
  "serde",
- "thiserror",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -698,7 +732,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "fedimint-api",
- "hex",
  "hkdf",
  "ring",
  "secp256k1-zkp",
@@ -789,6 +822,7 @@ dependencies = [
  "strum_macros",
  "thiserror",
  "tracing",
+ "url",
  "validator",
 ]
 
@@ -1354,6 +1388,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonrpc"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f8423b78fc94d12ef1a4a9d13c348c9a78766dda0cc18817adf0faf77e670c8"
+dependencies = [
+ "base64-compat",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "jsonrpsee-client-transport"
 version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1467,18 +1513,18 @@ checksum = "348108ab3fba42ec82ff6e9564fc4ca0247bdccdc68dd8af9764bbc79c3c8ffb"
 
 [[package]]
 name = "lightning"
-version = "0.0.112"
+version = "0.0.113"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5deb857f23c88083ac09bc31fe4eadccf4b2779fb3c973862691258bff38b0e2"
+checksum = "087add70f81d2fdc6d4409bc0cef69e11ad366ef1d0068550159bd22b3ac8664"
 dependencies = [
  "bitcoin",
 ]
 
 [[package]]
 name = "lightning-invoice"
-version = "0.20.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fc6ec960257cddce1b85d5ce258821a6138dcd0ae9fd9661b2c3061df588289"
+checksum = "e9680857590c3529cf8c7d32b04501f215f2bf1e029fdfa22f4112f66c1741e4"
 dependencies = [
  "bech32",
  "bitcoin_hashes 0.11.0",
@@ -2499,10 +2545,10 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 name = "tbs"
 version = "0.1.0"
 dependencies = [
+ "bitcoin_hashes 0.11.0",
  "bls12_381",
  "ff",
  "group",
- "hex",
  "rand",
  "rand_chacha",
  "serde",

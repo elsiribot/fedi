@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::anyhow;
-use fedimint_api::config::Node;
+use fedimint_api::config::ApiEndpoint;
 use mint_client::api::WsFederationConnect;
 use serde::Serialize;
 
@@ -24,7 +24,7 @@ pub fn hacky_lightning_invoice_fee(
 pub struct FedimintFederation {
     pub name: String,
     pub connect_info: WsFederationConnect,
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<ApiEndpoint>,
     pub balance: fedimint_api::Amount,
 }
 
