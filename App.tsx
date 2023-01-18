@@ -5,20 +5,21 @@ import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
+import Router from './Router'
 import {
-    init,
     LogEvent,
     TFedimintEventEmitter,
     TransactionEvent,
+    init,
 } from './bridge'
 import CustomToast from './components/ui/CustomToast'
-import Router from './Router'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { CommunityProvider } from './state/contexts/CommunityContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import theme from './styles/theme'
+import amountUtils from './utils/AmountUtils'
 
 const App = () => {
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
@@ -57,7 +58,9 @@ const App = () => {
             // TODO: if on-chain, replace existing notification if there is one
             await notifee.displayNotification({
                 title: 'Transaction received',
-                body: `Amount = ${event.transaction.amount}`,
+                body: `Amount = ${amountUtils.msatToSat(
+                    event.transaction.amount,
+                )}`,
                 android: {
                     channelId,
                     // pressAction is needed if you want the notification to open the app when pressed
