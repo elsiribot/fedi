@@ -7,15 +7,15 @@ import { useNavigation } from '@react-navigation/native'
 import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
-type SocialBackupHeaderProps = {
+type WalletHeaderProps = {
     toggleOffline?: () => void
     offline: boolean
 }
 
-const WalletHeader: React.FC<SocialBackupHeaderProps> = ({
+const WalletHeader: React.FC<WalletHeaderProps> = ({
     toggleOffline,
     offline = false,
-}: SocialBackupHeaderProps) => {
+}: WalletHeaderProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()

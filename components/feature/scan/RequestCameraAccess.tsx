@@ -121,13 +121,12 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.xl,
         },
         backIconContainer: {
-            marginTop: 100,
+            marginTop: 20,
             paddingHorizontal: theme.spacing.xl,
             alignSelf: 'flex-start',
         },
         buttonsContainer: {
             width: '100%',
-            height: 100,
             paddingHorizontal: theme.spacing.xl,
             justifyContent: 'space-between',
         },

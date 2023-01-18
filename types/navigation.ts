@@ -1,6 +1,6 @@
-import { LinkingOptions } from '@react-navigation/native'
+import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { BtcLnUri, MSats, Site } from '.'
+import { BtcLnUri, MSats, Room, Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -14,6 +14,7 @@ declare global {
 export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
 
+export type RouteHook = RouteProp<RootStackParamList>
 export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 export type NavigationLinkingConfig = LinkingOptions<
     RootStackParamList | MainNavigatorDrawerParamList
@@ -23,8 +24,9 @@ export type MainNavigatorDrawerParamList = {
 }
 export type HomeTabsParamList = {
     Admin: undefined
-    Wallet: { offline: boolean }
+    Community: undefined
     Sites: undefined
+    Wallet: { offline: boolean }
 }
 export type RootStackParamList = {
     BitcoinRequest: { uri: string }
@@ -38,10 +40,14 @@ export type RootStackParamList = {
     ConfirmSendLightning: { lightningUri: BtcLnUri }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConnectedFederationsDrawer: undefined
+    CreateUsername: undefined
     Eula: undefined
     FederationInvite: { inviteLink: string }
+    FederationGreeting: undefined
+    FederationWelcome: undefined
     Home: undefined
     Initializing: { reset: boolean }
+    JoinRoom: undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
@@ -53,6 +59,9 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
+    Room: { room: Room }
+    RoomAdmin: { room: Room }
+    RoomInvite: { room: Room }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }

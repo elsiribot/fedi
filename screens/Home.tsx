@@ -2,15 +2,18 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Image, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
+import CommunityHeader from '../components/feature/community/CommunityHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import Admin from './Admin'
+import Community from './Community'
 import Sites from './Sites'
 import Wallet from './Wallet'
 
@@ -18,11 +21,12 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>()
 
-const Home: React.FC<Props> = () => {
+const Home: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
+    const { selectedFederation } = useFederationsContext().state
 
     const toggleOffline = () => {
         if (!offline) {
@@ -32,6 +36,16 @@ const Home: React.FC<Props> = () => {
         }
         setOffline(!offline)
     }
+
+    // Make sure all users have a username and push them to the
+    // FederationWelcome screen if they don't have one
+    useEffect(() => {
+        if (!selectedFederation?.username) {
+            navigation.replace('FederationWelcome')
+        }
+    }, [navigation, selectedFederation, selectedFederation?.username])
+
+    // Check xmpp auth and listen for new messages here
 
     return (
         <Tab.Navigator
@@ -44,6 +58,13 @@ const Home: React.FC<Props> = () => {
                                 <Image
                                     style={styles(theme, insets).iconImage}
                                     source={Images.Wallet}
+                                />
+                            )
+                        case 'Community':
+                            return (
+                                <Image
+                                    style={styles(theme, insets).iconImage}
+                                    source={Images.FediLogoIcon}
                                 />
                             )
                         case 'Sites':
@@ -90,6 +111,13 @@ const Home: React.FC<Props> = () => {
                     title: t('words.sites'),
                     headerShown: false,
                 }}
+            />
+            <Tab.Screen
+                name="Community"
+                component={Community}
+                options={() => ({
+                    header: () => <CommunityHeader />,
+                })}
             />
             <Tab.Screen
                 name="Admin"

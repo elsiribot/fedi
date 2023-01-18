@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import { Header as HeaderRNE, Icon, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, View, ViewStyle } from 'react-native'
+import { Pressable, ViewStyle } from 'react-native'
 
 import { NavigationHook } from '../../types/navigation'
 
@@ -54,12 +54,12 @@ const Header: React.FC<HeaderProps> = ({
     }
     const mergedContainerStyle = {
         ...DEFAULT_REQUIRED_CONTAINER_STYLES,
-        containerStyle,
+        ...containerStyle,
     }
 
     // This logic allows for custom UI in the left side of the Header
     // but the backButton prop overrides any custom headerLeft component
-    let leftComponent = <View>{headerLeft || null}</View>
+    let leftComponent = <>{headerLeft || null}</>
     if (backButton) {
         leftComponent = (
             <Pressable
@@ -74,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({
 
     // This logic allows for custom UI in the right side of the Header
     // but the closeButton prop overrides any custom headerRight component
-    let rightComponent = <View>{headerRight || null}</View>
+    let rightComponent = <>{headerRight || null}</>
     if (closeButton) {
         rightComponent = (
             <Pressable
@@ -112,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({
                 backgroundColor ? backgroundColor : theme.colors.secondary
             }
             containerStyle={mergedContainerStyle}
-            centerComponent={<View>{headerCenter || null}</View>}
+            centerComponent={<>{headerCenter || null}</>}
             leftComponent={leftComponent}
             rightComponent={rightComponent}
             leftContainerStyle={mergedLeftContainerStyle}

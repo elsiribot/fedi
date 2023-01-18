@@ -32,6 +32,7 @@ enum ActionType {
     SET_USER_IS_GUARDIAN = 'SET_USER_IS_GUARDIAN',
     UPDATE_CONNECTED_FEDERATIONS = 'UPDATE_CONNECTED_FEDERATIONS',
     UPDATE_FEDERATION_BALANCE = 'UPDATE_FEDERATION_BALANCE',
+    UPDATE_FEDERATION_USERNAME = 'UPDATE_FEDERATION_USERNAME',
 }
 interface Action {
     type: ActionType
@@ -86,6 +87,18 @@ export function updateFederationBalance(event: BalanceEvent): Action {
         payload: event,
     }
 }
+export function updateFederationUsername(username: String): Action {
+    return {
+        type: ActionType.UPDATE_FEDERATION_USERNAME,
+        payload: username,
+    }
+}
+export function resetFederationUsername(): Action {
+    return {
+        type: ActionType.UPDATE_FEDERATION_USERNAME,
+        payload: null,
+    }
+}
 
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
@@ -117,7 +130,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     (f: Federation) => new Federation(f),
                 ),
             }
-        case ActionType.UPDATE_FEDERATION_BALANCE:
+        case ActionType.UPDATE_FEDERATION_BALANCE: {
             // If the federation id matches, check if selectedFederation.balance
             // has changed
             let updatedSelectedFederation = state.selectedFederation
@@ -156,6 +169,31 @@ export function reducer(state: AppState, action: Action): AppState {
                 connectedFederations: updatedConnectedFederations,
                 selectedFederation: updatedSelectedFederation,
             }
+        }
+        case ActionType.UPDATE_FEDERATION_USERNAME: {
+            const updatedSelectedFederation = state.selectedFederation
+            updatedSelectedFederation!.username = action.payload
+
+            // Find selectedFederation in connectedFederations to
+            // update the username
+            const updatedConnectedFederations = state.connectedFederations.map(
+                (f: Federation) => {
+                    if (f.name === state.selectedFederation!.name) {
+                        return new Federation({
+                            ...f,
+                            username: action.payload,
+                        })
+                    } else {
+                        return f
+                    }
+                },
+            )
+            return {
+                ...state,
+                connectedFederations: updatedConnectedFederations,
+                selectedFederation: updatedSelectedFederation,
+            }
+        }
         case ActionType.RESET_FEDERATIONS_STATE:
             return { ...initialState }
         default:

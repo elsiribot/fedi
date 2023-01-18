@@ -14,11 +14,15 @@ import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
+import CreateUsername from './screens/CreateUsername'
 import DeveloperSettings from './screens/DeveloperSettings'
 import Eula from './screens/Eula'
+import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
+import FederationWelcome from './screens/FederationWelcome'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
+import JoinRoom from './screens/JoinRoom'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
@@ -30,6 +34,9 @@ import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
+import Room from './screens/Room'
+import RoomAdmin from './screens/RoomAdmin'
+import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
@@ -56,10 +63,16 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
+import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
+import RoomHeader from './components/feature/community/RoomHeader'
+import RoomInviteHeader from './components/feature/community/RoomInviteHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
+import EulaHeader from './components/feature/onboarding/EulaHeader'
+import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
@@ -73,7 +86,6 @@ import SendHeader from './components/feature/send/SendHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
-import EulaHeader from './components/feature/onboarding/EulaHeader'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -135,10 +147,13 @@ const MainNavigator = () => {
                         }}
                     />
                 </Stack.Group>
-                {/* This group of screens relies on a non-null selectedFederation
-                in the FederationsContext because they contain API calls to the
-                FFI NativeModule. Since it is possible to store multiple federation
-                connections in-app, each call requires a Federation to be specified */}
+                {/*
+                    This group of screens relies on a non-null selectedFederation
+                    in the FederationsContext because they contain API calls to
+                    the FFI NativeModule. Since it is possible to store multiple
+                    federation connections in-app, each call requires a
+                    Federation to be specified
+                */}
                 {selectedFederation !== null && (
                     <Stack.Group>
                         <Stack.Group
@@ -155,6 +170,70 @@ const MainNavigator = () => {
                                             navigation={navigation}
                                         />
                                     ),
+                                })}
+                            />
+                            {/* Federation Onboarding */}
+                            <Stack.Screen
+                                name="FederationWelcome"
+                                component={FederationWelcome}
+                                options={({ navigation }) => ({
+                                    header: () => (
+                                        <SelectedFederationHeader
+                                            navigation={navigation}
+                                        />
+                                    ),
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CreateUsername"
+                                component={CreateUsername}
+                                options={({ navigation }) => ({
+                                    header: () => (
+                                        <>
+                                            <SelectedFederationHeader
+                                                navigation={navigation}
+                                            />
+                                            <NewMemberHeader />
+                                        </>
+                                    ),
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationGreeting"
+                                component={FederationGreeting}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Community */}
+                            <Stack.Screen
+                                name="JoinRoom"
+                                component={JoinRoom}
+                                options={() => ({
+                                    header: () => <JoinRoomHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RoomInvite"
+                                component={RoomInvite}
+                                options={() => ({
+                                    header: () => <RoomInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="Room"
+                                component={Room}
+                                options={() => ({
+                                    header: () => <RoomHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RoomAdmin"
+                                component={RoomAdmin}
+                                options={() => ({
+                                    header: () => <RoomAdminHeader />,
                                 })}
                             />
                             {/* Wallet (Send) */}

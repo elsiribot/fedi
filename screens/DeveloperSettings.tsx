@@ -1,11 +1,26 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { CheckBox, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { LightningGateway } from '../bridge'
-import { useBridge } from '../state/hooks'
+import {
+    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    COMMUNITY_ROOMS_PERSISTENCE_KEY,
+} from '../constants'
+import {
+    MOCKED_ROOMS,
+    receiveMessages,
+    receiveRooms,
+    useCommunityContext,
+} from '../state/contexts/CommunityContext'
+import {
+    resetFederationUsername,
+    useFederationsContext,
+} from '../state/contexts/FederationsContext'
+import { useBridge, useXmpp } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -17,6 +32,9 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
+    const { dispatch: federationsDispatch } = useFederationsContext()
+    const { dispatch: communityDispatch } = useCommunityContext()
+    const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
@@ -83,6 +101,33 @@ const DeveloperSettings: React.FC<Props> = () => {
                     onPress={() => setSelectedLanguage('es')}
                 />
             </View>
+            <Button
+                title={'Delete all rooms & messages'}
+                onPress={() => {
+                    communityDispatch(receiveMessages([]))
+                    communityDispatch(receiveRooms(MOCKED_ROOMS))
+                    AsyncStorage.setItem(
+                        COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                        JSON.stringify({ messages: [] }),
+                    )
+                    AsyncStorage.setItem(
+                        COMMUNITY_ROOMS_PERSISTENCE_KEY,
+                        JSON.stringify({ rooms: MOCKED_ROOMS }),
+                    )
+                }}
+            />
+            <Button
+                title="Reset username"
+                onPress={() => {
+                    federationsDispatch(resetFederationUsername())
+                }}
+            />
+            <Button
+                title="Send XML"
+                onPress={() => {
+                    sendTestXml()
+                }}
+            />
         </View>
     )
 }

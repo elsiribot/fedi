@@ -1,0 +1,76 @@
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { Image, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { Pressable, StyleSheet } from 'react-native'
+
+import { Images } from '../../../assets/images'
+import Header from '../../ui/Header'
+
+import { Props as RoomProps } from '../../../screens/Room'
+import { NavigationHook } from '../../../types/navigation'
+
+type RoomRouteProp = RoomProps['route']
+
+const RoomAdminHeader: React.FC<{}> = () => {
+    const { theme } = useTheme()
+    const navigation = useNavigation<NavigationHook>()
+    const route = useRoute<RoomRouteProp>()
+
+    return (
+        <Header
+            backButton
+            containerStyle={styles(theme).container}
+            rightContainerStyle={styles(theme).headerRightContainer}
+            headerRight={
+                <>
+                    <Pressable
+                        disabled
+                        onPress={() => {}}
+                        style={styles(theme).headerIconContainer}>
+                        <Image
+                            style={styles(theme).headerIcon}
+                            source={Images.EditBlack}
+                        />
+                    </Pressable>
+                </>
+            }
+        />
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            marginTop: theme.spacing.md,
+        },
+        headerCenterContainer: {
+            flex: 6,
+            justifyContent: 'flex-start',
+        },
+        headerRightContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+        },
+        headerIconContainer: {
+            padding: theme.spacing.sm,
+            // Disabled
+            opacity: 0.25,
+        },
+        headerIcon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+        },
+        roomIcon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+            marginRight: theme.spacing.sm,
+        },
+        roomNameContainer: {
+            padding: theme.spacing.sm,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+        },
+    })
+
+export default RoomAdminHeader
