@@ -39,9 +39,8 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
 
     useEffect(() => {
         const checkForValidFile = async () => {
-            // copy file to tmp directory so rust can read it
-            const filename = Math.random().toString(20)
-            const dest = `${RNFS.TemporaryDirectoryPath}/${filename}.fedi`
+            // copy file to docs directory so rust can read it
+            const dest = `${RNFS.DocumentDirectoryPath}/backup.fedi`
             await RNFS.copyFile(result!.uri, dest)
             // validate file
             try {

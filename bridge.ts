@@ -433,19 +433,10 @@ export async function validateRecoveryFile(
 }
 
 // This string contains a public key and URL to video file
-export async function backupQr(_federationId: string): Promise<string> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId })
-    // let response = await FedimintFfi.rpc('backupQr', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate success/failure modes
-    const SAMPLE_VIDEO_URL =
-        'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
-    return handleRpcResponse<string>(
-        `{"result": "socialrecovery::pubkey::${SAMPLE_VIDEO_URL}"}`,
-    )
-    // return handleRpcResponse<string>('{"error": "no social backup QR code found"}')
+export async function recoveryQr(federationId: string): Promise<string> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('recoveryQr', payload)
+    return handleRpcResponse<string>(response)
 }
 
 // guardian fetches `_secret` (somehow) from federation admin web UI

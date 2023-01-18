@@ -7,7 +7,6 @@ import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
     authenticateGuardian,
-    backupQr,
     dangerousLeaveFederation,
     denySocialRecoveryRequest,
     generateAddress,
@@ -23,6 +22,7 @@ import {
     payInvoice,
     receiveEcash,
     recoverFromMnemonic,
+    recoveryQr,
     switchGateway,
     updateTransactionNotes,
     uploadBackupFile,
@@ -69,8 +69,8 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        backupQr: useCallback(() => {
-            return backupQr(selectedFederation!.name)
+        recoveryQr: useCallback(() => {
+            return recoveryQr(selectedFederation!.name)
         }, [selectedFederation]),
         dangerousLeaveFederation: useCallback(() => {
             return dangerousLeaveFederation(selectedFederation!.name)

@@ -101,7 +101,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <SettingsItem
                     imageSource={Images.Wallet}
                     label={t('feature.backup.backup-wallet')}
-                    onPress={() => navigation.navigate('ChooseBackupMethod')}
+                    onPress={() => navigation.navigate('RecordBackupVideo')}
                 />
                 <SettingsItem
                     imageSource={Images.Recovery}
