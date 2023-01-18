@@ -11,6 +11,7 @@ use crate::{
     event::Event,
     mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
+    recovery::{SocialRecoveryQr, SocialRecoveryStateKey},
     tx::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -38,6 +39,7 @@ use mint_client::{
     api::{WsFederationApi, WsFederationConnect},
     module_decode_stubs,
     query::CurrentConsensus,
+    social::RecoveryFile,
     UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
@@ -215,6 +217,11 @@ impl Federation {
     }
 
     pub fn name(&self) -> String {
+        self.client.config().0.federation_name.clone()
+    }
+
+    // FIXME: move this to actually using config.federation_id
+    pub fn federation_id(&self) -> String {
         self.client.config().0.federation_name.clone()
     }
 
@@ -653,14 +660,12 @@ impl Federation {
 
     async fn send_balance_notification(&self) {
         let balance_millis = self.client.coins().await.total_amount().msats;
-        let federation_id = self.client.config().0.federation_name;
-        let event = Event::balance(federation_id.clone(), balance_millis);
+        let event = Event::balance(self.federation_id(), balance_millis);
         self.event_sink.event(&event);
     }
 
     fn transaction_event(&self, tx: &Transaction) {
-        let federation_id = self.client.config().0.federation_name;
-        let event = Event::transaction(federation_id.clone(), tx.clone());
+        let event = Event::transaction(self.federation_id(), tx.clone());
         self.event_sink.event(&event);
     }
 
@@ -712,6 +717,46 @@ impl Federation {
         fs::write(&recovery_file_path, recovery_file.to_bytes())?;
         debug!("recovery file saved");
         Ok(recovery_file_path)
+    }
+
+    // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
+    pub async fn start_social_recovery(
+        &self,
+        recovery_file: &RecoveryFile,
+    ) -> Result<SocialRecoveryQr> {
+        let recovery_client = self.client.social_recovery_start(recovery_file.clone());
+
+        // save social recovery state
+        // TODO: fail if there's already a social recovery in the db
+        let mut dbtx = self.dbtx().await;
+        dbtx.insert_entry(
+            &SocialRecoveryStateKey(self.federation_id()),
+            recovery_client.state(),
+        )
+        .await
+        .expect("Db error");
+        dbtx.commit_tx().await.expect("Db error");
+
+        // Create and upload verification request
+        // FIXME: probably shouldn't clone verification doc because it might be large
+        let verification_request = recovery_client
+            .create_verification_request(recovery_file.verification_document.clone())?;
+        recovery_client
+            .upload_verification_request(&verification_request)
+            .await
+            .unwrap();
+
+        // Return social recovery QR
+        let recovery_id = verification_request.recovery_id();
+        Ok(SocialRecoveryQr { recovery_id })
+    }
+
+    pub async fn social_recovery_state() {
+        todo!()
+    }
+
+    pub async fn approve_social_recovery() {
+        todo!()
     }
 
     pub async fn start_pollers(&mut self) {

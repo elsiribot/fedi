@@ -3,6 +3,7 @@ pub mod event;
 pub mod logging;
 pub mod mnemonic;
 pub mod payment;
+pub mod recovery;
 pub mod tx;
 pub mod types;
 
@@ -24,7 +25,6 @@ use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
-use tracing::info;
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
@@ -611,8 +611,33 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     };
     let contents = fs::read(path)?;
     // TODO: check that the federation matches and everything
+    // also fixed by using federation-specific location
     let valid = RecoveryFile::from_bytes(&contents).is_ok();
     Ok(json!({ "result": valid }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoveryQrPayload {
+    federation_id: String,
+}
+
+// FIXME: maybe this would better be called "begin_social_recovery"
+async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
+    let RecoveryQrPayload { federation_id } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
+    let recovery_file_path = get_bridge().await.unwrap().data_dir.join(RECOVERY_FILENAME);
+    let contents = fs::read(recovery_file_path)?;
+    let recovery_file = RecoveryFile::from_bytes(&contents)?;
+
+    // Return QR code contents
+    let federation = get_federation(&federation_id).await;
+    let qr = federation.start_social_recovery(&recovery_file).await?;
+    let qr_code_json = serde_json::to_string(&qr).unwrap();
+    Ok(json!({ "result": qr_code_json }).to_string())
 }
 
 pub fn fedimint_rpc(method: String, payload: String) -> String {
@@ -641,6 +666,17 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "uploadBackupFile" => handle_upload_backup_file(payload).await,
             "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
             "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
+            "recoveryQr" => handle_recovery_qr(payload).await,
+
+            // return whether we're currently recovering ecash tokens or not
+            "ecashRecoveryState" => todo!(),
+            // return whether we're currently recovering ecash tokens or not
+            "socialRecoveryState" => todo!(),
+            // present the QR data. if there isn't social recovery session, start one.
+            // "socialRecoveryQr" => todo!(),
+            // takes recovery id, downloads verificaiton document, saves to disk, returns path
+            "downloadVerificationDocument" => todo!(),
+
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
