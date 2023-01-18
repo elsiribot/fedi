@@ -31,11 +31,11 @@ tokio = {version = "1.0", features = ["full"]}
 thiserror = "1.0.37"
 hex = "0.4.3"
 
-uniffi_macros = { version = "0.22.0", features = ["builtin-bindgen"] }
-uniffi = { version = "0.22.0", features = ["builtin-bindgen"] }
+uniffi_macros = { version = "0.21.0", features = ["builtin-bindgen"] }
+uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
 
 [build-dependencies]
-uniffi_build = { version = "0.22.0", features = ["builtin-bindgen"] }
+uniffi_build = { version = "0.21.0", features = ["builtin-bindgen"] }
 
 # [target.'cfg(target_os = "ios")'.dependencies]
 # tracing-oslog = "0.1.2"
