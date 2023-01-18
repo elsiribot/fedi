@@ -92,6 +92,9 @@ const MainNavigator = () => {
 
     return (
         <Stack.Navigator
+            screenOptions={{
+                orientation: 'portrait',
+            }}
             initialRouteName={'Initializing'}
             id={MAIN_NAVIGATOR_ID}>
             <>
