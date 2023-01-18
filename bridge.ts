@@ -439,6 +439,15 @@ export async function recoveryQr(federationId: string): Promise<string> {
     return handleRpcResponse<string>(response)
 }
 
+export async function socialRecoveryApprovals(
+    federationId: string,
+): Promise<SocialRecoveryEvent> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('socialRecoveryApprovals', payload)
+    console.log('approvals response', response)
+    return handleRpcResponse<SocialRecoveryEvent>(response)
+}
+
 // guardian fetches `_secret` (somehow) from federation admin web UI
 export async function authenticateGuardian(
     _secret: string,
@@ -488,19 +497,9 @@ export async function approveSocialRecoveryRequest(
  * Mocked-out social backup and recovery events
  */
 
-enum GuardianApprovalStatus {
-    approved = 'approved',
-    denied = 'denied',
-    pending = 'pending',
-}
-
-export type Guardian = {
-    name: string
-}
-
 export type GuardianApproval = {
-    guardian: Guardian
-    status: GuardianApprovalStatus
+    guardianName: String
+    approved: boolean
 }
 
 export type SocialRecoveryStatus =

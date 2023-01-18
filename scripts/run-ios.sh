@@ -1,3 +1,6 @@
+# exit on failure
+set -e
+
 # re-build bridge bindings for ios
 pushd ../bridge
 ./ios.sh

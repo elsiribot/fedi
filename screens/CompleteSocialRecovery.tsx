@@ -5,9 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
-import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
+import {
+    GuardianApproval,
+    SocialRecoveryEvent,
+    TFedimintEventEmitter,
+} from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,9 +23,14 @@ export type Props = NativeStackScreenProps<
 const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { socialRecoveryApprovals } = useBridge()
     const { selectedFederation } = useFederationsContext().state
     const [guardianApprovals, setGuardianApprovals] = useState<number>(0)
     const [guardianDenials, setGuardianDenials] = useState<number>(0)
+
+    const [approvals, setApprovals] = useState<SocialRecoveryEvent | undefined>(
+        undefined,
+    )
 
     const socialRecoveryHandler = useCallback(
         (event: SocialRecoveryEvent) => {
@@ -31,14 +41,27 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             console.log('event')
             console.log(event)
             setGuardianApprovals(
-                event.approvals?.filter(a => a.status === 'approved').length,
+                event.approvals?.filter(a => a.approved).length,
             )
-            setGuardianDenials(
-                event.approvals?.filter(a => a.status === 'denied').length,
-            )
+            // setGuardianDenials(
+            //     event.approvals?.filter(a => a.status === 'denied').length,
+            // )
         },
         [selectedFederation],
     )
+
+    // ask bridge every second
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                const _approvals = await socialRecoveryApprovals()
+                setApprovals(_approvals)
+            } catch (e) {
+                console.log('failed to get approvals', e)
+            }
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [socialRecoveryApprovals, setApprovals])
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
@@ -88,24 +111,23 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const renderGuardians = () => {
-        return selectedFederation?.nodes.map((n: Node, i) => {
-            const approvalStatus =
-                guardianApprovals >= 1 ? 'approved' : 'pending'
-
-            return (
-                <View style={styles(theme).guardianRow} key={`gr-${i}`}>
-                    <Text>{n.name}</Text>
-                    <Text
-                        style={
-                            approvalStatus === 'approved'
-                                ? styles(theme).completed
-                                : {}
-                        }>
-                        {approvalStatus}
-                    </Text>
-                </View>
-            )
-        })
+        return (
+            approvals &&
+            approvals.approvals.map((approval: GuardianApproval, i) => {
+                return (
+                    <View style={styles(theme).guardianRow} key={`gr-${i}`}>
+                        <Text>{approval.guardianName}</Text>
+                        <Text
+                            style={
+                                approval.approved ? styles(theme).completed : {}
+                            }>
+                            {/* FIXME: internationalize */}
+                            {approval.approved ? 'approved' : 'pending'}
+                        </Text>
+                    </View>
+                )
+            })
+        )
     }
 
     return (

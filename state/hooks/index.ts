@@ -23,6 +23,7 @@ import {
     receiveEcash,
     recoverFromMnemonic,
     recoveryQr,
+    socialRecoveryApprovals,
     switchGateway,
     updateTransactionNotes,
     uploadBackupFile,
@@ -77,6 +78,9 @@ export const useBridge = () => {
         }, [selectedFederation]),
         generateAddress: useCallback(() => {
             return generateAddress(selectedFederation!.name)
+        }, [selectedFederation]),
+        socialRecoveryApprovals: useCallback(() => {
+            return socialRecoveryApprovals(selectedFederation!.name)
         }, [selectedFederation]),
         generateEcash: useCallback(
             (amount: MSats) => {
