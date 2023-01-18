@@ -1,6 +1,7 @@
 import notifee from '@notifee/react-native'
 import { ThemeProvider } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -22,6 +23,7 @@ import theme from './styles/theme'
 import amountUtils from './utils/AmountUtils'
 
 const App = () => {
+    const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
 
     async function initializeBridge() {
@@ -57,10 +59,9 @@ const App = () => {
             // Display a notification
             // TODO: if on-chain, replace existing notification if there is one
             await notifee.displayNotification({
-                title: 'Transaction received',
-                body: `Amount = ${amountUtils.msatToSat(
-                    event.transaction.amount,
-                )}`,
+                title: t('phrases.transaction-received'),
+                body: `${amountUtils.msatToSat(event.transaction.amount)} 
+                ${t('words.sats')}`,
                 android: {
                     channelId,
                     // pressAction is needed if you want the notification to open the app when pressed
