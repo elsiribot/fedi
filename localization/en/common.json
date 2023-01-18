@@ -69,6 +69,7 @@
         "paste-from-clipboard": "Paste from clipboard",
         "please-confirm": "Please confirm",
         "transaction-id": "Transaction ID",
+        "transaction-received": "Transaction received",
         "user-agreement": "User Agreement",
         "you-are-offline": "You are currently in offline mode"
     },
