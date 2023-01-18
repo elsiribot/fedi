@@ -10,7 +10,7 @@ pub mod types;
 use std::{fs, path::PathBuf, str::FromStr, sync::Arc};
 
 use bitcoin::{secp256k1::Message, Address};
-use event::EventSink;
+use event::{EventSink, SocialRecoveryEvent};
 use fedimint_api::{Amount, TieredMulti};
 use lazy_static::lazy_static;
 
@@ -612,7 +612,15 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     let contents = fs::read(path)?;
     // TODO: check that the federation matches and everything
     // also fixed by using federation-specific location
-    let valid = RecoveryFile::from_bytes(&contents).is_ok();
+    let valid = match RecoveryFile::from_bytes(&contents) {
+        Ok(recovery_file) => {
+            let federation = get_federation(&federation_id).await;
+            federation.start_social_recovery(&recovery_file).await;
+            info!("social recovery started");
+            true
+        }
+        Err(_) => false,
+    };
     Ok(json!({ "result": valid }).to_string())
 }
 
@@ -635,9 +643,32 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
 
     // Return QR code contents
     let federation = get_federation(&federation_id).await;
-    let qr = federation.start_social_recovery(&recovery_file).await?;
+    let qr = federation.social_recovery_qr(&recovery_file).await?;
     let qr_code_json = serde_json::to_string(&qr).unwrap();
     Ok(json!({ "result": qr_code_json }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialRecoveryApprovalsPayload {
+    federation_id: String,
+}
+
+// FIXME: maybe this would better be called "begin_social_recovery"
+async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<String> {
+    let SocialRecoveryApprovalsPayload { federation_id } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    // Return QR code contents
+    let federation = get_federation(&federation_id).await;
+    let approvals = federation.social_recovery_approvals().await?;
+    let result = SocialRecoveryEvent {
+        federation_id,
+        approvals,
+        complete: true, // FIXME: don't hardcode
+    };
+    Ok(json!({ "result": result }).to_string())
 }
 
 pub fn fedimint_rpc(method: String, payload: String) -> String {
@@ -667,6 +698,8 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
             "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
             "recoveryQr" => handle_recovery_qr(payload).await,
+
+            "socialRecoveryApprovals" => handle_social_recovery_approvals(payload).await,
 
             // return whether we're currently recovering ecash tokens or not
             "ecashRecoveryState" => todo!(),

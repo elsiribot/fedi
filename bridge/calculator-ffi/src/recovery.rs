@@ -11,6 +11,15 @@ pub struct SocialRecoveryQr {
     pub recovery_id: RecoveryId,
 }
 
+/// This type is set to React Native and displayed in the UI
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialRecoveryApproval {
+    // FIXME: perhaps this should be peer id and client can look up the name ???
+    pub guardian_name: String,
+    pub approved: bool,
+}
+
 // FIXME: this is stringified FederationId (which doesn't impl Encodable b/c threshold_crypto::PublicKey doesn't)
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct SocialRecoveryStateKey(pub String);

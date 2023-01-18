@@ -11,7 +11,7 @@ use crate::{
     event::Event,
     mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
-    recovery::{SocialRecoveryQr, SocialRecoveryStateKey},
+    recovery::{SocialRecoveryApproval, SocialRecoveryQr, SocialRecoveryStateKey},
     tx::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -27,7 +27,7 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::VerificationDocument;
-use fedimint_api::config::ClientConfig;
+use fedimint_api::{config::ClientConfig, PeerId};
 use fedimint_api::{db::Database, NumPeers};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
@@ -39,7 +39,7 @@ use mint_client::{
     api::{WsFederationApi, WsFederationConnect},
     module_decode_stubs,
     query::CurrentConsensus,
-    social::RecoveryFile,
+    social::{RecoveryFile, SocialRecovery},
     UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
@@ -719,15 +719,18 @@ impl Federation {
         Ok(recovery_file_path)
     }
 
-    // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
-    pub async fn start_social_recovery(
-        &self,
-        recovery_file: &RecoveryFile,
-    ) -> Result<SocialRecoveryQr> {
-        let recovery_client = self.client.social_recovery_start(recovery_file.clone());
+    pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
+        let mut dbtx = self.dbtx().await;
+        let state = dbtx
+            .get_value(&SocialRecoveryStateKey(self.federation_id()))
+            .await
+            .expect("Db error")
+            .ok_or(anyhow!("no active recovery session"))?;
+        Ok(self.client.social_recovery_continue(state))
+    }
 
-        // save social recovery state
-        // TODO: fail if there's already a social recovery in the db
+    pub async fn social_recovery_save(&self, recovery_client: &SocialRecovery) {
+        // FIXME: should I pass dbtx from outside?
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(
             &SocialRecoveryStateKey(self.federation_id()),
@@ -736,6 +739,22 @@ impl Federation {
         .await
         .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
+    }
+
+    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) {
+        let recovery_client = self.client.social_recovery_start(recovery_file.clone());
+
+        // save social recovery state
+        // TODO: fail if there's already a social recovery in the db
+        self.social_recovery_save(&recovery_client).await;
+    }
+
+    // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
+    pub async fn social_recovery_qr(
+        &self,
+        recovery_file: &RecoveryFile,
+    ) -> Result<SocialRecoveryQr> {
+        let recovery_client = self.social_recovery_continue().await?;
 
         // Create and upload verification request
         // FIXME: probably shouldn't clone verification doc because it might be large
@@ -749,6 +768,37 @@ impl Federation {
         // Return social recovery QR
         let recovery_id = verification_request.recovery_id();
         Ok(SocialRecoveryQr { recovery_id })
+    }
+
+    pub async fn social_recovery_approvals(&self) -> Result<Vec<SocialRecoveryApproval>> {
+        let mut recovery_client = self.social_recovery_continue().await?;
+        let guardian_peer_ids: Vec<(String, PeerId)> = self
+            .client
+            .config()
+            .0
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, node)| (node.name.clone(), PeerId::from(i as u16))) // FIXME: don't use "as"
+            .collect();
+        let mut approvals = vec![];
+        for (guardian_name, peer_id) in guardian_peer_ids {
+            let approved = recovery_client
+                .get_decryption_share_from(peer_id) // FIXME: don't use as
+                .await
+                .expect("get decryption share"); // FIXME: don't unwrap
+            approvals.push(SocialRecoveryApproval {
+                guardian_name,
+                approved,
+            });
+        }
+
+        // TODO: try to combine, return whether it's finished or not
+
+        // Save progress to DB
+        self.social_recovery_save(&recovery_client).await;
+
+        Ok(approvals)
     }
 
     pub async fn social_recovery_state() {

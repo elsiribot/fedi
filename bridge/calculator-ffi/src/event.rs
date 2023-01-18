@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::tx::Transaction;
+use crate::{recovery::SocialRecoveryApproval, tx::Transaction};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -20,7 +20,8 @@ pub struct TransactionEvent {
 #[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryEvent {
     pub federation_id: String,
-    // TODO: add payload
+    pub approvals: Vec<SocialRecoveryApproval>,
+    pub complete: bool,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -62,18 +63,14 @@ impl Event {
             },
         }
     }
-    pub fn social_recovery(federation_id: String) -> Self {
-        Self::SocialRecovery {
-            event: SocialRecoveryEvent {
-                federation_id,
-            },
-        }
-    }
+    // pub fn social_recovery(federation_id: String) -> Self {
+    //     Self::SocialRecovery {
+    //         event: SocialRecoveryEvent { federation_id },
+    //     }
+    // }
     pub fn recovery_file_creation(federation_id: String) -> Self {
         Self::RecoveryFileCreation {
-            event: RecoveryFileCreationEvent {
-                federation_id,
-            },
+            event: RecoveryFileCreationEvent { federation_id },
         }
     }
     pub fn log(log: String) -> Self {
