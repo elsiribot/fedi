@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
 
 import { joinFederation, listFederations } from '../bridge'
@@ -32,6 +32,14 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleUserInput = useCallback(
         async (input: string) => {
+            // tmuxinator
+            if (Platform.OS === 'android') {
+                // input =
+                //     '{"members":[[0,"ws://10.0.2.2:4001/"],[1,"ws://10.0.2.2:4011/"],[2,"ws://10.0.2.2:4021/"],[3,"ws://10.0.2.2:4031/"]]}'
+                input =
+                    '{"members":[[0,"wss://4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}'
+            }
+            console.log('input', input)
             // Provide a 500ms delay to throttle input from the scanner
             setScannerProcessing(true)
             setTimeout(() => setScannerProcessing(false), 500)
