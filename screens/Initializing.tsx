@@ -7,11 +7,13 @@ import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
 import {
+    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
     FEDERATIONS_PERSISTENCE_KEY,
 } from '../constants'
 import {
+    receiveMembersSeen,
     receiveMessages,
     receiveRooms,
     useCommunityContext,
@@ -122,9 +124,37 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 }
             }
 
+            const restoreMembers = async () => {
+                try {
+                    const savedCommunityMembersJson =
+                        await AsyncStorage.getItem(
+                            COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                        )
+
+                    const savedCommunityMembers = savedCommunityMembersJson
+                        ? JSON.parse(savedCommunityMembersJson)
+                        : null
+
+                    console.info('savedCommunityMembers', savedCommunityMembers)
+
+                    if (savedCommunityMembers !== null) {
+                        const { members } = savedCommunityMembers
+
+                        console.log('recovering members')
+
+                        if (members) {
+                            communityDispatch(receiveMembersSeen(members))
+                        }
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
+            }
+
             const restoreCommunityState = async () => {
                 restoreMessages()
                 restoreRooms()
+                restoreMembers()
             }
 
             restoreCommunityState()

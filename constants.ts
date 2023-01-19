@@ -14,6 +14,8 @@ export const FEDERATION_SIGNET =
 export const TEST_FEDERATION = FEDERATION_ALPHA
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 export const COMMUNITY_PERSISTENCE_KEY = 'AsyncStorage-CommunityContext'
+export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
+    'AsyncStorage-CommunityContext-members'
 export const COMMUNITY_MESSAGES_PERSISTENCE_KEY =
     'AsyncStorage-CommunityContext-messages'
 export const COMMUNITY_ROOMS_PERSISTENCE_KEY =

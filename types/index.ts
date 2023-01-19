@@ -1,3 +1,4 @@
+import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { ImageSourcePropType } from 'react-native'
 
@@ -121,8 +122,12 @@ export type RoomSettings = {
 
 export class Member extends Base {
     jid: JID
+    constructor(data: any) {
+        super(data)
+        this.jid = jid(data.jid._local, data.jid._domain, data.jid._resource)
+    }
     get username(): string {
-        return this.jid.local
+        return this.jid.getLocal()
     }
 }
 
