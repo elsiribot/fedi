@@ -784,3 +784,30 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
         String::from("log"),
     ];
 }
+
+mod tests {
+    use super::*;
+
+    struct FakeEventSink;
+
+    impl FakeEventSink {
+        fn new() -> Self {
+            Self {}
+        }
+    }
+
+    impl EventSink for FakeEventSink {
+        fn event(&self, event_type: String, body: String) {
+            tracing::debug!("event {} {}", event_type, body);
+        }
+    }
+
+    #[test]
+    fn test_decryption_shares() {
+        let event_sink = FakeEventSink::new();
+        let connection_string = r#"{"members":[[0,"wss:;//4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#;
+        // TODO: make this directory
+        let data_dir = String::from("/Users/justin/fedi/bridge/tests");
+        fedimint_init(data_dir, Box::new(event_sink));
+    }
+}
