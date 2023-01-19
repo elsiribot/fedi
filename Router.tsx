@@ -5,6 +5,7 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 
 import BitcoinRequest from './screens/BitcoinRequest'
+import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
 import CompleteRecoveryAssist from './screens/CompleteRecoveryAssist'
@@ -65,6 +66,7 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import ChatWalletHeader from './components/feature/community/ChatWalletHeader'
 import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
 import NewMessageHeader from './components/feature/community/NewMessageHeader'
 import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
@@ -251,6 +253,13 @@ const MainNavigator = () => {
                                 component={RoomAdmin}
                                 options={() => ({
                                     header: () => <RoomAdminHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatWallet"
+                                component={ChatWallet}
+                                options={() => ({
+                                    header: () => <ChatWalletHeader />,
                                 })}
                             />
                             {/* Wallet (Send) */}

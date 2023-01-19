@@ -30,6 +30,7 @@ export type HomeTabsParamList = {
 }
 export type RootStackParamList = {
     BitcoinRequest: { uri: string }
+    ChatWallet: { recipient: Member }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
     CompleteRecoveryAssist: { userPublicKey: string; videoUrl: string }
