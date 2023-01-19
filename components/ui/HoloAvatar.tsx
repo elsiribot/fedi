@@ -9,8 +9,9 @@ import HoloGradient, { HoloLevels } from './HoloGradient'
     Avatar component does not support this
 */
 
-enum AvatarSize {
+export enum AvatarSize {
     sm = 'sm',
+    md = 'md',
     lg = 'lg',
 }
 
@@ -28,6 +29,8 @@ const HoloAvatar: React.FC<HoloAvatarProps> = ({
     const customSize =
         size === AvatarSize.sm
             ? theme.sizes.smallAvatar
+            : size === AvatarSize.md
+            ? theme.sizes.mediumAvatar
             : theme.sizes.largeAvatar
     const height = customSize
     const width = customSize
