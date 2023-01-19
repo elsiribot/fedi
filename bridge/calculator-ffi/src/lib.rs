@@ -781,6 +781,7 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
 }
 
 mod tests {
+    use serde_json::Value;
     use tracing::debug;
 
     use super::*;
@@ -795,7 +796,7 @@ mod tests {
 
     impl EventSink for FakeEventSink {
         fn event(&self, event_type: String, body: String) {
-            tracing::debug!("event {} {}", event_type, body);
+            debug!("event {} {}", event_type, body);
         }
     }
 
@@ -805,8 +806,27 @@ mod tests {
             .into_path()
             .display()
             .to_string();
-        debug!(data_dir = data_dir);
+        info!(data_dir = data_dir);
         data_dir
+    }
+
+    // fn parse_result<'a,T: Deserialize<'a>>(result: &'a String) -> T {
+    //     let v: Value = serde_json::from_str(&result).unwrap();
+    //     let t = v["result"].into();
+    //     t
+    // }
+
+    // FIXME: make this generic
+    fn parse_result(result: String) -> String {
+        let v: Value = serde_json::from_str(&result).unwrap();
+        let t = &v["result"];
+        t.to_string()
+    }
+
+    async fn test_get_federation() -> (String, Arc<Federation>) {
+        let federation_id = "Hals_trusty_mint";
+        (federation_id.into(), get_federation(federation_id).await)
+
     }
 
     #[test]
@@ -823,14 +843,21 @@ mod tests {
             // TODO: make this directory
             fedimint_init_async(create_data_dir(), Box::new(event_sink)).await;
 
-            // join federation
+            // Join federation
             let connect_string = String::from(
                 r#"{"members":[[0,"wss://4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#,
             );
-            let connect_string = serde_json::to_string(&JoinFederationPayload { connect_string}).unwrap();
-            handle_join_federation(connect_string).await.unwrap();
+            let payload = serde_json::to_string(&JoinFederationPayload { connect_string}).unwrap();
+            handle_join_federation(payload).await.unwrap();
+            let (federation_id, federation) = test_get_federation().await;
 
-            let recovery_file = String::from("/Users/justin/fedi/bridge/fixtures/backup.txt");
+            // Upload backup
+            let video_file_path = PathBuf::from("/Users/justin/fedi/bridge/fixtures/backup.txt");
+            let payload = serde_json::to_string(&UploadBackupFilePayload { video_file_path, federation_id }).unwrap();
+            let result = handle_upload_backup_file(payload).await.unwrap();
+            let recovery_file_path = parse_result(result);
+            info!(recovery_file_path=recovery_file_path);
+            
         });
     }
 }
