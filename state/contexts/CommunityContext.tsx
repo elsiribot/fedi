@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Client, client, Options, xml } from '@xmpp/client'
+import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
+import { JID } from '@xmpp/jid'
 import { isEqual } from 'lodash'
 import React, {
     createContext,
@@ -12,8 +13,14 @@ import React, {
 
 import { Images } from '../../assets/images'
 import {
+    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
+    XMPP_CONNECTION_OPTIONS,
+    XMPP_DOMAIN,
+    XMPP_MOCK_PASSWORD,
+    XMPP_MUC_DOMAIN,
+    XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
 import { Member, Message, Room } from '../../types'
@@ -51,9 +58,16 @@ export const MOCKED_ROOMS: Room[] = [
     },
 ]
 
+const MOCKED_MEMBERS = [
+    new Member({
+        jid: jid('oz21m', XMPP_DOMAIN, XMPP_RESOURCE),
+    }),
+]
+
 // Define the structure of this Context and its initial state
 interface CommunityContextState {
     xmppClient: Client | null
+    authenticatedMember: Member | null
     username: string | null
     userIsOnline: boolean
     messages: Message[]
@@ -64,6 +78,7 @@ const initialState: CommunityContextState = {
     xmppClient: null,
     username: null,
     userIsOnline: false,
+    authenticatedMember: null,
     messages: [],
     rooms: MOCKED_ROOMS,
     membersSeen: [],
@@ -72,12 +87,15 @@ type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
+    ADD_TO_MEMBERS_SEEN = 'ADD_TO_MEMBERS_SEEN',
     ADD_TO_MESSAGES = 'ADD_TO_MESSAGES',
     ADD_TO_ROOMS = 'ADD_TO_ROOMS',
     CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
+    RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_ROOMS = 'RECEIVE_ROOMS',
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
+    SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_ROOM = 'UPDATE_ROOM',
     UPDATE_ROOM_MESSAGE_PREVIEW = 'UPDATE_ROOM_MESSAGE_PREVIEW',
@@ -98,6 +116,12 @@ type BaseContext = {
 export const CommunityContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
+export function addToMembersSeen(member: Member): Action {
+    return {
+        type: ActionType.ADD_TO_MEMBERS_SEEN,
+        payload: member,
+    }
+}
 export function addToMessages(message: Message): Action {
     return {
         type: ActionType.ADD_TO_MESSAGES,
@@ -116,6 +140,12 @@ export function changeUserIsOnline(online: boolean): Action {
         payload: online,
     }
 }
+export function receiveMembersSeen(members: Member[]): Action {
+    return {
+        type: ActionType.RECEIVE_MEMBERS_SEEN,
+        payload: members,
+    }
+}
 export function receiveMessages(messages: Message[]): Action {
     return {
         type: ActionType.RECEIVE_MESSAGES,
@@ -126,6 +156,12 @@ export function receiveRooms(rooms: Room[]): Action {
     return {
         type: ActionType.RECEIVE_ROOMS,
         payload: rooms,
+    }
+}
+export function setAuthenticatedMember(member: Member): Action {
+    return {
+        type: ActionType.SET_AUTHENTICATED_MEMBER,
+        payload: member,
     }
 }
 export function setXmppClient(xmpp: Client): Action {
@@ -155,6 +191,74 @@ export function resetCommunityState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
+        case ActionType.ADD_TO_MEMBERS_SEEN:
+            const memberIndex = state.membersSeen.findIndex(
+                (m: Member) => m.username === action.payload.username,
+            )
+
+            if (memberIndex === -1) {
+                // New members get added
+                return {
+                    ...state,
+                    membersSeen: [
+                        ...state.membersSeen,
+                        new Member(action.payload),
+                    ],
+                }
+            } else if (
+                // Should we deep compare or just use username?
+                isEqual(action.payload, state.membersSeen[memberIndex])
+                // action.payload.username === state.membersSeen[memberIndex].username
+            ) {
+                // Avoid re-render, this member is already added
+                // and has not changed
+                return state
+            } else {
+                // member is already added but something has changed...
+                const updatedMember = {
+                    ...state.messages[memberIndex],
+                    ...action.payload,
+                }
+                return {
+                    ...state,
+                    membersSeen: state.membersSeen.map((m: Member, i) =>
+                        i === memberIndex ? updatedMember : m,
+                    ),
+                }
+            }
+        case ActionType.ADD_TO_MESSAGES:
+            const messageIndex = state.messages.findIndex(
+                (m: Message) => m.id === action.payload.id,
+            )
+
+            if (messageIndex === -1) {
+                // New messages get added
+                return {
+                    ...state,
+                    messages: [...state.messages, new Message(action.payload)],
+                }
+            } else if (
+                // Should we deep compare or just use ID?
+                // isEqual(action.payload, state.messages[messageIndex])
+                action.payload.id === state.messages[messageIndex].id
+            ) {
+                // Avoid re-render, this message is already added
+                // and has not changed
+                return state
+            } else {
+                // message is already added but has changed...
+                const updatedMessage = {
+                    ...state.messages[messageIndex],
+                    ...action.payload,
+                }
+                return {
+                    ...state,
+                    messages: state.messages.map((m: Message, i) =>
+                        i === messageIndex ? updatedMessage : m,
+                    ),
+                }
+            }
+
         case ActionType.ADD_TO_ROOMS: {
             const roomIndex = state.rooms.findIndex(
                 (r: Room) => r.id === action.payload.id,
@@ -188,53 +292,30 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
-        case ActionType.ADD_TO_MESSAGES:
-            const messageIndex = state.messages.findIndex(
-                (m: Message) => m.id === action.payload.id,
-            )
-
-            if (messageIndex === -1) {
-                // New messages get added
-                return {
-                    ...state,
-                    messages: [...state.messages, new Message(action.payload)],
-                }
-            } else if (
-                // Should we deep compare or just use ID?
-                // isEqual(action.payload, state.messages[messageIndex])
-                action.payload.id === state.messages[messageIndex].id
-            ) {
-                // Avoid re-render, this message is already added
-                // and has not changed
-                return state
-            } else {
-                // message is already added but has changed...
-                const updatedMessage = {
-                    ...state.messages[messageIndex],
-                    ...action.payload,
-                }
-                return {
-                    ...state,
-                    messages: state.messages.map((m: Message, i) =>
-                        i === messageIndex ? updatedMessage : m,
-                    ),
-                }
-            }
         case ActionType.CHANGE_USER_IS_ONLINE:
             return {
                 ...state,
                 userIsOnline: action.payload,
             }
+        case ActionType.RECEIVE_MEMBERS_SEEN:
+            return {
+                ...state,
+                membersSeen: [...action.payload].map(m => new Member(m)),
+            }
         case ActionType.RECEIVE_MESSAGES:
             return {
                 ...state,
-                messages: [...action.payload],
+                messages: [...action.payload].map(m => new Message(m)),
             }
         case ActionType.RECEIVE_ROOMS:
-            console.info('RECEIVE_ROOMS.rooms', action.payload)
             return {
                 ...state,
-                rooms: [...action.payload],
+                rooms: [...action.payload].map(r => new Room(r)),
+            }
+        case ActionType.SET_AUTHENTICATED_MEMBER:
+            return {
+                ...state,
+                authenticatedMember: action.payload,
             }
         case ActionType.SET_XMPP_CLIENT:
             // Stop the existing xmppClient before overwriting it
@@ -317,18 +398,6 @@ export function reducer(state: AppState, action: Action): AppState {
         default:
             return state
     }
-}
-
-export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
-// This is the XMPP Multi-User-Chat (MUC) domain defined
-// in prosody.config.lua on the XMPP server
-// https://prosody.im/doc/modules/mod_muc
-export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
-export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
-export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
-export const XMPP_CONNECTION_OPTIONS: Options = {
-    service: XMPP_SERVICE,
-    resource: 'community',
 }
 
 // Creates an ephemeral XMPP client used solely for registration
@@ -438,19 +507,49 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
         // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
+            if (stanza.is('presence')) {
+                // ignore if there is no presence data
+                const user = stanza.getChild('x')
+                if (!user) return
+
+                const statusCode = user?.getChild('status')?.getAttr('code')
+
+                // This is a self-presence code, we don't
+                // need to add to membersSeen
+                if (statusCode === '110') return
+
+                // Make sure this presence stanza came from the main domain
+                // so we can create a member with the JID
+                const from = stanza.getAttr('from')
+                const fromJid = jid(from)
+                let userJid: JID = fromJid
+
+                // This came from a user through the MUC domain, reformat JID
+                // to main domain with the /community resource
+                if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
+                    userJid = jid(
+                        fromJid.getResource(),
+                        XMPP_DOMAIN,
+                        XMPP_RESOURCE,
+                    )
+                }
+
+                dispatch(
+                    addToMembersSeen(
+                        new Member({
+                            jid: userJid,
+                        }),
+                    ),
+                )
+            }
             if (stanza.is('message')) {
-                if (
-                    stanza.getAttr('type') === 'chat' ||
-                    stanza.getAttr('type') === 'groupchat'
-                ) {
+                if (stanza.getAttr('type') === 'groupchat') {
                     const from = stanza.getAttr('from')
                     const room = from.split('@')[0]
                     const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
                     const bodyText = stanza.getChildText('body') as string
 
-                    console.info(from)
-                    console.info(room)
-                    console.info(sender)
+                    console.info(from, room, sender)
                     console.info(bodyText)
                     if (bodyText) {
                         // environmentState.toast?.show(body, 5000)
@@ -461,7 +560,24 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                             sentIn: new Room({
                                 id: room,
                             }),
-                            sentBy: new Member({ username: sender }),
+                            sentBy: new Member({
+                                jid: jid(sender, XMPP_DOMAIN, XMPP_RESOURCE),
+                            }),
+                        })
+                        dispatch(addToMessages(newMessage))
+                        dispatch(updateRoomMessagePreview(newMessage))
+                    }
+                } else if (stanza.getAttr('type') === 'chat') {
+                    const bodyText = stanza.getChildText('body') as string
+                    const directMessageJson = stanza.getChildText(
+                        'dm',
+                    ) as string
+
+                    if (bodyText) {
+                        const parsedMessage = JSON.parse(directMessageJson)
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                            receivedAt: Date.now() / 1000,
                         })
                         dispatch(addToMessages(newMessage))
                         dispatch(updateRoomMessagePreview(newMessage))
@@ -479,6 +595,15 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             await xmpp.send(xml('presence'))
 
             dispatch(changeUserIsOnline(true))
+            if (xmpp.jid) {
+                dispatch(
+                    setAuthenticatedMember(
+                        new Member({
+                            jid: jid(xmpp.jid.toString()),
+                        }),
+                    ),
+                )
+            }
         })
 
         xmpp.start().catch(console.error)
@@ -502,6 +627,18 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             )
         }
     }, [state.rooms])
+
+    // Update async storage when members are added
+    useEffect(() => {
+        console.log('useEffect: members')
+        if (state.membersSeen.length > 0) {
+            console.log('storing', state.membersSeen.length, 'members')
+            AsyncStorage.setItem(
+                COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                JSON.stringify({ members: state.membersSeen }),
+            )
+        }
+    }, [state.membersSeen])
 
     // Update async storage when messages are added
     useEffect(() => {

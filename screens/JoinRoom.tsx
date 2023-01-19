@@ -27,7 +27,7 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (input.startsWith('fedi:room:')) {
                 console.info('fedi community room detected', input)
-                navigation.replace('Room', {
+                navigation.replace('RoomChat', {
                     room: Room.decodeInvitationLink(input),
                 })
             } else {

@@ -1,3 +1,5 @@
+import { Options } from '@xmpp/client'
+
 import i18n from './localization/i18n'
 
 // Regtest feds
@@ -12,12 +14,26 @@ export const FEDERATION_SIGNET =
 export const TEST_FEDERATION = FEDERATION_ALPHA
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 export const COMMUNITY_PERSISTENCE_KEY = 'AsyncStorage-CommunityContext'
+export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
+    'AsyncStorage-CommunityContext-members'
 export const COMMUNITY_MESSAGES_PERSISTENCE_KEY =
     'AsyncStorage-CommunityContext-messages'
 export const COMMUNITY_ROOMS_PERSISTENCE_KEY =
     'AsyncStorage-CommunityContext-rooms'
 
 export const DEFAULT_ROOM_NAME = i18n.t('feature.community.new-room')
+export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
+// This is the XMPP Multi-User-Chat (MUC) domain defined
+// in prosody.config.lua on the XMPP server
+// https://prosody.im/doc/modules/mod_muc
+export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
+export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
+export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
+export const XMPP_RESOURCE = 'community'
+export const XMPP_CONNECTION_OPTIONS: Options = {
+    service: XMPP_SERVICE,
+    resource: XMPP_RESOURCE,
+}
 
 export const SITES = [
     // TODO: Show only for regtest federations

@@ -16,6 +16,7 @@ import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateUsername from './screens/CreateUsername'
 import DeveloperSettings from './screens/DeveloperSettings'
+import DirectChat from './screens/DirectChat'
 import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
@@ -24,6 +25,7 @@ import Home from './screens/Home'
 import Initializing from './screens/Initializing'
 import JoinRoom from './screens/JoinRoom'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import NewMessage from './screens/NewMessage'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -34,8 +36,8 @@ import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
-import Room from './screens/Room'
 import RoomAdmin from './screens/RoomAdmin'
+import RoomChat from './screens/RoomChat'
 import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -64,6 +66,7 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
+import NewMessageHeader from './components/feature/community/NewMessageHeader'
 import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
 import RoomHeader from './components/feature/community/RoomHeader'
 import RoomInviteHeader from './components/feature/community/RoomInviteHeader'
@@ -209,6 +212,13 @@ const MainNavigator = () => {
                             />
                             {/* Community */}
                             <Stack.Screen
+                                name="NewMessage"
+                                component={NewMessage}
+                                options={() => ({
+                                    header: () => <NewMessageHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="JoinRoom"
                                 component={JoinRoom}
                                 options={() => ({
@@ -223,8 +233,15 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="Room"
-                                component={Room}
+                                name="DirectChat"
+                                component={DirectChat}
+                                options={() => ({
+                                    header: () => <RoomHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RoomChat"
+                                component={RoomChat}
                                 options={() => ({
                                     header: () => <RoomHeader />,
                                 })}

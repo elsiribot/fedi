@@ -30,7 +30,7 @@ const Community: React.FC<Props> = () => {
                 size="large"
                 placement="right"
                 onPress={() => {
-                    navigation.navigate('JoinRoom')
+                    navigation.navigate('NewMessage')
                 }}
             />
         </View>

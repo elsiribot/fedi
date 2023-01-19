@@ -1,5 +1,8 @@
+import { jid } from '@xmpp/client'
+import { JID } from '@xmpp/jid'
 import { ImageSourcePropType } from 'react-native'
-import Base from '../bridge'
+
+import Base, { Invoice } from '../bridge'
 import { DEFAULT_ROOM_NAME } from '../constants'
 import i18n from '../localization/i18n'
 
@@ -64,6 +67,8 @@ export class Room extends Base {
     // TODO: What exactly is encoded in this invitationCode?
     invitationCode?: FediRoomLink
 
+    members?: Member[]
+
     // Consider MessagePreview type:
     lastMessage?: MessagePreview
     // or simplify:
@@ -118,8 +123,14 @@ export type RoomSettings = {
 }
 
 export class Member extends Base {
-    username: string
-    pubkey?: string
+    jid: JID
+    constructor(data: any) {
+        super(data)
+        this.jid = jid(data.jid._local, data.jid._domain, data.jid._resource)
+    }
+    get username(): string {
+        return this.jid.getLocal()
+    }
 }
 
 export class Message extends Base {
@@ -127,10 +138,16 @@ export class Message extends Base {
     content: string
     sentAt?: number
     receivedAt?: number
-    sentBy?: Member
     sentIn?: Room
+    sentBy?: Member
+    sentTo?: Member
     actions?: MessageAction[]
     payment?: Payment
+    constructor(data: any) {
+        super(data)
+        if (data.sentBy) this.sentBy = new Member(data.sentBy)
+        if (data.sentTo) this.sentTo = new Member(data.sentTo)
+    }
 }
 
 // This is for embedding action buttons within messages
@@ -140,10 +157,12 @@ export type MessageAction = {
     handler: () => {}
 }
 
-export type Payment = {
-    amount: number
+export class Payment extends Base {
+    amount: MSats
     status: PaymentStatus
+    memo?: string
     token?: string
+    invoice?: Invoice
 }
 
 export enum PaymentStatus {

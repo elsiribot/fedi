@@ -7,11 +7,13 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { LightningGateway } from '../bridge'
 import {
+    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
 } from '../constants'
 import {
     MOCKED_ROOMS,
+    receiveMembersSeen,
     receiveMessages,
     receiveRooms,
     useCommunityContext,
@@ -102,10 +104,16 @@ const DeveloperSettings: React.FC<Props> = () => {
                 />
             </View>
             <Button
-                title={'Delete all rooms & messages'}
+                size="sm"
+                title={'Delete all rooms, messages, & members'}
                 onPress={() => {
+                    communityDispatch(receiveMembersSeen([]))
                     communityDispatch(receiveMessages([]))
                     communityDispatch(receiveRooms(MOCKED_ROOMS))
+                    AsyncStorage.setItem(
+                        COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                        JSON.stringify({ members: [] }),
+                    )
                     AsyncStorage.setItem(
                         COMMUNITY_MESSAGES_PERSISTENCE_KEY,
                         JSON.stringify({ messages: [] }),
@@ -117,12 +125,14 @@ const DeveloperSettings: React.FC<Props> = () => {
                 }}
             />
             <Button
+                size="sm"
                 title="Reset username"
                 onPress={() => {
                     federationsDispatch(resetFederationUsername())
                 }}
             />
             <Button
+                size="sm"
                 title="Send XML"
                 onPress={() => {
                     sendTestXml()

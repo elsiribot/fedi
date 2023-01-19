@@ -1,6 +1,6 @@
 import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { BtcLnUri, MSats, Room, Site } from '.'
+import { BtcLnUri, Member, MSats, Room, Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -41,6 +41,7 @@ export type RootStackParamList = {
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConnectedFederationsDrawer: undefined
     CreateUsername: undefined
+    DirectChat: { member: Member }
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
@@ -48,6 +49,7 @@ export type RootStackParamList = {
     Home: undefined
     Initializing: { reset: boolean }
     JoinRoom: undefined
+    NewMessage: undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
@@ -59,7 +61,7 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    Room: { room: Room }
+    RoomChat: { room: Room }
     RoomAdmin: { room: Room }
     RoomInvite: { room: Room }
     ScanFederationCode: undefined

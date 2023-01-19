@@ -28,14 +28,10 @@ import {
     validateBackupFile,
     validateEcash,
 } from '../../bridge'
-import { MSats, Room, Sats } from '../../types'
+import { XMPP_MUC_DOMAIN } from '../../constants'
+import { Member, Message, MSats, Room, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
-import {
-    addToRooms,
-    useCommunityContext,
-    XMPP_DOMAIN,
-    XMPP_MUC_DOMAIN,
-} from '../contexts/CommunityContext'
+import { addToRooms, useCommunityContext } from '../contexts/CommunityContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -190,8 +186,9 @@ export const useBridge = () => {
 
 type OutgoingMessage = {
     text?: string
-    fromUser?: string
-    toUser?: string
+    from?: Member
+    to?: Member
+    message: Message
 }
 type OutgoingGroupMessage = {
     text?: string
@@ -344,22 +341,30 @@ export const useXmpp = () => {
                 )
             })
         }, [xmppClient]),
-        sendMessage: useCallback(
-            async ({ text, toUser }: OutgoingMessage) => {
-                const { local, domain, resource } = xmppClient?.jid as JID
-                const fromUser = `${local}@${domain}/${resource}`
-                const to = `${toUser}@${XMPP_DOMAIN}`
+        sendDirectMessage: useCallback(
+            async ({ message, to }: OutgoingMessage) => {
+                const fromJid = xmppClient?.jid?.toString()
+                const toJid = to?.jid.toString()
 
                 await xmppClient?.send(
                     xml(
                         'message',
                         {
-                            id: uuid.v4(),
-                            from: fromUser,
+                            id: message.id,
                             type: 'chat',
-                            to,
+                            from: fromJid,
+                            to: toJid,
                         },
-                        xml('body', { xmlns: 'jabber:client' }, text as string),
+                        xml(
+                            'body',
+                            { xmlns: 'jabber:client' },
+                            message.content as string,
+                        ),
+                        xml(
+                            'dm',
+                            { xmlns: 'fedi:direct-message' },
+                            JSON.stringify(message),
+                        ),
                     ),
                 )
             },
