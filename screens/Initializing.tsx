@@ -127,8 +127,8 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 restoreRooms()
             }
 
-            restoreFederationsState()
             restoreCommunityState()
+            restoreFederationsState()
         }
 
         if (reset === true) {
