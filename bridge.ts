@@ -107,6 +107,10 @@ export enum AddressOrInvoice {
     invoice = 'invoice',
 }
 
+export type SocialRecoveryQrCode = {
+    recoveryId: string
+}
+
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter
 
@@ -433,10 +437,12 @@ export async function validateRecoveryFile(
 }
 
 // This string contains a public key and URL to video file
-export async function recoveryQr(federationId: string): Promise<string> {
+export async function recoveryQr(
+    federationId: string,
+): Promise<SocialRecoveryQrCode> {
     let payload = JSON.stringify({ federationId })
     let response = await FedimintFfi.rpc('recoveryQr', payload)
-    return handleRpcResponse<string>(response)
+    return handleRpcResponse<SocialRecoveryQrCode>(response)
 }
 
 export async function socialRecoveryApprovals(
@@ -444,7 +450,6 @@ export async function socialRecoveryApprovals(
 ): Promise<SocialRecoveryEvent> {
     let payload = JSON.stringify({ federationId })
     let response = await FedimintFfi.rpc('socialRecoveryApprovals', payload)
-    console.log('approvals response', response)
     return handleRpcResponse<SocialRecoveryEvent>(response)
 }
 
@@ -491,6 +496,18 @@ export async function approveSocialRecoveryRequest(
     // Simulate success/failure modes
     return handleRpcResponse<null>('{"result": "null"}')
     // return handleRpcResponse<null>('{"error": "social recovery approval failed"}')
+}
+
+export async function socialRecoveryDownloadVerificationDoc(
+    recoveryId: string,
+    federationId: string,
+): Promise<string | null> {
+    let payload = JSON.stringify({ federationId, recoveryId })
+    let response = await FedimintFfi.rpc(
+        'socialRecoveryDownloadVerificationDoc',
+        payload,
+    )
+    return handleRpcResponse<string | null>(response)
 }
 
 /*

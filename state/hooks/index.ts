@@ -24,6 +24,7 @@ import {
     recoverFromMnemonic,
     recoveryQr,
     socialRecoveryApprovals,
+    socialRecoveryDownloadVerificationDoc,
     switchGateway,
     updateTransactionNotes,
     uploadBackupFile,
@@ -166,6 +167,15 @@ export const useBridge = () => {
             (userPublicKey: string) => {
                 return denySocialRecoveryRequest(
                     userPublicKey,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
+        socialRecoveryDownloadVerificationDoc: useCallback(
+            (recoveryId: string) => {
+                return socialRecoveryDownloadVerificationDoc(
+                    recoveryId,
                     selectedFederation!.name,
                 )
             },

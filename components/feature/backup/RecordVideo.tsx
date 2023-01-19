@@ -23,6 +23,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
 
     const startRecording = async () => {
         setIsRecording(true)
+        console.log('codecs', await camera.current?.getAvailableVideoCodecs())
         camera.current?.startRecording({
             onRecordingFinished: saveVideo,
             onRecordingError: error => {
@@ -30,6 +31,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
             },
             // FIXME: will this always be available?
             fileType: 'mp4',
+            videoCodec: 'h264',
         })
     }
 
@@ -59,6 +61,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
                     isActive={true}
                     video={true}
                     audio={true}
+                    preset="high"
                 />
             </View>
             <Text

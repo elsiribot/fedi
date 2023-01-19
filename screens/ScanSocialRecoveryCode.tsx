@@ -5,10 +5,12 @@ import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
+import { SocialRecoveryQrCode } from '../bridge'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,27 +20,57 @@ export type Props = NativeStackScreenProps<
 
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
+    const { socialRecoveryDownloadVerificationDoc } = useBridge()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            if (input.startsWith('socialrecovery:')) {
-                console.info('fedi social recovery detected', input)
-                const parts = input.split('::')
-                const userPublicKey = parts[1]
-                const videoUrl = parts[2]
-                console.info(userPublicKey, videoUrl)
+            // if (input.startsWith('socialrecovery:')) {
+            //     console.info('fedi social recovery detected', input)
+            //     const parts = input.split('::')
+            //     const userPublicKey = parts[1]
+            //     const videoUrl = parts[2]
+            //     console.info(userPublicKey, videoUrl)
 
-                navigation.navigate('CompleteRecoveryAssist', {
-                    userPublicKey,
-                    videoUrl,
-                })
-            } else {
+            //     navigation.navigate('CompleteRecoveryAssist', {
+            //         userPublicKey,
+            //         videoUrl,
+            //     })
+            // } else {
+            //     toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
+            // }
+            try {
+                console.log('parsin', input)
+                let qr: SocialRecoveryQrCode = JSON.parse(input)
+                console.log('parsed')
+                try {
+                    console.log('downloading')
+                    let videoPath = await socialRecoveryDownloadVerificationDoc(
+                        qr.recoveryId,
+                    )
+                    console.log('downloaded', videoPath)
+                    if (videoPath == null) {
+                        // FIXME: internationalize
+                        toast?.show('nothing to download frmo guardian', 3000)
+                    } else {
+                        console.log('todo: navigtate')
+                        navigation.navigate('CompleteRecoveryAssist', {
+                            videoPath: videoPath as string,
+                        })
+                    }
+                } catch (e) {
+                    console.log("couldn't download video", e)
+                    // FIXME: internationalize
+                    toast?.show('failed to download from guardian', 3000)
+                }
+            } catch (e) {
+                // FIXME: this isn't quite right error message. It's more like "valid qr, couldn't download"
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
+            console.log(input)
         },
-        [navigation, toast, t],
+        [navigation, toast, t, socialRecoveryDownloadVerificationDoc],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -57,6 +89,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 <QrCodeScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
+                        // FIXME: only 1 request at-a-time
                         handleUserInput(qrCodeData)
                     }}
                 />

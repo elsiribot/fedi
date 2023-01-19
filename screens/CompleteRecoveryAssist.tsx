@@ -24,41 +24,40 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const { approveSocialRecoveryRequest, denySocialRecoveryRequest } =
         useBridge()
     const { toast } = useEnvironmentContext().state
-    const { userPublicKey, videoUrl } = route.params
+    const { videoPath } = route.params
     const [isPaused, setIsPaused] = useState(true)
     const [approvalSelected, setApprovalSelected] = useState(false)
     const [denialSelected, setDenialSelected] = useState(false)
 
-    console.info('userPublicKey', userPublicKey)
-
     const handleGuardianApproval = async () => {
-        try {
-            await approveSocialRecoveryRequest(userPublicKey)
-            navigation.replace('RecoveryAssistSuccess')
-        } catch (error) {
-            const typedError = error as Error
-            console.error(typedError)
-            toast?.show(typedError?.message, 3000)
-        }
+        // try {
+        //     await approveSocialRecoveryRequest(userPublicKey)
+        //     navigation.replace('RecoveryAssistSuccess')
+        // } catch (error) {
+        //     const typedError = error as Error
+        //     console.error(typedError)
+        //     toast?.show(typedError?.message, 3000)
+        // }
     }
 
     const handleGuardianDenial = async () => {
-        try {
-            await denySocialRecoveryRequest(userPublicKey)
-            // TODO: Go to denial screen once design is provided
-            navigation.replace('RecoveryAssistSuccess')
-        } catch (error) {
-            const typedError = error as Error
-            console.error(typedError)
-            toast?.show(typedError?.message, 3000)
-        }
+        // try {
+        //     await denySocialRecoveryRequest(userPublicKey)
+        //     // TODO: Go to denial screen once design is provided
+        //     navigation.replace('RecoveryAssistSuccess')
+        // } catch (error) {
+        //     const typedError = error as Error
+        //     console.error(typedError)
+        //     toast?.show(typedError?.message, 3000)
+        // }
     }
 
+    // console.log('videoPath', `file://${videoPath}`)
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
                 <Video
-                    source={{ uri: videoUrl }} // Can be a URL or a local file.
+                    source={{ uri: `file://${videoPath}` }} // Can be a URL or a local file.
                     style={[
                         styles(theme).video,
                         isPaused ? styles(theme).shaded : {},

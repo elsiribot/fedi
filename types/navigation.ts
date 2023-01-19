@@ -32,7 +32,7 @@ export type RootStackParamList = {
     BitcoinRequest: { uri: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
-    CompleteRecoveryAssist: { userPublicKey: string; videoUrl: string }
+    CompleteRecoveryAssist: { videoPath: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
     ConfirmReceiveOffline: { ecash: string; amount: MSats }

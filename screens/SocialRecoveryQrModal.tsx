@@ -33,7 +33,7 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
         const getRecoveryAssistCode = async () => {
             const recoveryAssistCode = await recoveryQr()
             console.info('recoveryAssistCode', recoveryAssistCode)
-            setRecoveryQrCode(recoveryAssistCode)
+            setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
         }
 
         getRecoveryAssistCode()
