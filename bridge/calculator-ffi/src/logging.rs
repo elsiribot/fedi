@@ -1,3 +1,5 @@
+// Stop complaining about unused variables due to cfg macros
+#![allow(unused)]
 use std::{collections::BTreeMap, sync::Arc};
 
 use tracing::metadata::LevelFilter;

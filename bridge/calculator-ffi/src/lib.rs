@@ -65,14 +65,18 @@ async fn get_bridge() -> Option<Arc<Bridge>> {
 
 pub fn fedimint_init(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
     RUNTIME.block_on(async {
-        let event_sink = Arc::new(EventSinkWrapper { event_sink });
-        init_logging(event_sink.clone());
-        tracing::info!("init called ...");
-
-        let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone()).await;
-
-        set_bridge(bridge).await;
+        fedimint_init_async(data_dir, event_sink).await;
     })
+}
+
+async fn fedimint_init_async(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
+    let event_sink = Arc::new(EventSinkWrapper { event_sink });
+    init_logging(event_sink.clone());
+    tracing::info!("init called ...");
+
+    let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone()).await;
+
+    set_bridge(bridge).await;
 }
 
 fn rpc_error(description: &str) -> String {
@@ -86,7 +90,7 @@ async fn get_federation(federation_id: &str) -> Arc<Federation> {
     federation.clone() // FIXME: don't clone
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListTransactionsPayload {
     federation_id: String,
@@ -103,7 +107,7 @@ async fn handle_list_transactions(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": transactions }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateTransactionNotePayload {
     federation_id: String,
@@ -123,7 +127,7 @@ async fn handle_update_transaction_notes(payload: String) -> anyhow::Result<Stri
     Ok(json!({ "result": () }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinFederationPayload {
     connect_string: String,
@@ -156,7 +160,7 @@ async fn handle_list_federations() -> anyhow::Result<String> {
     Ok(json!({ "result": federations }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GenerateInvoicePayload {
     federation_id: String,
@@ -176,7 +180,7 @@ async fn handle_generate_invoice(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": invoice.to_string() }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayInvoicePayload {
     federation_id: String,
@@ -194,7 +198,7 @@ async fn handle_pay_invoice(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": () }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddressOrInvoicePayload {
     federation_id: String,
@@ -243,7 +247,7 @@ async fn handle_address_or_invoice(payload: String) -> anyhow::Result<String> {
     Err(anyhow!("Not an address or invoice"))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GenerateAddressPayload {
     federation_id: String,
@@ -259,7 +263,7 @@ async fn handle_generate_address(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": address.to_string() }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GenerateEcashPayload {
     federation_id: String,
@@ -305,7 +309,7 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": ecash }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReceiveEcashPayload {
     federation_id: String,
@@ -335,7 +339,7 @@ async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
 }
 
 // FIXME: this is the same as ReceiveOfflinePayload ...
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidateEcashPayload {
     federation_id: String,
@@ -362,7 +366,7 @@ async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": { "valid": valid, "amount": amount }}).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DecodeInvoicePayload {
     invoice: String,
@@ -379,7 +383,7 @@ async fn handle_decode_invoice(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": bridge_invoice }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayAddressPayload {
     federation_id: String,
@@ -431,7 +435,7 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": out_point.txid.to_string() }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LnurlSignMessagePayload {
     /// hex-encoded message
@@ -456,7 +460,7 @@ async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
     )
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListGatewaysPayload {
     federation_id: String,
@@ -485,7 +489,7 @@ async fn handle_list_gateways(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": bridge_gateways }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SwitchGatewayPayload {
     federation_id: String,
@@ -508,7 +512,7 @@ async fn handle_switch_gateway(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": () }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetMnemonicPayload {
     federation_id: String,
@@ -524,7 +528,7 @@ async fn handle_get_mnemonic(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": mnemonic.serialize() }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoverFromMnemonicPayload {
     federation_id: String,
@@ -550,7 +554,7 @@ async fn handle_recover_from_mnemonic(payload: String) -> anyhow::Result<String>
     Ok(json!({ "result": () }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DangerousLeaveFederationPayload {
     federation_id: String,
@@ -566,7 +570,7 @@ async fn handle_dangerous_leave_federation(payload: String) -> anyhow::Result<St
     Ok(json!({ "result": () }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadBackupFilePayload {
     federation_id: String,
@@ -596,7 +600,7 @@ async fn handle_locate_recovery_file(_payload: String) -> anyhow::Result<String>
     Ok(json!({ "result": recovery_file_path }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidateRecoveryFilePayload {
     federation_id: String,
@@ -626,7 +630,7 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     Ok(json!({ "result": valid }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryQrPayload {
     federation_id: String,
@@ -649,7 +653,7 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
     Ok(json!({ "result": qr }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryApprovalsPayload {
     federation_id: String,
@@ -673,7 +677,7 @@ async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<Str
     Ok(json!({ "result": result }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryDownloadVerificationDocPayload {
     federation_id: String,
@@ -699,7 +703,7 @@ async fn handle_social_recovery_download_verification_doc(
     Ok(json!({ "result": path }).to_string())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApproveSocialRecoveryRequestPayload {
     federation_id: String,
@@ -755,15 +759,6 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             }
             "approveSocialRecoveryRequest" => handle_approve_social_recovery_request(payload).await,
 
-            // return whether we're currently recovering ecash tokens or not
-            "ecashRecoveryState" => todo!(),
-            // return whether we're currently recovering ecash tokens or not
-            "socialRecoveryState" => todo!(),
-            // present the QR data. if there isn't social recovery session, start one.
-            // "socialRecoveryQr" => todo!(),
-            // takes recovery id, downloads verificaiton document, saves to disk, returns path
-            "downloadVerificationDocument" => todo!(),
-
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
                 other
@@ -786,6 +781,8 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
 }
 
 mod tests {
+    use tracing::debug;
+
     use super::*;
 
     struct FakeEventSink;
@@ -802,12 +799,38 @@ mod tests {
         }
     }
 
+    fn create_data_dir() -> String {
+        let data_dir = tempfile::tempdir()
+            .unwrap()
+            .into_path()
+            .display()
+            .to_string();
+        debug!(data_dir = data_dir);
+        data_dir
+    }
+
+    #[test]
+    fn test_fedimint_init() {
+        let event_sink = FakeEventSink::new();
+        fedimint_init(create_data_dir(), Box::new(event_sink));
+    }
+
     #[test]
     fn test_decryption_shares() {
-        let event_sink = FakeEventSink::new();
-        let connection_string = r#"{"members":[[0,"wss:;//4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#;
-        // TODO: make this directory
-        let data_dir = String::from("/Users/justin/fedi/bridge/tests");
-        fedimint_init(data_dir, Box::new(event_sink));
+        // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
+        RUNTIME.block_on(async {
+            let event_sink = FakeEventSink::new();
+            // TODO: make this directory
+            fedimint_init_async(create_data_dir(), Box::new(event_sink)).await;
+
+            // join federation
+            let connect_string = String::from(
+                r#"{"members":[[0,"wss://4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#,
+            );
+            let connect_string = serde_json::to_string(&JoinFederationPayload { connect_string}).unwrap();
+            handle_join_federation(connect_string).await.unwrap();
+
+            let recovery_file = String::from("/Users/justin/fedi/bridge/fixtures/backup.txt");
+        });
     }
 }
