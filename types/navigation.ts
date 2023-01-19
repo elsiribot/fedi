@@ -48,6 +48,7 @@ export type RootStackParamList = {
     Home: undefined
     Initializing: { reset: boolean }
     JoinRoom: undefined
+    NewMessage: undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined

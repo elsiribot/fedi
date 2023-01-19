@@ -24,6 +24,7 @@ import Home from './screens/Home'
 import Initializing from './screens/Initializing'
 import JoinRoom from './screens/JoinRoom'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import NewMessage from './screens/NewMessage'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -64,6 +65,7 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
+import NewMessageHeader from './components/feature/community/NewMessageHeader'
 import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
 import RoomHeader from './components/feature/community/RoomHeader'
 import RoomInviteHeader from './components/feature/community/RoomInviteHeader'
@@ -208,6 +210,13 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             {/* Community */}
+                            <Stack.Screen
+                                name="NewMessage"
+                                component={NewMessage}
+                                options={() => ({
+                                    header: () => <NewMessageHeader />,
+                                })}
+                            />
                             <Stack.Screen
                                 name="JoinRoom"
                                 component={JoinRoom}

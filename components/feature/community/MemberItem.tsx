@@ -1,0 +1,49 @@
+import { Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { Pressable, StyleSheet } from 'react-native'
+
+import { Member } from '../../../types'
+import HoloAvatar, { AvatarSize } from '../../ui/HoloAvatar'
+
+type MemberItemProps = {
+    member: Member
+    selectMember: (member: Member) => void
+}
+
+const MemberItem: React.FC<MemberItemProps> = ({
+    member,
+    selectMember,
+}: MemberItemProps) => {
+    const { theme } = useTheme()
+
+    return (
+        <Pressable
+            style={[styles(theme).container]}
+            onPress={() => {
+                selectMember(member)
+            }}>
+            <HoloAvatar
+                title={member.username.substring(0, 1).toUpperCase()}
+                size={AvatarSize.md}
+            />
+            <Text bold style={[styles(theme).usernameText]}>
+                {member.username}
+            </Text>
+        </Pressable>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            paddingVertical: theme.spacing.sm,
+        },
+        usernameText: {
+            marginLeft: theme.spacing.md,
+        },
+    })
+
+export default MemberItem
