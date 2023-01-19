@@ -16,6 +16,7 @@ import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateUsername from './screens/CreateUsername'
 import DeveloperSettings from './screens/DeveloperSettings'
+import DirectChat from './screens/DirectChat'
 import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
@@ -35,8 +36,8 @@ import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
-import Room from './screens/Room'
 import RoomAdmin from './screens/RoomAdmin'
+import RoomChat from './screens/RoomChat'
 import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -232,8 +233,15 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="Room"
-                                component={Room}
+                                name="DirectChat"
+                                component={DirectChat}
+                                options={() => ({
+                                    header: () => <RoomHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RoomChat"
+                                component={RoomChat}
                                 options={() => ({
                                     header: () => <RoomHeader />,
                                 })}

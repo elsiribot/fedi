@@ -2,10 +2,10 @@ import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
-import { DEFAULT_ROOM_NAME } from '../../../constants'
 
+import { DEFAULT_ROOM_NAME } from '../../../constants'
 import { useCommunityContext } from '../../../state/contexts/CommunityContext'
-import { Room } from '../../../types'
+import { Message, Room } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import RoomTile from './RoomTile'
 
@@ -15,7 +15,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const RoomsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { rooms } = useCommunityContext().state
+    const { authenticatedMember, rooms, messages } = useCommunityContext().state
 
     const renderRoom: ListRenderItem<Room> = ({ item }) => {
         return (
@@ -23,25 +23,81 @@ const RoomsList: React.FC<{}> = () => {
                 room={item}
                 selectRoom={(room: Room) => {
                     console.log('go to room detail', room.id)
-                    navigation.navigate('Room', {
-                        room: new Room({
-                            id: room.id,
-                            name: room.name,
-                            invitationCode: Room.encodeInvitationLink(
-                                room.id,
-                                room.name || DEFAULT_ROOM_NAME,
-                            ),
-                        }),
-                    })
+                    if (room.members?.length === 1) {
+                        navigation.navigate('DirectChat', {
+                            member: room.members[0],
+                        })
+                    } else {
+                        navigation.navigate('RoomChat', {
+                            room: new Room({
+                                id: room.id,
+                                name: room.name,
+                                invitationCode: Room.encodeInvitationLink(
+                                    room.id,
+                                    room.name || DEFAULT_ROOM_NAME,
+                                ),
+                            }),
+                        })
+                    }
                 }}
             />
         )
     }
 
+    console.debug('messages', messages)
+    const directMessages = messages.filter(m => !m.sentIn)
+    // const directChats = groupBy(directMessages, (m: Message) => {
+    //     return m.sentTo.username || m.sentBy.username
+    // })
+    console.debug('directMessages', directMessages)
+
+    // Produce a set of direct chat rooms from all direct messages
+    const directChats: Room[] = directMessages.reduce(
+        (roomsResult: Room[], m: Message) => {
+            // Determine the other member that is not the authenticatedMember
+            // since they may have sent or received the message
+            let otherMember = m.sentTo
+            if (m.sentTo?.username === authenticatedMember?.username) {
+                otherMember = m.sentBy
+            }
+            const existingRoomIndex = roomsResult.findIndex(
+                r => r.id === otherMember?.username,
+            )
+
+            if (existingRoomIndex === -1) {
+                // Add the room if it doesn't exist
+                roomsResult.push(
+                    new Room({
+                        id: otherMember?.username,
+                        name: otherMember?.username,
+                        members: [otherMember],
+                        messagePreview: m.content,
+                        lastReceivedTimestamp: m.sentAt,
+                    }),
+                )
+                return roomsResult
+            } else {
+                // Room exists, check if message previews should be updated
+                const updatedRoom = roomsResult[existingRoomIndex]
+                if (updatedRoom.lastReceivedTimestamp! < m.sentAt!) {
+                    updatedRoom.lastReceivedTimestamp = m.sentAt
+                    updatedRoom.messagePreview = m.content
+
+                    roomsResult = roomsResult.map((r: Room, i) =>
+                        i === existingRoomIndex ? updatedRoom : r,
+                    )
+                }
+            }
+            return roomsResult
+        },
+        [] as Room[],
+    )
+    console.debug('directChats', directChats)
+
     return (
         <FlatList
             style={styles(theme).container}
-            data={rooms}
+            data={[...rooms, ...directChats]}
             renderItem={renderRoom}
             keyExtractor={(item: Room) => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content

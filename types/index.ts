@@ -67,6 +67,8 @@ export class Room extends Base {
     // TODO: What exactly is encoded in this invitationCode?
     invitationCode?: FediRoomLink
 
+    members?: Member[]
+
     // Consider MessagePreview type:
     lastMessage?: MessagePreview
     // or simplify:
@@ -136,10 +138,16 @@ export class Message extends Base {
     content: string
     sentAt?: number
     receivedAt?: number
-    sentBy?: Member
     sentIn?: Room
+    sentBy?: Member
+    sentTo?: Member
     actions?: MessageAction[]
     payment?: Payment
+    constructor(data: any) {
+        super(data)
+        if (data.sentBy) this.sentBy = new Member(data.sentBy)
+        if (data.sentTo) this.sentTo = new Member(data.sentTo)
+    }
 }
 
 // This is for embedding action buttons within messages

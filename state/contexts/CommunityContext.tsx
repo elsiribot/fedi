@@ -543,10 +543,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                 )
             }
             if (stanza.is('message')) {
-                if (
-                    stanza.getAttr('type') === 'chat' ||
-                    stanza.getAttr('type') === 'groupchat'
-                ) {
+                if (stanza.getAttr('type') === 'groupchat') {
                     const from = stanza.getAttr('from')
                     const room = from.split('@')[0]
                     const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
@@ -566,6 +563,21 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                             sentBy: new Member({
                                 jid: jid(sender, XMPP_DOMAIN, XMPP_RESOURCE),
                             }),
+                        })
+                        dispatch(addToMessages(newMessage))
+                        dispatch(updateRoomMessagePreview(newMessage))
+                    }
+                } else if (stanza.getAttr('type') === 'chat') {
+                    const bodyText = stanza.getChildText('body') as string
+                    const directMessageJson = stanza.getChildText(
+                        'dm',
+                    ) as string
+
+                    if (bodyText) {
+                        const parsedMessage = JSON.parse(directMessageJson)
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                            receivedAt: Date.now() / 1000,
                         })
                         dispatch(addToMessages(newMessage))
                         dispatch(updateRoomMessagePreview(newMessage))

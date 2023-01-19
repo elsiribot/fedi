@@ -18,8 +18,7 @@ const MembersList: React.FC<MembersListProps> = ({
     const navigation = useNavigation<NavigationHook>()
 
     const openDirectChat = (member: Member) => {
-        console.log('member', member)
-        // navigation.navigate('DirectChat', { member })
+        navigation.navigate('DirectChat', { member })
     }
 
     const renderMember: ListRenderItem<Member> = ({ item }) => {

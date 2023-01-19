@@ -6,10 +6,10 @@ import { Pressable, StyleSheet } from 'react-native'
 import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
-import { Props as RoomProps } from '../../../screens/Room'
+import { Props as RoomChatProps } from '../../../screens/RoomChat'
 import { NavigationHook } from '../../../types/navigation'
 
-type RoomRouteProp = RoomProps['route']
+type RoomRouteProp = RoomChatProps['route']
 
 const RoomAdminHeader: React.FC<{}> = () => {
     const { theme } = useTheme()

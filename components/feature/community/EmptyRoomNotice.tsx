@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import { Props as RoomProps } from '../../../screens/Room'
+import { Props as RoomChatProps } from '../../../screens/RoomChat'
 import { NavigationHook } from '../../../types/navigation'
 
-type RoomRouteProp = RoomProps['route']
+type RoomRouteProp = RoomChatProps['route']
 
 const EmptyRoomNotice: React.FC<{}> = () => {
     const { t } = useTranslation()
