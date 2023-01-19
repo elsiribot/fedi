@@ -28,7 +28,6 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
     const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
-    const [scannerProcessing, setScannerProcessing] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
         async (input: string) => {
@@ -40,9 +39,6 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     '{"members":[[0,"wss://4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}'
             }
             console.log('input', input)
-            // Provide a 500ms delay to throttle input from the scanner
-            setScannerProcessing(true)
-            setTimeout(() => setScannerProcessing(false), 500)
 
             if (input.startsWith('{"members":')) {
                 console.log('fedi qr code detected', input)
@@ -64,6 +60,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     setJoiningFederation(false)
                     navigation.navigate('Home')
                 }
+                setJoiningFederation(false) // just in case
             } else {
                 toast?.show('invalid federation code', 5000)
             }
@@ -87,7 +84,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 <QrCodeScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
-                        if (scannerProcessing) return
+                        if (joiningFederation) return
                         handleUserInput(qrCodeData)
                     }}
                 />
