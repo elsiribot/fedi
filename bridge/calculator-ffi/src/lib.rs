@@ -659,8 +659,6 @@ pub struct SocialRecoveryApprovalsPayload {
     federation_id: String,
 }
 
-// FIXME: maybe this would better be called "begin_social_recovery"
-// FIXME: maybe it would be better to return the RecoveryId here, too ... doens't seem anything else is needed
 async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<String> {
     let SocialRecoveryApprovalsPayload { federation_id } = match serde_json::from_str(&payload) {
         Ok(p) => p,
@@ -886,6 +884,14 @@ mod tests {
             let contents = fs::read(verification_doc_path)?;
             let _ = VerificationDocument::from_raw(&contents);
             assert_eq!(contents, video_file_contents);
+
+            // Guardian approves
+            let payload = serde_json::to_string(&ApproveSocialRecoveryRequestPayload { recovery_id: recovery_id.clone(), federation_id: federation_id.clone() }).unwrap();
+            handle_approve_social_recovery_request(payload).await.unwrap();
+
+            // Member checks approval status
+            let payload = serde_json::to_string(&SocialRecoveryApprovalsPayload { federation_id: federation_id.clone() }).unwrap();
+            handle_social_recovery_approvals(payload).await.unwrap();
 
             Ok(())
         })
