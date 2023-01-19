@@ -823,10 +823,14 @@ mod tests {
         t.to_string()
     }
 
+    fn get_result(result: String) -> Value {
+        let v: Value = serde_json::from_str(&result).unwrap();
+        v["result"].clone()
+    }
+
     async fn test_get_federation() -> (String, Arc<Federation>) {
         let federation_id = "Hals_trusty_mint";
         (federation_id.into(), get_federation(federation_id).await)
-
     }
 
     #[test]
@@ -849,15 +853,25 @@ mod tests {
             );
             let payload = serde_json::to_string(&JoinFederationPayload { connect_string}).unwrap();
             handle_join_federation(payload).await.unwrap();
-            let (federation_id, federation) = test_get_federation().await;
+            let (federation_id, _) = test_get_federation().await;
 
             // Upload backup
             let video_file_path = PathBuf::from("/Users/justin/fedi/bridge/fixtures/backup.txt");
-            let payload = serde_json::to_string(&UploadBackupFilePayload { video_file_path, federation_id }).unwrap();
+            let payload = serde_json::to_string(&UploadBackupFilePayload { video_file_path, federation_id: federation_id.clone() }).unwrap();
             let result = handle_upload_backup_file(payload).await.unwrap();
-            let recovery_file_path = parse_result(result);
+            let recovery_file_path : String = serde_json::from_value(get_result(result)).unwrap();
             info!(recovery_file_path=recovery_file_path);
-            
+
+            // Validate recovery file
+            let payload = serde_json::to_string(&ValidateRecoveryFilePayload { path: recovery_file_path.into(), federation_id }).unwrap();
+            let result = handle_validate_recovery_file(payload).await.unwrap();
+            let valid: bool = serde_json::from_value(get_result(result)).unwrap();
+            assert!(valid);
+
+
+            // Get recovery_id
+
+
         });
     }
 }
