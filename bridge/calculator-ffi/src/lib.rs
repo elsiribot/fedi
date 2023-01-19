@@ -839,7 +839,6 @@ mod tests {
         // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
         RUNTIME.block_on(async {
             let event_sink = FakeEventSink::new();
-            // TODO: make this directory
             fedimint_init_async(create_data_dir(), Box::new(event_sink)).await;
 
             // Join federation
