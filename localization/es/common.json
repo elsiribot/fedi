@@ -60,8 +60,8 @@
         "onchain-address": "Dirección en cadena",
         "please-confirm": "Por favor, confirma",
         "user-agreement": "Acuerdo de usuario",
-        "transaction-received": "Transacción recibida",
         "transaction-id": "ID de transacción",
+        "transaction-received": "Transacción recibida",
         "you-are-offline": "Actualmente estás en modo fuera de línea"
     },
     "feature": {
