@@ -2,16 +2,18 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
+import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import {
     setUserIsGuardian,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import stringUtils from '../utils/StringUtils'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -41,13 +43,17 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 {/*
                     TODO: Replace with username set during onboarding
                 */}
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).profileCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <Text h2>{'SN'}</Text>
-                </ImageBackground>
-                <Text h2>{'Satoshi Nakomoto'}</Text>
+                <View style={styles(theme).avatarContainer}>
+                    <HoloAvatar
+                        size={AvatarSize.lg}
+                        title={stringUtils.getInitialsFromName(
+                            selectedFederation?.username || '',
+                        )}
+                    />
+                </View>
+                <Text h2 medium>
+                    {selectedFederation?.username}
+                </Text>
             </View>
             {/* TODO: Add offline status indicator here */}
             <View style={styles(theme).sectionContainer}>
@@ -139,16 +145,9 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             paddingBottom: theme.spacing.lg,
         },
-        profileCircle: {
-            height: theme.sizes.adminProfileCircle,
-            width: theme.sizes.adminProfileCircle,
-            alignItems: 'center',
-            justifyContent: 'center',
+        avatarContainer: {
             marginTop: theme.spacing.xl,
             marginBottom: theme.spacing.md,
-        },
-        circleBorder: {
-            borderRadius: theme.sizes.adminProfileCircle * 0.5,
         },
         sectionContainer: {
             flexDirection: 'column',

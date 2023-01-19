@@ -10,6 +10,7 @@ import { t } from 'i18next'
 import { Props as DirectChatProps } from '../../../screens/DirectChatProps'
 import { Props as RoomChatProps } from '../../../screens/RoomChat'
 import { NavigationHook } from '../../../types/navigation'
+import stringUtils from '../../../utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
 
 type RoomRouteProp = RoomChatProps['route']
@@ -26,7 +27,7 @@ const RoomHeader: React.FC<{}> = () => {
     const headerImage = room ? (
         <Image style={styles(theme).roomIcon} source={Images.NewRoom} />
     ) : (
-        <HoloAvatar title={member.username.substring(0, 1)} />
+        <HoloAvatar title={stringUtils.getInitialsFromName(member.username)} />
     )
     const headerText = room
         ? room.name || t('feature.community.new-room')
