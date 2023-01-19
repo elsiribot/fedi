@@ -818,12 +818,6 @@ mod tests {
     // }
 
     // FIXME: make this generic
-    fn parse_result(result: String) -> String {
-        let v: Value = serde_json::from_str(&result).unwrap();
-        let t = &v["result"];
-        t.to_string()
-    }
-
     fn get_result(result: String) -> Value {
         let v: Value = serde_json::from_str(&result).unwrap();
         v["result"].clone()
