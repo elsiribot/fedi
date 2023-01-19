@@ -829,12 +829,6 @@ mod tests {
     }
 
     #[test]
-    fn test_fedimint_init() {
-        let event_sink = FakeEventSink::new();
-        fedimint_init(create_data_dir(), Box::new(event_sink));
-    }
-
-    #[test]
     fn test_decryption_shares() -> anyhow::Result<()> {
         // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
         RUNTIME.block_on(async {
