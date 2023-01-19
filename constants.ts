@@ -1,4 +1,5 @@
 import { Options } from '@xmpp/client'
+import { Images } from './assets/images'
 
 import i18n from './localization/i18n'
 
@@ -33,6 +34,22 @@ export const XMPP_RESOURCE = 'community'
 export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
     resource: XMPP_RESOURCE,
+}
+export const FEDI_GENERAL_CHANNEL_ROOM = {
+    id: 'fedi-general-channel',
+    icon: Images.FediLogoIcon,
+    name: 'Fedi',
+    pinned: true,
+    messagePreview:
+        'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
+}
+export const FEDI_RECOVERY_SUPPORT_ROOM = {
+    id: 'fedi-recovery-support',
+    icon: Images.Recovery,
+    name: 'Recovery Support',
+    pinned: true,
+    messagePreview:
+        'Could someone please help me get in touch with a guardian...',
 }
 
 export const SITES = [

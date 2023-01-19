@@ -11,11 +11,12 @@ import React, {
     useReducer,
 } from 'react'
 
-import { Images } from '../../assets/images'
 import {
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
+    FEDI_GENERAL_CHANNEL_ROOM,
+    FEDI_RECOVERY_SUPPORT_ROOM,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
     XMPP_MOCK_PASSWORD,
@@ -27,41 +28,9 @@ import { Member, Message, Room } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
 
-export const MOCKED_ROOMS: Room[] = [
-    {
-        id: 'fedi-general-channel',
-        icon: Images.FediLogoIcon,
-        name: 'Fedi',
-        pinned: true,
-        hasNewMessages: true,
-        lastReceivedTimestamp: Date.now() / 1000 - 172800, // 2 days ago
-        messagePreview:
-            'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
-        lastMessage: {
-            timestamp: Date.now() / 1000 - 172800, // 2 days ago
-            text: 'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app such as:<br><br>- Federation health checks<br>- Scam awareness<br>- Security checks<br>- App updates<br>- Tips & tricks<br>- Education',
-        },
-    },
-    {
-        id: 'fedi-recovery-support',
-        icon: Images.Recovery,
-        name: 'Recovery Support',
-        pinned: false,
-        hasNewMessages: false,
-        lastReceivedTimestamp: Date.now() / 1000,
-        messagePreview:
-            'Could someone please help me get in touch with a guardian so I can',
-        lastMessage: {
-            timestamp: Date.now() / 1000,
-            text: 'Could someone please help me get in touch with a guardian so I can recover my funds??? My phone was stolen it is urgent!',
-        },
-    },
-]
-
-const MOCKED_MEMBERS = [
-    new Member({
-        jid: jid('oz21m', XMPP_DOMAIN, XMPP_RESOURCE),
-    }),
+export const DEFAULT_ROOMS: Room[] = [
+    FEDI_GENERAL_CHANNEL_ROOM,
+    FEDI_RECOVERY_SUPPORT_ROOM,
 ]
 
 // Define the structure of this Context and its initial state
@@ -80,7 +49,7 @@ const initialState: CommunityContextState = {
     userIsOnline: false,
     authenticatedMember: null,
     messages: [],
-    rooms: MOCKED_ROOMS,
+    rooms: DEFAULT_ROOMS,
     membersSeen: [],
 }
 type AppState = typeof initialState
@@ -619,7 +588,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     // Update async storage when rooms are added
     useEffect(() => {
         console.log('useEffect: rooms')
-        if (state.rooms.length > MOCKED_ROOMS.length) {
+        if (state.rooms.length > DEFAULT_ROOMS.length) {
             console.log('storing', state.rooms.length, 'rooms')
             AsyncStorage.setItem(
                 COMMUNITY_ROOMS_PERSISTENCE_KEY,
