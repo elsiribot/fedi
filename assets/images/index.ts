@@ -5,6 +5,15 @@ interface ImagesMap {
 }
 
 export const Images: ImagesMap = {
+    // TODO: Refactor to use 1 colorable SVG file instead of 2 PNGs
+    DoneWhite: require('./done-white.png'),
+    // TODO: Refactor to use 1 colorable SVG file instead of 2 PNGs
+    EditBlack: require('./edit-black.png'),
+    // TODO: Refactor FederationXIcon sizes to use scalable SVGs
+    FederationXIconXs: require('./federationx-icon-xs.png'),
+    FederationXIconSm: require('./federationx-icon-sm.png'),
+    FederationXIconLg: require('./federationx-icon-lg.png'),
+
     Alarm: require('./alarm.png'),
     AllowCameraAccessIcon: require('./allow-camera-access-icon.png'),
     Cash: require('./cash.png'),
@@ -12,14 +21,8 @@ export const Images: ImagesMap = {
     Cog: require('./cog.png'),
     Done: require('./done.png'),
     Edit: require('./edit.png'),
-    // TODO: Refactor to use 1 colorable SVG file instead of 2 PNGs
-    EditBlack: require('./edit-black.png'),
     Error: require('./error.png'),
     Federation: require('./federation.png'),
-    // TODO: Refactor FederationXIcon sizes to use scalable SVGs
-    FederationXIconXs: require('./federationx-icon-xs.png'),
-    FederationXIconSm: require('./federationx-icon-sm.png'),
-    FederationXIconLg: require('./federationx-icon-lg.png'),
     FediFile: require('./fedi-file.png'),
     FediLogo: require('./fedi-logo.png'),
     FediLogoIcon: require('./fedi-logo-icon.png'),

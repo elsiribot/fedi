@@ -1,9 +1,10 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
-import { useFederationsContext } from '../../../state/contexts/FederationsContext'
+import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 
+import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { Message } from '../../../types'
+import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
     message: Message
@@ -15,27 +16,45 @@ const MessageItem: React.FC<MessageItemProps> = ({
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
 
-    const sentByMe = message.sentBy?.username === selectedFederation?.username
+    const { sentBy, sentAt, payment } = message
+
+    const sentByMe = sentBy?.username === selectedFederation?.username
+
+    let bubbleStyles: StyleProp<ViewStyle | TextStyle>[] = [
+        styles(theme).container,
+    ]
+    let textStyles: StyleProp<ViewStyle | TextStyle>[] = [
+        styles(theme).messageText,
+    ]
+
+    // Set alignment (left/right) based on sender
+    if (sentByMe) {
+        bubbleStyles.push(styles(theme).rightAlignedMessage)
+    } else {
+        bubbleStyles.push(styles(theme).leftAlignedMessage)
+    }
+
+    if (payment) {
+        bubbleStyles.push(styles(theme).orangeBubble)
+    } else if (sentByMe) {
+        bubbleStyles.push(styles(theme).sentMessage)
+        bubbleStyles.push(styles(theme).blueBubble)
+        textStyles.push(styles(theme).sentMessageText)
+    } else {
+        bubbleStyles.push(styles(theme).receivedMessage)
+        bubbleStyles.push(styles(theme).greyBubble)
+        textStyles.push(styles(theme).receivedMessageText)
+    }
 
     return (
-        <View
-            style={[
-                styles(theme).container,
-                sentByMe
-                    ? styles(theme).sentMessage
-                    : styles(theme).receivedMessage,
-            ]}>
-            <Text
-                caption
-                medium
-                style={[
-                    styles(theme).messageText,
-                    sentByMe
-                        ? styles(theme).sentMessageText
-                        : styles(theme).receivedMessageText,
-                ]}>
-                {message.content}
-            </Text>
+        <View style={bubbleStyles}>
+            {payment ? (
+                <PaymentMessage message={message} />
+            ) : (
+                <Text caption medium style={textStyles}>
+                    {message.content}
+                </Text>
+            )}
         </View>
     )
 }
@@ -48,15 +67,26 @@ const styles = (theme: Theme) =>
             borderRadius: 12,
             maxWidth: theme.sizes.maxMessageWidth,
         },
-        receivedMessage: {
-            backgroundColor: theme.colors.lightGrey,
-            borderBottomLeftRadius: 2,
+        leftAlignedMessage: {
             marginRight: 'auto',
         },
-        sentMessage: {
-            backgroundColor: theme.colors.blue,
-            borderBottomRightRadius: 2,
+        rightAlignedMessage: {
             marginLeft: 'auto',
+        },
+        receivedMessage: {
+            borderBottomLeftRadius: 2,
+        },
+        sentMessage: {
+            borderBottomRightRadius: 2,
+        },
+        greyBubble: {
+            backgroundColor: theme.colors.lightGrey,
+        },
+        blueBubble: {
+            backgroundColor: theme.colors.blue,
+        },
+        orangeBubble: {
+            backgroundColor: theme.colors.orange,
         },
         messageText: {
             textAlign: 'left',

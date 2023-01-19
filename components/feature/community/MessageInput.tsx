@@ -1,9 +1,17 @@
+import { useNavigation } from '@react-navigation/native'
 import { Image, Input, Theme, useTheme } from '@rneui/themed'
+import { JID } from '@xmpp/jid'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
+import {
+    XMPP_DOMAIN,
+    XMPP_RESOURCE,
+} from '../../../state/contexts/CommunityContext'
+import { Member } from '../../../types'
+import { NavigationHook } from '../../../types/navigation'
 
 type MessageInputProps = {
     onMessageSubmitted: (message: string) => void
@@ -14,6 +22,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const navigation = useNavigation<NavigationHook>()
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
@@ -54,7 +63,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 numberOfLines={3}
                 blurOnSubmit={true}
             />
-            <Image style={styles(theme).icon} source={Images.Cash} />
+            <Pressable
+                // TODO: Disable if not exactly 1 recipient in room
+                disabled={false}
+                onPress={() =>
+                    navigation.navigate('ChatWallet', {
+                        recipient: new Member({
+                            jid: new JID('oz139', XMPP_DOMAIN, XMPP_RESOURCE),
+                        }),
+                    })
+                }>
+                <Image style={styles(theme).icon} source={Images.Cash} />
+            </Pressable>
         </View>
     )
 }
