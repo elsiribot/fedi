@@ -20,8 +20,10 @@ const NewMessage: React.FC<Props> = ({ navigation, route }: Props) => {
     const { enterMucRoom, sendGroupMessage } = useXmpp()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
 
-    // Subscribe to new messages
-    // Fetch any unreceived messages
+    // filter out members if usernameFilter has text to filter with
+    const filteredMembers = usernameFilter
+        ? state.membersSeen.filter(m => m.username.includes(usernameFilter))
+        : state.membersSeen
 
     return (
         <View style={styles(theme).container}>
@@ -65,7 +67,7 @@ const NewMessage: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Text small medium style={styles(theme).membersLabel}>
                     {t('words.members')}
                 </Text>
-                <MembersList members={state.membersSeen} />
+                <MembersList members={filteredMembers} />
             </View>
             {/* <MessageInput onMessageSubmitted={messageText => {}} /> */}
         </View>
