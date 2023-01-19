@@ -26,7 +26,7 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
-use fedi_social::common::VerificationDocument;
+use fedi_social::common::{RecoveryId, VerificationDocument};
 use fedimint_api::{config::ClientConfig, PeerId};
 use fedimint_api::{db::Database, NumPeers};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
@@ -50,6 +50,7 @@ type FederationId = String;
 
 const GAP_LIMIT: usize = 100;
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
+pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
 async fn load_federations_from_disk(
     data_dir: &PathBuf,
@@ -710,7 +711,8 @@ impl Federation {
             .upload_backup_to_federation(&recovery_file)
             .await?;
         debug!("backup file uploaded");
-        fs::remove_file(video_file_path)?;
+        // FIXME: we should clean this up, but i commented out to try to diagnose what's wrong with this file
+        // fs::remove_file(video_file_path)?;
         debug!("original video file removed");
         // FIXME: is this a good filename?
         let recovery_file_path = datadir.join(RECOVERY_FILENAME);
@@ -799,6 +801,30 @@ impl Federation {
         self.social_recovery_save(&recovery_client).await;
 
         Ok(approvals)
+    }
+
+    pub async fn social_recovery_download_verification_doc(
+        &self,
+        recovery_id: &RecoveryId,
+        // FIXME: remove this argument
+        data_dir: PathBuf,
+    ) -> Result<Option<PathBuf>> {
+        // FIXME: what to do for peer id?
+        tracing::info!("downloading verificaiton doc {}", recovery_id);
+        let verification_client = self.client.social_verification(PeerId::from(0));
+        let verification_doc = verification_client
+            .download_verification_doc(*recovery_id)
+            .await?;
+        if let Some(verification_doc) = verification_doc {
+            tracing::info!("downloaded verification doc ... saving to filesystem");
+            let path = data_dir.join(VERIFICATION_FILENAME);
+            fs::write(&path, verification_doc.to_raw())?;
+            tracing::info!("saved verificaiton doc");
+            return Ok(Some(path));
+        };
+        tracing::info!("no verificaiton doc found");
+
+        Ok(None)
     }
 
     pub async fn social_recovery_state() {

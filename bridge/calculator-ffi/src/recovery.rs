@@ -7,13 +7,13 @@ use mint_client::social::SocialRecoveryState;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryQr {
     pub recovery_id: RecoveryId,
 }
 
 /// This type is set to React Native and displayed in the UI
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryApproval {
     // FIXME: perhaps this should be peer id and client can look up the name ???
     pub guardian_name: String,

@@ -11,6 +11,7 @@ use std::{fs, path::PathBuf, str::FromStr, sync::Arc};
 
 use bitcoin::{secp256k1::Message, Address};
 use event::{EventSink, SocialRecoveryEvent};
+use fedi_social::common::RecoveryId;
 use fedimint_api::{Amount, TieredMulti};
 use lazy_static::lazy_static;
 
@@ -25,6 +26,7 @@ use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
+use tracing::info;
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
@@ -45,19 +47,19 @@ lazy_static! {
 }
 
 async fn set_bridge(bridge: Bridge) {
-    tracing::info!("resetting bridge");
+    tracing::debug!("resetting bridge");
     if let Some(b) = BRIDGE.lock().await.clone() {
         // FIXME: don't panic
         b.stop_pollers().await.expect("couldn't stop pollers")
     }
     *BRIDGE.lock().await = Some(Arc::new(bridge));
-    tracing::info!("reset bridge");
+    tracing::debug!("reset bridge");
 }
 
 async fn get_bridge() -> Option<Arc<Bridge>> {
-    tracing::info!("getting bridge");
+    tracing::debug!("getting bridge");
     let bridge = BRIDGE.lock().await.clone();
-    tracing::info!("got bridge");
+    tracing::debug!("got bridge");
     bridge
 }
 
@@ -644,8 +646,7 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
     // Return QR code contents
     let federation = get_federation(&federation_id).await;
     let qr = federation.social_recovery_qr(&recovery_file).await?;
-    let qr_code_json = serde_json::to_string(&qr).unwrap();
-    Ok(json!({ "result": qr_code_json }).to_string())
+    Ok(json!({ "result": qr }).to_string())
 }
 
 #[derive(Debug, Deserialize)]
@@ -655,6 +656,7 @@ pub struct SocialRecoveryApprovalsPayload {
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
+// FIXME: maybe it would be better to return the RecoveryId here, too ... doens't seem anything else is needed
 async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<String> {
     let SocialRecoveryApprovalsPayload { federation_id } = match serde_json::from_str(&payload) {
         Ok(p) => p,
@@ -669,6 +671,32 @@ async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<Str
         complete: true, // FIXME: don't hardcode
     };
     Ok(json!({ "result": result }).to_string())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialRecoveryDownloadVerificationDocPayload {
+    federation_id: String,
+    recovery_id: RecoveryId,
+}
+
+async fn handle_social_recovery_download_verification_doc(
+    payload: String,
+) -> anyhow::Result<String> {
+    let SocialRecoveryDownloadVerificationDocPayload {
+        federation_id,
+        recovery_id,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let datadir = { get_bridge().await.unwrap().data_dir.clone() };
+    // Return QR code contents
+    let federation = get_federation(&federation_id).await;
+    let path = federation
+        .social_recovery_download_verification_doc(&recovery_id, datadir)
+        .await?;
+    Ok(json!({ "result": path }).to_string())
 }
 
 pub fn fedimint_rpc(method: String, payload: String) -> String {
@@ -700,6 +728,9 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "recoveryQr" => handle_recovery_qr(payload).await,
 
             "socialRecoveryApprovals" => handle_social_recovery_approvals(payload).await,
+            "socialRecoveryDownloadVerificationDoc" => {
+                handle_social_recovery_download_verification_doc(payload).await
+            }
 
             // return whether we're currently recovering ecash tokens or not
             "ecashRecoveryState" => todo!(),
