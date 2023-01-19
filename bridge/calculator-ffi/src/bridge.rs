@@ -743,12 +743,18 @@ impl Federation {
         dbtx.commit_tx().await.expect("Db error");
     }
 
+    /// Start a new social recovery session if one doesn't exist already
+    /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
+    /// Also won't be able to do simulataneous recoveries in 2 federations.
     pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) {
-        let recovery_client = self.client.social_recovery_start(recovery_file.clone());
-
-        // save social recovery state
-        // TODO: fail if there's already a social recovery in the db
-        self.social_recovery_save(&recovery_client).await;
+        match self.social_recovery_continue().await {
+            Ok(recovery_client) => recovery_client,
+            Err(_) => {
+                let recovery_client = self.client.social_recovery_start(recovery_file.clone());
+                self.social_recovery_save(&recovery_client).await;
+                recovery_client
+            }
+        };
     }
 
     // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
@@ -827,12 +833,10 @@ impl Federation {
         Ok(None)
     }
 
-    pub async fn social_recovery_state() {
-        todo!()
-    }
-
-    pub async fn approve_social_recovery() {
-        todo!()
+    pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
+        // FIXME: don't hard-code peer id
+        let verification_client = self.client.social_verification(PeerId::from(0));
+        verification_client.approve_recovery(*recovery_id).await
     }
 
     pub async fn start_pollers(&mut self) {

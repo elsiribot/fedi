@@ -699,6 +699,28 @@ async fn handle_social_recovery_download_verification_doc(
     Ok(json!({ "result": path }).to_string())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApproveSocialRecoveryRequestPayload {
+    federation_id: String,
+    recovery_id: RecoveryId,
+}
+
+async fn handle_approve_social_recovery_request(payload: String) -> anyhow::Result<String> {
+    let ApproveSocialRecoveryRequestPayload {
+        federation_id,
+        recovery_id,
+    } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    federation
+        .approve_social_recovery_request(&recovery_id)
+        .await?;
+    Ok(json!({ "result": () }).to_string())
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         let result = match method.as_ref() {
@@ -731,6 +753,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "socialRecoveryDownloadVerificationDoc" => {
                 handle_social_recovery_download_verification_doc(payload).await
             }
+            "approveSocialRecoveryRequest" => handle_approve_social_recovery_request(payload).await,
 
             // return whether we're currently recovering ecash tokens or not
             "ecashRecoveryState" => todo!(),
