@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Client, client, Options, xml } from '@xmpp/client'
+import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
 import { isEqual } from 'lodash'
 import React, {
@@ -9,11 +9,17 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+import { Platform } from 'react-native'
 
 import { Images } from '../../assets/images'
 import {
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
+    XMPP_CONNECTION_OPTIONS,
+    XMPP_DOMAIN,
+    XMPP_MOCK_PASSWORD,
+    XMPP_MUC_DOMAIN,
+    XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
 import { Member, Message, Room } from '../../types'
@@ -51,6 +57,12 @@ export const MOCKED_ROOMS: Room[] = [
     },
 ]
 
+const MOCKED_MEMBERS = [
+    new Member({
+        jid: jid('oz21m', XMPP_DOMAIN, XMPP_RESOURCE),
+    }),
+]
+
 // Define the structure of this Context and its initial state
 interface CommunityContextState {
     xmppClient: Client | null
@@ -68,7 +80,7 @@ const initialState: CommunityContextState = {
     authenticatedMember: null,
     messages: [],
     rooms: MOCKED_ROOMS,
-    membersSeen: [],
+    membersSeen: MOCKED_MEMBERS,
 }
 type AppState = typeof initialState
 
@@ -333,19 +345,6 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 }
 
-export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
-// This is the XMPP Multi-User-Chat (MUC) domain defined
-// in prosody.config.lua on the XMPP server
-// https://prosody.im/doc/modules/mod_muc
-export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
-export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
-export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
-export const XMPP_RESOURCE = 'community'
-export const XMPP_CONNECTION_OPTIONS: Options = {
-    service: XMPP_SERVICE,
-    resource: XMPP_RESOURCE,
-}
-
 // Creates an ephemeral XMPP client used solely for registration
 // that opens thes stream and terminates on success or failure
 export const registerXmppUser = async (username: string): Promise<boolean> => {
@@ -476,7 +475,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                             sentIn: new Room({
                                 id: room,
                             }),
-                            sentBy: new Member({ username: sender }),
+                            sentBy: new Member({ jid: jid(from) }),
                         })
                         dispatch(addToMessages(newMessage))
                         dispatch(updateRoomMessagePreview(newMessage))
@@ -494,14 +493,15 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             await xmpp.send(xml('presence'))
 
             dispatch(changeUserIsOnline(true))
+            if (xmpp.jid) {
             dispatch(
                 setAuthenticatedMember(
                     new Member({
-                        username: selectedFederation.username,
-                        jid: xmpp.jid,
+                            jid: jid(xmpp.jid.toString()),
                     }),
                 ),
             )
+            }
         })
 
         xmpp.start().catch(console.error)
