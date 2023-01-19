@@ -54,6 +54,7 @@ export const MOCKED_ROOMS: Room[] = [
 // Define the structure of this Context and its initial state
 interface CommunityContextState {
     xmppClient: Client | null
+    authenticatedMember: Member | null
     username: string | null
     userIsOnline: boolean
     messages: Message[]
@@ -64,6 +65,7 @@ const initialState: CommunityContextState = {
     xmppClient: null,
     username: null,
     userIsOnline: false,
+    authenticatedMember: null,
     messages: [],
     rooms: MOCKED_ROOMS,
     membersSeen: [],
@@ -78,6 +80,7 @@ enum ActionType {
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_ROOMS = 'RECEIVE_ROOMS',
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
+    SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_ROOM = 'UPDATE_ROOM',
     UPDATE_ROOM_MESSAGE_PREVIEW = 'UPDATE_ROOM_MESSAGE_PREVIEW',
@@ -126,6 +129,12 @@ export function receiveRooms(rooms: Room[]): Action {
     return {
         type: ActionType.RECEIVE_ROOMS,
         payload: rooms,
+    }
+}
+export function setAuthenticatedMember(member: Member): Action {
+    return {
+        type: ActionType.SET_AUTHENTICATED_MEMBER,
+        payload: member,
     }
 }
 export function setXmppClient(xmpp: Client): Action {
@@ -236,6 +245,11 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 rooms: [...action.payload],
             }
+        case ActionType.SET_AUTHENTICATED_MEMBER:
+            return {
+                ...state,
+                authenticatedMember: action.payload,
+            }
         case ActionType.SET_XMPP_CLIENT:
             // Stop the existing xmppClient before overwriting it
             // This may not be necessary???
@@ -326,9 +340,10 @@ export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
 export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
 export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
 export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
+export const XMPP_RESOURCE = 'community'
 export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
-    resource: 'community',
+    resource: XMPP_RESOURCE,
 }
 
 // Creates an ephemeral XMPP client used solely for registration
@@ -479,6 +494,14 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             await xmpp.send(xml('presence'))
 
             dispatch(changeUserIsOnline(true))
+            dispatch(
+                setAuthenticatedMember(
+                    new Member({
+                        username: selectedFederation.username,
+                        jid: xmpp.jid,
+                    }),
+                ),
+            )
         })
 
         xmpp.start().catch(console.error)
