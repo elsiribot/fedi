@@ -784,6 +784,8 @@ mod tests {
     use serde_json::Value;
     use tracing::debug;
 
+    use crate::recovery::SocialRecoveryQr;
+
     use super::*;
 
     struct FakeEventSink;
@@ -863,13 +865,16 @@ mod tests {
             info!(recovery_file_path=recovery_file_path);
 
             // Validate recovery file
-            let payload = serde_json::to_string(&ValidateRecoveryFilePayload { path: recovery_file_path.into(), federation_id }).unwrap();
+            let payload = serde_json::to_string(&ValidateRecoveryFilePayload { path: recovery_file_path.into(), federation_id: federation_id.clone() }).unwrap();
             let result = handle_validate_recovery_file(payload).await.unwrap();
             let valid: bool = serde_json::from_value(get_result(result)).unwrap();
             assert!(valid);
 
-
             // Get recovery_id
+            let payload = serde_json::to_string(&RecoveryQrPayload { federation_id: federation_id.clone() }).unwrap();
+            let result = handle_recovery_qr(payload).await.unwrap();
+            let qr: SocialRecoveryQr = serde_json::from_value(get_result(result)).unwrap();
+            let recovery_id = qr.recovery_id;
 
 
         });
