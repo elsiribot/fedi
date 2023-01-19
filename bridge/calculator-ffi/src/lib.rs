@@ -781,6 +781,7 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
 }
 
 mod tests {
+    use fedi_social::common::VerificationDocument;
     use serde_json::Value;
     use tracing::debug;
 
@@ -842,7 +843,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decryption_shares() {
+    fn test_decryption_shares() -> anyhow::Result<()> {
         // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
         RUNTIME.block_on(async {
             let event_sink = FakeEventSink::new();
@@ -859,6 +860,7 @@ mod tests {
 
             // Upload backup
             let video_file_path = PathBuf::from("/Users/justin/fedi/bridge/fixtures/backup.txt");
+            let video_file_contents = fs::read(&video_file_path)?;
             let payload = serde_json::to_string(&UploadBackupFilePayload { video_file_path, federation_id: federation_id.clone() }).unwrap();
             let result = handle_upload_backup_file(payload).await.unwrap();
             let recovery_file_path : String = serde_json::from_value(get_result(result)).unwrap();
@@ -877,6 +879,15 @@ mod tests {
             let recovery_id = qr.recovery_id;
 
 
-        });
+            // Guardian downloads verification doc
+            let payload = serde_json::to_string(&SocialRecoveryDownloadVerificationDocPayload { recovery_id: recovery_id.clone(), federation_id: federation_id.clone() }).unwrap();
+            let result = handle_social_recovery_download_verification_doc(payload).await.unwrap();
+            let verification_doc_path: PathBuf = serde_json::from_value(get_result(result)).unwrap();
+            let contents = fs::read(verification_doc_path)?;
+            let _ = VerificationDocument::from_raw(&contents);
+            assert_eq!(contents, video_file_contents);
+
+            Ok(())
+        })
     }
 }
