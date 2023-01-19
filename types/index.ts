@@ -1,5 +1,7 @@
+import { JID } from '@xmpp/jid'
 import { ImageSourcePropType } from 'react-native'
-import Base from '../bridge'
+
+import Base, { Invoice } from '../bridge'
 import { DEFAULT_ROOM_NAME } from '../constants'
 import i18n from '../localization/i18n'
 
@@ -118,8 +120,10 @@ export type RoomSettings = {
 }
 
 export class Member extends Base {
-    username: string
-    pubkey?: string
+    jid: JID
+    get username(): string {
+        return this.jid.local
+    }
 }
 
 export class Message extends Base {
@@ -140,10 +144,12 @@ export type MessageAction = {
     handler: () => {}
 }
 
-export type Payment = {
-    amount: number
+export class Payment extends Base {
+    amount: MSats
     status: PaymentStatus
+    memo?: string
     token?: string
+    invoice?: Invoice
 }
 
 export enum PaymentStatus {
