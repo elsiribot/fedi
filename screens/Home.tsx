@@ -105,19 +105,19 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 {props => <Wallet {...props} offline={offline} />}
             </Tab.Screen>
             <Tab.Screen
+                name="Community"
+                component={Community}
+                options={() => ({
+                    header: () => <CommunityHeader />,
+                })}
+            />
+            <Tab.Screen
                 name="Sites"
                 component={Sites}
                 options={{
                     title: t('words.sites'),
                     headerShown: false,
                 }}
-            />
-            <Tab.Screen
-                name="Community"
-                component={Community}
-                options={() => ({
-                    header: () => <CommunityHeader />,
-                })}
             />
             <Tab.Screen
                 name="Admin"
