@@ -3,9 +3,12 @@ import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import uuid from 'react-native-uuid'
 
+import { useCommunityContext } from '../state/contexts/CommunityContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { SatsString } from '../types'
+import { useXmpp } from '../state/hooks'
+import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
@@ -18,27 +21,29 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<SatsString>('' as SatsString)
     // const { generateEcash } = useBridge()
-    // const { sendEcashRequest } = useXmpp()
-    // const { authenticatedMember } = useCommunityContext().state
-    // const { recipient } = route.params
+    const { sendDirectMessage } = useXmpp()
+    const { authenticatedMember } = useCommunityContext().state
+    const { recipient } = route.params
 
     const requestEcash = async () => {
         try {
             setIsLoading(true)
-            // const millis = amountUtils.satToMsat(Number(amount) as Sats)
-            // const ecashRequest = new Message({
-            //     content: 'fedi:ecash-request:',
-            //     sentBy: authenticatedMember,
-            //     sentAt: Date.now() / 1000,
-            //     payment: new Payment({
-            //         amount: millis,
-            //         status: PaymentStatus.requested,
-            //     }),
-            // })
-            // sendEcashRequest({
-            //     to: recipient,
-            //     message: ecashRequest,
-            // })
+            const millis = amountUtils.satToMsat(Number(amount) as Sats)
+            const ecashRequest = new Message({
+                id: uuid.v4(),
+                content: 'fedi:ecash-request:',
+                sentBy: authenticatedMember,
+                sentTo: recipient,
+                sentAt: Date.now() / 1000,
+                payment: new Payment({
+                    amount: millis,
+                    status: PaymentStatus.requested,
+                }),
+            })
+            sendDirectMessage({
+                to: recipient,
+                message: ecashRequest,
+            })
             setIsLoading(false)
             navigation.goBack()
         } catch (error) {
