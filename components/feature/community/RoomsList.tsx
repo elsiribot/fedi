@@ -6,8 +6,9 @@ import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { DEFAULT_ROOM_NAME } from '../../../constants'
 import { useCommunityContext } from '../../../state/contexts/CommunityContext'
-import { Message, Room } from '../../../types'
+import { Message, MSats, Room } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
+import amountUtils from '../../../utils/AmountUtils'
 import RoomTile from './RoomTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
@@ -74,7 +75,9 @@ const RoomsList: React.FC<{}> = () => {
                         messagePreview: m.payment
                             ? t('feature.community.payment-requested', {
                                   name: otherMember?.username,
-                                  amount: m.payment.amount,
+                                  amount: amountUtils.msatToSat(
+                                      m.payment.amount as MSats,
+                                  ),
                                   unit: 'SATS',
                               })
                             : m.content,
@@ -90,7 +93,9 @@ const RoomsList: React.FC<{}> = () => {
                     updatedRoom.messagePreview = m.payment
                         ? t('feature.community.payment-requested', {
                               name: otherMember?.username,
-                              amount: m.payment.amount,
+                              amount: amountUtils.msatToSat(
+                                  m.payment.amount as MSats,
+                              ),
                               unit: 'SATS',
                           })
                         : m.content
