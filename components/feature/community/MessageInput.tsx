@@ -1,17 +1,14 @@
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { Image, Input, Theme, useTheme } from '@rneui/themed'
-import { JID } from '@xmpp/jid'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import {
-    XMPP_DOMAIN,
-    XMPP_RESOURCE,
-} from '../../../state/contexts/CommunityContext'
-import { Member } from '../../../types'
+import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { NavigationHook } from '../../../types/navigation'
+
+type DirectChatRouteProp = DirectChatProps['route']
 
 type MessageInputProps = {
     onMessageSubmitted: (message: string) => void
@@ -23,6 +20,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const route = useRoute<DirectChatRouteProp>()
+    const { member } = route.params
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
@@ -30,15 +29,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     return (
         <View style={styles(theme).container}>
+            <Pressable
+                onPress={() =>
+                    navigation.navigate('ChatWallet', {
+                        recipient: member,
+                    })
+                }>
+                <Image style={styles(theme).icon} source={Images.Wallet} />
+            </Pressable>
             <Input
                 onChangeText={setMessageText}
                 value={messageText}
                 placeholder={`${t('words.message')}`}
-                returnKeyType="send"
-                onSubmitEditing={({ nativeEvent: { text } }) => {
-                    onMessageSubmitted(text)
-                    setMessageText('')
-                }}
+                returnKeyType="next"
                 onContentSizeChange={({
                     nativeEvent: {
                         contentSize: { height },
@@ -61,19 +64,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 inputContainerStyle={styles(theme).textInputInner}
                 multiline
                 numberOfLines={3}
-                blurOnSubmit={true}
+                blurOnSubmit={false}
             />
             <Pressable
-                // TODO: Disable if not exactly 1 recipient in room
-                disabled={false}
-                onPress={() =>
-                    navigation.navigate('ChatWallet', {
-                        recipient: new Member({
-                            jid: new JID('oz139', XMPP_DOMAIN, XMPP_RESOURCE),
-                        }),
-                    })
-                }>
-                <Image style={styles(theme).icon} source={Images.Cash} />
+                style={styles(theme).sendButton}
+                onPress={() => {
+                    onMessageSubmitted(messageText)
+                    setMessageText('')
+                }}>
+                <Image
+                    source={Images.SendArrowUpCircle}
+                    style={styles(theme).sendIcon}
+                />
             </Pressable>
         </View>
     )
@@ -84,22 +86,32 @@ const styles = (theme: Theme) =>
         container: {
             width: '100%',
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'flex-end',
             marginTop: 'auto',
             backgroundColor: theme.colors.keyboardGrey,
             paddingHorizontal: theme.spacing.lg,
             paddingVertical: theme.spacing.md,
+            position: 'relative',
+        },
+        sendButton: {
+            position: 'absolute',
+            right: theme.spacing.xl,
+            bottom: theme.spacing.lg + 3,
+        },
+        sendIcon: {
+            height: theme.sizes.md,
+            width: theme.sizes.md,
         },
         icon: {
             height: theme.sizes.md,
             width: theme.sizes.md,
-            marginLeft: theme.spacing.md,
-            // Disabled
-            opacity: 0.25,
+            marginRight: theme.spacing.md,
+            marginBottom: theme.spacing.sm,
         },
         textInputInner: {
             borderBottomWidth: 0,
             marginTop: theme.spacing.xs,
+            paddingRight: theme.spacing.xl,
         },
         textInputOuter: {
             flex: 1,

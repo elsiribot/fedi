@@ -43,6 +43,7 @@ export const Images: ImagesMap = {
     Recovery: require('./recovery.png'),
     Room: require('./room.png'),
     Scan: require('./scan.png'),
+    SendArrowUpCircle: require('./send-arrow-up-circle.png'),
     Search: require('./search.png'),
     SocialPeople: require('./social-people.png'),
     SpeakerPhone: require('./speakerphone.png'),
