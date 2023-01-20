@@ -67,6 +67,7 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import ChatWalletHeader from './components/feature/community/ChatWalletHeader'
+import DirectChatHeader from './components/feature/community/DirectChatHeader'
 import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
 import NewMessageHeader from './components/feature/community/NewMessageHeader'
 import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
@@ -238,7 +239,7 @@ const MainNavigator = () => {
                                 name="DirectChat"
                                 component={DirectChat}
                                 options={() => ({
-                                    header: () => <RoomHeader />,
+                                    header: () => <DirectChatHeader />,
                                 })}
                             />
                             <Stack.Screen

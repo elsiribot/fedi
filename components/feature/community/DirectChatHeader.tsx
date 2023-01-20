@@ -1,4 +1,4 @@
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
+import { RouteProp, useRoute } from '@react-navigation/native'
 import { Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
@@ -6,20 +6,16 @@ import { Pressable, StyleSheet } from 'react-native'
 import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
-import { t } from 'i18next'
-import { NavigationHook, RootStackParamList } from '../../../types/navigation'
+import { RootStackParamList } from '../../../types/navigation'
+import stringUtils from '../../../utils/StringUtils'
+import HoloAvatar from '../../ui/HoloAvatar'
 
-type RoomChatRouteProp = RouteProp<RootStackParamList, 'RoomChat'>
+type DirectChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 
-const RoomHeader: React.FC<{}> = () => {
+const DirectChatHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<RoomChatRouteProp>()
-    const { room } = route.params
-
-    // Mocked roomLink format: fedi:room:uniqueRoomId::userDefinedRoomName
-    // If userDefinedRoomName is not provided, assume it is a new room
-    const headerText = room.name || t('feature.community.new-room')
+    const route = useRoute<DirectChatRouteProp>()
+    const { member } = route.params
 
     return (
         <Header
@@ -28,18 +24,17 @@ const RoomHeader: React.FC<{}> = () => {
             centerContainerStyle={styles(theme).headerCenterContainer}
             headerCenter={
                 <Pressable
-                    // if this is a DirectChat, header press is disabled
-                    disabled={room === undefined}
-                    style={styles(theme).roomNameContainer}
+                    disabled
+                    style={styles(theme).memberContainer}
                     onPress={() => {
-                        navigation.navigate('RoomAdmin', { room })
+                        // TODO: implement admin settings for 1on1 chat
+                        // navigation.navigate('RoomAdmin', { room })
                     }}>
-                    <Image
-                        style={styles(theme).roomIcon}
-                        source={Images.NewRoom}
+                    <HoloAvatar
+                        title={stringUtils.getInitialsFromName(member.username)}
                     />
-                    <Text bold style={styles(theme).roomNameText}>
-                        {headerText}
+                    <Text bold style={styles(theme).memberText}>
+                        {member.username}
                     </Text>
                 </Pressable>
             }
@@ -93,14 +88,10 @@ const styles = (theme: Theme) =>
             height: theme.sizes.sm,
             width: theme.sizes.sm,
         },
-        roomNameText: {
+        memberText: {
             marginLeft: theme.spacing.sm,
         },
-        roomIcon: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
-        },
-        roomNameContainer: {
+        memberContainer: {
             padding: theme.spacing.sm,
             flexDirection: 'row',
             alignItems: 'center',
@@ -108,4 +99,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomHeader
+export default DirectChatHeader
