@@ -8,10 +8,12 @@ import MessageItem from './MessageItem'
 
 type MessagesListProps = {
     messages: Message[]
+    multiUserChat?: boolean
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({
     messages,
+    multiUserChat = false,
 }: MessagesListProps) => {
     const { theme } = useTheme()
     const renderMessage: ListRenderItem<Message> = ({ item }) => {
@@ -24,7 +26,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             renderItem={renderMessage}
             keyExtractor={(item: Message) => `${item.id}`}
             style={styles(theme).container}
-            ListEmptyComponent={<EmptyRoomNotice />}
+            ListEmptyComponent={multiUserChat ? <EmptyRoomNotice /> : null}
         />
     )
 }

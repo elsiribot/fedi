@@ -121,7 +121,7 @@ const RoomChat: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={sortedMessages} />
+            <MessagesList messages={sortedMessages} multiUserChat />
             <MessageInput
                 onMessageSubmitted={messageText => {
                     console.info('send message')
