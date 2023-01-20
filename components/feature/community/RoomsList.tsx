@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
@@ -44,12 +45,9 @@ const RoomsList: React.FC<{}> = () => {
         )
     }
 
-    console.debug('messages', messages)
+    // console.debug('messages', messages)
     const directMessages = messages.filter(m => !m.sentIn)
-    // const directChats = groupBy(directMessages, (m: Message) => {
-    //     return m.sentTo.username || m.sentBy.username
-    // })
-    console.debug('directMessages', directMessages)
+    // console.debug('directMessages', directMessages)
 
     // Produce a set of direct chat rooms from all direct messages
     const directChats: Room[] = directMessages.reduce(
@@ -71,8 +69,15 @@ const RoomsList: React.FC<{}> = () => {
                         id: otherMember?.username,
                         name: otherMember?.username,
                         members: [otherMember],
-                        messagePreview: m.content,
                         lastReceivedTimestamp: m.sentAt,
+                        // If last message is a payment, render details
+                        messagePreview: m.payment
+                            ? t('feature.community.payment-requested', {
+                                  name: otherMember?.username,
+                                  amount: m.payment.amount,
+                                  unit: 'SATS',
+                              })
+                            : m.content,
                     }),
                 )
                 return roomsResult
@@ -81,7 +86,14 @@ const RoomsList: React.FC<{}> = () => {
                 const updatedRoom = roomsResult[existingRoomIndex]
                 if (updatedRoom.lastReceivedTimestamp! < m.sentAt!) {
                     updatedRoom.lastReceivedTimestamp = m.sentAt
-                    updatedRoom.messagePreview = m.content
+                    // If last message is a payment, render details
+                    updatedRoom.messagePreview = m.payment
+                        ? t('feature.community.payment-requested', {
+                              name: otherMember?.username,
+                              amount: m.payment.amount,
+                              unit: 'SATS',
+                          })
+                        : m.content
 
                     roomsResult = roomsResult.map((r: Room, i) =>
                         i === existingRoomIndex ? updatedRoom : r,
@@ -92,7 +104,7 @@ const RoomsList: React.FC<{}> = () => {
         },
         [] as Room[],
     )
-    console.debug('directChats', directChats)
+    // console.debug('directChats', directChats)
 
     return (
         <FlatList
