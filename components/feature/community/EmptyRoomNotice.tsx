@@ -8,13 +8,13 @@ import { Images } from '../../../assets/images'
 import { Props as RoomChatProps } from '../../../screens/RoomChat'
 import { NavigationHook } from '../../../types/navigation'
 
-type RoomRouteProp = RoomChatProps['route']
+type RoomChatRouteProp = RoomChatProps['route']
 
 const EmptyRoomNotice: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<RoomRouteProp>()
+    const route = useRoute<RoomChatRouteProp>()
     const { room } = route.params
 
     return (
