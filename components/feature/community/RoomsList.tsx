@@ -51,64 +51,63 @@ const RoomsList: React.FC<{}> = () => {
     // console.debug('directMessages', directMessages)
 
     // Produce a set of direct chat rooms from all direct messages
-    const directChats: Room[] = directMessages.reduce(
-        (roomsResult: Room[], m: Message) => {
-            // Determine the other member that is not the authenticatedMember
-            // since they may have sent or received the message
-            let otherMember = m.sentTo
-            if (m.sentTo?.username === authenticatedMember?.username) {
-                otherMember = m.sentBy
-            }
-            const existingRoomIndex = roomsResult.findIndex(
-                r => r.id === otherMember?.username,
-            )
+    const directChats: Room[] = authenticatedMember?.username
+        ? directMessages.reduce((roomsResult: Room[], m: Message) => {
+              // Determine the other member that is not the authenticatedMember
+              // since they may have sent or received the message
+              let otherMember = m.sentTo
+              if (m.sentTo?.username === authenticatedMember?.username) {
+                  otherMember = m.sentBy
+              }
+              const existingRoomIndex = roomsResult.findIndex(
+                  r => r.id === otherMember?.username,
+              )
 
-            if (existingRoomIndex === -1) {
-                // Add the room if it doesn't exist
-                roomsResult.push(
-                    new Room({
-                        id: otherMember?.username,
-                        name: otherMember?.username,
-                        members: [otherMember],
-                        lastReceivedTimestamp: m.sentAt,
-                        // If last message is a payment, render details
-                        messagePreview: m.payment
-                            ? t('feature.community.payment-requested', {
-                                  name: otherMember?.username,
-                                  amount: amountUtils.msatToSat(
-                                      m.payment.amount as MSats,
-                                  ),
-                                  unit: 'SATS',
-                              })
-                            : m.content,
-                    }),
-                )
-                return roomsResult
-            } else {
-                // Room exists, check if message previews should be updated
-                const updatedRoom = roomsResult[existingRoomIndex]
-                if (updatedRoom.lastReceivedTimestamp! < m.sentAt!) {
-                    updatedRoom.lastReceivedTimestamp = m.sentAt
-                    // If last message is a payment, render details
-                    updatedRoom.messagePreview = m.payment
-                        ? t('feature.community.payment-requested', {
-                              name: otherMember?.username,
-                              amount: amountUtils.msatToSat(
-                                  m.payment.amount as MSats,
-                              ),
-                              unit: 'SATS',
-                          })
-                        : m.content
+              if (existingRoomIndex === -1) {
+                  // Add the room if it doesn't exist
+                  roomsResult.push(
+                      new Room({
+                          id: otherMember?.username,
+                          name: otherMember?.username,
+                          members: [otherMember],
+                          lastReceivedTimestamp: m.sentAt,
+                          // If last message is a payment, render details
+                          messagePreview: m.payment
+                              ? t('feature.community.payment-requested', {
+                                    name: otherMember?.username,
+                                    amount: amountUtils.msatToSat(
+                                        m.payment.amount as MSats,
+                                    ),
+                                    unit: 'SATS',
+                                })
+                              : m.content,
+                      }),
+                  )
+                  return roomsResult
+              } else {
+                  // Room exists, check if message previews should be updated
+                  const updatedRoom = roomsResult[existingRoomIndex]
+                  if (updatedRoom.lastReceivedTimestamp! < m.sentAt!) {
+                      updatedRoom.lastReceivedTimestamp = m.sentAt
+                      // If last message is a payment, render details
+                      updatedRoom.messagePreview = m.payment
+                          ? t('feature.community.payment-requested', {
+                                name: otherMember?.username,
+                                amount: amountUtils.msatToSat(
+                                    m.payment.amount as MSats,
+                                ),
+                                unit: 'SATS',
+                            })
+                          : m.content
 
-                    roomsResult = roomsResult.map((r: Room, i) =>
-                        i === existingRoomIndex ? updatedRoom : r,
-                    )
-                }
-            }
-            return roomsResult
-        },
-        [] as Room[],
-    )
+                      roomsResult = roomsResult.map((r: Room, i) =>
+                          i === existingRoomIndex ? updatedRoom : r,
+                      )
+                  }
+              }
+              return roomsResult
+          }, [] as Room[])
+        : []
     // console.debug('directChats', directChats)
 
     return (
