@@ -341,7 +341,7 @@ export const useXmpp = () => {
                 )
             })
         }, [xmppClient]),
-        sendCancelPaymentMessage: useCallback(
+        sendUpdatedPaymentMessage: useCallback(
             async ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const toJid = to?.jid.toString()
@@ -365,7 +365,7 @@ export const useXmpp = () => {
                             { xmlns: 'fedi:direct-message' },
                             JSON.stringify(message),
                         ),
-                        xml('action', { xmlns: 'fedi:cancel-payment' }),
+                        xml('action', { xmlns: 'fedi:update-payment' }),
                     ),
                 )
             },

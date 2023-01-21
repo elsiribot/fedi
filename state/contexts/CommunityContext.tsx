@@ -581,8 +581,9 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         })
 
                     const action = stanza.getChild('action')
-                    if (action?.getNS() === 'fedi:cancel-payment') {
-                        // find message and replace with canceled version
+                    if (action?.getNS() === 'fedi:update-payment') {
+                        // find message and replace with updated version
+                        // with canceled or rejected payment
                         dispatch(updateMessage(newMessage))
                     } else {
                         dispatch(addToMessages(newMessage))

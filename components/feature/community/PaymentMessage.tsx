@@ -21,7 +21,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { sendCancelPaymentMessage } = useXmpp()
+    const { sendUpdatedPaymentMessage } = useXmpp()
     const { state, dispatch } = useCommunityContext()
     const { authenticatedMember } = state
     const { payment } = message
@@ -51,11 +51,30 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
                     status: PaymentStatus.canceled,
                 },
             })
-            sendCancelPaymentMessage({
+            sendUpdatedPaymentMessage({
                 to: message.sentTo,
                 message: canceledPaymentMessage,
             })
             dispatch(updateMessage(canceledPaymentMessage))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const rejectIncomingPaymentRequest = () => {
+        try {
+            const rejectedPaymentMessage = new Message({
+                ...message,
+                payment: {
+                    ...message.payment,
+                    status: PaymentStatus.rejected,
+                },
+            })
+            sendUpdatedPaymentMessage({
+                to: message.sentBy,
+                message: rejectedPaymentMessage,
+            })
+            dispatch(updateMessage(rejectedPaymentMessage))
         } catch (error) {
             console.log(error)
         }
@@ -75,6 +94,13 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
                         />
                         <Text medium caption style={styles(theme).statusText}>
                             {t('words.paid')}
+                        </Text>
+                    </View>
+                )}
+                {payment?.status === PaymentStatus.rejected && (
+                    <View style={styles(theme).statusContainer}>
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.rejected')}
                         </Text>
                     </View>
                 )}
@@ -104,6 +130,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
                                 size="sm"
                                 color={theme.colors.secondary}
                                 containerStyle={styles(theme).buttonContainer}
+                                onPress={rejectIncomingPaymentRequest}
                                 title={
                                     <Text medium caption>
                                         {t('words.reject')}

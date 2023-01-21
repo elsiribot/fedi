@@ -37,6 +37,7 @@
         "receive": "Receive",
         "received": "Received",
         "reject": "Reject",
+        "rejected": "Rejected",
         "request": "Request",
         "required": "required",
         "room": "Room",
