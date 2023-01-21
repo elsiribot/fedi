@@ -63,13 +63,13 @@ async fn get_bridge() -> Option<Arc<Bridge>> {
     bridge
 }
 
-pub fn fedimint_init(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
+pub fn fedimint_initialize(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
     RUNTIME.block_on(async {
-        fedimint_init_async(data_dir, event_sink).await;
+        fedimint_initialize_async(data_dir, event_sink).await;
     })
 }
 
-async fn fedimint_init_async(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
+async fn fedimint_initialize_async(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
     let event_sink = Arc::new(EventSinkWrapper { event_sink });
     init_logging(event_sink.clone());
     tracing::info!("init called ...");
@@ -858,7 +858,7 @@ mod tests {
         // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
         RUNTIME.block_on(async {
             let event_sink = FakeEventSink::new();
-            fedimint_init_async(create_data_dir(), Box::new(event_sink)).await;
+            fedimint_initialize_async(create_data_dir(), Box::new(event_sink)).await;
 
             // Join federation
             // ngrok
