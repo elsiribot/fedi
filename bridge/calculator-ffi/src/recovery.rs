@@ -14,6 +14,7 @@ pub struct SocialRecoveryQr {
 
 /// This type is set to React Native and displayed in the UI
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryApproval {
     // FIXME: perhaps this should be peer id and client can look up the name ???
     pub guardian_name: String,

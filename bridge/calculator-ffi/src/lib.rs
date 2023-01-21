@@ -621,7 +621,7 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     let valid = match RecoveryFile::from_bytes(&contents) {
         Ok(recovery_file) => {
             let federation = get_federation(&federation_id).await;
-            federation.start_social_recovery(&recovery_file).await;
+            federation.start_social_recovery(&recovery_file).await?;
             info!("social recovery started");
             true
         }

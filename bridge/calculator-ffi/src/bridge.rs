@@ -27,7 +27,10 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::{RecoveryId, VerificationDocument};
-use fedimint_api::{config::ClientConfig, PeerId};
+use fedimint_api::{
+    config::{ClientConfig, ConfigResponse},
+    PeerId,
+};
 use fedimint_api::{db::Database, NumPeers};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
@@ -36,7 +39,10 @@ use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
-    api::{WsFederationApi, WsFederationConnect},
+    api::{
+        FederationApiExt, GlobalFederationApi, WalletFederationApi, WsFederationApi,
+        WsFederationConnect,
+    },
     module_decode_stubs,
     query::CurrentConsensus,
     social::{RecoveryFile, SocialRecovery},
@@ -71,7 +77,9 @@ async fn load_federations_from_disk(
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
                 let db = Database::new(db, module_decode_stubs());
-                let client = UserClient::new(cfg.clone(), db, Default::default()).await;
+                let client =
+                    UserClient::new(cfg.clone(), module_decode_stubs(), db, Default::default())
+                        .await;
                 let federation =
                     Federation::new(client, event_sink.clone(), task_group.make_subgroup().await);
                 federations.push(federation)
@@ -164,7 +172,7 @@ impl Bridge {
             let config = fed.client.config();
             let db = fed.client.db();
             let secp = Secp256k1::new();
-            let new_client = UserClient::new(config, db.clone(), secp).await;
+            let new_client = UserClient::new(config, module_decode_stubs(), db.clone(), secp).await;
             fed.client = Arc::new(new_client);
 
             // start pollers
@@ -274,14 +282,8 @@ impl Federation {
         tracing::info!("parsed connection string");
         let api = WsFederationApi::new(connect_cfg.members);
         tracing::info!("fetching config");
-        let cfg: ClientConfig = api
-            // FIXME: is this the correct policy?
-            .request(
-                "/config",
-                (),
-                CurrentConsensus::new(api.peers().one_honest()),
-            )
-            .await?;
+        let res: ConfigResponse = api.download_client_config().await?;
+        let cfg = res.client;
 
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).unwrap();
@@ -308,7 +310,13 @@ impl Federation {
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
         let db = SledDb::open(db_path, "client").unwrap(); // FIXME: don't unwrap
         let db = Database::new(db, module_decode_stubs());
-        let client = UserClient::new(UserClientConfig(cfg.clone()), db, Default::default()).await;
+        let client = UserClient::new(
+            UserClientConfig(cfg.clone()),
+            module_decode_stubs(),
+            db,
+            Default::default(),
+        )
+        .await;
         Ok(Self::new(client, event_sink, task_group))
     }
 
@@ -745,15 +753,16 @@ impl Federation {
     /// Start a new social recovery session if one doesn't exist already
     /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
     /// Also won't be able to do simulataneous recoveries in 2 federations.
-    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) {
+    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
         match self.social_recovery_continue().await {
             Ok(recovery_client) => recovery_client,
             Err(_) => {
-                let recovery_client = self.client.social_recovery_start(recovery_file.clone());
+                let recovery_client = self.client.social_recovery_start(recovery_file.clone())?;
                 self.social_recovery_save(&recovery_client).await;
                 recovery_client
             }
         };
+        Ok(())
     }
 
     // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
@@ -836,7 +845,7 @@ impl Federation {
         if let Some(verification_doc) = verification_doc {
             tracing::info!("downloaded verification doc ... saving to filesystem");
             let path = data_dir.join(VERIFICATION_FILENAME);
-            fs::write(&path, verification_doc.to_raw())?;
+            fs::write(&path, verification_doc.to_raw()?)?;
             tracing::info!("saved verificaiton doc");
             return Ok(Some(path));
         };
