@@ -1,5 +1,5 @@
 import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -8,7 +8,7 @@ import {
     updateMessage,
     useCommunityContext,
 } from '../../../state/contexts/CommunityContext'
-import { useXmpp } from '../../../state/hooks'
+import { useBridge, useXmpp } from '../../../state/hooks'
 import { Message, MSats, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 
@@ -21,6 +21,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { generateEcash, receiveEcash, validateEcash } = useBridge()
     const { sendUpdatedPaymentMessage } = useXmpp()
     const { state, dispatch } = useCommunityContext()
     const { authenticatedMember } = state
@@ -79,6 +80,75 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             console.log(error)
         }
     }
+
+    const acceptIncomingPaymentRequest = async () => {
+        try {
+            const ecash = await generateEcash(message.payment?.amount as MSats)
+            const acceptedPaymentMessage = new Message({
+                ...message,
+                payment: {
+                    ...message.payment,
+                    recipient: message.sentBy,
+                    token: ecash,
+                },
+            })
+            sendUpdatedPaymentMessage({
+                to: message.sentBy,
+                message: acceptedPaymentMessage,
+            })
+            dispatch(updateMessage(acceptedPaymentMessage))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    // Redeem ecash if found in incoming message
+    useEffect(() => {
+        const redeemEcash = async (ecash: string) => {
+            try {
+                const { valid, amount } = await validateEcash(ecash)
+                console.debug('valid', valid)
+                if (valid) {
+                    console.debug('receiving ecash', amount, 'msats')
+                    await receiveEcash(ecash)
+                    const acceptedPaymentMessage = new Message({
+                        ...message,
+                        payment: {
+                            ...message.payment,
+                            status: PaymentStatus.paid,
+                            token: 'spent',
+                        },
+                    })
+                    sendUpdatedPaymentMessage({
+                        to: message.sentTo,
+                        message: acceptedPaymentMessage,
+                    })
+                    dispatch(updateMessage(acceptedPaymentMessage))
+                }
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+        if (
+            message.payment?.token &&
+            message.payment?.token !== 'spent' &&
+            message.payment?.status !== PaymentStatus.paid &&
+            message.payment?.recipient?.username ===
+                authenticatedMember?.username
+        ) {
+            console.debug('redeeming ecash', message.payment?.token)
+            redeemEcash(message.payment?.token)
+        }
+    }, [
+        dispatch,
+        message.payment,
+        authenticatedMember?.username,
+        validateEcash,
+        receiveEcash,
+        message,
+        sendUpdatedPaymentMessage,
+    ])
 
     return (
         <View style={styles(theme).container}>
@@ -142,6 +212,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
                                 size="sm"
                                 color={theme.colors.secondary}
                                 containerStyle={styles(theme).buttonContainer}
+                                onPress={acceptIncomingPaymentRequest}
                                 title={
                                     <Text medium caption>
                                         {t('words.pay')}

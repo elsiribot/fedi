@@ -162,9 +162,14 @@ export type MessageAction = {
 export class Payment extends Base {
     amount: MSats
     status: PaymentStatus
+    recipient?: Member
     memo?: string
     token?: string
     invoice?: Invoice
+    constructor(data: any) {
+        super(data)
+        if (data.recipient) this.recipient = new Member(data.recipient)
+    }
 }
 
 export enum PaymentStatus {
