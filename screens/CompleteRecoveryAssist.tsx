@@ -24,35 +24,30 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const { approveSocialRecoveryRequest, denySocialRecoveryRequest } =
         useBridge()
     const { toast } = useEnvironmentContext().state
-    const { videoPath } = route.params
+    const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
     const [approvalSelected, setApprovalSelected] = useState(false)
     const [denialSelected, setDenialSelected] = useState(false)
+    const [approving, setApproving] = useState(false)
 
     const handleGuardianApproval = async () => {
-        // try {
-        //     await approveSocialRecoveryRequest(userPublicKey)
-        //     navigation.replace('RecoveryAssistSuccess')
-        // } catch (error) {
-        //     const typedError = error as Error
-        //     console.error(typedError)
-        //     toast?.show(typedError?.message, 3000)
-        // }
+        try {
+            setApproving(true)
+            await approveSocialRecoveryRequest(recoveryId)
+            navigation.replace('RecoveryAssistSuccess')
+        } catch (error) {
+            const typedError = error as Error
+            console.error(typedError)
+            toast?.show(typedError?.message, 3000)
+        }
+        setApproving(false)
     }
 
     const handleGuardianDenial = async () => {
-        // try {
-        //     await denySocialRecoveryRequest(userPublicKey)
-        //     // TODO: Go to denial screen once design is provided
-        //     navigation.replace('RecoveryAssistSuccess')
-        // } catch (error) {
-        //     const typedError = error as Error
-        //     console.error(typedError)
-        //     toast?.show(typedError?.message, 3000)
-        // }
+        // FIXME: seeing a success screen when you deny someone is a little unexpected
+        navigation.replace('RecoveryAssistSuccess')
     }
 
-    // console.log('videoPath', `file://${videoPath}`)
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
@@ -135,6 +130,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                         handleGuardianDenial()
                     }
                 }}
+                loading={approving}
                 disabled={!approvalSelected && !denialSelected}
                 containerStyle={styles(theme).confirmButton}
             />

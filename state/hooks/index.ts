@@ -7,6 +7,7 @@ import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
     authenticateGuardian,
+    completeSocialRecovery,
     dangerousLeaveFederation,
     denySocialRecoveryRequest,
     generateAddress,
@@ -57,9 +58,9 @@ export const useBridge = () => {
             [selectedFederation],
         ),
         approveSocialRecoveryRequest: useCallback(
-            (userPublicKey: string) => {
+            (recoveryId: string) => {
                 return approveSocialRecoveryRequest(
-                    userPublicKey,
+                    recoveryId,
                     selectedFederation!.name,
                 )
             },
@@ -138,6 +139,9 @@ export const useBridge = () => {
         ),
         locateRecoveryFile: useCallback(() => {
             return locateRecoveryFile(selectedFederation!.name)
+        }, [selectedFederation]),
+        completeSocialRecovery: useCallback(() => {
+            return completeSocialRecovery(selectedFederation!.name)
         }, [selectedFederation]),
         payInvoice: useCallback(
             (invoice: string) => {

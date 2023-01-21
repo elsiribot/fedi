@@ -485,17 +485,15 @@ export async function denySocialRecoveryRequest(
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
 export async function approveSocialRecoveryRequest(
-    _userPublicKey: string,
-    _federationId: string,
+    recoveryId: string,
+    federationId: string,
 ): Promise<null> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, userPublicKey })
-    // let response = await FedimintFfi.rpc('approveSocialRecoveryRequest', payload)
-    // return handleRpcResponse<null>(response)
-
-    // Simulate success/failure modes
-    return handleRpcResponse<null>('{"result": "null"}')
-    // return handleRpcResponse<null>('{"error": "social recovery approval failed"}')
+    let payload = JSON.stringify({ federationId, recoveryId })
+    let response = await FedimintFfi.rpc(
+        'approveSocialRecoveryRequest',
+        payload,
+    )
+    return handleRpcResponse<null>(response)
 }
 
 export async function socialRecoveryDownloadVerificationDoc(
@@ -510,6 +508,15 @@ export async function socialRecoveryDownloadVerificationDoc(
     return handleRpcResponse<string | null>(response)
 }
 
+export async function completeSocialRecovery(
+    federationId: string,
+): Promise<string | null> {
+    console.log('calling completeSocialRecovery')
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('completeSocialRecovery', payload)
+    return handleRpcResponse<null>(response)
+}
+
 /*
  * Mocked-out social backup and recovery events
  */
@@ -519,15 +526,10 @@ export type GuardianApproval = {
     approved: boolean
 }
 
-export type SocialRecoveryStatus =
-    | { type: 'failed' }
-    | { type: 'complete' }
-    | { type: 'pending'; approvalsRemaining: number }
-
 export type SocialRecoveryEvent = {
     federationId: string
     approvals: GuardianApproval[]
-    status: SocialRecoveryStatus
+    remaining: number
 }
 
 export type RecoveryFileCreationEvent =

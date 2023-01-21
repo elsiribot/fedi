@@ -9,14 +9,12 @@ import DocumentPicker, {
 } from 'react-native-document-picker'
 import RNFS from 'react-native-fs'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useBridge } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { validateRecoveryFile } = useBridge()
-    const { toast } = useEnvironmentContext().state
     const navigation = useNavigation<NavigationHook>()
     const [result, setResult] = useState<
         DocumentPickerResponse | undefined | null
@@ -33,7 +31,8 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
         } catch (error) {
             const typedError = error as Error
             console.error('DocumentPicker Error: ', typedError)
-            toast?.show(typedError?.message, 3000)
+            // Hiding this because it shows the toast when user closes the dialogue ...
+            // toast?.show(typedError?.message, 3000)
         }
     }
 

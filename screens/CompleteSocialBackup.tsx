@@ -175,7 +175,8 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.backup.complete-social-backup')}
                 containerStyle={[
                     styles(theme).completeButton,
-                    backupsCompleted < 2 ? styles(theme).hidden : {},
+                    // FIXME: changed 2 to 1 as hack for faster dev
+                    backupsCompleted < 1 ? styles(theme).hidden : {},
                 ]}
                 onPress={() => {
                     navigation.navigate('SocialBackupSuccess')

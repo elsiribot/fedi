@@ -26,46 +26,28 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            // if (input.startsWith('socialrecovery:')) {
-            //     console.info('fedi social recovery detected', input)
-            //     const parts = input.split('::')
-            //     const userPublicKey = parts[1]
-            //     const videoUrl = parts[2]
-            //     console.info(userPublicKey, videoUrl)
-
-            //     navigation.navigate('CompleteRecoveryAssist', {
-            //         userPublicKey,
-            //         videoUrl,
-            //     })
-            // } else {
-            //     toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
-            // }
             try {
-                console.log('parsin', input)
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
-                console.log('parsed')
                 try {
-                    console.log('downloading')
                     let videoPath = await socialRecoveryDownloadVerificationDoc(
                         qr.recoveryId,
                     )
-                    console.log('downloaded', videoPath)
                     if (videoPath == null) {
-                        // FIXME: internationalize
-                        toast?.show('nothing to download frmo guardian', 3000)
+                        toast?.show(t('nothing-to-download'), 3000)
                     } else {
                         console.log('todo: navigtate')
                         navigation.navigate('CompleteRecoveryAssist', {
                             videoPath: videoPath as string,
+                            recoveryId: qr.recoveryId,
                         })
                     }
                 } catch (e) {
                     console.log("couldn't download video", e)
                     // FIXME: internationalize
-                    toast?.show('failed to download from guardian', 3000)
+                    toast?.show(t('download-failed'), 3000)
                 }
             } catch (e) {
-                // FIXME: this isn't quite right error message. It's more like "valid qr, couldn't download"
+                // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
             console.log(input)

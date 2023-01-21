@@ -36,7 +36,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 // input =
                 //     '{"members":[[0,"ws://10.0.2.2:4001/"],[1,"ws://10.0.2.2:4011/"],[2,"ws://10.0.2.2:4021/"],[3,"ws://10.0.2.2:4031/"]]}'
                 input =
-                    '{"members":[[0,"wss://4c0922043ed1.ngrok.io"],[1,"wss://6fc418b1717c.ngrok.io"],[2,"wss://141bc9ab1e05.ngrok.io"],[3,"wss://d8589c2dac84.ngrok.io/"]]}'
+                    '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
             }
             console.log('input', input)
 
@@ -62,10 +62,10 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 }
                 setJoiningFederation(false) // just in case
             } else {
-                toast?.show('invalid federation code', 5000)
+                toast?.show(t('invalid-federation-code'), 5000)
             }
         },
-        [dispatch, joiningFederation, navigation, toast],
+        [dispatch, joiningFederation, navigation, toast, t],
     )
 
     const checkClipboard = useCallback(async () => {
