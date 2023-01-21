@@ -555,17 +555,17 @@ async fn handle_recover_from_mnemonic(payload: String) -> anyhow::Result<String>
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DangerousLeaveFederationPayload {
+pub struct LeaveFederationPayload {
     federation_id: String,
 }
 
-async fn handle_dangerous_leave_federation(payload: String) -> anyhow::Result<String> {
-    let DangerousLeaveFederationPayload { federation_id } = match serde_json::from_str(&payload) {
+async fn handle_leave_federation(payload: String) -> anyhow::Result<String> {
+    let LeaveFederationPayload { federation_id } = match serde_json::from_str(&payload) {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
     let bridge = get_bridge().await.expect("there should be a bridge");
-    bridge.dangerous_leave_federation(federation_id).await?;
+    bridge.leave_federation(&federation_id).await?;
     Ok(json!({ "result": () }).to_string())
 }
 
@@ -764,7 +764,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "switchGateway" => handle_switch_gateway(payload).await,
             "getMnemonic" => handle_get_mnemonic(payload).await,
             "recoverFromMnemonic" => handle_recover_from_mnemonic(payload).await,
-            "dangerousLeaveFederation" => handle_dangerous_leave_federation(payload).await,
+            "leaveFederation" => handle_leave_federation(payload).await,
             // social recovery
             "uploadBackupFile" => handle_upload_backup_file(payload).await,
             "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
@@ -801,6 +801,8 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
+    use std::path;
+
     use fedi_social::common::VerificationDocument;
     use serde_json::Value;
     use tracing::debug;
@@ -825,14 +827,13 @@ mod tests {
         }
     }
 
+    // note: logging doesn't work yet at this point
     fn create_data_dir() -> String {
-        let data_dir = tempfile::tempdir()
+        tempfile::tempdir()
             .unwrap()
             .into_path()
             .display()
-            .to_string();
-        info!(data_dir = data_dir);
-        data_dir
+            .to_string()
     }
 
     // fn parse_result<'a,T: Deserialize<'a>>(result: &'a String) -> T {
@@ -847,43 +848,87 @@ mod tests {
         v["result"].clone()
     }
 
-    async fn test_get_federation() -> (String, Arc<Federation>) {
+    // TODO: should we return the bridge here?
+    async fn setup() -> anyhow::Result<Arc<Federation>> {
+        // Intialize bridge
+        let event_sink = FakeEventSink::new();
+        fedimint_initialize_async(create_data_dir(), Box::new(event_sink)).await;
+
+        // Join federation
+        // ngrok
+        // let connect_string = String::from(
+        //     r#"{"members":[[2,"wss://141bc9ab1e05.ngrok.io/"],[0,"wss://4c0922043ed1.ngrok.io/"],[1,"wss://6fc418b1717c.ngrok.io/"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#,
+        // );
+        // local
+        let connect_string = String::from(
+            r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#,
+        );
+        let payload = serde_json::to_string(&JoinFederationPayload { connect_string })?;
+        handle_join_federation(payload).await.unwrap();
         let federation_id = "Hals_trusty_mint";
-        (federation_id.into(), get_federation(federation_id).await)
+        let federation = get_federation(&federation_id).await;
+
+        let data_dir = get_bridge().await.unwrap().data_dir.display().to_string();
+        tracing::info!(data_dir = data_dir);
+        Ok(federation)
+    }
+
+    #[test]
+    fn test_leave_federation() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            let federation = setup().await?;
+            let bridge = get_bridge().await.unwrap();
+            {
+                let federations_lock = bridge.federations.lock().await.clone();
+                assert_eq!(1, federations_lock.keys().len());
+                let config_exists =
+                    path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
+                        .is_file();
+                assert!(config_exists);
+                let db_exists =
+                    path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
+                        .is_dir();
+                assert!(db_exists);
+            }
+            bridge.leave_federation(&federation.id()).await?;
+            {
+                let federations_lock = bridge.federations.lock().await.clone();
+                assert_eq!(0, federations_lock.keys().len());
+                let config_exists =
+                    path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
+                        .is_file();
+                assert!(!config_exists);
+                let db_exists =
+                    path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
+                        .is_dir();
+                assert!(!db_exists);
+            }
+            Ok(())
+        })
     }
 
     #[test]
     fn test_decryption_shares() -> anyhow::Result<()> {
         // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
         RUNTIME.block_on(async {
-            let event_sink = FakeEventSink::new();
-            fedimint_initialize_async(create_data_dir(), Box::new(event_sink)).await;
-
-            // Join federation
-            // ngrok
-            let connect_string = String::from(r#"{"members":[[2,"wss://141bc9ab1e05.ngrok.io/"],[0,"wss://4c0922043ed1.ngrok.io/"],[1,"wss://6fc418b1717c.ngrok.io/"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#);
-            // local
-            // let connect_string = String::from(r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#);
-            let payload = serde_json::to_string(&JoinFederationPayload { connect_string }).unwrap();
-            handle_join_federation(payload).await.unwrap();
-            let (federation_id, fed) = test_get_federation().await;
-            fed.client.config().0;
+            let federation = setup().await?;
 
             // Get original mnemonic (for comparison later)
-            let payload = serde_json::to_string(&GetMnemonicPayload { federation_id: federation_id.clone() }).unwrap();
+            let payload = serde_json::to_string(&GetMnemonicPayload {
+                federation_id: federation.id(),
+            })?;
             let result = handle_get_mnemonic(payload).await.unwrap();
             let words: Vec<String> = serde_json::from_value(get_result(result))?;
             let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
             info!("initial mnemnoic {:?}", &words);
-            
+
             // Upload backup
             let video_file_path = PathBuf::from("/Users/justin/fedi/bridge/fixtures/backup.fedi");
             let video_file_contents = fs::read(&video_file_path)?;
             let payload = serde_json::to_string(&UploadBackupFilePayload {
                 video_file_path,
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             let result = handle_upload_backup_file(payload).await.unwrap();
             let recovery_file_path: String = serde_json::from_value(get_result(result)).unwrap();
             info!(recovery_file_path = recovery_file_path);
@@ -891,18 +936,16 @@ mod tests {
             // Validate recovery file
             let payload = serde_json::to_string(&ValidateRecoveryFilePayload {
                 path: recovery_file_path.into(),
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             let result = handle_validate_recovery_file(payload).await.unwrap();
             let valid: bool = serde_json::from_value(get_result(result)).unwrap();
             assert!(valid);
 
             // Get recovery_id
             let payload = serde_json::to_string(&RecoveryQrPayload {
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             let result = handle_recovery_qr(payload).await.unwrap();
             let qr: SocialRecoveryQr = serde_json::from_value(get_result(result)).unwrap();
             let recovery_id = qr.recovery_id;
@@ -910,9 +953,8 @@ mod tests {
             // Guardian downloads verification doc
             let payload = serde_json::to_string(&SocialRecoveryDownloadVerificationDocPayload {
                 recovery_id: recovery_id.clone(),
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             let result = handle_social_recovery_download_verification_doc(payload)
                 .await
                 .unwrap();
@@ -925,29 +967,28 @@ mod tests {
             // Guardian approves
             let payload = serde_json::to_string(&ApproveSocialRecoveryRequestPayload {
                 recovery_id: recovery_id.clone(),
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             handle_approve_social_recovery_request(payload)
                 .await
                 .unwrap();
 
             // Member checks approval status
             let payload = serde_json::to_string(&SocialRecoveryApprovalsPayload {
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             handle_social_recovery_approvals(payload).await.unwrap();
 
             // Member combines decryption shares, loading recovered mnemonic back into their db
             let payload = serde_json::to_string(&CompleteSocialRecoveryPayload {
-                federation_id: federation_id.clone(),
-            })
-            .unwrap();
+                federation_id: federation.id(),
+            })?;
             handle_complete_social_recovery(payload).await.unwrap();
 
             // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
-            let payload = serde_json::to_string(&GetMnemonicPayload { federation_id: federation_id.clone() }).unwrap();
+            let payload = serde_json::to_string(&GetMnemonicPayload {
+                federation_id: federation.id(),
+            })?;
             let result = handle_get_mnemonic(payload).await.unwrap();
             let words: Vec<String> = serde_json::from_value(get_result(result))?;
             let final_mnemnoic = Mnemonic::parse(words.join(" "))?;

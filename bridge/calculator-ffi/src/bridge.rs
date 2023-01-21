@@ -27,11 +27,11 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::{RecoveryId, VerificationDocument};
+use fedimint_api::db::Database;
 use fedimint_api::{
     config::{ClientConfig, ConfigResponse},
     PeerId,
 };
-use fedimint_api::{db::Database, NumPeers};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
@@ -39,10 +39,7 @@ use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
-    api::{
-        FederationApiExt, GlobalFederationApi, WalletFederationApi, WsFederationApi,
-        WsFederationConnect,
-    },
+    api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
     module_decode_stubs,
     query::CurrentConsensus,
     social::{RecoveryFile, SocialRecovery},
@@ -121,7 +118,6 @@ impl Bridge {
     }
 
     pub async fn stop_pollers(&self) -> Result<()> {
-        // FIXME: don't clone
         self.task_group.clone().shutdown_join_all().await
     }
 
@@ -194,13 +190,22 @@ impl Bridge {
     }
 
     /// Deletes federation client database and config
-    /// only use this in development
-    /// TODO: actually make sure we're not running in production
-    pub async fn dangerous_leave_federation(&self, federation_id: String) -> anyhow::Result<()> {
-        let files = fs::read_dir(&self.data_dir).unwrap();
-        for file in files {
-            tracing::info!("{:?}", file);
-        }
+    /// Returns error if use has a balance
+    pub async fn leave_federation(&self, federation_id: &str) -> anyhow::Result<()> {
+        info!("called leave");
+        // Error if we don't recognize federation
+        let federation = self
+            .get_federation(federation_id)
+            .await
+            .ok_or(anyhow!("Federation not found"))?;
+
+        // Stop pollers
+        info!("stopping pollers");
+        federation.stop_pollers().await?;
+
+        // Remove config and db
+        // FIXME: this should all be atomic
+        info!("deleting configs");
         let json_path = Path::new(&self.data_dir)
             .join(&federation_id)
             .with_extension("json");
@@ -209,6 +214,13 @@ impl Bridge {
             .with_extension("db");
         fs::remove_file(json_path)?;
         fs::remove_dir_all(db_path)?;
+
+        // Remove from bridge state
+        info!("removing from bridge");
+        let mut lock = self.federations.lock().await;
+        lock.remove(federation_id);
+
+        info!("done");
         Ok(())
     }
 }
@@ -239,7 +251,7 @@ impl Federation {
     }
 
     // FIXME: move this to actually using config.federation_id
-    pub fn federation_id(&self) -> String {
+    pub fn id(&self) -> String {
         self.client.config().0.federation_name.clone()
     }
 
@@ -677,12 +689,12 @@ impl Federation {
 
     async fn send_balance_notification(&self) {
         let balance_millis = self.client.coins().await.total_amount().msats;
-        let event = Event::balance(self.federation_id(), balance_millis);
+        let event = Event::balance(self.id(), balance_millis);
         self.event_sink.event(&event);
     }
 
     fn transaction_event(&self, tx: &Transaction) {
-        let event = Event::transaction(self.federation_id(), tx.clone());
+        let event = Event::transaction(self.id(), tx.clone());
         self.event_sink.event(&event);
     }
 
@@ -736,7 +748,7 @@ impl Federation {
     pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
         let mut dbtx = self.dbtx().await;
         let state = dbtx
-            .get_value(&SocialRecoveryStateKey(self.federation_id()))
+            .get_value(&SocialRecoveryStateKey(self.id()))
             .await
             .expect("Db error")
             .ok_or(anyhow!("no active recovery session"))?;
@@ -746,12 +758,9 @@ impl Federation {
     pub async fn social_recovery_save(&self, recovery_client: &SocialRecovery) {
         // FIXME: should I pass dbtx from outside?
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(
-            &SocialRecoveryStateKey(self.federation_id()),
-            recovery_client.state(),
-        )
-        .await
-        .expect("Db error");
+        dbtx.insert_entry(&SocialRecoveryStateKey(self.id()), recovery_client.state())
+            .await
+            .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
     }
 
@@ -865,6 +874,13 @@ impl Federation {
             let verification_client = self.client.social_verification(PeerId::from(i as u16));
             verification_client.approve_recovery(*recovery_id).await?;
         }
+        Ok(())
+    }
+
+    // FIXME: this just hangs forever
+    pub async fn stop_pollers(&self) -> anyhow::Result<()> {
+        // FIXME: is this clone a problem?
+        // self.task_group.clone().shutdown_join_all().await
         Ok(())
     }
 

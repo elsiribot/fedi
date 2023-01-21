@@ -73,7 +73,8 @@ impl<'a> tracing::field::Visit for StringVisitor<'a> {
 
 // TODO: configurable log level
 pub fn init_logging(event_sink: Arc<EventSinkWrapper>) {
-    // #[cfg(target_os = "android")]
+    // react native
+    #[cfg(not(target_os = "macos"))]
     tracing_subscriber::registry()
         .with(ReactNativeLayer(event_sink).with_filter(LevelFilter::INFO))
         .try_init()
@@ -91,6 +92,8 @@ pub fn init_logging(event_sink: Arc<EventSinkWrapper>) {
     //     )
     //     .try_init()
     //     .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
+
+    // running tests on a mac
     #[cfg(target_os = "macos")]
     tracing_subscriber::fmt()
         .try_init()
