@@ -21,7 +21,7 @@ pub struct TransactionEvent {
 pub struct SocialRecoveryEvent {
     pub federation_id: String,
     pub approvals: Vec<SocialRecoveryApproval>,
-    pub complete: bool,
+    pub remaining: usize,
 }
 
 #[derive(Serialize, Clone, Debug)]

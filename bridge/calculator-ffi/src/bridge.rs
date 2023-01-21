@@ -52,6 +52,10 @@ const GAP_LIMIT: usize = 100;
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
 pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
+fn required_threashold_of(n: usize) -> usize {
+    n - ((n - 1) / 3)
+}
+
 async fn load_federations_from_disk(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
@@ -278,7 +282,6 @@ impl Federation {
                 CurrentConsensus::new(api.peers().one_honest()),
             )
             .await?;
-        tracing::info!("config {:?}", &cfg);
 
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).unwrap();
@@ -704,20 +707,16 @@ impl Federation {
         let verification_doc = VerificationDocument::from_raw(&file_contents);
         // FIXME: two different forms of seed phrase
         let seed_phrase = UserSeedPhrase::from(self.get_mnemonic().await.to_string());
+
         let backup_client = self.client.social_backup();
         let recovery_file =
             backup_client.prepare_recovery_file(verification_doc.clone(), seed_phrase.clone());
         backup_client
             .upload_backup_to_federation(&recovery_file)
             .await?;
-        debug!("backup file uploaded");
-        // FIXME: we should clean this up, but i commented out to try to diagnose what's wrong with this file
-        // fs::remove_file(video_file_path)?;
-        debug!("original video file removed");
         // FIXME: is this a good filename?
         let recovery_file_path = datadir.join(RECOVERY_FILENAME);
         fs::write(&recovery_file_path, recovery_file.to_bytes())?;
-        debug!("recovery file saved");
         Ok(recovery_file_path)
     }
 
@@ -778,7 +777,7 @@ impl Federation {
         Ok(SocialRecoveryQr { recovery_id })
     }
 
-    pub async fn social_recovery_approvals(&self) -> Result<Vec<SocialRecoveryApproval>> {
+    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
         let mut recovery_client = self.social_recovery_continue().await?;
         let guardian_peer_ids: Vec<(String, PeerId)> = self
             .client
@@ -792,21 +791,34 @@ impl Federation {
         let mut approvals = vec![];
         for (guardian_name, peer_id) in guardian_peer_ids {
             let approved = recovery_client
-                .get_decryption_share_from(peer_id) // FIXME: don't use as
+                .get_decryption_share_from(peer_id)
                 .await
-                .expect("get decryption share"); // FIXME: don't unwrap
+                .unwrap_or_else(|_| {
+                    debug!("failed to get decryption share from peer {}", peer_id);
+                    false
+                });
             approvals.push(SocialRecoveryApproval {
                 guardian_name,
                 approved,
             });
         }
 
-        // TODO: try to combine, return whether it's finished or not
+        // calculate approvals remaining
+        let approvals_required = required_threashold_of(approvals.len());
+        let num_approvals = approvals.iter().filter(|a| a.approved).count();
+        let remaining = approvals_required.saturating_sub(num_approvals);
 
         // Save progress to DB
         self.social_recovery_save(&recovery_client).await;
 
-        Ok(approvals)
+        Ok((approvals, remaining))
+    }
+
+    pub async fn social_recovery_combine_shares(&self) -> Result<Mnemonic> {
+        let recovery_client = self.social_recovery_continue().await?;
+        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
+        let mnemonic = Mnemonic::parse(seed_phrase.0)?;
+        Ok(mnemonic)
     }
 
     pub async fn social_recovery_download_verification_doc(
@@ -834,9 +846,12 @@ impl Federation {
     }
 
     pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
-        // FIXME: don't hard-code peer id
-        let verification_client = self.client.social_verification(PeerId::from(0));
-        verification_client.approve_recovery(*recovery_id).await
+        // TODO: figure out which guardian should do the next approval and fire off request to them
+        for i in 0..4 {
+            let verification_client = self.client.social_verification(PeerId::from(i as u16));
+            verification_client.approve_recovery(*recovery_id).await?;
+        }
+        Ok(())
     }
 
     pub async fn start_pollers(&mut self) {
