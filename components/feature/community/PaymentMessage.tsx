@@ -2,9 +2,13 @@ import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { Images } from '../../../assets/images'
-import { useCommunityContext } from '../../../state/contexts/CommunityContext'
 
+import { Images } from '../../../assets/images'
+import {
+    updateMessage,
+    useCommunityContext,
+} from '../../../state/contexts/CommunityContext'
+import { useXmpp } from '../../../state/hooks'
 import { Message, MSats, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 
@@ -17,7 +21,9 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { authenticatedMember } = useCommunityContext().state
+    const { sendCancelPaymentMessage } = useXmpp()
+    const { state, dispatch } = useCommunityContext()
+    const { authenticatedMember } = state
     const { payment } = message
 
     const sentByMe = message.sentBy?.username === authenticatedMember?.username
@@ -36,6 +42,25 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
               memo: payment?.memo,
           })}`
 
+    const cancelPayment = () => {
+        try {
+            const canceledPaymentMessage = new Message({
+                ...message,
+                payment: {
+                    ...message.payment,
+                    status: PaymentStatus.canceled,
+                },
+            })
+            sendCancelPaymentMessage({
+                to: message.sentTo,
+                message: canceledPaymentMessage,
+            })
+            dispatch(updateMessage(canceledPaymentMessage))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     return (
         <View style={styles(theme).container}>
             <Text caption medium style={styles(theme).messageText}>
@@ -43,13 +68,20 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             </Text>
             <View style={styles(theme).actionsContainer}>
                 {payment?.status === PaymentStatus.paid && (
-                    <View style={styles(theme).paidContainer}>
+                    <View style={styles(theme).statusContainer}>
                         <Image
                             source={Images.DoneWhite}
                             style={styles(theme).paidIcon}
                         />
-                        <Text medium caption style={styles(theme).paidText}>
+                        <Text medium caption style={styles(theme).statusText}>
                             {t('words.paid')}
+                        </Text>
+                    </View>
+                )}
+                {payment?.status === PaymentStatus.canceled && (
+                    <View style={styles(theme).statusContainer}>
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.canceled')}
                         </Text>
                     </View>
                 )}
@@ -59,6 +91,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
                             size="sm"
                             color={theme.colors.secondary}
                             containerStyle={styles(theme).buttonContainer}
+                            onPress={cancelPayment}
                             title={
                                 <Text medium caption>
                                     {t('words.cancel')}
@@ -106,7 +139,7 @@ const styles = (theme: Theme) =>
             width: '100%',
             paddingVertical: theme.spacing.xs,
         },
-        paidContainer: {
+        statusContainer: {
             flexDirection: 'row',
             alignItems: 'center',
         },
@@ -114,7 +147,7 @@ const styles = (theme: Theme) =>
             height: theme.sizes.xs,
             width: theme.sizes.xs,
         },
-        paidText: {
+        statusText: {
             color: theme.colors.secondary,
             marginLeft: theme.spacing.xs,
         },

@@ -145,8 +145,10 @@ export class Message extends Base {
     payment?: Payment
     constructor(data: any) {
         super(data)
+        if (data.sentIn) this.sentIn = new Room(data.sentIn)
         if (data.sentBy) this.sentBy = new Member(data.sentBy)
         if (data.sentTo) this.sentTo = new Member(data.sentTo)
+        if (data.payment) this.payment = new Payment(data.payment)
     }
 }
 

@@ -341,6 +341,36 @@ export const useXmpp = () => {
                 )
             })
         }, [xmppClient]),
+        sendCancelPaymentMessage: useCallback(
+            async ({ message, to }: OutgoingMessage) => {
+                const fromJid = xmppClient?.jid?.toString()
+                const toJid = to?.jid.toString()
+
+                await xmppClient?.send(
+                    xml(
+                        'message',
+                        {
+                            id: message.id,
+                            type: 'chat',
+                            from: fromJid,
+                            to: toJid,
+                        },
+                        xml(
+                            'body',
+                            { xmlns: 'jabber:client' },
+                            message.content as string,
+                        ),
+                        xml(
+                            'dm',
+                            { xmlns: 'fedi:direct-message' },
+                            JSON.stringify(message),
+                        ),
+                        xml('action', { xmlns: 'fedi:cancel-payment' }),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
         sendDirectMessage: useCallback(
             async ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()

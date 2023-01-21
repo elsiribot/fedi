@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
-import { useCommunityContext } from '../state/contexts/CommunityContext'
+import {
+    addToMessages,
+    useCommunityContext,
+} from '../state/contexts/CommunityContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useXmpp } from '../state/hooks'
 import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
@@ -22,7 +25,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const [amount, setAmount] = useState<SatsString>('' as SatsString)
     // const { generateEcash } = useBridge()
     const { sendDirectMessage } = useXmpp()
-    const { authenticatedMember } = useCommunityContext().state
+    const { state, dispatch } = useCommunityContext()
+    const { authenticatedMember } = state
     const { recipient } = route.params
 
     const requestEcash = async () => {
@@ -31,7 +35,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
             const ecashRequest = new Message({
                 id: uuid.v4(),
-                content: 'fedi:ecash-request:',
+                content: 'fedi:payment-request:',
                 sentBy: authenticatedMember,
                 sentTo: recipient,
                 sentAt: Date.now() / 1000,
@@ -44,6 +48,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 to: recipient,
                 message: ecashRequest,
             })
+            dispatch(addToMessages(ecashRequest))
             setIsLoading(false)
             navigation.goBack()
         } catch (error) {

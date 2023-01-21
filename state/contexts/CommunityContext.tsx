@@ -139,6 +139,12 @@ export function setXmppClient(xmpp: Client): Action {
         payload: xmpp,
     }
 }
+export function updateMessage(message: Message): Action {
+    return {
+        type: ActionType.UPDATE_MESSAGE,
+        payload: message,
+    }
+}
 export function updateRoomMessagePreview(message: Message): Action {
     return {
         type: ActionType.UPDATE_ROOM_MESSAGE_PREVIEW,
@@ -195,7 +201,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     ),
                 }
             }
-        case ActionType.ADD_TO_MESSAGES:
+        case ActionType.ADD_TO_MESSAGES: {
             const messageIndex = state.messages.findIndex(
                 (m: Message) => m.id === action.payload.id,
             )
@@ -227,7 +233,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     ),
                 }
             }
-
+        }
         case ActionType.ADD_TO_ROOMS: {
             const roomIndex = state.rooms.findIndex(
                 (r: Room) => r.id === action.payload.id,
@@ -299,6 +305,31 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 xmppClient: action.payload,
             }
+        case ActionType.UPDATE_MESSAGE: {
+            const messageIndex = state.messages.findIndex(
+                (m: Message) => m.id === action.payload.id,
+            )
+
+            if (messageIndex === -1) {
+                // message not found, avoid re-render
+                return state
+            } else if (isEqual(action.payload, state.messages[messageIndex])) {
+                // message exists but has not changed, avoid re-render
+                return state
+            } else {
+                // message needs an update...
+                const updatedMessage = new Message({
+                    ...state.messages[messageIndex],
+                    ...action.payload,
+                })
+                return {
+                    ...state,
+                    messages: state.messages.map((m: Message, i) =>
+                        i === messageIndex ? updatedMessage : m,
+                    ),
+                }
+            }
+        }
         case ActionType.UPDATE_ROOM_MESSAGE_PREVIEW: {
             const newMessage = action.payload as Message
             const roomIndex = state.rooms.findIndex(
@@ -538,16 +569,22 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     }
                 } else if (stanza.getAttr('type') === 'chat') {
                     const bodyText = stanza.getChildText('body') as string
+                    if (!bodyText) return
+
                     const directMessageJson = stanza.getChildText(
                         'dm',
                     ) as string
-
-                    if (bodyText) {
                         const parsedMessage = JSON.parse(directMessageJson)
                         const newMessage = new Message({
                             ...parsedMessage,
                             receivedAt: Date.now() / 1000,
                         })
+
+                    const action = stanza.getChild('action')
+                    if (action?.getNS() === 'fedi:cancel-payment') {
+                        // find message and replace with canceled version
+                        dispatch(updateMessage(newMessage))
+                    } else {
                         dispatch(addToMessages(newMessage))
                         dispatch(updateRoomMessagePreview(newMessage))
                     }
