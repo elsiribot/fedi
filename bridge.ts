@@ -311,8 +311,8 @@ export async function payAddress(
     return handleRpcResponse<string>(response)
 }
 
-export async function init(dataDir: string) {
-    return FedimintFfi.init(dataDir)
+export async function initializeBridge(dataDir: string) {
+    return FedimintFfi.initialize(dataDir)
 }
 
 export async function generateEcash(

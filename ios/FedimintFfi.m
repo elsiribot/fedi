@@ -3,9 +3,9 @@
 
 @interface RCT_EXTERN_MODULE(FedimintFfi, NSObject)
 
-RCT_EXTERN_METHOD(init:(NSString*)dataDir
-                  withResolver:(RCTPromiseResolveBlock)resolve
-                  withRejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(initialize:(NSString*)dataDir
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(rpc:(NSString*)method
                   payload:(NSString*)payload
@@ -14,7 +14,7 @@ RCT_EXTERN_METHOD(rpc:(NSString*)method
 
 + (BOOL)requiresMainQueueSetup
 {
-  return NO;
+  return YES;
 }
 
 @end
@@ -24,5 +24,10 @@ RCT_EXTERN_METHOD(rpc:(NSString*)method
 @interface RCT_EXTERN_MODULE(FedimintEventEmitter, RCTEventEmitter)
 
 RCT_EXTERN_METHOD(supportedEvents)
+
++ (BOOL)requiresMainQueueSetup
+{
+  return YES;
+}
 
 @end
