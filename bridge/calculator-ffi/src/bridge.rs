@@ -144,6 +144,11 @@ impl Bridge {
         Ok(federation)
     }
 
+    pub async fn get_federation(&self, federation_id: &str) -> Option<Arc<Federation>> {
+        let lock = self.federations.lock().await;
+        lock.get(federation_id).map(|federation| federation.clone())
+    }
+
     pub async fn recover_from_mnemonic(
         &self,
         federation_id: &str,

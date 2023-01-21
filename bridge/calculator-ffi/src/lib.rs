@@ -85,9 +85,8 @@ fn rpc_error(description: &str) -> String {
 
 async fn get_federation(federation_id: &str) -> Arc<Federation> {
     let bridge = get_bridge().await.expect("there should be a bridge");
-    let lock = bridge.federations.lock().await;
-    let federation = lock.get(federation_id).unwrap(); // FIXME: don't unwrap
-    federation.clone() // FIXME: don't clone
+    // FIXME: don't unwrap
+    bridge.get_federation(federation_id).await.unwrap()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
