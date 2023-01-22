@@ -26,7 +26,9 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { sendDirectMessage } = useXmpp()
 
     const messagesWithMember = state.messages.filter(
-        m => m.sentBy?.username === member.username || m.sentTo?.username,
+        m =>
+            m.sentBy?.username === member.username ||
+            m.sentTo?.username === member.username,
     )
     const sortedMessages = [...orderBy(messagesWithMember, 'sentAt', 'asc')]
 
