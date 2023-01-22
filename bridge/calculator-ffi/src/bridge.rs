@@ -134,7 +134,6 @@ impl Bridge {
         let federation_name = federation.name();
         if !federations.contains_key(&federation_name) {
             federation.start_pollers().await;
-            federation.back_up_ecash_to_federation().await?;
             federations.insert(federation_name, Arc::new(federation.clone()));
         };
         Ok(federation)
