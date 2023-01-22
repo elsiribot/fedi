@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useRef } from 'react'
 import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { Message } from '../../../types'
@@ -16,6 +16,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     multiUserChat = false,
 }: MessagesListProps) => {
     const { theme } = useTheme()
+    const listRef = useRef<FlatList>(null)
     const renderMessage: ListRenderItem<Message> = ({ item }) => {
         return <MessageItem message={item} />
     }
@@ -23,9 +24,11 @@ const MessagesList: React.FC<MessagesListProps> = ({
     return (
         <FlatList
             data={messages}
+            ref={listRef}
             renderItem={renderMessage}
             keyExtractor={(item: Message) => `${item.id}`}
             style={styles(theme).container}
+            onContentSizeChange={() => listRef.current?.scrollToEnd()}
             ListEmptyComponent={multiUserChat ? <EmptyRoomNotice /> : null}
         />
     )

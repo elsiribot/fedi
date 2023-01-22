@@ -62,8 +62,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            marginTop: theme.spacing.md,
             padding: theme.spacing.sm,
+            marginBottom: theme.spacing.md,
             borderRadius: 12,
             maxWidth: theme.sizes.maxMessageWidth,
         },
