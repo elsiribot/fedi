@@ -195,6 +195,12 @@ type OutgoingGroupMessage = {
     fromUser?: string
     toRoom?: string
 }
+type ArchiveQueryFilters = {
+    withJid?: string | null
+}
+type MessageArchiveQuery = {
+    filters?: ArchiveQueryFilters | null
+}
 export const useXmpp = () => {
     const { state, dispatch } = useCommunityContext()
     const { xmppClient } = state
@@ -300,6 +306,48 @@ export const useXmpp = () => {
                 )
             },
             [dispatch, xmppClient],
+        ),
+        fetchMessagesFromArchive: useCallback(
+            async ({ filters }: MessageArchiveQuery) => {
+                const filterQuery = filters?.withJid
+                    ? xml(
+                          'x',
+                          {
+                              xmlns: 'jabber:x:data',
+                              type: 'submit',
+                          },
+                          xml(
+                              'field',
+                              { var: 'FORM_TYPE', type: 'hidden' },
+                              xml('value', {}, 'urn:xmpp:mam:2'),
+                          ),
+                          xml(
+                              'field',
+                              { var: 'with' },
+                              xml('value', {}, withJid),
+                          ),
+                      )
+                    : xml('x')
+
+                await xmppClient?.send(
+                    xml(
+                        'iq',
+                        {
+                            id: 'get-messages',
+                            type: 'set',
+                        },
+                        xml(
+                            'query',
+                            {
+                                xmlns: 'urn:xmpp:mam:2',
+                                queryid: 'get-messages',
+                            },
+                            filterQuery,
+                        ),
+                    ),
+                )
+            },
+            [xmppClient],
         ),
         getUniqueRoomName: useCallback((): Promise<string> => {
             return new Promise(resolve => {
@@ -422,37 +470,19 @@ export const useXmpp = () => {
             [xmppClient],
         ),
         sendTestXml: useCallback(async () => {
-            const { local, domain, resource } = xmppClient?.jid as JID
-            const fromUser = `${local}@${domain}/${resource}`
             await xmppClient?.send(
                 xml(
                     'iq',
                     {
-                        from: fromUser,
-                        id: 'testxml',
-                        to: `fedi-general-channel@${XMPP_MUC_DOMAIN}`,
-                        type: 'get',
+                        id: 'get-messages',
+                        type: 'set',
                     },
                     xml('query', {
-                        xmlns: 'http://jabber.org/protocol/disco#items',
-                        node: 'x-roomuser-item',
+                        xmlns: 'urn:xmpp:mam:2',
+                        queryid: 'q1',
                     }),
                 ),
             )
-            // await xmppClient?.send(
-            //     xml(
-            //         'iq',
-            //         {
-            //             from: fromUser,
-            //             id: 'testxml',
-            //             to: `fedi-general-channel@${XMPP_MUC_DOMAIN}`,
-            //             type: 'get',
-            //         },
-            //         xml('query', {
-            //             xmlns: 'http://jabber.org/protocol/disco#items',
-            //         }),
-            //     ),
-            // )
         }, [xmppClient]),
     }
 }

@@ -544,6 +544,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             }
             if (stanza.is('message')) {
                 if (stanza.getAttr('type') === 'groupchat') {
+                    // Handle incoming messages from RoomChat
                     const from = stanza.getAttr('from')
                     const room = from.split('@')[0]
                     const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
@@ -568,19 +569,53 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         dispatch(updateRoomMessagePreview(newMessage))
                     }
                 } else if (stanza.getAttr('type') === 'chat') {
-                    const bodyText = stanza.getChildText('body') as string
+                    // Handle incoming messages from DirectChat
+                    const bodyText = stanza.getChildText('body')
                     if (!bodyText) return
 
-                    const directMessageJson = stanza.getChildText(
-                        'dm',
-                    ) as string
-                        const parsedMessage = JSON.parse(directMessageJson)
+                    const directMessageJson = stanza.getChildText('dm')
+                    const parsedMessage = JSON.parse(
+                        directMessageJson as string,
+                    )
                         const newMessage = new Message({
                             ...parsedMessage,
                             receivedAt: Date.now() / 1000,
                         })
 
                     const action = stanza.getChild('action')
+                    if (action?.getNS() === 'fedi:update-payment') {
+                        // find message and replace with updated version
+                        // with canceled or rejected payment
+                        dispatch(updateMessage(newMessage))
+                    } else {
+                        dispatch(addToMessages(newMessage))
+                        dispatch(updateRoomMessagePreview(newMessage))
+                    }
+                } else if (
+                    stanza.getChild('result')?.getAttr('queryid') ===
+                    'get-messages'
+                ) {
+                    // Handle messages received while offline, typically
+                    // triggered by the fetchMessagesFromArchive hook
+                    const result = stanza.getChild('result')
+                    const forwarded = result?.getChild('forwarded')
+                    const message = forwarded?.getChild('message')
+                    console.info(forwarded)
+                    if (!message) return
+                    if (forwarded) {
+                        console.info('found forwarded', forwarded)
+                    }
+
+                    const directMessageJson = message.getChildText('dm')
+                    const parsedMessage = JSON.parse(
+                        directMessageJson as string,
+                    )
+                    const newMessage = new Message({
+                        ...parsedMessage,
+                        receivedAt: Date.now() / 1000,
+                    })
+
+                    const action = message.getChild('action')
                     if (action?.getNS() === 'fedi:update-payment') {
                         // find message and replace with updated version
                         // with canceled or rejected payment
