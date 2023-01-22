@@ -32,10 +32,13 @@ const CustomToast = () => {
                 toastRef.current = ref
             }}
             position="bottom"
-            positionValue={200}
+            positionValue={250}
             fadeInDuration={150}
             fadeOutDuration={150}
             opacity={0.85}
+            style={{
+                marginHorizontal: theme.spacing.xl,
+            }}
             textStyle={{
                 color: theme.colors.white,
                 fontSize: 16,
