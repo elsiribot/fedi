@@ -13,12 +13,12 @@ popd
 # ignoring MacOS for now
 # cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-darwin
 # cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-darwin
-cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-ios
+# cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-ios
 cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-ios
-cargo +nightly build --package calculator-ffi --release -Z build-std --target aarch64-apple-ios-sim
+# cargo +nightly build --package calculator-ffi --release -Z build-std --target aarch64-apple-ios-sim
 
-mkdir -p target/lipo-ios-sim/release-smaller
-lipo target/aarch64-apple-ios-sim/release/libcalculatorffi.a target/x86_64-apple-ios/release-smaller/libcalculatorffi.a -create -output target/lipo-ios-sim/release-smaller/libcalculatorffi.a
+# mkdir -p target/lipo-ios-sim/release-smaller
+# lipo target/aarch64-apple-ios-sim/release/libcalculatorffi.a target/x86_64-apple-ios/release-smaller/libcalculatorffi.a -create -output target/lipo-ios-sim/release-smaller/libcalculatorffi.a
 # mkdir -p target/lipo-macos/release-smaller
 # lipo target/aarch64-apple-darwin/release-smaller/libcalculatorffi.a target/x86_64-apple-darwin/release-smaller/libcalculatorffi.a -create -output target/lipo-macos/release-smaller/libcalculatorffi.a
 
