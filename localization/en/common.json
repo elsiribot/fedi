@@ -82,6 +82,7 @@
     },
     "errors": {
         "unknown-error": "An unknown error occurred",
+        "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-room-code": "This is not a valid room code"
     },
     "feature": {

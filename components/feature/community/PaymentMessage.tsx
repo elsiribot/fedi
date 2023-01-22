@@ -8,6 +8,8 @@ import {
     updateMessage,
     useCommunityContext,
 } from '../../../state/contexts/CommunityContext'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
 import { Message, MSats, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
@@ -23,6 +25,8 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     const { theme } = useTheme()
     const { generateEcash, receiveEcash, validateEcash } = useBridge()
     const { sendUpdatedPaymentMessage } = useXmpp()
+    const { toast } = useEnvironmentContext().state
+    const { selectedFederation } = useFederationsContext().state
     const { state, dispatch } = useCommunityContext()
     const { authenticatedMember } = state
     const { payment } = message
@@ -83,6 +87,17 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 
     const acceptIncomingPaymentRequest = async () => {
         try {
+            if (selectedFederation?.balance! < message.payment?.amount!) {
+                toast?.show(
+                    t('errors.insufficient-balance', {
+                        balance: `${amountUtils.msatToSat(
+                            selectedFederation?.balance as MSats,
+                        )} SATS`,
+                    }),
+                    5000,
+                )
+                return
+            }
             const ecash = await generateEcash(message.payment?.amount as MSats)
             const acceptedPaymentMessage = new Message({
                 ...message,
