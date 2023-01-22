@@ -31,7 +31,7 @@ const CustomToast = () => {
             ref={(ref: any) => {
                 toastRef.current = ref
             }}
-            position="top"
+            position="bottom"
             positionValue={200}
             fadeInDuration={150}
             fadeOutDuration={150}
@@ -39,6 +39,7 @@ const CustomToast = () => {
             textStyle={{
                 color: theme.colors.white,
                 fontSize: 16,
+                textAlign: 'center',
             }}
         />
     )
