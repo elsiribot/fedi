@@ -4,8 +4,8 @@ import {
     DrawerItem,
 } from '@react-navigation/drawer'
 import { useNavigation } from '@react-navigation/native'
-import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ImageBackground,
@@ -15,13 +15,11 @@ import {
 } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import { Federation, listFederations } from '../../../bridge'
+import { Federation } from '../../../bridge'
 import {
-    changeSelectedFederation,
-    updateConnectedFederations,
+    updateSelectedFederationId,
     useFederationsContext,
 } from '../../../state/contexts/FederationsContext'
-import { useBridge } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
 
@@ -75,20 +73,8 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const { dangerousLeaveFederation } = useBridge()
     const { state, dispatch } = useFederationsContext()
-    const { selectedFederation, connectedFederations } = state
-
-    useEffect(() => {
-        const refreshFederations = async () => {
-            const federations = await listFederations()
-            if (federations.length > 0) {
-                dispatch(updateConnectedFederations(federations))
-            }
-        }
-
-        refreshFederations()
-    }, [dispatch])
+    const { selectedFederation, federations } = state
 
     return (
         <ImageBackground
@@ -98,7 +84,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 <Text h2 style={styles(theme).headerTitle}>
                     {t('words.federations')}
                 </Text>
-                {connectedFederations.map((f, i) => (
+                {federations.map((f, i) => (
                     <DrawerItem
                         key={`di-${i}`}
                         label={() => (
@@ -107,7 +93,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         style={styles(theme).drawerItem}
                         focused={f.name === selectedFederation?.name}
                         onPress={() => {
-                            dispatch(changeSelectedFederation(f))
+                            dispatch(updateSelectedFederationId(f.name))
                         }}
                     />
                 ))}
@@ -122,18 +108,6 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     {t('feature.federations.add-federation')}
                 </Text>
             </TouchableOpacity>
-
-            {/* For dev purposes only */}
-            <Button
-                title={'Reset Federations State'}
-                type="clear"
-                onPress={async () => {
-                    await dangerousLeaveFederation()
-                    navigation.navigate('Initializing', {
-                        reset: true,
-                    })
-                }}
-            />
         </ImageBackground>
     )
 }

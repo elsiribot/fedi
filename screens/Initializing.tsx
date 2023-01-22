@@ -6,11 +6,13 @@ import React, { useEffect } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
+import { listFederations } from '../bridge'
 import {
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
     FEDERATIONS_PERSISTENCE_KEY,
+    SELECTED_FEDERATION_ID_DB_KEY,
 } from '../constants'
 import {
     receiveMembersSeen,
@@ -19,9 +21,8 @@ import {
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
-    changeSelectedFederation,
     resetFederationsState,
-    updateConnectedFederations,
+    updateFederations,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -55,10 +56,10 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                             savedFederationsState
 
                         federationsDispatch(
-                            changeSelectedFederation(selectedFederation),
-                        )
-                        federationsDispatch(
-                            updateConnectedFederations(connectedFederations),
+                            updateFederations(
+                                selectedFederation.id,
+                                connectedFederations,
+                            ),
                         )
                         return navigation.replace('Home')
                     }
@@ -168,6 +169,32 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             restoreState()
         }
     }, [communityDispatch, federationsDispatch, navigation, reset])
+
+    useEffect(() => {
+        const initialize = async () => {
+            // load selected federation id from async storage
+            const saved = await AsyncStorage.getItem(
+                SELECTED_FEDERATION_ID_DB_KEY,
+            )
+            const selectedFederationId = saved ? JSON.parse(saved) : null
+
+            // load federations from bridge
+            let federations = await listFederations()
+            federationsDispatch(
+                updateFederations(selectedFederationId, federations),
+            )
+
+            // navigate depending on if we've joined a federation or not
+            console.log(
+                'navigating',
+                federations.length > 0 ? 'Home' : 'Splash',
+                selectedFederationId,
+                saved,
+            )
+            navigation.replace(federations.length > 0 ? 'Home' : 'Splash')
+        }
+        initialize()
+    }, [federationsDispatch, navigation])
 
     return (
         <ImageBackground

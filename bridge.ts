@@ -242,11 +242,9 @@ export async function joinFederation(
     return handleRpcResponse<Federation>(response)
 }
 
-export async function dangerousLeaveFederation(
-    federationId: string,
-): Promise<null> {
+export async function leaveFederation(federationId: string): Promise<null> {
     let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('dangerousLeaveFederation', payload)
+    let response = await FedimintFfi.rpc('leaveFederation', payload)
     return handleRpcResponse<null>(response)
 }
 

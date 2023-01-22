@@ -13,7 +13,6 @@ export const FEDERATION_SIGNET =
 
 export const TEST_FEDERATION = FEDERATION_ALPHA
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
-export const COMMUNITY_PERSISTENCE_KEY = 'AsyncStorage-CommunityContext'
 export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
     'AsyncStorage-CommunityContext-members'
 export const COMMUNITY_MESSAGES_PERSISTENCE_KEY =
@@ -34,6 +33,7 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
     resource: XMPP_RESOURCE,
 }
+export const SELECTED_FEDERATION_ID_DB_KEY = 'SELECTED_FEDERATION_ID_DB_KEY'
 
 export const SITES = [
     // TODO: Show only for regtest federations

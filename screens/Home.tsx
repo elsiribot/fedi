@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Image, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React, { useEffect, useState } from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
@@ -39,6 +39,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
 
     // Make sure all users have a username and push them to the
     // FederationWelcome screen if they don't have one
+    // FIXME: will this selectedFederation change screw this up?
     useEffect(() => {
         if (!selectedFederation?.username) {
             navigation.replace('FederationWelcome')
@@ -46,6 +47,13 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
     }, [navigation, selectedFederation, selectedFederation?.username])
 
     // Check xmpp auth and listen for new messages here
+
+    // If we don't have a selected federation, there's nothing to display here
+    // Redirect user to splash screen and render nothing.
+    if (!selectedFederation) {
+        navigation.navigate('Splash')
+        return <View />
+    }
 
     return (
         <Tab.Navigator

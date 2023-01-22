@@ -24,6 +24,7 @@
         "message": "Message",
         "messages": "Messages",
         "next": "Next",
+        "no": "No",
         "okay": "Okay",
         "one": "one",
         "onchain": "On-chain",
@@ -47,6 +48,7 @@
         "to": "To",
         "two": "two",
         "username": "Username",
+        "yes": "Yes",
         "wallet": "Wallet"
     },
     "phrases": {
@@ -159,6 +161,8 @@
             "invite-link-notice": "Invite link is valid for 2 hours",
             "join-federation": "Join a new Federation",
             "leave-federation": "Leave Federation",
+            "leave-federation-confirmation": "Are you sure you want to leave this federation?",
+            "leave-federation-withdraw-first": "You must withdraw your funds before leaving",
             "paste-federation-code-instead": "Paste federation code instead",
             "paste-federation-code": "Paste federation code",
             "scan-federation-invite": "Scan a Federation Invite"

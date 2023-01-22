@@ -76,7 +76,7 @@ const App = () => {
 
         onInitializeBridge()
         requestPushNotificationPermissions()
-    }, [])
+    }, [t])
 
     return (
         <SafeAreaProvider>

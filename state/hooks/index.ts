@@ -8,12 +8,12 @@ import {
     approveSocialRecoveryRequest,
     authenticateGuardian,
     completeSocialRecovery,
-    dangerousLeaveFederation,
     denySocialRecoveryRequest,
     generateAddress,
     generateEcash,
     generateInvoice,
     getMnemonic,
+    leaveFederation,
     LightningGateway,
     listGateways,
     listTransactions,
@@ -75,8 +75,8 @@ export const useBridge = () => {
         recoveryQr: useCallback(() => {
             return recoveryQr(selectedFederation!.name)
         }, [selectedFederation]),
-        dangerousLeaveFederation: useCallback(() => {
-            return dangerousLeaveFederation(selectedFederation!.name)
+        leaveFederation: useCallback(() => {
+            return leaveFederation(selectedFederation!.name)
         }, [selectedFederation]),
         generateAddress: useCallback(() => {
             return generateAddress(selectedFederation!.name)

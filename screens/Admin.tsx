@@ -1,17 +1,21 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
+import React, { useState } from 'react'
+import { Alert } from 'react-native'
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
+
+import { listFederations } from '../bridge'
 import {
-    setUserIsGuardian,
+    updateFederations,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import AmountUtils from '../utils/AmountUtils'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -21,16 +25,59 @@ export type Props = BottomTabScreenProps<
 const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { authenticateGuardian } = useBridge()
+    const { leaveFederation } = useBridge()
     const { state, dispatch } = useFederationsContext()
     const { selectedFederation } = state
+    const [userIsGuardian, setUserIsGuardian] = useState(false)
 
     const simulateGuardianAuthentication = async () => {
-        try {
-            await authenticateGuardian('mocksecret')
-            dispatch(setUserIsGuardian(true))
-        } catch (error) {
-            dispatch(setUserIsGuardian(false))
+        setUserIsGuardian(true)
+    }
+
+    // FIXME: this needs some kind of loading state
+    // TODO: this should be an thunkified action creator
+    const handleLeaveFederation = async () => {
+        // leave federation
+        await leaveFederation()
+
+        // update context and navigate
+        const federations = await listFederations()
+        if (federations.length > 0) {
+            dispatch(updateFederations(federations[0].name, federations))
+            // FIXME: this doesn't do enough ...
+            navigation.navigate('Home')
+        } else {
+            navigation.navigate('Splash')
+            dispatch(updateFederations(null, federations))
+        }
+    }
+
+    const confirmLeaveFederation = () => {
+        // Only allow leaving if they have less than 100 sats
+        if (AmountUtils.msatToSat(selectedFederation!.balance) > 100) {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t('feature.federations.leave-federation-withdraw-first'),
+                [
+                    {
+                        text: t('words.ok'),
+                    },
+                ],
+            )
+        } else {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t('feature.federations.leave-federation-confirmation'),
+                [
+                    {
+                        text: 'No',
+                    },
+                    {
+                        text: t('words.yes'),
+                        onPress: handleLeaveFederation,
+                    },
+                ],
+            )
         }
     }
 
@@ -71,7 +118,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                         })
                     }}
                 />
-                {state.userIsGuardian ? (
+                {userIsGuardian ? (
                     <SettingsItem
                         imageSource={Images.SocialPeople}
                         label={t('feature.recovery.recovery-assist')}
@@ -91,7 +138,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     disabled
                     imageSource={Images.LeaveFederation}
                     label={t('feature.federations.leave-federation')}
-                    onPress={() => {}}
+                    onPress={confirmLeaveFederation}
                 />
             </View>
             <View>
@@ -117,7 +164,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     disabled
                     imageSource={Images.FediLogoIcon}
                     label={t('phrases.app-settings-security')}
-                    onPress={() => {}}
+                    onPress={confirmLeaveFederation}
                 />
                 <SettingsItem
                     imageSource={Images.FediLogoIcon}

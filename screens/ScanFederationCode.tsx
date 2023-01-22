@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
 
 import { joinFederation, listFederations } from '../bridge'
@@ -11,8 +11,7 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
-    changeSelectedFederation,
-    updateConnectedFederations,
+    updateFederations,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
@@ -32,12 +31,9 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const handleUserInput = useCallback(
         async (input: string) => {
             // tmuxinator
-            if (Platform.OS === 'android') {
-                // input =
-                //     '{"members":[[0,"ws://10.0.2.2:4001/"],[1,"ws://10.0.2.2:4011/"],[2,"ws://10.0.2.2:4021/"],[3,"ws://10.0.2.2:4031/"]]}'
-                input =
-                    '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
-            }
+            input =
+                // '{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}'
+                '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
             console.log('input', input)
 
             if (input.startsWith('{"members":')) {
@@ -48,6 +44,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 try {
                     setJoiningFederation(true)
                     var federation = await joinFederation(input)
+                    console.log('joined')
                 } catch (e) {
                     console.error('Failed to join federation', e)
                     setJoiningFederation(false)
@@ -55,8 +52,8 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 }
                 const federations = await listFederations()
                 if (federations.length > 0) {
-                    dispatch(updateConnectedFederations(federations))
-                    dispatch(changeSelectedFederation(federation))
+                    console.log('navigating')
+                    dispatch(updateFederations(federation.name, federations))
                     setJoiningFederation(false)
                     navigation.navigate('Home')
                 }
