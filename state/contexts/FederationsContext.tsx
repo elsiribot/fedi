@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { isEqual } from 'lodash'
 import React, {
     createContext,
     useContext,
@@ -38,7 +39,7 @@ enum ActionType {
     // with federation list of []
     UNSET_SELECTED_FEDERATION = 'UNSET_SELECTED_FEDERATION',
     UPDATE_FEDERATIONS = 'UPDATE_FEDERATIONS',
-    UPDATE_FEDERATION_BALANCE = 'UPDATE_FEDERATION_BALANCE',
+    UPDATE_FEDERATION = 'UPDATE_FEDERATION',
     UPDATE_FEDERATION_USERNAME = 'UPDATE_FEDERATION_USERNAME',
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
 }
@@ -70,6 +71,12 @@ export function updateFederations(
     return {
         type: ActionType.UPDATE_FEDERATIONS,
         payload: { selectedFederationId, federations },
+    }
+}
+export function updateFederation(event: FederationEvent): Action {
+    return {
+        type: ActionType.UPDATE_FEDERATION,
+        payload: event,
     }
 }
 
@@ -109,14 +116,10 @@ export function reducer(state: AppState, action: Action): AppState {
                 ),
             }
         case ActionType.UPDATE_FEDERATION_USERNAME: {
-            const selectedFederation = state.federations.find(
-                // FIXME: switch to using federation.id
-                f => f.name === state.selectedFederationId,
-            )
             const federations = state.federations.map((f: Federation) => {
                 // If the federation id matches, update the balance of that
                 // single connectedFederation
-                if (f.name === selectedFederation!.name) {
+                if (f.name === state.selectedFederationId) {
                     return new Federation({
                         ...f,
                         username: action.payload,
@@ -130,27 +133,18 @@ export function reducer(state: AppState, action: Action): AppState {
                 federations,
             }
         }
-        case ActionType.UPDATE_FEDERATION_BALANCE:
-            const selectedFederation = state.federations.find(
-                // FIXME: switch to using federation.id
-                f => f.name === state.selectedFederationId,
+        case ActionType.UPDATE_FEDERATION:
+            const federations = state.federations.map(
+                // If the federation id matches, update the entry
+                (f: Federation) =>
+                    f.name === action.payload.name
+                        ? new Federation({ ...action.payload })
+                        : f,
             )
-            const federations = state.federations.map((f: Federation) => {
-                // If the federation id matches, update the balance of that
-                // single connectedFederation
-                if (f.name === selectedFederation!.name) {
-                    return new Federation({
-                        ...f,
-                        username: action.payload,
-                    })
-                } else {
-                    return f
-                }
-            })
-            return {
-                ...state,
-                federations,
+            if (isEqual(federations, state.federations)) {
+                return state
             }
+            return { ...state, federations }
         case ActionType.RESET_FEDERATIONS_STATE:
             return { ...initialState }
         default:
@@ -182,13 +176,15 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     )
 
     useEffect(() => {
+        console.info('onFederationUpdate subscribed')
         const emitter = new TFedimintEventEmitter()
         const onFederationUpdate = (event: FederationEvent) => {
+            console.info('onFederationUpdate', event)
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
 
-            dispatch(updateSelectedFederationId(event.name))
+            dispatch(updateFederation(event))
         }
         emitter.onFederationUpdate(onFederationUpdate)
 

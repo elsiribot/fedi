@@ -153,7 +153,6 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 )}
 
                 <SettingsItem
-                    disabled
                     imageSource={Images.LeaveFederation}
                     label={t('feature.federations.leave-federation')}
                     onPress={confirmLeaveFederation}
