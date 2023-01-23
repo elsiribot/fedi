@@ -237,6 +237,7 @@
             "personal-recovery-instructions": "Enter the 12 words you wrote down when you first backed up your {{federation}} wallet",
             "recover-a-wallet": "Recover a wallet",
             "recover-wallet": "Recover wallet",
+            "recover-wallet-with-balance": "Recovery is currently unsupported for wallets with a balance. Please withdraw your funds first.",
             "recovering-your-wallet": "Recovering your wallet, please check back later",
             "recovery-assist": "Recovery assist",
             "recovery-assist-description": "A member of your Federation is requesting your assistance in recovering their wallet",

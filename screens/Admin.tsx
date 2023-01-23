@@ -81,6 +81,23 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const onChooseRecovery = () => {
+        // Only allow recovery for wallets with less than 100 sats
+        if (selectedFederation!.balance > 100000) {
+            Alert.alert(
+                t('feature.recovery.recover-wallet'),
+                t('feature.recovery.recover-wallet-with-balance'),
+                [
+                    {
+                        text: t('words.okay'),
+                    },
+                ],
+            )
+        } else {
+            navigation.navigate('ChooseRecoveryMethod')
+        }
+    }
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
@@ -153,7 +170,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <SettingsItem
                     imageSource={Images.Recovery}
                     label={t('feature.recovery.recover-a-wallet')}
-                    onPress={() => navigation.navigate('ChooseRecoveryMethod')}
+                    onPress={onChooseRecovery}
                 />
             </View>
             <View>
