@@ -38,6 +38,15 @@ platform :android do
     )
   end
 
+  desc "Build a new app APK to release for production"
+  lane :build_production_apk do
+    gradle(
+      task: 'assemble',
+      flavor: 'production',
+      build_type: 'Release'
+    )
+  end
+
   desc "Build a new app bundle to release for production"
   lane :build_production do
     gradle(task: 'clean')

@@ -1,4 +1,5 @@
-## fastlane documentation
+fastlane documentation
+----
 
 # Installation
 
@@ -37,6 +38,14 @@ Build a new apk to debug for production (apk can be found at /android/build/outp
 ```
 
 Increment the versionCode in build.gradle
+
+### android build_production_apk
+
+```sh
+[bundle exec] fastlane android build_production_apk
+```
+
+Build a new app APK to release for production
 
 ### android build_production
 
@@ -102,7 +111,7 @@ Submit a new beta build
 
 Submit a new beta build for special deployment (Bitcoin Lake)
 
----
+----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
 
