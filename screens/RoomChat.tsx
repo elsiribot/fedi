@@ -24,99 +24,14 @@ const RoomChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const messagesInRoom = state.messages.filter(
         m => m.sentIn?.id === currentRoom.id,
     )
-    const sortedMessages = [
-        ...orderBy(messagesInRoom, 'receivedAt', 'asc'),
-        // new Message({
-        //     id: '1',
-        //     content: 'test',
-        //     sentAt: Date.now() / 1000 - 100000,
-        //     sentBy: new Member({
-        //         username: 'oz139',
-        //         jid: new JID('oz139', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        // }),
-        // new Message({
-        //     id: '2',
-        //     content: 'fedi:ecash-request:',
-        //     sentAt: Date.now() / 1000,
-        //     sentBy: new Member({
-        //         username: 'oz139',
-        //         jid: new JID('oz139', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        //     payment: new Payment({
-        //         amount: 100000,
-        //         memo: 'For coffee',
-        //         status: PaymentStatus.requested,
-        //     }),
-        // }),
-        // new Message({
-        //     id: '3',
-        //     content: 'test from me',
-        //     sentAt: Date.now() / 1000 - 100000,
-        //     sentBy: new Member({
-        //         username: 'oz131',
-        //         jid: new JID('oz131', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        // }),
-        // new Message({
-        //     id: '4',
-        //     content: 'fedi:ecash-request:',
-        //     sentAt: Date.now() / 1000,
-        //     sentBy: new Member({
-        //         username: 'oz131',
-        //         jid: new JID('oz131', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        //     payment: new Payment({
-        //         amount: 1500000,
-        //         memo: 'For food',
-        //         status: PaymentStatus.requested,
-        //     }),
-        // }),
-        // new Message({
-        //     id: '5',
-        //     content: 'test from me again',
-        //     sentAt: Date.now() / 1000 - 100000,
-        //     sentBy: new Member({
-        //         username: 'oz131',
-        //         jid: new JID('oz131', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        // }),
-        // new Message({
-        //     id: '6',
-        //     content: 'fedi:ecash-request:',
-        //     sentAt: Date.now() / 1000,
-        //     sentBy: new Member({
-        //         username: 'oz139',
-        //         jid: new JID('oz139', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        //     payment: new Payment({
-        //         amount: 8200000,
-        //         memo: 'uber',
-        //         status: PaymentStatus.paid,
-        //     }),
-        // }),
-        // new Message({
-        //     id: '7',
-        //     content: 'fedi:ecash-request:',
-        //     sentAt: Date.now() / 1000,
-        //     sentBy: new Member({
-        //         username: 'oz131',
-        //         jid: new JID('oz131', XMPP_DOMAIN, XMPP_RESOURCE),
-        //     }),
-        //     payment: new Payment({
-        //         amount: 4050000,
-        //         memo: 'tickets',
-        //         status: PaymentStatus.paid,
-        //     }),
-        // }),
-    ]
-
-    // Subscribe to new messages
-    // Fetch any unreceived messages
+    const sortedMessages = [...orderBy(messagesInRoom, 'receivedAt', 'asc')]
 
     useEffect(() => {
         // announce presence
         enterMucRoom(currentRoom)
+        // TODO: some new messages will be received automatically after
+        // enterMucRoom is called but we should check archive here
+        // to make sure we get them all
     }, [currentRoom, enterMucRoom])
 
     return (
