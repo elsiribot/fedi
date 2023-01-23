@@ -48,31 +48,34 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     )
                     const savedJson = saved ? JSON.parse(saved) : null
 
-                    const { selectedFederation } = savedJson
+                    if (savedJson) {
+                        const { selectedFederation } = savedJson
 
-                    // load federations from bridge
-                    let federations = await listFederations()
-                    if (selectedFederation?.name) {
-                        federationsDispatch(
-                            updateFederations(
-                                selectedFederation?.name,
-                                federations,
-                            ),
-                        )
-                        if (selectedFederation.username) {
+                        // load federations from bridge
+                        let federations = await listFederations()
+                        if (selectedFederation?.name) {
                             federationsDispatch(
-                                updateFederationUsername(
-                                    selectedFederation.username,
+                                updateFederations(
+                                    selectedFederation?.name,
+                                    federations,
                                 ),
                             )
+                            if (selectedFederation.username) {
+                                federationsDispatch(
+                                    updateFederationUsername(
+                                        selectedFederation.username,
+                                    ),
+                                )
+                            }
                         }
+                        return navigation.replace(
+                            federations.length > 0 ? 'Home' : 'Splash',
+                        )
                     }
-                    return navigation.replace(
-                        federations.length > 0 ? 'Home' : 'Splash',
-                    )
                 } catch (error) {
                     console.error(error)
                 }
+                return navigation.replace('Splash')
             }
 
             const restoreMessages = async () => {
