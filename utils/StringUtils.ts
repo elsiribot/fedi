@@ -1,4 +1,15 @@
 class StringUtils {
+    getInitialsFromName = (name: string): string => {
+        const names = name.split(' ')
+        let initials = ''
+        if (names.length === 1) {
+            initials = name.substring(0, 1)
+        }
+        if (names.length >= 2) {
+            initials = `${names[0].substring(0, 1)}${names[1].substring(0, 1)}`
+        }
+        return initials.toUpperCase()
+    }
     truncateMiddleOfString = (
         longString: string,
         numberOfCharacters: number,

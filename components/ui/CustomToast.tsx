@@ -31,14 +31,18 @@ const CustomToast = () => {
             ref={(ref: any) => {
                 toastRef.current = ref
             }}
-            position="top"
-            positionValue={200}
+            position="bottom"
+            positionValue={250}
             fadeInDuration={150}
             fadeOutDuration={150}
             opacity={0.85}
+            style={{
+                marginHorizontal: theme.spacing.xl,
+            }}
             textStyle={{
                 color: theme.colors.white,
                 fontSize: 16,
+                textAlign: 'center',
             }}
         />
     )

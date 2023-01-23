@@ -22,17 +22,20 @@ export type Props = BottomTabScreenProps<
 const Community: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { enterMucRoom } = useXmpp()
+    const { enterMucRoom, fetchMessagesFromArchive } = useXmpp()
     const { authenticatedMember } = useCommunityContext().state
 
-    // This is a temporary measure to improve member discovery...
-    // all users announce presence in this room even without clicking it
-    // so that presence messages for each new user are sent to all other users
     useEffect(() => {
         if (authenticatedMember) {
+            // This is a temporary measure to improve member discovery...
+            // all users announce presence in this room even without clicking it
+            // so that presence messages for each new user are sent to all other users
             enterMucRoom(FEDI_GENERAL_CHANNEL_ROOM)
+            // Here we fetch any messages we may have missed while offline
+            // TODO: only fetch messages from after the last received timestamp
+            fetchMessagesFromArchive({ filters: null })
         }
-    }, [authenticatedMember, enterMucRoom])
+    }, [authenticatedMember, enterMucRoom, fetchMessagesFromArchive])
 
     return (
         <View style={styles(theme).container}>
