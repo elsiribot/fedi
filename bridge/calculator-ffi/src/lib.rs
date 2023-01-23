@@ -26,7 +26,7 @@ use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{debug, info, metadata::LevelFilter};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
@@ -63,15 +63,20 @@ async fn get_bridge() -> Option<Arc<Bridge>> {
     bridge
 }
 
-pub fn fedimint_initialize(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
+pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
+    let log_level = LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::INFO);
     RUNTIME.block_on(async {
-        fedimint_initialize_async(data_dir, event_sink).await;
+        fedimint_initialize_async(data_dir, log_level, event_sink).await;
     })
 }
 
-async fn fedimint_initialize_async(data_dir: String, event_sink: Box<dyn EventSink>) -> () {
+async fn fedimint_initialize_async(
+    data_dir: String,
+    log_level: LevelFilter,
+    event_sink: Box<dyn EventSink>,
+) -> () {
     let event_sink = Arc::new(EventSinkWrapper { event_sink });
-    init_logging(event_sink.clone());
+    init_logging(event_sink.clone(), log_level);
     tracing::info!("init called ...");
 
     let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone()).await;
@@ -745,6 +750,7 @@ async fn handle_complete_social_recovery(payload: String) -> anyhow::Result<Stri
 
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
+        debug!("RPC {} {}", method, payload);
         let result = match method.as_ref() {
             "listTransactions" => handle_list_transactions(payload).await,
             "updateTransactionNotes" => handle_update_transaction_notes(payload).await,
@@ -805,7 +811,7 @@ mod tests {
 
     use fedi_social::common::VerificationDocument;
     use serde_json::Value;
-    use tracing::debug;
+    use tracing::{debug, metadata::LevelFilter};
 
     use crate::recovery::SocialRecoveryQr;
 
@@ -852,7 +858,8 @@ mod tests {
     async fn setup() -> anyhow::Result<Arc<Federation>> {
         // Intialize bridge
         let event_sink = FakeEventSink::new();
-        fedimint_initialize_async(create_data_dir(), Box::new(event_sink)).await;
+        // TODO: how to grab log level from environment?
+        fedimint_initialize_async(create_data_dir(), LevelFilter::INFO, Box::new(event_sink)).await;
 
         // Join federation
         // ngrok
