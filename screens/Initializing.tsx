@@ -183,9 +183,9 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
             // load federations from bridge
             let federations = await listFederations()
-            if (selectedFederation.id) {
+            if (selectedFederation?.id) {
                 federationsDispatch(
-                    updateFederations(selectedFederation.id, federations),
+                    updateFederations(selectedFederation?.id, federations),
                 )
             }
             if (selectedFederation.username) {
