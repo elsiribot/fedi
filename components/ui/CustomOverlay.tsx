@@ -24,14 +24,12 @@ const CustomOverlay: React.FC<OverlayProps> = ({
     const renderButtons = () => {
         return buttons.map((button, i) => {
             return (
-                <>
-                    <Button
-                        key={i}
-                        title={button.text}
-                        type={button.type}
-                        onPress={button.onPress}
-                    />
-                </>
+                <Button
+                    key={i}
+                    title={button.text}
+                    type={button.type}
+                    onPress={button.onPress}
+                />
             )
         })
     }
