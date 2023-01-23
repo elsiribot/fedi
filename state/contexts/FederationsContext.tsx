@@ -176,10 +176,8 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     )
 
     useEffect(() => {
-        console.info('onFederationUpdate subscribed')
         const emitter = new TFedimintEventEmitter()
         const onFederationUpdate = (event: FederationEvent) => {
-            console.info('onFederationUpdate', event)
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
