@@ -1,5 +1,4 @@
-fastlane documentation
-----
+## fastlane documentation
 
 # Installation
 
@@ -22,6 +21,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 ```
 
 Runs all the tests
+
+### android build_debug
+
+```sh
+[bundle exec] fastlane android build_debug
+```
+
+Build a new apk to debug for production (apk can be found at /android/build/outputs/apk/production/debug/app-production-debug.apk)
 
 ### android increment_version_code
 
@@ -95,7 +102,7 @@ Submit a new beta build
 
 Submit a new beta build for special deployment (Bitcoin Lake)
 
-----
+---
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
 
