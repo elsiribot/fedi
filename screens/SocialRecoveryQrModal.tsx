@@ -26,18 +26,18 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { backupQr } = useBridge()
+    const { recoveryQr } = useBridge()
     const [recoveryQrCode, setRecoveryQrCode] = useState<string>('')
 
     useEffect(() => {
         const getRecoveryAssistCode = async () => {
-            const recoveryAssistCode = await backupQr()
+            const recoveryAssistCode = await recoveryQr()
             console.info('recoveryAssistCode', recoveryAssistCode)
-            setRecoveryQrCode(recoveryAssistCode)
+            setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
         }
 
         getRecoveryAssistCode()
-    }, [navigation, backupQr])
+    }, [navigation, recoveryQr])
 
     return (
         <View style={styles(theme).container}>

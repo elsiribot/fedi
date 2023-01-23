@@ -20,10 +20,7 @@ export type LogEvent = {
     log: string
 }
 
-export type BalanceEvent = {
-    federationId: string
-    balance: MSats
-}
+export type FederationEvent = Federation
 
 export type TransactionEvent = {
     federationId: string
@@ -107,6 +104,10 @@ export enum AddressOrInvoice {
     invoice = 'invoice',
 }
 
+export type SocialRecoveryQrCode = {
+    recoveryId: string
+}
+
 export class TFedimintEventEmitter {
     private emitter: NativeEventEmitter
 
@@ -142,11 +143,11 @@ export class TFedimintEventEmitter {
         return this.addListener('log', listener, context)
     }
 
-    onBalanceUpdate = (
-        listener: (event: BalanceEvent) => void,
+    onFederationUpdate = (
+        listener: (event: FederationEvent) => void,
         context?: Object,
     ): EmitterSubscription => {
-        return this.addListener('balance', listener, context)
+        return this.addListener('federation', listener, context)
     }
 
     onTransaction = (
@@ -190,6 +191,7 @@ export class Federation extends Base {
     rooms?: Room[] | null
     messages?: Message[] | null
     membersSeen?: Member[] | null
+    socialRecoveryActive: boolean
 
     get approvalsRequired(): number {
         const numNodes = this.nodes.length
@@ -236,6 +238,12 @@ export async function joinFederation(
     let payload = JSON.stringify({ connectString })
     let response = await FedimintFfi.rpc('joinFederation', payload)
     return handleRpcResponse<Federation>(response)
+}
+
+export async function leaveFederation(federationId: string): Promise<null> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('leaveFederation', payload)
+    return handleRpcResponse<null>(response)
 }
 
 export async function listFederations(): Promise<Federation[]> {
@@ -299,8 +307,8 @@ export async function payAddress(
     return handleRpcResponse<string>(response)
 }
 
-export async function init(dataDir: string) {
-    return FedimintFfi.init(dataDir)
+export async function initializeBridge(dataDir: string) {
+    return FedimintFfi.initialize(dataDir)
 }
 
 export async function generateEcash(
@@ -365,47 +373,20 @@ export async function switchGateway(
  */
 export type SeedWords = string[]
 
-export async function generateMnemonic(
-    _federationId: string,
-): Promise<SeedWords> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId })
-    // let response = await FedimintFfi.rpc('generateMnemonic', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate recovery with success/failure modes
-    const MOCK_SEED = JSON.stringify([
-        'never',
-        'gonna',
-        'give',
-        'you',
-        'up',
-        'never',
-        'gonna',
-        'let',
-        'you',
-        'down',
-        'never',
-        'gonna',
-    ])
-    return handleRpcResponse<SeedWords>(`{"result": ${MOCK_SEED}}`)
-    // return handleRpcResponse<null>('{"error": "seed is invalid"}')
+export async function getMnemonic(federationId: string): Promise<SeedWords> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('getMnemonic', payload)
+    return handleRpcResponse<SeedWords>(response)
 }
 
 // progress reported via `SeedRecoveryEvent` events
 export async function recoverFromMnemonic(
-    _mnemonic: string[],
-    _federationId: string,
+    mnemonic: string[],
+    federationId: string,
 ): Promise<null> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ mnemonic, federationId })
-    // let response = await FedimintFfi.rpc('recoverFromMnemonic', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate recovery with success/failure modes
-    await new Promise(r => setTimeout(r, 2000))
-    return handleRpcResponse<null>('{"result": "null"}')
-    // return handleRpcResponse<null>('{"error": "seed is invalid"}')
+    let payload = JSON.stringify({ mnemonic, federationId })
+    let response = await FedimintFfi.rpc('recoverFromMnemonic', payload)
+    return handleRpcResponse<null>(response)
 }
 
 /*
@@ -422,60 +403,50 @@ export type SeedRecoveryEvent =
  */
 
 export async function uploadBackupFile(
-    _contents: string,
-    _federationId: string,
-): Promise<string> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, contents })
-    // let response = await FedimintFfi.rpc('uploadBackupFile', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate success/failure modes
-    return handleRpcResponse<string>('{"result": "/path/to/backup.fedi"}')
-    // return handleRpcResponse<string>('{"error": "error creating social backup file"}')
+    videoFilePath: string,
+    federationId: string,
+): Promise<null> {
+    // FIXME: for some reason rust can't read the file if it has `file://` prefix ...
+    videoFilePath = videoFilePath.replace('file://', '')
+    console.log('upload video file', videoFilePath)
+    let payload = JSON.stringify({ federationId, videoFilePath })
+    let response = await FedimintFfi.rpc('uploadBackupFile', payload)
+    return handleRpcResponse<null>(response)
 }
 
 export async function locateRecoveryFile(
-    _federationId: string,
+    federationId: string,
 ): Promise<string> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId })
-    // let response = await FedimintFfi.rpc('locateRecoveryFile', payload)
-    // return handleRpcResponse<string>(response)
-
-    // Simulate success/failure modes
-    return handleRpcResponse<string>('{"result": "/path/to/backup.fedi"}')
-    // return handleRpcResponse<string>('{"error": "no social backup file found"}')
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('locateRecoveryFile', payload)
+    return handleRpcResponse<string>(response)
 }
 
-export async function validateBackupFile(
-    _contents: string,
-    _federationId: string,
+export async function validateRecoveryFile(
+    path: string,
+    federationId: string,
 ): Promise<boolean> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, contents })
-    // let response = await FedimintFfi.rpc('validateBackupFile', payload)
-    // return handleRpcResponse<boolean>(response)
-
-    // Simulate success/failure modes
-    return handleRpcResponse<boolean>('{"result": "true"}')
-    // return handleRpcResponse<boolean>('{"error": "invalid recovery file"}')
+    console.log('backup file path', path)
+    let payload = JSON.stringify({ federationId, path })
+    let response = await FedimintFfi.rpc('validateRecoveryFile', payload)
+    return handleRpcResponse<boolean>(response)
 }
 
 // This string contains a public key and URL to video file
-export async function backupQr(_federationId: string): Promise<string> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId })
-    // let response = await FedimintFfi.rpc('backupQr', payload)
-    // return handleRpcResponse<string>(response)
+export async function recoveryQr(
+    federationId: string,
+): Promise<SocialRecoveryQrCode> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('recoveryQr', payload)
+    return handleRpcResponse<SocialRecoveryQrCode>(response)
+}
 
-    // Simulate success/failure modes
-    const SAMPLE_VIDEO_URL =
-        'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
-    return handleRpcResponse<string>(
-        `{"result": "socialrecovery::pubkey::${SAMPLE_VIDEO_URL}"}`,
-    )
-    // return handleRpcResponse<string>('{"error": "no social backup QR code found"}')
+export async function socialRecoveryApprovals(
+    federationId: string,
+): Promise<SocialRecoveryEvent> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('socialRecoveryApprovals', payload)
+    return handleRpcResponse<SocialRecoveryEvent>(response)
 }
 
 // guardian fetches `_secret` (somehow) from federation admin web UI
@@ -510,47 +481,51 @@ export async function denySocialRecoveryRequest(
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
 export async function approveSocialRecoveryRequest(
-    _userPublicKey: string,
-    _federationId: string,
+    recoveryId: string,
+    federationId: string,
 ): Promise<null> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, userPublicKey })
-    // let response = await FedimintFfi.rpc('approveSocialRecoveryRequest', payload)
-    // return handleRpcResponse<null>(response)
+    let payload = JSON.stringify({ federationId, recoveryId })
+    let response = await FedimintFfi.rpc(
+        'approveSocialRecoveryRequest',
+        payload,
+    )
+    return handleRpcResponse<null>(response)
+}
 
-    // Simulate success/failure modes
-    return handleRpcResponse<null>('{"result": "null"}')
-    // return handleRpcResponse<null>('{"error": "social recovery approval failed"}')
+export async function socialRecoveryDownloadVerificationDoc(
+    recoveryId: string,
+    federationId: string,
+): Promise<string | null> {
+    let payload = JSON.stringify({ federationId, recoveryId })
+    let response = await FedimintFfi.rpc(
+        'socialRecoveryDownloadVerificationDoc',
+        payload,
+    )
+    return handleRpcResponse<string | null>(response)
+}
+
+export async function completeSocialRecovery(
+    federationId: string,
+): Promise<string | null> {
+    console.log('calling completeSocialRecovery')
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('completeSocialRecovery', payload)
+    return handleRpcResponse<null>(response)
 }
 
 /*
  * Mocked-out social backup and recovery events
  */
 
-enum GuardianApprovalStatus {
-    approved = 'approved',
-    denied = 'denied',
-    pending = 'pending',
-}
-
-export type Guardian = {
-    name: string
-}
-
 export type GuardianApproval = {
-    guardian: Guardian
-    status: GuardianApprovalStatus
+    guardianName: String
+    approved: boolean
 }
-
-export type SocialRecoveryStatus =
-    | { type: 'failed' }
-    | { type: 'complete' }
-    | { type: 'pending'; approvalsRemaining: number }
 
 export type SocialRecoveryEvent = {
     federationId: string
     approvals: GuardianApproval[]
-    status: SocialRecoveryStatus
+    remaining: number
 }
 
 export type RecoveryFileCreationEvent =

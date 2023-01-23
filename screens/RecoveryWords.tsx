@@ -28,17 +28,17 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
 const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { generateMnemonic } = useBridge()
+    const { getMnemonic } = useBridge()
     const [seedWords, setSeedWords] = useState<SeedWords>([])
 
     useEffect(() => {
-        const getMnemonic = async () => {
-            const seed = await generateMnemonic()
+        const getMnemonicWrapper = async () => {
+            const seed = await getMnemonic()
             setSeedWords(seed)
         }
 
-        getMnemonic()
-    }, [generateMnemonic])
+        getMnemonicWrapper()
+    }, [getMnemonic])
 
     const renderFirstSixSeedWords = () => {
         return seedWords

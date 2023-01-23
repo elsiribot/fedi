@@ -21,10 +21,29 @@ platform :android do
     gradle(task: "test")
   end
 
+  desc "Build a new apk to debug for production (apk can be found at /android/build/outputs/apk/production/debug/app-production-debug.apk)"
+  lane :build_debug do
+    gradle(task: 'clean')
+    gradle(
+      task: 'assemble',
+      flavor: 'production',
+      build_type: 'Debug'
+    )
+  end
+
   desc "Increment the versionCode in build.gradle"
   lane :increment_version_code do
     android_set_version_code(
       gradle_file: './app/build.gradle'
+    )
+  end
+
+  desc "Build a new app APK to release for production"
+  lane :build_production_apk do
+    gradle(
+      task: 'assemble',
+      flavor: 'production',
+      build_type: 'Release'
     )
   end
 

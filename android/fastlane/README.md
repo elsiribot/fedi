@@ -23,6 +23,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Runs all the tests
 
+### android build_debug
+
+```sh
+[bundle exec] fastlane android build_debug
+```
+
+Build a new apk to debug for production (apk can be found at /android/build/outputs/apk/production/debug/app-production-debug.apk)
+
 ### android increment_version_code
 
 ```sh
@@ -30,6 +38,14 @@ Runs all the tests
 ```
 
 Increment the versionCode in build.gradle
+
+### android build_production_apk
+
+```sh
+[bundle exec] fastlane android build_production_apk
+```
+
+Build a new app APK to release for production
 
 ### android build_production
 

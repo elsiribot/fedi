@@ -2,12 +2,18 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
-import { Node, SocialRecoveryEvent, TFedimintEventEmitter } from '../bridge'
+import {
+    GuardianApproval,
+    SocialRecoveryEvent,
+    TFedimintEventEmitter,
+} from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,9 +24,15 @@ export type Props = NativeStackScreenProps<
 const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { toast } = useEnvironmentContext().state
+    const { socialRecoveryApprovals, completeSocialRecovery } = useBridge()
     const { selectedFederation } = useFederationsContext().state
-    const [guardianApprovals, setGuardianApprovals] = useState<number>(0)
-    const [guardianDenials, setGuardianDenials] = useState<number>(0)
+    const [recovering, setRecovering] = useState(false)
+
+    const [approvals, setApprovals] = useState<SocialRecoveryEvent | undefined>(
+        undefined,
+    )
+    console.log('approvals', approvals)
 
     const socialRecoveryHandler = useCallback(
         (event: SocialRecoveryEvent) => {
@@ -28,17 +40,22 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             if (selectedFederation!.name !== event.federationId) {
                 return
             }
-            console.log('event')
-            console.log(event)
-            setGuardianApprovals(
-                event.approvals?.filter(a => a.status === 'approved').length,
-            )
-            setGuardianDenials(
-                event.approvals?.filter(a => a.status === 'denied').length,
-            )
         },
         [selectedFederation],
     )
+
+    // ask bridge every second
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                const _approvals = await socialRecoveryApprovals()
+                setApprovals(_approvals)
+            } catch (e) {
+                console.log('failed to get approvals', e)
+            }
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [socialRecoveryApprovals, setApprovals])
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
@@ -49,63 +66,57 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [navigation, socialRecoveryHandler])
 
-    useEffect(() => {
-        if (guardianDenials > (selectedFederation?.denialThreshold as number)) {
-            navigation.navigate('SocialRecoveryFailure')
-        }
-    }, [guardianDenials, selectedFederation?.denialThreshold, navigation])
-
     const showQrCode = () => {
         navigation.navigate('SocialRecoveryQrModal')
+    }
 
-        // TODO: Remove simulated approval when bridge is emitting events
-        setTimeout(() => {
-            // Mock guardian approvals 5s after every QR code display
-            setGuardianApprovals(
-                Math.min(
-                    selectedFederation?.approvalsRequired as number,
-                    guardianApprovals + 1,
-                ),
-            )
-            // Mock guardian denial
-            // setGuardianDenials(Math.min(guardianDenials + 1))
-        }, 5000)
+    const handleComplete = async () => {
+        setRecovering(true)
+        try {
+            await completeSocialRecovery()
+            navigation.navigate('SocialRecoverySuccess')
+        } catch (e) {
+            // FIXME: internationalize
+            toast?.show("Couldn't complete social recovery", 3000)
+        }
+        setRecovering(false)
     }
 
     const renderGuardianApprovalStatus = () => {
-        if (guardianApprovals === selectedFederation?.approvalsRequired) {
+        if (approvals?.remaining === 0) {
             return <Text bold>{`(${t('words.complete')})`}</Text>
         } else {
             return (
                 <Text bold>
-                    {`(${
-                        (selectedFederation?.approvalsRequired as number) -
-                        guardianApprovals
-                    } ${t('words.required')})`}
+                    {`(${approvals?.remaining} ${t('words.required')})`}
                 </Text>
             )
         }
     }
 
     const renderGuardians = () => {
-        return selectedFederation?.nodes.map((n: Node, i) => {
-            const approvalStatus =
-                guardianApprovals >= 1 ? 'approved' : 'pending'
+        return (
+            approvals &&
+            approvals.approvals.map((approval: GuardianApproval, i) => {
+                return (
+                    <View style={styles(theme).guardianRow} key={`gr-${i}`}>
+                        <Text>{approval.guardianName}</Text>
+                        <Text
+                            style={
+                                approval.approved ? styles(theme).completed : {}
+                            }>
+                            {/* FIXME: internationalize */}
+                            {approval.approved ? 'approved' : 'pending'}
+                        </Text>
+                    </View>
+                )
+            })
+        )
+    }
 
-            return (
-                <View style={styles(theme).guardianRow} key={`gr-${i}`}>
-                    <Text>{n.name}</Text>
-                    <Text
-                        style={
-                            approvalStatus === 'approved'
-                                ? styles(theme).completed
-                                : {}
-                        }>
-                        {approvalStatus}
-                    </Text>
-                </View>
-            )
-        })
+    // Show loading indicator until we have approvals
+    if (approvals == null) {
+        return <ActivityIndicator />
     }
 
     return (
@@ -159,13 +170,10 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.recovery.complete-social-recovery')}
                 containerStyle={[
                     styles(theme).completeButton,
-                    guardianApprovals < selectedFederation?.approvalsRequired!
-                        ? styles(theme).hidden
-                        : {},
+                    approvals?.remaining > 0 ? styles(theme).hidden : {},
                 ]}
-                onPress={() => {
-                    navigation.navigate('SocialRecoverySuccess')
-                }}
+                loading={recovering}
+                onPress={handleComplete}
             />
         </ScrollView>
     )

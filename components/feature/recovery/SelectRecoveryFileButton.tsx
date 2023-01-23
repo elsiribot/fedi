@@ -7,15 +7,14 @@ import DocumentPicker, {
     DocumentPickerResponse,
     types,
 } from 'react-native-document-picker'
+import RNFS from 'react-native-fs'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useBridge } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
-    const { validateBackupFile } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    const { validateRecoveryFile } = useBridge()
     const navigation = useNavigation<NavigationHook>()
     const [result, setResult] = useState<
         DocumentPickerResponse | undefined | null
@@ -32,20 +31,34 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
         } catch (error) {
             const typedError = error as Error
             console.error('DocumentPicker Error: ', typedError)
-            toast?.show(typedError?.message, 3000)
+            // Hiding this because it shows the toast when user closes the dialogue ...
+            // toast?.show(typedError?.message, 3000)
         }
     }
 
     useEffect(() => {
         const checkForValidFile = async () => {
+            // copy file to docs directory so rust can read it
+            const dest = `${RNFS.DocumentDirectoryPath}/backup.fedi`
+            // remove existing file
             try {
-                await validateBackupFile(result!.uri)
+                await RNFS.unlink(dest)
+            } catch (e) {
+                console.log('no existing file to remove')
+            }
+            // copy file to docs dir
+            await RNFS.copyFile(result!.uri, dest)
+            // validate file
+            try {
+                await validateRecoveryFile(dest)
                 navigation.replace('SelectRecoveryFileSuccess', {
-                    fileName: result!.name as string,
+                    // fileName: result!.name as string,
+                    fileName: dest,
                 })
             } catch (error) {
                 navigation.replace('SelectRecoveryFileFailure', {
-                    fileName: result!.name as string,
+                    // fileName: result!.name as string,
+                    fileName: dest,
                 })
             }
         }
@@ -53,7 +66,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
         if (result?.uri && result?.name) {
             checkForValidFile()
         }
-    }, [navigation, result, validateBackupFile])
+    }, [navigation, result, validateRecoveryFile])
 
     return (
         <Button

@@ -33,7 +33,7 @@ export type RootStackParamList = {
     ChatWallet: { recipient: Member }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
-    CompleteRecoveryAssist: { userPublicKey: string; videoUrl: string }
+    CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
     ConfirmReceiveOffline: { ecash: string; amount: MSats }

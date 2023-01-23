@@ -26,6 +26,7 @@
         "message": "Message",
         "messages": "Messages",
         "next": "Next",
+        "no": "No",
         "okay": "Okay",
         "one": "one",
         "onchain": "On-chain",
@@ -53,6 +54,7 @@
         "to": "To",
         "two": "two",
         "username": "Username",
+        "yes": "Yes",
         "wallet": "Wallet"
     },
     "phrases": {
@@ -169,6 +171,8 @@
             "invite-link-notice": "Invite link is valid for 2 hours",
             "join-federation": "Join a new Federation",
             "leave-federation": "Leave Federation",
+            "leave-federation-confirmation": "Are you sure you want to leave this federation?",
+            "leave-federation-withdraw-first": "You must withdraw your funds before leaving",
             "paste-federation-code-instead": "Paste federation code instead",
             "paste-federation-code": "Paste federation code",
             "scan-federation-invite": "Scan a Federation Invite"
@@ -209,6 +213,9 @@
             "you-sent": "You sent"
         },
         "recovery": {
+            "download-failed": "Failed to download",
+            "nothing-to-download": "Nothing to download from guardian",
+
             "camera-access-information": "To assist with recovery, you will need to allow Fedi access to your camera to scan the social recovery code",
             "choose-method": "Choose a recovery method",
             "choose-method-instructions": "Choose the method you used to back up your wallet when you first joined {{federation}}",
@@ -240,6 +247,7 @@
             "personal-recovery-instructions": "Enter the 12 words you wrote down when you first backed up your {{federation}} wallet",
             "recover-a-wallet": "Recover a wallet",
             "recover-wallet": "Recover wallet",
+            "recover-wallet-with-balance": "Recovery is currently unsupported for wallets with a balance. Please withdraw your funds first.",
             "recovering-your-wallet": "Recovering your wallet, please check back later",
             "recovery-assist": "Recovery assist",
             "recovery-assist-description": "A member of your Federation is requesting your assistance in recovering their wallet",

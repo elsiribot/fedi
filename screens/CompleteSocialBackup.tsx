@@ -8,6 +8,10 @@ import Share from 'react-native-share'
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import {
+    completeSocialBackup,
+    useBackupRecoveryContext,
+} from '../state/contexts/BackupRecoveryContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -23,12 +27,15 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { locateRecoveryFile } = useBridge()
     const [backupsCompleted, setBackupsCompleted] = useState<number>(0)
+    const { dispatch } = useBackupRecoveryContext()
 
     const createBackup = async () => {
         try {
             const recoveryFilePath = await locateRecoveryFile()
             const result = await Share.open({
-                url: recoveryFilePath,
+                title: 'Your Fedi Backup File',
+                // FIXME: this needs file:// prefix ... should do this with a util?
+                url: `file://${recoveryFilePath}`,
             })
             console.log(result)
             setBackupsCompleted(
@@ -173,9 +180,11 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.backup.complete-social-backup')}
                 containerStyle={[
                     styles(theme).completeButton,
-                    backupsCompleted < 2 ? styles(theme).hidden : {},
+                    // FIXME: changed 2 to 1 as hack for faster dev
+                    backupsCompleted < 1 ? styles(theme).hidden : {},
                 ]}
                 onPress={() => {
+                    dispatch(completeSocialBackup())
                     navigation.navigate('SocialBackupSuccess')
                 }}
             />

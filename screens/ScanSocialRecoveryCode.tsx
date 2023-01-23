@@ -5,10 +5,12 @@ import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
+import { SocialRecoveryQrCode } from '../bridge'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,27 +20,39 @@ export type Props = NativeStackScreenProps<
 
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
+    const { socialRecoveryDownloadVerificationDoc } = useBridge()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            if (input.startsWith('socialrecovery:')) {
-                console.info('fedi social recovery detected', input)
-                const parts = input.split('::')
-                const userPublicKey = parts[1]
-                const videoUrl = parts[2]
-                console.info(userPublicKey, videoUrl)
-
-                navigation.navigate('CompleteRecoveryAssist', {
-                    userPublicKey,
-                    videoUrl,
-                })
-            } else {
+            try {
+                let qr: SocialRecoveryQrCode = JSON.parse(input)
+                try {
+                    let videoPath = await socialRecoveryDownloadVerificationDoc(
+                        qr.recoveryId,
+                    )
+                    if (videoPath == null) {
+                        toast?.show(t('nothing-to-download'), 3000)
+                    } else {
+                        console.log('todo: navigtate')
+                        navigation.navigate('CompleteRecoveryAssist', {
+                            videoPath: videoPath as string,
+                            recoveryId: qr.recoveryId,
+                        })
+                    }
+                } catch (e) {
+                    console.log("couldn't download video", e)
+                    // FIXME: internationalize
+                    toast?.show(t('download-failed'), 3000)
+                }
+            } catch (e) {
+                // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
+            console.log(input)
         },
-        [navigation, toast, t],
+        [navigation, toast, t, socialRecoveryDownloadVerificationDoc],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -57,6 +71,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 <QrCodeScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
+                        // FIXME: only 1 request at-a-time
                         handleUserInput(qrCodeData)
                     }}
                 />

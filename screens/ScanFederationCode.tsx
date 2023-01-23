@@ -11,8 +11,7 @@ import CameraPermissionsRequired from '../components/feature/scan/CameraPermissi
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
-    changeSelectedFederation,
-    updateConnectedFederations,
+    updateFederations,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
@@ -28,13 +27,14 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
     const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
-    const [scannerProcessing, setScannerProcessing] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            // Provide a 500ms delay to throttle input from the scanner
-            setScannerProcessing(true)
-            setTimeout(() => setScannerProcessing(false), 500)
+            // tmuxinator
+            // input =
+            // '{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}'
+            // '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
+            console.log('input', input)
 
             if (input.startsWith('{"members":')) {
                 console.log('fedi qr code detected', input)
@@ -44,6 +44,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 try {
                     setJoiningFederation(true)
                     var federation = await joinFederation(input)
+                    console.log('joined')
                 } catch (e) {
                     console.error('Failed to join federation', e)
                     setJoiningFederation(false)
@@ -51,16 +52,17 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 }
                 const federations = await listFederations()
                 if (federations.length > 0) {
-                    dispatch(updateConnectedFederations(federations))
-                    dispatch(changeSelectedFederation(federation))
+                    console.log('navigating')
+                    dispatch(updateFederations(federation.name, federations))
                     setJoiningFederation(false)
                     navigation.navigate('Home')
                 }
+                setJoiningFederation(false) // just in case
             } else {
-                toast?.show('invalid federation code', 5000)
+                toast?.show(t('invalid-federation-code'), 5000)
             }
         },
-        [dispatch, joiningFederation, navigation, toast],
+        [dispatch, joiningFederation, navigation, toast, t],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -79,7 +81,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 <QrCodeScanner
                     device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
-                        if (scannerProcessing) return
+                        if (joiningFederation) return
                         handleUserInput(qrCodeData)
                     }}
                 />

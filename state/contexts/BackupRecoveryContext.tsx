@@ -1,15 +1,18 @@
 import React, { createContext, useContext, useMemo, useReducer } from 'react'
+import { VideoFile } from 'react-native-vision-camera'
 
 // Define the structure of this Context and its initial state
 interface BackupRecoveryContextState {
     recoveryFileCreated: boolean
     recoveryFileConfirmed: boolean
     socialBackupsCompleted: number
+    videoFile: VideoFile | null
 }
 const initialState: BackupRecoveryContextState = {
     recoveryFileCreated: false,
     recoveryFileConfirmed: false,
     socialBackupsCompleted: 0,
+    videoFile: null,
 }
 type AppState = typeof initialState
 
@@ -18,6 +21,8 @@ enum ActionType {
     CHANGE_SOCIAL_BACKUPS_COMPLETED = 'CHANGE_SOCIAL_BACKUPS_COMPLETED',
     SET_RECOVERY_FILE_CREATED = 'SET_RECOVERY_FILE_CREATED',
     RESET_BACKUP_RECOVERY_STATE = 'RESET_BACKUP_RECOVERY_STATE',
+    SAVE_VIDEO_FILE = 'SAVE_VIDEO_FILE',
+    COMPLETE_SOCIAL_BACKUP = 'COMPLETE_SOCIAL_BACKUP',
 }
 interface Action {
     type: ActionType
@@ -56,9 +61,21 @@ export function setRecoveryFileCreated(created: boolean): Action {
         payload: created,
     }
 }
-export function resetBackupRecoveryState(): Action {
+export function resetVideo(): Action {
     return {
-        type: ActionType.RESET_BACKUP_RECOVERY_STATE,
+        type: ActionType.SAVE_VIDEO_FILE,
+        payload: null,
+    }
+}
+export function saveVideo(video: VideoFile): Action {
+    return {
+        type: ActionType.SAVE_VIDEO_FILE,
+        payload: video,
+    }
+}
+export function completeSocialBackup(): Action {
+    return {
+        type: ActionType.COMPLETE_SOCIAL_BACKUP,
     }
 }
 
@@ -77,6 +94,11 @@ export function reducer(state: AppState, action: Action): AppState {
             }
         case ActionType.RESET_BACKUP_RECOVERY_STATE:
             return { ...initialState }
+        case ActionType.COMPLETE_SOCIAL_BACKUP:
+            // Reset video file so it's not still there if user returns
+            return { ...state, videoFile: null }
+        case ActionType.SAVE_VIDEO_FILE:
+            return { ...initialState, videoFile: action.payload }
         default:
             return state
     }

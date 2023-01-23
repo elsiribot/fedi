@@ -7,12 +7,13 @@ import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
     authenticateGuardian,
-    backupQr,
+    completeSocialRecovery,
     denySocialRecoveryRequest,
     generateAddress,
     generateEcash,
     generateInvoice,
-    generateMnemonic,
+    getMnemonic,
+    leaveFederation,
     LightningGateway,
     listGateways,
     listTransactions,
@@ -22,11 +23,14 @@ import {
     payInvoice,
     receiveEcash,
     recoverFromMnemonic,
+    recoveryQr,
+    socialRecoveryApprovals,
+    socialRecoveryDownloadVerificationDoc,
     switchGateway,
     updateTransactionNotes,
     uploadBackupFile,
-    validateBackupFile,
     validateEcash,
+    validateRecoveryFile,
 } from '../../bridge'
 import { XMPP_MUC_DOMAIN } from '../../constants'
 import { Member, Message, MSats, Room, Sats } from '../../types'
@@ -54,9 +58,9 @@ export const useBridge = () => {
             [selectedFederation],
         ),
         approveSocialRecoveryRequest: useCallback(
-            (userPublicKey: string) => {
+            (recoveryId: string) => {
                 return approveSocialRecoveryRequest(
-                    userPublicKey,
+                    recoveryId,
                     selectedFederation!.name,
                 )
             },
@@ -68,11 +72,17 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        backupQr: useCallback(() => {
-            return backupQr(selectedFederation!.name)
+        recoveryQr: useCallback(() => {
+            return recoveryQr(selectedFederation!.name)
+        }, [selectedFederation]),
+        leaveFederation: useCallback(() => {
+            return leaveFederation(selectedFederation!.name)
         }, [selectedFederation]),
         generateAddress: useCallback(() => {
             return generateAddress(selectedFederation!.name)
+        }, [selectedFederation]),
+        socialRecoveryApprovals: useCallback(() => {
+            return socialRecoveryApprovals(selectedFederation!.name)
         }, [selectedFederation]),
         generateEcash: useCallback(
             (amount: MSats) => {
@@ -90,8 +100,8 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        generateMnemonic: useCallback(() => {
-            return generateMnemonic(selectedFederation!.name)
+        getMnemonic: useCallback(() => {
+            return getMnemonic(selectedFederation!.name)
         }, [selectedFederation]),
         listTransactions: useCallback(() => {
             return listTransactions(selectedFederation!.name)
@@ -130,6 +140,9 @@ export const useBridge = () => {
         locateRecoveryFile: useCallback(() => {
             return locateRecoveryFile(selectedFederation!.name)
         }, [selectedFederation]),
+        completeSocialRecovery: useCallback(() => {
+            return completeSocialRecovery(selectedFederation!.name)
+        }, [selectedFederation]),
         payInvoice: useCallback(
             (invoice: string) => {
                 return payInvoice(invoice, selectedFederation!.name)
@@ -163,9 +176,18 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        validateBackupFile: useCallback(
+        socialRecoveryDownloadVerificationDoc: useCallback(
+            (recoveryId: string) => {
+                return socialRecoveryDownloadVerificationDoc(
+                    recoveryId,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
+        validateRecoveryFile: useCallback(
             (file: string) => {
-                return validateBackupFile(file, selectedFederation!.name)
+                return validateRecoveryFile(file, selectedFederation!.name)
             },
             [selectedFederation],
         ),
