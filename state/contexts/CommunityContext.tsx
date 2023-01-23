@@ -11,11 +11,12 @@ import React, {
     useReducer,
 } from 'react'
 
-import { Images } from '../../assets/images'
 import {
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
+    FEDI_GENERAL_CHANNEL_ROOM,
+    FEDI_RECOVERY_SUPPORT_ROOM,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
     XMPP_MOCK_PASSWORD,
@@ -27,41 +28,9 @@ import { Member, Message, Room } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
 
-export const MOCKED_ROOMS: Room[] = [
-    {
-        id: 'fedi-general-channel',
-        icon: Images.FediLogoIcon,
-        name: 'Fedi',
-        pinned: true,
-        hasNewMessages: true,
-        lastReceivedTimestamp: Date.now() / 1000 - 172800, // 2 days ago
-        messagePreview:
-            'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
-        lastMessage: {
-            timestamp: Date.now() / 1000 - 172800, // 2 days ago
-            text: 'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app such as:<br><br>- Federation health checks<br>- Scam awareness<br>- Security checks<br>- App updates<br>- Tips & tricks<br>- Education',
-        },
-    },
-    {
-        id: 'fedi-recovery-support',
-        icon: Images.Recovery,
-        name: 'Recovery Support',
-        pinned: false,
-        hasNewMessages: false,
-        lastReceivedTimestamp: Date.now() / 1000,
-        messagePreview:
-            'Could someone please help me get in touch with a guardian so I can',
-        lastMessage: {
-            timestamp: Date.now() / 1000,
-            text: 'Could someone please help me get in touch with a guardian so I can recover my funds??? My phone was stolen it is urgent!',
-        },
-    },
-]
-
-const MOCKED_MEMBERS = [
-    new Member({
-        jid: jid('oz21m', XMPP_DOMAIN, XMPP_RESOURCE),
-    }),
+export const DEFAULT_ROOMS: Room[] = [
+    FEDI_GENERAL_CHANNEL_ROOM,
+    FEDI_RECOVERY_SUPPORT_ROOM,
 ]
 
 // Define the structure of this Context and its initial state
@@ -80,7 +49,7 @@ const initialState: CommunityContextState = {
     userIsOnline: false,
     authenticatedMember: null,
     messages: [],
-    rooms: MOCKED_ROOMS,
+    rooms: DEFAULT_ROOMS,
     membersSeen: [],
 }
 type AppState = typeof initialState
@@ -170,6 +139,12 @@ export function setXmppClient(xmpp: Client): Action {
         payload: xmpp,
     }
 }
+export function updateMessage(message: Message): Action {
+    return {
+        type: ActionType.UPDATE_MESSAGE,
+        payload: message,
+    }
+}
 export function updateRoomMessagePreview(message: Message): Action {
     return {
         type: ActionType.UPDATE_ROOM_MESSAGE_PREVIEW,
@@ -226,7 +201,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     ),
                 }
             }
-        case ActionType.ADD_TO_MESSAGES:
+        case ActionType.ADD_TO_MESSAGES: {
             const messageIndex = state.messages.findIndex(
                 (m: Message) => m.id === action.payload.id,
             )
@@ -258,7 +233,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     ),
                 }
             }
-
+        }
         case ActionType.ADD_TO_ROOMS: {
             const roomIndex = state.rooms.findIndex(
                 (r: Room) => r.id === action.payload.id,
@@ -330,6 +305,31 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 xmppClient: action.payload,
             }
+        case ActionType.UPDATE_MESSAGE: {
+            const messageIndex = state.messages.findIndex(
+                (m: Message) => m.id === action.payload.id,
+            )
+
+            if (messageIndex === -1) {
+                // message not found, avoid re-render
+                return state
+            } else if (isEqual(action.payload, state.messages[messageIndex])) {
+                // message exists but has not changed, avoid re-render
+                return state
+            } else {
+                // message needs an update...
+                const updatedMessage = new Message({
+                    ...state.messages[messageIndex],
+                    ...action.payload,
+                })
+                return {
+                    ...state,
+                    messages: state.messages.map((m: Message, i) =>
+                        i === messageIndex ? updatedMessage : m,
+                    ),
+                }
+            }
+        }
         case ActionType.UPDATE_ROOM_MESSAGE_PREVIEW: {
             const newMessage = action.payload as Message
             const roomIndex = state.rooms.findIndex(
@@ -544,6 +544,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             }
             if (stanza.is('message')) {
                 if (stanza.getAttr('type') === 'groupchat') {
+                    // Handle incoming messages from RoomChat
                     const from = stanza.getAttr('from')
                     const room = from.split('@')[0]
                     const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
@@ -568,17 +569,58 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         dispatch(updateRoomMessagePreview(newMessage))
                     }
                 } else if (stanza.getAttr('type') === 'chat') {
-                    const bodyText = stanza.getChildText('body') as string
-                    const directMessageJson = stanza.getChildText(
-                        'dm',
-                    ) as string
+                    // Handle incoming messages from DirectChat
+                    const bodyText = stanza.getChildText('body')
+                    if (!bodyText) return
 
-                    if (bodyText) {
-                        const parsedMessage = JSON.parse(directMessageJson)
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                            receivedAt: Date.now() / 1000,
-                        })
+                    const directMessageJson = stanza.getChildText('dm')
+                    const parsedMessage = JSON.parse(
+                        directMessageJson as string,
+                    )
+                    const newMessage = new Message({
+                        ...parsedMessage,
+                        receivedAt: Date.now() / 1000,
+                    })
+
+                    const action = stanza.getChild('action')
+                    if (action?.getNS() === 'fedi:update-payment') {
+                        // find message and replace with updated version
+                        // with canceled or rejected payment
+                        dispatch(updateMessage(newMessage))
+                    } else {
+                        dispatch(addToMessages(newMessage))
+                        dispatch(updateRoomMessagePreview(newMessage))
+                    }
+                } else if (
+                    stanza.getChild('result')?.getAttr('queryid') ===
+                    'get-messages'
+                ) {
+                    // Handle messages received while offline, typically
+                    // triggered by the fetchMessagesFromArchive hook
+                    const result = stanza.getChild('result')
+                    const forwarded = result?.getChild('forwarded')
+                    const message = forwarded?.getChild('message')
+                    console.info(forwarded)
+                    if (!message) return
+                    if (forwarded) {
+                        console.info('found forwarded', forwarded)
+                    }
+
+                    const directMessageJson = message.getChildText('dm')
+                    const parsedMessage = JSON.parse(
+                        directMessageJson as string,
+                    )
+                    const newMessage = new Message({
+                        ...parsedMessage,
+                        receivedAt: Date.now() / 1000,
+                    })
+
+                    const action = message.getChild('action')
+                    if (action?.getNS() === 'fedi:update-payment') {
+                        // find message and replace with updated version
+                        // with canceled or rejected payment
+                        dispatch(updateMessage(newMessage))
+                    } else {
                         dispatch(addToMessages(newMessage))
                         dispatch(updateRoomMessagePreview(newMessage))
                     }
@@ -619,7 +661,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     // Update async storage when rooms are added
     useEffect(() => {
         console.log('useEffect: rooms')
-        if (state.rooms.length > MOCKED_ROOMS.length) {
+        if (state.rooms.length > DEFAULT_ROOMS.length) {
             console.log('storing', state.rooms.length, 'rooms')
             AsyncStorage.setItem(
                 COMMUNITY_ROOMS_PERSISTENCE_KEY,

@@ -145,8 +145,10 @@ export class Message extends Base {
     payment?: Payment
     constructor(data: any) {
         super(data)
+        if (data.sentIn) this.sentIn = new Room(data.sentIn)
         if (data.sentBy) this.sentBy = new Member(data.sentBy)
         if (data.sentTo) this.sentTo = new Member(data.sentTo)
+        if (data.payment) this.payment = new Payment(data.payment)
     }
 }
 
@@ -160,9 +162,14 @@ export type MessageAction = {
 export class Payment extends Base {
     amount: MSats
     status: PaymentStatus
+    recipient?: Member
     memo?: string
     token?: string
     invoice?: Invoice
+    constructor(data: any) {
+        super(data)
+        if (data.recipient) this.recipient = new Member(data.recipient)
+    }
 }
 
 export enum PaymentStatus {

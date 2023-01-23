@@ -1,4 +1,5 @@
 import { Options } from '@xmpp/client'
+import { Images } from './assets/images'
 
 import i18n from './localization/i18n'
 
@@ -12,6 +13,7 @@ export const FEDERATION_SIGNET =
     '{"members":[[0,"wss://fm-signet.sirion.io:443"]]}'
 
 export const TEST_FEDERATION = FEDERATION_ALPHA
+export const SELECTED_FEDERATION_ID_DB_KEY = 'SELECTED_FEDERATION_ID_DB_KEY'
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
     'AsyncStorage-CommunityContext-members'
@@ -33,7 +35,22 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
     resource: XMPP_RESOURCE,
 }
-export const SELECTED_FEDERATION_ID_DB_KEY = 'SELECTED_FEDERATION_ID_DB_KEY'
+export const FEDI_GENERAL_CHANNEL_ROOM = {
+    id: 'fedi-general-channel',
+    icon: Images.FediLogoIcon,
+    name: 'Fedi',
+    pinned: true,
+    messagePreview:
+        'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
+}
+export const FEDI_RECOVERY_SUPPORT_ROOM = {
+    id: 'fedi-recovery-support',
+    icon: Images.Recovery,
+    name: 'Recovery Support',
+    pinned: true,
+    messagePreview:
+        'Could someone please help me get in touch with a guardian...',
+}
 
 export const SITES = [
     // TODO: Show only for regtest federations
