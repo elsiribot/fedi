@@ -22,8 +22,8 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun initialize(dataDir: String, promise: Promise) {
-        fedimintInitialize(dataDir, EventDispatcher)
+    fun initialize(dataDir: String, logLevel: String, promise: Promise) {
+        fedimintInitialize(dataDir, logLevel, EventDispatcher)
         promise.resolve(null)
     }
 
