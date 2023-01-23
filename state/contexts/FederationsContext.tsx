@@ -203,9 +203,19 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         // Try not to accidentally overwrite real value with null
         if (state.selectedFederationId != null) {
+            const selectedFederation = state.federations.find(
+                // FIXME: switch to using federation.id
+                f => f.name === state.selectedFederationId,
+            )
+
             AsyncStorage.setItem(
                 SELECTED_FEDERATION_ID_DB_KEY,
-                JSON.stringify(state.selectedFederationId),
+                JSON.stringify({
+                    selectedFederation: {
+                        id: state.selectedFederationId,
+                        username: selectedFederation?.username,
+                    },
+                }),
             )
         }
     }, [state])

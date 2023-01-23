@@ -23,6 +23,7 @@ import {
 import {
     resetFederationsState,
     updateFederations,
+    updateFederationUsername,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -176,19 +177,28 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             const saved = await AsyncStorage.getItem(
                 SELECTED_FEDERATION_ID_DB_KEY,
             )
-            const selectedFederationId = saved ? JSON.parse(saved) : null
+            const savedJson = saved ? JSON.parse(saved) : null
+
+            const { selectedFederation } = savedJson
 
             // load federations from bridge
             let federations = await listFederations()
-            federationsDispatch(
-                updateFederations(selectedFederationId, federations),
-            )
+            if (selectedFederation.id) {
+                federationsDispatch(
+                    updateFederations(selectedFederation.id, federations),
+                )
+            }
+            if (selectedFederation.username) {
+                federationsDispatch(
+                    updateFederationUsername(selectedFederation.username),
+                )
+            }
 
             // navigate depending on if we've joined a federation or not
             console.log(
                 'navigating',
                 federations.length > 0 ? 'Home' : 'Splash',
-                selectedFederationId,
+                selectedFederation.id,
                 saved,
             )
             navigation.replace(federations.length > 0 ? 'Home' : 'Splash')
