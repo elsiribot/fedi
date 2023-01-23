@@ -23,6 +23,11 @@ const Sites: React.FC<Props> = ({ navigation }) => {
     }
 
     // TODO: Add offline state as part of #53
+
+    // TODO: Use a <Stack.Navigator> here instead of a <View>
+    // Inside will be 2 <Stack.Screens>:
+    // 1. SitesList
+    // 2. SitesBrowser (move this from Router.tsx)
     return (
         <View style={styles(theme).container}>
             <Text h2 medium h2Style={styles(theme).title}>

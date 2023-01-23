@@ -139,6 +139,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 })
 
                 // Attempt to pay the invoice
+                // TODO: Check selectedFederation.balance < invoice.amount
+                // and run a toast.show
                 await payInvoice(paymentRequest)
 
                 return {
@@ -209,6 +211,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     console.log('uri: ', uri)
     return (
         <View style={styles.container}>
+            {/* TODO: Move SitesHeader here so we can pass props to it */}
             <WebView
                 ref={webview}
                 source={{ uri: site.url }}
