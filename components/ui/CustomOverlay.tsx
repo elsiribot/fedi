@@ -26,8 +26,18 @@ const CustomOverlay: React.FC<OverlayProps> = ({
             return (
                 <Button
                     key={i}
+                    containerStyle={styles(theme).buttonContainer}
                     title={button.text}
-                    type={button.type}
+                    titleStyle={
+                        button.textColor
+                            ? { color: button.textColor }
+                            : { color: theme.colors.white }
+                    }
+                    buttonStyle={
+                        button.backgroundColor
+                            ? { backgroundColor: button.backgroundColor }
+                            : { backgroundColor: theme.colors.black }
+                    }
                     onPress={button.onPress}
                 />
             )
@@ -80,8 +90,12 @@ const styles = (theme: Theme) =>
         },
         overlayButtonView: {
             flexDirection: 'row',
-            justifyContent: 'space-around',
-            marginVertical: theme.spacing.xxl,
+            justifyContent: 'space-between',
+            margin: theme.spacing.sm,
+        },
+        buttonContainer: {
+            margin: theme.spacing.sm,
+            flex: 1,
         },
     })
 
