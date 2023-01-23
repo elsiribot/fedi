@@ -108,6 +108,28 @@ export function reducer(state: AppState, action: Action): AppState {
                     (f: Federation) => new Federation(f),
                 ),
             }
+        case ActionType.UPDATE_FEDERATION_USERNAME: {
+            const selectedFederation = state.federations.find(
+                // FIXME: switch to using federation.id
+                f => f.name === state.selectedFederationId,
+            )
+            const federations = state.federations.map((f: Federation) => {
+                // If the federation id matches, update the balance of that
+                // single connectedFederation
+                if (f.name === selectedFederation!.name) {
+                    return new Federation({
+                        ...f,
+                        username: action.payload,
+                    })
+                } else {
+                    return f
+                }
+            })
+            return {
+                ...state,
+                federations,
+            }
+        }
         case ActionType.UPDATE_FEDERATION_BALANCE:
             const selectedFederation = state.federations.find(
                 // FIXME: switch to using federation.id
