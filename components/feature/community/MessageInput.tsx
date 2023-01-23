@@ -29,14 +29,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     return (
         <View style={styles(theme).container}>
-            <Pressable
-                onPress={() =>
-                    navigation.navigate('ChatWallet', {
-                        recipient: member,
-                    })
-                }>
-                <Image style={styles(theme).icon} source={Images.Wallet} />
-            </Pressable>
+            {/* in-chat payments only available for DirectChat */}
+            {member && (
+                <Pressable
+                    onPress={() =>
+                        navigation.navigate('ChatWallet', {
+                            recipient: member,
+                        })
+                    }>
+                    <Image style={styles(theme).icon} source={Images.Wallet} />
+                </Pressable>
+            )}
             <Input
                 onChangeText={setMessageText}
                 value={messageText}
