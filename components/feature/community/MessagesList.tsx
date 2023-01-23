@@ -28,6 +28,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             renderItem={renderMessage}
             keyExtractor={(item: Message) => `${item.id}`}
             style={styles(theme).container}
+            contentContainerStyle={styles(theme).contentContainer}
             onContentSizeChange={() => listRef.current?.scrollToEnd()}
             ListEmptyComponent={multiUserChat ? <EmptyRoomNotice /> : null}
         />
@@ -39,6 +40,9 @@ const styles = (theme: Theme) =>
         container: {
             width: '100%',
             paddingHorizontal: theme.spacing.xl,
+        },
+        contentContainer: {
+            paddingTop: theme.spacing.md,
         },
     })
 
