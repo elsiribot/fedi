@@ -52,10 +52,10 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
                     // load federations from bridge
                     let federations = await listFederations()
-                    if (selectedFederation?.id) {
+                    if (selectedFederation?.name) {
                         federationsDispatch(
                             updateFederations(
-                                selectedFederation?.id,
+                                selectedFederation?.name,
                                 federations,
                             ),
                         )

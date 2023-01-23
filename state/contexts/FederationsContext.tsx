@@ -206,7 +206,7 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
                 SELECTED_FEDERATION_ID_DB_KEY,
                 JSON.stringify({
                     selectedFederation: {
-                        id: state.selectedFederationId,
+                        name: state.selectedFederationId,
                         username: selectedFederation?.username,
                     },
                 }),
