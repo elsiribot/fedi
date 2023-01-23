@@ -31,9 +31,9 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const handleUserInput = useCallback(
         async (input: string) => {
             // tmuxinator
-            input =
-                // '{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}'
-                '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
+            // input =
+            // '{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}'
+            // '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
             console.log('input', input)
 
             if (input.startsWith('{"members":')) {
