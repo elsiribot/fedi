@@ -27,6 +27,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
     const { toast } = useEnvironmentContext().state
     const { videoFilePath } = route.params
     const [percentComplete, setPercentComplete] = useState<number>(0)
+    const [uploadStarted, setUploadStarted] = useState(false)
 
     // Registers an event handler listening for recovery file creation events
     useEffect(() => {
@@ -51,22 +52,33 @@ const SocialBackupProcessing: React.FC<Props> = ({
 
     useEffect(() => {
         const startBackupFileUpload = async () => {
+            setUploadStarted(true)
             try {
                 await uploadBackupFile(videoFilePath)
             } catch (error) {
+                setUploadStarted(false)
                 const typedError = error as Error
                 console.error(typedError)
                 toast?.show(typedError?.message, 3000)
             }
         }
 
-        startBackupFileUpload()
-    }, [navigation, toast, uploadBackupFile, videoFilePath])
+        // Only upload backup file once
+        if (!uploadStarted) {
+            startBackupFileUpload()
+        }
+    }, [
+        navigation,
+        toast,
+        uploadBackupFile,
+        videoFilePath,
+        uploadStarted,
+        setUploadStarted,
+    ])
 
     // TODO: Remove this simulation when bridge is emitting events
     useEffect(() => {
         if (percentComplete === 100) {
-            // setPercentComplete(0)
             navigation.replace('SocialBackupCloudUpload')
         }
         const interval = setInterval(() => {

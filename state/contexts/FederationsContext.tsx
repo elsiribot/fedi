@@ -162,7 +162,6 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
         const onFederationUpdate = (event: FederationEvent) => {
-            console.log('on update federation', event)
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
@@ -186,7 +185,6 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
                 SELECTED_FEDERATION_ID_DB_KEY,
                 JSON.stringify(state.selectedFederationId),
             )
-            console.log('savedd', state.selectedFederationId)
         }
     }, [state])
 
