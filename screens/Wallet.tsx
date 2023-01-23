@@ -63,6 +63,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
                             {t('words.bitcoin')}
                         </Text>
                     </View>
+                    <Text>FIXME</Text>
                     <Balance balance={selectedFederation!.balance} />
                     <View style={styles(theme).buttonsGroupContainer}>
                         <Button
