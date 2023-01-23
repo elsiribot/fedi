@@ -3,8 +3,8 @@ import Calculator
 @objc(FedimintFfi)
 class FedimintFfi: NSObject {
   @objc
-  func initialize(_ dataDir: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    fedimintInitialize(dataDir: String(dataDir), eventSink: EventDispatcher())
+  func initialize(_ dataDir: NSString, logLevel: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    fedimintInitialize(dataDir: String(dataDir), logLevel: String(logLevel), eventSink: EventDispatcher())
     resolve("")  // FIXME: how to resolve nothing?
   }
 

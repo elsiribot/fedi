@@ -29,6 +29,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
             try {
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
                 try {
+                    // FIXME: this is getting called over-and-over
                     let videoPath = await socialRecoveryDownloadVerificationDoc(
                         qr.recoveryId,
                     )
