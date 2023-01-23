@@ -346,7 +346,7 @@ export const useXmpp = () => {
                           xml(
                               'field',
                               { var: 'with' },
-                              xml('value', {}, withJid),
+                              xml('value', {}, filters.withJid),
                           ),
                       )
                     : xml('x')
