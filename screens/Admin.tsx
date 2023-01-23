@@ -95,11 +95,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 ],
             )
         } else {
-            if (selectedFederation!.socialRecoveryActive) {
-                navigation.navigate('CompleteSocialRecovery')
-            } else {
-                navigation.navigate('ChooseRecoveryMethod')
-            }
+            navigation.navigate('ChooseRecoveryMethod')
         }
     }
 
@@ -170,7 +166,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <SettingsItem
                     imageSource={Images.Wallet}
                     label={t('feature.backup.backup-wallet')}
-                    onPress={() => navigation.navigate('RecordBackupVideo')}
+                    onPress={() => navigation.navigate('ChooseBackupMethod')}
                 />
                 <SettingsItem
                     imageSource={Images.Recovery}
