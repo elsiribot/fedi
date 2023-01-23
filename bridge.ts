@@ -20,10 +20,7 @@ export type LogEvent = {
     log: string
 }
 
-export type BalanceEvent = {
-    federationId: string
-    balance: MSats
-}
+export type FederationEvent = Federation
 
 export type TransactionEvent = {
     federationId: string
@@ -146,11 +143,11 @@ export class TFedimintEventEmitter {
         return this.addListener('log', listener, context)
     }
 
-    onBalanceUpdate = (
-        listener: (event: BalanceEvent) => void,
+    onFederationUpdate = (
+        listener: (event: FederationEvent) => void,
         context?: Object,
     ): EmitterSubscription => {
-        return this.addListener('balance', listener, context)
+        return this.addListener('federation', listener, context)
     }
 
     onTransaction = (
@@ -194,6 +191,7 @@ export class Federation extends Base {
     rooms?: Room[] | null
     messages?: Message[] | null
     membersSeen?: Member[] | null
+    socialRecoveryActive: boolean
 
     get approvalsRequired(): number {
         const numNodes = this.nodes.length

@@ -83,6 +83,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
 
     const onChooseRecovery = () => {
         // Only allow recovery for wallets with less than 100 sats
+        // FIXME: a bit of a race condition here if a user starts a recovery with 0 sats, then receives and tries this again
         if (selectedFederation!.balance > 100000) {
             Alert.alert(
                 t('feature.recovery.recover-wallet'),
@@ -94,7 +95,11 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 ],
             )
         } else {
-            navigation.navigate('ChooseRecoveryMethod')
+            if (selectedFederation!.socialRecoveryActive) {
+                navigation.navigate('CompleteSocialRecovery')
+            } else {
+                navigation.navigate('ChooseRecoveryMethod')
+            }
         }
     }
 

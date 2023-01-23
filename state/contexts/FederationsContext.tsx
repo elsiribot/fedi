@@ -7,7 +7,11 @@ import React, {
     useReducer,
 } from 'react'
 
-import { BalanceEvent, Federation, TFedimintEventEmitter } from '../../bridge'
+import {
+    Federation,
+    FederationEvent,
+    TFedimintEventEmitter,
+} from '../../bridge'
 import { SELECTED_FEDERATION_ID_DB_KEY } from '../../constants'
 
 // Define the structure of this Context and its initial state
@@ -69,12 +73,6 @@ export function updateFederations(
     }
 }
 
-export function updateFederationBalance(event: BalanceEvent): Action {
-    return {
-        type: ActionType.UPDATE_FEDERATION_BALANCE,
-        payload: event,
-    }
-}
 export function updateFederationUsername(username: String): Action {
     return {
         type: ActionType.UPDATE_FEDERATION_USERNAME,
@@ -103,32 +101,12 @@ export function reducer(state: AppState, action: Action): AppState {
                 selectedFederationId: action.payload,
             }
         case ActionType.UPDATE_FEDERATIONS:
-            console.log('update federations', action.payload)
             return {
                 ...state,
                 selectedFederationId: action.payload.selectedFederationId,
                 federations: action.payload.federations.map(
                     (f: Federation) => new Federation(f),
                 ),
-            }
-        case ActionType.UPDATE_FEDERATION_BALANCE:
-            const updatedConnectedFederations = state.federations.map(
-                (f: Federation) => {
-                    // If the federation id matches, update the balance of that
-                    // single connectedFederation
-                    if (f.name === action.payload.federationId) {
-                        return new Federation({
-                            ...f,
-                            balance: action.payload.balance,
-                        })
-                    } else {
-                        return f
-                    }
-                },
-            )
-            return {
-                ...state,
-                federations: updatedConnectedFederations,
             }
         case ActionType.UPDATE_FEDERATION_BALANCE:
             const selectedFederation = state.federations.find(
@@ -183,20 +161,20 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
-        const onBalanceUpdate = (event: BalanceEvent) => {
-            console.log('on update balance', event)
+        const onFederationUpdate = (event: FederationEvent) => {
+            console.log('on update federation', event)
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
 
-            dispatch(updateFederationBalance(event))
+            dispatch(updateFederation(event))
         }
-        emitter.onBalanceUpdate(onBalanceUpdate)
+        emitter.onFederationUpdate(onFederationUpdate)
 
         // This may be redundant if the event emitter already
         // removes existing listeners
         return () => {
-            emitter.removeListener('balance')
+            emitter.removeListener('federation')
         }
     }, [state])
 
