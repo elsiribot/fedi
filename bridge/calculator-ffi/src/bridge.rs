@@ -339,6 +339,15 @@ impl Federation {
         Ok(Self::new(client, event_sink, task_group))
     }
 
+    pub fn normalized_federation_name(&self) -> String {
+        self.name().replace(" ", "_")
+    }
+
+    pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
+        let federation_name = self.normalized_federation_name();
+        datadir.join(format!("{}_{}", federation_name, RECOVERY_FILENAME))
+    }
+
     pub fn sign_with_node_privkey(&self, msg: &Message) -> Signature {
         // TODO: don't hardcode
         let secret_key =
@@ -867,11 +876,34 @@ impl Federation {
         Ok(None)
     }
 
+    /// test method to be deleted later
+    pub async fn next_peer_id(&self, recovery_id: &RecoveryId) -> Result<PeerId> {
+        let guardian_peer_ids: Vec<PeerId> = self
+            .client
+            .config()
+            .0
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, _)| PeerId::from(i as u16)) // FIXME: don't use "as"
+            .collect();
+        let mut approvals = 0;
+        for peer_id in guardian_peer_ids {
+            let mut verification_client = self.client.social_verification(peer_id);
+            if verification_client
+                .decryption_share_exists(recovery_id)
+                .await?
+            {
+                approvals += 1;
+            }
+        }
+        Ok(PeerId::from(approvals as u16))
+    }
+
     pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
-        // TODO: figure out which guardian should do the next approval and fire off request to them
-        let (approvals, remaining) = self.social_recovery_approvals().await?;
-        let next_id = PeerId::from((approvals.len() - remaining) as u16);
-        let verification_client = self.client.social_verification(next_id);
+        let next_peer_id = self.next_peer_id(recovery_id).await?;
+        tracing::info!("approve social recovery {}", next_peer_id);
+        let verification_client = self.client.social_verification(next_peer_id);
         verification_client.approve_recovery(*recovery_id).await?;
         Ok(())
     }
