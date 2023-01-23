@@ -577,10 +577,10 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     const parsedMessage = JSON.parse(
                         directMessageJson as string,
                     )
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                            receivedAt: Date.now() / 1000,
-                        })
+                    const newMessage = new Message({
+                        ...parsedMessage,
+                        receivedAt: Date.now() / 1000,
+                    })
 
                     const action = stanza.getChild('action')
                     if (action?.getNS() === 'fedi:update-payment') {
