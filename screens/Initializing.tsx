@@ -11,7 +11,6 @@ import {
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
-    FEDERATIONS_PERSISTENCE_KEY,
     SELECTED_FEDERATION_ID_DB_KEY,
 } from '../constants'
 import {
@@ -43,31 +42,37 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         const restoreState = async () => {
             const restoreFederationsState = async () => {
                 try {
-                    const savedFederationsStateJson =
-                        await AsyncStorage.getItem(FEDERATIONS_PERSISTENCE_KEY)
+                    // load selected federation id from async storage
+                    const saved = await AsyncStorage.getItem(
+                        SELECTED_FEDERATION_ID_DB_KEY,
+                    )
+                    const savedJson = saved ? JSON.parse(saved) : null
 
-                    const savedFederationsState = savedFederationsStateJson
-                        ? JSON.parse(savedFederationsStateJson)
-                        : null
+                    const { selectedFederation } = savedJson
 
-                    console.info('savedFederationsState', savedFederationsState)
-
-                    if (savedFederationsState !== null) {
-                        const { selectedFederation, connectedFederations } =
-                            savedFederationsState
-
+                    // load federations from bridge
+                    let federations = await listFederations()
+                    if (selectedFederation?.id) {
                         federationsDispatch(
                             updateFederations(
-                                selectedFederation.id,
-                                connectedFederations,
+                                selectedFederation?.id,
+                                federations,
                             ),
                         )
-                        return navigation.replace('Home')
+                        if (selectedFederation.username) {
+                            federationsDispatch(
+                                updateFederationUsername(
+                                    selectedFederation.username,
+                                ),
+                            )
+                        }
                     }
+                    return navigation.replace(
+                        federations.length > 0 ? 'Home' : 'Splash',
+                    )
                 } catch (error) {
                     console.error(error)
                 }
-                navigation.replace('Splash')
             }
 
             const restoreMessages = async () => {
@@ -170,41 +175,6 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             restoreState()
         }
     }, [communityDispatch, federationsDispatch, navigation, reset])
-
-    useEffect(() => {
-        const initialize = async () => {
-            // load selected federation id from async storage
-            const saved = await AsyncStorage.getItem(
-                SELECTED_FEDERATION_ID_DB_KEY,
-            )
-            const savedJson = saved ? JSON.parse(saved) : null
-
-            const { selectedFederation } = savedJson
-
-            // load federations from bridge
-            let federations = await listFederations()
-            if (selectedFederation?.id) {
-                federationsDispatch(
-                    updateFederations(selectedFederation?.id, federations),
-                )
-            }
-            if (selectedFederation.username) {
-                federationsDispatch(
-                    updateFederationUsername(selectedFederation.username),
-                )
-            }
-
-            // navigate depending on if we've joined a federation or not
-            console.log(
-                'navigating',
-                federations.length > 0 ? 'Home' : 'Splash',
-                selectedFederation.id,
-                saved,
-            )
-            navigation.replace(federations.length > 0 ? 'Home' : 'Splash')
-        }
-        initialize()
-    }, [federationsDispatch, navigation])
 
     return (
         <ImageBackground
