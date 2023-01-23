@@ -51,12 +51,12 @@ const SocialBackupProcessing: React.FC<Props> = ({
     }, [navigation, toast])
 
     useEffect(() => {
+        // FIXME: this is broken until the backend allows us to re-upload
         const startBackupFileUpload = async () => {
             setUploadStarted(true)
             try {
                 await uploadBackupFile(videoFilePath)
             } catch (error) {
-                setUploadStarted(false)
                 const typedError = error as Error
                 console.error(typedError)
                 toast?.show(typedError?.message, 3000)
