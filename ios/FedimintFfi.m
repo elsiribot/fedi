@@ -4,6 +4,7 @@
 @interface RCT_EXTERN_MODULE(FedimintFfi, NSObject)
 
 RCT_EXTERN_METHOD(initialize:(NSString*)dataDir
+                  logLevel:(NSString*)logLevel
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 
