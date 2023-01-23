@@ -69,20 +69,22 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             try {
                 await new Promise((resolve, reject) => {
                     setOverlay({
-                        title: `${site.title} wants to pay you`,
+                        title: t('site.wants-to-pay-you', {
+                            site: site.title,
+                        }),
                         message: `${amount} ${t('words.sats').toUpperCase()}`,
                         buttons: [
                             {
-                                text: 'Reject',
-                                type: 'outline',
+                                text: t('words.reject'),
+                                textColor: 'black',
+                                backgroundColor: 'white',
                                 onPress: () => {
                                     reject()
                                     setShowOverlay(false)
                                 },
                             },
                             {
-                                text: 'Accept',
-                                type: 'solid',
+                                text: t('words.accept'),
                                 onPress: () => {
                                     resolve(null)
                                     setShowOverlay(false)
@@ -113,22 +115,22 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 // Wait for user to interact with alert
                 await new Promise((resolve, reject) => {
                     setOverlay({
-                        title: `Boost this post on ${site.title}?`,
+                        title: t('site.boost-this-post', { site: site.title }),
                         message: `${amountSats} ${t(
                             'words.sats',
-                        ).toUpperCase()}?`,
+                        ).toUpperCase()}`,
                         buttons: [
                             {
-                                text: 'Reject',
-                                type: 'outline',
+                                text: t('words.reject'),
+                                textColor: 'black',
+                                backgroundColor: 'white',
                                 onPress: () => {
                                     reject('Denied')
                                     setShowOverlay(false)
                                 },
                             },
                             {
-                                text: 'Accept',
-                                type: 'solid',
+                                text: t('words.accept'),
                                 onPress: () => {
                                     resolve('Accepted')
                                     setShowOverlay(false)
@@ -169,20 +171,20 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             console.log('foundInvoice', paymentRequest)
             if (paymentRequest.toLowerCase().startsWith('lnurl')) {
                 setOverlay({
-                    title: 'Login',
-                    message: `Login to ${site.title}?`,
+                    title: t('site.login-to'),
+                    message: `${site.title}`,
                     buttons: [
                         {
-                            text: 'No',
-                            type: 'outline',
+                            text: t('words.no'),
+                            textColor: 'black',
+                            backgroundColor: 'white',
                             onPress: () => {
                                 console.error('Login denied')
                                 setShowOverlay(false)
                             },
                         },
                         {
-                            text: 'Yes',
-                            type: 'solid',
+                            text: t('words.yes'),
                             onPress: async () => {
                                 try {
                                     const token = await lnurlGetToken(
