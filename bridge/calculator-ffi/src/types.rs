@@ -26,16 +26,21 @@ pub struct FedimintFederation {
     pub connect_info: WsFederationConnect,
     pub nodes: Vec<ApiEndpoint>,
     pub balance: fedimint_api::Amount,
+    pub social_recovery_active: bool,
 }
 
 // FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
     let client_config = federation.client.config().0;
+    let balance = federation.client.coins().await.total_amount();
+    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+
     FedimintFederation {
         name: client_config.federation_name.clone(),
         connect_info: WsFederationConnect::from(&client_config),
         nodes: client_config.nodes.clone(),
-        balance: federation.client.coins().await.total_amount(),
+        balance,
+        social_recovery_active,
     }
 }
 

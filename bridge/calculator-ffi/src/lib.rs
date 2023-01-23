@@ -417,7 +417,7 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
         .await_peg_out_outcome(out_point)
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
-    federation.update_balance().await;
+    federation.send_federation_notification().await;
     let fee = Some(fedimint_api::Amount::from(peg_out.fees.amount()));
     let amount = fedimint_api::Amount::from(sats);
     let outgoing_status = Some(IncomingBitcoinTransactionStatus::Pending);
@@ -791,7 +791,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
 // Event enum/impl in event.rs?
 pub fn fedimint_get_supported_events() -> Vec<String> {
     return vec![
-        String::from("balance"),
+        String::from("federation"),
         String::from("transaction"),
         String::from("socialRecovery"),
         String::from("recoveryFileCreation"),

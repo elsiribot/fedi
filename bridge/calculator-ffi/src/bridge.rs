@@ -17,7 +17,7 @@ use crate::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
     },
-    types::hacky_lightning_invoice_fee,
+    types::{federation_to_fedimint_federation, hacky_lightning_invoice_fee},
     EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
@@ -405,7 +405,7 @@ impl Federation {
 
         // FIXME: actually check that a refund happened
         if result.is_err() {
-            self.update_balance().await;
+            self.send_federation_notification().await;
         }
 
         Ok(result?)
@@ -497,7 +497,7 @@ impl Federation {
                 }
 
                 tracing::info!("peg-in successful for {}", address);
-                self.update_balance().await;
+                self.send_federation_notification().await;
                 // FIXME: helper to replace existing transaction
                 let mut tx = self
                     .fetch_transaction(item.tx_hash.to_string())
@@ -555,7 +555,7 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.update_balance().await;
+                self.send_federation_notification().await;
                 self.save_transaction(&Transaction::lightning(
                     TransactionDirection::Send,
                     fedimint_api::Amount::from_msats(
@@ -684,14 +684,11 @@ impl Federation {
             .await?)
     }
 
-    pub async fn update_balance(&self) {
+    /// Send whenever the balance or social recovery state changes
+    pub async fn send_federation_notification(&self) {
         self.client.fetch_all_coins().await;
-        self.send_balance_notification().await;
-    }
-
-    async fn send_balance_notification(&self) {
-        let balance_millis = self.client.coins().await.total_amount().msats;
-        let event = Event::balance(self.id(), balance_millis);
+        let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
+        let event = Event::federation(fedimint_federation).await;
         self.event_sink.event(&event);
     }
 
@@ -712,7 +709,7 @@ impl Federation {
             .mint_client()
             .restore_ecash_from_federation(GAP_LIMIT, &mut task_group)
             .await??;
-        self.update_balance().await;
+        self.send_federation_notification().await;
         Ok(())
     }
 
@@ -872,10 +869,10 @@ impl Federation {
 
     pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
         // TODO: figure out which guardian should do the next approval and fire off request to them
-        for i in 0..4 {
-            let verification_client = self.client.social_verification(PeerId::from(i as u16));
-            verification_client.approve_recovery(*recovery_id).await?;
-        }
+        let (approvals, remaining) = self.social_recovery_approvals().await?;
+        let next_id = PeerId::from((approvals.len() - remaining) as u16);
+        let verification_client = self.client.social_verification(next_id);
+        verification_client.approve_recovery(*recovery_id).await?;
         Ok(())
     }
 
@@ -903,7 +900,7 @@ impl Federation {
             .spawn(
                 format!("{} balance poller", self.name()),
                 |task_handle| async move {
-                    fed.poll_balance(task_handle).await;
+                    fed.poll_federation(task_handle).await;
                 },
             )
             .await;
@@ -976,13 +973,13 @@ impl Federation {
     }
 
     /// Announces balance to event emitter every second
-    pub async fn poll_balance(&self, task_handle: TaskHandle) {
+    pub async fn poll_federation(&self, task_handle: TaskHandle) {
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
 
-            self.update_balance().await;
+            self.send_federation_notification().await;
             fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
@@ -1030,7 +1027,7 @@ impl Federation {
                         tracing::info!("completed payment: {:?}", &payment_hash);
                         fed.update_payment_status(payment_hash, PaymentStatus::Paid)
                             .await;
-                        fed.update_balance().await;
+                        fed.send_federation_notification().await;
                         let amount = fedimint_api::Amount::from_msats(
                             payment.invoice.amount_milli_satoshis().expect(
                                 "assuming we only receive payments for invoices with amount",
@@ -1095,7 +1092,7 @@ impl Federation {
                     {
                         Ok(_) => {
                             tracing::info!("got refund");
-                            fed.update_balance().await;
+                            fed.send_federation_notification().await;
                         }
                         Err(e) => tracing::info!("refund failed {:?}", e),
                     };
