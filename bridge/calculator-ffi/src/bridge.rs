@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
+    time::Duration,
 };
 
 use crate::{
@@ -27,11 +28,11 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::{RecoveryId, VerificationDocument};
-use fedimint_api::db::Database;
 use fedimint_api::{
     config::{ClientConfig, ConfigResponse},
     PeerId,
 };
+use fedimint_api::{db::Database, task::TaskHandle};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
@@ -41,7 +42,6 @@ use lightning_invoice::Invoice;
 use mint_client::{
     api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
     module_decode_stubs,
-    query::CurrentConsensus,
     social::{RecoveryFile, SocialRecovery},
     UserClient, UserClientConfig, UserSeedPhrase,
 };
@@ -118,7 +118,10 @@ impl Bridge {
     }
 
     pub async fn stop_pollers(&self) -> Result<()> {
-        self.task_group.clone().shutdown_join_all().await
+        self.task_group
+            .clone()
+            .shutdown_join_all(Some(Duration::from_secs(3)))
+            .await
     }
 
     /// Adds federation to "federations" and starts polling (if we haven't already joined)
@@ -879,8 +882,10 @@ impl Federation {
     // FIXME: this just hangs forever
     pub async fn stop_pollers(&self) -> anyhow::Result<()> {
         // FIXME: is this clone a problem?
-        // self.task_group.clone().shutdown_join_all().await
-        Ok(())
+        self.task_group
+            .clone()
+            .shutdown_join_all(Some(Duration::from_secs(3)))
+            .await
     }
 
     pub async fn start_pollers(&mut self) {
@@ -888,86 +893,108 @@ impl Federation {
         self.task_group
             .spawn(
                 format!("{} ecash backup poller", self.name()),
-                |_handle| async move {
-                    fed.poll_ecash_backup().await;
+                |task_handle| async move {
+                    fed.poll_ecash_backup(task_handle).await;
                 },
             )
             .await;
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} ecash backup poller", self.name()),
-                |_handle| async move {
-                    fed.poll_balance().await;
+                format!("{} balance poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_balance(task_handle).await;
                 },
             )
             .await;
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} ecash backup poller", self.name()),
-                |_handle| async move {
-                    fed.poll_peg_ins().await;
+                format!("{} peg-in poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_peg_ins(task_handle).await;
                 },
             )
             .await;
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} ecash backup poller", self.name()),
-                |_handle| async move {
-                    fed.poll_incoming_ln().await;
+                format!("{} incoming ln poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_incoming_ln(task_handle).await;
                 },
             )
             .await;
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} ecash backup poller", self.name()),
-                |_handle| async move {
-                    fed.poll_ln_refunds().await;
+                format!("{} ln refund poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_ln_refunds(task_handle).await;
                 },
             )
             .await;
     }
 
     /// Make an ecash backup once every minute
-    pub async fn poll_ecash_backup(&self) {
+    pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
+        let mut ticks = 0;
         loop {
+            if task_handle.is_shutting_down() {
+                return;
+            }
+
+            // Run once per minute
+            if ticks < 60 {
+                ticks += 1;
+                fedimint_api::task::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+            ticks = 0;
+
             match self.back_up_ecash_to_federation().await {
                 Ok(_) => info!("ecash backup complete"),
                 Err(_) => error!("ecash backup failed"),
             }
-            fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
         }
     }
 
     /// Checks for peg-ins every second
-    pub async fn poll_peg_ins(&self) {
+    pub async fn poll_peg_ins(&self, task_handle: TaskHandle) {
         let mut last_consensus_block_height = None;
         loop {
+            if task_handle.is_shutting_down() {
+                return;
+            }
             let current_block_height = self.block_height().await.ok();
             if last_consensus_block_height != current_block_height {
                 self.attempt_pegins().await;
                 last_consensus_block_height = current_block_height;
             }
-            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+            fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
 
     /// Announces balance to event emitter every second
-    pub async fn poll_balance(&self) {
+    pub async fn poll_balance(&self, task_handle: TaskHandle) {
         loop {
+            if task_handle.is_shutting_down() {
+                return;
+            }
+
             self.update_balance().await;
-            tracing::debug!("poll balance");
-            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+            fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
 
     /// Checks for incoming payments every second
-    pub async fn poll_incoming_ln(&self) {
+    pub async fn poll_incoming_ln(&self, task_handle: TaskHandle) {
         let fed = self.clone();
         loop {
+            if task_handle.is_shutting_down() {
+                return;
+            }
+
             let pending_payments: Vec<Payment> = fed
                 .list_payments()
                 .await
@@ -1023,15 +1050,27 @@ impl Federation {
                 .collect::<Vec<()>>()
                 .await;
 
-            fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+            fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
 
     /// Attempts lightning refunds every minute
-    pub async fn poll_ln_refunds(&self) {
+    pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
+        let mut ticks = 0;
 
         loop {
+            if task_handle.is_shutting_down() {
+                return;
+            }
+            // Run once per minute
+            if ticks < 60 {
+                ticks += 1;
+                fedimint_api::task::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+            ticks = 0;
+
             let consensus_block_height = fed.block_height().await.unwrap_or(0);
             let contracts = fed
                 .client
@@ -1064,9 +1103,6 @@ impl Federation {
                 .collect::<FuturesUnordered<_>>()
                 .collect::<Vec<()>>()
                 .await;
-
-            // once per minute
-            fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
         }
     }
 }
