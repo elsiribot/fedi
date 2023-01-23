@@ -1,12 +1,12 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
-
 import { joinFederation, listFederations } from '../bridge'
+
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -27,42 +27,42 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
     const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
+    const [connectionString, setConnectionString] = useState<string>('')
+
+    useEffect(() => {
+        const handleJoinFederation = async () => {
+            try {
+                var federation = await joinFederation(connectionString)
+            } catch (e) {
+                console.error('Failed to join federation', e)
+                setJoiningFederation(false)
+                return
+            }
+            const federations = await listFederations()
+            if (federations.length > 0) {
+                dispatch(updateFederations(federation.name, federations))
+                setJoiningFederation(false)
+                navigation.replace('Home')
+            }
+            setJoiningFederation(false) // just in case
+        }
+
+        if (joiningFederation === true && connectionString !== '') {
+            handleJoinFederation()
+        }
+    }, [connectionString, dispatch, navigation, joiningFederation])
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            // tmuxinator
-            // input =
-            // '{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}'
-            // '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
-            console.log('input', input)
-
             if (input.startsWith('{"members":')) {
-                console.log('fedi qr code detected', input)
-
-                if (joiningFederation === true) return
-
-                try {
-                    setJoiningFederation(true)
-                    var federation = await joinFederation(input)
-                    console.log('joined')
-                } catch (e) {
-                    console.error('Failed to join federation', e)
-                    setJoiningFederation(false)
-                    return
-                }
-                const federations = await listFederations()
-                if (federations.length > 0) {
-                    console.log('navigating')
-                    dispatch(updateFederations(federation.name, federations))
-                    setJoiningFederation(false)
-                    navigation.navigate('Home')
-                }
-                setJoiningFederation(false) // just in case
+                console.info('fedi qr code detected', input)
+                setJoiningFederation(true)
+                setConnectionString(input)
             } else {
                 toast?.show(t('invalid-federation-code'), 5000)
             }
         },
-        [dispatch, joiningFederation, navigation, toast, t],
+        [t, toast],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -80,10 +80,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             return (
                 <QrCodeScanner
                     device={device}
-                    onQrCodeDetected={(qrCodeData: string) => {
-                        if (joiningFederation) return
-                        handleUserInput(qrCodeData)
-                    }}
+                    onQrCodeDetected={handleUserInput}
                 />
             )
         }
