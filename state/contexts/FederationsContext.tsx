@@ -166,7 +166,7 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
 
-            dispatch(updateFederation(event))
+            dispatch(updateSelectedFederationId(event.name))
         }
         emitter.onFederationUpdate(onFederationUpdate)
 
