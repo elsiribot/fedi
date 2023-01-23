@@ -127,13 +127,13 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
                 from("${project.projectDir}/../../target/aarch64-linux-android/release/libcalculatorffi.so")
             }
 
-            // into("x86_64") {
-            //     from("${project.projectDir}/../../target/x86_64-linux-android/release/libcalculatorffi.so")
-            // }
+            into("x86_64") {
+                from("${project.projectDir}/../../target/x86_64-linux-android/release/libcalculatorffi.so")
+            }
 
-            // into("armeabi-v7a") {
-            //     from("${project.projectDir}/../../target/armv7-linux-androideabi/release/libcalculatorffi.so")
-            // }
+            into("armeabi-v7a") {
+                from("${project.projectDir}/../../target/armv7-linux-androideabi/release/libcalculatorffi.so")
+            }
 
             doLast {
                 println("Native binaries for Android moved to ./lib/src/main/jniLibs/")
@@ -170,8 +170,8 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
 
             dependsOn(
                 buildAndroidAarch64Binary,
-                // buildAndroidX86_64Binary,
-                // buildAndroidArmv7Binary,
+                buildAndroidX86_64Binary,
+                buildAndroidArmv7Binary,
                 moveNativeAndroidLibs,
                 generateAndroidBindings
             )
