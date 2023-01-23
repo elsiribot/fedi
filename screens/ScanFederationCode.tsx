@@ -26,7 +26,6 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
-    const [scannerProcessing, setScannerProcessing] = useState<boolean>(false)
     const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
@@ -37,16 +36,6 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             // '{"members":[[0,"wss://76242fcb4941.ngrok.io"],[1,"wss://8e6437f36982.ngrok.io"],[2,"wss://777e223bf7b3.ngrok.io"],[3,"wss://f9fed2a14599.ngrok.io/"]]}'
             console.log('input', input)
             // Provide a 500ms delay to throttle input from the scanner
-            if (scannerProcessing) {
-                console.debug('scanner is processing, please wait!')
-                return
-            }
-            console.debug('setScannerProcessing(true) to throttle for 500 ms')
-            setScannerProcessing(true)
-            setTimeout(() => {
-                console.debug('500ms passed. setScannerProcessing(false)')
-                setScannerProcessing(false)
-            }, 500)
 
             if (input.startsWith('{"members":')) {
                 console.info('fedi qr code detected', input)
@@ -85,7 +74,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 toast?.show(t('invalid-federation-code'), 5000)
             }
         },
-        [dispatch, joiningFederation, navigation, scannerProcessing, t, toast],
+        [dispatch, joiningFederation, navigation, t, toast],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -104,6 +93,8 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 <QrCodeScanner
                     device={device}
                     onQrCodeDetected={handleUserInput}
+                    // Provide a 500ms delay to throttle input from the scanner
+                    millisecondsToThrottle={500}
                 />
             )
         }

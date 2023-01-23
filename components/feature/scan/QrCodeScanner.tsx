@@ -7,9 +7,14 @@ import { usePrevious } from '../../../state/hooks'
 type QrCodeScanner = {
     device: CameraDevice
     onQrCodeDetected: Function
+    millisecondsToThrottle: number
 }
 
-const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
+const QrCodeScanner = ({
+    device,
+    onQrCodeDetected,
+    millisecondsToThrottle = 5000,
+}: QrCodeScanner) => {
     const [detectedQrData, setDetectedQrData] = useState<string>('')
     const previousQrData = usePrevious(detectedQrData)
     const [frameProcessor, barcodes] = useScanBarcodes(
@@ -27,10 +32,16 @@ const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
             // in case some error occurs
             if (detectedQrData !== '' && detectedQrData !== previousQrData) {
                 onQrCodeDetected(b.content?.data)
-                setTimeout(() => setDetectedQrData(''), 5000)
+                setTimeout(() => setDetectedQrData(''), millisecondsToThrottle)
             }
         })
-    }, [barcodes, detectedQrData, onQrCodeDetected, previousQrData])
+    }, [
+        barcodes,
+        detectedQrData,
+        millisecondsToThrottle,
+        onQrCodeDetected,
+        previousQrData,
+    ])
 
     return (
         <Camera
