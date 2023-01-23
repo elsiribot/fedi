@@ -138,7 +138,7 @@ export function reducer(state: AppState, action: Action): AppState {
                 // If the federation id matches, update the entry
                 (f: Federation) =>
                     f.name === action.payload.name
-                        ? new Federation({ ...action.payload })
+                        ? new Federation({ ...f, ...action.payload })
                         : f,
             )
             if (isEqual(federations, state.federations)) {
