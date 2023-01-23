@@ -7,14 +7,9 @@ import { usePrevious } from '../../../state/hooks'
 type QrCodeScanner = {
     device: CameraDevice
     onQrCodeDetected: Function
-    millisecondsToThrottle: number
 }
 
-const QrCodeScanner = ({
-    device,
-    onQrCodeDetected,
-    millisecondsToThrottle = 5000,
-}: QrCodeScanner) => {
+const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
     const [detectedQrData, setDetectedQrData] = useState<string>('')
     const previousQrData = usePrevious(detectedQrData)
     const [frameProcessor, barcodes] = useScanBarcodes(
@@ -25,23 +20,28 @@ const QrCodeScanner = ({
     )
 
     useEffect(() => {
+        if (detectedQrData !== '' && detectedQrData !== previousQrData) {
+            // TODO: imeplement a delay to throttle input from the scanner
+            // if (throttling) return
+            // setThrottling(true)
+            // setTimeout(() => {
+            //     setThrottling(false)
+            //     onQrCodeDetected(b.content?.data)
+            // }, millisecondsToThrottle)
+
+            // Only call the detection function if QR data is different
+            // but reset after a few seconds... in case some error occurs
+            // and we should retry the same input
+            onQrCodeDetected(detectedQrData)
+            setTimeout(() => setDetectedQrData(''), 5000)
+        }
+    }, [detectedQrData, onQrCodeDetected, previousQrData])
+
+    useEffect(() => {
         barcodes.map(b => {
             setDetectedQrData(b.content?.data as string)
-            // Only call the detection function if QR data is different
-            // but retry after a few seconds... essentially a throttling function
-            // in case some error occurs
-            if (detectedQrData !== '' && detectedQrData !== previousQrData) {
-                onQrCodeDetected(b.content?.data)
-                setTimeout(() => setDetectedQrData(''), millisecondsToThrottle)
-            }
         })
-    }, [
-        barcodes,
-        detectedQrData,
-        millisecondsToThrottle,
-        onQrCodeDetected,
-        previousQrData,
-    ])
+    }, [barcodes])
 
     return (
         <Camera
