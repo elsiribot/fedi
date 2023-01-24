@@ -7,6 +7,7 @@ import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
 import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
+import SitesHeader from '../components/feature/sites/SitesHeader'
 import CustomOverlay from '../components/ui/CustomOverlay'
 import { useBridge } from '../state/hooks'
 import { Sats } from '../types'
@@ -216,6 +217,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     return (
         <View style={styles.container}>
             {/* TODO: Move SitesHeader here so we can pass props to it */}
+            <SitesHeader webViewRef={webview} />
             <WebView
                 ref={webview}
                 source={{ uri: site.url }}

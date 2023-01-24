@@ -563,9 +563,9 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="SitesBrowser"
                                 component={SitesBrowser}
-                                // TODO: Replace this with headerShown: false
                                 options={{
-                                    header: SitesHeader,
+                                    headerShown: false,
+                                    header: () => <SitesHeader />,
                                 }}
                             />
                             <Stack.Screen

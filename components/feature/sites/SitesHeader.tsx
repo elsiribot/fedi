@@ -5,7 +5,11 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import Header from '../../ui/Header'
 
-const SitesHeader: React.FC<{}> = () => {
+type SitesHeaderProps = {
+    webViewRef?: any
+}
+
+const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
     const navigation = useNavigation()
 
     return (
@@ -15,12 +19,12 @@ const SitesHeader: React.FC<{}> = () => {
                 <View style={styles.container}>
                     <View style={styles.row}>
                         <Pressable
-                            onPress={() => console.log('back')}
+                            onPress={() => webViewRef.current.goBack()}
                             style={styles.arrow}>
                             <Icon name={'angle-left'} type="font-awesome" />
                         </Pressable>
                         <Pressable
-                            onPress={() => console.log('forward')}
+                            onPress={() => webViewRef.current.goForward()}
                             style={styles.arrow}>
                             <Icon name={'angle-right'} type="font-awesome" />
                         </Pressable>
