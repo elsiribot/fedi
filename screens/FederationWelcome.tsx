@@ -46,7 +46,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                     title={t('feature.onboarding.join-returning-member')}
                     onPress={() => {
-                        navigation.navigate('CreateUsername')
+                        navigation.navigate('ChooseRecoveryMethod')
                     }}
                     containerStyle={styles(theme).button}
                 />
