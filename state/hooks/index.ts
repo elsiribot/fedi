@@ -2,7 +2,6 @@ import { xml } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
 import { useCallback, useEffect, useRef } from 'react'
-import uuid from 'react-native-uuid'
 import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
@@ -213,9 +212,8 @@ type OutgoingMessage = {
     message: Message
 }
 type OutgoingGroupMessage = {
-    text?: string
-    fromUser?: string
-    toRoom?: string
+    message: Message
+    toRoom: string
 }
 type ArchiveQueryFilters = {
     withJid?: string | null
@@ -471,21 +469,29 @@ export const useXmpp = () => {
             [xmppClient],
         ),
         sendGroupMessage: useCallback(
-            async ({ text, toRoom }: OutgoingGroupMessage) => {
-                const { local, domain, resource } = xmppClient?.jid as JID
-                const fromUser = `${local}@${domain}/${resource}`
+            async ({ message, toRoom }: OutgoingGroupMessage) => {
+                const fromJid = xmppClient?.jid?.toString()
                 const to = `${toRoom}@${XMPP_MUC_DOMAIN}`
 
                 await xmppClient?.send(
                     xml(
                         'message',
                         {
-                            id: uuid.v4(),
-                            from: fromUser,
+                            id: message.id,
+                            from: fromJid,
                             type: 'groupchat',
                             to,
                         },
-                        xml('body', { xmlns: 'jabber:client' }, text as string),
+                        xml(
+                            'body',
+                            { xmlns: 'jabber:client' },
+                            message.content as string,
+                        ),
+                        xml(
+                            'gm',
+                            { xmlns: 'fedi:group-message' },
+                            JSON.stringify(message),
+                        ),
                     ),
                 )
             },
