@@ -13,6 +13,7 @@ import {
     generateEcash,
     generateInvoice,
     getMnemonic,
+    getXmppCredentials,
     leaveFederation,
     LightningGateway,
     listGateways,
@@ -203,6 +204,9 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
+        getXmppCredentials: useCallback(() => {
+            return getXmppCredentials(selectedFederation!.name)
+        }, [selectedFederation]),
     }
 }
 
