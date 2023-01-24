@@ -1,12 +1,13 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Icon, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
+import { useXmpp } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>
@@ -17,13 +18,17 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { group } = route.params
+    const { enterMucRoom } = useXmpp()
+
+    useEffect(() => {
+        enterMucRoom(group)
+    }, [group, enterMucRoom])
 
     const copyToClipboard = () => {
         Clipboard.setString(group.invitationCode as string)
     }
 
     const viewGroup = () => {
-        console.info(group)
         navigation.navigate('GroupChat', { group })
     }
 

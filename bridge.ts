@@ -305,7 +305,7 @@ export async function payAddress(
 }
 
 export async function initializeBridge(dataDir: string) {
-    const logLevel = 'debug'
+    const logLevel = 'info'
     return FedimintFfi.initialize(dataDir, logLevel)
 }
 

@@ -18,7 +18,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     const { theme } = useTheme()
     const listRef = useRef<FlatList>(null)
     const renderMessage: ListRenderItem<Message> = ({ item }) => {
-        return <MessageItem message={item} />
+        return <MessageItem message={item} multiUserChat={multiUserChat} />
     }
 
     return (

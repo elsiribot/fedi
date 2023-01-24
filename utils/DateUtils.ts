@@ -29,6 +29,17 @@ class DateUtils {
         // Otherwise show the day instead of time
         return this.formatTimestamp(unixSeconds, 'MMM dd')
     }
+    formatMessageItemTimestamp = (unixSeconds: number): string => {
+        const today = new Date()
+        const date = new Date(unixSeconds * 1000)
+
+        if (isSameDay(today, date)) {
+            // Show hour + minute if the timestamp is today
+            return this.formatTimestamp(unixSeconds, 'h:mmaaa')
+        }
+        // Otherwise show the day instead of time
+        return this.formatTimestamp(unixSeconds, 'MMM dd, h:mmaaa')
+    }
 }
 
 const dateUtils = new DateUtils()
