@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useRef } from 'react'
 import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { Message } from '../../../types'
@@ -8,12 +8,15 @@ import MessageItem from './MessageItem'
 
 type MessagesListProps = {
     messages: Message[]
+    multiUserChat?: boolean
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({
     messages,
+    multiUserChat = false,
 }: MessagesListProps) => {
     const { theme } = useTheme()
+    const listRef = useRef<FlatList>(null)
     const renderMessage: ListRenderItem<Message> = ({ item }) => {
         return <MessageItem message={item} />
     }
@@ -21,10 +24,13 @@ const MessagesList: React.FC<MessagesListProps> = ({
     return (
         <FlatList
             data={messages}
+            ref={listRef}
             renderItem={renderMessage}
             keyExtractor={(item: Message) => `${item.id}`}
             style={styles(theme).container}
-            ListEmptyComponent={<EmptyRoomNotice />}
+            contentContainerStyle={styles(theme).contentContainer}
+            onContentSizeChange={() => listRef.current?.scrollToEnd()}
+            ListEmptyComponent={multiUserChat ? <EmptyRoomNotice /> : null}
         />
     )
 }
@@ -34,6 +40,9 @@ const styles = (theme: Theme) =>
         container: {
             width: '100%',
             paddingHorizontal: theme.spacing.xl,
+        },
+        contentContainer: {
+            paddingTop: theme.spacing.md,
         },
     })
 

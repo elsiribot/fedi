@@ -2,11 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBackground, StyleSheet, View } from 'react-native'
-import { Images } from '../assets/images'
+import { StyleSheet, View } from 'react-native'
+import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
+import stringUtils from '../utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -21,14 +22,14 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).contentContainer}>
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).profileCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <Text h2 medium>
-                        {selectedFederation?.username?.substring(0, 1)}
-                    </Text>
-                </ImageBackground>
+                <View style={styles(theme).avatarContainer}>
+                    <HoloAvatar
+                        size={AvatarSize.lg}
+                        title={stringUtils.getInitialsFromName(
+                            selectedFederation?.username || '',
+                        )}
+                    />
+                </View>
                 <Text h2 medium style={styles(theme).welcomeTitle}>
                     {`${t('feature.onboarding.nice-to-meet-you', {
                         username: selectedFederation?.username,
@@ -61,18 +62,11 @@ const styles = (theme: Theme) =>
         button: {
             marginTop: 'auto',
         },
-        circleBorder: {
-            borderRadius: theme.sizes.adminProfileCircle * 0.5,
-        },
         contentContainer: {
             marginTop: 'auto',
             alignItems: 'center',
         },
-        profileCircle: {
-            height: theme.sizes.adminProfileCircle,
-            width: theme.sizes.adminProfileCircle,
-            alignItems: 'center',
-            justifyContent: 'center',
+        avatarContainer: {
             marginTop: theme.spacing.xl,
             marginBottom: theme.spacing.md,
         },

@@ -2,32 +2,37 @@ import { Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
-import type { CameraDevice, VideoFile } from 'react-native-vision-camera'
+import type { CameraDevice } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
+import {
+    saveVideo,
+    useBackupRecoveryContext,
+} from '../../../state/contexts/BackupRecoveryContext'
 
 import dateUtils from '../../../utils/DateUtils'
 
-type RecordVideoProps = {
-    saveVideo: (video: VideoFile) => {}
-}
-
-const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
+const RecordVideo = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [isRecording, setIsRecording] = useState(false)
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const device = devices.front
+    const { dispatch } = useBackupRecoveryContext()
 
     if (devices.front === undefined) return null
 
     const startRecording = async () => {
         setIsRecording(true)
+        console.log('codecs', await camera.current?.getAvailableVideoCodecs())
         camera.current?.startRecording({
-            onRecordingFinished: saveVideo,
+            onRecordingFinished: video => dispatch(saveVideo(video)),
             onRecordingError: error => {
                 console.log(error)
             },
+            // FIXME: will this always be available?
+            fileType: 'mp4',
+            videoCodec: 'h264',
         })
     }
 
@@ -57,6 +62,7 @@ const RecordVideo = ({ saveVideo }: RecordVideoProps) => {
                     isActive={true}
                     video={true}
                     audio={true}
+                    preset="high"
                 />
             </View>
             <Text

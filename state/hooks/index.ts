@@ -7,12 +7,13 @@ import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
     authenticateGuardian,
-    backupQr,
+    completeSocialRecovery,
     denySocialRecoveryRequest,
     generateAddress,
     generateEcash,
     generateInvoice,
-    generateMnemonic,
+    getMnemonic,
+    leaveFederation,
     LightningGateway,
     listGateways,
     listTransactions,
@@ -22,11 +23,14 @@ import {
     payInvoice,
     receiveEcash,
     recoverFromMnemonic,
+    recoveryQr,
+    socialRecoveryApprovals,
+    socialRecoveryDownloadVerificationDoc,
     switchGateway,
     updateTransactionNotes,
     uploadBackupFile,
-    validateBackupFile,
     validateEcash,
+    validateRecoveryFile,
 } from '../../bridge'
 import { XMPP_MUC_DOMAIN } from '../../constants'
 import { Member, Message, MSats, Room, Sats } from '../../types'
@@ -54,9 +58,9 @@ export const useBridge = () => {
             [selectedFederation],
         ),
         approveSocialRecoveryRequest: useCallback(
-            (userPublicKey: string) => {
+            (recoveryId: string) => {
                 return approveSocialRecoveryRequest(
-                    userPublicKey,
+                    recoveryId,
                     selectedFederation!.name,
                 )
             },
@@ -68,11 +72,17 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        backupQr: useCallback(() => {
-            return backupQr(selectedFederation!.name)
+        recoveryQr: useCallback(() => {
+            return recoveryQr(selectedFederation!.name)
+        }, [selectedFederation]),
+        leaveFederation: useCallback(() => {
+            return leaveFederation(selectedFederation!.name)
         }, [selectedFederation]),
         generateAddress: useCallback(() => {
             return generateAddress(selectedFederation!.name)
+        }, [selectedFederation]),
+        socialRecoveryApprovals: useCallback(() => {
+            return socialRecoveryApprovals(selectedFederation!.name)
         }, [selectedFederation]),
         generateEcash: useCallback(
             (amount: MSats) => {
@@ -90,8 +100,8 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        generateMnemonic: useCallback(() => {
-            return generateMnemonic(selectedFederation!.name)
+        getMnemonic: useCallback(() => {
+            return getMnemonic(selectedFederation!.name)
         }, [selectedFederation]),
         listTransactions: useCallback(() => {
             return listTransactions(selectedFederation!.name)
@@ -130,6 +140,9 @@ export const useBridge = () => {
         locateRecoveryFile: useCallback(() => {
             return locateRecoveryFile(selectedFederation!.name)
         }, [selectedFederation]),
+        completeSocialRecovery: useCallback(() => {
+            return completeSocialRecovery(selectedFederation!.name)
+        }, [selectedFederation]),
         payInvoice: useCallback(
             (invoice: string) => {
                 return payInvoice(invoice, selectedFederation!.name)
@@ -163,9 +176,18 @@ export const useBridge = () => {
             },
             [selectedFederation],
         ),
-        validateBackupFile: useCallback(
+        socialRecoveryDownloadVerificationDoc: useCallback(
+            (recoveryId: string) => {
+                return socialRecoveryDownloadVerificationDoc(
+                    recoveryId,
+                    selectedFederation!.name,
+                )
+            },
+            [selectedFederation],
+        ),
+        validateRecoveryFile: useCallback(
             (file: string) => {
-                return validateBackupFile(file, selectedFederation!.name)
+                return validateRecoveryFile(file, selectedFederation!.name)
             },
             [selectedFederation],
         ),
@@ -194,6 +216,12 @@ type OutgoingGroupMessage = {
     text?: string
     fromUser?: string
     toRoom?: string
+}
+type ArchiveQueryFilters = {
+    withJid?: string | null
+}
+type MessageArchiveQuery = {
+    filters?: ArchiveQueryFilters | null
 }
 export const useXmpp = () => {
     const { state, dispatch } = useCommunityContext()
@@ -301,6 +329,48 @@ export const useXmpp = () => {
             },
             [dispatch, xmppClient],
         ),
+        fetchMessagesFromArchive: useCallback(
+            async ({ filters }: MessageArchiveQuery) => {
+                const filterQuery = filters?.withJid
+                    ? xml(
+                          'x',
+                          {
+                              xmlns: 'jabber:x:data',
+                              type: 'submit',
+                          },
+                          xml(
+                              'field',
+                              { var: 'FORM_TYPE', type: 'hidden' },
+                              xml('value', {}, 'urn:xmpp:mam:2'),
+                          ),
+                          xml(
+                              'field',
+                              { var: 'with' },
+                              xml('value', {}, filters.withJid),
+                          ),
+                      )
+                    : xml('x')
+
+                await xmppClient?.send(
+                    xml(
+                        'iq',
+                        {
+                            id: 'get-messages',
+                            type: 'set',
+                        },
+                        xml(
+                            'query',
+                            {
+                                xmlns: 'urn:xmpp:mam:2',
+                                queryid: 'get-messages',
+                            },
+                            filterQuery,
+                        ),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
         getUniqueRoomName: useCallback((): Promise<string> => {
             return new Promise(resolve => {
                 // Make sure the stream is open before sending the
@@ -341,6 +411,36 @@ export const useXmpp = () => {
                 )
             })
         }, [xmppClient]),
+        sendUpdatedPaymentMessage: useCallback(
+            async ({ message, to }: OutgoingMessage) => {
+                const fromJid = xmppClient?.jid?.toString()
+                const toJid = to?.jid.toString()
+
+                await xmppClient?.send(
+                    xml(
+                        'message',
+                        {
+                            id: message.id,
+                            type: 'chat',
+                            from: fromJid,
+                            to: toJid,
+                        },
+                        xml(
+                            'body',
+                            { xmlns: 'jabber:client' },
+                            message.content as string,
+                        ),
+                        xml(
+                            'dm',
+                            { xmlns: 'fedi:direct-message' },
+                            JSON.stringify(message),
+                        ),
+                        xml('action', { xmlns: 'fedi:update-payment' }),
+                    ),
+                )
+            },
+            [xmppClient],
+        ),
         sendDirectMessage: useCallback(
             async ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
@@ -392,37 +492,19 @@ export const useXmpp = () => {
             [xmppClient],
         ),
         sendTestXml: useCallback(async () => {
-            const { local, domain, resource } = xmppClient?.jid as JID
-            const fromUser = `${local}@${domain}/${resource}`
             await xmppClient?.send(
                 xml(
                     'iq',
                     {
-                        from: fromUser,
-                        id: 'testxml',
-                        to: `fedi-general-channel@${XMPP_MUC_DOMAIN}`,
-                        type: 'get',
+                        id: 'get-messages',
+                        type: 'set',
                     },
                     xml('query', {
-                        xmlns: 'http://jabber.org/protocol/disco#items',
-                        node: 'x-roomuser-item',
+                        xmlns: 'urn:xmpp:mam:2',
+                        queryid: 'q1',
                     }),
                 ),
             )
-            // await xmppClient?.send(
-            //     xml(
-            //         'iq',
-            //         {
-            //             from: fromUser,
-            //             id: 'testxml',
-            //             to: `fedi-general-channel@${XMPP_MUC_DOMAIN}`,
-            //             type: 'get',
-            //         },
-            //         xml('query', {
-            //             xmlns: 'http://jabber.org/protocol/disco#items',
-            //         }),
-            //     ),
-            // )
         }, [xmppClient]),
     }
 }

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { isEqual } from 'lodash'
 import React, {
     createContext,
     useContext,
@@ -7,32 +8,40 @@ import React, {
     useReducer,
 } from 'react'
 
-import { BalanceEvent, Federation, TFedimintEventEmitter } from '../../bridge'
-import { FEDERATIONS_PERSISTENCE_KEY } from '../../constants'
+import {
+    Federation,
+    FederationEvent,
+    TFedimintEventEmitter,
+} from '../../bridge'
+import { SELECTED_FEDERATION_ID_DB_KEY } from '../../constants'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
-    connectedFederations: Federation[]
-    selectedFederation: Federation | null
-    userIsGuardian: boolean
+    federations: Federation[]
+    selectedFederationId: string | null
+}
+
+// We compute the selectedFederation here based on selectedFederationId
+interface ComputedFederationsContextState extends FederationsContextState {
+    // this can be undefined because Array.find returns undefined if it can't find anything
+    selectedFederation: Federation | undefined
 }
 const initialState: FederationsContextState = {
-    connectedFederations: [],
-    selectedFederation: null,
-    userIsGuardian: false,
+    federations: [],
+    selectedFederationId: null,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
-    ADD_TO_CONNECTED_FEDERATIONS = 'ADD_TO_CONNECTED_FEDERATIONS',
-    CHANGE_SELECTED_FEDERATION = 'CHANGE_SELECTED_FEDERATION',
-    CLEAR_CONNECTED_FEDERATIONS = 'CLEAR_CONNECTED_FEDERATIONS',
-    RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
-    SET_USER_IS_GUARDIAN = 'SET_USER_IS_GUARDIAN',
-    UPDATE_CONNECTED_FEDERATIONS = 'UPDATE_CONNECTED_FEDERATIONS',
-    UPDATE_FEDERATION_BALANCE = 'UPDATE_FEDERATION_BALANCE',
+    UPDATE_SELECTED_FEDERATION_ID = 'UPDATE_SELECTED_FEDERATION_ID',
+    // FIXME: we could just send null with ^^ instead ... or infer it when updated
+    // with federation list of []
+    UNSET_SELECTED_FEDERATION = 'UNSET_SELECTED_FEDERATION',
+    UPDATE_FEDERATIONS = 'UPDATE_FEDERATIONS',
+    UPDATE_FEDERATION = 'UPDATE_FEDERATION',
     UPDATE_FEDERATION_USERNAME = 'UPDATE_FEDERATION_USERNAME',
+    RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
 }
 interface Action {
     type: ActionType
@@ -41,52 +50,36 @@ interface Action {
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {
-    state: FederationsContextState
+    state: ComputedFederationsContextState
     dispatch: React.Dispatch<Action>
 }
 export const FederationsContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
-export function addToConnectedFederations(federation: Federation): Action {
+export function updateSelectedFederationId(
+    federationId: null | string,
+): Action {
     return {
-        type: ActionType.ADD_TO_CONNECTED_FEDERATIONS,
-        payload: federation,
+        type: ActionType.UPDATE_SELECTED_FEDERATION_ID,
+        payload: federationId,
     }
 }
-export function changeSelectedFederation(federation: Federation): Action {
+export function updateFederations(
+    selectedFederationId: null | string,
+    federations: Federation[],
+): Action {
     return {
-        type: ActionType.CHANGE_SELECTED_FEDERATION,
-        payload: federation,
+        type: ActionType.UPDATE_FEDERATIONS,
+        payload: { selectedFederationId, federations },
     }
 }
-export function clearConnectedFederations(): Action {
+export function updateFederation(event: FederationEvent): Action {
     return {
-        type: ActionType.CLEAR_CONNECTED_FEDERATIONS,
-    }
-}
-export function resetFederationsState(): Action {
-    return {
-        type: ActionType.RESET_FEDERATIONS_STATE,
-    }
-}
-export function setUserIsGuardian(isGuardian: boolean): Action {
-    return {
-        type: ActionType.SET_USER_IS_GUARDIAN,
-        payload: isGuardian,
-    }
-}
-export function updateConnectedFederations(federations: Federation[]): Action {
-    return {
-        type: ActionType.UPDATE_CONNECTED_FEDERATIONS,
-        payload: federations,
-    }
-}
-export function updateFederationBalance(event: BalanceEvent): Action {
-    return {
-        type: ActionType.UPDATE_FEDERATION_BALANCE,
+        type: ActionType.UPDATE_FEDERATION,
         payload: event,
     }
 }
+
 export function updateFederationUsername(username: String): Action {
     return {
         type: ActionType.UPDATE_FEDERATION_USERNAME,
@@ -99,101 +92,59 @@ export function resetFederationUsername(): Action {
         payload: null,
     }
 }
+export function resetFederationsState(): Action {
+    return {
+        type: ActionType.RESET_FEDERATIONS_STATE,
+    }
+}
 
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case ActionType.ADD_TO_CONNECTED_FEDERATIONS:
+        case ActionType.UPDATE_SELECTED_FEDERATION_ID:
+            // TODO: sanity check that such a federation exists
             return {
                 ...state,
-                connectedFederations: [
-                    ...state.connectedFederations,
-                    new Federation(action.payload),
-                ],
+                selectedFederationId: action.payload,
             }
-        case ActionType.CHANGE_SELECTED_FEDERATION:
+        case ActionType.UPDATE_FEDERATIONS:
             return {
                 ...state,
-                selectedFederation: new Federation(action.payload),
-            }
-        case ActionType.CLEAR_CONNECTED_FEDERATIONS:
-            return { ...state, connectedFederations: [] }
-        case ActionType.SET_USER_IS_GUARDIAN:
-            return {
-                ...state,
-                userIsGuardian: action.payload,
-            }
-        case ActionType.UPDATE_CONNECTED_FEDERATIONS:
-            return {
-                ...state,
-                connectedFederations: action.payload.map(
+                selectedFederationId: action.payload.selectedFederationId,
+                federations: action.payload.federations.map(
                     (f: Federation) => new Federation(f),
                 ),
             }
-        case ActionType.UPDATE_FEDERATION_BALANCE: {
-            // If the federation id matches, check if selectedFederation.balance
-            // has changed
-            let updatedSelectedFederation = state.selectedFederation
-            if (
-                state.selectedFederation?.name === action.payload.federationId
-            ) {
-                // If balance is unchanged and the BalanceEvent is from the
-                // selectedFederation, we can return a completely unchanged state
-                // to prevent re-renders
-                // Otherwise update the balance and proceed
-                if (
-                    state.selectedFederation?.balance === action.payload.balance
-                ) {
-                    return state
-                } else {
-                    updatedSelectedFederation!.balance = action.payload.balance
-                }
-            }
-
-            const updatedConnectedFederations = state.connectedFederations.map(
-                (f: Federation) => {
-                    // If the federation id matches, update the balance of that
-                    // single connectedFederation
-                    if (f.name === action.payload.federationId) {
-                        return new Federation({
-                            ...f,
-                            balance: action.payload.balance,
-                        })
-                    } else {
-                        return f
-                    }
-                },
-            )
-            return {
-                ...state,
-                connectedFederations: updatedConnectedFederations,
-                selectedFederation: updatedSelectedFederation,
-            }
-        }
         case ActionType.UPDATE_FEDERATION_USERNAME: {
-            const updatedSelectedFederation = state.selectedFederation
-            updatedSelectedFederation!.username = action.payload
-
-            // Find selectedFederation in connectedFederations to
-            // update the username
-            const updatedConnectedFederations = state.connectedFederations.map(
-                (f: Federation) => {
-                    if (f.name === state.selectedFederation!.name) {
-                        return new Federation({
-                            ...f,
-                            username: action.payload,
-                        })
-                    } else {
-                        return f
-                    }
-                },
-            )
+            const federations = state.federations.map((f: Federation) => {
+                // If the federation id matches, update the balance of that
+                // single connectedFederation
+                if (f.name === state.selectedFederationId) {
+                    return new Federation({
+                        ...f,
+                        username: action.payload,
+                    })
+                } else {
+                    return f
+                }
+            })
             return {
                 ...state,
-                connectedFederations: updatedConnectedFederations,
-                selectedFederation: updatedSelectedFederation,
+                federations,
             }
         }
+        case ActionType.UPDATE_FEDERATION:
+            const federations = state.federations.map(
+                // If the federation id matches, update the entry
+                (f: Federation) =>
+                    f.name === action.payload.name
+                        ? new Federation({ ...f, ...action.payload })
+                        : f,
+            )
+            if (isEqual(federations, state.federations)) {
+                return state
+            }
+            return { ...state, federations }
         case ActionType.RESET_FEDERATIONS_STATE:
             return { ...initialState }
         default:
@@ -210,38 +161,62 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
     const providerValue = useMemo(
-        () => ({ state, dispatch }),
+        () => ({
+            state: {
+                ...state,
+                // compute selected federation based on federationId
+                selectedFederation: state.federations.find(
+                    // FIXME: switch to using federation.id
+                    f => f.name === state.selectedFederationId,
+                ),
+            },
+            dispatch,
+        }),
         [state, dispatch],
     )
 
     useEffect(() => {
         const emitter = new TFedimintEventEmitter()
-        const onBalanceUpdate = (event: BalanceEvent) => {
+        const onFederationUpdate = (event: FederationEvent) => {
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
-            if (state.selectedFederation == null) return
+            if (state.selectedFederationId == null) return
 
-            dispatch(updateFederationBalance(event))
+            dispatch(updateFederation(event))
         }
-        emitter.onBalanceUpdate(onBalanceUpdate)
+        emitter.onFederationUpdate(onFederationUpdate)
 
         // This may be redundant if the event emitter already
         // removes existing listeners
         return () => {
-            emitter.removeListener('balance')
+            emitter.removeListener('federation')
         }
     }, [state])
 
+    // Persist currently selected federation
     useEffect(() => {
-        if (state.selectedFederation !== null) {
+        // Try not to accidentally overwrite real value with null
+        if (state.selectedFederationId != null) {
+            const selectedFederation = state.federations.find(
+                // FIXME: switch to using federation.id
+                f => f.name === state.selectedFederationId,
+            )
+
             AsyncStorage.setItem(
-                FEDERATIONS_PERSISTENCE_KEY,
-                JSON.stringify(state),
+                SELECTED_FEDERATION_ID_DB_KEY,
+                JSON.stringify({
+                    selectedFederation: {
+                        name: state.selectedFederationId,
+                        username: selectedFederation?.username,
+                    },
+                }),
             )
         }
     }, [state])
 
-    return <FederationsContext.Provider value={providerValue} {...props} />
+    return (
+        <FederationsContext.Provider value={{ ...providerValue }} {...props} />
+    )
 }
 
 function useFederationsContext() {

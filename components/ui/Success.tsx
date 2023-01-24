@@ -20,6 +20,7 @@ interface SuccessBase {
     button?: React.ReactNode
     buttonText?: string
     nextScreen?: keyof RootStackParamList
+    nextScreenProps?: RootStackParamList[keyof RootStackParamList]
 }
 
 interface SuccessWithCustomButton extends SuccessBase {
@@ -43,6 +44,7 @@ const Success: React.FC<SuccessProps> = ({
     messageText,
     iconImage = Images.Done,
     nextScreen = 'Home',
+    nextScreenProps = undefined,
     button,
     buttonText,
 }: SuccessProps) => {
@@ -71,7 +73,7 @@ const Success: React.FC<SuccessProps> = ({
                     <Button
                         title={buttonText ? buttonText : t('words.done')}
                         onPress={() => {
-                            navigation.replace(nextScreen)
+                            navigation.replace(nextScreen, nextScreenProps)
                         }}
                     />
                 )}

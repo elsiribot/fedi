@@ -24,41 +24,35 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const { approveSocialRecoveryRequest, denySocialRecoveryRequest } =
         useBridge()
     const { toast } = useEnvironmentContext().state
-    const { userPublicKey, videoUrl } = route.params
+    const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
     const [approvalSelected, setApprovalSelected] = useState(false)
     const [denialSelected, setDenialSelected] = useState(false)
-
-    console.info('userPublicKey', userPublicKey)
+    const [approving, setApproving] = useState(false)
 
     const handleGuardianApproval = async () => {
         try {
-            await approveSocialRecoveryRequest(userPublicKey)
+            setApproving(true)
+            await approveSocialRecoveryRequest(recoveryId)
             navigation.replace('RecoveryAssistSuccess')
         } catch (error) {
             const typedError = error as Error
             console.error(typedError)
             toast?.show(typedError?.message, 3000)
         }
+        setApproving(false)
     }
 
     const handleGuardianDenial = async () => {
-        try {
-            await denySocialRecoveryRequest(userPublicKey)
-            // TODO: Go to denial screen once design is provided
-            navigation.replace('RecoveryAssistSuccess')
-        } catch (error) {
-            const typedError = error as Error
-            console.error(typedError)
-            toast?.show(typedError?.message, 3000)
-        }
+        // FIXME: seeing a success screen when you deny someone is a little unexpected
+        navigation.replace('RecoveryAssistSuccess')
     }
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
                 <Video
-                    source={{ uri: videoUrl }} // Can be a URL or a local file.
+                    source={{ uri: `file://${videoPath}` }} // Can be a URL or a local file.
                     style={[
                         styles(theme).video,
                         isPaused ? styles(theme).shaded : {},
@@ -136,6 +130,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                         handleGuardianDenial()
                     }
                 }}
+                loading={approving}
                 disabled={!approvalSelected && !denialSelected}
                 containerStyle={styles(theme).confirmButton}
             />

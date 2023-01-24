@@ -6,14 +6,14 @@ import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import Router from './Router'
 import {
+    initializeBridge,
     LogEvent,
     TFedimintEventEmitter,
     TransactionEvent,
-    init,
 } from './bridge'
 import CustomToast from './components/ui/CustomToast'
+import Router from './Router'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { CommunityProvider } from './state/contexts/CommunityContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
@@ -26,10 +26,10 @@ const App = () => {
     const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
 
-    async function initializeBridge() {
+    async function onInitializeBridge() {
         console.log('initializing connection to federation')
         const start = Date.now()
-        await init(RNFS.DocumentDirectoryPath)
+        await initializeBridge(RNFS.DocumentDirectoryPath)
         setBridgeIsReady(true)
         const stop = Date.now()
         console.log('initialized:', stop - start, 'ms OS:', Platform.OS)
@@ -74,9 +74,9 @@ const App = () => {
         }
         emitter.onTransaction(onDisplayNotification)
 
-        initializeBridge()
+        onInitializeBridge()
         requestPushNotificationPermissions()
-    }, [])
+    }, [t])
 
     return (
         <SafeAreaProvider>

@@ -37,7 +37,8 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
         const backupFound = false
 
         if (backupFound) {
-            navigation.navigate('SocialBackupCloudUpload')
+            // TODO: navigate to SocialBackupCloudUpload when it's implemented
+            navigation.navigate('CompleteSocialBackup')
         } else {
             navigation.navigate('StartSocialBackup')
         }

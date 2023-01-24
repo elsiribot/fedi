@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import { orderBy } from 'lodash'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
@@ -31,14 +31,6 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
             m.sentTo?.username === member.username,
     )
     const sortedMessages = [...orderBy(messagesWithMember, 'sentAt', 'asc')]
-
-    // Subscribe to new messages
-    // Fetch any unreceived messages
-
-    useEffect(() => {
-        // announce presence?
-        // enterDirectChat(member)
-    }, [])
 
     return (
         <View style={styles(theme).container}>

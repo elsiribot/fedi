@@ -20,6 +20,14 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
 
+    const onChooseSocialRecovery = () => {
+        if (selectedFederation!.socialRecoveryActive) {
+            navigation.navigate('CompleteSocialRecovery')
+        } else {
+            navigation.navigate('LocateSocialRecovery')
+        }
+    }
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
@@ -39,9 +47,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                         <Button
                             title={t('feature.recovery.start-social-recovery')}
                             containerStyle={styles(theme).recoveryMethodButton}
-                            onPress={() =>
-                                navigation.navigate('LocateSocialRecovery')
-                            }
+                            onPress={onChooseSocialRecovery}
                         />
                     </>
                 }

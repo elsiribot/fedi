@@ -14,10 +14,16 @@ import {
 } from 'react-native'
 
 import { SeedWords } from '../bridge'
+import { BIP39_WORD_LIST } from '../constants'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
+
+const isValidSeedWord = (word: string) => {
+    return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
+}
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -38,8 +44,7 @@ const SeedWordInput = ({
     const { theme } = useTheme()
     const inputRef = useRef<TextInput | null>(null)
     const [isFocused, setIsFocused] = useState(false)
-
-    console.log('word', word)
+    const valid = isValidSeedWord(word)
 
     return (
         <Pressable
@@ -67,6 +72,7 @@ const SeedWordInput = ({
                 inputStyle={[
                     styles(theme).wordInput,
                     isFocused ? styles(theme).focusedInput : {},
+                    !(isFocused || valid) ? styles(theme).invalidWord : {},
                 ]}
                 autoCapitalize={'none'}
                 returnKeyType={'next'}
@@ -79,6 +85,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { recoverFromMnemonic } = useBridge()
+    const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
@@ -175,10 +182,12 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                         setIsLoading(false)
                         navigation.replace('PersonalRecoverySuccess')
                     } catch (error) {
-                        // TODO: show error toast
+                        toast?.show((error as Error)?.message, 3000)
                     }
                 }}
-                disabled={isLoading || seedWords.some(s => s.length === 0)}
+                // TODO: separate loading screen as per designs
+                loading={isLoading}
+                disabled={isLoading || seedWords.some(s => !isValidSeedWord(s))}
             />
         </ScrollView>
     )
@@ -239,6 +248,9 @@ const styles = (theme: Theme) =>
         },
         focusedInput: {
             marginBottom: 0,
+        },
+        invalidWord: {
+            color: 'red',
         },
     })
 

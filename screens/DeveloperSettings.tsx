@@ -12,7 +12,7 @@ import {
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
 } from '../constants'
 import {
-    MOCKED_ROOMS,
+    DEFAULT_ROOMS,
     receiveMembersSeen,
     receiveMessages,
     receiveRooms,
@@ -109,7 +109,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                 onPress={() => {
                     communityDispatch(receiveMembersSeen([]))
                     communityDispatch(receiveMessages([]))
-                    communityDispatch(receiveRooms(MOCKED_ROOMS))
+                    communityDispatch(receiveRooms(DEFAULT_ROOMS))
                     AsyncStorage.setItem(
                         COMMUNITY_MEMBERS_PERSISTENCE_KEY,
                         JSON.stringify({ members: [] }),
@@ -120,7 +120,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     )
                     AsyncStorage.setItem(
                         COMMUNITY_ROOMS_PERSISTENCE_KEY,
-                        JSON.stringify({ rooms: MOCKED_ROOMS }),
+                        JSON.stringify({ rooms: DEFAULT_ROOMS }),
                     )
                 }}
             />

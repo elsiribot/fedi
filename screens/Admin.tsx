@@ -1,17 +1,21 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
+import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import { listFederations } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
+import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import {
-    setUserIsGuardian,
+    updateFederations,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import AmountUtils from '../utils/AmountUtils'
+import stringUtils from '../utils/StringUtils'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
@@ -21,16 +25,77 @@ export type Props = BottomTabScreenProps<
 const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { authenticateGuardian } = useBridge()
+    const { leaveFederation } = useBridge()
     const { state, dispatch } = useFederationsContext()
     const { selectedFederation } = state
+    const [userIsGuardian, setUserIsGuardian] = useState(false)
 
     const simulateGuardianAuthentication = async () => {
-        try {
-            await authenticateGuardian('mocksecret')
-            dispatch(setUserIsGuardian(true))
-        } catch (error) {
-            dispatch(setUserIsGuardian(false))
+        setUserIsGuardian(true)
+    }
+
+    // FIXME: this needs some kind of loading state
+    // TODO: this should be an thunkified action creator
+    const handleLeaveFederation = async () => {
+        // leave federation
+        await leaveFederation()
+
+        // update context and navigate
+        const federations = await listFederations()
+        if (federations.length > 0) {
+            dispatch(updateFederations(federations[0].name, federations))
+            // FIXME: this doesn't do enough ...
+            navigation.navigate('Home')
+        } else {
+            navigation.navigate('Splash')
+            dispatch(updateFederations(null, federations))
+        }
+    }
+
+    const confirmLeaveFederation = () => {
+        // Only allow leaving if they have less than 100 sats
+        if (AmountUtils.msatToSat(selectedFederation!.balance) > 100) {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t('feature.federations.leave-federation-withdraw-first'),
+                [
+                    {
+                        text: t('words.ok'),
+                    },
+                ],
+            )
+        } else {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t('feature.federations.leave-federation-confirmation'),
+                [
+                    {
+                        text: 'No',
+                    },
+                    {
+                        text: t('words.yes'),
+                        onPress: handleLeaveFederation,
+                    },
+                ],
+            )
+        }
+    }
+
+    const onChooseRecovery = () => {
+        // Only allow recovery for wallets with less than 100 sats
+        // FIXME: a bit of a race condition here if a user starts a recovery with 0 sats, then receives and tries this again
+        if (selectedFederation!.balance > 100000) {
+            Alert.alert(
+                t('feature.recovery.recover-wallet'),
+                t('feature.recovery.recover-wallet-with-balance'),
+                [
+                    {
+                        text: t('words.okay'),
+                    },
+                ],
+            )
+        } else {
+            navigation.navigate('ChooseRecoveryMethod')
         }
     }
 
@@ -41,13 +106,17 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 {/*
                     TODO: Replace with username set during onboarding
                 */}
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).profileCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <Text h2>{'SN'}</Text>
-                </ImageBackground>
-                <Text h2>{'Satoshi Nakomoto'}</Text>
+                <View style={styles(theme).avatarContainer}>
+                    <HoloAvatar
+                        size={AvatarSize.lg}
+                        title={stringUtils.getInitialsFromName(
+                            selectedFederation?.username || '',
+                        )}
+                    />
+                </View>
+                <Text h2 medium>
+                    {selectedFederation?.username}
+                </Text>
             </View>
             {/* TODO: Add offline status indicator here */}
             <View style={styles(theme).sectionContainer}>
@@ -71,7 +140,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                         })
                     }}
                 />
-                {state.userIsGuardian ? (
+                {userIsGuardian ? (
                     <SettingsItem
                         imageSource={Images.SocialPeople}
                         label={t('feature.recovery.recovery-assist')}
@@ -88,10 +157,9 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 )}
 
                 <SettingsItem
-                    disabled
                     imageSource={Images.LeaveFederation}
                     label={t('feature.federations.leave-federation')}
-                    onPress={() => {}}
+                    onPress={confirmLeaveFederation}
                 />
             </View>
             <View>
@@ -106,7 +174,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 <SettingsItem
                     imageSource={Images.Recovery}
                     label={t('feature.recovery.recover-a-wallet')}
-                    onPress={() => navigation.navigate('ChooseRecoveryMethod')}
+                    onPress={onChooseRecovery}
                 />
             </View>
             <View>
@@ -117,7 +185,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     disabled
                     imageSource={Images.FediLogoIcon}
                     label={t('phrases.app-settings-security')}
-                    onPress={() => {}}
+                    onPress={confirmLeaveFederation}
                 />
                 <SettingsItem
                     imageSource={Images.FediLogoIcon}
@@ -139,16 +207,9 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             paddingBottom: theme.spacing.lg,
         },
-        profileCircle: {
-            height: theme.sizes.adminProfileCircle,
-            width: theme.sizes.adminProfileCircle,
-            alignItems: 'center',
-            justifyContent: 'center',
+        avatarContainer: {
             marginTop: theme.spacing.xl,
             marginBottom: theme.spacing.md,
-        },
-        circleBorder: {
-            borderRadius: theme.sizes.adminProfileCircle * 0.5,
         },
         sectionContainer: {
             flexDirection: 'column',

@@ -37,4 +37,38 @@ describe('StringUtils', () => {
             )
         })
     })
+    describe('getInitialsFromName', () => {
+        it('returns 1 uppercase letter from 1 word title-case name', () => {
+            const initials = stringUtils.getInitialsFromName('Satoshi')
+
+            expect(initials).toEqual('S')
+        })
+        it('returns 1 uppercase letter from 1 word lower-case name', () => {
+            const initials = stringUtils.getInitialsFromName('satoshi')
+
+            expect(initials).toEqual('S')
+        })
+        it('returns 2 uppercase letters from 2-word title-case name', () => {
+            const initials = stringUtils.getInitialsFromName('Satoshi Nakamoto')
+
+            expect(initials).toEqual('SN')
+        })
+        it('returns 2 uppercase letters from 2-word lower-case name', () => {
+            const initials = stringUtils.getInitialsFromName('satoshi nakamoto')
+
+            expect(initials).toEqual('SN')
+        })
+        it('returns 2 uppercase letters from first 2 words from 3+-word title-case name', () => {
+            const initials =
+                stringUtils.getInitialsFromName('We Are All Satoshi')
+
+            expect(initials).toEqual('WA')
+        })
+        it('returns 2 uppercase letters from first 2 words from 3+-word lower-case name', () => {
+            const initials =
+                stringUtils.getInitialsFromName('we are all satoshi')
+
+            expect(initials).toEqual('WA')
+        })
+    })
 })

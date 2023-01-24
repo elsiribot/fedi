@@ -6,11 +6,12 @@ import React, { useEffect } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
+import { listFederations } from '../bridge'
 import {
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
     COMMUNITY_ROOMS_PERSISTENCE_KEY,
-    FEDERATIONS_PERSISTENCE_KEY,
+    SELECTED_FEDERATION_ID_DB_KEY,
 } from '../constants'
 import {
     receiveMembersSeen,
@@ -19,9 +20,9 @@ import {
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
-    changeSelectedFederation,
     resetFederationsState,
-    updateConnectedFederations,
+    updateFederations,
+    updateFederationUsername,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -41,31 +42,40 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         const restoreState = async () => {
             const restoreFederationsState = async () => {
                 try {
-                    const savedFederationsStateJson =
-                        await AsyncStorage.getItem(FEDERATIONS_PERSISTENCE_KEY)
+                    // load selected federation id from async storage
+                    const saved = await AsyncStorage.getItem(
+                        SELECTED_FEDERATION_ID_DB_KEY,
+                    )
+                    const savedJson = saved ? JSON.parse(saved) : null
 
-                    const savedFederationsState = savedFederationsStateJson
-                        ? JSON.parse(savedFederationsStateJson)
-                        : null
+                    if (savedJson) {
+                        const { selectedFederation } = savedJson
 
-                    console.info('savedFederationsState', savedFederationsState)
-
-                    if (savedFederationsState !== null) {
-                        const { selectedFederation, connectedFederations } =
-                            savedFederationsState
-
-                        federationsDispatch(
-                            changeSelectedFederation(selectedFederation),
+                        // load federations from bridge
+                        let federations = await listFederations()
+                        if (selectedFederation?.name) {
+                            federationsDispatch(
+                                updateFederations(
+                                    selectedFederation?.name,
+                                    federations,
+                                ),
+                            )
+                            if (selectedFederation.username) {
+                                federationsDispatch(
+                                    updateFederationUsername(
+                                        selectedFederation.username,
+                                    ),
+                                )
+                            }
+                        }
+                        return navigation.replace(
+                            federations.length > 0 ? 'Home' : 'Splash',
                         )
-                        federationsDispatch(
-                            updateConnectedFederations(connectedFederations),
-                        )
-                        return navigation.replace('Home')
                     }
                 } catch (error) {
                     console.error(error)
                 }
-                navigation.replace('Splash')
+                return navigation.replace('Splash')
             }
 
             const restoreMessages = async () => {

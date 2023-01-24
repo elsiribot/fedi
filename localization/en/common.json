@@ -5,6 +5,8 @@
         "backup": "Backup",
         "balance": "Balance",
         "bitcoin": "Bitcoin",
+        "cancel": "Cancel",
+        "canceled": "Canceled",
         "complete": "Complete",
         "community": "Community",
         "continue": "Continue",
@@ -24,14 +26,19 @@
         "message": "Message",
         "messages": "Messages",
         "next": "Next",
+        "no": "No",
         "okay": "Okay",
         "one": "one",
         "onchain": "On-chain",
         "optional": "Optional",
+        "pay": "Pay",
+        "paid": "Paid",
         "payments": "Payments",
         "pending": "pending",
         "receive": "Receive",
         "received": "Received",
+        "reject": "Reject",
+        "rejected": "Rejected",
         "request": "Request",
         "required": "required",
         "room": "Room",
@@ -47,6 +54,7 @@
         "to": "To",
         "two": "two",
         "username": "Username",
+        "yes": "Yes",
         "wallet": "Wallet"
     },
     "phrases": {
@@ -76,6 +84,7 @@
     },
     "errors": {
         "unknown-error": "An unknown error occurred",
+        "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-room-code": "This is not a valid room code"
     },
     "feature": {
@@ -138,12 +147,15 @@
             "invalid-room": "This is not a valid community room",
             "invite-link-notice": "Anyone with this link can join this room. Link is valid for 2 hours.",
             "invite-to-room": "Invite to room",
+            "incoming-chat-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
             "join-a-room": "Join a room",
             "leave-room": "Leave room",
             "new-message": "New message",
             "new-room": "New room",
             "no-one-is-in-this-room": "No one is in this room yet.",
             "or-join-a-room": "Or join a room",
+            "outgoing-chat-payment": "You requested {{amount}} {{unit}} {{memo}}",
+            "payment-requested": "{{name}} requested {{amount}} {{unit}}",
             "room-invite": "Room invite",
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
@@ -159,6 +171,8 @@
             "invite-link-notice": "Invite link is valid for 2 hours",
             "join-federation": "Join a new Federation",
             "leave-federation": "Leave Federation",
+            "leave-federation-confirmation": "Are you sure you want to leave this federation?",
+            "leave-federation-withdraw-first": "You must withdraw your funds before leaving",
             "paste-federation-code-instead": "Paste federation code instead",
             "paste-federation-code": "Paste federation code",
             "scan-federation-invite": "Scan a Federation Invite"
@@ -199,6 +213,9 @@
             "you-sent": "You sent"
         },
         "recovery": {
+            "download-failed": "Failed to download",
+            "nothing-to-download": "Nothing to download from guardian",
+
             "camera-access-information": "To assist with recovery, you will need to allow Fedi access to your camera to scan the social recovery code",
             "choose-method": "Choose a recovery method",
             "choose-method-instructions": "Choose the method you used to back up your wallet when you first joined {{federation}}",
@@ -230,6 +247,7 @@
             "personal-recovery-instructions": "Enter the 12 words you wrote down when you first backed up your {{federation}} wallet",
             "recover-a-wallet": "Recover a wallet",
             "recover-wallet": "Recover wallet",
+            "recover-wallet-with-balance": "Recovery is currently unsupported for wallets with a balance. Please withdraw your funds first.",
             "recovering-your-wallet": "Recovering your wallet, please check back later",
             "recovery-assist": "Recovery assist",
             "recovery-assist-description": "A member of your Federation is requesting your assistance in recovering their wallet",
