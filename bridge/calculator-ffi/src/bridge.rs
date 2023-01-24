@@ -904,7 +904,16 @@ impl Federation {
         let next_peer_id = self.next_peer_id(recovery_id).await?;
         tracing::info!("approve social recovery {}", next_peer_id);
         let verification_client = self.client.social_verification(next_peer_id);
-        verification_client.approve_recovery(*recovery_id).await?;
+        let admin_password = match next_peer_id.to_usize() {
+            0 => "1111",
+            1 => "2222",
+            2 => "3333",
+            3 => "4444",
+            _ => panic!("invalid peer id"),
+        };
+        verification_client
+            .approve_recovery(*recovery_id, admin_password)
+            .await?;
         Ok(())
     }
 
