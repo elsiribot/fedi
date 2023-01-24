@@ -69,7 +69,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             try {
                 await new Promise((resolve, reject) => {
                     setOverlay({
-                        title: t('site.wants-to-pay-you', {
+                        title: t('feature.sites.wants-to-pay-you', {
                             site: site.title,
                         }),
                         message: `${amount} ${t('words.sats').toUpperCase()}`,
@@ -115,7 +115,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 // Wait for user to interact with alert
                 await new Promise((resolve, reject) => {
                     setOverlay({
-                        title: t('site.boost-this-post', { site: site.title }),
+                        title: t('feature.sites.payment-request', {
+                            site: site.title,
+                        }),
                         message: `${amountSats} ${t(
                             'words.sats',
                         ).toUpperCase()}`,
@@ -171,7 +173,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             console.log('foundInvoice', paymentRequest)
             if (paymentRequest.toLowerCase().startsWith('lnurl')) {
                 setOverlay({
-                    title: t('site.login-to'),
+                    title: t('feature.sites.login-to'),
                     message: `${site.title}`,
                     buttons: [
                         {

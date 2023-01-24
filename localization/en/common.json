@@ -292,10 +292,11 @@
             "receive-bitcoin-offline": "Receive bitcoin offline",
             "you-received": "You received"
         },
-        "site": {
+        "sites": {
             "wants-to-pay-you": "{{site}} wants to pay you",
             "boost-this-post": "Boost this post on {{site}}?",
-            "login-to": "Login to"
+            "login-to": "Login to",
+            "payment-request": "Payment request from {{site}} "
         }
     }
 }
