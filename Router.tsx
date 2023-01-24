@@ -91,6 +91,7 @@ import SendHeader from './components/feature/send/SendHeader'
 import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
+import GroupChat from './screens/GroupChat'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
