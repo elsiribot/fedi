@@ -52,16 +52,16 @@ const NewMessage: React.FC<Props> = ({ navigation, route }: Props) => {
                     <Image source={Images.Scan} style={styles(theme).icon} />
                 </View>
                 <Pressable
-                    style={styles(theme).createRoomContainer}
+                    style={styles(theme).createGroupContainer}
                     onPress={() => {
-                        navigation.replace('JoinRoom')
+                        navigation.replace('JoinGroup')
                     }}>
                     <Image
                         source={Images.SocialPeople}
                         style={styles(theme).icon}
                     />
-                    <Text medium style={styles(theme).createRoomText}>
-                        {t('feature.community.or-join-a-room')}
+                    <Text medium style={styles(theme).createGroupText}>
+                        {t('feature.community.or-join-a-group')}
                     </Text>
                 </Pressable>
                 <Text small medium style={styles(theme).membersLabel}>
@@ -88,16 +88,15 @@ const styles = (theme: Theme) =>
             height: theme.sizes.sm,
             width: theme.sizes.sm,
         },
-        createRoomContainer: {
+        createGroupContainer: {
             width: '100%',
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
             paddingVertical: theme.spacing.lg,
             paddingHorizontal: theme.spacing.xl,
-            // backgroundColor: 'lightblue',
         },
-        createRoomText: {
+        createGroupText: {
             marginLeft: theme.spacing.md,
         },
         filterMembersContainer: {
@@ -108,7 +107,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.xl,
             borderBottomWidth: 1,
             borderBottomColor: theme.colors.grey,
-            // backgroundColor: 'lightpink',
         },
         filterLabel: {
             textAlign: 'left',
@@ -116,16 +114,12 @@ const styles = (theme: Theme) =>
         filterMembersTextInputOuter: {
             flex: 1,
             height: 40,
-            // backgroundColor: 'purple',
         },
         filterMembersTextInputInner: {
             borderBottomWidth: 0,
-            // marginTop: theme.spacing.xxs,
-            // backgroundColor: 'green',
         },
         filterMembersTextInput: {
             fontSize: 16,
-            // backgroundColor: 'red',
         },
         membersLabel: {
             paddingHorizontal: theme.spacing.xl,

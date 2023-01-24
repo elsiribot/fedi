@@ -8,7 +8,7 @@ import { Images } from '../../../assets/images'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 
-const RoomInviteHeader: React.FC<{}> = () => {
+const GroupInviteHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
@@ -34,12 +34,12 @@ const RoomInviteHeader: React.FC<{}> = () => {
             }
             headerCenter={
                 <Text bold style={{ color: theme.colors.secondary }}>
-                    {t('feature.community.room-invite')}
+                    {t('feature.community.group-invite')}
                 </Text>
             }
             headerRight={
                 <Pressable
-                    // onPress={() => navigation.navigate('EditRoom')}
+                    // onPress={() => navigation.navigate('EditGroup')}
                     disabled
                     style={{
                         padding: theme.spacing.sm,
@@ -59,4 +59,4 @@ const RoomInviteHeader: React.FC<{}> = () => {
     )
 }
 
-export default RoomInviteHeader
+export default GroupInviteHeader

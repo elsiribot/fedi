@@ -3,7 +3,7 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
-import { Member, Message, MSats, Room, Sats } from './types'
+import { MSats, Sats } from './types'
 
 const { FedimintEventEmitter, FedimintFfi } = NativeModules
 
@@ -188,9 +188,6 @@ export class Federation extends Base {
     // until/unless we find a better place...
     // used for XMPP login for chat/community features
     username?: string | null
-    rooms?: Room[] | null
-    messages?: Message[] | null
-    membersSeen?: Member[] | null
     socialRecoveryActive: boolean
 
     get approvalsRequired(): number {

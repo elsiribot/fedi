@@ -18,6 +18,7 @@
         "fedimint": "Fedimint",
         "fee": "Fee",
         "general": "General",
+        "group": "Group",
         "home": "Home",
         "important": "Important",
         "lightning": "Lightning",
@@ -41,7 +42,6 @@
         "rejected": "Rejected",
         "request": "Request",
         "required": "required",
-        "room": "Room",
         "sats": "sats",
         "send": "Send",
         "sent": "Sent",
@@ -85,7 +85,7 @@
     "errors": {
         "unknown-error": "An unknown error occurred",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
-        "invalid-room-code": "This is not a valid room code"
+        "invalid-group-code": "This is not a valid group code"
     },
     "feature": {
         "backup": {
@@ -140,27 +140,27 @@
         },
         "community": {
             "broadcast-only": "Broadcast only",
-            "camera-access-information": "To join a room, you will need to allow Fedi access to your camera to scan a room invite link",
-            "create-a-room": "Create a room",
+            "camera-access-information": "To join a group, you will need to allow Fedi access to your camera to scan a group invite link",
+            "create-a-group": "Create a group",
             "disappearing-messages": "Disappearing messages",
             "enter-a-username": "Enter a username",
-            "invalid-room": "This is not a valid community room",
-            "invite-link-notice": "Anyone with this link can join this room. Link is valid for 2 hours.",
-            "invite-to-room": "Invite to room",
+            "invalid-group": "This is not a valid community group",
+            "invite-link-notice": "Anyone with this link can join this group. Link is valid for 2 hours.",
+            "invite-to-group": "Invite to group",
             "incoming-chat-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
-            "join-a-room": "Join a room",
-            "leave-room": "Leave room",
+            "join-a-group": "Join a group",
+            "leave-group": "Leave group",
             "new-message": "New message",
-            "new-room": "New room",
-            "no-one-is-in-this-room": "No one is in this room yet.",
-            "or-join-a-room": "Or join a room",
+            "new-group": "New group",
+            "no-one-is-in-this-group": "No one is in this group yet.",
+            "or-join-a-group": "Or join a group",
             "outgoing-chat-payment": "You requested {{amount}} {{unit}} {{memo}}",
             "payment-requested": "{{name}} requested {{amount}} {{unit}}",
-            "room-invite": "Room invite",
+            "group-invite": "Group invite",
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
             "view-shared-media": "View shared media",
-            "view-room": "View room"
+            "view-group": "View group"
         },
         "federations": {
             "add-federation": "Add a Federation",

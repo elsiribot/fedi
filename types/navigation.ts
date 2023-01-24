@@ -1,6 +1,6 @@
 import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { BtcLnUri, Member, MSats, Room, Site } from '.'
+import { BtcLnUri, Group, Member, MSats, Site } from '.'
 import { Transaction } from '../bridge'
 
 // This type declaration allows all instances of useNavigation
@@ -49,7 +49,7 @@ export type RootStackParamList = {
     FederationWelcome: undefined
     Home: undefined
     Initializing: { reset: boolean }
-    JoinRoom: undefined
+    JoinGroup: undefined
     NewMessage: undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
@@ -62,9 +62,9 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    RoomChat: { room: Room }
-    RoomAdmin: { room: Room }
-    RoomInvite: { room: Room }
+    GroupChat: { group: Group }
+    GroupAdmin: { group: Group }
+    GroupInvite: { group: Group }
     ScanFederationCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }

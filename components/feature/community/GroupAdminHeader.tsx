@@ -6,15 +6,15 @@ import { Pressable, StyleSheet } from 'react-native'
 import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
-import { Props as RoomChatProps } from '../../../screens/RoomChat'
+import { Props as GroupAdminProps } from '../../../screens/GroupAdmin'
 import { NavigationHook } from '../../../types/navigation'
 
-type RoomRouteProp = RoomChatProps['route']
+type GroupAdminRouteProp = GroupAdminProps['route']
 
-const RoomAdminHeader: React.FC<{}> = () => {
+const GroupAdminHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<RoomRouteProp>()
+    const route = useRoute<GroupAdminRouteProp>()
 
     return (
         <Header
@@ -60,12 +60,12 @@ const styles = (theme: Theme) =>
             height: theme.sizes.sm,
             width: theme.sizes.sm,
         },
-        roomIcon: {
+        groupIcon: {
             height: theme.sizes.sm,
             width: theme.sizes.sm,
             marginRight: theme.spacing.sm,
         },
-        roomNameContainer: {
+        groupNameContainer: {
             padding: theme.spacing.sm,
             flexDirection: 'row',
             alignItems: 'center',
@@ -73,4 +73,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomAdminHeader
+export default GroupAdminHeader

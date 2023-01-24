@@ -13,7 +13,7 @@ export type Props = { navigation: any }
 const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { state } = useFederationsContext()
-    const selectedFederation: Federation | null = state.selectedFederation
+    const selectedFederation: Federation | undefined = state.selectedFederation
 
     const openFederationsDrawer = () => {
         navigation.getParent(DRAWER_NAVIGATION_ID).openDrawer()

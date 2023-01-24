@@ -3,41 +3,41 @@ import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import { DEFAULT_ROOM_NAME } from '../../../constants'
-import { Room } from '../../../types'
+import { DEFAULT_GROUP_NAME } from '../../../constants'
+import { Chat } from '../../../types'
 import DateUtils from '../../../utils/DateUtils'
 
-type RoomTileProps = {
-    room: Room
-    selectRoom: (room: Room) => void
+type ChatTileProps = {
+    chat: Chat
+    selectChat: (chat: Chat) => void
 }
 
-const RoomTile = ({ room, selectRoom }: RoomTileProps) => {
+const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
     const { theme } = useTheme()
 
     return (
         <Pressable
             style={styles(theme).container}
-            onPress={() => selectRoom(room)}>
+            onPress={() => selectChat(chat)}>
             <View style={styles(theme).iconContainer}>
                 <View
                     style={[
                         styles(theme).unreadIndicator,
-                        room.hasNewMessages ? { opacity: 1 } : { opacity: 0 },
+                        chat.hasNewMessages ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
                 <Image
-                    source={room.icon || Images.FediLogoIcon}
+                    source={chat.icon || Images.FediLogoIcon}
                     style={styles(theme).icon}
                 />
             </View>
             <View style={styles(theme).contents}>
                 <View style={styles(theme).topRow}>
-                    <Text bold>{room.name || DEFAULT_ROOM_NAME}</Text>
-                    {room.lastReceivedTimestamp && (
+                    <Text bold>{chat.name || DEFAULT_GROUP_NAME}</Text>
+                    {chat.lastReceivedTimestamp && (
                         <Text small>
-                            {DateUtils.formatRoomTileTimestamp(
-                                room.lastReceivedTimestamp!,
+                            {DateUtils.formatChatTileTimestamp(
+                                chat.lastReceivedTimestamp!,
                             )}
                         </Text>
                     )}
@@ -47,9 +47,9 @@ const RoomTile = ({ room, selectRoom }: RoomTileProps) => {
                         caption
                         style={styles(theme).messagePreview}
                         numberOfLines={2}>
-                        {room.lastMessage?.text || room.messagePreview || ''}
+                        {chat.messagePreview || ''}
                     </Text>
-                    {room.pinned && (
+                    {chat.pinned && (
                         <Icon
                             name="pin"
                             type="material-community"
@@ -113,4 +113,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomTile
+export default ChatTile

@@ -3,9 +3,9 @@ import { useNavigation } from '@react-navigation/native'
 import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
+import ChatsList from '../components/feature/community/ChatsList'
 
-import RoomsList from '../components/feature/community/RoomsList'
-import { FEDI_GENERAL_CHANNEL_ROOM } from '../constants'
+import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
 import { useCommunityContext } from '../state/contexts/CommunityContext'
 import { useXmpp } from '../state/hooks'
 import {
@@ -28,9 +28,9 @@ const Community: React.FC<Props> = () => {
     useEffect(() => {
         if (authenticatedMember) {
             // This is a temporary measure to improve member discovery...
-            // all users announce presence in this room even without clicking it
+            // all users announce presence in this MUC room even without clicking it
             // so that presence messages for each new user are sent to all other users
-            enterMucRoom(FEDI_GENERAL_CHANNEL_ROOM)
+            enterMucRoom(FEDI_GENERAL_CHANNEL_GROUP)
             // Here we fetch any messages we may have missed while offline
             // TODO: only fetch messages from after the last received timestamp
             fetchMessagesFromArchive({ filters: null })
@@ -39,7 +39,7 @@ const Community: React.FC<Props> = () => {
 
     return (
         <View style={styles(theme).container}>
-            <RoomsList />
+            <ChatsList />
 
             <FAB
                 icon={{ name: 'add', color: theme.colors.secondary }}

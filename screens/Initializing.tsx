@@ -8,15 +8,15 @@ import { ImageBackground, StyleSheet } from 'react-native'
 import { Images } from '../assets/images'
 import { listFederations } from '../bridge'
 import {
+    COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
-    COMMUNITY_ROOMS_PERSISTENCE_KEY,
     SELECTED_FEDERATION_ID_DB_KEY,
 } from '../constants'
 import {
+    receiveGroups,
     receiveMembersSeen,
     receiveMessages,
-    receiveRooms,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
@@ -108,25 +108,25 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 }
             }
 
-            const restoreRooms = async () => {
+            const restoreGroups = async () => {
                 try {
-                    const savedCommunityRoomsJson = await AsyncStorage.getItem(
-                        COMMUNITY_ROOMS_PERSISTENCE_KEY,
+                    const savedCommunityGroupsJson = await AsyncStorage.getItem(
+                        COMMUNITY_GROUPS_PERSISTENCE_KEY,
                     )
 
-                    const savedCommunityRooms = savedCommunityRoomsJson
-                        ? JSON.parse(savedCommunityRoomsJson)
+                    const savedCommunityGroups = savedCommunityGroupsJson
+                        ? JSON.parse(savedCommunityGroupsJson)
                         : null
 
-                    console.info('savedCommunityRooms', savedCommunityRooms)
+                    console.info('savedCommunityGroups', savedCommunityGroups)
 
-                    if (savedCommunityRooms !== null) {
-                        const { rooms } = savedCommunityRooms
+                    if (savedCommunityGroups !== null) {
+                        const { groups } = savedCommunityGroups
 
-                        console.log('recovering rooms')
+                        console.log('recovering groups')
 
-                        if (rooms) {
-                            communityDispatch(receiveRooms(rooms))
+                        if (groups) {
+                            communityDispatch(receiveGroups(groups))
                         }
                     }
                 } catch (error) {
@@ -163,7 +163,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
             const restoreCommunityState = async () => {
                 restoreMessages()
-                restoreRooms()
+                restoreGroups()
                 restoreMembers()
             }
 

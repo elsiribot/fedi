@@ -22,9 +22,11 @@ import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
 import FederationWelcome from './screens/FederationWelcome'
+import GroupAdmin from './screens/GroupAdmin'
+import GroupInvite from './screens/GroupInvite'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
-import JoinRoom from './screens/JoinRoom'
+import JoinGroup from './screens/JoinGroup'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import NewMessage from './screens/NewMessage'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
@@ -37,9 +39,6 @@ import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
-import RoomAdmin from './screens/RoomAdmin'
-import RoomChat from './screens/RoomChat'
-import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
@@ -68,11 +67,11 @@ import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import ChatWalletHeader from './components/feature/community/ChatWalletHeader'
 import DirectChatHeader from './components/feature/community/DirectChatHeader'
-import JoinRoomHeader from './components/feature/community/JoinRoomHeader'
+import GroupAdminHeader from './components/feature/community/GroupAdminHeader'
+import GroupHeader from './components/feature/community/GroupHeader'
+import GroupInviteHeader from './components/feature/community/GroupInviteHeader'
+import JoinGroupHeader from './components/feature/community/JoinGroupHeader'
 import NewMessageHeader from './components/feature/community/NewMessageHeader'
-import RoomAdminHeader from './components/feature/community/RoomAdminHeader'
-import RoomHeader from './components/feature/community/RoomHeader'
-import RoomInviteHeader from './components/feature/community/RoomInviteHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
@@ -222,17 +221,17 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="JoinRoom"
-                                component={JoinRoom}
+                                name="JoinGroup"
+                                component={JoinGroup}
                                 options={() => ({
-                                    header: () => <JoinRoomHeader />,
+                                    header: () => <JoinGroupHeader />,
                                 })}
                             />
                             <Stack.Screen
-                                name="RoomInvite"
-                                component={RoomInvite}
+                                name="GroupInvite"
+                                component={GroupInvite}
                                 options={() => ({
-                                    header: () => <RoomInviteHeader />,
+                                    header: () => <GroupInviteHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -243,17 +242,17 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="RoomChat"
-                                component={RoomChat}
+                                name="GroupChat"
+                                component={GroupChat}
                                 options={() => ({
-                                    header: () => <RoomHeader />,
+                                    header: () => <GroupHeader />,
                                 })}
                             />
                             <Stack.Screen
-                                name="RoomAdmin"
-                                component={RoomAdmin}
+                                name="GroupAdmin"
+                                component={GroupAdmin}
                                 options={() => ({
-                                    header: () => <RoomAdminHeader />,
+                                    header: () => <GroupAdminHeader />,
                                 })}
                             />
                             <Stack.Screen

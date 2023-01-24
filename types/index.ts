@@ -3,7 +3,7 @@ import { JID } from '@xmpp/jid'
 import { ImageSourcePropType } from 'react-native'
 
 import Base, { Invoice } from '../bridge'
-import { DEFAULT_ROOM_NAME } from '../constants'
+import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
 
 export enum BitcoinOrLightning {
@@ -54,43 +54,41 @@ export type SatsString = BitcoinUnit<string, 'SatsString'>
 export type MsatsString = BitcoinUnit<string, 'MsatsString'>
 
 // Community features
-export type FediRoomLink = string
+export type FediGroupLink = string
 
-export class Room extends Base {
+export class Chat extends Base {
     id: string
-    icon?: ImageSourcePropType
     name?: string
-    description?: string
-    hasNewMessages?: boolean
+    icon?: ImageSourcePropType
     pinned?: boolean
-    settings?: RoomSettings
-    // TODO: What exactly is encoded in this invitationCode?
-    invitationCode?: FediRoomLink
-
-    members?: Member[]
-
-    // Consider MessagePreview type:
-    lastMessage?: MessagePreview
-    // or simplify:
+    hasNewMessages?: boolean
     messagePreview?: string
     lastReceivedTimestamp?: number
+    members?: Member[]
 
     constructor(data: any) {
         super(data)
+        if (data.members) this.members = this.members?.map(m => new Member(m))
     }
+}
+export class Group extends Chat {
+    description?: string
+    settings?: GroupSettings
+    // TODO: What exactly is encoded in this invitationCode?
+    invitationCode?: FediGroupLink
 
     static encodeInvitationLink(id: string, name: string): string {
-        return `fedi:room:${id}::${name}`
+        return `fedi:group: ${id}::${name}`
     }
-    static decodeInvitationLink(link: string): Room {
-        const contents = link.split('fedi:room:')[1]
+    static decodeInvitationLink(link: string): Group {
+        const contents = link.split('fedi:group: ')[1]
         if (!contents) throw new Error(i18n.t('errors.unknown-error'))
 
         // TODO: Harden this encoding scheme (use standard URL params?)
         const id = contents.split('::')[0]
-        const name = contents.split('::')[1] || DEFAULT_ROOM_NAME
+        const name = contents.split('::')[1] || DEFAULT_GROUP_NAME
 
-        return new Room({
+        return new Group({
             id,
             name,
             invitationCode: link,
@@ -109,7 +107,7 @@ export type MessagePreview = {
 }
 
 // Consider combining members and admins?
-export type RoomSettings = {
+export type GroupSettings = {
     members: Member[]
     // What can admins do that members can't (if anything)?
     // Enable payments? Show message history?
@@ -118,7 +116,7 @@ export type RoomSettings = {
     paymentsEnabled: boolean
     // Consider instead a shareMessageHistory boolean
     // because each Member would request and store any Messages
-    // from other Members upon joining a Room
+    // from other Members upon joining a Group
     showMessageHistory: boolean
 }
 
@@ -138,14 +136,14 @@ export class Message extends Base {
     content: string
     sentAt?: number
     receivedAt?: number
-    sentIn?: Room
+    sentIn?: Group
     sentBy?: Member
     sentTo?: Member
     actions?: MessageAction[]
     payment?: Payment
     constructor(data: any) {
         super(data)
-        if (data.sentIn) this.sentIn = new Room(data.sentIn)
+        if (data.sentIn) this.sentIn = new Group(data.sentIn)
         if (data.sentBy) this.sentBy = new Member(data.sentBy)
         if (data.sentTo) this.sentTo = new Member(data.sentTo)
         if (data.payment) this.payment = new Payment(data.payment)

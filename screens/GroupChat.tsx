@@ -12,37 +12,35 @@ import type { RootStackParamList } from '../types/navigation'
 
 import { useXmpp } from '../state/hooks'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'RoomChat'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
-const RoomChat: React.FC<Props> = ({ navigation, route }: Props) => {
+const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { room: currentRoom } = route.params
+    const { group: currentGroup } = route.params
     const { state, dispatch } = useCommunityContext()
     const { enterMucRoom, sendGroupMessage } = useXmpp()
 
-    const messagesInRoom = state.messages.filter(
-        m => m.sentIn?.id === currentRoom.id,
+    const messagesInGroup = state.messages.filter(
+        m => m.sentIn?.id === currentGroup.id,
     )
-    const sortedMessages = [...orderBy(messagesInRoom, 'receivedAt', 'asc')]
+    const sortedMessages = [...orderBy(messagesInGroup, 'receivedAt', 'asc')]
 
     useEffect(() => {
         // announce presence
-        enterMucRoom(currentRoom)
+        enterMucRoom(currentGroup)
         // TODO: some new messages will be received automatically after
         // enterMucRoom is called but we should check archive here
         // to make sure we get them all
-    }, [currentRoom, enterMucRoom])
+    }, [currentGroup, enterMucRoom])
 
     return (
         <View style={styles(theme).container}>
             <MessagesList messages={sortedMessages} multiUserChat />
             <MessageInput
                 onMessageSubmitted={messageText => {
-                    console.info('send message')
-                    console.info(messageText)
                     sendGroupMessage({
-                        toRoom: currentRoom.id,
+                        toRoom: currentGroup.id,
                         text: messageText,
                     })
                     // TODO: add message locally and validate later
@@ -53,7 +51,7 @@ const RoomChat: React.FC<Props> = ({ navigation, route }: Props) => {
                     //             id: randomId(),
                     //             content: messageText,
                     //             sentBy: new Member({ username: 'me' }),
-                    //             sentIn: currentRoom,
+                    //             sentIn: currentGroup,
                     //             sentAt: Date.now(),
                     //         }),
                     //     ),
@@ -73,4 +71,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomChat
+export default GroupChat

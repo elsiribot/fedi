@@ -9,17 +9,17 @@ import Header from '../../ui/Header'
 import { t } from 'i18next'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 
-type RoomChatRouteProp = RouteProp<RootStackParamList, 'RoomChat'>
+type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
 
-const RoomHeader: React.FC<{}> = () => {
+const GroupHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<RoomChatRouteProp>()
-    const { room } = route.params
+    const route = useRoute<GroupChatRouteProp>()
+    const { group } = route.params
 
-    // Mocked roomLink format: fedi:room:uniqueRoomId::userDefinedRoomName
-    // If userDefinedRoomName is not provided, assume it is a new room
-    const headerText = room.name || t('feature.community.new-room')
+    // Mocked groupLink format: fedi:group:uniqueGroupId::userDefinedGroupName
+    // If userDefinedGroupName is not provided, assume it is a new group
+    const headerText = group.name || t('feature.community.new-group')
 
     return (
         <Header
@@ -29,16 +29,16 @@ const RoomHeader: React.FC<{}> = () => {
             headerCenter={
                 <Pressable
                     // if this is a DirectChat, header press is disabled
-                    disabled={room === undefined}
-                    style={styles(theme).roomNameContainer}
+                    disabled={group === undefined}
+                    style={styles(theme).groupNameContainer}
                     onPress={() => {
-                        navigation.navigate('RoomAdmin', { room })
+                        navigation.navigate('GroupAdmin', { group })
                     }}>
                     <Image
-                        style={styles(theme).roomIcon}
+                        style={styles(theme).groupIcon}
                         source={Images.NewRoom}
                     />
-                    <Text bold style={styles(theme).roomNameText}>
+                    <Text bold style={styles(theme).groupNameText}>
                         {headerText}
                     </Text>
                 </Pressable>
@@ -93,14 +93,14 @@ const styles = (theme: Theme) =>
             height: theme.sizes.sm,
             width: theme.sizes.sm,
         },
-        roomNameText: {
+        groupNameText: {
             marginLeft: theme.spacing.sm,
         },
-        roomIcon: {
+        groupIcon: {
             height: theme.sizes.sm,
             width: theme.sizes.sm,
         },
-        roomNameContainer: {
+        groupNameContainer: {
             padding: theme.spacing.sm,
             flexDirection: 'row',
             alignItems: 'center',
@@ -108,4 +108,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomHeader
+export default GroupHeader
