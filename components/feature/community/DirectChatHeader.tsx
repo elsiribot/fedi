@@ -28,7 +28,7 @@ const DirectChatHeader: React.FC<{}> = () => {
                     style={styles(theme).memberContainer}
                     onPress={() => {
                         // TODO: implement admin settings for 1on1 chat
-                        // navigation.navigate('RoomAdmin', { room })
+                        // navigation.navigate('GroupAdmin', { group })
                     }}>
                     <HoloAvatar
                         title={stringUtils.getInitialsFromName(member.username)}

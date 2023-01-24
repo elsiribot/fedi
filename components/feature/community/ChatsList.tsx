@@ -4,39 +4,38 @@ import { t } from 'i18next'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { DEFAULT_ROOM_NAME } from '../../../constants'
+import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { useCommunityContext } from '../../../state/contexts/CommunityContext'
-import { Message, MSats, Room } from '../../../types'
+import { Chat, Group, Message, MSats } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
-import RoomTile from './RoomTile'
+import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
-// const CIRCLE_SIZE = WINDOW_WIDTH * 0.25
 
-const RoomsList: React.FC<{}> = () => {
+const ChatsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { authenticatedMember, rooms, messages } = useCommunityContext().state
+    const { authenticatedMember, groups, messages } =
+        useCommunityContext().state
 
-    const renderRoom: ListRenderItem<Room> = ({ item }) => {
+    const renderChat: ListRenderItem<Chat> = ({ item }) => {
         return (
-            <RoomTile
-                room={item}
-                selectRoom={(room: Room) => {
-                    console.log('go to room detail', room.id)
-                    if (room.members?.length === 1) {
+            <ChatTile
+                chat={item}
+                selectChat={(chat: Chat) => {
+                    if (chat.members?.length === 1) {
                         navigation.navigate('DirectChat', {
-                            member: room.members[0],
+                            member: chat.members[0],
                         })
                     } else {
                         navigation.navigate('GroupChat', {
-                            room: new Room({
-                                id: room.id,
-                                name: room.name,
-                                invitationCode: Room.encodeInvitationLink(
-                                    room.id,
-                                    room.name || DEFAULT_ROOM_NAME,
+                            group: new Group({
+                                id: chat.id,
+                                name: chat.name,
+                                invitationCode: Group.encodeInvitationLink(
+                                    chat.id,
+                                    chat.name || DEFAULT_GROUP_NAME,
                                 ),
                             }),
                         })
@@ -50,23 +49,23 @@ const RoomsList: React.FC<{}> = () => {
     const directMessages = messages.filter(m => !m.sentIn)
     // console.debug('directMessages', directMessages)
 
-    // Produce a set of direct chat rooms from all direct messages
-    const directChats: Room[] = authenticatedMember?.username
-        ? directMessages.reduce((roomsResult: Room[], m: Message) => {
+    // Produce a set of direct chats from all direct messages
+    const directChats: Chat[] = authenticatedMember?.username
+        ? directMessages.reduce((chatsResult: Chat[], m: Message) => {
               // Determine the other member that is not the authenticatedMember
               // since they may have sent or received the message
               let otherMember = m.sentTo
               if (m.sentTo?.username === authenticatedMember?.username) {
                   otherMember = m.sentBy
               }
-              const existingRoomIndex = roomsResult.findIndex(
-                  r => r.id === otherMember?.username,
+              const existingChatIndex = chatsResult.findIndex(
+                  c => c.id === otherMember?.username,
               )
 
-              if (existingRoomIndex === -1) {
-                  // Add the room if it doesn't exist
-                  roomsResult.push(
-                      new Room({
+              if (existingChatIndex === -1) {
+                  // Add the chat if it doesn't exist
+                  chatsResult.push(
+                      new Chat({
                           id: otherMember?.username,
                           name: otherMember?.username,
                           members: [otherMember],
@@ -83,14 +82,14 @@ const RoomsList: React.FC<{}> = () => {
                               : m.content,
                       }),
                   )
-                  return roomsResult
+                  return chatsResult
               } else {
-                  // Room exists, check if message previews should be updated
-                  const updatedRoom = roomsResult[existingRoomIndex]
-                  if (updatedRoom.lastReceivedTimestamp! < m.sentAt!) {
-                      updatedRoom.lastReceivedTimestamp = m.sentAt
+                  // Chat exists, check if message previews should be updated
+                  const updatedChat = chatsResult[existingChatIndex]
+                  if (updatedChat.lastReceivedTimestamp! < m.sentAt!) {
+                      updatedChat.lastReceivedTimestamp = m.sentAt
                       // If last message is a payment, render details
-                      updatedRoom.messagePreview = m.payment
+                      updatedChat.messagePreview = m.payment
                           ? t('feature.community.payment-requested', {
                                 name: otherMember?.username,
                                 amount: amountUtils.msatToSat(
@@ -100,22 +99,22 @@ const RoomsList: React.FC<{}> = () => {
                             })
                           : m.content
 
-                      roomsResult = roomsResult.map((r: Room, i) =>
-                          i === existingRoomIndex ? updatedRoom : r,
+                      chatsResult = chatsResult.map((c: Chat, i) =>
+                          i === existingChatIndex ? updatedChat : c,
                       )
                   }
               }
-              return roomsResult
-          }, [] as Room[])
+              return chatsResult
+          }, [] as Chat[])
         : []
     // console.debug('directChats', directChats)
 
     return (
         <FlatList
             style={styles(theme).container}
-            data={[...rooms, ...directChats]}
-            renderItem={renderRoom}
-            keyExtractor={(item: Room) => `${item.id}`}
+            data={[...groups, ...directChats]}
+            renderItem={renderChat}
+            keyExtractor={(item: Chat) => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content
             // for fixed-size list items
             getItemLayout={(data, index) => ({
@@ -135,4 +134,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomsList
+export default ChatsList

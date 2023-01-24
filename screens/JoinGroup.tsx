@@ -9,29 +9,29 @@ import { useCameraDevices } from 'react-native-vision-camera'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
-import { DEFAULT_ROOM_NAME } from '../constants'
+import { DEFAULT_GROUP_NAME } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useXmpp } from '../state/hooks'
-import { Room } from '../types'
+import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'JoinRoom'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'JoinGroup'>
 
-const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
+const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const { getUniqueRoomName } = useXmpp()
+    const { getUniqueGroupId } = useXmpp()
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            if (input.startsWith('fedi:room:')) {
-                console.info('fedi community room detected', input)
+            if (input.startsWith('fedi:group:')) {
+                console.info('fedi community group detected', input)
                 navigation.replace('GroupChat', {
-                    room: Room.decodeInvitationLink(input),
+                    group: Group.decodeInvitationLink(input),
                 })
             } else {
-                toast?.show(t('feature.community.invalid-room'), 3000)
+                toast?.show(t('feature.community.invalid-group'), 3000)
             }
         },
         [navigation, toast, t],
@@ -42,17 +42,17 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
         handleUserInput(text)
     }, [handleUserInput])
 
-    const createRoomInvite = async () => {
-        const roomCode = await getUniqueRoomName()
-        const roomName = DEFAULT_ROOM_NAME
-        const roomLink = Room.encodeInvitationLink(roomCode, roomName)
+    const createGroupInvite = async () => {
+        const groupId = await getUniqueGroupId()
+        const groupName = DEFAULT_GROUP_NAME
+        const groupLink = Group.encodeInvitationLink(groupId, groupName)
 
-        // TODO: room link should be a deep link with app download fallback
-        navigation.replace('RoomInvite', {
-            room: new Room({
-                id: roomCode,
-                name: roomName,
-                invitationCode: roomLink,
+        // TODO: group link should be a deep link with app download fallback
+        navigation.replace('GroupInvite', {
+            group: new Group({
+                id: groupId,
+                name: groupName,
+                invitationCode: groupLink,
             }),
         })
     }
@@ -86,8 +86,8 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
                     />
                     <LineBreak />
                     <Button
-                        title={t('feature.community.create-a-room')}
-                        onPress={createRoomInvite}
+                        title={t('feature.community.create-a-group')}
+                        onPress={createGroupInvite}
                     />
                     <LineBreak />
                 </>
@@ -105,8 +105,8 @@ const JoinRoom: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <Button
                     containerStyle={styles(theme).button}
-                    title={t('feature.community.create-a-room')}
-                    onPress={createRoomInvite}
+                    title={t('feature.community.create-a-group')}
+                    onPress={createGroupInvite}
                 />
             </View>
         </CameraPermissionsRequired>
@@ -132,4 +132,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default JoinRoom
+export default JoinGroup

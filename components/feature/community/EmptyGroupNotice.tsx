@@ -5,30 +5,31 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
+import { Props as GroupChatProps } from '../../../screens/GroupChat'
 import { NavigationHook } from '../../../types/navigation'
 
 type GroupChatRouteProp = GroupChatProps['route']
 
-const EmptyRoomNotice: React.FC<{}> = () => {
+const EmptyGroupNotice: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupChatRouteProp>()
-    const { room } = route.params
+    const { group } = route.params
 
     return (
         <View style={styles(theme).container}>
             <Image style={styles(theme).icon} source={Images.Search} />
             <Text medium style={styles(theme).text}>
-                {t('feature.community.no-one-is-in-this-room')}
+                {t('feature.community.no-one-is-in-this-group')}
             </Text>
             <Text medium style={styles(theme).text}>
                 {t('feature.community.try-inviting-someone')}
             </Text>
             <Button
                 containerStyle={styles(theme).button}
-                title={t('feature.community.invite-to-room')}
-                onPress={() => navigation.navigate('RoomInvite', { room })}
+                title={t('feature.community.invite-to-group')}
+                onPress={() => navigation.navigate('GroupInvite', { group })}
             />
         </View>
     )
@@ -61,4 +62,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default EmptyRoomNotice
+export default EmptyGroupNotice

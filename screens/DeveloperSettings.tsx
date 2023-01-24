@@ -7,15 +7,15 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { LightningGateway } from '../bridge'
 import {
+    COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
-    COMMUNITY_ROOMS_PERSISTENCE_KEY,
 } from '../constants'
 import {
-    DEFAULT_ROOMS,
+    DEFAULT_GROUPS,
+    receiveGroups,
     receiveMembersSeen,
     receiveMessages,
-    receiveRooms,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
@@ -105,11 +105,11 @@ const DeveloperSettings: React.FC<Props> = () => {
             </View>
             <Button
                 size="sm"
-                title={'Delete all rooms, messages, & members'}
+                title={'Delete all groups, messages, & members'}
                 onPress={() => {
                     communityDispatch(receiveMembersSeen([]))
                     communityDispatch(receiveMessages([]))
-                    communityDispatch(receiveRooms(DEFAULT_ROOMS))
+                    communityDispatch(receiveGroups(DEFAULT_GROUPS))
                     AsyncStorage.setItem(
                         COMMUNITY_MEMBERS_PERSISTENCE_KEY,
                         JSON.stringify({ members: [] }),
@@ -119,8 +119,8 @@ const DeveloperSettings: React.FC<Props> = () => {
                         JSON.stringify({ messages: [] }),
                     )
                     AsyncStorage.setItem(
-                        COMMUNITY_ROOMS_PERSISTENCE_KEY,
-                        JSON.stringify({ rooms: DEFAULT_ROOMS }),
+                        COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                        JSON.stringify({ groups: DEFAULT_GROUPS }),
                     )
                 }}
             />

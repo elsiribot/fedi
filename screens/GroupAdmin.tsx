@@ -11,14 +11,14 @@ import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
-    'RoomAdmin'
+    'GroupAdmin'
 >
 
-const RoomAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
+const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { state, dispatch } = useFederationsContext()
-    const { room } = route.params
+    const { group } = route.params
     const { selectedFederation } = state
 
     return (
@@ -29,17 +29,17 @@ const RoomAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     style={styles(theme).profileCircle}
                     imageStyle={styles(theme).circleBorder}>
                     <Image
-                        style={styles(theme).roomIcon}
+                        style={styles(theme).groupIcon}
                         source={Images.Room}
                     />
                 </ImageBackground>
-                <Text h2 style={styles(theme).roomNameText}>
-                    {room.name}
+                <Text h2 style={styles(theme).groupNameText}>
+                    {group.name}
                 </Text>
             </View>
             <View style={styles(theme).sectionContainer}>
                 <Text style={styles(theme).sectionTitle}>
-                    {t('words.room')}
+                    {t('words.group')}
                 </Text>
                 <SettingsItem
                     disabled
@@ -49,17 +49,17 @@ const RoomAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 />
                 <SettingsItem
                     imageSource={Images.Room}
-                    label={t('feature.community.invite-to-room')}
+                    label={t('feature.community.invite-to-group')}
                     onPress={() => {
-                        navigation.navigate('RoomInvite', {
-                            room,
+                        navigation.navigate('GroupInvite', {
+                            group,
                         })
                     }}
                 />
                 <SettingsItem
                     disabled
                     imageSource={Images.LeaveRoom}
-                    label={t('feature.community.leave-room')}
+                    label={t('feature.community.leave-group')}
                     onPress={() => {}}
                 />
                 <SettingsItem
@@ -122,10 +122,10 @@ const styles = (theme: Theme) =>
         circleBorder: {
             borderRadius: theme.sizes.adminProfileCircle * 0.5,
         },
-        roomNameText: {
+        groupNameText: {
             textAlign: 'center',
         },
-        roomIcon: {
+        groupIcon: {
             height: theme.sizes.md,
             width: theme.sizes.md,
         },
@@ -142,4 +142,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomAdmin
+export default GroupAdmin

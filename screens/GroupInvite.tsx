@@ -9,36 +9,36 @@ import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../assets/images'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'RoomInvite'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>
 
 const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 
-const RoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
+const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { room } = route.params
+    const { group } = route.params
 
     const copyToClipboard = () => {
-        Clipboard.setString(room.invitationCode as string)
+        Clipboard.setString(group.invitationCode as string)
     }
 
-    const viewRoom = () => {
-        console.info(room)
-        navigation.navigate('GroupChat', { room })
+    const viewGroup = () => {
+        console.info(group)
+        navigation.navigate('GroupChat', { group })
     }
 
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).qrCodeContainer}>
                 <QRCode
-                    value={room.invitationCode}
+                    value={group.invitationCode}
                     size={QR_CODE_SIZE}
                     logo={Images.FediQrLogo}
                 />
             </View>
             <View style={styles(theme).copyInviteLinkContainer}>
                 <Text style={styles(theme).inviteLinkText} numberOfLines={1}>
-                    {room.invitationCode}
+                    {group.invitationCode}
                 </Text>
                 <TouchableOpacity
                     style={styles(theme).copyButtonContainer}
@@ -62,8 +62,8 @@ const RoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                 containerStyle={styles(theme).buttonContainer}
                 titleStyle={styles(theme).buttonTitle}
                 buttonStyle={styles(theme).button}
-                title={t('feature.community.view-room')}
-                onPress={viewRoom}
+                title={t('feature.community.view-group')}
+                onPress={viewGroup}
             />
         </View>
     )
@@ -130,4 +130,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomInvite
+export default GroupInvite

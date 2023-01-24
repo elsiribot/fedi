@@ -12,11 +12,11 @@ import React, {
 } from 'react'
 
 import {
+    COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
-    COMMUNITY_ROOMS_PERSISTENCE_KEY,
-    FEDI_GENERAL_CHANNEL_ROOM,
-    FEDI_RECOVERY_SUPPORT_ROOM,
+    FEDI_GENERAL_CHANNEL_GROUP,
+    FEDI_RECOVERY_SUPPORT_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
     XMPP_MOCK_PASSWORD,
@@ -24,13 +24,13 @@ import {
     XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
-import { Member, Message, Room } from '../../types'
+import { Group, Member, Message } from '../../types'
 import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
 
-export const DEFAULT_ROOMS: Room[] = [
-    FEDI_GENERAL_CHANNEL_ROOM,
-    FEDI_RECOVERY_SUPPORT_ROOM,
+export const DEFAULT_GROUPS: Group[] = [
+    FEDI_GENERAL_CHANNEL_GROUP,
+    FEDI_RECOVERY_SUPPORT_GROUP,
 ]
 
 // Define the structure of this Context and its initial state
@@ -40,7 +40,7 @@ interface CommunityContextState {
     username: string | null
     userIsOnline: boolean
     messages: Message[]
-    rooms: Room[]
+    groups: Group[]
     membersSeen: Member[]
 }
 const initialState: CommunityContextState = {
@@ -49,7 +49,7 @@ const initialState: CommunityContextState = {
     userIsOnline: false,
     authenticatedMember: null,
     messages: [],
-    rooms: DEFAULT_ROOMS,
+    groups: DEFAULT_GROUPS,
     membersSeen: [],
 }
 type AppState = typeof initialState
@@ -58,16 +58,16 @@ type AppState = typeof initialState
 enum ActionType {
     ADD_TO_MEMBERS_SEEN = 'ADD_TO_MEMBERS_SEEN',
     ADD_TO_MESSAGES = 'ADD_TO_MESSAGES',
-    ADD_TO_ROOMS = 'ADD_TO_ROOMS',
+    ADD_TO_GROUPS = 'ADD_TO_GROUPS',
     CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
-    RECEIVE_ROOMS = 'RECEIVE_ROOMS',
+    RECEIVE_GROUPS = 'RECEIVE_GROUPS',
     RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
     SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
-    UPDATE_ROOM = 'UPDATE_ROOM',
-    UPDATE_ROOM_MESSAGE_PREVIEW = 'UPDATE_ROOM_MESSAGE_PREVIEW',
+    UPDATE_GROUP = 'UPDATE_GROUP',
+    UPDATE_GROUP_MESSAGE_PREVIEW = 'UPDATE_GROUP_MESSAGE_PREVIEW',
     UPDATE_MEMBER = 'UPDATE_MEMBER',
     UPDATE_MESSAGE = 'UPDATE_MESSAGE',
     UPDATE_MEMBERS_SEEN = 'UPDATE_MEMBERS_SEEN',
@@ -97,10 +97,10 @@ export function addToMessages(message: Message): Action {
         payload: message,
     }
 }
-export function addToRooms(room: Room): Action {
+export function addToGroups(group: Group): Action {
     return {
-        type: ActionType.ADD_TO_ROOMS,
-        payload: room,
+        type: ActionType.ADD_TO_GROUPS,
+        payload: group,
     }
 }
 export function changeUserIsOnline(online: boolean): Action {
@@ -121,10 +121,10 @@ export function receiveMessages(messages: Message[]): Action {
         payload: messages,
     }
 }
-export function receiveRooms(rooms: Room[]): Action {
+export function receiveGroups(groups: Group[]): Action {
     return {
-        type: ActionType.RECEIVE_ROOMS,
-        payload: rooms,
+        type: ActionType.RECEIVE_GROUPS,
+        payload: groups,
     }
 }
 export function setAuthenticatedMember(member: Member): Action {
@@ -145,16 +145,16 @@ export function updateMessage(message: Message): Action {
         payload: message,
     }
 }
-export function updateRoomMessagePreview(message: Message): Action {
+export function updateGroupMessagePreview(message: Message): Action {
     return {
-        type: ActionType.UPDATE_ROOM_MESSAGE_PREVIEW,
+        type: ActionType.UPDATE_GROUP_MESSAGE_PREVIEW,
         payload: message,
     }
 }
-export function updateRoom(room: Room): Action {
+export function updateGroup(group: Group): Action {
     return {
-        type: ActionType.UPDATE_ROOM,
-        payload: room,
+        type: ActionType.UPDATE_GROUP,
+        payload: group,
     }
 }
 export function resetCommunityState(): Action {
@@ -234,35 +234,35 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
-        case ActionType.ADD_TO_ROOMS: {
-            const roomIndex = state.rooms.findIndex(
-                (r: Room) => r.id === action.payload.id,
+        case ActionType.ADD_TO_GROUPS: {
+            const groupIndex = state.groups.findIndex(
+                (g: Group) => g.id === action.payload.id,
             )
 
-            if (roomIndex === -1) {
-                // New rooms get added
+            if (groupIndex === -1) {
+                // New groups get added
                 return {
                     ...state,
-                    rooms: [...state.rooms, new Room(action.payload)],
+                    groups: [...state.groups, new Group(action.payload)],
                 }
             } else if (
                 // Should we deep compare or just use ID?
-                // isEqual(action.payload, state.rooms[roomIndex])
-                action.payload.id === state.rooms[roomIndex].id
+                // isEqual(action.payload, state.groups[groupIndex])
+                action.payload.id === state.groups[groupIndex].id
             ) {
-                // Avoid re-render, this room is already added
+                // Avoid re-render, this group is already added
                 // and has not changed
                 return state
             } else {
-                // room is already added but has changed...
-                const updatedRoom = {
-                    ...state.rooms[roomIndex],
+                // group is already added but has changed...
+                const updatedGroup = {
+                    ...state.groups[groupIndex],
                     ...action.payload,
                 }
                 return {
                     ...state,
-                    rooms: state.rooms.map((r: Room, i) =>
-                        i === roomIndex ? updatedRoom : r,
+                    groups: state.groups.map((g: Group, i) =>
+                        i === groupIndex ? updatedGroup : g,
                     ),
                 }
             }
@@ -282,10 +282,10 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 messages: [...action.payload].map(m => new Message(m)),
             }
-        case ActionType.RECEIVE_ROOMS:
+        case ActionType.RECEIVE_GROUPS:
             return {
                 ...state,
-                rooms: [...action.payload].map(r => new Room(r)),
+                groups: [...action.payload].map(r => new Group(r)),
             }
         case ActionType.SET_AUTHENTICATED_MEMBER:
             return {
@@ -330,33 +330,33 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
-        case ActionType.UPDATE_ROOM_MESSAGE_PREVIEW: {
+        case ActionType.UPDATE_GROUP_MESSAGE_PREVIEW: {
             const newMessage = action.payload as Message
-            const roomIndex = state.rooms.findIndex(
-                (r: Room) => r.id === newMessage.sentIn?.id,
+            const groupIndex = state.groups.findIndex(
+                (g: Group) => g.id === newMessage.sentIn?.id,
             )
 
-            if (roomIndex === -1) {
-                // Room not found, no state change
+            if (groupIndex === -1) {
+                // Group not found, no state change
                 return state
             } else {
-                let updatedRoom = state.rooms[roomIndex]
+                let updatedGroup = state.groups[groupIndex]
 
                 if (
-                    !updatedRoom.lastReceivedTimestamp ||
-                    updatedRoom.lastReceivedTimestamp < newMessage.receivedAt!
+                    !updatedGroup.lastReceivedTimestamp ||
+                    updatedGroup.lastReceivedTimestamp < newMessage.receivedAt!
                 ) {
                     // update preview if this is the first message received or
                     // if there this is a newer message
-                    updatedRoom = {
-                        ...updatedRoom,
+                    updatedGroup = {
+                        ...updatedGroup,
                         lastReceivedTimestamp: newMessage.receivedAt,
                         messagePreview: newMessage.content,
                     }
                     return {
                         ...state,
-                        rooms: state.rooms.map((r: Room, i) =>
-                            i === roomIndex ? updatedRoom : r,
+                        groups: state.groups.map((g: Group, i) =>
+                            i === groupIndex ? updatedGroup : g,
                         ),
                     }
                 } else {
@@ -365,30 +365,30 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
-        case ActionType.UPDATE_ROOM: {
-            const roomIndex = state.rooms.findIndex(
-                (r: Room) => r.id === action.payload.id,
+        case ActionType.UPDATE_GROUP: {
+            const groupIndex = state.groups.findIndex(
+                (g: Group) => g.id === action.payload.id,
             )
 
-            if (roomIndex === -1) {
-                // New rooms get added
+            if (groupIndex === -1) {
+                // New groups get added
                 return {
                     ...state,
-                    rooms: [...state.rooms, new Room(action.payload)],
+                    groups: [...state.groups, new Group(action.payload)],
                 }
-            } else if (isEqual(action.payload, state.rooms[roomIndex])) {
-                // Avoid re-render, this room has not changed
+            } else if (isEqual(action.payload, state.groups[groupIndex])) {
+                // Avoid re-render, this group has not changed
                 return state
             } else {
-                // room needs an update...
-                const updatedRoom = {
-                    ...state.rooms[roomIndex],
+                // group needs an update...
+                const updatedGroup = {
+                    ...state.groups[groupIndex],
                     ...action.payload,
                 }
                 return {
                     ...state,
-                    rooms: state.rooms.map((r: Room, i) =>
-                        i === roomIndex ? updatedRoom : r,
+                    groups: state.groups.map((g: Group, i) =>
+                        i === groupIndex ? updatedGroup : g,
                     ),
                 }
             }
@@ -546,11 +546,11 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                 if (stanza.getAttr('type') === 'groupchat') {
                     // Handle incoming messages from GroupChat
                     const from = stanza.getAttr('from')
-                    const room = from.split('@')[0]
+                    const group = from.split('@')[0]
                     const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
                     const bodyText = stanza.getChildText('body') as string
 
-                    console.info(from, room, sender)
+                    console.info(from, group, sender)
                     console.info(bodyText)
                     if (bodyText) {
                         // environmentState.toast?.show(body, 5000)
@@ -558,15 +558,15 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                             id: stanza.attr('id'),
                             content: bodyText,
                             receivedAt: Date.now() / 1000,
-                            sentIn: new Room({
-                                id: room,
+                            sentIn: new Group({
+                                id: group,
                             }),
                             sentBy: new Member({
                                 jid: jid(sender, XMPP_DOMAIN, XMPP_RESOURCE),
                             }),
                         })
                         dispatch(addToMessages(newMessage))
-                        dispatch(updateRoomMessagePreview(newMessage))
+                        dispatch(updateGroupMessagePreview(newMessage))
                     }
                 } else if (stanza.getAttr('type') === 'chat') {
                     // Handle incoming messages from DirectChat
@@ -589,7 +589,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         dispatch(updateMessage(newMessage))
                     } else {
                         dispatch(addToMessages(newMessage))
-                        dispatch(updateRoomMessagePreview(newMessage))
+                        dispatch(updateGroupMessagePreview(newMessage))
                     }
                 } else if (
                     stanza.getChild('result')?.getAttr('queryid') ===
@@ -622,7 +622,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         dispatch(updateMessage(newMessage))
                     } else {
                         dispatch(addToMessages(newMessage))
-                        dispatch(updateRoomMessagePreview(newMessage))
+                        dispatch(updateGroupMessagePreview(newMessage))
                     }
                 }
             }
@@ -658,17 +658,17 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         selectedFederation?.username,
     ])
 
-    // Update async storage when rooms are added
+    // Update async storage when groups are added
     useEffect(() => {
-        console.log('useEffect: rooms')
-        if (state.rooms.length > DEFAULT_ROOMS.length) {
-            console.log('storing', state.rooms.length, 'rooms')
+        console.log('useEffect: groups')
+        if (state.groups.length > DEFAULT_GROUPS.length) {
+            console.log('storing', state.groups.length, 'groups')
             AsyncStorage.setItem(
-                COMMUNITY_ROOMS_PERSISTENCE_KEY,
-                JSON.stringify({ rooms: state.rooms }),
+                COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                JSON.stringify({ groups: state.groups }),
             )
         }
-    }, [state.rooms])
+    }, [state.groups])
 
     // Update async storage when members are added
     useEffect(() => {

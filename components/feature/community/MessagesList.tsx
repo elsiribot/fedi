@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { Message } from '../../../types'
-import EmptyRoomNotice from './EmptyRoomNotice'
+import EmptyGroupNotice from './EmptyGroupNotice'
 import MessageItem from './MessageItem'
 
 type MessagesListProps = {
@@ -30,7 +30,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             style={styles(theme).container}
             contentContainerStyle={styles(theme).contentContainer}
             onContentSizeChange={() => listRef.current?.scrollToEnd()}
-            ListEmptyComponent={multiUserChat ? <EmptyRoomNotice /> : null}
+            ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
         />
     )
 }

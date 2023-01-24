@@ -33,9 +33,9 @@ import {
     validateRecoveryFile,
 } from '../../bridge'
 import { XMPP_MUC_DOMAIN } from '../../constants'
-import { Member, Message, MSats, Room, Sats } from '../../types'
+import { Group, Member, Message, MSats, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
-import { addToRooms, useCommunityContext } from '../contexts/CommunityContext'
+import { addToGroups, useCommunityContext } from '../contexts/CommunityContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -254,7 +254,7 @@ export const useXmpp = () => {
 
         */
         enterMucRoom: useCallback(
-            async (room: Room) => {
+            async (group: Group) => {
                 const { local, domain, resource } = xmppClient?.jid as JID
                 const fromUser = `${local}@${domain}/${resource}`
                 const onStanzaReceived = async (stanza: Element) => {
@@ -276,7 +276,7 @@ export const useXmpp = () => {
                                         'iq',
                                         {
                                             from: fromUser,
-                                            to: `${room.id}@${XMPP_MUC_DOMAIN}`,
+                                            to: `${group.id}@${XMPP_MUC_DOMAIN}`,
                                             id: 'create-instant-muc-room',
                                             type: 'set',
                                         },
@@ -300,7 +300,7 @@ export const useXmpp = () => {
                                     'stanza',
                                     onStanzaReceived,
                                 )
-                                dispatch(addToRooms(room))
+                                dispatch(addToGroups(group))
                             }
                         })
                     }
@@ -320,7 +320,7 @@ export const useXmpp = () => {
                         'presence',
                         {
                             from: fromUser,
-                            to: `${room.id}@${XMPP_MUC_DOMAIN}/${local}`,
+                            to: `${group.id}@${XMPP_MUC_DOMAIN}/${local}`,
                             id: 'enter-muc-room',
                         },
                         xml('x', { xmlns: 'http://jabber.org/protocol/muc' }),
@@ -371,7 +371,7 @@ export const useXmpp = () => {
             },
             [xmppClient],
         ),
-        getUniqueRoomName: useCallback((): Promise<string> => {
+        getUniqueGroupId: useCallback((): Promise<string> => {
             return new Promise(resolve => {
                 // Make sure the stream is open before sending the
                 // registration request

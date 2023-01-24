@@ -21,7 +21,7 @@ const getInitialsFromName = (name: string): string => {
     return initials.toUpperCase()
 }
 
-const RoomHeader: React.FC<{}> = () => {
+const GroupHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const route = useRoute<ChatWalletRouteProp>()
     const { recipient } = route.params
@@ -60,4 +60,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomHeader
+export default GroupHeader
