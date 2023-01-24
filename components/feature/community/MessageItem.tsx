@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
+    Linking,
     Pressable,
     StyleProp,
     StyleSheet,
@@ -9,6 +10,7 @@ import {
     View,
     ViewStyle,
 } from 'react-native'
+import Hyperlink from 'react-native-hyperlink'
 
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { Message } from '../../../types'
@@ -63,6 +65,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     const shouldShowTimestamp = sentAt !== undefined
 
+    const renderMessageContent = () => {
+        // if (message.content.includes('http://') || message.content.includes('https://')) {
+
+        // }
+
+        return <Hyperlink />
+    }
+
     return (
         <View style={styles(theme).container}>
             {shouldShowTimestamp && (
@@ -105,9 +115,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         {payment ? (
                             <PaymentMessage message={message} />
                         ) : (
-                            <Text caption medium style={textStyles}>
-                                {message.content}
-                            </Text>
+                            <Hyperlink
+                                linkStyle={
+                                    sentByMe
+                                        ? styles(theme).outgoingLinkedText
+                                        : styles(theme).incomingLinkedText
+                                }
+                                onPress={url => Linking.openURL(url)}>
+                                <Text caption medium style={textStyles}>
+                                    {message.content}
+                                </Text>
+                            </Hyperlink>
                         )}
                     </View>
                 </View>
@@ -168,6 +186,14 @@ const styles = (theme: Theme) =>
         },
         orangeBubble: {
             backgroundColor: theme.colors.orange,
+        },
+        incomingLinkedText: {
+            textDecorationLine: 'underline',
+            color: theme.colors.blue,
+        },
+        outgoingLinkedText: {
+            textDecorationLine: 'underline',
+            color: theme.colors.primary,
         },
         messageText: {
             textAlign: 'left',
