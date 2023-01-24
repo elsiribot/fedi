@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::anyhow;
-use fedimint_api::config::Node;
+use fedimint_api::config::ApiEndpoint;
 use mint_client::api::WsFederationConnect;
 use serde::Serialize;
 
@@ -24,18 +24,23 @@ pub fn hacky_lightning_invoice_fee(
 pub struct FedimintFederation {
     pub name: String,
     pub connect_info: WsFederationConnect,
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<ApiEndpoint>,
     pub balance: fedimint_api::Amount,
+    pub social_recovery_active: bool,
 }
 
 // FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
     let client_config = federation.client.config().0;
+    let balance = federation.client.coins().await.total_amount();
+    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+
     FedimintFederation {
         name: client_config.federation_name.clone(),
         connect_info: WsFederationConnect::from(&client_config),
         nodes: client_config.nodes.clone(),
-        balance: federation.client.coins().await.total_amount(),
+        balance,
+        social_recovery_active,
     }
 }
 

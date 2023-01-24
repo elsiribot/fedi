@@ -1,13 +1,6 @@
 use serde::Serialize;
 
-use crate::tx::Transaction;
-
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct BalanceEvent {
-    pub federation_id: String,
-    pub balance: u64,
-}
+use crate::{recovery::SocialRecoveryApproval, tx::Transaction, types::FedimintFederation};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -20,7 +13,8 @@ pub struct TransactionEvent {
 #[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryEvent {
     pub federation_id: String,
-    // TODO: add payload
+    pub approvals: Vec<SocialRecoveryApproval>,
+    pub remaining: usize,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -36,9 +30,9 @@ pub struct LogEvent {
     pub log: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum Event {
-    Balance { event: BalanceEvent },
+    Federation { event: FedimintFederation },
     Transaction { event: TransactionEvent },
     SocialRecovery { event: SocialRecoveryEvent },
     RecoveryFileCreation { event: RecoveryFileCreationEvent },
@@ -46,12 +40,9 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn balance(federation_id: String, balance: u64) -> Self {
-        Self::Balance {
-            event: BalanceEvent {
-                federation_id,
-                balance,
-            },
+    pub async fn federation(fedimint_federation: FedimintFederation) -> Self {
+        Self::Federation {
+            event: fedimint_federation,
         }
     }
     pub fn transaction(federation_id: String, transaction: Transaction) -> Self {
@@ -62,18 +53,14 @@ impl Event {
             },
         }
     }
-    pub fn social_recovery(federation_id: String) -> Self {
-        Self::SocialRecovery {
-            event: SocialRecoveryEvent {
-                federation_id,
-            },
-        }
-    }
+    // pub fn social_recovery(federation_id: String) -> Self {
+    //     Self::SocialRecovery {
+    //         event: SocialRecoveryEvent { federation_id },
+    //     }
+    // }
     pub fn recovery_file_creation(federation_id: String) -> Self {
         Self::RecoveryFileCreation {
-            event: RecoveryFileCreationEvent {
-                federation_id,
-            },
+            event: RecoveryFileCreationEvent { federation_id },
         }
     }
     pub fn log(log: String) -> Self {
@@ -98,9 +85,9 @@ pub struct EventSinkWrapper {
 impl EventSinkWrapper {
     pub fn event(&self, event: &Event) {
         match event {
-            Event::Balance { event } => {
+            Event::Federation { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("balance".into(), body);
+                self.event_sink.event("federation".into(), body);
             }
             Event::Transaction { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");

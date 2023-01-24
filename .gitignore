@@ -22,3 +22,4 @@ Calculator.swift
 calculatorFFI.h
 .build
 .swiftpm
+calculator-swift/Sources/

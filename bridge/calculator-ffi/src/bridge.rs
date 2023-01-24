@@ -1,20 +1,23 @@
 use std::{
     collections::HashMap,
     default::Default,
-    fs::File,
+    fs::{self, File},
     path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
+    time::Duration,
 };
 
 use crate::{
     event::Event,
+    mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
+    recovery::{SocialRecoveryApproval, SocialRecoveryQr, SocialRecoveryStateKey},
     tx::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
     },
-    types::hacky_lightning_invoice_fee,
+    types::{federation_to_fedimint_federation, hacky_lightning_invoice_fee},
     EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
@@ -24,30 +27,44 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
-use fedimint_api::db::DatabaseTransaction;
-use fedimint_api::NumPeers;
-use fedimint_api::{config::ClientConfig, module::registry::ModuleDecoderRegistry};
+use fedi_social::common::{RecoveryId, VerificationDocument};
+use fedimint_api::{
+    config::{ClientConfig, ConfigResponse},
+    PeerId,
+};
+use fedimint_api::{db::Database, task::TaskHandle};
+use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
 use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
-    api::{WsFederationApi, WsFederationConnect},
-    query::CurrentConsensus,
-    UserClient, UserClientConfig,
+    api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
+    module_decode_stubs,
+    social::{RecoveryFile, SocialRecovery},
+    UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tokio::task::JoinHandle;
+use tracing::{debug, error, info};
 
 type FederationId = String;
 
-async fn get_federations(
+const GAP_LIMIT: usize = 100;
+pub const RECOVERY_FILENAME: &str = "backup.fedi";
+pub const VERIFICATION_FILENAME: &str = "verification.mp4";
+
+fn required_threashold_of(n: usize) -> usize {
+    n - ((n - 1) / 3)
+}
+
+async fn load_federations_from_disk(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
-) -> HashMap<FederationId, Arc<Federation>> {
-    let mut federations = HashMap::new();
+    task_group: &TaskGroup,
+) -> Vec<Federation> {
+    let mut federations = vec![];
     for element in data_dir.read_dir().unwrap() {
         let mut path = element.unwrap().path();
         if let Some(extension) = path.extension() {
@@ -56,9 +73,13 @@ async fn get_federations(
                 let cfg: UserClientConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
-                let client = UserClient::new(cfg.clone(), db.into(), Default::default()).await;
-                let federation = Arc::new(Federation::new(client, event_sink.clone()));
-                federations.insert(cfg.0.federation_name, federation);
+                let db = Database::new(db, module_decode_stubs());
+                let client =
+                    UserClient::new(cfg.clone(), module_decode_stubs(), db, Default::default())
+                        .await;
+                let federation =
+                    Federation::new(client, event_sink.clone(), task_group.make_subgroup().await);
+                federations.push(federation)
             }
         }
     }
@@ -68,44 +89,141 @@ async fn get_federations(
 pub struct Bridge {
     /// Where dbs & configs are stored. Result of calling getApplicationDocumentsDirectory() in Dart.
     pub data_dir: PathBuf,
-    pub clients: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
+    pub federations: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
-    pub pollers: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    pub task_group: TaskGroup,
 }
 
 impl Bridge {
-    // TODO: initialize all clients in data_dir
     pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
-        let federations = get_federations(&data_dir, event_sink.clone()).await;
+        // load federations from disk
+        let task_group = TaskGroup::new();
+        let mut federations_map = HashMap::new();
+        let federations_vec =
+            load_federations_from_disk(&data_dir, event_sink.clone(), &task_group).await;
 
-        // spawn pollers
-        let mut pollers = vec![];
-        for fed in federations.clone().into_values() {
-            let poller = tokio::spawn(async move { fed.event_loop().await });
-            pollers.push(poller);
+        // start pollers
+        for mut federation in federations_vec.into_iter() {
+            federation.start_pollers().await;
+            federations_map.insert(federation.name(), Arc::new(federation));
         }
 
         let bridge = Self {
             data_dir,
-            clients: Arc::new(Mutex::new(federations)),
-            pollers: Arc::new(Mutex::new(pollers)),
+            federations: Arc::new(Mutex::new(federations_map)),
+            task_group,
             event_sink,
         };
-        // TODO: this should start pollers for all federations ...
-        // or instantiating `Federation` should do so ...
         bridge
     }
-    /// Adds federation to "clients" and starts polling (if we haven't already joined)
-    pub async fn join_federation(&self, federation: Arc<Federation>) {
-        let federation_name = federation.client.config().0.federation_name;
-        let mut clients = self.clients.lock().await;
-        if !clients.contains_key(&federation_name) {
-            clients.insert(federation_name, federation.clone());
-            let poller = tokio::spawn(async move {
-                federation.event_loop().await;
-            });
-            self.pollers.lock().await.push(poller);
-        }
+
+    pub async fn stop_pollers(&self) -> Result<()> {
+        self.task_group
+            .clone()
+            .shutdown_join_all(Some(Duration::from_secs(3)))
+            .await
+    }
+
+    /// Adds federation to "federations" and starts polling (if we haven't already joined)
+    pub async fn join_federation(&self, connect_string: String) -> Result<Federation> {
+        let mut federation = Federation::join(
+            connect_string,
+            self.data_dir.clone(),
+            self.event_sink.clone(),
+            self.task_group.make_subgroup().await,
+        )
+        .await?;
+        let mut federations = self.federations.lock().await;
+        let federation_name = federation.name();
+        if !federations.contains_key(&federation_name) {
+            federation.start_pollers().await;
+            federations.insert(federation_name, Arc::new(federation.clone()));
+        };
+        Ok(federation)
+    }
+
+    pub async fn get_federation(&self, federation_id: &str) -> Option<Arc<Federation>> {
+        let lock = self.federations.lock().await;
+        lock.get(federation_id).map(|federation| federation.clone())
+    }
+
+    pub async fn recover_from_mnemonic(
+        &self,
+        federation_id: &str,
+        mnemonic: &Mnemonic,
+    ) -> Result<()> {
+        self.stop_pollers().await?;
+
+        let entropy = mnemonic.to_entropy();
+        let entropy: [u8; 16] = entropy[0..16]
+            .try_into()
+            .expect("mnemonic entropy array of wrong size");
+
+        // update client secret in memory
+        let fed = {
+            let mut feds = self.federations.lock().await;
+            let fed_arc = feds
+                .get(federation_id)
+                .ok_or(anyhow!("Federation not found"))?;
+            let mut fed = (**fed_arc).clone();
+
+            // write client secret to db
+            fed.client.dangerous_save_client_secret(entropy).await;
+
+            // HACK
+            // create a new client which will load updated client secret from db
+            let config = fed.client.config();
+            let db = fed.client.db();
+            let secp = Secp256k1::new();
+            let new_client = UserClient::new(config, module_decode_stubs(), db.clone(), secp).await;
+            fed.client = Arc::new(new_client);
+
+            // start pollers
+            fed.start_pollers().await;
+
+            feds.insert(federation_id.to_string(), Arc::new(fed.clone()));
+            fed
+        };
+
+        // recover ecash tokens
+        fed.restore_ecash_from_federation().await?;
+
+        Ok(())
+    }
+
+    /// Deletes federation client database and config
+    /// Returns error if use has a balance
+    pub async fn leave_federation(&self, federation_id: &str) -> anyhow::Result<()> {
+        info!("called leave");
+        // Error if we don't recognize federation
+        let federation = self
+            .get_federation(federation_id)
+            .await
+            .ok_or(anyhow!("Federation not found"))?;
+
+        // Stop pollers
+        info!("stopping pollers");
+        federation.stop_pollers().await?;
+
+        // Remove config and db
+        // FIXME: this should all be atomic
+        info!("deleting configs");
+        let json_path = Path::new(&self.data_dir)
+            .join(&federation_id)
+            .with_extension("json");
+        let db_path = Path::new(&self.data_dir)
+            .join(&federation_id)
+            .with_extension("db");
+        fs::remove_file(json_path)?;
+        fs::remove_dir_all(db_path)?;
+
+        // Remove from bridge state
+        info!("removing from bridge");
+        let mut lock = self.federations.lock().await;
+        lock.remove(federation_id);
+
+        info!("done");
+        Ok(())
     }
 }
 
@@ -114,14 +232,29 @@ impl Bridge {
 pub struct Federation {
     pub client: Arc<UserClient>,
     pub event_sink: Arc<EventSinkWrapper>,
+    pub task_group: TaskGroup,
 }
 
 impl Federation {
-    pub fn new(client: UserClient, event_sink: Arc<EventSinkWrapper>) -> Self {
+    pub fn new(
+        client: UserClient,
+        event_sink: Arc<EventSinkWrapper>,
+        task_group: TaskGroup,
+    ) -> Self {
         Self {
             client: Arc::new(client),
             event_sink,
+            task_group,
         }
+    }
+
+    pub fn name(&self) -> String {
+        self.client.config().0.federation_name.clone()
+    }
+
+    // FIXME: move this to actually using config.federation_id
+    pub fn id(&self) -> String {
+        self.client.config().0.federation_name.clone()
     }
 
     fn txout_proof_url(&self, txid: &Txid) -> Result<String> {
@@ -150,10 +283,7 @@ impl Federation {
     }
 
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.client
-            .db()
-            .begin_transaction(ModuleDecoderRegistry::default())
-            .await
+        self.client.db().begin_transaction().await
     }
 
     pub fn network(&self) -> bitcoin::Network {
@@ -164,43 +294,58 @@ impl Federation {
         connect_string: String,
         data_dir: PathBuf,
         event_sink: Arc<EventSinkWrapper>,
+        task_group: TaskGroup,
     ) -> Result<Self> {
         // Download federation config
         let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
         tracing::info!("parsed connection string");
         let api = WsFederationApi::new(connect_cfg.members);
         tracing::info!("fetching config");
-        let cfg: ClientConfig = api
-            // FIXME: is this the correct policy?
-            .request(
-                "/config",
-                (),
-                CurrentConsensus::new(api.peers().one_honest()),
-            )
-            .await?;
-        tracing::info!("config {:?}", &cfg);
+        let res: ConfigResponse = api.download_client_config().await?;
+        let cfg = res.client;
 
-        // tracing::info!("config {}", &cfg_string);
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).unwrap();
-        cfg_string = cfg_string.replace("localhost", "10.0.2.2");
-        cfg_string = cfg_string.replace("127.0.0.1", "10.0.2.2");
+        if std::env::consts::OS == "android" {
+            info!("android hacks");
+            cfg_string = cfg_string.replace("localhost", "10.0.2.2");
+            cfg_string = cfg_string.replace("127.0.0.1", "10.0.2.2");
+        };
+        if std::env::consts::OS == "ios" {
+            // I haven't tested this
+            info!("ios hacks");
+            cfg_string = cfg_string.replace("127.0.0.1", "localhost");
+        };
         let cfg: ClientConfig = serde_json::from_str(&cfg_string)?;
 
         // Save config
         let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         tracing::info!("saving file to {}", cfg_path.display());
-        let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         let file = File::create(cfg_path) // FIXME: this should probably use tokio's `File`
             .expect("Could not create cfg file");
         serde_json::to_writer_pretty(file, &cfg).expect("Could not write gateway cfg");
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
-        let db = SledDb::open(db_path, "client")?;
-        let client =
-            UserClient::new(UserClientConfig(cfg.clone()), db.into(), Default::default()).await;
-        Ok(Self::new(client, event_sink))
+        let db = SledDb::open(db_path, "client").unwrap(); // FIXME: don't unwrap
+        let db = Database::new(db, module_decode_stubs());
+        let client = UserClient::new(
+            UserClientConfig(cfg.clone()),
+            module_decode_stubs(),
+            db,
+            Default::default(),
+        )
+        .await;
+        Ok(Self::new(client, event_sink, task_group))
+    }
+
+    pub fn normalized_federation_name(&self) -> String {
+        self.name().replace(" ", "_")
+    }
+
+    pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
+        let federation_name = self.normalized_federation_name();
+        datadir.join(format!("{}_{}", federation_name, RECOVERY_FILENAME))
     }
 
     pub fn sign_with_node_privkey(&self, msg: &Message) -> Signature {
@@ -269,7 +414,7 @@ impl Federation {
 
         // FIXME: actually check that a refund happened
         if result.is_err() {
-            self.update_balance().await;
+            self.send_federation_notification().await;
         }
 
         Ok(result?)
@@ -361,7 +506,7 @@ impl Federation {
                 }
 
                 tracing::info!("peg-in successful for {}", address);
-                self.update_balance().await;
+                self.send_federation_notification().await;
                 // FIXME: helper to replace existing transaction
                 let mut tx = self
                     .fetch_transaction(item.tx_hash.to_string())
@@ -419,7 +564,7 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.update_balance().await;
+                self.send_federation_notification().await;
                 self.save_transaction(&Transaction::lightning(
                     TransactionDirection::Send,
                     fedimint_api::Amount::from_msats(
@@ -548,166 +693,454 @@ impl Federation {
             .await?)
     }
 
-    pub async fn update_balance(&self) {
+    /// Send whenever the balance or social recovery state changes
+    pub async fn send_federation_notification(&self) {
         self.client.fetch_all_coins().await;
-        self.send_balance_notification().await;
-    }
-
-    async fn send_balance_notification(&self) {
-        let balance_millis = self.client.coins().await.total_amount().msats;
-        let federation_id = self.client.config().0.federation_name;
-        let event = Event::balance(federation_id.clone(), balance_millis);
+        let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
+        let event = Event::federation(fedimint_federation).await;
         self.event_sink.event(&event);
     }
 
     fn transaction_event(&self, tx: &Transaction) {
-        let federation_id = self.client.config().0.federation_name;
-        let event = Event::transaction(federation_id.clone(), tx.clone());
+        let event = Event::transaction(self.id(), tx.clone());
         self.event_sink.event(&event);
     }
 
-    pub async fn event_loop(&self) {
-        self.poll_balance();
-        self.poll_peg_ins();
-        self.poll_incoming_ln();
-        self.poll_ln_refunds();
+    pub async fn get_mnemonic(&self) -> Mnemonic {
+        let client_secret = self.client.get_client_secret().await;
+        // FIXME: use all the entropy
+        Mnemonic::from_entropy(&client_secret.entropy())
+    }
+
+    pub async fn restore_ecash_from_federation(&self) -> Result<()> {
+        let mut task_group = TaskGroup::new();
+        self.client
+            .mint_client()
+            .restore_ecash_from_federation(GAP_LIMIT, &mut task_group)
+            .await??;
+        self.send_federation_notification().await;
+        Ok(())
+    }
+
+    pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
+        self.client
+            .mint_client()
+            .back_up_ecash_to_federation()
+            .await?;
+        Ok(())
+    }
+
+    pub async fn upload_backup_file(
+        &self,
+        video_file_path: &PathBuf,
+        datadir: &PathBuf,
+    ) -> Result<PathBuf> {
+        debug!("uploading backup file {:?}", video_file_path);
+        let file_contents = fs::read(video_file_path)?;
+        let verification_doc = VerificationDocument::from_raw(&file_contents);
+        // FIXME: two different forms of seed phrase
+        let seed_phrase = UserSeedPhrase::from(self.get_mnemonic().await.to_string());
+
+        let backup_client = self.client.social_backup();
+        let recovery_file =
+            backup_client.prepare_recovery_file(verification_doc.clone(), seed_phrase.clone());
+        backup_client
+            .upload_backup_to_federation(&recovery_file)
+            .await?;
+        // FIXME: is this a good filename?
+        let recovery_file_path = datadir.join(RECOVERY_FILENAME);
+        fs::write(&recovery_file_path, recovery_file.to_bytes())?;
+        Ok(recovery_file_path)
+    }
+
+    pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
+        let mut dbtx = self.dbtx().await;
+        let state = dbtx
+            .get_value(&SocialRecoveryStateKey(self.id()))
+            .await
+            .expect("Db error")
+            .ok_or(anyhow!("no active recovery session"))?;
+        Ok(self.client.social_recovery_continue(state))
+    }
+
+    pub async fn social_recovery_save(&self, recovery_client: &SocialRecovery) {
+        // FIXME: should I pass dbtx from outside?
+        let mut dbtx = self.dbtx().await;
+        dbtx.insert_entry(&SocialRecoveryStateKey(self.id()), recovery_client.state())
+            .await
+            .expect("Db error");
+        dbtx.commit_tx().await.expect("Db error");
+    }
+
+    /// Start a new social recovery session if one doesn't exist already
+    /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
+    /// Also won't be able to do simulataneous recoveries in 2 federations.
+    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
+        match self.social_recovery_continue().await {
+            Ok(recovery_client) => recovery_client,
+            Err(_) => {
+                let recovery_client = self.client.social_recovery_start(recovery_file.clone())?;
+                self.social_recovery_save(&recovery_client).await;
+                recovery_client
+            }
+        };
+        Ok(())
+    }
+
+    // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
+    pub async fn social_recovery_qr(
+        &self,
+        recovery_file: &RecoveryFile,
+    ) -> Result<SocialRecoveryQr> {
+        let recovery_client = self.social_recovery_continue().await?;
+
+        // Create and upload verification request
+        // FIXME: probably shouldn't clone verification doc because it might be large
+        let verification_request = recovery_client
+            .create_verification_request(recovery_file.verification_document.clone())?;
+        recovery_client
+            .upload_verification_request(&verification_request)
+            .await
+            .unwrap();
+
+        // Return social recovery QR
+        let recovery_id = verification_request.recovery_id();
+        Ok(SocialRecoveryQr { recovery_id })
+    }
+
+    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
+        let mut recovery_client = self.social_recovery_continue().await?;
+        let guardian_peer_ids: Vec<(String, PeerId)> = self
+            .client
+            .config()
+            .0
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, node)| (node.name.clone(), PeerId::from(i as u16))) // FIXME: don't use "as"
+            .collect();
+        let mut approvals = vec![];
+        for (guardian_name, peer_id) in guardian_peer_ids {
+            let approved = recovery_client
+                .get_decryption_share_from(peer_id)
+                .await
+                .unwrap_or_else(|_| {
+                    debug!("failed to get decryption share from peer {}", peer_id);
+                    false
+                });
+            approvals.push(SocialRecoveryApproval {
+                guardian_name,
+                approved,
+            });
+        }
+
+        // calculate approvals remaining
+        let approvals_required = required_threashold_of(approvals.len());
+        let num_approvals = approvals.iter().filter(|a| a.approved).count();
+        let remaining = approvals_required.saturating_sub(num_approvals);
+
+        // Save progress to DB
+        self.social_recovery_save(&recovery_client).await;
+
+        Ok((approvals, remaining))
+    }
+
+    pub async fn social_recovery_combine_shares(&self) -> Result<Mnemonic> {
+        let recovery_client = self.social_recovery_continue().await?;
+        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
+        let mnemonic = Mnemonic::parse(seed_phrase.0)?;
+        Ok(mnemonic)
+    }
+
+    pub async fn social_recovery_download_verification_doc(
+        &self,
+        recovery_id: &RecoveryId,
+        // FIXME: remove this argument
+        data_dir: PathBuf,
+    ) -> Result<Option<PathBuf>> {
+        // FIXME: what to do for peer id?
+        tracing::info!("downloading verificaiton doc {}", recovery_id);
+        let verification_client = self.client.social_verification(PeerId::from(0));
+        let verification_doc = verification_client
+            .download_verification_doc(*recovery_id)
+            .await?;
+        if let Some(verification_doc) = verification_doc {
+            tracing::info!("downloaded verification doc ... saving to filesystem");
+            let path = data_dir.join(VERIFICATION_FILENAME);
+            fs::write(&path, verification_doc.to_raw()?)?;
+            tracing::info!("saved verificaiton doc");
+            return Ok(Some(path));
+        };
+        tracing::info!("no verificaiton doc found");
+
+        Ok(None)
+    }
+
+    /// test method to be deleted later
+    pub async fn next_peer_id(&self, recovery_id: &RecoveryId) -> Result<PeerId> {
+        let guardian_peer_ids: Vec<PeerId> = self
+            .client
+            .config()
+            .0
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, _)| PeerId::from(i as u16)) // FIXME: don't use "as"
+            .collect();
+        let mut approvals = 0;
+        for peer_id in guardian_peer_ids {
+            let mut verification_client = self.client.social_verification(peer_id);
+            if verification_client
+                .decryption_share_exists(recovery_id)
+                .await?
+            {
+                approvals += 1;
+            }
+        }
+        Ok(PeerId::from(approvals as u16))
+    }
+
+    pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
+        let next_peer_id = self.next_peer_id(recovery_id).await?;
+        tracing::info!("approve social recovery {}", next_peer_id);
+        let verification_client = self.client.social_verification(next_peer_id);
+        let admin_password = match next_peer_id.to_usize() {
+            0 => "1111",
+            1 => "2222",
+            2 => "3333",
+            3 => "4444",
+            _ => panic!("invalid peer id"),
+        };
+        verification_client
+            .approve_recovery(*recovery_id, admin_password)
+            .await?;
+        Ok(())
+    }
+
+    // FIXME: this just hangs forever
+    pub async fn stop_pollers(&self) -> anyhow::Result<()> {
+        // FIXME: is this clone a problem?
+        self.task_group
+            .clone()
+            .shutdown_join_all(Some(Duration::from_secs(3)))
+            .await
+    }
+
+    pub async fn start_pollers(&mut self) {
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ecash backup poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_ecash_backup(task_handle).await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} balance poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_federation(task_handle).await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} peg-in poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_peg_ins(task_handle).await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} incoming ln poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_incoming_ln(task_handle).await;
+                },
+            )
+            .await;
+        let fed = self.clone();
+        self.task_group
+            .spawn(
+                format!("{} ln refund poller", self.name()),
+                |task_handle| async move {
+                    fed.poll_ln_refunds(task_handle).await;
+                },
+            )
+            .await;
+    }
+
+    /// Make an ecash backup once every minute
+    pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
+        let mut ticks = 0;
+        loop {
+            if task_handle.is_shutting_down() {
+                return;
+            }
+
+            // Run once per minute
+            if ticks < 60 {
+                ticks += 1;
+                fedimint_api::task::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+            ticks = 0;
+
+            match self.back_up_ecash_to_federation().await {
+                Ok(_) => info!("ecash backup complete"),
+                Err(_) => error!("ecash backup failed"),
+            }
+        }
     }
 
     /// Checks for peg-ins every second
-    pub fn poll_peg_ins(&self) {
-        let fed = self.clone();
-        tokio::spawn(async move {
-            let mut last_consensus_block_height = None;
-            loop {
-                let current_block_height = fed.block_height().await.ok();
-                if last_consensus_block_height != current_block_height {
-                    fed.attempt_pegins().await;
-                    last_consensus_block_height = current_block_height;
-                }
-                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+    pub async fn poll_peg_ins(&self, task_handle: TaskHandle) {
+        let mut last_consensus_block_height = None;
+        loop {
+            if task_handle.is_shutting_down() {
+                return;
             }
-        });
+            let current_block_height = self.block_height().await.ok();
+            if last_consensus_block_height != current_block_height {
+                self.attempt_pegins().await;
+                last_consensus_block_height = current_block_height;
+            }
+            fedimint_api::task::sleep(Duration::from_secs(1)).await;
+        }
     }
 
     /// Announces balance to event emitter every second
-    pub fn poll_balance(&self) {
-        let fed = self.clone();
-        tokio::spawn(async move {
-            loop {
-                fed.update_balance().await;
-                tracing::debug!("poll balance");
-                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+    pub async fn poll_federation(&self, task_handle: TaskHandle) {
+        loop {
+            if task_handle.is_shutting_down() {
+                return;
             }
-        });
+
+            self.send_federation_notification().await;
+            fedimint_api::task::sleep(Duration::from_secs(1)).await;
+        }
     }
 
     /// Checks for incoming payments every second
-    pub fn poll_incoming_ln(&self) {
+    pub async fn poll_incoming_ln(&self, task_handle: TaskHandle) {
         let fed = self.clone();
-        tokio::spawn(async move {
-            loop {
-                let pending_payments: Vec<Payment> = fed
-                    .list_payments()
-                    .await
-                    .into_iter()
-                    // TODO: should we filter
-                    .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
-                    .collect();
-
-                // Try to complete incoming payments
-                pending_payments
-                    .iter()
-                    .map(|payment| async {
-                        // FIXME: don't create rng in here ...
-                        let invoice_expired = payment.invoice.is_expired();
-                        let rng = rand::rngs::OsRng;
-                        let payment_hash = payment.invoice.payment_hash();
-                        tracing::debug!("fetching incoming contract {:?}", &payment_hash);
-                        let result = &fed
-                            .client
-                            .claim_incoming_contract(
-                                ContractId::from_hash(payment_hash.clone()),
-                                rng.clone(),
-                            )
-                            .await;
-                        if let Err(_) = result {
-                            tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
-                            // Mark it "expired" in db if we couldn't claim it and invoice is expired
-                            if invoice_expired {
-                                fed.update_payment_status(payment_hash, PaymentStatus::Expired)
-                                    .await;
-                            }
-                        } else {
-                            tracing::info!("completed payment: {:?}", &payment_hash);
-                            fed.update_payment_status(payment_hash, PaymentStatus::Paid)
-                                .await;
-                            fed.update_balance().await;
-                            let amount = fedimint_api::Amount::from_msats(
-                                payment.invoice.amount_milli_satoshis().expect(
-                                    "assuming we only receive payments for invoices with amount",
-                                ),
-                            );
-                            let fee = None;
-                            let tx = Transaction::lightning(
-                                TransactionDirection::Receive,
-                                amount,
-                                fee,
-                                payment.invoice.clone(),
-                            );
-                            fed.save_transaction(&tx).await;
-                        }
-                    })
-                    .collect::<FuturesUnordered<_>>()
-                    .collect::<Vec<()>>()
-                    .await;
-
-                fedimint_api::task::sleep(std::time::Duration::from_secs(1)).await;
+        loop {
+            if task_handle.is_shutting_down() {
+                return;
             }
-        });
+
+            let pending_payments: Vec<Payment> = fed
+                .list_payments()
+                .await
+                .into_iter()
+                // TODO: should we filter
+                .filter(|payment| !payment.paid() && !payment.expired() && payment.incoming())
+                .collect();
+
+            // Try to complete incoming payments
+            pending_payments
+                .iter()
+                .map(|payment| async {
+                    // FIXME: don't create rng in here ...
+                    let invoice_expired = payment.invoice.is_expired();
+                    let rng = rand::rngs::OsRng;
+                    let payment_hash = payment.invoice.payment_hash();
+                    tracing::debug!("fetching incoming contract {:?}", &payment_hash);
+                    let result = &fed
+                        .client
+                        .claim_incoming_contract(
+                            ContractId::from_hash(payment_hash.clone()),
+                            rng.clone(),
+                        )
+                        .await;
+                    if let Err(_) = result {
+                        tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
+                        // Mark it "expired" in db if we couldn't claim it and invoice is expired
+                        if invoice_expired {
+                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
+                                .await;
+                        }
+                    } else {
+                        tracing::info!("completed payment: {:?}", &payment_hash);
+                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                            .await;
+                        fed.send_federation_notification().await;
+                        let amount = fedimint_api::Amount::from_msats(
+                            payment.invoice.amount_milli_satoshis().expect(
+                                "assuming we only receive payments for invoices with amount",
+                            ),
+                        );
+                        let fee = None;
+                        let tx = Transaction::lightning(
+                            TransactionDirection::Receive,
+                            amount,
+                            fee,
+                            payment.invoice.clone(),
+                        );
+                        fed.save_transaction(&tx).await;
+                    }
+                })
+                .collect::<FuturesUnordered<_>>()
+                .collect::<Vec<()>>()
+                .await;
+
+            fedimint_api::task::sleep(Duration::from_secs(1)).await;
+        }
     }
 
     /// Attempts lightning refunds every minute
-    pub fn poll_ln_refunds(&self) {
+    pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
+        let mut ticks = 0;
 
-        tokio::spawn(async move {
-            loop {
-                let consensus_block_height = fed.block_height().await.unwrap_or(0);
-                let contracts = fed
-                    .client
-                    .ln_client()
-                    .refundable_outgoing_contracts(consensus_block_height)
-                    .await;
-                tracing::info!("looking for refunds...");
-                contracts
-                    .iter()
-                    .map(|contract| async {
-                        tracing::info!(
-                            "attempting to get refund {:?}",
-                            contract.contract_account.contract.contract_id(),
-                        );
-                        match fed
-                            .client
-                            .try_refund_outgoing_contract(
-                                contract.contract_account.contract.contract_id(),
-                                rand::rngs::OsRng,
-                            )
-                            .await
-                        {
-                            Ok(_) => {
-                                tracing::info!("got refund");
-                                fed.update_balance().await;
-                            }
-                            Err(e) => tracing::info!("refund failed {:?}", e),
-                        };
-                    })
-                    .collect::<FuturesUnordered<_>>()
-                    .collect::<Vec<()>>()
-                    .await;
-
-                // once per minute
-                fedimint_api::task::sleep(std::time::Duration::from_secs(60)).await;
+        loop {
+            if task_handle.is_shutting_down() {
+                return;
             }
-        });
+            // Run once per minute
+            if ticks < 60 {
+                ticks += 1;
+                fedimint_api::task::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+            ticks = 0;
+
+            let consensus_block_height = fed.block_height().await.unwrap_or(0);
+            let contracts = fed
+                .client
+                .ln_client()
+                .refundable_outgoing_contracts(consensus_block_height)
+                .await;
+            tracing::info!("looking for refunds...");
+            contracts
+                .iter()
+                .map(|contract| async {
+                    tracing::info!(
+                        "attempting to get refund {:?}",
+                        contract.contract_account.contract.contract_id(),
+                    );
+                    match fed
+                        .client
+                        .try_refund_outgoing_contract(
+                            contract.contract_account.contract.contract_id(),
+                            rand::rngs::OsRng,
+                        )
+                        .await
+                    {
+                        Ok(_) => {
+                            tracing::info!("got refund");
+                            fed.send_federation_notification().await;
+                        }
+                        Err(e) => tracing::info!("refund failed {:?}", e),
+                    };
+                })
+                .collect::<FuturesUnordered<_>>()
+                .collect::<Vec<()>>()
+                .await;
+        }
     }
 }

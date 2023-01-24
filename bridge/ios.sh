@@ -1,3 +1,6 @@
+# exit on failure
+set -e 
+
 rustup install nightly-x86_64-apple-darwin
 rustup install nightly-aarch64-apple-darwin
 rustup component add rust-src --toolchain nightly-x86_64-apple-darwin

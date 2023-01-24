@@ -1,3 +1,5 @@
+// Stop complaining about unused variables due to cfg macros
+#![allow(unused)]
 use std::{collections::BTreeMap, sync::Arc};
 
 use tracing::metadata::LevelFilter;
@@ -70,9 +72,30 @@ impl<'a> tracing::field::Visit for StringVisitor<'a> {
 }
 
 // TODO: configurable log level
-pub fn init_logging(event_sink: Arc<EventSinkWrapper>) {
+pub fn init_logging(event_sink: Arc<EventSinkWrapper>, log_level: LevelFilter) {
+    // react native
+    #[cfg(not(target_os = "macos"))]
     tracing_subscriber::registry()
-        .with(ReactNativeLayer(event_sink).with_filter(LevelFilter::INFO))
+        .with(ReactNativeLayer(event_sink).with_filter(log_level))
+        .try_init()
+        .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
+    // #[cfg(target_os = "ios")]
+    // use tracing_subscriber::{layer::SubscriberExt, prelude::*, Layer};
+    // #[cfg(target_os = "ios")]
+    // tracing_subscriber::registry()
+    //     .with(
+    //         tracing_oslog::OsLogger::new(
+    //             "com.justinmoon.fluttermint",
+    //             "INFO", // I don't know what this does ...
+    //         )
+    //         .with_filter(tracing_subscriber::filter::LevelFilter::INFO),
+    //     )
+    //     .try_init()
+    //     .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
+
+    // running tests on a mac
+    #[cfg(target_os = "macos")]
+    tracing_subscriber::fmt()
         .try_init()
         .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
 }

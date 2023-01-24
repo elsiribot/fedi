@@ -36,6 +36,15 @@ Inside them just put the following:
 INPUT(-lunwind)
 ```
 
+## Testing
+
+Run `fedimint/scripts/tmuxinator.sh` locally.
+
+```
+cd calculator-ffi
+cargo test -- --test-threads=1
+```
+
 # Template README
 
 ## Build the library for Android
