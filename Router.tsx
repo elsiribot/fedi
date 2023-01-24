@@ -47,7 +47,6 @@ import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
-import SitesBrowser from './screens/SitesBrowser'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
@@ -88,7 +87,6 @@ import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHe
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendHeader from './components/feature/send/SendHeader'
-import SitesHeader from './components/feature/sites/SitesHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import GroupChat from './screens/GroupChat'
@@ -559,15 +557,6 @@ const MainNavigator = () => {
                                 component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
-                            {/* Sites */}
-                            <Stack.Screen
-                                name="SitesBrowser"
-                                component={SitesBrowser}
-                                options={{
-                                    headerShown: false,
-                                    header: () => <SitesHeader />,
-                                }}
-                            />
                             <Stack.Screen
                                 name="DeveloperSettings"
                                 component={DeveloperSettings}
@@ -652,8 +641,6 @@ const linking: NavigationLinkingConfig = {
                     PersonalRecovery: 'personal-recovery',
                     PersonalRecoverySuccess: 'personal-recovery-success',
                     RequestCameraAccess: 'request-camera-access',
-                    // Sites
-                    SitesBrowser: 'sites-browser',
                     // Modals
                     Transactions: 'transactions',
                     SocialRecoveryQrModal: 'social-recovery-qr-modal',

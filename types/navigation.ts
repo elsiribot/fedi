@@ -86,5 +86,6 @@ export type RootStackParamList = {
     SocialRecoveryFailure: undefined
     Transactions: undefined
     SitesBrowser: { site: Site }
+    SitesList: undefined
     DeveloperSettings: undefined
 }
