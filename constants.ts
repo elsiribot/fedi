@@ -63,6 +63,13 @@ export const SITES = [
     //     description: 'A regtest playground',
     // },
     {
+        id: 'hrf',
+        title: 'Support HRF on Geyser',
+        url: 'https://geyser.fund/project/supporthrf',
+        description:
+            'Donate directly to the Human Rights Foundation on Guyser Fund',
+    },
+    {
         id: 'geyser',
         title: 'Geyser Fund',
         url: 'https://geyser.fund',
