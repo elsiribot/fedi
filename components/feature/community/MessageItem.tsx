@@ -1,9 +1,18 @@
+import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
+import {
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    TextStyle,
+    View,
+    ViewStyle,
+} from 'react-native'
 
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { Message } from '../../../types'
+import { NavigationHook } from '../../../types/navigation'
 import dateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
@@ -19,6 +28,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     multiUserChat = false,
 }: MessageItemProps) => {
     const { theme } = useTheme()
+    const navigation = useNavigation<NavigationHook>()
     const { selectedFederation } = useFederationsContext().state
 
     const { sentBy, sentAt, payment } = message
@@ -62,7 +72,16 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     </Text>
                 </View>
             )}
-            <View style={styles(theme).messageContainer}>
+            <Pressable
+                // link to direct chat but only for incoming messages
+                // in group chats
+                disabled={sentByMe || multiUserChat === false}
+                onPress={() => {
+                    if (sentBy) {
+                        navigation.navigate('DirectChat', { member: sentBy })
+                    }
+                }}
+                style={styles(theme).messageContainer}>
                 {!sentByMe && multiUserChat && (
                     <View style={styles(theme).avatarContainer}>
                         <HoloAvatar
@@ -92,7 +111,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         )}
                     </View>
                 </View>
-            </View>
+            </Pressable>
         </View>
     )
 }
