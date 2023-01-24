@@ -5,16 +5,15 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import { Props as RoomChatProps } from '../../../screens/RoomChat'
 import { NavigationHook } from '../../../types/navigation'
 
-type RoomChatRouteProp = RoomChatProps['route']
+type GroupChatRouteProp = GroupChatProps['route']
 
 const EmptyRoomNotice: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<RoomChatRouteProp>()
+    const route = useRoute<GroupChatRouteProp>()
     const { room } = route.params
 
     return (

@@ -544,7 +544,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             }
             if (stanza.is('message')) {
                 if (stanza.getAttr('type') === 'groupchat') {
-                    // Handle incoming messages from RoomChat
+                    // Handle incoming messages from GroupChat
                     const from = stanza.getAttr('from')
                     const room = from.split('@')[0]
                     const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]

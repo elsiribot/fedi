@@ -12,9 +12,9 @@ import type { RootStackParamList } from '../types/navigation'
 
 import { useXmpp } from '../state/hooks'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'RoomChat'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
-const RoomChat: React.FC<Props> = ({ navigation, route }: Props) => {
+const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { room: currentRoom } = route.params
@@ -73,4 +73,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default RoomChat
+export default GroupChat

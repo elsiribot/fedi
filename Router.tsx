@@ -38,7 +38,6 @@ import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
 import RoomAdmin from './screens/RoomAdmin'
-import RoomChat from './screens/RoomChat'
 import RoomInvite from './screens/RoomInvite'
 import ScanFederationCode from './screens/ScanFederationCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -243,8 +242,8 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="RoomChat"
-                                component={RoomChat}
+                                name="GroupChat"
+                                component={GroupChat}
                                 options={() => ({
                                     header: () => <RoomHeader />,
                                 })}

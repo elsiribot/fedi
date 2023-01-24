@@ -62,7 +62,7 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    RoomChat: { room: Room }
+    GroupChat: { room: Room }
     RoomAdmin: { room: Room }
     RoomInvite: { room: Room }
     ScanFederationCode: undefined

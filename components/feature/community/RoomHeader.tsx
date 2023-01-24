@@ -9,12 +9,12 @@ import Header from '../../ui/Header'
 import { t } from 'i18next'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 
-type RoomChatRouteProp = RouteProp<RootStackParamList, 'RoomChat'>
+type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
 
 const RoomHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<RoomChatRouteProp>()
+    const route = useRoute<GroupChatRouteProp>()
     const { room } = route.params
 
     // Mocked roomLink format: fedi:room:uniqueRoomId::userDefinedRoomName

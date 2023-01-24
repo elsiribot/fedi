@@ -24,7 +24,7 @@ const RoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const viewRoom = () => {
         console.info(room)
-        navigation.navigate('RoomChat', { room })
+        navigation.navigate('GroupChat', { room })
     }
 
     return (

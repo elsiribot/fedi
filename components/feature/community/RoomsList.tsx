@@ -30,7 +30,7 @@ const RoomsList: React.FC<{}> = () => {
                             member: room.members[0],
                         })
                     } else {
-                        navigation.navigate('RoomChat', {
+                        navigation.navigate('GroupChat', {
                             room: new Room({
                                 id: room.id,
                                 name: room.name,
