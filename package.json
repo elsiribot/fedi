@@ -36,6 +36,7 @@
         "react-native-easy-toast": "^2.3.0",
         "react-native-fs": "^2.20.0",
         "react-native-gesture-handler": "^2.8.0",
+        "react-native-hyperlink": "^0.0.22",
         "react-native-linear-gradient": "^2.6.2",
         "react-native-localize": "^2.2.4",
         "react-native-pager-view": "^6.1.2",
