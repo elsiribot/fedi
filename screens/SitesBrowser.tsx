@@ -9,8 +9,10 @@ import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
 import SitesHeader from '../components/feature/sites/SitesHeader'
 import CustomOverlay from '../components/ui/CustomOverlay'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
-import { Sats } from '../types'
+import { MSats, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
@@ -20,6 +22,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { site } = route.params
     const { generateInvoice, payInvoice } = useBridge()
     const { t } = useTranslation()
+    const { selectedFederation } = useFederationsContext().state
+    const { toast } = useEnvironmentContext().state
     // FIXME: is this type casting acceptable?
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState(false)
@@ -144,9 +148,18 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 })
 
                 // Attempt to pay the invoice
-                // TODO: Check selectedFederation.balance < invoice.amount
-                // and run a toast.show
-                await payInvoice(paymentRequest)
+                if (selectedFederation!.balance < invoice.amount) {
+                    toast?.show(
+                        t('errors.insufficient-balance', {
+                            balance: `${amountUtils.msatToSat(
+                                selectedFederation?.balance as MSats,
+                            )} SATS`,
+                        }),
+                        5000,
+                    )
+                } else {
+                    await payInvoice(paymentRequest)
+                }
 
                 return {
                     preimage: 'fixme',
@@ -216,7 +229,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     console.log('uri: ', uri)
     return (
         <View style={styles.container}>
-            {/* TODO: Move SitesHeader here so we can pass props to it */}
             <SitesHeader webViewRef={webview} />
             <WebView
                 ref={webview}
