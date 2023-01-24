@@ -17,7 +17,10 @@ use crate::{
         IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
     },
-    types::{federation_to_fedimint_federation, hacky_lightning_invoice_fee, XmppCredentials},
+    types::{
+        federation_to_fedimint_federation, hacky_lightning_invoice_fee, LnurlSignedMessage,
+        XmppCredentials,
+    },
     EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
@@ -59,6 +62,8 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_USERNAME: ChildId = ChildId(0);
 pub const XMPP_PASSWORD: ChildId = ChildId(1);
+
+pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
 fn required_threashold_of(n: usize) -> usize {
     n - ((n - 1) / 3)
@@ -353,22 +358,14 @@ impl Federation {
         datadir.join(format!("{}_{}", federation_name, RECOVERY_FILENAME))
     }
 
-    pub fn sign_with_node_privkey(&self, msg: &Message) -> Signature {
-        // TODO: don't hardcode
-        let secret_key =
-            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
-                .unwrap();
+    /// signs a message with "node pubkey" ... used in LNURL RPC call
+    pub fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
+        let secret = self.client.root_secret.child_key(LNURL_CHILD_ID);
         let secp = Secp256k1::new();
-        secp.sign_ecdsa(&msg, &secret_key)
-    }
-
-    pub fn node_pubkey(&self) -> PublicKey {
-        // TODO: don't hardcode
-        let secret_key =
-            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
-                .unwrap();
-        let secp = Secp256k1::new();
-        secret_key.public_key(&secp)
+        let keypair = secret.to_secp_key(&Secp256k1::new());
+        let pubkey = keypair.public_key();
+        let signature = secp.sign_ecdsa(msg, &keypair.secret_key());
+        LnurlSignedMessage { signature, pubkey }
     }
 
     /// Returns (username, password)

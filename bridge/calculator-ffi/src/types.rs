@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::anyhow;
+use bitcoin::secp256k1::{ecdsa::Signature, PublicKey};
 use fedimint_api::config::ApiEndpoint;
 use mint_client::api::WsFederationConnect;
 use serde::{Deserialize, Serialize};
@@ -35,6 +36,13 @@ pub struct FedimintFederation {
 pub struct XmppCredentials {
     pub username: String,
     pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LnurlSignedMessage {
+    pub signature: Signature,
+    pub pubkey: PublicKey,
 }
 
 // FIXME: this used to be a From implementation, but total_amount needed async

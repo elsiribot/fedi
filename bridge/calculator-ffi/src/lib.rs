@@ -457,11 +457,8 @@ async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
     };
     let federation = get_federation(&federation_id).await;
     let message = Message::from_slice(&hex::decode(message)?)?;
-    let signature = federation.sign_with_node_privkey(&message);
-    Ok(
-        json!({ "result": { "signature": signature, "pubkey": federation.node_pubkey() } })
-            .to_string(),
-    )
+    let signed_message = federation.sign_lnurl_message(&message);
+    Ok(json!({ "result": signed_message }).to_string())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
