@@ -77,10 +77,6 @@ export class Group extends Chat {
     // TODO: What exactly is encoded in this invitationCode?
     invitationCode?: FediGroupLink
 
-    constructor(data: any) {
-        super(data)
-    }
-
     static encodeInvitationLink(id: string, name: string): string {
         return `fedi:group: ${id}::${name}`
     }
