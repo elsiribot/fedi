@@ -65,14 +65,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     const shouldShowTimestamp = sentAt !== undefined
 
-    const renderMessageContent = () => {
-        // if (message.content.includes('http://') || message.content.includes('https://')) {
-
-        // }
-
-        return <Hyperlink />
-    }
-
     return (
         <View style={styles(theme).container}>
             {shouldShowTimestamp && (
