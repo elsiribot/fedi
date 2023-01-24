@@ -4,14 +4,19 @@ import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { Message } from '../../../types'
+import dateUtils from '../../../utils/DateUtils'
+import stringUtils from '../../../utils/StringUtils'
+import HoloAvatar from '../../ui/HoloAvatar'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
     message: Message
+    multiUserChat?: boolean
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
+    multiUserChat = false,
 }: MessageItemProps) => {
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
@@ -21,7 +26,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     const sentByMe = sentBy?.username === selectedFederation?.username
 
     let bubbleStyles: StyleProp<ViewStyle | TextStyle>[] = [
-        styles(theme).container,
+        styles(theme).bubbleContainer,
     ]
     let textStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).messageText,
@@ -46,15 +51,48 @@ const MessageItem: React.FC<MessageItemProps> = ({
         textStyles.push(styles(theme).receivedMessageText)
     }
 
+    const shouldShowTimestamp = sentAt !== undefined
+
     return (
-        <View style={bubbleStyles}>
-            {payment ? (
-                <PaymentMessage message={message} />
-            ) : (
-                <Text caption medium style={textStyles}>
-                    {message.content}
-                </Text>
+        <View style={styles(theme).container}>
+            {shouldShowTimestamp && (
+                <View style={styles(theme).timestampContainer}>
+                    <Text tiny>
+                        {dateUtils.formatChatTileTimestamp(sentAt!)}
+                    </Text>
+                </View>
             )}
+            <View style={styles(theme).messageContainer}>
+                {!sentByMe && multiUserChat && (
+                    <View style={styles(theme).avatarContainer}>
+                        <HoloAvatar
+                            title={stringUtils.getInitialsFromName(
+                                sentBy?.username!,
+                            )}
+                        />
+                    </View>
+                )}
+
+                <View style={styles(theme).contentContainer}>
+                    {!sentByMe && multiUserChat && (
+                        <View style={styles(theme).senderTextContainer}>
+                            <Text tiny style={styles(theme).senderText}>
+                                {sentBy?.username}
+                            </Text>
+                        </View>
+                    )}
+
+                    <View style={bubbleStyles}>
+                        {payment ? (
+                            <PaymentMessage message={message} />
+                        ) : (
+                            <Text caption medium style={textStyles}>
+                                {message.content}
+                            </Text>
+                        )}
+                    </View>
+                </View>
+            </View>
         </View>
     )
 }
@@ -62,10 +100,34 @@ const MessageItem: React.FC<MessageItemProps> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            padding: theme.spacing.sm,
             marginBottom: theme.spacing.md,
+        },
+        avatarContainer: {
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            marginRight: theme.spacing.xs,
+        },
+        bubbleContainer: {
+            marginTop: theme.spacing.xxs,
+            padding: theme.spacing.sm,
             borderRadius: 12,
             maxWidth: theme.sizes.maxMessageWidth,
+        },
+        contentContainer: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-end',
+            width: '100%',
+        },
+        messageContainer: {
+            flexDirection: 'row',
+        },
+        senderTextContainer: {},
+        senderText: {},
+        timestampContainer: {
+            alignItems: 'center',
+            width: '100%',
+            marginBottom: theme.spacing.md,
         },
         leftAlignedMessage: {
             marginRight: 'auto',
