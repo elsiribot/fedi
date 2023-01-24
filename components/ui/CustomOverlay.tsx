@@ -3,7 +3,7 @@ import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
 type OverlayProps = {
-    setShow: any
+    setShow: React.Dispatch<React.SetStateAction<boolean>>
     show: boolean
     title: string
     message: string
@@ -48,7 +48,7 @@ const CustomOverlay: React.FC<OverlayProps> = ({
         <View>
             <Overlay
                 isVisible={show || false}
-                onBackdropPress={() => setShow(null)}
+                onBackdropPress={() => setShow(false)}
                 overlayStyle={styles(theme).overlayContainer}>
                 <Text h2 h2Style={styles(theme).overlayText}>
                     {title}
