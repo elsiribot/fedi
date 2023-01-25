@@ -11,17 +11,17 @@ import {
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
-import { Message, MSats, PaymentStatus } from '../../../types'
+import { Message, MSats, Payment, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 import OutgoingPaymentRequest from './OutgoingPaymentRequest'
 
-type PaymentMessageProps = {
-    message: Message
+type IncomingPaymentRequestProps = {
+    outgoingPayment: Payment
 }
 
-const PaymentMessage: React.FC<PaymentMessageProps> = ({
-    message,
-}: PaymentMessageProps) => {
+const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
+    outgoingPayment,
+}: IncomingPaymentRequestProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { generateEcash, receiveEcash, validateEcash } = useBridge()
@@ -42,8 +42,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     if (sentByMe) {
         return (
             <OutgoingPaymentRequest
-                message={message}
-                incomingPayment={message.payment!}
+                incomingPayment={message.payment}
                 text={`${t('feature.community.outgoing-chat-payment', {
                     amount: amountUtils.msatToSat(payment?.amount as MSats),
                     unit: 'SATS',
@@ -110,10 +109,8 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             if (selectedFederation?.balance! < message.payment?.amount!) {
                 toast?.show(
                     t('errors.insufficient-balance', {
-                        balance: `${amountUtils.formatNumber(
-                            amountUtils.msatToSat(
-                                selectedFederation?.balance as MSats,
-                            ),
+                        balance: `${amountUtils.msatToSat(
+                            selectedFederation?.balance as MSats,
                         )} SATS`,
                     }),
                     5000,

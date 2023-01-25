@@ -174,6 +174,7 @@ export class Payment extends Base {
 }
 
 export enum PaymentStatus {
+    accepted,
     requested,
     canceled,
     rejected,

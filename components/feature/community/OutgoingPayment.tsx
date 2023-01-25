@@ -11,17 +11,16 @@ import {
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
-import { Message, MSats, PaymentStatus } from '../../../types'
+import { Message, MSats, Payment, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
-import OutgoingPaymentRequest from './OutgoingPaymentRequest'
 
-type PaymentMessageProps = {
-    message: Message
+type OutgoingPaymentProps = {
+    payment: Payment
 }
 
-const PaymentMessage: React.FC<PaymentMessageProps> = ({
-    message,
-}: PaymentMessageProps) => {
+const OutgoingPayment: React.FC<OutgoingPaymentProps> = ({
+    payment,
+}: OutgoingPaymentProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { generateEcash, receiveEcash, validateEcash } = useBridge()
@@ -36,35 +35,19 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 
     const sentByMe = message.sentBy?.username === authenticatedMember?.username
 
-    // This is for receiver-initated payments so (counter-intuitively) if the
-    // message (payment request) was sent by me, then I am the receiver
-    // of the payment itself which would be INCOMING...
-    if (sentByMe) {
-        return (
-            <OutgoingPaymentRequest
-                message={message}
-                incomingPayment={message.payment!}
-                text={`${t('feature.community.outgoing-chat-payment', {
-                    amount: amountUtils.msatToSat(payment?.amount as MSats),
-                    unit: 'SATS',
-                    name: message.sentBy?.username,
-                    memo: payment?.memo,
-                })}`}
-            />
-        )
-    } else {
-        return (
-            <IncomingPaymentRequest
-                outgoingPayment={message.payment}
-                text={`${t('feature.community.incoming-chat-payment', {
-                    amount: amountUtils.msatToSat(payment?.amount as MSats),
-                    unit: 'SATS',
-                    name: message.sentBy?.username,
-                    memo: payment?.memo,
-                })}`}
-            />
-        )
-    }
+    const text = sentByMe
+        ? `${t('feature.community.outgoing-chat-payment', {
+              amount: amountUtils.msatToSat(payment?.amount as MSats),
+              unit: 'SATS',
+              name: message.sentBy?.username,
+              memo: payment?.memo,
+          })}`
+        : `${t('feature.community.incoming-chat-payment', {
+              amount: amountUtils.msatToSat(payment?.amount as MSats),
+              unit: 'SATS',
+              name: message.sentBy?.username,
+              memo: payment?.memo,
+          })}`
 
     const cancelPayment = () => {
         try {
@@ -110,10 +93,8 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             if (selectedFederation?.balance! < message.payment?.amount!) {
                 toast?.show(
                     t('errors.insufficient-balance', {
-                        balance: `${amountUtils.formatNumber(
-                            amountUtils.msatToSat(
-                                selectedFederation?.balance as MSats,
-                            ),
+                        balance: `${amountUtils.msatToSat(
+                            selectedFederation?.balance as MSats,
                         )} SATS`,
                     }),
                     5000,
@@ -341,4 +322,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default PaymentMessage
+export default OutgoingPayment
