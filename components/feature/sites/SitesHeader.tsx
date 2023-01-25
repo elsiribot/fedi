@@ -1,13 +1,14 @@
 import { useNavigation } from '@react-navigation/native'
 import { Icon } from '@rneui/themed'
-import React from 'react'
+import React, { MutableRefObject } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
-import { NavigationHook } from '../../../types/navigation'
+import WebView from 'react-native-webview'
 
+import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 
 type SitesHeaderProps = {
-    webViewRef?: any
+    webViewRef: MutableRefObject<WebView>
 }
 
 const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {

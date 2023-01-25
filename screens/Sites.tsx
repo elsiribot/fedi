@@ -5,7 +5,6 @@ import SitesBrowser from './SitesBrowser'
 import SitesList from './SitesList'
 
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import SitesHeader from '../components/feature/sites/SitesHeader'
 import type {
     HomeTabsParamList,
     RootStackParamList,
@@ -34,7 +33,6 @@ const Sites: React.FC<Props> = ({}) => {
                 component={SitesBrowser}
                 options={{
                     headerShown: false,
-                    header: () => <SitesHeader />,
                 }}
             />
         </Stack.Navigator>
