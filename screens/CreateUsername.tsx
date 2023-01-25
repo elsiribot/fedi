@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import {
+    checkXmppUser,
     registerXmppUser,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
@@ -12,6 +13,7 @@ import {
     updateFederationUsername,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -21,20 +23,54 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [username, setUsername] = useState<string>('')
+    const [creatingXmppUser, setCreatingXmppUser] = useState<boolean>(false)
     const { state, dispatch } = useFederationsContext()
     const { xmppClient } = useCommunityContext().state
     const { toast } = useEnvironmentContext().state
+    const { getXmppCredentials } = useBridge()
 
     const handleSubmit = async () => {
-        try {
-            const success = await registerXmppUser(username)
-            if (success) {
-                dispatch(updateFederationUsername(username))
-            }
-        } catch (error) {
-            toast?.show(error as string, 3000)
-        }
+        setCreatingXmppUser(true)
     }
+
+    useEffect(() => {
+        const handleXmppRegistration = async () => {
+            try {
+                const credentials = await getXmppCredentials()
+                const userExists = await checkXmppUser(
+                    username,
+                    credentials.password,
+                )
+                if (userExists) {
+                    dispatch(updateFederationUsername(username))
+                    // TODO: store the password or always fetch from bridge?
+                    // dispatch(updateFederationPassword(username))
+                } else {
+                    const success = await registerXmppUser(
+                        username,
+                        credentials.password,
+                    )
+                    if (success) {
+                        dispatch(updateFederationUsername(username))
+                    }
+                }
+            } catch (error) {
+                console.error('caught')
+                toast?.show(error as string, 3000)
+            }
+            setCreatingXmppUser(false)
+        }
+        if (creatingXmppUser === true) {
+            handleXmppRegistration()
+        }
+    }, [
+        creatingXmppUser,
+        dispatch,
+        getXmppCredentials,
+        state.selectedFederation?.name,
+        toast,
+        username,
+    ])
 
     // if we have a successfully authed xmppClient and username set
     // continue to the FederationGreeting screen
