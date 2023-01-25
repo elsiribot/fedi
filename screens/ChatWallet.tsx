@@ -65,7 +65,9 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
+                {`${amountUtils.formatNumber(
+                    amountUtils.msatToSat(selectedFederation?.balance!),
+                )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <Input

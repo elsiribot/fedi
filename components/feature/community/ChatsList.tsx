@@ -74,8 +74,10 @@ const ChatsList: React.FC<{}> = () => {
                           messagePreview: m.payment
                               ? t('feature.community.payment-requested', {
                                     name: otherMember?.username,
-                                    amount: amountUtils.msatToSat(
-                                        m.payment.amount as MSats,
+                                    amount: amountUtils.formatNumber(
+                                        amountUtils.msatToSat(
+                                            m.payment.amount as MSats,
+                                        ),
                                     ),
                                     unit: 'SATS',
                                 })
@@ -92,8 +94,10 @@ const ChatsList: React.FC<{}> = () => {
                       updatedChat.messagePreview = m.payment
                           ? t('feature.community.payment-requested', {
                                 name: otherMember?.username,
-                                amount: amountUtils.msatToSat(
-                                    m.payment.amount as MSats,
+                                amount: amountUtils.formatNumber(
+                                    amountUtils.msatToSat(
+                                        m.payment.amount as MSats,
+                                    ),
                                 ),
                                 unit: 'SATS',
                             })

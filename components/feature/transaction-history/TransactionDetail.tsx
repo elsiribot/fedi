@@ -70,9 +70,9 @@ const TransactionDetail = ({
                         : t('feature.receive.you-received')
                 }`}
             </Text>
-            <Text h2>{`${amountUtils.msatToSat(txn.amount)} ${t(
-                'words.sats',
-            )}`}</Text>
+            <Text h2>{`${amountUtils.formatNumber(
+                amountUtils.msatToSat(txn.amount),
+            )} ${t('words.sats')}`}</Text>
             <View style={styles(theme).detailItemsContainer}>
                 <Divider />
                 {txn.bitcoin?.incomingStatus && (

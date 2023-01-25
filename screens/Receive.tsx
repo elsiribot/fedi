@@ -65,9 +65,11 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
             <UsdAmount amountSats={Number(amount) as Sats} />
             <Button
                 fullWidth
-                title={`${t('words.request')}${amount ? ` ${amount} ` : ' '}${t(
-                    'words.sats',
-                ).toUpperCase()}`}
+                title={`${t('words.request')}${
+                    amount
+                        ? ` ${amountUtils.formatNumber(Number(amount))} `
+                        : ' '
+                }${t('words.sats').toUpperCase()}`}
                 onPress={createAndShowInvoice}
                 disabled={!amountIsValid}
                 loading={isLoading}

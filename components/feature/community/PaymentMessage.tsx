@@ -11,7 +11,7 @@ import {
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
-import { Message, MSats, PaymentStatus } from '../../../types'
+import { MSats, Message, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 
 type PaymentMessageProps = {
@@ -35,13 +35,17 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 
     const text = sentByMe
         ? `${t('feature.community.outgoing-chat-payment', {
-              amount: amountUtils.msatToSat(payment?.amount as MSats),
+              amount: amountUtils.formatNumber(
+                  amountUtils.msatToSat(payment?.amount as MSats),
+              ),
               unit: 'SATS',
               name: message.sentBy?.username,
               memo: payment?.memo,
           })}`
         : `${t('feature.community.incoming-chat-payment', {
-              amount: amountUtils.msatToSat(payment?.amount as MSats),
+              amount: amountUtils.formatNumber(
+                  amountUtils.msatToSat(payment?.amount as MSats),
+              ),
               unit: 'SATS',
               name: message.sentBy?.username,
               memo: payment?.memo,
@@ -90,8 +94,10 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             if (selectedFederation?.balance! < message.payment?.amount!) {
                 toast?.show(
                     t('errors.insufficient-balance', {
-                        balance: `${amountUtils.msatToSat(
-                            selectedFederation?.balance as MSats,
+                        balance: `${amountUtils.formatNumber(
+                            amountUtils.msatToSat(
+                                selectedFederation?.balance as MSats,
+                            ),
                         )} SATS`,
                     }),
                     5000,

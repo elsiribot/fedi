@@ -47,9 +47,9 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
 
             <View style={styles(theme).rightContainer}>
                 <Text style={styles(theme).rightAlignedText}>
-                    {`${amountUtils.msatToSat(txn.amount)} ${t(
-                        'words.sats',
-                    ).toUpperCase()}`}
+                    {`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(txn.amount),
+                    )} ${t('words.sats').toUpperCase()}`}
                 </Text>
                 <Text
                     style={[

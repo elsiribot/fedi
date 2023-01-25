@@ -36,7 +36,9 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     const inviteLink = JSON.stringify(federation.connectInfo)
 
-    const amountInSats = amountUtils.msatToSat(federation.balance)
+    const amountInSats = amountUtils.formatNumber(
+        amountUtils.msatToSat(federation.balance),
+    )
 
     return (
         <View style={styles(theme).drawerItemLabel}>

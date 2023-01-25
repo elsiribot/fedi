@@ -94,7 +94,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         title: t('feature.sites.wants-to-pay-you', {
                             site: site.title,
                         }),
-                        message: `${amount} ${t('words.sats').toUpperCase()}`,
+                        message: `${amountUtils.formatNumber(amount)} ${t(
+                            'words.sats',
+                        ).toUpperCase()}`,
                         description: `$${convertSatsToUsdString(amount)}`,
                         buttons: [
                             {
@@ -140,7 +142,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         title: t('feature.sites.payment-request', {
                             site: site.title,
                         }),
-                        message: `${amountSats} ${t(
+                        message: `${amountUtils.formatNumber(amountSats)} ${t(
                             'words.sats',
                         ).toUpperCase()}`,
                         description: `$${convertSatsToUsdString(amountSats)}`,

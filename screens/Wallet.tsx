@@ -34,7 +34,9 @@ const Balance = ({ balance }: BalanceProps) => {
                     {`$${convertSatsToUsdString(amountInSats)}`}
                 </Text>
                 <Text caption medium style={styles(theme).balanceText}>
-                    {`${amountInSats} ${t('words.sats').toUpperCase()}`}
+                    {`${amountUtils.formatNumber(amountInSats)} ${t(
+                        'words.sats',
+                    ).toUpperCase()}`}
                 </Text>
             </View>
         )
