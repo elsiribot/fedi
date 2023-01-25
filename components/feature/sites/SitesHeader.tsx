@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Icon } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
+import { NavigationHook } from '../../../types/navigation'
 
 import Header from '../../ui/Header'
 
@@ -10,7 +11,7 @@ type SitesHeaderProps = {
 }
 
 const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
-    const navigation = useNavigation()
+    const navigation = useNavigation<NavigationHook>()
 
     return (
         <Header
@@ -32,7 +33,7 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                 </View>
             }
             headerRight={
-                <Pressable onPress={() => navigation.navigate('Home')}>
+                <Pressable onPress={() => navigation.goBack()}>
                     <Icon name={'close'} />
                 </Pressable>
             }
