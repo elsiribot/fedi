@@ -9,27 +9,31 @@ type CustomOverlayButton = {
     onPress: () => void
 }
 
-export type CustomOverlayProps = {
-    setShow?: React.Dispatch<React.SetStateAction<boolean>>
-    show?: boolean
+export type CustomOverlayContents = {
     title: string
     message: string
     description?: string
     buttons: CustomOverlayButton[]
 }
 
+type CustomOverlayProps = {
+    onBackdropPress?: () => void
+    show?: boolean
+    contents: CustomOverlayContents | null
+}
+
 const CustomOverlay: React.FC<CustomOverlayProps> = ({
-    setShow,
-    show,
-    title,
-    message,
-    description,
-    buttons,
+    onBackdropPress,
+    show = false,
+    contents,
 }) => {
     const { theme } = useTheme()
 
+    const { title, message, description, buttons } =
+        contents as CustomOverlayContents
+
     const renderButtons = () => {
-        return buttons.map((button, i) => {
+        return buttons.map((button: CustomOverlayButton, i: number) => {
             return (
                 <Button
                     key={i}
@@ -54,8 +58,8 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
     return (
         <View>
             <Overlay
-                isVisible={show || false}
-                onBackdropPress={() => setShow(false)}
+                isVisible={show}
+                onBackdropPress={onBackdropPress}
                 overlayStyle={styles(theme).overlayContainer}>
                 <Text h2 h2Style={styles(theme).overlayText}>
                     {title}

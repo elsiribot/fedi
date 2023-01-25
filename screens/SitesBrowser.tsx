@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
 import SitesHeader from '../components/feature/sites/SitesHeader'
 import CustomOverlay, {
-    CustomOverlayProps,
+    CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
@@ -26,23 +26,34 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { t } = useTranslation()
     const { selectedFederation } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
-    // FIXME: is this type casting acceptable?
     const webview = useRef<WebView>() as MutableRefObject<WebView>
-    const [jsInjected, setJsInjected] = useState(false)
+    const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
-    const [showOverlay, setShowOverlay] = useState(false)
-    const [overlay, setOverlay] = useState<CustomOverlayProps>({
-        title: '',
-        message: '',
-        buttons: [],
-    })
+    const [showOverlay, setShowOverlay] = useState<boolean>(false)
+    const [overlayContents, setOverlayContents] =
+        useState<CustomOverlayContents>({
+            title: '',
+            message: '',
+            buttons: [],
+        })
     const { lnurlGetToken } = useBridge()
 
     useEffect(() => {
-        if (Object.keys(overlay.title).length !== 0) {
+        if (overlayContents !== null) {
             setShowOverlay(true)
         }
-    }, [overlay])
+    }, [overlayContents])
+
+    // Reset overlay content when hidden
+    useEffect(() => {
+        if (showOverlay === false) {
+            setOverlayContents({
+                title: '',
+                message: '',
+                buttons: [],
+            })
+        }
+    }, [showOverlay])
 
     const onMessage = onMessageHandler(webview, {
         enable: async () => {
@@ -75,7 +86,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
             try {
                 await new Promise((resolve, reject) => {
-                    setOverlay({
+                    setOverlayContents({
                         title: t('feature.sites.wants-to-pay-you', {
                             site: site.title,
                         }),
@@ -86,21 +97,20 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                 textColor: 'black',
                                 backgroundColor: 'white',
                                 onPress: () => {
-                                    reject()
+                                    reject(false)
                                     setShowOverlay(false)
                                 },
                             },
                             {
                                 text: t('words.accept'),
-                                onPress: () => {
-                                    resolve(null)
+                                onPress: async () => {
+                                    resolve(true)
                                     setShowOverlay(false)
                                 },
                             },
                         ],
                     })
                 })
-
                 const invoice = await generateInvoice(
                     amountUtils.satToMsat(amount),
                     description,
@@ -121,7 +131,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             try {
                 // Wait for user to interact with alert
                 await new Promise((resolve, reject) => {
-                    setOverlay({
+                    setOverlayContents({
                         title: t('feature.sites.payment-request', {
                             site: site.title,
                         }),
@@ -134,14 +144,14 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                 textColor: 'black',
                                 backgroundColor: 'white',
                                 onPress: () => {
-                                    reject('Denied')
+                                    reject(false)
                                     setShowOverlay(false)
                                 },
                             },
                             {
                                 text: t('words.accept'),
-                                onPress: () => {
-                                    resolve('Accepted')
+                                onPress: async () => {
+                                    resolve(true)
                                     setShowOverlay(false)
                                 },
                             },
@@ -188,7 +198,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         foundInvoice: async (paymentRequest: string) => {
             console.log('foundInvoice', paymentRequest)
             if (paymentRequest.toLowerCase().startsWith('lnurl')) {
-                setOverlay({
+                setOverlayContents({
                     title: t('feature.sites.login-to'),
                     message: `${site.title}`,
                     buttons: [
@@ -245,15 +255,11 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 onMessage={onMessage}
                 style={{ width: '100%', height: '100%', flex: 1 }}
             />
-            {showOverlay && (
-                <CustomOverlay
-                    show={showOverlay}
-                    setShow={setShowOverlay}
-                    title={overlay.title}
-                    message={overlay.message}
-                    buttons={overlay.buttons}
-                />
-            )}
+            <CustomOverlay
+                show={showOverlay}
+                onBackdropPress={() => setShowOverlay(false)}
+                contents={overlayContents}
+            />
         </View>
     )
 }
