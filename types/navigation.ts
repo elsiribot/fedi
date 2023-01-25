@@ -22,6 +22,10 @@ export type NavigationLinkingConfig = LinkingOptions<
 export type MainNavigatorDrawerParamList = {
     MainNavigator: undefined
 }
+export type SitesStackParamList = {
+    SitesBrowser: { site: Site }
+    SitesList: undefined
+}
 export type HomeTabsParamList = {
     Admin: undefined
     Community: undefined
@@ -85,6 +89,5 @@ export type RootStackParamList = {
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
     Transactions: undefined
-    SitesBrowser: { site: Site }
     DeveloperSettings: undefined
 }

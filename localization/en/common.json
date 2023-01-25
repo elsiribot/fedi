@@ -1,5 +1,6 @@
 {
     "words": {
+        "accept": "Accept",
         "admin": "Admin",
         "amount": "Amount",
         "backup": "Backup",
@@ -290,6 +291,12 @@
             "receive-bitcoin": "Receive bitcoin",
             "receive-bitcoin-offline": "Receive bitcoin offline",
             "you-received": "You received"
+        },
+        "sites": {
+            "wants-to-pay-you": "{{site}} wants to pay you",
+            "boost-this-post": "Boost this post on {{site}}?",
+            "login-to": "Login to",
+            "payment-request": "Payment request from {{site}} "
         }
     }
 }

@@ -1,5 +1,6 @@
 {
     "words": {
+        "accept": "Aceptar",
         "admin": "Admin",
         "amount": "Cantidad",
         "backup": "Copia de seguridad",
@@ -20,6 +21,7 @@
         "lightning": "Lightning",
         "memo": "Memo",
         "next": "Siguiente",
+        "no": "No",
         "okay": "De acuerdo",
         "one": "uno",
         "onchain": "En cadena",
@@ -27,6 +29,7 @@
         "pending": "pendiente",
         "receive": "Recibir",
         "received": "Recibido",
+        "reject": "Rechazar",
         "request": "Solicitar",
         "required": "requerido",
         "sats": "sats",
@@ -39,6 +42,7 @@
         "time": "Hora",
         "transactions": "Transacciones",
         "two": "dos",
+        "yes": "Si",
         "wallet": "Cartera"
     },
     "phrases": {
@@ -226,6 +230,11 @@
             "receive-bitcoin": "Recibir bitcoin",
             "receive-bitcoin-offline": "Recibir bitcoin sin conexión",
             "you-received": "Has recibido"
+        },
+        "site": {
+            "wants-to-pay-you": "{{site}} quiere pagarte",
+            "boost-this-post": "Mejorar esta publicación de {{site}}?",
+            "login-to": "Iniciar sesión en"
         }
     }
 }
