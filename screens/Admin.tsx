@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
@@ -8,6 +9,18 @@ import { Images } from '../assets/images'
 import { listFederations } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
+import {
+    COMMUNITY_GROUPS_PERSISTENCE_KEY,
+    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+} from '../constants'
+import {
+    DEFAULT_GROUPS,
+    receiveGroups,
+    receiveMembersSeen,
+    receiveMessages,
+    useCommunityContext,
+} from '../state/contexts/CommunityContext'
 import {
     updateFederations,
     useFederationsContext,
@@ -26,7 +39,8 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { leaveFederation } = useBridge()
-    const { state, dispatch } = useFederationsContext()
+    const { state, dispatch: federationsDispatch } = useFederationsContext()
+    const { dispatch: communityDispatch } = useCommunityContext()
     const { selectedFederation } = state
     const [userIsGuardian, setUserIsGuardian] = useState(false)
 
@@ -34,21 +48,42 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         setUserIsGuardian(true)
     }
 
+    const resetCommunityState = () => {
+        communityDispatch(receiveMembersSeen([]))
+        communityDispatch(receiveMessages([]))
+        communityDispatch(receiveGroups(DEFAULT_GROUPS))
+        AsyncStorage.setItem(
+            COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+            JSON.stringify({ members: [] }),
+        )
+        AsyncStorage.setItem(
+            COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+            JSON.stringify({ messages: [] }),
+        )
+        AsyncStorage.setItem(
+            COMMUNITY_GROUPS_PERSISTENCE_KEY,
+            JSON.stringify({ groups: DEFAULT_GROUPS }),
+        )
+    }
+
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
     const handleLeaveFederation = async () => {
         // leave federation
         await leaveFederation()
+        resetCommunityState()
 
         // update context and navigate
         const federations = await listFederations()
         if (federations.length > 0) {
-            dispatch(updateFederations(federations[0].name, federations))
+            federationsDispatch(
+                updateFederations(federations[0].name, federations),
+            )
             // FIXME: this doesn't do enough ...
             navigation.navigate('Home')
         } else {
             navigation.navigate('Splash')
-            dispatch(updateFederations(null, federations))
+            federationsDispatch(updateFederations(null, federations))
         }
     }
 
@@ -60,7 +95,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 t('feature.federations.leave-federation-withdraw-first'),
                 [
                     {
-                        text: t('words.ok'),
+                        text: t('words.okay'),
                     },
                 ],
             )
