@@ -1,12 +1,17 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import {
+    CogSvg,
+    FediLogoIconSvg,
+    GlobeSvg,
+    WalletSvg,
+} from '../assets/images/svgs'
 
-import { Images } from '../assets/images'
 import CommunityHeader from '../components/feature/community/CommunityHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
@@ -66,30 +71,30 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                     switch (route.name) {
                         case 'Wallet':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Wallet}
+                                <WalletSvg
+                                    height={theme.sizes.sm}
+                                    width={theme.sizes.sm}
                                 />
                             )
                         case 'Community':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.FediLogoIcon}
+                                <FediLogoIconSvg
+                                    height={theme.sizes.sm}
+                                    width={theme.sizes.sm}
                                 />
                             )
                         case 'Sites':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Globe}
+                                <GlobeSvg
+                                    height={theme.sizes.sm}
+                                    width={theme.sizes.sm}
                                 />
                             )
                         case 'Admin':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Cog}
+                                <CogSvg
+                                    height={theme.sizes.sm}
+                                    width={theme.sizes.sm}
                                 />
                             )
                         default:

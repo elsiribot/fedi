@@ -5,7 +5,15 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
+import {
+    FederationSvg,
+    FediLogoIconSvg,
+    InviteMembersSvg,
+    LeaveFederationSvg,
+    RecoverySvg,
+    SocialPeopleSvg,
+    WalletSvg,
+} from '../assets/images/svgs'
 import { listFederations } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
@@ -160,12 +168,22 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
                 <SettingsItem
                     disabled
-                    imageSource={Images.Federation}
+                    imageSource={
+                        <FederationSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.federations.federation-details')}
                     onPress={() => {}}
                 />
                 <SettingsItem
-                    imageSource={Images.InviteMembers}
+                    imageSource={
+                        <InviteMembersSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.federations.invite-members')}
                     onPress={() => {
                         navigation.navigate('FederationInvite', {
@@ -177,7 +195,12 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 {userIsGuardian ? (
                     <SettingsItem
-                        imageSource={Images.SocialPeople}
+                        imageSource={
+                            <SocialPeopleSvg
+                                height={theme.sizes.sm}
+                                width={theme.sizes.sm}
+                            />
+                        }
                         label={t('feature.recovery.recovery-assist')}
                         onPress={() => {
                             navigation.navigate('StartRecoveryAssist')
@@ -185,14 +208,24 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     />
                 ) : (
                     <SettingsItem
-                        imageSource={Images.FediLogoIcon}
+                        imageSource={
+                            <FediLogoIconSvg
+                                height={theme.sizes.sm}
+                                width={theme.sizes.sm}
+                            />
+                        }
                         label={'DEV: Activate Guardian Mode'}
                         onPress={simulateGuardianAuthentication}
                     />
                 )}
 
                 <SettingsItem
-                    imageSource={Images.LeaveFederation}
+                    imageSource={
+                        <LeaveFederationSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.federations.leave-federation')}
                     onPress={confirmLeaveFederation}
                 />
@@ -202,12 +235,22 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     {t('words.wallet')}
                 </Text>
                 <SettingsItem
-                    imageSource={Images.Wallet}
+                    imageSource={
+                        <WalletSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.backup.backup-wallet')}
                     onPress={() => navigation.navigate('ChooseBackupMethod')}
                 />
                 <SettingsItem
-                    imageSource={Images.Recovery}
+                    imageSource={
+                        <RecoverySvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.recovery.recover-a-wallet')}
                     onPress={onChooseRecovery}
                 />
@@ -218,12 +261,22 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
                 <SettingsItem
                     disabled
-                    imageSource={Images.FediLogoIcon}
+                    imageSource={
+                        <FediLogoIconSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('phrases.app-settings-security')}
                     onPress={confirmLeaveFederation}
                 />
                 <SettingsItem
-                    imageSource={Images.FediLogoIcon}
+                    imageSource={
+                        <FediLogoIconSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={'Developer Settings'}
                     onPress={() => navigation.navigate('DeveloperSettings')}
                 />

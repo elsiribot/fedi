@@ -1,5 +1,4 @@
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import {
     GestureResponderEvent,
     ImageSourcePropType,
@@ -25,7 +24,7 @@ const SettingsItem = ({
         <Pressable
             style={[styles(theme).container, disabled ? { opacity: 0.25 } : {}]}
             onPress={disabled ? () => {} : onPress}>
-            <Image source={imageSource} style={styles(theme).image} />
+            {imageSource}
             <Text style={styles(theme).label}>{label}</Text>
             <Icon
                 name={'angle-right'}
