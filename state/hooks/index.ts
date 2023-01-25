@@ -58,6 +58,12 @@ export const useBtcUsdPrice = () => {
             },
             [btcUsdPrice],
         ),
+        convertSatsToUsdString: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToUsdString(sats, btcUsdPrice)
+            },
+            [btcUsdPrice],
+        ),
     }
 }
 

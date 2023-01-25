@@ -6,6 +6,7 @@ import {
     Sats,
     SatsString,
     Usd,
+    UsdString,
 } from '../types'
 
 class AmountUtils {
@@ -28,6 +29,19 @@ class AmountUtils {
         return Number(
             (btc * rate).toFixed(AmountUtils.USD_MAX_DECIMAL_PLACES),
         ) as Usd
+    }
+    msatToUsdString = (msats: MSats, rate: number): UsdString => {
+        const btc = this.msatToBtc(msats)
+        return this.btcToUsdString(btc, rate)
+    }
+    satToUsdString = (sats: Sats, rate: number): UsdString => {
+        const btc = this.satToBtc(sats)
+        return this.btcToUsdString(btc, rate)
+    }
+    btcToUsdString = (btc: Btc, rate: number): UsdString => {
+        return this.btcToUsd(btc, rate).toFixed(
+            AmountUtils.USD_MAX_DECIMAL_PLACES,
+        ) as UsdString
     }
 
     // For BTC unit conversions returned as number

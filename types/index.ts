@@ -54,7 +54,7 @@ export type BtcString = BitcoinUnit<string, 'BtcString'>
 export type SatsString = BitcoinUnit<string, 'SatsString'>
 export type MsatsString = BitcoinUnit<string, 'MsatsString'>
 export type Usd = FiatUnit<number, 'Usd'>
-export type UsdString = FiatUnit<number, 'UsdString'>
+export type UsdString = FiatUnit<string, 'UsdString'>
 
 // Community features
 export type FediGroupLink = string
