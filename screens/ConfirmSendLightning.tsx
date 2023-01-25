@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { decodeInvoice, Invoice } from '../bridge'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import LineBreak from '../components/ui/LineBreak'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -88,9 +89,18 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             </Text>
             <View style={styles(theme).detailsContainer}>
                 {decodedInvoice.amount && (
-                    <Text h2>{`${amountUtils.msatToSat(
-                        decodedInvoice.amount,
-                    )} ${t('words.sats').toUpperCase()}`}</Text>
+                    <>
+                        <Text h2>
+                            {`${amountUtils.msatToSat(
+                                decodedInvoice.amount,
+                            )} ${t('words.sats').toUpperCase()}`}
+                        </Text>
+                        <UsdAmount
+                            amountSats={amountUtils.msatToSat(
+                                decodedInvoice.amount,
+                            )}
+                        />
+                    </>
                 )}
                 {decodedInvoice.description && (
                     <Text small>{decodedInvoice.description}</Text>

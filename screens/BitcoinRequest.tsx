@@ -13,6 +13,7 @@ import {
     TransactionEvent,
 } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
@@ -181,9 +182,14 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             </Pressable>
             <View style={styles(theme).detailsContainer}>
                 {requestAmount && (
-                    <Text h2>{`${amountUtils.msatToSat(requestAmount)} ${t(
-                        'words.sats',
-                    ).toUpperCase()}`}</Text>
+                    <>
+                        <Text h2>{`${amountUtils.msatToSat(requestAmount)} ${t(
+                            'words.sats',
+                        ).toUpperCase()}`}</Text>
+                        <UsdAmount
+                            amountSats={amountUtils.msatToSat(requestAmount)}
+                        />
+                    </>
                 )}
                 {requestNote && <Text small>{requestNote}</Text>}
             </View>
