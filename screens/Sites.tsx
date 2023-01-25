@@ -6,16 +6,20 @@ import SitesList from './SitesList'
 
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import SitesHeader from '../components/feature/sites/SitesHeader'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import type {
+    HomeTabsParamList,
+    RootStackParamList,
+    SitesStackParamList,
+} from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
     'Sites'
 >
 
-const Sites: React.FC<Props> = ({}) => {
-    const Stack = createNativeStackNavigator<RootStackParamList>()
+const Stack = createNativeStackNavigator<SitesStackParamList>()
 
+const Sites: React.FC<Props> = ({}) => {
     // TODO: Add offline state as part of #53
 
     return (

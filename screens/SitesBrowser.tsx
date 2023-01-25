@@ -1,10 +1,10 @@
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
 import SitesHeader from '../components/feature/sites/SitesHeader'
@@ -13,10 +13,10 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { MSats, Sats } from '../types'
-import type { RootStackParamList } from '../types/navigation'
+import type { SitesStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
-export type Props = BottomTabScreenProps<RootStackParamList, 'SitesBrowser'>
+export type Props = NativeStackScreenProps<SitesStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { site } = route.params

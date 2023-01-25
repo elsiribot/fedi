@@ -1,4 +1,4 @@
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React from 'react'
@@ -7,14 +7,11 @@ import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import SiteTile from '../components/feature/sites/SiteTile'
 import { SITES } from '../constants'
 import { Site } from '../types'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import type { SitesStackParamList } from '../types/navigation'
 
-export type Props = BottomTabScreenProps<
-    HomeTabsParamList & RootStackParamList,
-    'SitesList'
->
+export type Props = NativeStackScreenProps<SitesStackParamList, 'SitesList'>
 
-const Sites: React.FC<Props> = ({ navigation }) => {
+const SitesList: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const onSelect = (site: Site) => {
         navigation.navigate('SitesBrowser', { site })
@@ -49,4 +46,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default Sites
+export default SitesList
