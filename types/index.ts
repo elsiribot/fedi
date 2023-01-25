@@ -78,10 +78,10 @@ export class Group extends Chat {
     invitationCode?: FediGroupLink
 
     static encodeInvitationLink(id: string, name: string): string {
-        return `fedi:group: ${id}::${name}`
+        return `fedi:group:${id}::${name}`
     }
     static decodeInvitationLink(link: string): Group {
-        const contents = link.split('fedi:group: ')[1]
+        const contents = link.split('fedi:group:')[1]
         if (!contents) throw new Error(i18n.t('errors.unknown-error'))
 
         // TODO: Harden this encoding scheme (use standard URL params?)

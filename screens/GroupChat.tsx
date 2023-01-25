@@ -4,6 +4,8 @@ import { orderBy } from 'lodash'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import uuid from 'react-native-uuid'
+
 import MessageInput from '../components/feature/community/MessageInput'
 import MessagesList from '../components/feature/community/MessagesList'
 import { useCommunityContext } from '../state/contexts/CommunityContext'
@@ -11,6 +13,7 @@ import { useCommunityContext } from '../state/contexts/CommunityContext'
 import type { RootStackParamList } from '../types/navigation'
 
 import { useXmpp } from '../state/hooks'
+import { Message } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
@@ -39,9 +42,16 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
             <MessagesList messages={sortedMessages} multiUserChat />
             <MessageInput
                 onMessageSubmitted={messageText => {
+                    const newMessage = new Message({
+                        id: uuid.v4(),
+                        content: messageText,
+                        sentAt: Date.now() / 1000,
+                        sentBy: state.authenticatedMember,
+                        sentIn: currentGroup,
+                    })
                     sendGroupMessage({
                         toRoom: currentGroup.id,
-                        text: messageText,
+                        message: newMessage,
                     })
                     // TODO: add message locally and validate later
                     // when server confirms sent message (smoother UX)

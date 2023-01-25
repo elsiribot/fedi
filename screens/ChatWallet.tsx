@@ -90,7 +90,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled={
                         !(selectedFederation!.balance > 0) ||
                         !Number(amount) ||
-                        isLoading
+                        isLoading ||
+                        true
                     }
                 />
             </View>

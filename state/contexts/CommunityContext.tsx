@@ -545,29 +545,18 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
             if (stanza.is('message')) {
                 if (stanza.getAttr('type') === 'groupchat') {
                     // Handle incoming messages from GroupChat
-                    const from = stanza.getAttr('from')
-                    const group = from.split('@')[0]
-                    const sender = from.split(`${XMPP_MUC_DOMAIN}/`)[1]
-                    const bodyText = stanza.getChildText('body') as string
+                    const bodyText = stanza.getChildText('body')
+                    if (!bodyText) return
 
-                    console.info(from, group, sender)
-                    console.info(bodyText)
-                    if (bodyText) {
-                        // environmentState.toast?.show(body, 5000)
-                        const newMessage = new Message({
-                            id: stanza.attr('id'),
-                            content: bodyText,
-                            receivedAt: Date.now() / 1000,
-                            sentIn: new Group({
-                                id: group,
-                            }),
-                            sentBy: new Member({
-                                jid: jid(sender, XMPP_DOMAIN, XMPP_RESOURCE),
-                            }),
-                        })
-                        dispatch(addToMessages(newMessage))
-                        dispatch(updateGroupMessagePreview(newMessage))
-                    }
+                    const groupMessageJson = stanza.getChildText('gm')
+                    const parsedMessage = JSON.parse(groupMessageJson as string)
+                    const newMessage = new Message({
+                        ...parsedMessage,
+                        receivedAt: Date.now() / 1000,
+                    })
+
+                    dispatch(addToMessages(newMessage))
+                    dispatch(updateGroupMessagePreview(newMessage))
                 } else if (stanza.getAttr('type') === 'chat') {
                     // Handle incoming messages from DirectChat
                     const bodyText = stanza.getChildText('body')
