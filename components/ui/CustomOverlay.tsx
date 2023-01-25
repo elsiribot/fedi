@@ -60,7 +60,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
             isVisible={show}
             onBackdropPress={onBackdropPress}
             overlayStyle={styles(theme).overlayContainer}>
-            <Text h2 h2Style={styles(theme).overlayText}>
+            <Text medium style={styles(theme).overlayTitle}>
                 {title}
             </Text>
             <Text h1 h1Style={styles(theme).overlayText}>
@@ -87,6 +87,10 @@ const styles = (theme: Theme) =>
             right: 0,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
+            paddingTop: theme.spacing.xl,
+        },
+        overlayTitle: {
+            textAlign: 'center',
         },
         overlayText: {
             marginTop: theme.spacing.lg,
@@ -94,7 +98,6 @@ const styles = (theme: Theme) =>
         },
         overlayDescription: {
             color: theme.colors.lightGrey,
-            marginTop: theme.spacing.lg,
             textAlign: 'center',
         },
         overlayButtonView: {
