@@ -1,11 +1,36 @@
-import { Btc, BtcString, MSats, MsatsString, Sats, SatsString } from '../types'
+import {
+    Btc,
+    BtcString,
+    MSats,
+    MsatsString,
+    Sats,
+    SatsString,
+    Usd,
+} from '../types'
 
 class AmountUtils {
     static BTC_MAX_DECIMAL_PLACES = 8
     static MIN_BTC_VALUE = 0.00000001
     static SATS_PER_BTC = 100000000
     static MSATS_PER_SAT = 1000
+    static USD_MAX_DECIMAL_PLACES = 2
 
+    // For BTC unit conversions returned as number
+    msatToUsd = (msats: MSats, rate: number): Usd => {
+        const btc = this.msatToBtc(msats)
+        return this.btcToUsd(btc, rate)
+    }
+    satToUsd = (sats: Sats, rate: number): Usd => {
+        const btc = this.satToBtc(sats)
+        return this.btcToUsd(btc, rate)
+    }
+    btcToUsd = (btc: Btc, rate: number): Usd => {
+        return Number(
+            (btc * rate).toFixed(AmountUtils.USD_MAX_DECIMAL_PLACES),
+        ) as Usd
+    }
+
+    // For BTC unit conversions returned as number
     msatToSat = (msats: MSats): Sats => {
         return Math.round(msats / AmountUtils.MSATS_PER_SAT) as Sats
     }
@@ -37,6 +62,7 @@ class AmountUtils {
         return btc
     }
 
+    // For BTC unit conversions returned as strings
     msatToSatString = (msats: MSats): SatsString => {
         return this.msatToSat(msats).toFixed(0) as SatsString
     }
@@ -44,13 +70,11 @@ class AmountUtils {
     satToMsatString = (sats: Sats): MsatsString => {
         return this.satToMsat(sats).toFixed(0) as MsatsString
     }
-
     satToBtcString = (sats: Sats): BtcString => {
         return this.satToBtc(sats).toFixed(
             AmountUtils.BTC_MAX_DECIMAL_PLACES,
         ) as BtcString
     }
-
     btcToSatString = (btc: Btc): SatsString => {
         return this.btcToSat(btc).toFixed(0) as SatsString
     }
