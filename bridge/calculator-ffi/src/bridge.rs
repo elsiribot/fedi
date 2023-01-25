@@ -56,8 +56,7 @@ pub const RECOVERY_FILENAME: &str = "backup.fedi";
 pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
-pub const XMPP_USERNAME: ChildId = ChildId(0);
-pub const XMPP_PASSWORD: ChildId = ChildId(1);
+pub const XMPP_PASSWORD: ChildId = ChildId(0);
 
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
@@ -162,7 +161,7 @@ impl Bridge {
         &self,
         federation_id: &str,
         mnemonic: &Mnemonic,
-    ) -> Result<()> {
+    ) -> Result<Option<String>> {
         self.stop_pollers().await?;
 
         let entropy = mnemonic.to_entropy();
@@ -197,9 +196,9 @@ impl Bridge {
         };
 
         // recover ecash tokens
-        fed.restore_ecash_from_federation().await?;
+        let username = fed.restore_ecash_from_federation().await?;
 
-        Ok(())
+        Ok(username)
     }
 
     /// Deletes federation client database and config
@@ -362,8 +361,12 @@ impl Federation {
         self.name().replace(" ", "_")
     }
 
-    pub async fn username(&self) -> Option<String> {
+    pub async fn get_username(&self) -> Option<String> {
         self.username.lock().await.clone()
+    }
+
+    pub async fn set_username(&self, username: String) {
+        *self.username.lock().await = Some(username);
     }
 
     pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
@@ -382,12 +385,10 @@ impl Federation {
     }
 
     /// Returns (username, password)
-    pub fn xmpp_credentials(&self) -> XmppCredentials {
+    pub async fn xmpp_credentials(&self) -> XmppCredentials {
         let xmpp_secret = self.client.root_secret.child_key(XMPP_CHILD_ID);
-        let username_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_USERNAME).to_random_bytes();
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
         XmppCredentials {
-            username: hex::encode(&username_bytes),
             password: hex::encode(&password_bytes),
         }
     }
@@ -738,7 +739,7 @@ impl Federation {
         Mnemonic::from_entropy(&client_secret.entropy())
     }
 
-    pub async fn restore_ecash_from_federation(&self) -> Result<()> {
+    pub async fn restore_ecash_from_federation(&self) -> Result<Option<String>> {
         let mut task_group = TaskGroup::new();
         let username = self
             .client
@@ -749,16 +750,16 @@ impl Federation {
         // Update username
         {
             let mut lock = self.username.lock().await;
-            *lock = username;
+            *lock = username.clone();
         }
 
         // FIXME: should we still do this?
         self.send_federation_notification().await;
-        Ok(())
+        Ok(username)
     }
 
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
-        let username = self.username().await;
+        let username = self.get_username().await;
         self.client
             .mint_client()
             .back_up_ecash_to_federation(username)
@@ -836,8 +837,8 @@ impl Federation {
             .create_verification_request(recovery_file.verification_document.clone())?;
         recovery_client
             .upload_verification_request(&verification_request)
-            .await
-            .unwrap();
+            .await?;
+        tracing::info!("verification request uploaded");
 
         // Return social recovery QR
         let recovery_id = verification_request.recovery_id();
@@ -1012,20 +1013,20 @@ impl Federation {
 
     /// Make an ecash backup once every minute
     pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut ticks = 0;
+        let mut ticks = 600;
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
 
-            // Run once per minute
-            if ticks < 60 {
+            // Run every 10 minutes
+            if ticks < 600 {
                 ticks += 1;
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            ticks = 0;
 
+            ticks = 0;
             match self.back_up_ecash_to_federation().await {
                 Ok(_) => info!("ecash backup complete"),
                 Err(_) => error!("ecash backup failed"),

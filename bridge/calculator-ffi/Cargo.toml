@@ -9,17 +9,18 @@ name = "calculatorffi"
 
 
 [dependencies]
-# mint-client = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-# fedimint-api = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-# fedimint-core = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-# fedimint-sled = { git = "https://github.com/justinmoon/fedimint", branch = "dec30" }
-
-mint-client = { path = "../../fedimint/client/client-lib" }
-fedimint-api = { path = "../../fedimint/fedimint-api" }
-fedimint-core = { path = "../../fedimint/fedimint-core" }
-fedimint-sled = { path = "../../fedimint/fedimint-sled" }
-fedi-social = { path = "../../fedimint/modules/fedi-social" }
-fedimint-derive-secret = { path = "../../fedimint/crypto/derive-secret" }
+mint-client = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", branch = "username" }
+fedimint-api = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", branch = "username" }
+fedimint-core = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", branch = "username" }
+fedimint-sled = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", branch = "username" }
+fedi-social = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", branch = "username" }
+fedimint-derive-secret = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", branch = "username" }
+# mint-client = { path = "../../fedimint/client/client-lib" }
+# fedimint-api = { path = "../../fedimint/fedimint-api" }
+# fedimint-core = { path = "../../fedimint/fedimint-core" }
+# fedimint-sled = { path = "../../fedimint/fedimint-sled" }
+# fedi-social = { path = "../../fedimint/modules/fedi-social" }
+# fedimint-derive-secret = { path = "../../fedimint/crypto/derive-secret" }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"
