@@ -82,6 +82,10 @@ export type OfflineTransactionDetails = {
     claimed: boolean
 }
 
+export type XmppCredentials = {
+    username: string
+    password: string
+}
 export class Transaction extends Base {
     id: string
     createdAt: number
@@ -343,6 +347,14 @@ export async function lnurlSignMessage(
     let payload = JSON.stringify({ message, federationId })
     let response = await FedimintFfi.rpc('lnurlSignMessage', payload)
     return handleRpcResponse<LnurlSignedMessage>(response)
+}
+
+export async function getXmppCredentials(
+    federationId: string,
+): Promise<XmppCredentials> {
+    let payload = JSON.stringify({ federationId })
+    let response = await FedimintFfi.rpc('xmppCredentials', payload)
+    return handleRpcResponse<XmppCredentials>(response)
 }
 
 export async function listGateways(
