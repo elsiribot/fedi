@@ -95,7 +95,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 t('feature.federations.leave-federation-withdraw-first'),
                 [
                     {
-                        text: t('words.ok'),
+                        text: t('words.okay'),
                     },
                 ],
             )
