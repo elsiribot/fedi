@@ -6,6 +6,7 @@ import { Alert, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import { Transaction } from '../bridge'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -51,6 +52,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
         }
     }
 
+    const amountSats = amountUtils.msatToSat(amount)
+
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).offlineContainer}>
@@ -61,9 +64,11 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>
             <View style={styles(theme).amountContainer}>
-                <Text h2>{`${amountUtils.msatToSat(amount)} `}</Text>
+                <Text h2>{`${amountSats} `}</Text>
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
+
+            <UsdAmount amountSats={amountSats} />
             <Input
                 onChangeText={e => setNote(e)}
                 value={note}

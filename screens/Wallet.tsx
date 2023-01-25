@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBtcUsdPrice } from '../state/hooks'
 import { MSats } from '../types'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -23,14 +24,19 @@ type BalanceProps = {
 const Balance = ({ balance }: BalanceProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { convertSatsToUsdString } = useBtcUsdPrice()
 
     if (balance !== null) {
+        const amountInSats = amountUtils.msatToSat(balance)
         return (
-            <Text
-                h2
-                style={styles(theme).balanceText}>{`${amountUtils.msatToSat(
-                balance,
-            )} ${t('words.sats')}`}</Text>
+            <View>
+                <Text h2 medium style={styles(theme).balanceText}>
+                    {`$${convertSatsToUsdString(amountInSats)}`}
+                </Text>
+                <Text caption medium style={styles(theme).balanceText}>
+                    {`${amountInSats} ${t('words.sats').toUpperCase()}`}
+                </Text>
+            </View>
         )
     } else {
         return <ActivityIndicator />
@@ -127,6 +133,7 @@ const styles = (theme: Theme) =>
         balanceText: {
             textAlign: 'center',
             color: theme.colors.secondary,
+            marginBottom: theme.spacing.sm,
         },
         buttonsGroupContainer: {
             margin: theme.spacing.sm,

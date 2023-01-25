@@ -3,6 +3,7 @@ import { Button, Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
@@ -61,6 +62,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
+            <UsdAmount amountSats={Number(amount) as Sats} />
             <Button
                 fullWidth
                 title={`${t('words.request')}${amount ? ` ${amount} ` : ' '}${t(
