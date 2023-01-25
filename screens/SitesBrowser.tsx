@@ -26,6 +26,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { t } = useTranslation()
     const { selectedFederation } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
+    const { convertSatsToUsdString } = useBtcUsdPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
@@ -34,6 +35,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         useState<CustomOverlayContents>({
             title: '',
             message: '',
+            description: '',
             buttons: [],
         })
     const { lnurlGetToken } = useBridge()
@@ -91,6 +93,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             site: site.title,
                         }),
                         message: `${amount} ${t('words.sats').toUpperCase()}`,
+                        description: convertSatsToUsdString(amount),
                         buttons: [
                             {
                                 text: t('words.reject'),
@@ -138,6 +141,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         message: `${amountSats} ${t(
                             'words.sats',
                         ).toUpperCase()}`,
+                        description: convertSatsToUsdString(amountSats),
                         buttons: [
                             {
                                 text: t('words.reject'),
