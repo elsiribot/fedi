@@ -67,12 +67,7 @@ class AmountUtils {
         ) as BtcString
     }
     formatNumber = (amount: Number) => {
-        const precision = 0
-        if (amount === 0) {
-            return accounting.unformat(String(amount), '.')
-        } else {
-            return accounting.formatNumber(amount, precision)
-        }
+        return accounting.formatNumber(amount, { precision: 0 })
     }
 }
 
