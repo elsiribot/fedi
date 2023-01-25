@@ -54,7 +54,6 @@ const styles = (theme: Theme) =>
         },
         padded: {
             paddingVertical: theme.spacing.sm,
-            backgroundColor: 'lightblue',
         },
     })
 

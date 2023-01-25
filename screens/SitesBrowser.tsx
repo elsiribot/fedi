@@ -5,6 +5,7 @@ import { WebView } from 'react-native-webview'
 import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
 import SitesHeader from '../components/feature/sites/SitesHeader'
@@ -13,7 +14,7 @@ import CustomOverlay, {
 } from '../components/ui/CustomOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useBridge, useBtcUsdPrice } from '../state/hooks'
 import { MSats, Sats } from '../types'
 import type { SitesStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -21,11 +22,13 @@ import amountUtils from '../utils/AmountUtils'
 export type Props = NativeStackScreenProps<SitesStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
+    const { theme } = useTheme()
     const { site } = route.params
     const { generateInvoice, payInvoice } = useBridge()
     const { t } = useTranslation()
     const { selectedFederation } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
+    const { convertSatsToUsdString } = useBtcUsdPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
@@ -34,6 +37,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         useState<CustomOverlayContents>({
             title: '',
             message: '',
+            description: '',
             buttons: [],
         })
     const { lnurlGetToken } = useBridge()
@@ -91,13 +95,14 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             site: site.title,
                         }),
                         message: `${amount} ${t('words.sats').toUpperCase()}`,
+                        description: `$${convertSatsToUsdString(amount)}`,
                         buttons: [
                             {
                                 text: t('words.reject'),
-                                textColor: 'black',
-                                backgroundColor: 'white',
+                                textColor: theme.colors.primary,
+                                backgroundColor: theme.colors.secondary,
                                 onPress: () => {
-                                    reject(false)
+                                    reject()
                                     setShowOverlay(false)
                                 },
                             },
@@ -138,13 +143,14 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         message: `${amountSats} ${t(
                             'words.sats',
                         ).toUpperCase()}`,
+                        description: `$${convertSatsToUsdString(amountSats)}`,
                         buttons: [
                             {
                                 text: t('words.reject'),
-                                textColor: 'black',
-                                backgroundColor: 'white',
+                                textColor: theme.colors.primary,
+                                backgroundColor: theme.colors.secondary,
                                 onPress: () => {
-                                    reject(false)
+                                    reject()
                                     setShowOverlay(false)
                                 },
                             },
@@ -204,8 +210,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     buttons: [
                         {
                             text: t('words.no'),
-                            textColor: 'black',
-                            backgroundColor: 'white',
+                            textColor: theme.colors.primary,
+                            backgroundColor: theme.colors.secondary,
                             onPress: () => {
                                 console.error('Login denied')
                                 setShowOverlay(false)
