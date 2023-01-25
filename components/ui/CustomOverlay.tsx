@@ -78,7 +78,6 @@ const styles = (theme: Theme) =>
             right: 0,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            marginTop: 20,
         },
         overlayText: {
             marginTop: theme.spacing.lg,
