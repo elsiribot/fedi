@@ -1,8 +1,15 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { Image, Input, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import {
+    Keyboard,
+    KeyboardEvent,
+    Platform,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 
 import { Images } from '../../../assets/images'
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
@@ -26,9 +33,37 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
     )
+    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+
+    useEffect(() => {
+        const keyboardShownListener = Keyboard.addListener(
+            'keyboardWillShow',
+            (e: KeyboardEvent) => {
+                console.info(e.endCoordinates)
+                setKeyboardHeight(e.endCoordinates.height)
+            },
+        )
+        const keyboardHiddenListener = Keyboard.addListener(
+            'keyboardWillHide',
+            () => {
+                setKeyboardHeight(0)
+            },
+        )
+
+        return () => {
+            keyboardShownListener.remove()
+            keyboardHiddenListener.remove()
+        }
+    }, [])
 
     return (
-        <View style={styles(theme).container}>
+        <View
+            style={[
+                styles(theme).container,
+                keyboardHeight > 0 && Platform.OS === 'ios'
+                    ? { paddingBottom: keyboardHeight + theme.spacing.lg }
+                    : {},
+            ]}>
             {/* in-chat payments only available for DirectChat */}
             {member && (
                 <Pressable
@@ -70,10 +105,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 blurOnSubmit={false}
             />
             <Pressable
-                style={styles(theme).sendButton}
+                style={[
+                    styles(theme).sendButton,
+                    keyboardHeight > 0 && Platform.OS === 'ios'
+                        ? { bottom: keyboardHeight + theme.spacing.lg + 6 }
+                        : {},
+                ]}
                 onPress={() => {
-                    onMessageSubmitted(messageText)
-                    setMessageText('')
+                    if (messageText) {
+                        onMessageSubmitted(messageText)
+                        setMessageText('')
+                    }
                 }}>
                 <Image
                     source={Images.SendArrowUpCircle}
@@ -99,7 +141,7 @@ const styles = (theme: Theme) =>
         sendButton: {
             position: 'absolute',
             right: theme.spacing.xl,
-            bottom: theme.spacing.lg + 3,
+            bottom: theme.spacing.lg + 4,
         },
         sendIcon: {
             height: theme.sizes.md,
