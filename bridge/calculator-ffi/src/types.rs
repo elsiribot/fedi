@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use anyhow::anyhow;
+use bitcoin::secp256k1::{ecdsa::Signature, PublicKey};
 use fedimint_api::config::ApiEndpoint;
 use mint_client::api::WsFederationConnect;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::bridge::Federation;
 
@@ -19,7 +20,7 @@ pub fn hacky_lightning_invoice_fee(
         .ok_or(anyhow!("Invoice missing amount"))
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FedimintFederation {
     pub name: String,
@@ -27,6 +28,21 @@ pub struct FedimintFederation {
     pub nodes: Vec<ApiEndpoint>,
     pub balance: fedimint_api::Amount,
     pub social_recovery_active: bool,
+}
+
+// FIXME: should probaby type these as bytes, but don't want to figure out serialization right now
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct XmppCredentials {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LnurlSignedMessage {
+    pub signature: Signature,
+    pub pubkey: PublicKey,
 }
 
 // FIXME: this used to be a From implementation, but total_amount needed async

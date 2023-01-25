@@ -457,11 +457,8 @@ async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
     };
     let federation = get_federation(&federation_id).await;
     let message = Message::from_slice(&hex::decode(message)?)?;
-    let signature = federation.sign_with_node_privkey(&message);
-    Ok(
-        json!({ "result": { "signature": signature, "pubkey": federation.node_pubkey() } })
-            .to_string(),
-    )
+    let signed_message = federation.sign_lnurl_message(&message);
+    Ok(json!({ "result": signed_message }).to_string())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -748,6 +745,22 @@ async fn handle_complete_social_recovery(payload: String) -> anyhow::Result<Stri
     Ok(json!({ "result": () }).to_string())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct XmppCredentialsPayload {
+    federation_id: String,
+}
+
+async fn handle_xmpp_credentials(payload: String) -> anyhow::Result<String> {
+    let XmppCredentialsPayload { federation_id } = match serde_json::from_str(&payload) {
+        Ok(p) => p,
+        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+    };
+    let federation = get_federation(&federation_id).await;
+    let credentials = federation.xmpp_credentials();
+    Ok(json!({ "result": credentials }).to_string())
+}
+
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async {
         debug!("RPC {} {}", method, payload);
@@ -765,7 +778,6 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "receiveEcash" => handle_receive_ecash(payload).await,
             "validateEcash" => handle_validate_ecash(payload).await,
             "addressOrInvoice" => handle_address_or_invoice(payload).await,
-            "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
             "listGateways" => handle_list_gateways(payload).await,
             "switchGateway" => handle_switch_gateway(payload).await,
             "getMnemonic" => handle_get_mnemonic(payload).await,
@@ -776,13 +788,15 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
             "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
             "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
             "recoveryQr" => handle_recovery_qr(payload).await,
-
             "socialRecoveryApprovals" => handle_social_recovery_approvals(payload).await,
             "completeSocialRecovery" => handle_complete_social_recovery(payload).await,
             "socialRecoveryDownloadVerificationDoc" => {
                 handle_social_recovery_download_verification_doc(payload).await
             }
             "approveSocialRecoveryRequest" => handle_approve_social_recovery_request(payload).await,
+            // authenticatino
+            "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
+            "xmppCredentials" => handle_xmpp_credentials(payload).await,
 
             other => Err(anyhow::anyhow!(format!(
                 "Unrecognized RPC command: {}",
@@ -867,17 +881,33 @@ mod tests {
         //     r#"{"members":[[2,"wss://141bc9ab1e05.ngrok.io/"],[0,"wss://4c0922043ed1.ngrok.io/"],[1,"wss://6fc418b1717c.ngrok.io/"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#,
         // );
         // local
+        // let connect_string = String::from(
+        //     r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#,
+        // );
         let connect_string = String::from(
-            r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#,
+            r#"{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}"#,
         );
         let payload = serde_json::to_string(&JoinFederationPayload { connect_string })?;
-        handle_join_federation(payload).await.unwrap();
-        let federation_id = "Hals_trusty_mint";
-        let federation = get_federation(&federation_id).await;
+        let result = handle_join_federation(payload).await.unwrap();
+        let fedimint_federation: FedimintFederation = serde_json::from_value(get_result(result))?;
+        let federation = get_federation(&fedimint_federation.name).await;
 
         let data_dir = get_bridge().await.unwrap().data_dir.display().to_string();
         tracing::info!(data_dir = data_dir);
         Ok(federation)
+    }
+
+    #[test]
+    fn test_xmpp_credentials() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            let fed1 = setup().await?;
+            let fed2 = setup().await?;
+            let cred1 = fed1.xmpp_credentials();
+            let cred2 = fed2.xmpp_credentials();
+            assert!(cred1.username != cred2.username);
+            assert!(cred1.password != cred2.password);
+            Ok(())
+        })
     }
 
     #[test]

@@ -277,6 +277,7 @@ dependencies = [
  "fedi-social",
  "fedimint-api",
  "fedimint-core",
+ "fedimint-derive-secret",
  "fedimint-sled",
  "futures",
  "hex",
