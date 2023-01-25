@@ -1,3 +1,4 @@
+import accounting from 'accounting-js'
 import { Btc, BtcString, MSats, MsatsString, Sats, SatsString } from '../types'
 
 class AmountUtils {
@@ -64,6 +65,14 @@ class AmountUtils {
                 ? '0'
                 : btc.toFixed(AmountUtils.BTC_MAX_DECIMAL_PLACES)
         ) as BtcString
+    }
+    formatNumber = (amount: Number) => {
+        const precision = 0
+        if (amount === 0) {
+            return accounting.unformat(String(amount), '.')
+        } else {
+            return accounting.formatNumber(amount, precision)
+        }
     }
 }
 
