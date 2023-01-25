@@ -468,7 +468,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = ": '\necho \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../bridge\n./ios.sh\npopd\n'\n";
+			shellScript = "\necho \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../bridge\n./ios.sh\npopd\n\n";
 		};
 		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
