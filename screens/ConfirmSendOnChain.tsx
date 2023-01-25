@@ -63,7 +63,9 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         <View style={styles(theme).container}>
             <Text caption>
                 {`${t('words.balance')}: `}
-                {`${amountUtils.msatToSat(selectedFederation?.balance!)} `}
+                {`${amountUtils.formatNumber(
+                    amountUtils.msatToSat(selectedFederation?.balance!),
+                )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <View style={styles(theme).detailsContainer}>
@@ -84,7 +86,11 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
             </View>
             <Button
                 title={`${t('words.send')}${
-                    amount ? ` ${amount} ${t('words.sats').toUpperCase()}` : ''
+                    amount
+                        ? ` ${amountUtils.formatNumber(Number(amount))} ${t(
+                              'words.sats',
+                          ).toUpperCase()}`
+                        : ''
                 }`}
                 onPress={onSendBtc}
                 loading={isLoading}

@@ -55,7 +55,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 await new Promise((resolve, reject) => {
                     Alert.alert(
                         'Invoice request',
-                        `Website wants to pay you ${amount} sats. Do you want to accept that?`,
+                        `Website wants to pay you ${amountUtils.formatNumber(
+                            amount,
+                        )} sats. Do you want to accept that?`,
                         [
                             {
                                 text: 'Yes',
@@ -93,7 +95,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 await new Promise((resolve, reject) => {
                     Alert.alert(
                         'Payment request',
-                        `Pay website ${amountSats} sats?`,
+                        `Pay website ${amountUtils.formatNumber(
+                            amountSats,
+                        )} sats?`,
                         [
                             {
                                 text: 'Yes',

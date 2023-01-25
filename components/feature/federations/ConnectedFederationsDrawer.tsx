@@ -45,9 +45,9 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     {federation.name}
                 </Text>
                 <Text style={styles(theme).subText}>
-                    {`${amountUtils.msatToSat(federation.balance)} ${t(
-                        'words.sats',
-                    )}`}
+                    {`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(federation.balance),
+                    )} ${t('words.sats')}`}
                 </Text>
             </View>
 

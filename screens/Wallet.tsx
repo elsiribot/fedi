@@ -28,8 +28,8 @@ const Balance = ({ balance }: BalanceProps) => {
         return (
             <Text
                 h2
-                style={styles(theme).balanceText}>{`${amountUtils.msatToSat(
-                balance,
+                style={styles(theme).balanceText}>{`${amountUtils.formatNumber(
+                amountUtils.msatToSat(balance),
             )} ${t('words.sats')}`}</Text>
         )
     } else {
