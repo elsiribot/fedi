@@ -58,6 +58,7 @@ export const SiteImages: ImagesMap = {
     btcmap: require('./sites/btcmap.png'),
     bitrefill: require('./sites/bitrefill.png'),
     geyser: require('./sites/geyser.png'),
+    hrf: require('./sites/hrf.png'),
     ibex: require('./sites/ibex.png'),
     kollider: require('./sites/kollider.png'),
     lookingglass: require('./sites/lookingglass.png'),

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
@@ -60,6 +61,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
+            <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).offlineContainer}>
                 <Image
                     source={Images.Offline}

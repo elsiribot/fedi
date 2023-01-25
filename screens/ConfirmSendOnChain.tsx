@@ -4,6 +4,7 @@ import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -77,6 +78,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     returnKeyType="done"
                     containerStyle={styles(theme).textInput}
                 />
+                <UsdAmount amountSats={Number(amount) as Sats} />
                 <Text>
                     {`${stringUtils.truncateMiddleOfString(
                         bitcoinUri.body,

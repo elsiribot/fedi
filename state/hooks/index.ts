@@ -34,8 +34,10 @@ import {
 } from '../../bridge'
 import { XMPP_MUC_DOMAIN } from '../../constants'
 import { Group, Member, Message, MSats, Sats } from '../../types'
+import amountUtils from '../../utils/AmountUtils'
 import lnurlUtils from '../../utils/LNURLUtils'
 import { addToGroups, useCommunityContext } from '../contexts/CommunityContext'
+import { useCurrencyContext } from '../contexts/CurrencyContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -44,6 +46,25 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
         ref.current = value
     })
     return ref.current
+}
+
+export const useBtcUsdPrice = () => {
+    const { state } = useCurrencyContext()
+    const { btcUsdPrice } = state
+    return {
+        convertSatsToUsd: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToUsd(sats, btcUsdPrice)
+            },
+            [btcUsdPrice],
+        ),
+        convertSatsToUsdString: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToUsdString(sats, btcUsdPrice)
+            },
+            [btcUsdPrice],
+        ),
+    }
 }
 
 export const useBridge = () => {

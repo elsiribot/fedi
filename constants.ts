@@ -22,6 +22,7 @@ export const COMMUNITY_MESSAGES_PERSISTENCE_KEY =
 export const COMMUNITY_GROUPS_PERSISTENCE_KEY =
     'AsyncStorage-CommunityContext-groups'
 
+export const BITFINEX_BTCUSD_WEBSOCKET_URL = 'wss://api-pub.bitfinex.com/ws/2'
 export const DEFAULT_GROUP_NAME = i18n.t('feature.community.new-group')
 export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
 // This is the XMPP Multi-User-Chat (MUC) domain defined
@@ -61,6 +62,13 @@ export const SITES = [
     //     url: 'https://testfed.xyz/webln',
     //     description: 'A regtest playground',
     // },
+    {
+        id: 'hrf',
+        title: 'Support HRF on Geyser',
+        url: 'https://geyser.fund/project/supporthrf',
+        description:
+            'Donate directly to the Human Rights Foundation on Guyser Fund',
+    },
     {
         id: 'geyser',
         title: 'Geyser Fund',

@@ -7,6 +7,7 @@ import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
@@ -29,14 +30,16 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
         return () => clearInterval(interval)
     }, [index, frames])
 
+    const amountSats = amountUtils.msatToSat(amount)
+
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).amountContainer}>
-                <Text h2>{`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(amount),
-                )} `}</Text>
+                <Text h2>{`${amountUtils.formatNumber(amountSats)} `}</Text>
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
+
+            <UsdAmount amountSats={amountSats} />
             <View style={styles(theme).qrContainer}>
                 <QRCode
                     value={frames[index]}

@@ -3,6 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import Success from '../components/ui/Success'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -12,11 +13,16 @@ export type Props = NativeStackScreenProps<
 
 const PersonalRecoverySuccess: React.FC<Props> = () => {
     const { t } = useTranslation()
+    const { selectedFederation } = useFederationsContext().state
 
     return (
         <Success
             messageText={t('feature.recovery.you-completed-personal-recovery')}
             buttonText={t('words.okay')}
+            // returning members might still need to set their username
+            nextScreen={
+                selectedFederation?.username ? 'Home' : 'CreateUsername'
+            }
         />
     )
 }

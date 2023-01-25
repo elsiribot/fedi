@@ -1,26 +1,63 @@
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import React, { MutableRefObject, useRef, useState } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
+import { StyleSheet, View } from 'react-native'
 import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useTheme } from '@rneui/themed'
+import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
-import { useBridge } from '../state/hooks'
-import { Sats } from '../types'
-import type { RootStackParamList } from '../types/navigation'
+import SitesHeader from '../components/feature/sites/SitesHeader'
+import CustomOverlay, {
+    CustomOverlayContents,
+} from '../components/ui/CustomOverlay'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBridge, useBtcUsdPrice } from '../state/hooks'
+import { MSats, Sats } from '../types'
+import type { SitesStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
-export type Props = BottomTabScreenProps<RootStackParamList, 'SitesBrowser'>
+export type Props = NativeStackScreenProps<SitesStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
+    const { theme } = useTheme()
     const { site } = route.params
     const { generateInvoice, payInvoice } = useBridge()
-    // FIXME: is this type casting acceptable?
+    const { t } = useTranslation()
+    const { selectedFederation } = useFederationsContext().state
+    const { toast } = useEnvironmentContext().state
+    const { convertSatsToUsdString } = useBtcUsdPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
-    const [jsInjected, setJsInjected] = useState(false)
+    const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
+    const [showOverlay, setShowOverlay] = useState<boolean>(false)
+    const [overlayContents, setOverlayContents] =
+        useState<CustomOverlayContents>({
+            title: '',
+            message: '',
+            description: '',
+            buttons: [],
+        })
     const { lnurlGetToken } = useBridge()
+
+    useEffect(() => {
+        if (overlayContents.title) {
+            setShowOverlay(true)
+        }
+    }, [overlayContents])
+
+    // Reset overlay content when hidden
+    useEffect(() => {
+        if (showOverlay === false) {
+            setOverlayContents({
+                title: '',
+                message: '',
+                buttons: [],
+            })
+        }
+    }, [showOverlay])
 
     const onMessage = onMessageHandler(webview, {
         enable: async () => {
@@ -53,26 +90,34 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
             try {
                 await new Promise((resolve, reject) => {
-                    Alert.alert(
-                        'Invoice request',
-                        `Website wants to pay you ${amountUtils.formatNumber(
-                            amount,
-                        )} sats. Do you want to accept that?`,
-                        [
+                    setOverlayContents({
+                        title: t('feature.sites.wants-to-pay-you', {
+                            site: site.title,
+                        }),
+                        message: `${amountUtils.formatNumber(amount)} ${t(
+                            'words.sats',
+                        ).toUpperCase()}`,
+                        description: `$${convertSatsToUsdString(amount)}`,
+                        buttons: [
                             {
-                                text: 'Yes',
-                                style: 'default',
-                                onPress: () => resolve(null),
+                                text: t('words.reject'),
+                                textColor: theme.colors.primary,
+                                backgroundColor: theme.colors.secondary,
+                                onPress: () => {
+                                    reject()
+                                    setShowOverlay(false)
+                                },
                             },
                             {
-                                text: 'No',
-                                style: 'default',
-                                onPress: () => reject(),
+                                text: t('words.accept'),
+                                onPress: async () => {
+                                    resolve(true)
+                                    setShowOverlay(false)
+                                },
                             },
                         ],
-                    )
+                    })
                 })
-
                 const invoice = await generateInvoice(
                     amountUtils.satToMsat(amount),
                     description,
@@ -93,28 +138,48 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             try {
                 // Wait for user to interact with alert
                 await new Promise((resolve, reject) => {
-                    Alert.alert(
-                        'Payment request',
-                        `Pay website ${amountUtils.formatNumber(
-                            amountSats,
-                        )} sats?`,
-                        [
+                    setOverlayContents({
+                        title: t('feature.sites.payment-request', {
+                            site: site.title,
+                        }),
+                        message: `${amountUtils.formatNumber(amountSats)} ${t(
+                            'words.sats',
+                        ).toUpperCase()}`,
+                        description: `$${convertSatsToUsdString(amountSats)}`,
+                        buttons: [
                             {
-                                text: 'Yes',
-                                style: 'default',
-                                onPress: () => resolve('Accepted'),
+                                text: t('words.reject'),
+                                textColor: theme.colors.primary,
+                                backgroundColor: theme.colors.secondary,
+                                onPress: () => {
+                                    reject()
+                                    setShowOverlay(false)
+                                },
                             },
                             {
-                                text: 'No',
-                                style: 'default',
-                                onPress: () => reject('Denied'),
+                                text: t('words.accept'),
+                                onPress: async () => {
+                                    resolve(true)
+                                    setShowOverlay(false)
+                                },
                             },
                         ],
-                    )
+                    })
                 })
 
                 // Attempt to pay the invoice
-                await payInvoice(paymentRequest)
+                if (selectedFederation!.balance < invoice.amount) {
+                    toast?.show(
+                        t('errors.insufficient-balance', {
+                            balance: `${amountUtils.msatToSat(
+                                selectedFederation?.balance as MSats,
+                            )} SATS`,
+                        }),
+                        5000,
+                    )
+                } else {
+                    await payInvoice(paymentRequest)
+                }
 
                 return {
                     preimage: 'fixme',
@@ -141,29 +206,40 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         foundInvoice: async (paymentRequest: string) => {
             console.log('foundInvoice', paymentRequest)
             if (paymentRequest.toLowerCase().startsWith('lnurl')) {
-                Alert.alert('Login', `Login to ${site.title}?`, [
-                    {
-                        text: 'Yes',
-                        style: 'default',
-                        onPress: async () => {
-                            try {
-                                const token = await lnurlGetToken(
-                                    paymentRequest,
-                                )
-                                setJwt(token)
-                                console.log('FIXLN-URL auth successful', token)
-                            } catch (e) {
-                                // FIXME
-                                console.error('LNURL-Auth failed', e)
-                            }
+                setOverlayContents({
+                    title: t('feature.sites.login-to'),
+                    message: `${site.title}`,
+                    buttons: [
+                        {
+                            text: t('words.no'),
+                            textColor: theme.colors.primary,
+                            backgroundColor: theme.colors.secondary,
+                            onPress: () => {
+                                console.error('Login denied')
+                                setShowOverlay(false)
+                            },
                         },
-                    },
-                    {
-                        text: 'No',
-                        style: 'default',
-                        onPress: () => console.error('Login denied'),
-                    },
-                ])
+                        {
+                            text: t('words.yes'),
+                            onPress: async () => {
+                                try {
+                                    const token = await lnurlGetToken(
+                                        paymentRequest,
+                                    )
+                                    setJwt(token)
+                                    console.log(
+                                        'FIXLN-URL auth successful',
+                                        token,
+                                    )
+                                } catch (e) {
+                                    // FIXME
+                                    console.error('LNURL-Auth failed', e)
+                                }
+                                setShowOverlay(false)
+                            },
+                        },
+                    ],
+                })
             }
         },
     })
@@ -173,6 +249,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     console.log('uri: ', uri)
     return (
         <View style={styles.container}>
+            <SitesHeader webViewRef={webview} />
             <WebView
                 ref={webview}
                 source={{ uri: site.url }}
@@ -186,6 +263,11 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 onMessage={onMessage}
                 style={{ width: '100%', height: '100%', flex: 1 }}
             />
+            <CustomOverlay
+                show={showOverlay}
+                onBackdropPress={() => setShowOverlay(false)}
+                contents={overlayContents}
+            />
         </View>
     )
 }
@@ -195,7 +277,6 @@ const styles = StyleSheet.create({
         flex: 1,
         // justifyContent: 'space-evenly',
         // alignItems: 'center',
-        paddingHorizontal: 24,
     },
 })
 
