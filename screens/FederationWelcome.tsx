@@ -96,6 +96,7 @@ const styles = (theme: Theme) =>
         },
         welcomeTitle: {
             marginVertical: theme.spacing.md,
+            textAlign: 'center',
         },
         welcomeText: {
             textAlign: 'center',
