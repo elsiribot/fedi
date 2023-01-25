@@ -78,7 +78,6 @@ const styles = (theme: Theme) =>
             right: 0,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            marginTop: 20,
         },
         overlayText: {
             marginTop: theme.spacing.lg,
@@ -95,8 +94,10 @@ const styles = (theme: Theme) =>
             margin: theme.spacing.sm,
         },
         buttonContainer: {
-            margin: theme.spacing.sm,
+            marginVertical: theme.spacing.lg,
+            marginHorizontal: theme.spacing.sm,
             flex: 1,
+            borderWidth: 1,
         },
     })
 
