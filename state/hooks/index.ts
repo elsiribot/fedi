@@ -6,6 +6,7 @@ import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
     authenticateGuardian,
+    backupXmppUsername,
     completeSocialRecovery,
     denySocialRecoveryRequest,
     generateAddress,
@@ -227,6 +228,12 @@ export const useBridge = () => {
         getXmppCredentials: useCallback(() => {
             return getXmppCredentials(selectedFederation!.name)
         }, [selectedFederation]),
+        backupXmppUsername: useCallback(
+            (username: string) => {
+                return backupXmppUsername(username, selectedFederation!.name)
+            },
+            [selectedFederation],
+        ),
     }
 }
 

@@ -22,6 +22,8 @@ export type LogEvent = {
 
 export type FederationEvent = Federation
 
+export type RecoveredUsername = string | null
+
 export type TransactionEvent = {
     federationId: string
     transaction: Transaction
@@ -83,7 +85,6 @@ export type OfflineTransactionDetails = {
 }
 
 export type XmppCredentials = {
-    username: string
     password: string
 }
 export class Transaction extends Base {
@@ -357,6 +358,15 @@ export async function getXmppCredentials(
     return handleRpcResponse<XmppCredentials>(response)
 }
 
+export async function backupXmppUsername(
+    username: String,
+    federationId: string,
+): Promise<null> {
+    let payload = JSON.stringify({ federationId, username })
+    let response = await FedimintFfi.rpc('backupXmppUsername', payload)
+    return handleRpcResponse<null>(response)
+}
+
 export async function listGateways(
     federationId: string,
 ): Promise<LightningGateway[]> {
@@ -393,10 +403,10 @@ export async function getMnemonic(federationId: string): Promise<SeedWords> {
 export async function recoverFromMnemonic(
     mnemonic: string[],
     federationId: string,
-): Promise<null> {
+): Promise<RecoveredUsername> {
     let payload = JSON.stringify({ mnemonic, federationId })
     let response = await FedimintFfi.rpc('recoverFromMnemonic', payload)
-    return handleRpcResponse<null>(response)
+    return handleRpcResponse<RecoveredUsername>(response)
 }
 
 /*
@@ -516,11 +526,11 @@ export async function socialRecoveryDownloadVerificationDoc(
 
 export async function completeSocialRecovery(
     federationId: string,
-): Promise<string | null> {
+): Promise<RecoveredUsername> {
     console.log('calling completeSocialRecovery')
     let payload = JSON.stringify({ federationId })
     let response = await FedimintFfi.rpc('completeSocialRecovery', payload)
-    return handleRpcResponse<null>(response)
+    return handleRpcResponse<RecoveredUsername>(response)
 }
 
 /*
