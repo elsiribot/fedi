@@ -39,7 +39,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { lnurlGetToken } = useBridge()
 
     useEffect(() => {
-        if (overlayContents !== null) {
+        if (overlayContents.title) {
             setShowOverlay(true)
         }
     }, [overlayContents])

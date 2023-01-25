@@ -56,27 +56,25 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
     }
 
     return (
-        <View>
-            <Overlay
-                isVisible={show}
-                onBackdropPress={onBackdropPress}
-                overlayStyle={styles(theme).overlayContainer}>
-                <Text h2 h2Style={styles(theme).overlayText}>
-                    {title}
+        <Overlay
+            isVisible={show}
+            onBackdropPress={onBackdropPress}
+            overlayStyle={styles(theme).overlayContainer}>
+            <Text h2 h2Style={styles(theme).overlayText}>
+                {title}
+            </Text>
+            <Text h1 h1Style={styles(theme).overlayText}>
+                {message}
+            </Text>
+            {description && (
+                <Text style={styles(theme).overlayDescription}>
+                    {description}
                 </Text>
-                <Text h1 h1Style={styles(theme).overlayText}>
-                    {message}
-                </Text>
-                {description && (
-                    <Text style={styles(theme).overlayDescription}>
-                        {description}
-                    </Text>
-                )}
-                <View style={styles(theme).overlayButtonView}>
-                    {renderButtons()}
-                </View>
-            </Overlay>
-        </View>
+            )}
+            <View style={styles(theme).overlayButtonView}>
+                {renderButtons()}
+            </View>
+        </Overlay>
     )
 }
 
