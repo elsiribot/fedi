@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use bitcoin::secp256k1::{ecdsa::Signature, PublicKey};
 use fedimint_api::config::ApiEndpoint;
-use mint_client::api::WsFederationConnect;
+use mint_client::{api::WsFederationConnect, UserClientConfig};
 use serde::{Deserialize, Serialize};
 
 use crate::bridge::Federation;
@@ -21,6 +21,12 @@ pub fn hacky_lightning_invoice_fee(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct FediConfig {
+    pub client_config: UserClientConfig,
+    pub username: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FedimintFederation {
     pub name: String,
@@ -28,6 +34,8 @@ pub struct FedimintFederation {
     pub nodes: Vec<ApiEndpoint>,
     pub balance: fedimint_api::Amount,
     pub social_recovery_active: bool,
+    // FIXME: maybe it's simpler to just not include this?
+    pub username: Option<String>,
 }
 
 // FIXME: should probaby type these as bytes, but don't want to figure out serialization right now
@@ -50,6 +58,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
     let client_config = federation.client.config().0;
     let balance = federation.client.coins().await.total_amount();
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    let username = federation.username.lock().await.clone();
 
     FedimintFederation {
         name: client_config.federation_name.clone(),
@@ -57,6 +66,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         nodes: client_config.nodes.clone(),
         balance,
         social_recovery_active,
+        username,
     }
 }
 
