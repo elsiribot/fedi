@@ -193,6 +193,7 @@ export class Federation extends Base {
     // until/unless we find a better place...
     // used for XMPP login for chat/community features
     username?: string | null
+    password?: string | null
     socialRecoveryActive: boolean
 
     get approvalsRequired(): number {

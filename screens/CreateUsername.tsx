@@ -10,7 +10,7 @@ import {
 } from '../state/contexts/CommunityContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
-    updateFederationUsername,
+    updateFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -27,7 +27,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { state, dispatch } = useFederationsContext()
     const { xmppClient } = useCommunityContext().state
     const { toast } = useEnvironmentContext().state
-    const { getXmppCredentials } = useBridge()
+    const { backupXmppUsername, getXmppCredentials } = useBridge()
 
     const handleSubmit = async () => {
         setCreatingXmppUser(true)
@@ -37,33 +37,35 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         const handleXmppRegistration = async () => {
             try {
                 const credentials = await getXmppCredentials()
-                const userExists = await checkXmppUser(
-                    username,
-                    credentials.password,
-                )
+                const { password } = credentials
+                const userExists = await checkXmppUser(username, password)
                 if (userExists) {
-                    dispatch(updateFederationUsername(username))
+                    dispatch(updateFederationCredentials(username, password))
+                    // dispatch(updateFederationUsername(username))
                     // TODO: store the password or always fetch from bridge?
-                    // dispatch(updateFederationPassword(username))
+                    // dispatch(updateFederationPassword(password))
+                    backupXmppUsername(username)
                 } else {
-                    const success = await registerXmppUser(
-                        username,
-                        credentials.password,
-                    )
+                    const success = await registerXmppUser(username, password)
                     if (success) {
-                        dispatch(updateFederationUsername(username))
+                        dispatch(
+                            updateFederationCredentials(username, password),
+                        )
+                        // dispatch(updateFederationPassword(password))
+                        backupXmppUsername(username)
                     }
                 }
             } catch (error) {
-                console.error('caught')
                 toast?.show(error as string, 3000)
             }
             setCreatingXmppUser(false)
         }
         if (creatingXmppUser === true) {
+            setCreatingXmppUser(false)
             handleXmppRegistration()
         }
     }, [
+        backupXmppUsername,
         creatingXmppUser,
         dispatch,
         getXmppCredentials,

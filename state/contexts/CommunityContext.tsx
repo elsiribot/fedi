@@ -20,7 +20,6 @@ import {
     FEDI_RECOVERY_SUPPORT_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
-    XMPP_MOCK_PASSWORD,
     XMPP_MUC_DOMAIN,
     XMPP_RESOURCE,
 } from '../../constants'
@@ -294,14 +293,6 @@ export function reducer(state: AppState, action: Action): AppState {
                 authenticatedMember: action.payload,
             }
         case ActionType.SET_XMPP_CLIENT:
-            // Stop the existing xmppClient before overwriting it
-            // This may not be necessary???
-            // try {
-            //     state.xmppClient?.stop()
-            // } catch (error) {
-            //     console.error(error)
-            // }
-
             return {
                 ...state,
                 xmppClient: action.payload,
@@ -483,6 +474,7 @@ export const checkXmppUser = async (
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
 
+        // Listen for not-authorized error meaning the credentials are not valid
         xmpp.on('error', async (error: XMPPError) => {
             console.info('error', error)
             if (error.condition === 'not-authorized') {
@@ -494,8 +486,7 @@ export const checkXmppUser = async (
 
         // Listen for successful online event meaning the credentials are valid
         xmpp.on('online', async () => {
-            // destroy this client and proceed to set the username
-            // and instantiate the standard client
+            // Shutdown the XMPP client (to be reinstantiated later)
             // TODO: Refactor this to not require ephemeral clients
             await xmpp.stop()
             xmpp.removeAllListeners()
@@ -525,21 +516,23 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     useEffect(() => {
         // Only attempt XMPP connection if there is a selectedFederation
-        // and a username has been created for it
+        // and a username+password has been created for it
+        console.info('useffect', selectedFederation)
         if (selectedFederation === null) return
         if (!selectedFederation?.username) return
+        if (!selectedFederation?.password) return
 
         const xmppConnectionOptions = {
             ...XMPP_CONNECTION_OPTIONS,
             username: selectedFederation.username,
-            password: XMPP_MOCK_PASSWORD,
+            password: selectedFederation.password,
         }
         console.info('xmppConnectionOptions', xmppConnectionOptions)
 
         const xmpp = client(xmppConnectionOptions)
         // debug(xmpp, true)
 
-        // debug(xmpp, true, `OS=${Platform.OS}`)
+        debug(xmpp, true, `OS=${Platform.OS}`)
         // This ^ helps debug when testing with both ios + android emulators
         // simultaneously to know which stanzas are coming from which device
 
@@ -694,6 +687,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         environmentState,
         selectedFederation,
         selectedFederation?.username,
+        selectedFederation?.password,
     ])
 
     // Update async storage when groups are added

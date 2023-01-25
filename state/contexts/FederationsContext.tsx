@@ -40,6 +40,7 @@ enum ActionType {
     UNSET_SELECTED_FEDERATION = 'UNSET_SELECTED_FEDERATION',
     UPDATE_FEDERATIONS = 'UPDATE_FEDERATIONS',
     UPDATE_FEDERATION = 'UPDATE_FEDERATION',
+    UPDATE_FEDERATION_CREDENTIALS = 'UPDATE_FEDERATION_CREDENTIALS',
     UPDATE_FEDERATION_USERNAME = 'UPDATE_FEDERATION_USERNAME',
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
 }
@@ -80,7 +81,16 @@ export function updateFederation(event: FederationEvent): Action {
     }
 }
 
-export function updateFederationUsername(username: String): Action {
+export function updateFederationCredentials(
+    username: string,
+    password: string,
+): Action {
+    return {
+        type: ActionType.UPDATE_FEDERATION_CREDENTIALS,
+        payload: { username, password },
+    }
+}
+export function updateFederationUsername(username: string): Action {
     return {
         type: ActionType.UPDATE_FEDERATION_USERNAME,
         payload: username,
@@ -115,9 +125,28 @@ export function reducer(state: AppState, action: Action): AppState {
                     (f: Federation) => new Federation(f),
                 ),
             }
+        case ActionType.UPDATE_FEDERATION_CREDENTIALS: {
+            const federations = state.federations.map((f: Federation) => {
+                // If the federation id matches, update the password of that
+                // single connectedFederation
+                if (f.name === state.selectedFederationId) {
+                    return new Federation({
+                        ...f,
+                        username: action.payload.username,
+                        password: action.payload.password,
+                    })
+                } else {
+                    return f
+                }
+            })
+            return {
+                ...state,
+                federations,
+            }
+        }
         case ActionType.UPDATE_FEDERATION_USERNAME: {
             const federations = state.federations.map((f: Federation) => {
-                // If the federation id matches, update the balance of that
+                // If the federation id matches, update the username of that
                 // single connectedFederation
                 if (f.name === state.selectedFederationId) {
                     return new Federation({

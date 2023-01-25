@@ -56,7 +56,7 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     // hard-coded username backup on first load
     useEffect(() => {
         console.log('backing up username')
-        backupXmppUsername('satoshi')
+        // backupXmppUsername('satoshi')
         console.log('backed up username')
     }, [backupXmppUsername])
 
