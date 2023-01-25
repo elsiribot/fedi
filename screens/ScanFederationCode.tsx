@@ -42,7 +42,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
             if (federations.length > 0) {
                 dispatch(updateFederations(federation.name, federations))
                 setJoiningFederation(false)
-                navigation.replace('Home')
+                navigation.replace('FederationWelcome')
             }
             setJoiningFederation(false) // just in case
         }

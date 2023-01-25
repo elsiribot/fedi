@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Image, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -36,15 +36,6 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
         }
         setOffline(!offline)
     }
-
-    // Make sure all users have a username and push them to the
-    // FederationWelcome screen if they don't have one
-    // FIXME: will this selectedFederation change screw this up?
-    useEffect(() => {
-        if (!selectedFederation?.username) {
-            navigation.replace('FederationWelcome')
-        }
-    }, [navigation, selectedFederation, selectedFederation?.username])
 
     // Check xmpp auth and listen for new messages here
 
