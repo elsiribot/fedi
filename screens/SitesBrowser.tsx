@@ -8,7 +8,9 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
 import SitesHeader from '../components/feature/sites/SitesHeader'
-import CustomOverlay from '../components/ui/CustomOverlay'
+import CustomOverlay, {
+    CustomOverlayProps,
+} from '../components/ui/CustomOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -29,10 +31,10 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const [jsInjected, setJsInjected] = useState(false)
     const [jwt, setJwt] = useState<string | null>(null)
     const [showOverlay, setShowOverlay] = useState(false)
-    const [overlay, setOverlay] = useState({
+    const [overlay, setOverlay] = useState<CustomOverlayProps>({
         title: '',
         message: '',
-        buttons: [{}],
+        buttons: [],
     })
     const { lnurlGetToken } = useBridge()
 

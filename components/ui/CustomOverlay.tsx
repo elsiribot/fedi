@@ -2,16 +2,23 @@ import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
-type OverlayProps = {
-    setShow: React.Dispatch<React.SetStateAction<boolean>>
-    show: boolean
+type CustomOverlayButton = {
+    text: string
+    textColor?: string
+    backgroundColor?: string
+    onPress: () => void
+}
+
+export type CustomOverlayProps = {
+    setShow?: React.Dispatch<React.SetStateAction<boolean>>
+    show?: boolean
     title: string
     message: string
     description?: string
-    buttons: Array<any>
+    buttons: CustomOverlayButton[]
 }
 
-const CustomOverlay: React.FC<OverlayProps> = ({
+const CustomOverlay: React.FC<CustomOverlayProps> = ({
     setShow,
     show,
     title,
