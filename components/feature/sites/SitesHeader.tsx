@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Icon } from '@rneui/themed'
+import { Icon, Theme, useTheme } from '@rneui/themed'
 import React, { MutableRefObject } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import WebView from 'react-native-webview'
@@ -12,29 +12,30 @@ type SitesHeaderProps = {
 }
 
 const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
+    const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
     return (
         <Header
             leftContainerStyle={{ flex: 3 }}
             headerLeft={
-                <View style={styles.container}>
-                    <View style={styles.row}>
-                        <Pressable
-                            onPress={() => webViewRef.current.goBack()}
-                            style={styles.arrow}>
-                            <Icon name={'angle-left'} type="font-awesome" />
-                        </Pressable>
-                        <Pressable
-                            onPress={() => webViewRef.current.goForward()}
-                            style={styles.arrow}>
-                            <Icon name={'angle-right'} type="font-awesome" />
-                        </Pressable>
-                    </View>
+                <View style={styles(theme).container}>
+                    <Pressable
+                        onPress={() => webViewRef.current.goBack()}
+                        style={[styles(theme).arrow, styles(theme).padded]}>
+                        <Icon name={'angle-left'} type="font-awesome" />
+                    </Pressable>
+                    <Pressable
+                        onPress={() => webViewRef.current.goForward()}
+                        style={[styles(theme).arrow, styles(theme).padded]}>
+                        <Icon name={'angle-right'} type="font-awesome" />
+                    </Pressable>
                 </View>
             }
             headerRight={
-                <Pressable onPress={() => navigation.goBack()}>
+                <Pressable
+                    style={styles(theme).padded}
+                    onPress={() => navigation.goBack()}>
                     <Icon name={'close'} />
                 </Pressable>
             }
@@ -42,17 +43,19 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-    },
-    row: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-    },
-    arrow: {
-        paddingHorizontal: 15,
-    },
-})
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            width: '100%',
+            flexDirection: 'row',
+        },
+        arrow: {
+            paddingHorizontal: 15,
+        },
+        padded: {
+            paddingVertical: theme.spacing.sm,
+            backgroundColor: 'lightblue',
+        },
+    })
 
 export default SitesHeader
