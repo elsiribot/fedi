@@ -84,7 +84,9 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
+        "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
+        "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username."

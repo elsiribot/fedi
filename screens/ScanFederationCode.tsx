@@ -24,42 +24,44 @@ export type Props = NativeStackScreenProps<
 const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { dispatch } = useFederationsContext()
+    const { state, dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
-    const [joiningFederation, setJoiningFederation] = useState<boolean>(false)
-    const [connectionString, setConnectionString] = useState<string>('')
+    const [joiningFederation, setJoiningFederation] = useState<string>('')
 
     useEffect(() => {
         const handleJoinFederation = async () => {
             try {
-                var federation = await joinFederation(connectionString)
+                const federation = await joinFederation(joiningFederation)
+                const federations = await listFederations()
+                if (federations.length > 0) {
+                    dispatch(updateFederations(federation.name, federations))
+                }
             } catch (e) {
-                console.error('Failed to join federation', e)
-                setJoiningFederation(false)
-                return
+                console.error(e)
+                toast?.show(t('errors.failed-to-join-federation'), 5000)
             }
-            const federations = await listFederations()
-            if (federations.length > 0) {
-                dispatch(updateFederations(federation.name, federations))
-                setJoiningFederation(false)
-                navigation.replace('FederationWelcome')
-            }
-            setJoiningFederation(false) // just in case
+            setJoiningFederation('')
         }
 
-        if (joiningFederation === true && connectionString !== '') {
+        if (joiningFederation) {
             handleJoinFederation()
         }
-    }, [connectionString, dispatch, navigation, joiningFederation])
+    }, [dispatch, joiningFederation, t, toast])
+
+    useEffect(() => {
+        if (joiningFederation === '' && state.selectedFederation) {
+            navigation.replace('FederationWelcome')
+        }
+    }, [navigation, state.selectedFederation, joiningFederation])
 
     const handleUserInput = useCallback(
         async (input: string) => {
             if (input.startsWith('{"members":')) {
                 console.info('fedi qr code detected', input)
-                setJoiningFederation(true)
-                setConnectionString(input)
+                // Set the federation string to trigger the useEffect above
+                setJoiningFederation(input)
             } else {
-                toast?.show(t('invalid-federation-code'), 5000)
+                toast?.show(t('errors.invalid-federation-code'), 5000)
             }
         },
         [t, toast],
@@ -74,7 +76,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const device = devices.back
 
     const renderQrCodeScanner = () => {
-        if (device == null || joiningFederation === true) {
+        if (device == null || joiningFederation !== '') {
             return <ActivityIndicator />
         } else {
             return (
@@ -94,6 +96,8 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                         'feature.federations.paste-federation-code-instead',
                     )}
                     onPress={checkClipboard}
+                    disabled={joiningFederation !== ''}
+                    loading={joiningFederation !== ''}
                     type="clear"
                 />
             }
@@ -102,10 +106,15 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
-                <Button
-                    title={t('feature.federations.paste-federation-code')}
-                    onPress={checkClipboard}
-                />
+                <View style={styles(theme).buttonContainer}>
+                    <Button
+                        disabled={joiningFederation !== ''}
+                        loading={joiningFederation !== ''}
+                        title={t('feature.federations.paste-federation-code')}
+                        onPress={checkClipboard}
+                        fullWidth
+                    />
+                </View>
             </View>
         </CameraPermissionsRequired>
     )
@@ -122,6 +131,10 @@ const styles = (theme: Theme) =>
             height: '80%',
             width: '100%',
             margin: theme.spacing.lg,
+        },
+        buttonContainer: {
+            width: '100%',
+            paddingHorizontal: theme.spacing.lg,
         },
     })
 
