@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use bitcoin::secp256k1::{ecdsa::Signature, PublicKey};
 use fedimint_api::config::ApiEndpoint;
-use mint_client::api::WsFederationConnect;
+use mint_client::{api::WsFederationConnect, UserClientConfig};
 use serde::{Deserialize, Serialize};
 
 use crate::bridge::Federation;
@@ -21,6 +21,12 @@ pub fn hacky_lightning_invoice_fee(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct FediConfig {
+    pub client_config: UserClientConfig,
+    pub username: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FedimintFederation {
     pub name: String,
@@ -34,7 +40,6 @@ pub struct FedimintFederation {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct XmppCredentials {
-    pub username: String,
     pub password: String,
 }
 

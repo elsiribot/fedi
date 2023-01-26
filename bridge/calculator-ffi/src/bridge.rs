@@ -3,7 +3,6 @@ use std::{
     default::Default,
     fs::{self, File},
     path::{Path, PathBuf},
-    str::FromStr,
     sync::Arc,
     time::Duration,
 };
@@ -18,23 +17,20 @@ use crate::{
         TransactionKeyPrefix,
     },
     types::{
-        federation_to_fedimint_federation, hacky_lightning_invoice_fee, LnurlSignedMessage,
-        XmppCredentials,
+        federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
+        LnurlSignedMessage, XmppCredentials,
     },
     EventSinkWrapper,
 };
 use anyhow::{anyhow, Result};
 use bitcoin::{
     hashes::sha256,
-    secp256k1::{ecdsa::Signature, Message, PublicKey, Secp256k1, SecretKey},
+    secp256k1::{Message, Secp256k1},
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::{RecoveryId, VerificationDocument};
-use fedimint_api::{
-    config::{ClientConfig, ConfigResponse},
-    PeerId,
-};
+use fedimint_api::{config::ConfigResponse, PeerId};
 use fedimint_api::{db::Database, task::TaskHandle};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
@@ -60,8 +56,7 @@ pub const RECOVERY_FILENAME: &str = "backup.fedi";
 pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
-pub const XMPP_USERNAME: ChildId = ChildId(0);
-pub const XMPP_PASSWORD: ChildId = ChildId(1);
+pub const XMPP_PASSWORD: ChildId = ChildId(0);
 
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
@@ -80,15 +75,20 @@ async fn load_federations_from_disk(
         if let Some(extension) = path.extension() {
             if extension == "json" {
                 // TODO: perhaps this should be a federation method?
-                let cfg: UserClientConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
+                let fedi_config: FediConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
                 path.set_extension("db");
                 let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
                 let db = Database::new(db, module_decode_stubs());
-                let client =
-                    UserClient::new(cfg.clone(), module_decode_stubs(), db, Default::default())
-                        .await;
+                let client = UserClient::new(
+                    fedi_config.client_config,
+                    module_decode_stubs(),
+                    db,
+                    Default::default(),
+                )
+                .await;
+                let subgroup = task_group.make_subgroup().await;
                 let federation =
-                    Federation::new(client, event_sink.clone(), task_group.make_subgroup().await);
+                    Federation::new(client, event_sink.clone(), subgroup, fedi_config.username);
                 federations.push(federation)
             }
         }
@@ -161,7 +161,7 @@ impl Bridge {
         &self,
         federation_id: &str,
         mnemonic: &Mnemonic,
-    ) -> Result<()> {
+    ) -> Result<Option<String>> {
         self.stop_pollers().await?;
 
         let entropy = mnemonic.to_entropy();
@@ -196,9 +196,9 @@ impl Bridge {
         };
 
         // recover ecash tokens
-        fed.restore_ecash_from_federation().await?;
+        let username = fed.restore_ecash_from_federation().await?;
 
-        Ok(())
+        Ok(username)
     }
 
     /// Deletes federation client database and config
@@ -243,6 +243,7 @@ pub struct Federation {
     pub client: Arc<UserClient>,
     pub event_sink: Arc<EventSinkWrapper>,
     pub task_group: TaskGroup,
+    pub username: Arc<Mutex<Option<String>>>,
 }
 
 impl Federation {
@@ -250,11 +251,13 @@ impl Federation {
         client: UserClient,
         event_sink: Arc<EventSinkWrapper>,
         task_group: TaskGroup,
+        username: Option<String>,
     ) -> Self {
         Self {
             client: Arc::new(client),
             event_sink,
             task_group,
+            username: Arc::new(Mutex::new(username)),
         }
     }
 
@@ -326,31 +329,44 @@ impl Federation {
             info!("ios hacks");
             cfg_string = cfg_string.replace("127.0.0.1", "localhost");
         };
-        let cfg: ClientConfig = serde_json::from_str(&cfg_string)?;
+        let client_config: UserClientConfig = serde_json::from_str(&cfg_string)?;
+        let fedi_config = FediConfig {
+            username: None,
+            client_config,
+        };
 
         // Save config
         let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         tracing::info!("saving file to {}", cfg_path.display());
         let file = File::create(cfg_path) // FIXME: this should probably use tokio's `File`
             .expect("Could not create cfg file");
-        serde_json::to_writer_pretty(file, &cfg).expect("Could not write gateway cfg");
+        serde_json::to_writer_pretty(file, &fedi_config).expect("Could not write gateway cfg");
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
         let db = SledDb::open(db_path, "client").unwrap(); // FIXME: don't unwrap
         let db = Database::new(db, module_decode_stubs());
         let client = UserClient::new(
-            UserClientConfig(cfg.clone()),
+            fedi_config.client_config,
             module_decode_stubs(),
             db,
             Default::default(),
         )
         .await;
-        Ok(Self::new(client, event_sink, task_group))
+        let username = None;
+        Ok(Self::new(client, event_sink, task_group, username))
     }
 
     pub fn normalized_federation_name(&self) -> String {
         self.name().replace(" ", "_")
+    }
+
+    pub async fn get_username(&self) -> Option<String> {
+        self.username.lock().await.clone()
+    }
+
+    pub async fn set_username(&self, username: String) {
+        *self.username.lock().await = Some(username);
     }
 
     pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
@@ -369,12 +385,10 @@ impl Federation {
     }
 
     /// Returns (username, password)
-    pub fn xmpp_credentials(&self) -> XmppCredentials {
+    pub async fn xmpp_credentials(&self) -> XmppCredentials {
         let xmpp_secret = self.client.root_secret.child_key(XMPP_CHILD_ID);
-        let username_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_USERNAME).to_random_bytes();
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
         XmppCredentials {
-            username: hex::encode(&username_bytes),
             password: hex::encode(&password_bytes),
         }
     }
@@ -725,20 +739,30 @@ impl Federation {
         Mnemonic::from_entropy(&client_secret.entropy())
     }
 
-    pub async fn restore_ecash_from_federation(&self) -> Result<()> {
+    pub async fn restore_ecash_from_federation(&self) -> Result<Option<String>> {
         let mut task_group = TaskGroup::new();
-        self.client
+        let username = self
+            .client
             .mint_client()
             .restore_ecash_from_federation(GAP_LIMIT, &mut task_group)
             .await??;
+
+        // Update username
+        {
+            let mut lock = self.username.lock().await;
+            *lock = username.clone();
+        }
+
+        // FIXME: should we still do this?
         self.send_federation_notification().await;
-        Ok(())
+        Ok(username)
     }
 
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
+        let username = self.get_username().await;
         self.client
             .mint_client()
-            .back_up_ecash_to_federation()
+            .back_up_ecash_to_federation(username)
             .await?;
         Ok(())
     }
@@ -813,8 +837,8 @@ impl Federation {
             .create_verification_request(recovery_file.verification_document.clone())?;
         recovery_client
             .upload_verification_request(&verification_request)
-            .await
-            .unwrap();
+            .await?;
+        tracing::info!("verification request uploaded");
 
         // Return social recovery QR
         let recovery_id = verification_request.recovery_id();
@@ -989,20 +1013,20 @@ impl Federation {
 
     /// Make an ecash backup once every minute
     pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut ticks = 0;
+        let mut ticks = 600;
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
 
-            // Run once per minute
-            if ticks < 60 {
+            // Run every 10 minutes
+            if ticks < 600 {
                 ticks += 1;
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            ticks = 0;
 
+            ticks = 0;
             match self.back_up_ecash_to_federation().await {
                 Ok(_) => info!("ecash backup complete"),
                 Err(_) => error!("ecash backup failed"),
