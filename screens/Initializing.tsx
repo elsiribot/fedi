@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
@@ -20,9 +20,9 @@ import {
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
-    resetFederationsState,
     updateFederationCredentials,
     updateFederations,
+    updateSelectedFederationId,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -34,9 +34,97 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { reset } = route.params
-    const { dispatch: federationsDispatch } = useFederationsContext()
+    const [usernameRequired, setUsernameRequired] = useState<boolean>(true)
+    const [usernameToRestore, setUsernameToRestore] = useState<string>('')
+    const { state, dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
-    const { getXmppCredentials } = useBridge()
+    const { backupXmppUsername, getXmppCredentials } = useBridge()
+
+    // restoreState changes usernameToRestore if it finds a username
+    // in localstorage... makes sure we don't go to FederationWelcome
+    useEffect(() => {
+        if (usernameToRestore) {
+            setUsernameRequired(false)
+        }
+    }, [usernameToRestore])
+
+    // this effect restores XMPP credentials after saving the
+    // username found in localstorage
+    useEffect(() => {
+        const restoreUsername = async () => {
+            const credentials = await getXmppCredentials()
+            const { password } = credentials
+            federationsDispatch(
+                updateFederationCredentials(usernameToRestore, password),
+            )
+            backupXmppUsername(usernameToRestore)
+        }
+        // don't try to restore unless we find both selectedFederationId
+        // and username in localstorage
+        if (state.selectedFederationId && usernameToRestore) {
+            restoreUsername()
+            setUsernameToRestore('')
+        }
+    }, [
+        backupXmppUsername,
+        federationsDispatch,
+        getXmppCredentials,
+        state.selectedFederation,
+        state.selectedFederationId,
+        usernameToRestore,
+    ])
+
+    // after localstorage has been checked and listFederations has been called
+    // go to FederationWelcome if a username still needs to be set
+    useEffect(() => {
+        if (
+            state.selectedFederation &&
+            usernameToRestore === '' &&
+            usernameRequired === true
+        ) {
+            navigation.replace('FederationWelcome')
+        }
+    }, [
+        navigation,
+        state.selectedFederation,
+        usernameToRestore,
+        usernameRequired,
+    ])
+
+    // after localstorage has been checked call listFederations
+    // to update the federations
+    useEffect(() => {
+        const storeFederations = async () => {
+            let federations = await listFederations()
+            federationsDispatch(
+                updateFederations(state.selectedFederationId, federations),
+            )
+        }
+        // selectedFederationId should be null if there are 0 federations so
+        // this should only ever be called once
+        if (state.selectedFederationId && state.federations.length === 0) {
+            storeFederations()
+        }
+    }, [
+        federationsDispatch,
+        state.selectedFederationId,
+        state.federations.length,
+    ])
+
+    // if federations have been stored and a username has been restored
+    // navigate to Home
+    useEffect(() => {
+        if (
+            state.federations.length > 0 &&
+            state.selectedFederation?.username
+        ) {
+            navigation.replace('Home')
+        }
+    }, [
+        navigation,
+        state.federations.length,
+        state.selectedFederation?.username,
+    ])
 
     // this useEffect checks async storage to restore
     // federations state on a fresh app load
@@ -51,36 +139,28 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     const savedJson = saved ? JSON.parse(saved) : null
 
                     if (savedJson) {
+                        // this logic must be reached to trigger any useEffects
                         const { selectedFederation } = savedJson
-
-                        // load federations from bridge
-                        let federations = await listFederations()
                         if (selectedFederation?.name) {
                             federationsDispatch(
-                                updateFederations(
+                                updateSelectedFederationId(
                                     selectedFederation?.name,
-                                    federations,
                                 ),
                             )
                             if (selectedFederation.username) {
-                                const credentials = await getXmppCredentials()
-                                const { password } = credentials
-                                federationsDispatch(
-                                    updateFederationCredentials(
-                                        selectedFederation.username,
-                                        password,
-                                    ),
+                                setUsernameToRestore(
+                                    selectedFederation.username,
                                 )
                             }
                         }
-                        return navigation.replace(
-                            federations.length > 0 ? 'Home' : 'Splash',
-                        )
+                    } else {
+                        // if there is nothing in localstorage go to Splash
+                        return navigation.replace('Splash')
                     }
                 } catch (error) {
                     console.error(error)
+                    return navigation.replace('Splash')
                 }
-                return navigation.replace('Splash')
             }
 
             const restoreMessages = async () => {
@@ -102,7 +182,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     if (savedCommunityMessages !== null) {
                         const { messages } = savedCommunityMessages
 
-                        console.log('recovering messages')
+                        console.debug('recovering messages')
 
                         if (messages) {
                             communityDispatch(receiveMessages(messages))
@@ -128,7 +208,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     if (savedCommunityGroups !== null) {
                         const { groups } = savedCommunityGroups
 
-                        console.log('recovering groups')
+                        console.debug('recovering groups')
 
                         if (groups) {
                             communityDispatch(receiveGroups(groups))
@@ -155,7 +235,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     if (savedCommunityMembers !== null) {
                         const { members } = savedCommunityMembers
 
-                        console.log('recovering members')
+                        console.debug('recovering members')
 
                         if (members) {
                             communityDispatch(receiveMembersSeen(members))
@@ -176,10 +256,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             restoreFederationsState()
         }
 
-        if (reset === true) {
-            federationsDispatch(resetFederationsState())
-            navigation.navigate('Splash')
-        } else {
+        if (!state.selectedFederationId) {
             restoreState()
         }
     }, [
@@ -188,6 +265,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         federationsDispatch,
         navigation,
         reset,
+        state.selectedFederationId,
     ])
 
     return (
