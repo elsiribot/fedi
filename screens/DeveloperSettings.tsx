@@ -2,8 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
+import RNFS from 'react-native-fs'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import Share from 'react-native-share'
 
 import { LightningGateway } from '../bridge'
 import {
@@ -61,6 +63,13 @@ const DeveloperSettings: React.FC<Props> = () => {
         setGateways(updatedGateways)
     }
 
+    const shareLogs = async () => {
+        const result = await Share.open({
+            title: 'Fedi logs',
+            // FIXME: this needs file:// prefix ... should do this with a util?
+            url: `file://${RNFS.DocumentDirectoryPath}/fedi.log`,
+        })
+    }
     useEffect(() => {
         i18n.changeLanguage(selectedLanguage)
     }, [i18n, selectedLanguage])
@@ -136,6 +145,13 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title="Send XML"
                 onPress={() => {
                     sendTestXml()
+                }}
+            />
+            <Button
+                size="sm"
+                title="Share logs"
+                onPress={() => {
+                    shareLogs()
                 }}
             />
         </View>
