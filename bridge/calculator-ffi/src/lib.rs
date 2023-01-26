@@ -75,11 +75,12 @@ async fn fedimint_initialize_async(
     log_level: LevelFilter,
     event_sink: Box<dyn EventSink>,
 ) -> () {
+    let data_dir = PathBuf::from(data_dir);
     let event_sink = Arc::new(EventSinkWrapper { event_sink });
-    init_logging(event_sink.clone(), log_level);
+    init_logging(&data_dir, event_sink.clone(), log_level);
     tracing::info!("init called ...");
 
-    let bridge = Bridge::new(PathBuf::from(data_dir), event_sink.clone()).await;
+    let bridge = Bridge::new(data_dir, event_sink.clone()).await;
 
     set_bridge(bridge).await;
 }

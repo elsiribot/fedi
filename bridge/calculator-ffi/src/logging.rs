@@ -1,9 +1,14 @@
 // Stop complaining about unused variables due to cfg macros
 #![allow(unused)]
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    io,
+    path::Path,
+    sync::{Arc, Mutex},
+};
 
 use tracing::metadata::LevelFilter;
-use tracing_subscriber::{layer::SubscriberExt, prelude::*, Layer};
+use tracing_subscriber::{layer::SubscriberExt, prelude::*, EnvFilter, Layer};
 
 use crate::{event::Event, EventSinkWrapper};
 
@@ -72,11 +77,29 @@ impl<'a> tracing::field::Visit for StringVisitor<'a> {
 }
 
 // TODO: configurable log level
-pub fn init_logging(event_sink: Arc<EventSinkWrapper>, log_level: LevelFilter) {
+pub fn init_logging(
+    data_dir: &Path,
+    event_sink: Arc<EventSinkWrapper>,
+    log_level: LevelFilter,
+) {
+    let log_file = data_dir.join("fedi.log");
+    let file = std::fs::File::options()
+        .create(true)
+        .append(true)
+        .open(log_file)
+        .unwrap();
+
+    let log_file_layer = tracing_subscriber::fmt::layer()
+        .json()
+        .with_writer(Mutex::new(file));
+
     // react native
     #[cfg(not(target_os = "macos"))]
     tracing_subscriber::registry()
         .with(ReactNativeLayer(event_sink).with_filter(log_level))
+        .with(log_file_layer.with_filter(EnvFilter::new(
+            "info,mint_client=trace,calculatorffi=trace",
+        )))
         .try_init()
         .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
     // #[cfg(target_os = "ios")]
