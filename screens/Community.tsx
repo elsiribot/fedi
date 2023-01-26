@@ -39,14 +39,6 @@ const Community: React.FC<Props> = () => {
         }
     }, [authenticatedMember, enterMucRoom, fetchMessagesFromArchive])
 
-    // Make sure all users have a username and push them to the
-    // FederationWelcome screen if they don't have one
-    useEffect(() => {
-        if (!selectedFederation?.username) {
-            navigation.replace('FederationWelcome')
-        }
-    }, [navigation, selectedFederation, selectedFederation?.username])
-
     return (
         <View style={styles(theme).container}>
             <ChatsList />

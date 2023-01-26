@@ -6,19 +6,21 @@ const HEX_COLORS = {
     green: '#00A829',
     orange: '#DF7B00',
     darkGrey: '#6D7071',
-    grey: '#D9D9D9',
+    grey: '#858789',
     lightGrey: '#D3D4DB',
+    extraLightGrey: '#E9E9EA',
     keyboardGrey: '#E8EAED',
     red: '#E00A00',
     white: '#FFFFFF',
-    black: '#0B1013',
+    black: '#000000',
+    night: '#0B1013',
     blue: '#0277F2',
 }
 
 const colors = {
     ...lightColors,
     link: HEX_COLORS.blue,
-    primary: HEX_COLORS.black,
+    primary: HEX_COLORS.night,
     primaryLight: HEX_COLORS.darkGrey,
     primaryVeryLight: HEX_COLORS.lightGrey,
     success: HEX_COLORS.green,
@@ -44,8 +46,22 @@ const theme = createTheme({
             disabledStyle: {
                 opacity: 0.7,
             },
-            loadingStyle: {
-                ...(props.fullWidth ? { width: '100%' } : {}),
+            /*
+                For button loading states, since we cannot determine the width
+                of the button unless it is set to fullWidth, we make the
+                background transparent + ActivityIndicator primary color to avoid
+                the effect of a button changing sizes when switching load states
+            */
+            loadingProps: {
+                color: theme.colors?.primary,
+            },
+            buttonStyle: {
+                ...(props.loading
+                    ? {
+                          backgroundColor: 'transparent',
+                          color: theme.colors?.primary,
+                      }
+                    : {}),
             },
         }),
         Text: props => ({

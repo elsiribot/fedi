@@ -4,14 +4,16 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import {
+    checkXmppUser,
     registerXmppUser,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
-    updateFederationUsername,
+    updateFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -21,28 +23,69 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [username, setUsername] = useState<string>('')
+    const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
     const { state, dispatch } = useFederationsContext()
-    const { xmppClient } = useCommunityContext().state
+    const { authenticatedMember } = useCommunityContext().state
     const { toast } = useEnvironmentContext().state
+    const { backupXmppUsername, getXmppCredentials } = useBridge()
 
     const handleSubmit = async () => {
-        try {
-            const success = await registerXmppUser(username)
-            if (success) {
-                dispatch(updateFederationUsername(username))
-            }
-        } catch (error) {
-            toast?.show(error as string, 3000)
-        }
+        setXmppAuthInProgress(true)
     }
+
+    useEffect(() => {
+        const handleXmppRegistration = async () => {
+            try {
+                const credentials = await getXmppCredentials()
+                const { password } = credentials
+                const credentialsAreValid = await checkXmppUser(
+                    username,
+                    password,
+                )
+                if (credentialsAreValid) {
+                    // TODO: store the password or always fetch from bridge?
+                    dispatch(updateFederationCredentials(username, password))
+                    backupXmppUsername(username)
+                } else {
+                    await registerXmppUser(username, password)
+                    dispatch(updateFederationCredentials(username, password))
+                    backupXmppUsername(username)
+                }
+            } catch (error) {
+                console.info('error', error)
+                console.info(toast)
+                toast?.show(error as string, 3000)
+            }
+        }
+        if (xmppAuthInProgress === true) {
+            handleXmppRegistration()
+            setXmppAuthInProgress(false)
+        }
+    }, [
+        backupXmppUsername,
+        dispatch,
+        getXmppCredentials,
+        toast,
+        username,
+        xmppAuthInProgress,
+    ])
 
     // if we have a successfully authed xmppClient and username set
     // continue to the FederationGreeting screen
     useEffect(() => {
-        if (xmppClient && state.selectedFederation?.username) {
+        if (
+            authenticatedMember &&
+            state.selectedFederation?.username &&
+            xmppAuthInProgress === false
+        ) {
             navigation.replace('FederationGreeting')
         }
-    }, [navigation, state.selectedFederation?.username, xmppClient])
+    }, [
+        authenticatedMember,
+        navigation,
+        state.selectedFederation?.username,
+        xmppAuthInProgress,
+    ])
 
     return (
         <View style={styles(theme).container}>
@@ -71,7 +114,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 fullWidth
                 title={t('feature.onboarding.create-username')}
                 onPress={handleSubmit}
-                disabled={!username}
+                disabled={!username || xmppAuthInProgress}
                 containerStyle={styles(theme).button}
             />
         </View>

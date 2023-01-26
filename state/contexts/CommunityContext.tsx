@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
+import XMPPError from '@xmpp/error'
 import { JID } from '@xmpp/jid'
 import { isEqual } from 'lodash'
 import React, {
@@ -19,7 +20,6 @@ import {
     FEDI_RECOVERY_SUPPORT_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
-    XMPP_MOCK_PASSWORD,
     XMPP_MUC_DOMAIN,
     XMPP_RESOURCE,
 } from '../../constants'
@@ -293,14 +293,6 @@ export function reducer(state: AppState, action: Action): AppState {
                 authenticatedMember: action.payload,
             }
         case ActionType.SET_XMPP_CLIENT:
-            // Stop the existing xmppClient before overwriting it
-            // This may not be necessary???
-            // try {
-            //     state.xmppClient?.stop()
-            // } catch (error) {
-            //     console.error(error)
-            // }
-
             return {
                 ...state,
                 xmppClient: action.payload,
@@ -401,8 +393,11 @@ export function reducer(state: AppState, action: Action): AppState {
 }
 
 // Creates an ephemeral XMPP client used solely for registration
-// that opens thes stream and terminates on success or failure
-export const registerXmppUser = async (username: string): Promise<boolean> => {
+// opens the stream and terminates on success or failure
+export const registerXmppUser = async (
+    username: string,
+    password: string,
+): Promise<boolean> => {
     return new Promise((resolve, reject) => {
         // Connect to XMPP server without credentials to establish
         // a session for registration
@@ -425,7 +420,7 @@ export const registerXmppUser = async (username: string): Promise<boolean> => {
                         'query',
                         { xmlns: 'jabber:iq:register' },
                         xml('username', {}, username),
-                        xml('password', {}, XMPP_MOCK_PASSWORD),
+                        xml('password', {}, password),
                     ),
                 ),
             )
@@ -443,14 +438,60 @@ export const registerXmppUser = async (username: string): Promise<boolean> => {
                 if (stanza.getAttr('type') === 'result') {
                     resolve(true)
                 } else if (stanza.getAttr('type') === 'error') {
-                    // TODO: Localize this error
-                    const errorMessage =
-                        stanza.getChild('error')?.getChildText('text') ||
-                        i18n.t('errors.unknown-error')
+                    const error = stanza.getChild('error')
+                    let errorMessage = i18n.t('errors.unknown-error')
+                    if (error?.getChild('conflict')) {
+                        errorMessage = i18n.t('errors.username-already-exists')
+                    }
 
                     reject(errorMessage)
                 }
             }
+        })
+
+        xmpp.start().catch(console.error)
+    })
+}
+
+// Creates an ephemeral XMPP client used solely for authentication check
+// opens the stream and terminates on success or failure
+export const checkXmppUser = async (
+    username: string,
+    password: string,
+): Promise<boolean> => {
+    return new Promise(resolve => {
+        // Connect to XMPP server with provided credentials to check
+        // if the user exists
+        const xmppConnectionOptions = {
+            ...XMPP_CONNECTION_OPTIONS,
+            username,
+            password,
+        }
+        console.info(
+            'checkXmppUser: xmppConnectionOptions',
+            xmppConnectionOptions,
+        )
+
+        const xmpp = client(xmppConnectionOptions)
+        debug(xmpp, true)
+
+        // Listen for not-authorized error meaning the credentials are not valid
+        xmpp.on('error', async (error: XMPPError) => {
+            console.info('error', error)
+            if (error.condition === 'not-authorized') {
+                await xmpp.stop()
+                xmpp.removeAllListeners()
+                resolve(false)
+            }
+        })
+
+        // Listen for successful online event meaning the credentials are valid
+        xmpp.on('online', async () => {
+            // Shutdown the XMPP client (to be reinstantiated later)
+            // TODO: Refactor this to not require ephemeral clients
+            await xmpp.stop()
+            xmpp.removeAllListeners()
+            resolve(true)
         })
 
         xmpp.start().catch(console.error)
@@ -476,14 +517,15 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     useEffect(() => {
         // Only attempt XMPP connection if there is a selectedFederation
-        // and a username has been created for it
+        // and a username+password has been created for it
         if (selectedFederation === null) return
         if (!selectedFederation?.username) return
+        if (!selectedFederation?.password) return
 
         const xmppConnectionOptions = {
             ...XMPP_CONNECTION_OPTIONS,
             username: selectedFederation.username,
-            password: XMPP_MOCK_PASSWORD,
+            password: selectedFederation.password,
         }
         console.info('xmppConnectionOptions', xmppConnectionOptions)
 
@@ -645,6 +687,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         environmentState,
         selectedFederation,
         selectedFederation?.username,
+        selectedFederation?.password,
     ])
 
     // Update async storage when groups are added
