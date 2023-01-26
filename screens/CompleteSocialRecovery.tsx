@@ -13,7 +13,7 @@ import {
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
-    updateFederationUsername,
+    updateFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -28,7 +28,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const { socialRecoveryApprovals, completeSocialRecovery } = useBridge()
+    const {
+        completeSocialRecovery,
+        getXmppCredentials,
+        socialRecoveryApprovals,
+    } = useBridge()
     const { selectedFederation } = useFederationsContext().state
     const dispatch = useFederationsContext().dispatch
     const [recovering, setRecovering] = useState(false)
@@ -80,7 +84,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             let username = await completeSocialRecovery()
             console.log('recovered username', username)
             if (username != null) {
-                dispatch(updateFederationUsername(username))
+                const credentials = await getXmppCredentials()
+                const { password } = credentials
+                dispatch(updateFederationCredentials(username, password))
             }
             navigation.navigate('SocialRecoverySuccess')
         } catch (e) {

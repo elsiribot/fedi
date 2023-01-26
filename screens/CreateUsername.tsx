@@ -40,10 +40,8 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 const { password } = credentials
                 const userExists = await checkXmppUser(username, password)
                 if (userExists) {
-                    dispatch(updateFederationCredentials(username, password))
-                    // dispatch(updateFederationUsername(username))
                     // TODO: store the password or always fetch from bridge?
-                    // dispatch(updateFederationPassword(password))
+                    dispatch(updateFederationCredentials(username, password))
                     backupXmppUsername(username)
                 } else {
                     const success = await registerXmppUser(username, password)
@@ -51,7 +49,6 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                         dispatch(
                             updateFederationCredentials(username, password),
                         )
-                        // dispatch(updateFederationPassword(password))
                         backupXmppUsername(username)
                     }
                 }

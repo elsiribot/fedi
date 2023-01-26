@@ -19,7 +19,7 @@ import {
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
-    resetFederationUsername,
+    resetFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../state/hooks'
@@ -128,7 +128,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title="Reset username"
                 onPress={() => {
-                    federationsDispatch(resetFederationUsername())
+                    federationsDispatch(resetFederationCredentials())
                 }}
             />
             <Button

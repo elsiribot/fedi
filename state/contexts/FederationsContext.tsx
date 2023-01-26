@@ -90,16 +90,10 @@ export function updateFederationCredentials(
         payload: { username, password },
     }
 }
-export function updateFederationUsername(username: string): Action {
+export function resetFederationCredentials(): Action {
     return {
-        type: ActionType.UPDATE_FEDERATION_USERNAME,
-        payload: username,
-    }
-}
-export function resetFederationUsername(): Action {
-    return {
-        type: ActionType.UPDATE_FEDERATION_USERNAME,
-        payload: null,
+        type: ActionType.UPDATE_FEDERATION_CREDENTIALS,
+        payload: { password: null, username: null },
     }
 }
 export function resetFederationsState(): Action {

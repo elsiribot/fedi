@@ -17,7 +17,7 @@ import { SeedWords } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
-    updateFederationUsername,
+    updateFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -87,7 +87,7 @@ const SeedWordInput = ({
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { recoverFromMnemonic } = useBridge()
+    const { getXmppCredentials, recoverFromMnemonic } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
     const { dispatch } = useFederationsContext()
@@ -185,7 +185,11 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                         let username = await recoverFromMnemonic(seedWords)
                         console.log('recovered username', username)
                         if (username != null) {
-                            dispatch(updateFederationUsername(username))
+                            const credentials = await getXmppCredentials()
+                            const { password } = credentials
+                            dispatch(
+                                updateFederationCredentials(username, password),
+                            )
                         }
                         setIsLoading(false)
                         navigation.replace('PersonalRecoverySuccess')

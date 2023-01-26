@@ -21,10 +21,11 @@ import {
 } from '../state/contexts/CommunityContext'
 import {
     resetFederationsState,
+    updateFederationCredentials,
     updateFederations,
-    updateFederationUsername,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
@@ -35,6 +36,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const { reset } = route.params
     const { dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
+    const { getXmppCredentials } = useBridge()
 
     // this useEffect checks async storage to restore
     // federations state on a fresh app load
@@ -61,9 +63,12 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                                 ),
                             )
                             if (selectedFederation.username) {
+                                const credentials = await getXmppCredentials()
+                                const { password } = credentials
                                 federationsDispatch(
-                                    updateFederationUsername(
+                                    updateFederationCredentials(
                                         selectedFederation.username,
+                                        password,
                                     ),
                                 )
                             }
@@ -177,7 +182,13 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         } else {
             restoreState()
         }
-    }, [communityDispatch, federationsDispatch, navigation, reset])
+    }, [
+        communityDispatch,
+        getXmppCredentials,
+        federationsDispatch,
+        navigation,
+        reset,
+    ])
 
     return (
         <ImageBackground
