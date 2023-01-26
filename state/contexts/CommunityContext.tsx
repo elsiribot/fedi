@@ -438,10 +438,11 @@ export const registerXmppUser = async (
                 if (stanza.getAttr('type') === 'result') {
                     resolve(true)
                 } else if (stanza.getAttr('type') === 'error') {
-                    // TODO: Localize this error
-                    const errorMessage =
-                        stanza.getChild('error')?.getChildText('text') ||
-                        i18n.t('errors.unknown-error')
+                    const error = stanza.getChild('error')
+                    let errorMessage = i18n.t('errors.unknown-error')
+                    if (error?.getChild('conflict')) {
+                        errorMessage = i18n.t('errors.username-already-exists')
+                    }
 
                     reject(errorMessage)
                 }

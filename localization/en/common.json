@@ -84,9 +84,10 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
-        "unknown-error": "An unknown error occurred",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
-        "invalid-group-code": "This is not a valid group code"
+        "invalid-group-code": "This is not a valid group code",
+        "unknown-error": "An unknown error occurred",
+        "username-already-exists": "This username already exists. Recover your wallet to restore your username."
     },
     "feature": {
         "backup": {
