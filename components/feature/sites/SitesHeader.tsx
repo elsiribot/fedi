@@ -22,12 +22,15 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                 <View style={styles(theme).container}>
                     <Pressable
                         onPress={() => webViewRef.current.goBack()}
-                        style={[styles(theme).arrow, styles(theme).padded]}>
+                        style={styles(theme).padded}>
                         <Icon name={'angle-left'} type="font-awesome" />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
-                        style={[styles(theme).arrow, styles(theme).padded]}>
+                        style={[
+                            styles(theme).rightArrow,
+                            styles(theme).padded,
+                        ]}>
                         <Icon name={'angle-right'} type="font-awesome" />
                     </Pressable>
                 </View>
@@ -49,11 +52,11 @@ const styles = (theme: Theme) =>
             width: '100%',
             flexDirection: 'row',
         },
-        arrow: {
-            paddingHorizontal: 15,
+        rightArrow: {
+            paddingLeft: theme.spacing.xl,
         },
         padded: {
-            paddingVertical: theme.spacing.sm,
+            paddingBottom: theme.spacing.xl,
         },
     })
 
