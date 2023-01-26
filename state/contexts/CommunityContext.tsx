@@ -517,7 +517,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         // Only attempt XMPP connection if there is a selectedFederation
         // and a username+password has been created for it
-        console.info('useffect', selectedFederation)
         if (selectedFederation === null) return
         if (!selectedFederation?.username) return
         if (!selectedFederation?.password) return
@@ -532,7 +531,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         const xmpp = client(xmppConnectionOptions)
         // debug(xmpp, true)
 
-        debug(xmpp, true, `OS=${Platform.OS}`)
+        // debug(xmpp, true, `OS=${Platform.OS}`)
         // This ^ helps debug when testing with both ios + android emulators
         // simultaneously to know which stanzas are coming from which device
 
