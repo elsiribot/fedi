@@ -26,7 +26,7 @@ const MemberItem: React.FC<MemberItemProps> = ({
                 title={member.username.substring(0, 1).toUpperCase()}
                 size={AvatarSize.md}
             />
-            <Text bold style={[styles(theme).usernameText]}>
+            <Text numberOfLines={1} bold style={[styles(theme).usernameText]}>
                 {member.username}
             </Text>
         </Pressable>
@@ -43,6 +43,7 @@ const styles = (theme: Theme) =>
         },
         usernameText: {
             marginLeft: theme.spacing.md,
+            width: '80%',
         },
     })
 
