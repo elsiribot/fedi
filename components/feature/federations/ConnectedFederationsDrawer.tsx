@@ -32,13 +32,11 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()
-    const { convertSatsToUsd } = useBtcUsdPrice()
+    const { convertSatsToUsdString } = useBtcUsdPrice()
 
     const inviteLink = JSON.stringify(federation.connectInfo)
 
-    const amountInSats = amountUtils.formatNumber(
-        amountUtils.msatToSat(federation.balance),
-    )
+    const amountInSats = amountUtils.msatToSat(federation.balance)
 
     return (
         <View style={styles(theme).drawerItemLabel}>
@@ -51,9 +49,9 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     {federation.name}
                 </Text>
                 <Text style={styles(theme).subText}>
-                    {`${amountInSats} ${t('words.sats')} ($${convertSatsToUsd(
-                        amountInSats,
-                    )})`}
+                    {`${amountUtils.formatNumber(amountInSats)} ${t(
+                        'words.sats',
+                    )} ($${convertSatsToUsdString(amountInSats)})`}
                 </Text>
             </View>
 
