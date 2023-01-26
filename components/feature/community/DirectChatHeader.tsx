@@ -33,7 +33,10 @@ const DirectChatHeader: React.FC<{}> = () => {
                     <HoloAvatar
                         title={stringUtils.getInitialsFromName(member.username)}
                     />
-                    <Text bold style={styles(theme).memberText}>
+                    <Text
+                        bold
+                        numberOfLines={1}
+                        style={styles(theme).memberText}>
                         {member.username}
                     </Text>
                 </Pressable>
@@ -92,6 +95,7 @@ const styles = (theme: Theme) =>
             marginLeft: theme.spacing.sm,
         },
         memberContainer: {
+            width: '95%',
             padding: theme.spacing.sm,
             flexDirection: 'row',
             alignItems: 'center',
