@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
-import { Images } from '../assets/images'
+import { GoogleDriveSvg } from '../assets/images/svgs'
 import HoloGuidance from '../components/ui/HoloGuidance'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -36,7 +36,12 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <HoloGuidance
-                iconImage={Images.GoogleDrive}
+                iconImage={
+                    <GoogleDriveSvg
+                        height={theme.sizes.lg}
+                        width={theme.sizes.lg}
+                    />
+                }
                 title={t('feature.backup.cloud-backup')}
                 message={t('feature.backup.cloud-backup-instructions')}
             />

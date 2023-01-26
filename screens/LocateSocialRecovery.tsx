@@ -4,7 +4,6 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
 import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecoveryFileButton'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
@@ -28,7 +27,9 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                 {t('feature.recovery.social-recovery-instructions')}
             </Text>
             <HoloCard
-                iconImage={Images.FediFile}
+                iconImage={
+                    <FediFile height={theme.sizes.sm} width={theme.sizes.sm} />
+                }
                 title={t('feature.recovery.locate-social-recovery-file')}
                 body={
                     <>

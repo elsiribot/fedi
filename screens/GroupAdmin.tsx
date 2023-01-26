@@ -1,10 +1,20 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import {
+    AlarmSvg,
+    CashSvg,
+    ChatHistorySvg,
+    InviteMembersSvg,
+    LeaveRoomSvg,
+    PhotoSvg,
+    RoomSvg,
+    SocialPeopleSvg,
+} from '../assets/images/svgs'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -22,10 +32,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     source={Images.HoloBackground}
                     style={styles(theme).profileCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <Image
-                        style={styles(theme).groupIcon}
-                        source={Images.Room}
-                    />
+                    <RoomSvg height={theme.sizes.md} width={theme.sizes.md} />
                 </ImageBackground>
                 <Text h2 style={styles(theme).groupNameText}>
                     {group.name}
@@ -37,12 +44,22 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Text>
                 <SettingsItem
                     disabled
-                    imageSource={Images.SocialPeople}
+                    imageSource={
+                        <SocialPeopleSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('words.members')}
                     onPress={() => {}}
                 />
                 <SettingsItem
-                    imageSource={Images.Room}
+                    imageSource={
+                        <RoomSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.community.invite-to-group')}
                     onPress={() => {
                         navigation.navigate('GroupInvite', {
@@ -52,13 +69,23 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.LeaveRoom}
+                    imageSource={
+                        <LeaveRoomSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.community.leave-group')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.InviteMembers}
+                    imageSource={
+                        <InviteMembersSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.community.broadcast-only')}
                     onPress={() => {}}
                 />
@@ -69,25 +96,45 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Text>
                 <SettingsItem
                     disabled
-                    imageSource={Images.Alarm}
+                    imageSource={
+                        <AlarmSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.community.disappearing-messages')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.ChatHistory}
+                    imageSource={
+                        <ChatHistorySvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.community.show-history-to-new-members')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.Photo}
+                    imageSource={
+                        <PhotoSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('feature.community.view-shared-media')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.Cash}
+                    imageSource={
+                        <CashSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                        />
+                    }
                     label={t('words.payments')}
                     onPress={() => {}}
                 />

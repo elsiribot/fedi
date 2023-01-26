@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
+import { SocialPeopleSvg } from '../assets/images/svgs'
 import {
     BridgeEventEmitter,
     GuardianApproval,
@@ -141,7 +141,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.recovery.guardian-approval-instructions')}
             </Text>
             <HoloCard
-                iconImage={Images.SocialPeople}
+                iconImage={<SocialPeopleSvg />}
                 title={t('feature.recovery.social-recovery-steps')}
                 body={
                     <>

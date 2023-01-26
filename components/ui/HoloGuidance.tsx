@@ -1,4 +1,4 @@
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
     ImageBackground,
@@ -30,9 +30,7 @@ const HoloGuidance: React.FC<HoloGuidanceProps> = ({
                 source={Images.HoloBackground}
                 style={styles(theme).holoCircle}
                 imageStyle={styles(theme).circleBorder}>
-                {iconImage && (
-                    <Image source={iconImage} style={styles(theme).iconImage} />
-                )}
+                {iconImage}
             </ImageBackground>
             {body ? (
                 body

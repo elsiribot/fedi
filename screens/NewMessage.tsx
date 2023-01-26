@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -7,7 +7,7 @@ import { useCommunityContext } from '../state/contexts/CommunityContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
-import { Images } from '../assets/images'
+import { ScanSvg, SocialPeopleSvg } from '../assets/images/svgs'
 import MembersList from '../components/feature/community/MembersList'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
@@ -47,16 +47,16 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
-                    <Image source={Images.Scan} style={styles(theme).icon} />
+                    <ScanSvg height={theme.sizes.sm} width={theme.sizes.sm} />
                 </View>
                 <Pressable
                     style={styles(theme).createGroupContainer}
                     onPress={() => {
                         navigation.replace('JoinGroup')
                     }}>
-                    <Image
-                        source={Images.SocialPeople}
-                        style={styles(theme).icon}
+                    <SocialPeopleSvg
+                        height={theme.sizes.sm}
+                        width={theme.sizes.sm}
                     />
                     <Text medium style={styles(theme).createGroupText}>
                         {t('feature.community.or-join-a-group')}

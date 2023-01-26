@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
+import { SocialPeopleSvg } from '../assets/images/svgs'
 import HoloGuidance from '../components/ui/HoloGuidance'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -20,7 +20,12 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <HoloGuidance
-                iconImage={Images.SocialPeople}
+                iconImage={
+                    <SocialPeopleSvg
+                        height={theme.sizes.lg}
+                        width={theme.sizes.lg}
+                    />
+                }
                 title={t('feature.backup.social-backup')}
                 message={t('feature.backup.start-social-backup-instructions')}
             />

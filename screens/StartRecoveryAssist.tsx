@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
+import { SocialPeopleSvg } from '../assets/images/svgs'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import type { RootStackParamList } from '../types/navigation'
@@ -24,7 +24,12 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.recovery.recovery-assist-description')}
             </Text>
             <HoloCard
-                iconImage={Images.SocialPeople}
+                iconImage={
+                    <SocialPeopleSvg
+                        height={theme.sizes.lg}
+                        width={theme.sizes.lg}
+                    />
+                }
                 title={t('feature.recovery.recovery-assist-process')}
                 body={
                     <>

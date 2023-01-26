@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
-import { Images } from '../assets/images'
+import { NoteSvg, SocialPeopleSvg } from '../assets/images/svgs'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 // import { useBridge } from '../contexts/FederationsContext'
@@ -50,7 +50,10 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.backup.choose-method-instructions')}
             </Text>
             <HoloCard
-                iconImage={Images.SocialPeople}
+                iconImage=<SocialPeopleSvg
+                        height={theme.sizes.sm}
+                        width={theme.sizes.sm}
+                        />
                 title={t('feature.backup.social-backup')}
                 body={
                     <>
@@ -67,7 +70,10 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
             />
             <LineBreak />
             <HoloCard
-                iconImage={Images.Note}
+                iconImage=<NoteSvg
+                    height={theme.sizes.sm}
+                    width={theme.sizes.sm}
+                />
                 title={t('feature.backup.personal-backup')}
                 body={
                     <>

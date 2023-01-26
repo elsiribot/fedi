@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import { ErrorSvg } from '../assets/images/svgs'
 import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecoveryFileButton'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -26,7 +27,7 @@ const SelectRecoveryFileFailure: React.FC<Props> = ({
             source={Images.HoloBackground}
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
-                <Image source={Images.Error} style={styles(theme).iconImage} />
+                <ErrorSvg height={theme.sizes.sm} width={theme.sizes.sm} />
                 <Text h2 h2Style={styles(theme).failureMessage}>
                     {t('feature.recovery.opening-backup-file-failed')}
                 </Text>
