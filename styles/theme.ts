@@ -37,12 +37,23 @@ const theme = createTheme({
                 borderRadius: 50,
                 ...(props.fullWidth ? { width: '100%' } : {}),
             },
+            buttonStyle: {
+                ...(props.loading
+                    ? {
+                          backgroundColor: 'transparent',
+                          color: theme.colors?.primary,
+                      }
+                    : {}),
+            },
             titleStyle: {
                 paddingLeft: 10,
                 paddingRight: 10,
             },
             disabledStyle: {
                 opacity: 0.7,
+            },
+            loadingProps: {
+                color: theme.colors?.primary,
             },
             loadingStyle: {
                 ...(props.fullWidth ? { width: '100%' } : {}),
