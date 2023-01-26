@@ -29,6 +29,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const {
+        backupXmppUsername,
         completeSocialRecovery,
         getXmppCredentials,
         socialRecoveryApprovals,
@@ -87,6 +88,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 const credentials = await getXmppCredentials()
                 const { password } = credentials
                 dispatch(updateFederationCredentials(username, password))
+                backupXmppUsername(username)
             }
             navigation.navigate('SocialRecoverySuccess')
         } catch (e) {

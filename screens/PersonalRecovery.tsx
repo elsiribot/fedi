@@ -87,7 +87,8 @@ const SeedWordInput = ({
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { getXmppCredentials, recoverFromMnemonic } = useBridge()
+    const { backupXmppUsername, getXmppCredentials, recoverFromMnemonic } =
+        useBridge()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
     const { dispatch } = useFederationsContext()
@@ -190,6 +191,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             dispatch(
                                 updateFederationCredentials(username, password),
                             )
+                            backupXmppUsername(username)
                         }
                         setIsLoading(false)
                         navigation.replace('PersonalRecoverySuccess')
