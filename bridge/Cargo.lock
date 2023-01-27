@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "aead"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "rand",
@@ -594,7 +594,7 @@ dependencies = [
 [[package]]
 name = "fedi-social"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "aead",
  "anyhow",
@@ -623,7 +623,7 @@ dependencies = [
 [[package]]
 name = "fedimint-api"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -637,6 +637,7 @@ dependencies = [
  "gloo-timers",
  "hbbft",
  "hex",
+ "js-sys",
  "lightning-invoice",
  "miniscript",
  "rand",
@@ -655,7 +656,7 @@ dependencies = [
 [[package]]
 name = "fedimint-bitcoind"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -671,7 +672,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -700,7 +701,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
@@ -711,7 +712,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive-secret"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "fedimint-api",
@@ -724,7 +725,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -751,7 +752,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -779,7 +780,7 @@ dependencies = [
 [[package]]
 name = "fedimint-sled"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -792,7 +793,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1181,7 +1182,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hkdf"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "bitcoin_hashes 0.11.0",
 ]
@@ -1593,7 +1594,7 @@ dependencies = [
 [[package]]
 name = "mint-client"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "aead",
  "anyhow",
@@ -1609,7 +1610,6 @@ dependencies = [
  "fedimint-mint",
  "futures",
  "hkdf",
- "js-sys",
  "jsonrpsee-core",
  "jsonrpsee-types",
  "jsonrpsee-wasm-client",
@@ -2528,7 +2528,7 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 [[package]]
 name = "tbs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=d1b104e69415ca3562ca8b9b3443dc1ff1a97db7#d1b104e69415ca3562ca8b9b3443dc1ff1a97db7"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
 dependencies = [
  "bitcoin_hashes 0.11.0",
  "bls12_381",
