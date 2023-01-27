@@ -346,7 +346,7 @@ export async function backupXmppUsername(
     username: String,
     federationId: string,
 ): Promise<null> {
-    return fedimintRpc('xmppCredentials', { federationId })
+    return fedimintRpc('backupXmppUsername', { username, federationId })
 }
 
 export async function listGateways(
