@@ -17,7 +17,7 @@ use lazy_static::lazy_static;
 
 uniffi_macros::include_scaffolding!("calculator");
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};
 use lightning_invoice::Invoice;
 use logging::init_logging;
@@ -46,23 +46,24 @@ lazy_static! {
     static ref BRIDGE: Mutex<Option<Arc<Bridge>>> = Mutex::new(None);
 }
 
-async fn set_bridge(bridge: Bridge) {
+async fn set_bridge(bridge: Bridge) -> anyhow::Result<()> {
     tracing::debug!("resetting bridge");
     if let Some(b) = BRIDGE.lock().await.clone() {
-        // FIXME: don't panic
-        b.stop_pollers().await.expect("couldn't stop pollers")
+        b.stop_pollers().await.context("couldn't stop pollers")?;
     }
     *BRIDGE.lock().await = Some(Arc::new(bridge));
     tracing::debug!("reset bridge");
+    Ok(())
 }
 
-async fn get_bridge() -> Option<Arc<Bridge>> {
+async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
     tracing::debug!("getting bridge");
-    let bridge = BRIDGE.lock().await.clone();
+    let bridge = BRIDGE.lock().await.clone().context("bridge not set")?;
     tracing::debug!("got bridge");
-    bridge
+    Ok(bridge)
 }
 
+// TODO: send error message
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
     let log_level = LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::INFO);
     RUNTIME.block_on(async {
@@ -74,25 +75,30 @@ async fn fedimint_initialize_async(
     data_dir: String,
     log_level: LevelFilter,
     event_sink: Box<dyn EventSink>,
-) -> () {
+) -> anyhow::Result<()> {
     let data_dir = PathBuf::from(data_dir);
     let event_sink = Arc::new(EventSinkWrapper { event_sink });
-    init_logging(&data_dir, event_sink.clone(), log_level);
+    init_logging(&data_dir, event_sink.clone(), log_level)?;
     tracing::info!("init called ...");
 
-    let bridge = Bridge::new(data_dir, event_sink.clone()).await;
+    let bridge = Bridge::new(data_dir, event_sink.clone())
+        .await
+        .context("could not create a bridge")?;
 
-    set_bridge(bridge).await;
+    set_bridge(bridge).await?;
+    Ok(())
 }
 
 fn rpc_error(description: &str) -> String {
     return json!({ "error": description }).to_string();
 }
 
-async fn get_federation(federation_id: &str) -> Arc<Federation> {
-    let bridge = get_bridge().await.expect("there should be a bridge");
-    // FIXME: don't unwrap
-    bridge.get_federation(federation_id).await.unwrap()
+async fn get_federation(federation_id: &str) -> anyhow::Result<Arc<Federation>> {
+    let bridge = get_bridge().await?;
+    bridge
+        .get_federation(federation_id)
+        .await
+        .context("could not find federation")
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -106,7 +112,7 @@ async fn handle_list_transactions(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&payload.federation_id).await;
+    let federation = get_federation(&payload.federation_id).await?;
     // FIXME: consider mapping from millisat to sat
     let transactions = federation.list_transactions().await;
     Ok(json!({ "result": transactions }).to_string())
@@ -125,7 +131,7 @@ async fn handle_update_transaction_notes(payload: String) -> anyhow::Result<Stri
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&payload.federation_id).await;
+    let federation = get_federation(&payload.federation_id).await?;
     federation
         .update_transaction_notes(payload.transaction_id, payload.notes)
         .await?;
@@ -143,7 +149,7 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let bridge = get_bridge().await.expect("bridge not initialized");
+    let bridge = get_bridge().await?;
 
     let federation = bridge.join_federation(connect_string).await?;
 
@@ -152,7 +158,7 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
 }
 
 async fn handle_list_federations() -> anyhow::Result<String> {
-    let bridge = get_bridge().await.expect("bridge not initialized");
+    let bridge = get_bridge().await?;
     let federations: Vec<FedimintFederation> = futures::future::join_all(
         bridge
             .federations
@@ -178,7 +184,7 @@ async fn handle_generate_invoice(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&payload.federation_id).await;
+    let federation = get_federation(&payload.federation_id).await?;
     let invoice = federation
         .generate_invoice(payload.amount, payload.description)
         .await?;
@@ -197,8 +203,8 @@ async fn handle_pay_invoice(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&payload.federation_id).await;
-    let invoice: Invoice = payload.invoice.parse().unwrap();
+    let federation = get_federation(&payload.federation_id).await?;
+    let invoice: Invoice = payload.invoice.parse().context("could not parse invoice")?;
     federation.pay_invoice(&invoice).await?;
     Ok(json!({ "result": () }).to_string())
 }
@@ -225,7 +231,7 @@ async fn handle_address_or_invoice(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     if let Ok(invoice) = input.parse::<Invoice>() {
         if network_to_currency(federation.network()) != invoice.currency() {
             return Err(anyhow!(format!(
@@ -263,7 +269,7 @@ async fn handle_generate_address(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&payload.federation_id).await;
+    let federation = get_federation(&payload.federation_id).await?;
     let address = federation.generate_address().await;
     Ok(json!({ "result": address.to_string() }).to_string())
 }
@@ -291,7 +297,7 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let rng = rand::rngs::OsRng;
     let ecash: Vec<NoteWithAmount> = federation
         .client
@@ -304,7 +310,7 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
         })
         .collect();
     // TODO: this should be serialized with Encodable, not Serializable
-    let ecash = serde_json::to_string(&ecash).unwrap();
+    let ecash = serde_json::to_string(&ecash).context("could not serialize")?;
     federation
         .save_transaction(&Transaction::offline(
             tx::TransactionDirection::Send,
@@ -329,7 +335,7 @@ async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let rng = rand::rngs::OsRng;
     let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
     let tiered_multi = TieredMulti::from_iter(input);
@@ -359,7 +365,7 @@ async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
     let tiered_multi = TieredMulti::from_iter(input);
     let valid = federation
@@ -402,7 +408,7 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&payload.federation_id).await;
+    let federation = get_federation(&payload.federation_id).await?;
     let address = bitcoin::util::address::Address::from_str(&payload.address)
         .map_err(|_| FedimintError::OtherError(anyhow!("Invalid address")))?;
     let mut rng = rand::rngs::OsRng;
@@ -456,7 +462,7 @@ async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let message = Message::from_slice(&hex::decode(message)?)?;
     let signed_message = federation.sign_lnurl_message(&message);
     Ok(json!({ "result": signed_message }).to_string())
@@ -473,7 +479,7 @@ async fn handle_list_gateways(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let gateways = federation.client.fetch_registered_gateways().await?;
     let active_gateway = match federation.client.fetch_active_gateway().await {
         Ok(gw) => Some(gw),
@@ -506,7 +512,7 @@ async fn handle_switch_gateway(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     federation
         .client
         .switch_active_gateway(Some(node_pubkey))
@@ -525,7 +531,7 @@ async fn handle_get_mnemonic(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let mnemonic = federation.get_mnemonic().await;
     Ok(json!({ "result": mnemonic.serialize() }).to_string())
 }
@@ -546,7 +552,7 @@ async fn handle_recover_from_mnemonic(payload: String) -> anyhow::Result<String>
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
 
-    let bridge = BRIDGE.lock().await.clone().unwrap();
+    let bridge = get_bridge().await?;
     let mnemonic_string = mnemonic.join(" ");
     // FIXME: should this happen inside bridge module?
     let mnemonic = Mnemonic::parse(mnemonic_string)?;
@@ -567,7 +573,7 @@ async fn handle_leave_federation(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let bridge = get_bridge().await.expect("there should be a bridge");
+    let bridge = get_bridge().await?;
     bridge.leave_federation(&federation_id).await?;
     Ok(json!({ "result": () }).to_string())
 }
@@ -587,8 +593,8 @@ async fn handle_upload_backup_file(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let datadir = { get_bridge().await.unwrap().data_dir.clone() };
-    let federation = get_federation(&federation_id).await;
+    let datadir = { get_bridge().await?.data_dir.clone() };
+    let federation = get_federation(&federation_id).await?;
     let recovery_file_path = federation
         .upload_backup_file(&video_file_path, &datadir)
         .await?;
@@ -597,7 +603,7 @@ async fn handle_upload_backup_file(payload: String) -> anyhow::Result<String> {
 
 // This method is a bit of a stopgap ...
 async fn handle_locate_recovery_file(_payload: String) -> anyhow::Result<String> {
-    let datadir = get_bridge().await.unwrap().data_dir.clone();
+    let datadir = get_bridge().await?.data_dir.clone();
     let recovery_file_path = datadir.join(RECOVERY_FILENAME);
     Ok(json!({ "result": recovery_file_path }).to_string())
 }
@@ -622,7 +628,7 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     // also fixed by using federation-specific location
     let valid = match RecoveryFile::from_bytes(&contents) {
         Ok(recovery_file) => {
-            let federation = get_federation(&federation_id).await;
+            let federation = get_federation(&federation_id).await?;
             federation.start_social_recovery(&recovery_file).await?;
             info!("social recovery started");
             true
@@ -645,12 +651,12 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
     // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
-    let recovery_file_path = get_bridge().await.unwrap().data_dir.join(RECOVERY_FILENAME);
+    let recovery_file_path = get_bridge().await?.data_dir.join(RECOVERY_FILENAME);
     let contents = fs::read(recovery_file_path)?;
     let recovery_file = RecoveryFile::from_bytes(&contents)?;
 
     // Return QR code contents
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let qr = federation.social_recovery_qr(&recovery_file).await?;
     Ok(json!({ "result": qr }).to_string())
 }
@@ -667,7 +673,7 @@ async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<Str
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
     // Return QR code contents
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let (approvals, remaining) = federation.social_recovery_approvals().await?;
     let result = SocialRecoveryEvent {
         federation_id,
@@ -694,9 +700,9 @@ async fn handle_social_recovery_download_verification_doc(
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let datadir = { get_bridge().await.unwrap().data_dir.clone() };
+    let datadir = { get_bridge().await?.data_dir.clone() };
     // Return QR code contents
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let path = federation
         .social_recovery_download_verification_doc(&recovery_id, datadir)
         .await?;
@@ -718,7 +724,7 @@ async fn handle_approve_social_recovery_request(payload: String) -> anyhow::Resu
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     federation
         .approve_social_recovery_request(&recovery_id)
         .await?;
@@ -736,10 +742,10 @@ async fn handle_complete_social_recovery(payload: String) -> anyhow::Result<Stri
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let mnemonic = federation.social_recovery_combine_shares().await?;
     tracing::info!("final {:?}", mnemonic.to_string());
-    let bridge = BRIDGE.lock().await.clone().unwrap();
+    let bridge = get_bridge().await?;
     let username = bridge
         .recover_from_mnemonic(&federation_id, &mnemonic)
         .await?;
@@ -757,7 +763,7 @@ async fn handle_xmpp_credentials(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     let credentials = federation.xmpp_credentials().await;
     Ok(json!({ "result": credentials }).to_string())
 }
@@ -896,7 +902,8 @@ mod tests {
         // Intialize bridge
         let event_sink = FakeEventSink::new();
         // TODO: how to grab log level from environment?
-        fedimint_initialize_async(create_data_dir(), LevelFilter::INFO, Box::new(event_sink)).await;
+        fedimint_initialize_async(create_data_dir(), LevelFilter::INFO, Box::new(event_sink))
+            .await?;
 
         // Join federation
         // ngrok
@@ -913,7 +920,7 @@ mod tests {
         let payload = serde_json::to_string(&JoinFederationPayload { connect_string })?;
         let result = handle_join_federation(payload).await.unwrap();
         let fedimint_federation: FedimintFederation = serde_json::from_value(get_result(result))?;
-        let federation = get_federation(&fedimint_federation.name).await;
+        let federation = get_federation(&fedimint_federation.name).await?;
 
         let data_dir = get_bridge().await.unwrap().data_dir.display().to_string();
         tracing::info!(data_dir = data_dir);

@@ -7,6 +7,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use anyhow::Context;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, prelude::*, EnvFilter, Layer};
 
@@ -77,7 +78,11 @@ impl<'a> tracing::field::Visit for StringVisitor<'a> {
 }
 
 // TODO: configurable log level
-pub fn init_logging(data_dir: &Path, event_sink: Arc<EventSinkWrapper>, log_level: LevelFilter) {
+pub fn init_logging(
+    data_dir: &Path,
+    event_sink: Arc<EventSinkWrapper>,
+    log_level: LevelFilter,
+) -> anyhow::Result<()> {
     // react native
     #[cfg(not(test))]
     {
@@ -86,7 +91,7 @@ pub fn init_logging(data_dir: &Path, event_sink: Arc<EventSinkWrapper>, log_leve
             .create(true)
             .append(true)
             .open(log_file)
-            .unwrap();
+            .context("could not open log file")?;
 
         let log_file_layer = tracing_subscriber::fmt::layer()
             .json()
@@ -120,4 +125,6 @@ pub fn init_logging(data_dir: &Path, event_sink: Arc<EventSinkWrapper>, log_leve
     tracing_subscriber::fmt()
         .try_init()
         .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
+
+    Ok(())
 }
