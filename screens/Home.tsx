@@ -8,6 +8,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
 import CommunityHeader from '../components/feature/community/CommunityHeader'
+import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
@@ -95,10 +96,13 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 options={() => ({
                     title: t('words.wallet'),
                     header: () => (
-                        <WalletHeader
-                            toggleOffline={toggleOffline}
-                            offline={offline}
-                        />
+                        <>
+                            <SelectedFederationHeader navigation={navigation} />
+                            <WalletHeader
+                                toggleOffline={toggleOffline}
+                                offline={offline}
+                            />
+                        </>
                     ),
                 })}>
                 {props => <Wallet {...props} offline={offline} />}
@@ -107,16 +111,21 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 name="Community"
                 component={Community}
                 options={() => ({
-                    header: () => <CommunityHeader />,
+                    header: () => (
+                        <>
+                            <SelectedFederationHeader navigation={navigation} />
+                            <CommunityHeader />
+                        </>
+                    ),
                 })}
             />
             <Tab.Screen
                 name="Sites"
                 component={Sites}
-                options={{
+                options={() => ({
                     title: t('words.sites'),
                     headerShown: false,
-                }}
+                })}
             />
             <Tab.Screen
                 name="Admin"
