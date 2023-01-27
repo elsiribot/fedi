@@ -4,7 +4,12 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageSourcePropType } from 'react-native'
 
-import { Images } from '../../../assets/images'
+import {
+    CashSvg,
+    FediLogoIconSvg,
+    FediMintSvg,
+    SocialPeopleSvg,
+} from '../../../assets/images/svgs'
 import HoloGuidance from '../../ui/HoloGuidance'
 
 type OnboardingSlideProps = {
@@ -44,25 +49,25 @@ const OnboardingSlides: React.FC<Props> = ({ onSlideChanged }: Props) => {
             key: 'welcome-to-fedi',
             title: t('feature.onboarding.welcome-to-fedi'),
             message: t('feature.onboarding.guidance-1'),
-            iconImage: Images.FediLogoIcon,
+            iconImage: <FediLogoIconSvg />,
         },
         {
             key: 'commmunity-first',
             title: t('feature.onboarding.community-first'),
             message: t('feature.onboarding.guidance-2'),
-            iconImage: Images.SocialPeople,
+            iconImage: <SocialPeopleSvg />,
         },
         {
             key: 'simple-and-private',
             title: t('feature.onboarding.simple-and-private'),
             message: t('feature.onboarding.guidance-3'),
-            iconImage: Images.Fedimint,
+            iconImage: <FediMintSvg />,
         },
         {
             key: 'earn-and-save',
             title: t('feature.onboarding.earn-and-save'),
             message: t('feature.onboarding.guidance-4'),
-            iconImage: Images.Cash,
+            iconImage: <CashSvg />,
         },
     ]
 

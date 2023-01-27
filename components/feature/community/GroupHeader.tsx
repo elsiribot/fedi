@@ -7,6 +7,7 @@ import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
 import { t } from 'i18next'
+import { NewRoomSvg, PhoneSvg } from '../../../assets/images/svgs'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
@@ -34,9 +35,9 @@ const GroupHeader: React.FC<{}> = () => {
                     onPress={() => {
                         navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <Image
-                        style={styles(theme).groupIcon}
-                        source={Images.NewRoom}
+                    <NewRoomSvg
+                        height={theme.sizes.sm}
+                        width={theme.sizes.sm}
                     />
                     <Text
                         bold
@@ -62,9 +63,9 @@ const GroupHeader: React.FC<{}> = () => {
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <Image
-                            style={styles(theme).headerIcon}
-                            source={Images.Phone}
+                        <PhoneSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
                         />
                     </Pressable>
                 </>

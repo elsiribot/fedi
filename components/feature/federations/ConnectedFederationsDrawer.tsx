@@ -4,7 +4,7 @@ import {
     DrawerItem,
 } from '@react-navigation/drawer'
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -15,6 +15,10 @@ import {
 } from 'react-native'
 
 import { Images } from '../../../assets/images'
+import {
+    FedearationxIconSvg,
+    InviteMembersSvg,
+} from '../../../assets/images/svgs'
 import { Federation } from '../../../bridge'
 import {
     updateSelectedFederationId,
@@ -40,10 +44,14 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     return (
         <View style={styles(theme).drawerItemLabel}>
-            <Image
+            <FedearationxIconSvg
+                height={theme.sizes.lg}
+                width={theme.sizes.lg}
+            />
+            {/* <Image
                 style={styles(theme).image}
                 source={Images.FederationXIconSm}
-            />
+            /> */}
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
                     {federation.name}
@@ -62,10 +70,14 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                         inviteLink,
                     })
                 }}>
-                <Image
+                <InviteMembersSvg
+                    height={theme.sizes.sm}
+                    width={theme.sizes.sm}
+                />
+                {/* <Image
                     style={styles(theme).iconImage}
                     source={Images.InviteMembers}
-                />
+                /> */}
             </TouchableOpacity>
         </View>
     )

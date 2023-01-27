@@ -1,10 +1,10 @@
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useNavigation } from '@react-navigation/native'
-import { Images } from '../../../assets/images'
+import { OfflineSvg } from '../../../assets/images/svgs'
 import Header from '../../ui/Header'
 
 type WalletHeaderProps = {
@@ -34,13 +34,19 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                         style={{
                             padding: theme.spacing.sm,
                         }}>
-                        <Image
+                        <OfflineSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
+                            color={theme.colors.grey}
+                            opacity={offline ? 1 : 0.1}
+                        />
+                        {/* <Image
                             source={Images.Offline}
                             style={[
                                 styles(theme).offlineIcon,
                                 offline ? { opacity: 1 } : { opacity: 0.1 },
                             ]}
-                        />
+                        /> */}
                     </Pressable>
                     <Pressable
                         onPress={() => navigation.navigate('Transactions')}

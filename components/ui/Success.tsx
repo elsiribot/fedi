@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 
 import { Images } from '../../assets/images'
+import { DoneSvg } from '../../assets/images/svgs'
 import { reset } from '../../state/navigation'
 import type { NavigationHook, RootStackParamList } from '../../types/navigation'
 
@@ -43,7 +44,6 @@ type SuccessProps =
 const Success: React.FC<SuccessProps> = ({
     message,
     messageText,
-    iconImage = Images.Done,
     nextScreen = 'Home',
     nextScreenProps = undefined,
     button,
@@ -58,7 +58,9 @@ const Success: React.FC<SuccessProps> = ({
             source={Images.HoloBackground}
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
-                <Image source={iconImage} style={styles(theme).iconImage} />
+                {/* <Image source={iconImage} style={styles(theme).iconImage} /> */}
+
+                <DoneSvg height={theme.sizes.md} width={theme.sizes.md} />
                 {message ? (
                     message
                 ) : (

@@ -1,11 +1,11 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { Image, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
+import { EditSvg } from '../../../assets/images/svgs'
 import { Props as GroupAdminProps } from '../../../screens/GroupAdmin'
 import { NavigationHook } from '../../../types/navigation'
 
@@ -31,9 +31,9 @@ const GroupAdminHeader: React.FC<{}> = () => {
                             })
                         }
                         style={styles(theme).headerIconContainer}>
-                        <Image
-                            style={styles(theme).headerIcon}
-                            source={Images.EditBlack}
+                        <EditSvg
+                            height={theme.sizes.sm}
+                            width={theme.sizes.sm}
                         />
                     </Pressable>
                 </>

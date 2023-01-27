@@ -2,8 +2,8 @@ import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
-
 import { Images } from '../../../assets/images'
+
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
 import DateUtils from '../../../utils/DateUtils'

@@ -1,6 +1,5 @@
-import { Image } from '@rneui/themed'
 import React from 'react'
-import { Images } from '../../../assets/images'
+import { FediLogoSvg } from '../../../assets/images/svgs'
 
 import Header from '../../ui/Header'
 
@@ -9,11 +8,12 @@ const EulaHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={
-                <Image
-                    style={{ width: 100, height: 20 }}
-                    source={Images.FediLogo}
-                    resizeMode="contain"
-                />
+                <FediLogoSvg height={20} width={100} />
+                // <Image
+                //     style={{ width: 100, height: 20 }}
+                //     source={Images.FediLogo}
+                //     resizeMode="contain"
+                // />
             }
         />
     )

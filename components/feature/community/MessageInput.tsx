@@ -1,5 +1,5 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { Image, Input, Theme, useTheme } from '@rneui/themed'
+import { Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import { Images } from '../../../assets/images'
+import { SendArrowUpCircleSvg, WalletSvg } from '../../../assets/images/svgs'
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { NavigationHook } from '../../../types/navigation'
 
@@ -72,7 +72,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             recipient: member,
                         })
                     }>
-                    <Image style={styles(theme).icon} source={Images.Wallet} />
+                    <WalletSvg
+                        height={theme.sizes.md}
+                        width={theme.sizes.md}
+                        // marginRight={theme.spacing.md}
+                        // marginBottom={theme.spacing.md}
+                    />
                 </Pressable>
             )}
             <Input
@@ -117,9 +122,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         setMessageText('')
                     }
                 }}>
-                <Image
-                    source={Images.SendArrowUpCircle}
-                    style={styles(theme).sendIcon}
+                <SendArrowUpCircleSvg
+                    height={theme.sizes.md}
+                    width={theme.sizes.md}
                 />
             </Pressable>
         </View>
