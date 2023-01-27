@@ -308,10 +308,25 @@ export function reducer(state: AppState, action: Action): AppState {
                 // message exists but has not changed, avoid re-render
                 return state
             } else {
-                // message needs an update...
-                // TODO: Since XMPP sends all versions of a message as we update
-                // the payment inside of it, check the payment.updatedAt value
-                // and compare to see if we can skip a state update here
+                // message may need an update but we may already have the
+                // most updated version of the embedded payment
+                const currentPayment = state.messages[messageIndex].payment
+                const newPayment = action.payload.payment
+                if (currentPayment && newPayment) {
+                    const currentTimestamp = currentPayment.updatedAt
+                    const newTimestamp = newPayment.updatedAt
+
+                    // There are no new updates to the payment so we can
+                    // skip a state update
+                    if (
+                        currentTimestamp &&
+                        newTimestamp &&
+                        currentTimestamp >= newTimestamp
+                    ) {
+                        return state
+                    }
+                }
+                // message should be updated...
                 const updatedMessage = new Message({
                     ...state.messages[messageIndex],
                     ...action.payload,
@@ -551,108 +566,108 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
             try {
-            if (stanza.is('presence')) {
-                // ignore if there is no presence data
-                const user = stanza.getChild('x')
-                if (!user) return
+                if (stanza.is('presence')) {
+                    // ignore if there is no presence data
+                    const user = stanza.getChild('x')
+                    if (!user) return
 
-                const statusCode = user?.getChild('status')?.getAttr('code')
+                    const statusCode = user?.getChild('status')?.getAttr('code')
 
-                // This is a self-presence code, we don't
-                // need to add to membersSeen
-                if (statusCode === '110') return
+                    // This is a self-presence code, we don't
+                    // need to add to membersSeen
+                    if (statusCode === '110') return
 
-                // Make sure this presence stanza came from the main domain
-                // so we can create a member with the JID
-                const from = stanza.getAttr('from')
-                const fromJid = jid(from)
-                let userJid: JID = fromJid
+                    // Make sure this presence stanza came from the main domain
+                    // so we can create a member with the JID
+                    const from = stanza.getAttr('from')
+                    const fromJid = jid(from)
+                    let userJid: JID = fromJid
 
-                // This came from a user through the MUC domain, reformat JID
-                // to main domain with the /community resource
-                if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
-                    userJid = jid(
-                        fromJid.getResource(),
-                        XMPP_DOMAIN,
-                        XMPP_RESOURCE,
+                    // This came from a user through the MUC domain, reformat JID
+                    // to main domain with the /community resource
+                    if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
+                        userJid = jid(
+                            fromJid.getResource(),
+                            XMPP_DOMAIN,
+                            XMPP_RESOURCE,
+                        )
+                    }
+
+                    dispatch(
+                        addToMembersSeen(
+                            new Member({
+                                jid: userJid,
+                            }),
+                        ),
                     )
                 }
+                if (stanza.is('message')) {
+                    if (stanza.getAttr('type') === 'groupchat') {
+                        // Handle incoming messages from GroupChat
+                        const bodyText = stanza.getChildText('body')
+                        if (!bodyText) return
 
-                dispatch(
-                    addToMembersSeen(
-                        new Member({
-                            jid: userJid,
-                        }),
-                    ),
-                )
-            }
-            if (stanza.is('message')) {
-                if (stanza.getAttr('type') === 'groupchat') {
-                    // Handle incoming messages from GroupChat
-                    const bodyText = stanza.getChildText('body')
-                    if (!bodyText) return
-
-                    const groupMessageJson = stanza.getChildText('gm')
+                        const groupMessageJson = stanza.getChildText('gm')
                         const parsedMessage = JSON.parse(
                             groupMessageJson as string,
                         )
-                    const newMessage = new Message({
-                        ...parsedMessage,
-                    })
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                        })
 
-                    dispatch(addToMessages(newMessage))
-                    dispatch(updateGroupMessagePreview(newMessage))
-                } else if (stanza.getAttr('type') === 'chat') {
-                    // Handle incoming messages from DirectChat
-                    const bodyText = stanza.getChildText('body')
-                    if (!bodyText) return
-
-                    const directMessageJson = stanza.getChildText('dm')
-                    const parsedMessage = JSON.parse(
-                        directMessageJson as string,
-                    )
-                    const newMessage = new Message({
-                        ...parsedMessage,
-                    })
-
-                    const action = stanza.getChild('action')
-                    if (action?.getNS() === 'fedi:update-payment') {
-                        // find message and replace with updated version
-                        // with canceled or rejected payment
-                        dispatch(updateMessage(newMessage))
-                    } else {
                         dispatch(addToMessages(newMessage))
                         dispatch(updateGroupMessagePreview(newMessage))
-                    }
-                } else if (
-                    stanza.getChild('result')?.getAttr('queryid') ===
-                    'get-messages'
-                ) {
-                    // Handle messages received while offline, typically
-                    // triggered by the fetchMessagesFromArchive hook
-                    const result = stanza.getChild('result')
-                    const forwarded = result?.getChild('forwarded')
-                    const message = forwarded?.getChild('message')
-                    if (!message) return
+                    } else if (stanza.getAttr('type') === 'chat') {
+                        // Handle incoming messages from DirectChat
+                        const bodyText = stanza.getChildText('body')
+                        if (!bodyText) return
 
-                    const directMessageJson = message.getChildText('dm')
-                    const parsedMessage = JSON.parse(
-                        directMessageJson as string,
-                    )
-                    const newMessage = new Message({
-                        ...parsedMessage,
-                    })
+                        const directMessageJson = stanza.getChildText('dm')
+                        const parsedMessage = JSON.parse(
+                            directMessageJson as string,
+                        )
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                        })
 
-                    const action = message.getChild('action')
-                    if (action?.getNS() === 'fedi:update-payment') {
-                        // find message and replace with updated version
-                        // with canceled or rejected payment
-                        dispatch(updateMessage(newMessage))
-                    } else {
-                        dispatch(addToMessages(newMessage))
-                        dispatch(updateGroupMessagePreview(newMessage))
+                        const action = stanza.getChild('action')
+                        if (action?.getNS() === 'fedi:update-payment') {
+                            // find message and replace with updated version
+                            // with canceled or rejected payment
+                            dispatch(updateMessage(newMessage))
+                        } else {
+                            dispatch(addToMessages(newMessage))
+                            dispatch(updateGroupMessagePreview(newMessage))
+                        }
+                    } else if (
+                        stanza.getChild('result')?.getAttr('queryid') ===
+                        'get-messages'
+                    ) {
+                        // Handle messages received while offline, typically
+                        // triggered by the fetchMessagesFromArchive hook
+                        const result = stanza.getChild('result')
+                        const forwarded = result?.getChild('forwarded')
+                        const message = forwarded?.getChild('message')
+                        if (!message) return
+
+                        const directMessageJson = message.getChildText('dm')
+                        const parsedMessage = JSON.parse(
+                            directMessageJson as string,
+                        )
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                        })
+
+                        const action = message.getChild('action')
+                        if (action?.getNS() === 'fedi:update-payment') {
+                            // find message and replace with updated version
+                            // with canceled or rejected payment
+                            dispatch(updateMessage(newMessage))
+                        } else {
+                            dispatch(addToMessages(newMessage))
+                            dispatch(updateGroupMessagePreview(newMessage))
+                        }
                     }
-                }
                 }
             } catch (error) {
                 console.error('Error parsing XMPP stanza', error)
