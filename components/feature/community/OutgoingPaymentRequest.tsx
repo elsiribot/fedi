@@ -1,175 +1,169 @@
 import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
+import { ValidateEcashResponse } from '../../../bridge'
 import {
     updateMessage,
     useCommunityContext,
 } from '../../../state/contexts/CommunityContext'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
 import { Message, Payment, PaymentStatus } from '../../../types'
 
 type IncomingPaymentActionsProps = {
     message: Message
-    paymentStatus: PaymentStatus
+    onCancel: () => void
 }
 
 const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     message,
-    paymentStatus,
-}: OutgoingPaymentRequestProps) => {
+    onCancel,
+}: IncomingPaymentActionsProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
     const { sendUpdatedPaymentMessage } = useXmpp()
-    const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = useFederationsContext().state
-    const { state, dispatch } = useCommunityContext()
-    const { authenticatedMember } = state
-    const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
-    const [redemptionProcessing, setRedemptionProcessing] =
-        useState<boolean>(false)
-    const { payment, sentBy } = message
+    const { dispatch } = useCommunityContext()
+    const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
+    // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
+    const [validatingToken, setValidatingToken] = useState<boolean>(false)
+    const [processingRedemption, setProcessingRedemption] =
+        useState<ValidateEcashResponse | null>(null)
+    const { payment, sentTo } = message
 
-    const cancelPayment = () => {
-        try {
-            const canceledPaymentMessage = new Message({
+    // When paymentProcessing begins, ...
+    useEffect(() => {
+        if (broadcastingUpdate) {
+            setBroadcastingUpdate(false)
+            const acceptedPaymentMessage = new Message({
                 ...message,
                 payment: {
-                    ...message?.payment,
-                    status: PaymentStatus.canceled,
+                    ...payment,
+                    updatedAt: Date.now() / 1000,
+                    status: PaymentStatus.paid,
+                    token: null,
                 },
             })
             sendUpdatedPaymentMessage({
-                to: message?.sentTo,
-                message: canceledPaymentMessage,
+                to: sentTo,
+                message: acceptedPaymentMessage,
             })
-            dispatch(updateMessage(canceledPaymentMessage))
-        } catch (error) {
-            console.log(error)
+            dispatch(updateMessage(acceptedPaymentMessage))
         }
-    }
+    }, [broadcastingUpdate, dispatch, message])
 
-    // When paymentProcessing begins, ...
-
-    const updateAndBroadcastSpentPayment = useCallback(async () => {
-        const acceptedPaymentMessage = new Message({
-            ...message,
-            payment: {
-                ...payment,
-                status: PaymentStatus.paid,
-                token: null,
-            },
-        })
-        sendUpdatedPaymentMessage({
-            to: sentBy,
-            message: acceptedPaymentMessage,
-        })
-        dispatch(updateMessage(acceptedPaymentMessage))
-    }, [dispatch, message, payment, sendUpdatedPaymentMessage, sentBy])
-
-    const redeemEcash = useCallback(async () => {
-        try {
-            const { valid, amount } = await validateEcash(payment?.token!)
-            console.debug('redeemEcash: valid:', valid)
-            if (valid) {
-                console.debug('receiving ecash', amount, 'msats')
+    useEffect(() => {
+        const redeemEcash = async () => {
+            try {
+                setProcessingRedemption(null)
                 await receiveEcash(payment?.token!)
-                updateAndBroadcastSpentPayment()
+                setBroadcastingUpdate(true)
+            } catch (error) {
+                console.error('receiveEcash', error)
+                setBroadcastingUpdate(true)
+                // setTokenWasSpent(true)
             }
-        } catch (error) {
-            console.log(error)
         }
-    }, [
-        payment?.token,
-        receiveEcash,
-        updateAndBroadcastSpentPayment,
-        validateEcash,
-    ])
-
-    useEffect(() => {
-        if (redemptionProcessing === true) {
-            redeemEcash(payment?.token!)
+        if (processingRedemption !== null && payment?.token) {
+            redeemEcash()
         }
-    }, [redeemEcash, redemptionProcessing])
+    }, [payment?.token!, processingRedemption, receiveEcash])
 
-    useEffect(() => {
-        if (tokenWasSpent === true) {
-            updateAndBroadcastSpentPayment()
-        }
-    }, [tokenWasSpent, updateAndBroadcastSpentPayment])
+    // TODO: Handle if a token is already spent
+    // useEffect(() => {
+    //     if (tokenWasSpent === true) {
+    //         updateAndBroadcastSpentPayment()
+    //     }
+    // }, [tokenWasSpent])
 
-    // Redeem ecash if found in incoming message
     useEffect(() => {
         const checkForSpentToken = async (ecash: string) => {
-            const { valid } = await validateEcash(ecash)
-            console.debug('checkForSpentToken: valid:', valid)
-            if (!valid) {
-                setTokenWasSpent(true)
+            const result = await validateEcash(ecash)
+            if (result.valid) {
+                setProcessingRedemption(result)
+            } else {
+                // TODO: Handle invalid ecash tokens
             }
         }
-
-        if (payment?.token && payment?.status) {
-            checkForSpentToken(payment?.token)
+        if (validatingToken === true) {
+            checkForSpentToken(payment?.token!)
         }
+    }, [validatingToken, payment?.token, validateEcash])
 
+    // Check for valid ecash if found in incoming message
+    useEffect(() => {
         if (payment?.token && payment?.status !== PaymentStatus.paid) {
-            console.debug('redeeming ecash', payment?.token)
-            setRedemptionProcessing(true)
+            setValidatingToken(true)
         }
-    }, [
-        payment,
-        authenticatedMember?.username,
-        validateEcash,
-        receiveEcash,
-        message,
-        updateAndBroadcastSpentPayment,
-    ])
+    }, [payment?.token, payment?.status])
+
+    const renderPaymentStatus = () => {
+        let paymentStatus = (
+            <View style={styles(theme).statusContainer}>
+                <Text medium caption style={styles(theme).statusText}>
+                    {t('words.pending')}
+                </Text>
+            </View>
+        )
+        switch (payment?.status!) {
+            case PaymentStatus.paid:
+                paymentStatus = (
+                    <View style={styles(theme).statusContainer}>
+                        <Image
+                            source={Images.DoneWhite}
+                            style={styles(theme).paidIcon}
+                        />
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.paid')}
+                        </Text>
+                    </View>
+                )
+                break
+            case PaymentStatus.rejected:
+                paymentStatus = (
+                    <View style={styles(theme).statusContainer}>
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.rejected')}
+                        </Text>
+                    </View>
+                )
+                break
+            case PaymentStatus.canceled:
+                paymentStatus = (
+                    <View style={styles(theme).statusContainer}>
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.canceled')}
+                        </Text>
+                    </View>
+                )
+                break
+            case PaymentStatus.requested:
+                paymentStatus = (
+                    <Button
+                        size="sm"
+                        color={theme.colors.secondary}
+                        containerStyle={styles(theme).buttonContainer}
+                        onPress={onCancel}
+                        title={
+                            <Text medium caption>
+                                {t('words.cancel')}
+                            </Text>
+                        }
+                    />
+                )
+                break
+            // Redemption in progess & status = accepted
+            default:
+                break
+        }
+        return paymentStatus
+    }
 
     return (
         <View style={styles(theme).actionsContainer}>
-            {paymentStatus === PaymentStatus.paid && (
-                <View style={styles(theme).statusContainer}>
-                    <Image
-                        source={Images.DoneWhite}
-                        style={styles(theme).paidIcon}
-                    />
-                    <Text medium caption style={styles(theme).statusText}>
-                        {t('words.paid')}
-                    </Text>
-                </View>
-            )}
-            {paymentStatus === PaymentStatus.rejected && (
-                <View style={styles(theme).statusContainer}>
-                    <Text medium caption style={styles(theme).statusText}>
-                        {t('words.rejected')}
-                    </Text>
-                </View>
-            )}
-            {paymentStatus === PaymentStatus.canceled && (
-                <View style={styles(theme).statusContainer}>
-                    <Text medium caption style={styles(theme).statusText}>
-                        {t('words.canceled')}
-                    </Text>
-                </View>
-            )}
-            {paymentStatus === PaymentStatus.requested && (
-                <Button
-                    size="sm"
-                    color={theme.colors.secondary}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={cancelPayment}
-                    title={
-                        <Text medium caption>
-                            {t('words.cancel')}
-                        </Text>
-                    }
-                />
-            )}
+            {renderPaymentStatus()}
         </View>
     )
 }
@@ -186,13 +180,38 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
     text,
 }: OutgoingPaymentRequestProps) => {
     const { theme } = useTheme()
+    const { sendUpdatedPaymentMessage } = useXmpp()
+    const { dispatch } = useCommunityContext()
+
+    const cancelPayment = () => {
+        try {
+            const canceledPaymentMessage = new Message({
+                ...message,
+                payment: {
+                    ...message.payment,
+                    updatedAt: Date.now() / 1000,
+                    status: PaymentStatus.canceled,
+                },
+            })
+            sendUpdatedPaymentMessage({
+                to: message.sentTo,
+                message: canceledPaymentMessage,
+            })
+            dispatch(updateMessage(canceledPaymentMessage))
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     return (
         <View style={styles(theme).container}>
             <Text caption medium style={styles(theme).messageText}>
                 {text}
             </Text>
-            <IncomingPaymentActions message={message} />
+            <IncomingPaymentActions
+                message={message}
+                onCancel={cancelPayment}
+            />
         </View>
     )
 }
@@ -227,9 +246,6 @@ const styles = (theme: Theme) =>
         messageText: {
             color: theme.colors.secondary,
             paddingBottom: theme.spacing.sm,
-        },
-        paymentActionsButtonText: {
-            color: theme.colors.primary,
         },
     })
 

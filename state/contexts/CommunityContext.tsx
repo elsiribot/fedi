@@ -310,6 +310,9 @@ export function reducer(state: AppState, action: Action): AppState {
                 return state
             } else {
                 // message needs an update...
+                // TODO: Since XMPP sends all versions of a message as we update
+                // the payment inside of it, check the payment.updatedAt value
+                // and compare to see if we can skip a state update here
                 const updatedMessage = new Message({
                     ...state.messages[messageIndex],
                     ...action.payload,

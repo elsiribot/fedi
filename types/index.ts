@@ -164,6 +164,7 @@ export class Payment extends Base {
     amount: MSats
     status: PaymentStatus
     recipient?: Member
+    updatedAt?: number
     memo?: string
     token?: string
     invoice?: Invoice
