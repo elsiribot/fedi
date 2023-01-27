@@ -23,8 +23,8 @@ const SendSuccess: React.FC<Props> = ({ route }: Props) => {
                         {t('feature.send.you-sent')}
                     </Text>
                     <Text h2>
-                        {`${amountUtils.msatToSat(
-                            amount,
+                        {`${amountUtils.formatNumber(
+                            amountUtils.msatToSat(amount),
                         )} ${unit.toUpperCase()}`}
                     </Text>
                 </>

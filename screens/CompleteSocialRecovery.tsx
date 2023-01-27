@@ -12,7 +12,10 @@ import {
 } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import {
+    updateFederationCredentials,
+    useFederationsContext,
+} from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -25,8 +28,14 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const { socialRecoveryApprovals, completeSocialRecovery } = useBridge()
+    const {
+        backupXmppUsername,
+        completeSocialRecovery,
+        getXmppCredentials,
+        socialRecoveryApprovals,
+    } = useBridge()
     const { selectedFederation } = useFederationsContext().state
+    const dispatch = useFederationsContext().dispatch
     const [recovering, setRecovering] = useState(false)
 
     const [approvals, setApprovals] = useState<SocialRecoveryEvent | undefined>(
@@ -73,7 +82,14 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const handleComplete = async () => {
         setRecovering(true)
         try {
-            await completeSocialRecovery()
+            let username = await completeSocialRecovery()
+            console.log('recovered username', username)
+            if (username != null) {
+                const credentials = await getXmppCredentials()
+                const { password } = credentials
+                dispatch(updateFederationCredentials(username, password))
+                backupXmppUsername(username)
+            }
             navigation.navigate('SocialRecoverySuccess')
         } catch (e) {
             // FIXME: internationalize

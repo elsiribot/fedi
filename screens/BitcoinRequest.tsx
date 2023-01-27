@@ -183,9 +183,9 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             <View style={styles(theme).detailsContainer}>
                 {requestAmount && (
                     <>
-                        <Text h2>{`${amountUtils.msatToSat(requestAmount)} ${t(
-                            'words.sats',
-                        ).toUpperCase()}`}</Text>
+                        <Text h2>{`${amountUtils.formatNumber(
+                            amountUtils.msatToSat(requestAmount),
+                        )} ${t('words.sats').toUpperCase()}`}</Text>
                         <UsdAmount
                             amountSats={amountUtils.msatToSat(requestAmount)}
                         />

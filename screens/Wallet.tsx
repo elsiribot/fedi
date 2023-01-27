@@ -1,13 +1,13 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import type { Theme } from '@rneui/themed'
 import { Button, Card, Icon, Text, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBtcUsdPrice } from '../state/hooks'
+import { useBridge, useBtcUsdPrice } from '../state/hooks'
 import { MSats } from '../types'
 import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -34,7 +34,9 @@ const Balance = ({ balance }: BalanceProps) => {
                     {`$${convertSatsToUsdString(amountInSats)}`}
                 </Text>
                 <Text caption medium style={styles(theme).balanceText}>
-                    {`${amountInSats} ${t('words.sats').toUpperCase()}`}
+                    {`${amountUtils.formatNumber(amountInSats)} ${t(
+                        'words.sats',
+                    ).toUpperCase()}`}
                 </Text>
             </View>
         )
@@ -49,6 +51,14 @@ const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { selectedFederation } = useFederationsContext().state
     // TODO: Hoist state and listen to bridge for updates
     const [recoveryInProgress] = useState(false)
+    const { backupXmppUsername } = useBridge()
+
+    // hard-coded username backup on first load
+    useEffect(() => {
+        console.log('backing up username')
+        // backupXmppUsername('satoshi')
+        console.log('backed up username')
+    }, [backupXmppUsername])
 
     return (
         <View style={styles(theme).container}>

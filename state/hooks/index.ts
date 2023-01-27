@@ -6,6 +6,7 @@ import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
     authenticateGuardian,
+    backupXmppUsername,
     completeSocialRecovery,
     denySocialRecoveryRequest,
     generateAddress,
@@ -69,164 +70,170 @@ export const useBtcUsdPrice = () => {
 
 export const useBridge = () => {
     const { state } = useFederationsContext()
-    const { selectedFederation } = state
+    const { selectedFederationId } = state
 
     return {
         addressOrInvoice: useCallback(
             (input: string) => {
-                return addressOrInvoice(input, selectedFederation!.name)
+                return addressOrInvoice(input, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string) => {
                 return approveSocialRecoveryRequest(
                     recoveryId,
-                    selectedFederation!.name,
+                    selectedFederationId!,
                 )
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         authenticateGuardian: useCallback(
             (secret: string) => {
-                return authenticateGuardian(secret, selectedFederation!.name)
+                return authenticateGuardian(secret, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         recoveryQr: useCallback(() => {
-            return recoveryQr(selectedFederation!.name)
-        }, [selectedFederation]),
+            return recoveryQr(selectedFederationId!)
+        }, [selectedFederationId]),
         leaveFederation: useCallback(() => {
-            return leaveFederation(selectedFederation!.name)
-        }, [selectedFederation]),
+            return leaveFederation(selectedFederationId!)
+        }, [selectedFederationId]),
         generateAddress: useCallback(() => {
-            return generateAddress(selectedFederation!.name)
-        }, [selectedFederation]),
+            return generateAddress(selectedFederationId!)
+        }, [selectedFederationId]),
         socialRecoveryApprovals: useCallback(() => {
-            return socialRecoveryApprovals(selectedFederation!.name)
-        }, [selectedFederation]),
+            return socialRecoveryApprovals(selectedFederationId!)
+        }, [selectedFederationId]),
         generateEcash: useCallback(
             (amount: MSats) => {
-                return generateEcash(amount, selectedFederation!.name)
+                return generateEcash(amount, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         generateInvoice: useCallback(
             (amount: MSats, description: string) => {
                 return generateInvoice(
                     amount,
                     description,
-                    selectedFederation!.name,
+                    selectedFederationId!,
                 )
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         getMnemonic: useCallback(() => {
-            return getMnemonic(selectedFederation!.name)
-        }, [selectedFederation]),
+            return getMnemonic(selectedFederationId!)
+        }, [selectedFederationId]),
         listTransactions: useCallback(() => {
-            return listTransactions(selectedFederation!.name)
-        }, [selectedFederation]),
+            return listTransactions(selectedFederationId!)
+        }, [selectedFederationId]),
         lnurlSignMessage: useCallback(
             (url: string) => {
-                return lnurlSignMessage(url, selectedFederation!.name)
+                return lnurlSignMessage(url, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         lnurlGetToken: useCallback(
             (lnurl: string) => {
-                return lnurlUtils.getToken(lnurl, selectedFederation!.name)
+                return lnurlUtils.getToken(lnurl, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return updateTransactionNotes(
                     transactionId,
                     notes,
-                    selectedFederation!.name,
+                    selectedFederationId!,
                 )
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         listGateways: useCallback(() => {
-            return listGateways(selectedFederation!.name)
-        }, [selectedFederation]),
+            return listGateways(selectedFederationId!)
+        }, [selectedFederationId]),
         switchGateway: useCallback(
             (gateway: LightningGateway) => {
-                return switchGateway(gateway, selectedFederation!.name)
+                return switchGateway(gateway, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         locateRecoveryFile: useCallback(() => {
-            return locateRecoveryFile(selectedFederation!.name)
-        }, [selectedFederation]),
+            return locateRecoveryFile(selectedFederationId!)
+        }, [selectedFederationId]),
         completeSocialRecovery: useCallback(() => {
-            return completeSocialRecovery(selectedFederation!.name)
-        }, [selectedFederation]),
+            return completeSocialRecovery(selectedFederationId!)
+        }, [selectedFederationId]),
         payInvoice: useCallback(
             (invoice: string) => {
-                return payInvoice(invoice, selectedFederation!.name)
+                return payInvoice(invoice, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         payAddress: useCallback(
             (address: string, sats: Sats) => {
-                return payAddress(address, sats, selectedFederation!.name)
+                return payAddress(address, sats, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         receiveEcash: useCallback(
             (ecash: string) => {
-                return receiveEcash(ecash, selectedFederation!.name)
+                return receiveEcash(ecash, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         recoverFromMnemonic: useCallback(
             (mnemonic: string[]) => {
-                return recoverFromMnemonic(mnemonic, selectedFederation!.name)
+                return recoverFromMnemonic(mnemonic, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         denySocialRecoveryRequest: useCallback(
             (userPublicKey: string) => {
                 return denySocialRecoveryRequest(
                     userPublicKey,
-                    selectedFederation!.name,
+                    selectedFederationId!,
                 )
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         socialRecoveryDownloadVerificationDoc: useCallback(
             (recoveryId: string) => {
                 return socialRecoveryDownloadVerificationDoc(
                     recoveryId,
-                    selectedFederation!.name,
+                    selectedFederationId!,
                 )
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         validateRecoveryFile: useCallback(
             (file: string) => {
-                return validateRecoveryFile(file, selectedFederation!.name)
+                return validateRecoveryFile(file, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         validateEcash: useCallback(
             (ecash: string) => {
-                return validateEcash(ecash, selectedFederation!.name)
+                return validateEcash(ecash, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
-                return uploadBackupFile(videoFilePath, selectedFederation!.name)
+                return uploadBackupFile(videoFilePath, selectedFederationId!)
             },
-            [selectedFederation],
+            [selectedFederationId],
         ),
         getXmppCredentials: useCallback(() => {
-            return getXmppCredentials(selectedFederation!.name)
-        }, [selectedFederation]),
+            return getXmppCredentials(selectedFederationId!)
+        }, [selectedFederationId]),
+        backupXmppUsername: useCallback(
+            (username: string) => {
+                return backupXmppUsername(username, selectedFederationId!)
+            },
+            [selectedFederationId],
+        ),
     }
 }
 
@@ -277,7 +284,8 @@ export const useXmpp = () => {
 
         */
         enterMucRoom: useCallback(
-            async (group: Group) => {
+            (group: Group) => {
+                if (!xmppClient?.jid) return
                 const { local, domain, resource } = xmppClient?.jid as JID
                 const fromUser = `${local}@${domain}/${resource}`
                 const onStanzaReceived = async (stanza: Element) => {
@@ -294,7 +302,7 @@ export const useXmpp = () => {
                             // configuration query to allow others to join
                             // https://xmpp.org/extensions/xep-0045.html#createroom-instant
                             if (sr?.getAttr('code') === '201') {
-                                await xmppClient?.send(
+                                xmppClient?.send(
                                     xml(
                                         'iq',
                                         {
@@ -337,23 +345,28 @@ export const useXmpp = () => {
                     xmppClient?.listenerCount('stanza'),
                     'listeners',
                 )
-
-                await xmppClient?.send(
-                    xml(
-                        'presence',
-                        {
-                            from: fromUser,
-                            to: `${group.id}@${XMPP_MUC_DOMAIN}/${local}`,
-                            id: 'enter-muc-room',
-                        },
-                        xml('x', { xmlns: 'http://jabber.org/protocol/muc' }),
-                    ),
-                )
+                try {
+                    xmppClient?.send(
+                        xml(
+                            'presence',
+                            {
+                                from: fromUser,
+                                to: `${group.id}@${XMPP_MUC_DOMAIN}/${local}`,
+                                id: 'enter-muc-room',
+                            },
+                            xml('x', {
+                                xmlns: 'http://jabber.org/protocol/muc',
+                            }),
+                        ),
+                    )
+                } catch (error) {
+                    console.error('enterMucRoom error', error)
+                }
             },
             [dispatch, xmppClient],
         ),
         fetchMessagesFromArchive: useCallback(
-            async ({ filters }: MessageArchiveQuery) => {
+            ({ filters }: MessageArchiveQuery) => {
                 const filterQuery = filters?.withJid
                     ? xml(
                           'x',
@@ -373,24 +386,27 @@ export const useXmpp = () => {
                           ),
                       )
                     : xml('x')
-
-                await xmppClient?.send(
-                    xml(
-                        'iq',
-                        {
-                            id: 'get-messages',
-                            type: 'set',
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'query',
+                            'iq',
                             {
-                                xmlns: 'urn:xmpp:mam:2',
-                                queryid: 'get-messages',
+                                id: 'get-messages',
+                                type: 'set',
                             },
-                            filterQuery,
+                            xml(
+                                'query',
+                                {
+                                    xmlns: 'urn:xmpp:mam:2',
+                                    queryid: 'get-messages',
+                                },
+                                filterQuery,
+                            ),
                         ),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendDirectMessage error', error)
+                }
             },
             [xmppClient],
         ),
@@ -419,111 +435,123 @@ export const useXmpp = () => {
                 }
                 xmppClient?.on('stanza', uniqueRoomListener)
 
-                xmppClient?.send(
-                    xml(
-                        'iq',
-                        {
-                            type: 'get',
-                            to: XMPP_MUC_DOMAIN,
-                            id: 'get-unique-room-name',
-                        },
-                        xml('unique', {
-                            xmlns: 'http://jabber.org/protocol/muc#unique',
-                        }),
-                    ),
-                )
+                xmppClient
+                    ?.send(
+                        xml(
+                            'iq',
+                            {
+                                type: 'get',
+                                to: XMPP_MUC_DOMAIN,
+                                id: 'get-unique-room-name',
+                            },
+                            xml('unique', {
+                                xmlns: 'http://jabber.org/protocol/muc#unique',
+                            }),
+                        ),
+                    )
+                    .catch(console.error)
             })
         }, [xmppClient]),
         sendUpdatedPaymentMessage: useCallback(
-            async ({ message, to }: OutgoingMessage) => {
+            ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const toJid = to?.jid.toString()
-
-                await xmppClient?.send(
-                    xml(
-                        'message',
-                        {
-                            id: message.id,
-                            type: 'chat',
-                            from: fromJid,
-                            to: toJid,
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'body',
-                            { xmlns: 'jabber:client' },
-                            message.content as string,
+                            'message',
+                            {
+                                id: message.id,
+                                type: 'chat',
+                                from: fromJid,
+                                to: toJid,
+                            },
+                            xml(
+                                'body',
+                                { xmlns: 'jabber:client' },
+                                message.content as string,
+                            ),
+                            xml(
+                                'dm',
+                                { xmlns: 'fedi:direct-message' },
+                                JSON.stringify(message),
+                            ),
+                            xml('action', { xmlns: 'fedi:update-payment' }),
                         ),
-                        xml(
-                            'dm',
-                            { xmlns: 'fedi:direct-message' },
-                            JSON.stringify(message),
-                        ),
-                        xml('action', { xmlns: 'fedi:update-payment' }),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendUpdatedPaymentMessage error', error)
+                }
             },
             [xmppClient],
         ),
         sendDirectMessage: useCallback(
-            async ({ message, to }: OutgoingMessage) => {
+            ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const toJid = to?.jid.toString()
 
-                await xmppClient?.send(
-                    xml(
-                        'message',
-                        {
-                            id: message.id,
-                            type: 'chat',
-                            from: fromJid,
-                            to: toJid,
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'body',
-                            { xmlns: 'jabber:client' },
-                            message.content as string,
+                            'message',
+                            {
+                                id: message.id,
+                                type: 'chat',
+                                from: fromJid,
+                                to: toJid,
+                            },
+                            xml(
+                                'body',
+                                { xmlns: 'jabber:client' },
+                                message.content as string,
+                            ),
+                            xml(
+                                'dm',
+                                { xmlns: 'fedi:direct-message' },
+                                JSON.stringify(message),
+                            ),
                         ),
-                        xml(
-                            'dm',
-                            { xmlns: 'fedi:direct-message' },
-                            JSON.stringify(message),
-                        ),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendDirectMessage error', error)
+                }
             },
             [xmppClient],
         ),
         sendGroupMessage: useCallback(
-            async ({ message, toRoom }: OutgoingGroupMessage) => {
+            ({ message, toRoom }: OutgoingGroupMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const to = `${toRoom}@${XMPP_MUC_DOMAIN}`
-
-                await xmppClient?.send(
-                    xml(
-                        'message',
-                        {
-                            id: message.id,
-                            from: fromJid,
-                            type: 'groupchat',
-                            to,
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'body',
-                            { xmlns: 'jabber:client' },
-                            message.content as string,
+                            'message',
+                            {
+                                id: message.id,
+                                from: fromJid,
+                                type: 'groupchat',
+                                to,
+                            },
+                            xml(
+                                'body',
+                                { xmlns: 'jabber:client' },
+                                message.content as string,
+                            ),
+                            xml(
+                                'gm',
+                                { xmlns: 'fedi:group-message' },
+                                JSON.stringify(message),
+                            ),
                         ),
-                        xml(
-                            'gm',
-                            { xmlns: 'fedi:group-message' },
-                            JSON.stringify(message),
-                        ),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendGroupMessage error', error)
+                }
             },
             [xmppClient],
         ),
-        sendTestXml: useCallback(async () => {
-            await xmppClient?.send(
+        sendTestXml: useCallback(() => {
+            xmppClient?.send(
                 xml(
                     'iq',
                     {

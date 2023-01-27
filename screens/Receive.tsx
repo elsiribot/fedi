@@ -3,8 +3,8 @@ import { Button, Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import UsdAmount from '../components/feature/wallet/UsdAmount'
 
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -15,12 +15,13 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { generateInvoice } = useBridge()
     const [amount, setAmount] = useState<SatsString | string>('')
+    const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
+    const [invoice, setInvoice] = useState<string>('')
+    const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     // TODO integrate memo
     const [memo] = useState<string>('')
-    const [isLoading, setIsLoading] = useState(false)
-    const [amountIsValid, setAmountIsValid] = useState(false)
-    const { generateInvoice } = useBridge()
 
     useEffect(() => {
         const isNumeric = /^-?\d+$/.test(amount)
@@ -32,24 +33,30 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [amount])
 
-    const onChangeText = (updatedValue: SatsString) => {
-        setAmount(updatedValue)
-    }
-
-    const createAndShowInvoice = async () => {
-        try {
-            setIsLoading(true)
+    useEffect(() => {
+        const createNewInvoice = async () => {
             const newInvoice = await generateInvoice(
                 amountUtils.satToMsat(Number(amount) as Sats),
                 memo,
             )
-            navigation.navigate('BitcoinRequest', {
-                uri: `lightning:${newInvoice}`,
-            })
-        } catch (error) {
-            console.log(error)
+            setInvoice(newInvoice)
         }
-        setIsLoading(false)
+        if (generatingInvoice) {
+            createNewInvoice()
+        }
+    }, [amount, generateInvoice, generatingInvoice, memo])
+
+    useEffect(() => {
+        if (invoice) {
+            setGeneratingInvoice(false)
+            navigation.navigate('BitcoinRequest', {
+                uri: `lightning:${invoice}`,
+            })
+        }
+    }, [invoice, navigation])
+
+    const onChangeText = (updatedValue: SatsString) => {
+        setAmount(updatedValue)
     }
 
     return (
@@ -65,12 +72,14 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
             <UsdAmount amountSats={Number(amount) as Sats} />
             <Button
                 fullWidth
-                title={`${t('words.request')}${amount ? ` ${amount} ` : ' '}${t(
-                    'words.sats',
-                ).toUpperCase()}`}
-                onPress={createAndShowInvoice}
-                disabled={!amountIsValid}
-                loading={isLoading}
+                title={`${t('words.request')}${
+                    amount
+                        ? ` ${amountUtils.formatNumber(Number(amount))} `
+                        : ' '
+                }${t('words.sats').toUpperCase()}`}
+                onPress={() => setGeneratingInvoice(true)}
+                disabled={!amountIsValid || generatingInvoice}
+                loading={generatingInvoice}
                 containerStyle={styles(theme).button}
             />
         </View>

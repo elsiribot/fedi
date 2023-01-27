@@ -13,6 +13,7 @@ import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -24,6 +25,7 @@ export type Props = NativeStackScreenProps<
 const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 
 const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
+    const { toast } = useEnvironmentContext().state
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { recoveryQr } = useBridge()
@@ -31,13 +33,19 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
 
     useEffect(() => {
         const getRecoveryAssistCode = async () => {
-            const recoveryAssistCode = await recoveryQr()
-            console.info('recoveryAssistCode', recoveryAssistCode)
-            setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
+            try {
+                const recoveryAssistCode = await recoveryQr()
+                console.info('recoveryAssistCode', recoveryAssistCode)
+                setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
+            } catch (error) {
+                const typedError = error as Error
+                console.error(typedError)
+                // toast?.show(typedError?.message, 3000)
+            }
         }
 
         getRecoveryAssistCode()
-    }, [navigation, recoveryQr])
+    }, [navigation, recoveryQr, toast])
 
     return (
         <View style={styles(theme).container}>

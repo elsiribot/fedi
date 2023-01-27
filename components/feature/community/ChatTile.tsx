@@ -33,7 +33,12 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
             </View>
             <View style={styles(theme).contents}>
                 <View style={styles(theme).topRow}>
-                    <Text bold>{chat.name || DEFAULT_GROUP_NAME}</Text>
+                    <Text
+                        style={styles(theme).namePreview}
+                        numberOfLines={1}
+                        bold>
+                        {chat.name || DEFAULT_GROUP_NAME}
+                    </Text>
                     {chat.lastReceivedTimestamp && (
                         <Text small>
                             {DateUtils.formatChatTileTimestamp(
@@ -110,6 +115,9 @@ const styles = (theme: Theme) =>
             width: theme.sizes.xxs,
             marginRight: theme.spacing.xs,
             borderRadius: theme.sizes.xxs * 0.5,
+        },
+        namePreview: {
+            width: '80%',
         },
     })
 

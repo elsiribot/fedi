@@ -61,9 +61,9 @@ const App = () => {
             // TODO: if on-chain, replace existing notification if there is one
             await notifee.displayNotification({
                 title: t('phrases.transaction-received'),
-                body: `${amountUtils.msatToSat(event.transaction.amount)} ${t(
-                    'words.sats',
-                )}`,
+                body: `${amountUtils.formatNumber(
+                    amountUtils.msatToSat(event.transaction.amount),
+                )} ${t('words.sats')}`,
                 android: {
                     channelId,
                     // pressAction is needed if you want the notification to open the app when pressed

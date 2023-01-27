@@ -16,7 +16,10 @@ import {
 import { SeedWords } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import {
+    updateFederationCredentials,
+    useFederationsContext,
+} from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
@@ -84,9 +87,11 @@ const SeedWordInput = ({
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { recoverFromMnemonic } = useBridge()
+    const { backupXmppUsername, getXmppCredentials, recoverFromMnemonic } =
+        useBridge()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
+    const { dispatch } = useFederationsContext()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
@@ -178,7 +183,16 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 onPress={async () => {
                     try {
                         setIsLoading(true)
-                        await recoverFromMnemonic(seedWords)
+                        let username = await recoverFromMnemonic(seedWords)
+                        console.log('recovered username', username)
+                        if (username != null) {
+                            const credentials = await getXmppCredentials()
+                            const { password } = credentials
+                            dispatch(
+                                updateFederationCredentials(username, password),
+                            )
+                            backupXmppUsername(username)
+                        }
                         setIsLoading(false)
                         navigation.replace('PersonalRecoverySuccess')
                     } catch (error) {
