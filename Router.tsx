@@ -93,13 +93,14 @@ import GroupChat from './screens/GroupChat'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
+    MainNavigatorDrawerParamList,
     MAIN_NAVIGATOR_ID,
     NavigationLinkingConfig,
     RootStackParamList,
 } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
-const Drawer = createDrawerNavigator()
+const Drawer = createDrawerNavigator<MainNavigatorDrawerParamList>()
 
 const MainNavigator = () => {
     const {
@@ -168,24 +169,16 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="Home"
                                 component={Home}
-                                options={({ navigation }) => ({
-                                    header: () => (
-                                        <SelectedFederationHeader
-                                            navigation={navigation}
-                                        />
-                                    ),
+                                options={() => ({
+                                    headerShown: false,
                                 })}
                             />
                             {/* Federation Onboarding */}
                             <Stack.Screen
                                 name="FederationWelcome"
                                 component={FederationWelcome}
-                                options={({ navigation }) => ({
-                                    header: () => (
-                                        <SelectedFederationHeader
-                                            navigation={navigation}
-                                        />
-                                    ),
+                                options={() => ({
+                                    header: () => <SelectedFederationHeader />,
                                     animation: 'fade',
                                     animationDuration: 300,
                                 })}
@@ -193,12 +186,10 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="CreateUsername"
                                 component={CreateUsername}
-                                options={({ navigation }) => ({
+                                options={() => ({
                                     header: () => (
                                         <>
-                                            <SelectedFederationHeader
-                                                navigation={navigation}
-                                            />
+                                            <SelectedFederationHeader />
                                             <NewMemberHeader />
                                         </>
                                     ),

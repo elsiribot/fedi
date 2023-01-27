@@ -5,6 +5,7 @@ import SitesBrowser from './SitesBrowser'
 import SitesList from './SitesList'
 
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import type {
     HomeTabsParamList,
     RootStackParamList,
@@ -26,7 +27,9 @@ const Sites: React.FC<Props> = ({}) => {
             <Stack.Screen
                 name="SitesList"
                 component={SitesList}
-                options={{ headerShown: false }}
+                options={() => ({
+                    header: () => <SelectedFederationHeader />,
+                })}
             />
             <Stack.Screen
                 name="SitesBrowser"

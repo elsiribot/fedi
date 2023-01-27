@@ -22,13 +22,24 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                 <View style={styles(theme).container}>
                     <Pressable
                         onPress={() => webViewRef.current.goBack()}
-                        style={[styles(theme).arrow, styles(theme).padded]}>
-                        <Icon name={'angle-left'} type="font-awesome" />
+                        style={styles(theme).padded}>
+                        <Icon
+                            size={30}
+                            name={'angle-left'}
+                            type="font-awesome"
+                        />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
-                        style={[styles(theme).arrow, styles(theme).padded]}>
-                        <Icon name={'angle-right'} type="font-awesome" />
+                        style={[
+                            styles(theme).rightArrow,
+                            styles(theme).padded,
+                        ]}>
+                        <Icon
+                            size={30}
+                            name={'angle-right'}
+                            type="font-awesome"
+                        />
                     </Pressable>
                 </View>
             }
@@ -36,7 +47,7 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                 <Pressable
                     style={styles(theme).padded}
                     onPress={() => navigation.goBack()}>
-                    <Icon name={'close'} />
+                    <Icon size={30} name={'close'} />
                 </Pressable>
             }
         />
@@ -49,11 +60,11 @@ const styles = (theme: Theme) =>
             width: '100%',
             flexDirection: 'row',
         },
-        arrow: {
-            paddingHorizontal: 15,
+        rightArrow: {
+            paddingLeft: 100,
         },
         padded: {
-            paddingVertical: theme.spacing.sm,
+            paddingVertical: theme.spacing.lg,
         },
     })
 
