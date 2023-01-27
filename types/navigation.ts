@@ -1,4 +1,9 @@
-import { LinkingOptions, RouteProp } from '@react-navigation/native'
+import { DrawerNavigationProp } from '@react-navigation/drawer'
+import {
+    LinkingOptions,
+    ParamListBase,
+    RouteProp,
+} from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { BtcLnUri, Group, Member, MSats, Site } from '.'
 import { Transaction } from '../bridge'
@@ -15,6 +20,7 @@ export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
 
 export type RouteHook = RouteProp<RootStackParamList>
+export type DrawerNavigationHook = DrawerNavigationProp<ParamListBase>
 export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 export type NavigationLinkingConfig = LinkingOptions<
     RootStackParamList | MainNavigatorDrawerParamList

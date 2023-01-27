@@ -103,7 +103,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                     title: t('words.wallet'),
                     header: () => (
                         <>
-                            <SelectedFederationHeader navigation={navigation} />
+                            <SelectedFederationHeader />
                             <WalletHeader
                                 toggleOffline={toggleOffline}
                                 offline={offline}
@@ -119,7 +119,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 options={() => ({
                     header: () => (
                         <>
-                            <SelectedFederationHeader navigation={navigation} />
+                            <SelectedFederationHeader />
                             <CommunityHeader />
                         </>
                     ),

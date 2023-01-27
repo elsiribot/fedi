@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
@@ -5,23 +6,29 @@ import { Pressable, StyleSheet } from 'react-native'
 import { Images } from '../../../assets/images'
 import { Federation } from '../../../bridge'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
-import { DRAWER_NAVIGATION_ID } from '../../../types/navigation'
+import {
+    DrawerNavigationHook,
+    DRAWER_NAVIGATION_ID,
+    NavigationHook,
+} from '../../../types/navigation'
 import Header from '../../ui/Header'
 
-export type Props = { navigation: any }
-
-const SelectedFederationHeader: React.FC<Props> = ({ navigation }: Props) => {
+const SelectedFederationHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const { state } = useFederationsContext()
+    const navigation = useNavigation<NavigationHook>()
     const selectedFederation: Federation | undefined = state.selectedFederation
+    const drawerNavigator = navigation.getParent(
+        DRAWER_NAVIGATION_ID,
+    ) as DrawerNavigationHook
 
     const openFederationsDrawer = () => {
-        navigation.getParent(DRAWER_NAVIGATION_ID).openDrawer()
+        drawerNavigator.openDrawer()
     }
 
     useEffect(() => {
-        navigation.getParent(DRAWER_NAVIGATION_ID).closeDrawer()
-    }, [navigation, selectedFederation])
+        drawerNavigator.closeDrawer()
+    }, [drawerNavigator, selectedFederation])
 
     return (
         <Header

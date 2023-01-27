@@ -27,10 +27,8 @@ const Sites: React.FC<Props> = ({}) => {
             <Stack.Screen
                 name="SitesList"
                 component={SitesList}
-                options={({ navigation }) => ({
-                    header: () => (
-                        <SelectedFederationHeader navigation={navigation} />
-                    ),
+                options={() => ({
+                    header: () => <SelectedFederationHeader />,
                 })}
             />
             <Stack.Screen
