@@ -4,7 +4,9 @@ use std::{
     collections::BTreeMap,
     io,
     path::Path,
+    str::FromStr,
     sync::{Arc, Mutex},
+    time::SystemTime,
 };
 
 use anyhow::Context;
@@ -81,7 +83,7 @@ impl<'a> tracing::field::Visit for StringVisitor<'a> {
 pub fn init_logging(
     data_dir: &Path,
     event_sink: Arc<EventSinkWrapper>,
-    log_level: LevelFilter,
+    log_filter: &str,
 ) -> anyhow::Result<()> {
     // react native
     #[cfg(not(test))]
@@ -97,14 +99,35 @@ pub fn init_logging(
             .json()
             .with_writer(Mutex::new(file));
 
-        tracing_subscriber::registry()
-            .with(ReactNativeLayer(event_sink).with_filter(log_level))
+        let reg = tracing_subscriber::registry()
+            .with(
+                ReactNativeLayer(event_sink)
+                    .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
+            )
             .with(
                 log_file_layer
                     .with_filter(EnvFilter::new("info,mint_client=trace,calculatorffi=trace")),
+            );
+
+        let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
+            let time = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)?
+                .as_secs();
+            reg.with(
+                tracing_subscriber::fmt::layer()
+                    .with_ansi(true)
+                    .pretty()
+                    // using time because we can't overwrite existing files in Download
+                    .with_writer(Mutex::new(std::fs::File::create(format!(
+                        "/storage/emulated/0/Download/fedi-{time}.log",
+                    ))?))
+                    .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
             )
             .try_init()
-            .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
+        } else {
+            reg.try_init()
+        };
+        res.unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
     }
     // #[cfg(target_os = "ios")]
     // use tracing_subscriber::{layer::SubscriberExt, prelude::*, Layer};

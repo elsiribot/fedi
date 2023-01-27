@@ -48,7 +48,7 @@ use mint_client::{
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, info_span, Instrument, Span, instrument};
 
 type FederationId = String;
 
@@ -597,16 +597,21 @@ impl Federation {
         for script in scripts.iter() {
             let f = fed.clone();
             let s = script.clone();
-            tokio::spawn(async move {
-                if let Err(e) = f.pegin_script(&s).await {
-                    tracing::debug!(
-                        "Failed to pegin address: {}",
-                        Address::from_script(&s, f.client.wallet_client().config.network).unwrap()
-                    );
-                    tracing::debug!("{:?}", e);
+            tokio::spawn(
+                async move {
+                    if let Err(e) = f.pegin_script(&s).await {
+                        tracing::debug!(
+                            "Failed to pegin address: {}",
+                            Address::from_script(&s, f.client.wallet_client().config.network)
+                                .unwrap()
+                        );
+                        tracing::debug!("{:?}", e);
+                    }
+                    tracing::info!("Finished pegins for {:?}", s);
                 }
-                tracing::info!("Finished pegins for {:?}", s);
-            });
+                // parent span to display the span too in logs
+                .instrument(info_span!(parent: Span::current(), "attempt pegin")),
+            );
         }
     }
 
@@ -1046,6 +1051,7 @@ impl Federation {
     }
 
     /// Make an ecash backup once every minute
+    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
         let mut ticks = 600;
         loop {
@@ -1069,6 +1075,7 @@ impl Federation {
     }
 
     /// Checks for peg-ins every second
+    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_peg_ins(&self, task_handle: TaskHandle) {
         let mut last_consensus_block_height = None;
         loop {
@@ -1085,6 +1092,7 @@ impl Federation {
     }
 
     /// Announces balance to event emitter every second
+    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_federation(&self, task_handle: TaskHandle) {
         loop {
             if task_handle.is_shutting_down() {
@@ -1097,6 +1105,7 @@ impl Federation {
     }
 
     /// Checks for incoming payments every second
+    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_incoming_ln(&self, task_handle: TaskHandle) {
         let fed = self.clone();
         loop {
@@ -1164,6 +1173,7 @@ impl Federation {
     }
 
     /// Attempts lightning refunds every minute
+    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
         let mut ticks = 0;
