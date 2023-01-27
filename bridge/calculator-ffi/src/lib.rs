@@ -21,7 +21,7 @@ use anyhow::anyhow;
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};
 use lightning_invoice::Invoice;
 use logging::init_logging;
-use mint_client::{mint::SpendableNote, social::RecoveryFile, utils::network_to_currency};
+use mint_client::{mint::SpendableNote, social::RecoveryFile};
 use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -227,26 +227,13 @@ async fn handle_address_or_invoice(payload: String) -> anyhow::Result<String> {
     };
     let federation = get_federation(&federation_id).await;
     if let Ok(invoice) = input.parse::<Invoice>() {
-        if network_to_currency(federation.network()) != invoice.currency() {
-            return Err(anyhow!(format!(
-                "Wrong network. Expected {}, got {}",
-                network_to_currency(federation.network()),
-                invoice.currency()
-            )));
-        }
-        if federation.already_paid_invoice(&invoice).await {
-            return Err(anyhow!("Already paid this invoice"));
-        }
+        // validate that we can pay this invoice
+        federation.can_pay_invoice(&invoice).await?;
         return Ok(json!({ "result": AddressOrInvoice::Invoice }).to_string());
     }
     if let Ok(address) = input.parse::<Address>() {
-        if federation.network() != address.network {
-            return Err(anyhow!(format!(
-                "Wrong network. Expected {}, got {}",
-                federation.network(),
-                address.network
-            )));
-        }
+        // validate that we can pay this invoice
+        federation.can_pay_address(&address)?;
         return Ok(json!({ "result": AddressOrInvoice::Address }).to_string());
     }
     Err(anyhow!("Not an address or invoice"))
@@ -405,6 +392,7 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     let federation = get_federation(&payload.federation_id).await;
     let address = bitcoin::util::address::Address::from_str(&payload.address)
         .map_err(|_| FedimintError::OtherError(anyhow!("Invalid address")))?;
+    federation.can_pay_address(&address)?;
     let mut rng = rand::rngs::OsRng;
     let sats = bitcoin::Amount::from_sat(payload.sats);
     let peg_out = federation

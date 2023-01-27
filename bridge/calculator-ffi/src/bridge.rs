@@ -43,6 +43,7 @@ use mint_client::{
     api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
     module_decode_stubs,
     social::{RecoveryFile, SocialRecovery},
+    utils::network_to_currency,
     UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
@@ -448,13 +449,44 @@ impl Federation {
     }
 
     // TODO: make sure we aren't trying to pay invoices twice ...
-    pub async fn can_pay(&self, invoice: &Invoice) -> bool {
-        self.list_payments()
+    pub fn can_pay_address(&self, address: &Address) -> Result<()> {
+        if self.network() != address.network {
+            return Err(anyhow!(format!(
+                "Address is for wrong network. Expected {}, got {}",
+                self.network(),
+                address.network
+            )));
+        }
+        Ok(())
+    }
+    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+        // Check that we haven't already paid it
+        if self
+            .list_payments()
             .await
             .iter()
             .filter(|payment| payment.outgoing() && &payment.invoice == invoice)
             .next()
-            .is_none()
+            .is_some()
+        {
+            return Err(anyhow!("Can't pay invoice twice"));
+        }
+
+        // Check that it has an amount;
+        if invoice.amount_milli_satoshis().is_none() {
+            return Err(anyhow!("Invoice is missing amount"));
+        }
+
+        // Check that we're on the same network
+        if network_to_currency(self.network()) != invoice.currency() {
+            return Err(anyhow!(format!(
+                "Invoice is for wrong network. Expected {}, got {}",
+                network_to_currency(self.network()),
+                invoice.currency()
+            )));
+        }
+
+        Ok(())
     }
 
     pub async fn list_scripts(&self) -> Vec<Script> {
@@ -578,9 +610,8 @@ impl Federation {
     }
 
     pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        if !self.can_pay(&invoice).await {
-            return Err(anyhow!("Can't pay invoice twice"));
-        }
+        // validate that we can pay this invoice
+        self.can_pay_invoice(&invoice).await?;
 
         match self.pay_invoice_inner(&invoice).await {
             Ok(_) => {
