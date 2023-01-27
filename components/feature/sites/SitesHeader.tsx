@@ -23,7 +23,11 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                     <Pressable
                         onPress={() => webViewRef.current.goBack()}
                         style={styles(theme).padded}>
-                        <Icon name={'angle-left'} type="font-awesome" />
+                        <Icon
+                            size={30}
+                            name={'angle-left'}
+                            type="font-awesome"
+                        />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
@@ -31,7 +35,11 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                             styles(theme).rightArrow,
                             styles(theme).padded,
                         ]}>
-                        <Icon name={'angle-right'} type="font-awesome" />
+                        <Icon
+                            size={30}
+                            name={'angle-right'}
+                            type="font-awesome"
+                        />
                     </Pressable>
                 </View>
             }
@@ -39,7 +47,7 @@ const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
                 <Pressable
                     style={styles(theme).padded}
                     onPress={() => navigation.goBack()}>
-                    <Icon name={'close'} />
+                    <Icon size={30} name={'close'} />
                 </Pressable>
             }
         />
@@ -53,10 +61,10 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
         },
         rightArrow: {
-            paddingLeft: theme.spacing.xl,
+            paddingLeft: 100,
         },
         padded: {
-            paddingBottom: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
         },
     })
 

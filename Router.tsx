@@ -168,12 +168,8 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="Home"
                                 component={Home}
-                                options={({ navigation }) => ({
-                                    header: () => (
-                                        <SelectedFederationHeader
-                                            navigation={navigation}
-                                        />
-                                    ),
+                                options={() => ({
+                                    headerShown: false,
                                 })}
                             />
                             {/* Federation Onboarding */}
