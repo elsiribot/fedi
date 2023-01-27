@@ -928,6 +928,7 @@ impl Federation {
     ) -> Result<Option<PathBuf>> {
         // FIXME: what to do for peer id?
         tracing::info!("downloading verificaiton doc {}", recovery_id);
+        // FIXME: maybe shouldn't download from only one peer?
         let verification_client = self.client.social_verification(PeerId::from(0));
         let verification_doc = verification_client
             .download_verification_doc(*recovery_id)
