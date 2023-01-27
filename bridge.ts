@@ -22,6 +22,8 @@ export type LogEvent = {
 
 export type FederationEvent = Federation
 
+export type RecoveredUsername = string | null
+
 export type TransactionEvent = {
     federationId: string
     transaction: Transaction
@@ -83,7 +85,6 @@ export type OfflineTransactionDetails = {
 }
 
 export type XmppCredentials = {
-    username: string
     password: string
 }
 export class Transaction extends Base {
@@ -192,6 +193,7 @@ export class Federation extends Base {
     // until/unless we find a better place...
     // used for XMPP login for chat/community features
     username?: string | null
+    password?: string | null
     socialRecoveryActive: boolean
 
     get approvalsRequired(): number {
@@ -204,7 +206,14 @@ export class Federation extends Base {
     }
 }
 
-function handleRpcResponse<Type>(json: string): Type {
+async function fedimintRpc<Type>(
+    method: string,
+    payload: object,
+): Promise<Type> {
+    const jsonPayload = JSON.stringify(payload)
+    const json: string = await new Promise(resolve => {
+        setTimeout(() => resolve(FedimintFfi.rpc(method, jsonPayload)))
+    })
     const parsed = JSON.parse(json)
     if (parsed.error) {
         throw Error(parsed.error)
@@ -216,11 +225,7 @@ function handleRpcResponse<Type>(json: string): Type {
 export async function listTransactions(
     federationId: string,
 ): Promise<Transaction[]> {
-    let payload = JSON.stringify({
-        federationId,
-    })
-    let response = await FedimintFfi.rpc('listTransactions', payload)
-    return handleRpcResponse<Transaction[]>(response)
+    return fedimintRpc<Transaction[]>('listTransactions', { federationId })
 }
 
 export async function updateTransactionNotes(
@@ -228,29 +233,25 @@ export async function updateTransactionNotes(
     notes: string,
     federationId: string,
 ): Promise<null> {
-    let payload = JSON.stringify({ federationId, transactionId, notes })
-    let response = await FedimintFfi.rpc('updateTransactionNotes', payload)
-    return handleRpcResponse<null>(response)
+    return fedimintRpc('updateTransactionNotes', {
+        federationId,
+        transactionId,
+        notes,
+    })
 }
 
 export async function joinFederation(
     connectString: string,
 ): Promise<Federation> {
-    let payload = JSON.stringify({ connectString })
-    let response = await FedimintFfi.rpc('joinFederation', payload)
-    return handleRpcResponse<Federation>(response)
+    return fedimintRpc('joinFederation', { connectString })
 }
 
 export async function leaveFederation(federationId: string): Promise<null> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('leaveFederation', payload)
-    return handleRpcResponse<null>(response)
+    return fedimintRpc('leaveFederation', { federationId })
 }
 
 export async function listFederations(): Promise<Federation[]> {
-    let payload = JSON.stringify({}) // FIXME
-    let response = await FedimintFfi.rpc('listFederations', payload)
-    return handleRpcResponse<Federation[]>(response)
+    return fedimintRpc('listFederations', {})
 }
 
 export async function generateInvoice(
@@ -258,40 +259,30 @@ export async function generateInvoice(
     description: string,
     federationId: string,
 ): Promise<string> {
-    let payload = JSON.stringify({
+    return fedimintRpc('generateInvoice', {
         amount,
         description,
         federationId,
     })
-    let response = await FedimintFfi.rpc('generateInvoice', payload)
-    return handleRpcResponse<string>(response)
 }
 
 export async function decodeInvoice(invoice: string): Promise<Invoice> {
-    let payload = JSON.stringify({ invoice })
-    let response = await FedimintFfi.rpc('decodeInvoice', payload)
-    return handleRpcResponse<Invoice>(response)
+    return fedimintRpc('decodeInvoice', { invoice })
 }
 
 export async function addressOrInvoice(
     input: string,
     federationId: string,
 ): Promise<AddressOrInvoice> {
-    let payload = JSON.stringify({ federationId, input })
-    let response = await FedimintFfi.rpc('addressOrInvoice', payload)
-    return handleRpcResponse<AddressOrInvoice>(response)
+    return fedimintRpc('addressOrInvoice', { federationId, input })
 }
 
 export async function payInvoice(invoice: string, federationId: string) {
-    let payload = JSON.stringify({ invoice, federationId })
-    let response = await FedimintFfi.rpc('payInvoice', payload)
-    return handleRpcResponse<null>(response)
+    return fedimintRpc('payInvoice', { invoice, federationId })
 }
 
 export async function generateAddress(federationId: string): Promise<string> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('generateAddress', payload)
-    return handleRpcResponse<string>(response)
+    return fedimintRpc('generateAddress', { federationId })
 }
 
 export async function payAddress(
@@ -299,13 +290,11 @@ export async function payAddress(
     sats: Sats,
     federationId: string,
 ): Promise<string> {
-    let payload = JSON.stringify({
+    return fedimintRpc('payAddress', {
         address,
         sats,
         federationId,
     })
-    let response = await FedimintFfi.rpc('payAddress', payload)
-    return handleRpcResponse<string>(response)
 }
 
 export async function initializeBridge(dataDir: string) {
@@ -317,52 +306,53 @@ export async function generateEcash(
     amount: number,
     federationId: string,
 ): Promise<string> {
-    let payload = JSON.stringify({ federationId, amount })
-    let response = await FedimintFfi.rpc('generateEcash', payload)
-    return handleRpcResponse<string>(response)
+    return fedimintRpc('generateEcash', { federationId, amount })
 }
 
 export async function receiveEcash(
     ecash: string,
     federationId: string,
 ): Promise<ReceiveEcashResponse> {
-    let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
-    let response = await FedimintFfi.rpc('receiveEcash', payload)
-    return handleRpcResponse<ReceiveEcashResponse>(response)
+    return fedimintRpc('receiveEcash', {
+        federationId,
+        ecash: JSON.parse(ecash),
+    })
 }
 
 export async function validateEcash(
     ecash: string,
     federationId: string,
 ): Promise<ValidateEcashResponse> {
-    let payload = JSON.stringify({ federationId, ecash: JSON.parse(ecash) })
-    let response = await FedimintFfi.rpc('validateEcash', payload)
-    return handleRpcResponse<ValidateEcashResponse>(response)
+    return fedimintRpc('validateEcash', {
+        federationId,
+        ecash: JSON.parse(ecash),
+    })
 }
 
 export async function lnurlSignMessage(
     message: string,
     federationId: string,
 ): Promise<LnurlSignedMessage> {
-    let payload = JSON.stringify({ message, federationId })
-    let response = await FedimintFfi.rpc('lnurlSignMessage', payload)
-    return handleRpcResponse<LnurlSignedMessage>(response)
+    return fedimintRpc('lnurlSignMessage', { message, federationId })
 }
 
 export async function getXmppCredentials(
     federationId: string,
 ): Promise<XmppCredentials> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('xmppCredentials', payload)
-    return handleRpcResponse<XmppCredentials>(response)
+    return fedimintRpc('xmppCredentials', { federationId })
+}
+
+export async function backupXmppUsername(
+    username: String,
+    federationId: string,
+): Promise<null> {
+    return fedimintRpc('xmppCredentials', { federationId })
 }
 
 export async function listGateways(
     federationId: string,
 ): Promise<LightningGateway[]> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('listGateways', payload)
-    return handleRpcResponse<LightningGateway[]>(response)
+    return fedimintRpc('listGateways', { federationId })
 }
 
 export async function switchGateway(
@@ -370,12 +360,10 @@ export async function switchGateway(
     federationId: string,
 ): Promise<null> {
     // FIXME: annoying how nodePubkey has 2 different forms of casing ...
-    let payload = JSON.stringify({
+    return fedimintRpc('switchGateway', {
         federationId,
         nodePubkey: gateway.nodePubKey,
     })
-    let response = await FedimintFfi.rpc('switchGateway', payload)
-    return handleRpcResponse<null>(response)
 }
 
 /*
@@ -384,19 +372,15 @@ export async function switchGateway(
 export type SeedWords = string[]
 
 export async function getMnemonic(federationId: string): Promise<SeedWords> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('getMnemonic', payload)
-    return handleRpcResponse<SeedWords>(response)
+    return fedimintRpc('getMnemonic', { federationId })
 }
 
 // progress reported via `SeedRecoveryEvent` events
 export async function recoverFromMnemonic(
     mnemonic: string[],
     federationId: string,
-): Promise<null> {
-    let payload = JSON.stringify({ mnemonic, federationId })
-    let response = await FedimintFfi.rpc('recoverFromMnemonic', payload)
-    return handleRpcResponse<null>(response)
+): Promise<RecoveredUsername> {
+    return fedimintRpc('recoverFromMnemonic', { mnemonic, federationId })
 }
 
 /*
@@ -418,18 +402,13 @@ export async function uploadBackupFile(
 ): Promise<null> {
     // FIXME: for some reason rust can't read the file if it has `file://` prefix ...
     videoFilePath = videoFilePath.replace('file://', '')
-    console.log('upload video file', videoFilePath)
-    let payload = JSON.stringify({ federationId, videoFilePath })
-    let response = await FedimintFfi.rpc('uploadBackupFile', payload)
-    return handleRpcResponse<null>(response)
+    return fedimintRpc('uploadBackupFile', { federationId, videoFilePath })
 }
 
 export async function locateRecoveryFile(
     federationId: string,
 ): Promise<string> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('locateRecoveryFile', payload)
-    return handleRpcResponse<string>(response)
+    return fedimintRpc('locateRecoveryFile', { federationId })
 }
 
 export async function validateRecoveryFile(
@@ -437,26 +416,20 @@ export async function validateRecoveryFile(
     federationId: string,
 ): Promise<boolean> {
     console.log('backup file path', path)
-    let payload = JSON.stringify({ federationId, path })
-    let response = await FedimintFfi.rpc('validateRecoveryFile', payload)
-    return handleRpcResponse<boolean>(response)
+    return fedimintRpc('validateRecoveryFile', { federationId, path })
 }
 
 // This string contains a public key and URL to video file
 export async function recoveryQr(
     federationId: string,
 ): Promise<SocialRecoveryQrCode> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('recoveryQr', payload)
-    return handleRpcResponse<SocialRecoveryQrCode>(response)
+    return fedimintRpc('recoveryQr', { federationId })
 }
 
 export async function socialRecoveryApprovals(
     federationId: string,
 ): Promise<SocialRecoveryEvent> {
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('socialRecoveryApprovals', payload)
-    return handleRpcResponse<SocialRecoveryEvent>(response)
+    return fedimintRpc('socialRecoveryApprovals', { federationId })
 }
 
 // guardian fetches `_secret` (somehow) from federation admin web UI
@@ -464,14 +437,9 @@ export async function authenticateGuardian(
     _secret: string,
     _federationId: string,
 ): Promise<null> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, secret })
-    // let response = await FedimintFfi.rpc('authenticateGuardian', payload)
-    // return handleRpcResponse<boolean>(response)
-
     // Simulate success/failure modes
-    return handleRpcResponse<null>('{"result": "null"}')
-    // return handleRpcResponse<boolean>('{"error": "invalid secret"}')
+    return Promise.resolve(null)
+    // return Promise.reject('invalid secret')
 }
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
@@ -479,14 +447,9 @@ export async function denySocialRecoveryRequest(
     _userPublicKey: string,
     _federationId: string,
 ): Promise<null> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, userPublicKey })
-    // let response = await FedimintFfi.rpc('denySocialRecoveryRequest', payload)
-    // return handleRpcResponse<null>(response)
-
     // Simulate success/failure modes
-    return handleRpcResponse<null>('{"result": "null"}')
-    // return handleRpcResponse<null>('{"error": "social recovery denial failed"}')
+    return Promise.resolve(null)
+    // return Promise.reject('social recovery denial failed')
 }
 
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
@@ -494,33 +457,26 @@ export async function approveSocialRecoveryRequest(
     recoveryId: string,
     federationId: string,
 ): Promise<null> {
-    let payload = JSON.stringify({ federationId, recoveryId })
-    let response = await FedimintFfi.rpc(
-        'approveSocialRecoveryRequest',
-        payload,
-    )
-    return handleRpcResponse<null>(response)
+    return fedimintRpc('approveSocialRecoveryRequest', {
+        federationId,
+        recoveryId,
+    })
 }
 
 export async function socialRecoveryDownloadVerificationDoc(
     recoveryId: string,
     federationId: string,
 ): Promise<string | null> {
-    let payload = JSON.stringify({ federationId, recoveryId })
-    let response = await FedimintFfi.rpc(
-        'socialRecoveryDownloadVerificationDoc',
-        payload,
-    )
-    return handleRpcResponse<string | null>(response)
+    return fedimintRpc('socialRecoveryDownloadVerificationDoc', {
+        federationId,
+        recoveryId,
+    })
 }
 
 export async function completeSocialRecovery(
     federationId: string,
-): Promise<string | null> {
-    console.log('calling completeSocialRecovery')
-    let payload = JSON.stringify({ federationId })
-    let response = await FedimintFfi.rpc('completeSocialRecovery', payload)
-    return handleRpcResponse<null>(response)
+): Promise<RecoveredUsername> {
+    return fedimintRpc('completeSocialRecovery', { federationId })
 }
 
 /*
@@ -549,11 +505,7 @@ export async function generateCommunitySecret(
     _federationId: string,
     _username: string,
 ): Promise<string> {
-    // TODO: Replace mocked function when bridge is ready
-    // let payload = JSON.stringify({ federationId, username })
-    // let response = await FedimintFfi.rpc('generateCommunitySecret', payload)
-    // return handleRpcResponse<string>(response)
-
-    return handleRpcResponse<string>('{"result": "abcdefg1234567"}')
-    // return handleRpcResponse<null>('{"error": "error generating secret"}')
+    // Simulate success/failure modes
+    return Promise.resolve('abcdefg1234567')
+    // return Promise.reject('error generating secret')
 }

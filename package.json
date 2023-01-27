@@ -8,6 +8,7 @@
         "start": "react-native start",
         "postinstall": "cd ios && pod install && cd ..",
         "test": "jest",
+        "clean": "sh scripts/clean.sh",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
     },
     "dependencies": {

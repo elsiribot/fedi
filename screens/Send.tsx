@@ -9,6 +9,7 @@ import { useCameraDevices } from 'react-native-vision-camera'
 import { AddressOrInvoice } from '../bridge'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -20,7 +21,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
-    // const { toast } = useEnvironmentContext().state
+    const { toast } = useEnvironmentContext().state
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [paymentRequestUri, setPaymentRequestUri] = useState<BtcLnUri | null>(
         null,
@@ -44,14 +45,13 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                     normalized.type = BitcoinOrLightning.lightning
                     setPaymentRequestUri(normalized)
                 }
-            } catch (e: any) {
-                // TODO: show this error
-                console.error(e)
-                // toast?.show('e', 5000)
+            } catch (error) {
+                let typedError = error as Error
+                toast?.show(typedError.message, 3000)
             }
             setIsLoading(false)
         },
-        [addressOrInvoice, isLoading],
+        [toast, addressOrInvoice, isLoading],
     )
 
     const checkClipboard = useCallback(async () => {
