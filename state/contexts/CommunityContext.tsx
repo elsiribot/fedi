@@ -25,7 +25,6 @@ import {
 } from '../../constants'
 import i18n from '../../localization/i18n'
 import { Group, Member, Message } from '../../types'
-import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -502,10 +501,9 @@ export const checkXmppUser = async (
 }
 
 function CommunityProvider(props: React.PropsWithChildren<{}>) {
-    const { state: environmentState } = useEnvironmentContext()
     const { state: federationsState, dispatch: federationsDispatch } =
         useFederationsContext()
-    const { selectedFederation } = federationsState
+    const { selectedFederationId, selectedFederation } = federationsState
     const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
         reducer,
         initialState,
@@ -521,7 +519,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         // Only attempt XMPP connection if there is a selectedFederation
         // and a username+password has been created for it
-        if (selectedFederation === null) return
+        if (selectedFederationId === null) return
         if (!selectedFederation?.username) return
         if (!selectedFederation?.password) return
 
@@ -637,11 +635,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     const result = stanza.getChild('result')
                     const forwarded = result?.getChild('forwarded')
                     const message = forwarded?.getChild('message')
-                    console.info(forwarded)
                     if (!message) return
-                    if (forwarded) {
-                        console.info('found forwarded', forwarded)
-                    }
 
                     const directMessageJson = message.getChildText('dm')
                     const parsedMessage = JSON.parse(
@@ -697,15 +691,13 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         dispatch(setXmppClient(xmpp))
     }, [
         federationsDispatch,
-        environmentState,
-        selectedFederation,
+        selectedFederationId,
         selectedFederation?.username,
         selectedFederation?.password,
     ])
 
     // Update async storage when groups are added
     useEffect(() => {
-        console.log('useEffect: groups')
         if (state.groups.length > DEFAULT_GROUPS.length) {
             console.log('storing', state.groups.length, 'groups')
             AsyncStorage.setItem(
@@ -717,7 +709,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when members are added
     useEffect(() => {
-        console.log('useEffect: members')
         if (state.membersSeen.length > 0) {
             console.log('storing', state.membersSeen.length, 'members')
             AsyncStorage.setItem(
@@ -729,7 +720,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when messages are added
     useEffect(() => {
-        console.log('useEffect: messages')
         if (state.messages.length > 0) {
             console.log('storing', state.messages.length, 'messages')
             AsyncStorage.setItem(
