@@ -284,7 +284,8 @@ export const useXmpp = () => {
 
         */
         enterMucRoom: useCallback(
-            async (group: Group) => {
+            (group: Group) => {
+                if (!xmppClient?.jid) return
                 const { local, domain, resource } = xmppClient?.jid as JID
                 const fromUser = `${local}@${domain}/${resource}`
                 const onStanzaReceived = async (stanza: Element) => {
@@ -301,7 +302,7 @@ export const useXmpp = () => {
                             // configuration query to allow others to join
                             // https://xmpp.org/extensions/xep-0045.html#createroom-instant
                             if (sr?.getAttr('code') === '201') {
-                                await xmppClient?.send(
+                                xmppClient?.send(
                                     xml(
                                         'iq',
                                         {
@@ -344,23 +345,28 @@ export const useXmpp = () => {
                     xmppClient?.listenerCount('stanza'),
                     'listeners',
                 )
-
-                await xmppClient?.send(
-                    xml(
-                        'presence',
-                        {
-                            from: fromUser,
-                            to: `${group.id}@${XMPP_MUC_DOMAIN}/${local}`,
-                            id: 'enter-muc-room',
-                        },
-                        xml('x', { xmlns: 'http://jabber.org/protocol/muc' }),
-                    ),
-                )
+                try {
+                    xmppClient?.send(
+                        xml(
+                            'presence',
+                            {
+                                from: fromUser,
+                                to: `${group.id}@${XMPP_MUC_DOMAIN}/${local}`,
+                                id: 'enter-muc-room',
+                            },
+                            xml('x', {
+                                xmlns: 'http://jabber.org/protocol/muc',
+                            }),
+                        ),
+                    )
+                } catch (error) {
+                    console.error('enterMucRoom error', error)
+                }
             },
             [dispatch, xmppClient],
         ),
         fetchMessagesFromArchive: useCallback(
-            async ({ filters }: MessageArchiveQuery) => {
+            ({ filters }: MessageArchiveQuery) => {
                 const filterQuery = filters?.withJid
                     ? xml(
                           'x',
@@ -380,24 +386,27 @@ export const useXmpp = () => {
                           ),
                       )
                     : xml('x')
-
-                await xmppClient?.send(
-                    xml(
-                        'iq',
-                        {
-                            id: 'get-messages',
-                            type: 'set',
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'query',
+                            'iq',
                             {
-                                xmlns: 'urn:xmpp:mam:2',
-                                queryid: 'get-messages',
+                                id: 'get-messages',
+                                type: 'set',
                             },
-                            filterQuery,
+                            xml(
+                                'query',
+                                {
+                                    xmlns: 'urn:xmpp:mam:2',
+                                    queryid: 'get-messages',
+                                },
+                                filterQuery,
+                            ),
                         ),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendDirectMessage error', error)
+                }
             },
             [xmppClient],
         ),
@@ -426,111 +435,123 @@ export const useXmpp = () => {
                 }
                 xmppClient?.on('stanza', uniqueRoomListener)
 
-                xmppClient?.send(
-                    xml(
-                        'iq',
-                        {
-                            type: 'get',
-                            to: XMPP_MUC_DOMAIN,
-                            id: 'get-unique-room-name',
-                        },
-                        xml('unique', {
-                            xmlns: 'http://jabber.org/protocol/muc#unique',
-                        }),
-                    ),
-                )
+                xmppClient
+                    ?.send(
+                        xml(
+                            'iq',
+                            {
+                                type: 'get',
+                                to: XMPP_MUC_DOMAIN,
+                                id: 'get-unique-room-name',
+                            },
+                            xml('unique', {
+                                xmlns: 'http://jabber.org/protocol/muc#unique',
+                            }),
+                        ),
+                    )
+                    .catch(console.error)
             })
         }, [xmppClient]),
         sendUpdatedPaymentMessage: useCallback(
-            async ({ message, to }: OutgoingMessage) => {
+            ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const toJid = to?.jid.toString()
-
-                await xmppClient?.send(
-                    xml(
-                        'message',
-                        {
-                            id: message.id,
-                            type: 'chat',
-                            from: fromJid,
-                            to: toJid,
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'body',
-                            { xmlns: 'jabber:client' },
-                            message.content as string,
+                            'message',
+                            {
+                                id: message.id,
+                                type: 'chat',
+                                from: fromJid,
+                                to: toJid,
+                            },
+                            xml(
+                                'body',
+                                { xmlns: 'jabber:client' },
+                                message.content as string,
+                            ),
+                            xml(
+                                'dm',
+                                { xmlns: 'fedi:direct-message' },
+                                JSON.stringify(message),
+                            ),
+                            xml('action', { xmlns: 'fedi:update-payment' }),
                         ),
-                        xml(
-                            'dm',
-                            { xmlns: 'fedi:direct-message' },
-                            JSON.stringify(message),
-                        ),
-                        xml('action', { xmlns: 'fedi:update-payment' }),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendUpdatedPaymentMessage error', error)
+                }
             },
             [xmppClient],
         ),
         sendDirectMessage: useCallback(
-            async ({ message, to }: OutgoingMessage) => {
+            ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const toJid = to?.jid.toString()
 
-                await xmppClient?.send(
-                    xml(
-                        'message',
-                        {
-                            id: message.id,
-                            type: 'chat',
-                            from: fromJid,
-                            to: toJid,
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'body',
-                            { xmlns: 'jabber:client' },
-                            message.content as string,
+                            'message',
+                            {
+                                id: message.id,
+                                type: 'chat',
+                                from: fromJid,
+                                to: toJid,
+                            },
+                            xml(
+                                'body',
+                                { xmlns: 'jabber:client' },
+                                message.content as string,
+                            ),
+                            xml(
+                                'dm',
+                                { xmlns: 'fedi:direct-message' },
+                                JSON.stringify(message),
+                            ),
                         ),
-                        xml(
-                            'dm',
-                            { xmlns: 'fedi:direct-message' },
-                            JSON.stringify(message),
-                        ),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendDirectMessage error', error)
+                }
             },
             [xmppClient],
         ),
         sendGroupMessage: useCallback(
-            async ({ message, toRoom }: OutgoingGroupMessage) => {
+            ({ message, toRoom }: OutgoingGroupMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
                 const to = `${toRoom}@${XMPP_MUC_DOMAIN}`
-
-                await xmppClient?.send(
-                    xml(
-                        'message',
-                        {
-                            id: message.id,
-                            from: fromJid,
-                            type: 'groupchat',
-                            to,
-                        },
+                try {
+                    xmppClient?.send(
                         xml(
-                            'body',
-                            { xmlns: 'jabber:client' },
-                            message.content as string,
+                            'message',
+                            {
+                                id: message.id,
+                                from: fromJid,
+                                type: 'groupchat',
+                                to,
+                            },
+                            xml(
+                                'body',
+                                { xmlns: 'jabber:client' },
+                                message.content as string,
+                            ),
+                            xml(
+                                'gm',
+                                { xmlns: 'fedi:group-message' },
+                                JSON.stringify(message),
+                            ),
                         ),
-                        xml(
-                            'gm',
-                            { xmlns: 'fedi:group-message' },
-                            JSON.stringify(message),
-                        ),
-                    ),
-                )
+                    )
+                } catch (error) {
+                    console.error('sendGroupMessage error', error)
+                }
             },
             [xmppClient],
         ),
-        sendTestXml: useCallback(async () => {
-            await xmppClient?.send(
+        sendTestXml: useCallback(() => {
+            xmppClient?.send(
                 xml(
                     'iq',
                     {

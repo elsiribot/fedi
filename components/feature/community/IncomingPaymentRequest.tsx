@@ -1,0 +1,292 @@
+import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
+
+import { Images } from '../../../assets/images'
+import {
+    updateMessage,
+    useCommunityContext,
+} from '../../../state/contexts/CommunityContext'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../../../state/contexts/FederationsContext'
+import { useBridge, useXmpp } from '../../../state/hooks'
+import { Message, MSats, Payment, PaymentStatus } from '../../../types'
+import amountUtils from '../../../utils/AmountUtils'
+
+type OutgoingPaymentActionsProps = {
+    message: Message
+    onReject: () => void
+    onPay: () => void
+    paymentProcessing: boolean
+}
+
+const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
+    message,
+    onReject,
+    onPay,
+    paymentProcessing,
+}: OutgoingPaymentActionsProps) => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { payment } = message
+
+    const renderPaymentStatus = () => {
+        if (paymentProcessing) return <ActivityIndicator />
+        let paymentStatus = (
+            <View style={styles(theme).statusContainer}>
+                <Text medium caption style={styles(theme).statusText}>
+                    {t('words.pending')}
+                </Text>
+            </View>
+        )
+
+        switch (payment?.status!) {
+            case PaymentStatus.paid:
+                paymentStatus = (
+                    <View style={styles(theme).statusContainer}>
+                        <Image
+                            source={Images.DoneWhite}
+                            style={styles(theme).paidIcon}
+                        />
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.paid')}
+                        </Text>
+                    </View>
+                )
+                break
+            case PaymentStatus.rejected:
+                paymentStatus = (
+                    <View style={styles(theme).statusContainer}>
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.rejected')}
+                        </Text>
+                    </View>
+                )
+                break
+            case PaymentStatus.canceled:
+                paymentStatus = (
+                    <View style={styles(theme).statusContainer}>
+                        <Text medium caption style={styles(theme).statusText}>
+                            {t('words.canceled')}
+                        </Text>
+                    </View>
+                )
+                break
+            case PaymentStatus.requested:
+                paymentStatus = (
+                    <>
+                        <Button
+                            disabled={paymentProcessing}
+                            size="sm"
+                            color={theme.colors.secondary}
+                            containerStyle={styles(theme).buttonContainer}
+                            onPress={onReject}
+                            title={
+                                <Text medium caption>
+                                    {t('words.reject')}
+                                </Text>
+                            }
+                        />
+                        <Text>&nbsp;&nbsp;</Text>
+                        <Button
+                            disabled={paymentProcessing}
+                            size="sm"
+                            color={theme.colors.secondary}
+                            containerStyle={styles(theme).buttonContainer}
+                            onPress={onPay}
+                            title={
+                                <Text medium caption>
+                                    {t('words.pay')}
+                                </Text>
+                            }
+                        />
+                    </>
+                )
+                break
+            // Redemption in progess & status = accepted
+            default:
+                break
+        }
+        return paymentStatus
+    }
+
+    return (
+        <View style={styles(theme).actionsContainer}>
+            {renderPaymentStatus()}
+        </View>
+    )
+}
+
+type IncomingPaymentRequestProps = {
+    message: Message
+    outgoingPayment?: Payment
+    text: string
+}
+
+const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
+    message,
+    text,
+}: IncomingPaymentRequestProps) => {
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+    const { generateEcash } = useBridge()
+    const { sendUpdatedPaymentMessage } = useXmpp()
+    const { toast } = useEnvironmentContext().state
+    const { selectedFederation } = useFederationsContext().state
+    const { dispatch } = useCommunityContext()
+    const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
+    const [generatedEcashToken, setGeneratedEcashToken] = useState<string>('')
+
+    const rejectPaymentRequest = () => {
+        try {
+            const rejectedPaymentMessage = new Message({
+                ...message,
+                payment: {
+                    ...message.payment,
+                    updatedAt: Date.now() / 1000,
+                    status: PaymentStatus.rejected,
+                },
+            })
+            sendUpdatedPaymentMessage({
+                to: message.sentBy,
+                message: rejectedPaymentMessage,
+            })
+            dispatch(updateMessage(rejectedPaymentMessage))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    // Process for sending a payment starts here
+    const acceptPaymentRequest = async () => {
+        if (selectedFederation?.balance! < message.payment?.amount!) {
+            toast?.show(
+                t('errors.insufficient-balance', {
+                    balance: `${amountUtils.formatNumber(
+                        amountUtils.msatToSat(
+                            selectedFederation?.balance as MSats,
+                        ),
+                    )} SATS`,
+                }),
+                5000,
+            )
+            throw new Error('errors.insufficient-balance')
+        } else {
+            setPaymentProcessing(true)
+        }
+    }
+
+    // When paymentProcessing begins, we generate and send ecash
+    useEffect(() => {
+        const generateAndSendEcash = async () => {
+            try {
+                const ecash = await generateEcash(
+                    message.payment?.amount as MSats,
+                )
+                setPaymentProcessing(false)
+                setGeneratedEcashToken(ecash)
+            } catch (error) {
+                console.error(error)
+                setPaymentProcessing(false)
+            }
+        }
+
+        if (paymentProcessing === true) {
+            // Need this because UI thread gets blocked
+            // Is there a cleaner way to do this?
+            setTimeout(() => {
+                generateAndSendEcash()
+            }, 1)
+        }
+    }, [dispatch, generateEcash, paymentProcessing, message.payment?.amount])
+
+    useEffect(() => {
+        const prepareAndSendPayment = async () => {
+            try {
+                const acceptedPaymentMessage = new Message({
+                    ...message,
+                    payment: {
+                        ...message.payment,
+                        // sender of the payment request should be the recipient
+                        // here...  need to refactor for sender-initiated payments
+                        recipient: message.sentBy,
+                        updatedAt: Date.now() / 1000,
+                        status: PaymentStatus.accepted,
+                        token: generatedEcashToken,
+                    },
+                })
+                setGeneratedEcashToken('')
+                sendUpdatedPaymentMessage({
+                    to: message.sentBy,
+                    message: acceptedPaymentMessage,
+                })
+                dispatch(updateMessage(acceptedPaymentMessage))
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        if (generatedEcashToken) {
+            // Need this because UI thread gets blocked
+            // Is there a cleaner way to do this?
+            setTimeout(() => {
+                prepareAndSendPayment()
+            }, 1)
+        }
+    }, [dispatch, generatedEcashToken, message, sendUpdatedPaymentMessage])
+
+    // TODO: if a payment has a token & a Rebroadcast a payment
+    // useEffect(() => {
+    //     if (payment?.token && payment?.status === PaymentStatus.accepted) {
+    //     }
+    // }, [])
+
+    return (
+        <View style={styles(theme).container}>
+            <Text caption medium style={styles(theme).messageText}>
+                {text}
+            </Text>
+            <OutgoingPaymentActions
+                message={message}
+                onReject={rejectPaymentRequest}
+                onPay={acceptPaymentRequest}
+                paymentProcessing={paymentProcessing}
+            />
+        </View>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            alignItems: 'flex-start',
+        },
+        actionsContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            width: '100%',
+            paddingVertical: theme.spacing.xs,
+        },
+        statusContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        paidIcon: {
+            height: theme.sizes.xs,
+            width: theme.sizes.xs,
+        },
+        statusText: {
+            color: theme.colors.secondary,
+            marginLeft: theme.spacing.xs,
+        },
+        buttonContainer: {
+            flex: 1,
+            maxWidth: '50%',
+        },
+        messageText: {
+            color: theme.colors.secondary,
+            paddingBottom: theme.spacing.sm,
+        },
+    })
+
+export default IncomingPaymentRequest

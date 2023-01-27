@@ -27,7 +27,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const messagesInGroup = state.messages.filter(
         m => m.sentIn?.id === currentGroup.id,
     )
-    const sortedMessages = [...orderBy(messagesInGroup, 'receivedAt', 'asc')]
+    const sortedMessages = [...orderBy(messagesInGroup, 'sentAt', 'asc')]
 
     useEffect(() => {
         // announce presence

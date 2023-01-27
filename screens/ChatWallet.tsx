@@ -42,6 +42,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 payment: new Payment({
                     amount: millis,
                     status: PaymentStatus.requested,
+                    updatedAt: Date.now() / 1000,
                 }),
             })
             sendDirectMessage({
