@@ -598,7 +598,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         )
                     const newMessage = new Message({
                         ...parsedMessage,
-                        receivedAt: Date.now() / 1000,
                     })
 
                     dispatch(addToMessages(newMessage))
@@ -614,7 +613,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     )
                     const newMessage = new Message({
                         ...parsedMessage,
-                        receivedAt: Date.now() / 1000,
                     })
 
                     const action = stanza.getChild('action')
@@ -643,7 +641,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     )
                     const newMessage = new Message({
                         ...parsedMessage,
-                        receivedAt: Date.now() / 1000,
                     })
 
                     const action = message.getChild('action')
