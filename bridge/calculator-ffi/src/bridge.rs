@@ -22,7 +22,7 @@ use crate::{
     },
     EventSinkWrapper,
 };
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use bitcoin::{
     hashes::sha256,
     secp256k1::{Message, Secp256k1},
@@ -69,16 +69,17 @@ async fn load_federations_from_disk(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
     task_group: &TaskGroup,
-) -> Vec<Federation> {
+) -> anyhow::Result<Vec<Federation>> {
     let mut federations = vec![];
-    for element in data_dir.read_dir().unwrap() {
-        let mut path = element.unwrap().path();
+    for element in data_dir.read_dir().context("read dir")? {
+        let mut path = element.context("read dir")?.path();
         if let Some(extension) = path.extension() {
             if extension == "json" {
                 // TODO: perhaps this should be a federation method?
-                let fedi_config: FediConfig = load_from_file(&path).expect("invalid cfg on disk"); // FIXME: this panics
+                let fedi_config: FediConfig =
+                    load_from_file(&path).context("invalid cfg on disk")?;
                 path.set_extension("db");
-                let db = SledDb::open(path, "client").unwrap(); // FIXME: don't unwrap
+                let db = SledDb::open(path, "client").context("client tree not found")?;
                 let db = Database::new(db, module_decode_stubs());
                 let client = UserClient::new(
                     fedi_config.client_config,
@@ -94,7 +95,7 @@ async fn load_federations_from_disk(
             }
         }
     }
-    federations
+    Ok(federations)
 }
 
 pub struct Bridge {
@@ -106,12 +107,12 @@ pub struct Bridge {
 }
 
 impl Bridge {
-    pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> Self {
+    pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> anyhow::Result<Self> {
         // load federations from disk
         let task_group = TaskGroup::new();
         let mut federations_map = HashMap::new();
         let federations_vec =
-            load_federations_from_disk(&data_dir, event_sink.clone(), &task_group).await;
+            load_federations_from_disk(&data_dir, event_sink.clone(), &task_group).await?;
 
         // start pollers
         for mut federation in federations_vec.into_iter() {
@@ -125,7 +126,7 @@ impl Bridge {
             task_group,
             event_sink,
         };
-        bridge
+        Ok(bridge)
     }
 
     pub async fn stop_pollers(&self) -> Result<()> {
@@ -168,7 +169,7 @@ impl Bridge {
         let entropy = mnemonic.to_entropy();
         let entropy: [u8; 16] = entropy[0..16]
             .try_into()
-            .expect("mnemonic entropy array of wrong size");
+            .context("mnemonic entropy array of wrong size")?;
 
         // update client secret in memory
         let fed = {
@@ -319,7 +320,7 @@ impl Federation {
         let cfg = res.client;
 
         // Hack to run against local federation
-        let mut cfg_string = serde_json::to_string(&cfg).unwrap();
+        let mut cfg_string = serde_json::to_string(&cfg).context("unable to serialize cfg")?;
         if std::env::consts::OS == "android" {
             info!("android hacks");
             cfg_string = cfg_string.replace("localhost", "10.0.2.2");
@@ -340,12 +341,12 @@ impl Federation {
         let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         tracing::info!("saving file to {}", cfg_path.display());
         let file = File::create(cfg_path) // FIXME: this should probably use tokio's `File`
-            .expect("Could not create cfg file");
-        serde_json::to_writer_pretty(file, &fedi_config).expect("Could not write gateway cfg");
+            .context("Could not create cfg file")?;
+        serde_json::to_writer_pretty(file, &fedi_config).context("Could not write fedi cfg")?;
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
-        let db = SledDb::open(db_path, "client").unwrap(); // FIXME: don't unwrap
+        let db = SledDb::open(db_path, "client").context("client tree not found")?;
         let db = Database::new(db, module_decode_stubs());
         let client = UserClient::new(
             fedi_config.client_config,
@@ -528,7 +529,7 @@ impl Federation {
                 let rng = rand::rngs::OsRng;
                 let address =
                     Address::from_script(script, self.client.wallet_client().config.network)
-                        .unwrap();
+                        .context("address::from_script")?;
                 let fee = None;
                 // FIXME: there should be a simpler API to get the amount of a peg-in
                 let amount_sats = self
@@ -579,7 +580,7 @@ impl Federation {
                         Some(IncomingBitcoinTransactionStatus::Pending),
                     ));
                 // FIXME: make a helper for this
-                let mut details = tx.bitcoin.expect("this should exist (fixme)");
+                let mut details = tx.bitcoin.context("this should exist (fixme)")?;
                 details.incoming_status = Some(IncomingBitcoinTransactionStatus::Complete);
                 tx.bitcoin = Some(details);
                 self.save_transaction(&tx).await;
@@ -628,7 +629,7 @@ impl Federation {
                     fedimint_api::Amount::from_msats(
                         invoice
                             .amount_milli_satoshis()
-                            .expect("assuming invoice has amount"),
+                            .context("assuming invoice has amount")?,
                     ),
                     fee,
                     invoice.clone(),
@@ -868,7 +869,8 @@ impl Federation {
             .create_verification_request(recovery_file.verification_document.clone())?;
         recovery_client
             .upload_verification_request(&verification_request)
-            .await?;
+            .await
+            .context("upload verification request")?;
         tracing::info!("verification request uploaded");
 
         // Return social recovery QR
