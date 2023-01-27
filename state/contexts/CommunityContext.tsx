@@ -25,7 +25,6 @@ import {
 } from '../../constants'
 import i18n from '../../localization/i18n'
 import { Group, Member, Message } from '../../types'
-import { useEnvironmentContext } from './EnvironmentContext'
 import { useFederationsContext } from './FederationsContext'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -309,7 +308,25 @@ export function reducer(state: AppState, action: Action): AppState {
                 // message exists but has not changed, avoid re-render
                 return state
             } else {
-                // message needs an update...
+                // message may need an update but we may already have the
+                // most updated version of the embedded payment
+                const currentPayment = state.messages[messageIndex].payment
+                const newPayment = action.payload.payment
+                if (currentPayment && newPayment) {
+                    const currentTimestamp = currentPayment.updatedAt
+                    const newTimestamp = newPayment.updatedAt
+
+                    // There are no new updates to the payment so we can
+                    // skip a state update
+                    if (
+                        currentTimestamp &&
+                        newTimestamp &&
+                        currentTimestamp >= newTimestamp
+                    ) {
+                        return state
+                    }
+                }
+                // message should be updated...
                 const updatedMessage = new Message({
                     ...state.messages[messageIndex],
                     ...action.payload,
@@ -499,10 +516,9 @@ export const checkXmppUser = async (
 }
 
 function CommunityProvider(props: React.PropsWithChildren<{}>) {
-    const { state: environmentState } = useEnvironmentContext()
     const { state: federationsState, dispatch: federationsDispatch } =
         useFederationsContext()
-    const { selectedFederation } = federationsState
+    const { selectedFederationId, selectedFederation } = federationsState
     const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
         reducer,
         initialState,
@@ -518,7 +534,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         // Only attempt XMPP connection if there is a selectedFederation
         // and a username+password has been created for it
-        if (selectedFederation === null) return
+        if (selectedFederationId === null) return
         if (!selectedFederation?.username) return
         if (!selectedFederation?.password) return
 
@@ -549,113 +565,112 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
         // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
-            if (stanza.is('presence')) {
-                // ignore if there is no presence data
-                const user = stanza.getChild('x')
-                if (!user) return
+            try {
+                if (stanza.is('presence')) {
+                    // ignore if there is no presence data
+                    const user = stanza.getChild('x')
+                    if (!user) return
 
-                const statusCode = user?.getChild('status')?.getAttr('code')
+                    const statusCode = user?.getChild('status')?.getAttr('code')
 
-                // This is a self-presence code, we don't
-                // need to add to membersSeen
-                if (statusCode === '110') return
+                    // This is a self-presence code, we don't
+                    // need to add to membersSeen
+                    if (statusCode === '110') return
 
-                // Make sure this presence stanza came from the main domain
-                // so we can create a member with the JID
-                const from = stanza.getAttr('from')
-                const fromJid = jid(from)
-                let userJid: JID = fromJid
+                    // Make sure this presence stanza came from the main domain
+                    // so we can create a member with the JID
+                    const from = stanza.getAttr('from')
+                    const fromJid = jid(from)
+                    let userJid: JID = fromJid
 
-                // This came from a user through the MUC domain, reformat JID
-                // to main domain with the /community resource
-                if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
-                    userJid = jid(
-                        fromJid.getResource(),
-                        XMPP_DOMAIN,
-                        XMPP_RESOURCE,
+                    // This came from a user through the MUC domain, reformat JID
+                    // to main domain with the /community resource
+                    if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
+                        userJid = jid(
+                            fromJid.getResource(),
+                            XMPP_DOMAIN,
+                            XMPP_RESOURCE,
+                        )
+                    }
+
+                    dispatch(
+                        addToMembersSeen(
+                            new Member({
+                                jid: userJid,
+                            }),
+                        ),
                     )
                 }
+                if (stanza.is('message')) {
+                    if (stanza.getAttr('type') === 'groupchat') {
+                        // Handle incoming messages from GroupChat
+                        const bodyText = stanza.getChildText('body')
+                        if (!bodyText) return
 
-                dispatch(
-                    addToMembersSeen(
-                        new Member({
-                            jid: userJid,
-                        }),
-                    ),
-                )
-            }
-            if (stanza.is('message')) {
-                if (stanza.getAttr('type') === 'groupchat') {
-                    // Handle incoming messages from GroupChat
-                    const bodyText = stanza.getChildText('body')
-                    if (!bodyText) return
+                        const groupMessageJson = stanza.getChildText('gm')
+                        const parsedMessage = JSON.parse(
+                            groupMessageJson as string,
+                        )
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                        })
 
-                    const groupMessageJson = stanza.getChildText('gm')
-                    const parsedMessage = JSON.parse(groupMessageJson as string)
-                    const newMessage = new Message({
-                        ...parsedMessage,
-                        receivedAt: Date.now() / 1000,
-                    })
-
-                    dispatch(addToMessages(newMessage))
-                    dispatch(updateGroupMessagePreview(newMessage))
-                } else if (stanza.getAttr('type') === 'chat') {
-                    // Handle incoming messages from DirectChat
-                    const bodyText = stanza.getChildText('body')
-                    if (!bodyText) return
-
-                    const directMessageJson = stanza.getChildText('dm')
-                    const parsedMessage = JSON.parse(
-                        directMessageJson as string,
-                    )
-                    const newMessage = new Message({
-                        ...parsedMessage,
-                        receivedAt: Date.now() / 1000,
-                    })
-
-                    const action = stanza.getChild('action')
-                    if (action?.getNS() === 'fedi:update-payment') {
-                        // find message and replace with updated version
-                        // with canceled or rejected payment
-                        dispatch(updateMessage(newMessage))
-                    } else {
                         dispatch(addToMessages(newMessage))
                         dispatch(updateGroupMessagePreview(newMessage))
-                    }
-                } else if (
-                    stanza.getChild('result')?.getAttr('queryid') ===
-                    'get-messages'
-                ) {
-                    // Handle messages received while offline, typically
-                    // triggered by the fetchMessagesFromArchive hook
-                    const result = stanza.getChild('result')
-                    const forwarded = result?.getChild('forwarded')
-                    const message = forwarded?.getChild('message')
-                    console.info(forwarded)
-                    if (!message) return
-                    if (forwarded) {
-                        console.info('found forwarded', forwarded)
-                    }
+                    } else if (stanza.getAttr('type') === 'chat') {
+                        // Handle incoming messages from DirectChat
+                        const bodyText = stanza.getChildText('body')
+                        if (!bodyText) return
 
-                    const directMessageJson = message.getChildText('dm')
-                    const parsedMessage = JSON.parse(
-                        directMessageJson as string,
-                    )
-                    const newMessage = new Message({
-                        ...parsedMessage,
-                        receivedAt: Date.now() / 1000,
-                    })
+                        const directMessageJson = stanza.getChildText('dm')
+                        const parsedMessage = JSON.parse(
+                            directMessageJson as string,
+                        )
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                        })
 
-                    const action = message.getChild('action')
-                    if (action?.getNS() === 'fedi:update-payment') {
-                        // find message and replace with updated version
-                        // with canceled or rejected payment
-                        dispatch(updateMessage(newMessage))
-                    } else {
-                        dispatch(addToMessages(newMessage))
-                        dispatch(updateGroupMessagePreview(newMessage))
+                        const action = stanza.getChild('action')
+                        if (action?.getNS() === 'fedi:update-payment') {
+                            // find message and replace with updated version
+                            // with canceled or rejected payment
+                            dispatch(updateMessage(newMessage))
+                        } else {
+                            dispatch(addToMessages(newMessage))
+                            dispatch(updateGroupMessagePreview(newMessage))
+                        }
+                    } else if (
+                        stanza.getChild('result')?.getAttr('queryid') ===
+                        'get-messages'
+                    ) {
+                        // Handle messages received while offline, typically
+                        // triggered by the fetchMessagesFromArchive hook
+                        const result = stanza.getChild('result')
+                        const forwarded = result?.getChild('forwarded')
+                        const message = forwarded?.getChild('message')
+                        if (!message) return
+
+                        const directMessageJson = message.getChildText('dm')
+                        const parsedMessage = JSON.parse(
+                            directMessageJson as string,
+                        )
+                        const newMessage = new Message({
+                            ...parsedMessage,
+                        })
+
+                        const action = message.getChild('action')
+                        if (action?.getNS() === 'fedi:update-payment') {
+                            // find message and replace with updated version
+                            // with canceled or rejected payment
+                            dispatch(updateMessage(newMessage))
+                        } else {
+                            dispatch(addToMessages(newMessage))
+                            dispatch(updateGroupMessagePreview(newMessage))
+                        }
                     }
                 }
+            } catch (error) {
+                console.error('Error parsing XMPP stanza', error)
             }
         })
 
@@ -665,7 +680,11 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         })
         xmpp.on('online', async _address => {
             // Send a presence message
-            await xmpp.send(xml('presence'))
+            try {
+                xmpp.send(xml('presence'))
+            } catch (error) {
+                console.error('Error sending XMPP presence', error)
+            }
 
             dispatch(changeUserIsOnline(true))
             if (xmpp.jid) {
@@ -684,15 +703,13 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         dispatch(setXmppClient(xmpp))
     }, [
         federationsDispatch,
-        environmentState,
-        selectedFederation,
+        selectedFederationId,
         selectedFederation?.username,
         selectedFederation?.password,
     ])
 
     // Update async storage when groups are added
     useEffect(() => {
-        console.log('useEffect: groups')
         if (state.groups.length > DEFAULT_GROUPS.length) {
             console.log('storing', state.groups.length, 'groups')
             AsyncStorage.setItem(
@@ -704,7 +721,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when members are added
     useEffect(() => {
-        console.log('useEffect: members')
         if (state.membersSeen.length > 0) {
             console.log('storing', state.membersSeen.length, 'members')
             AsyncStorage.setItem(
@@ -716,7 +732,6 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when messages are added
     useEffect(() => {
-        console.log('useEffect: messages')
         if (state.messages.length > 0) {
             console.log('storing', state.messages.length, 'messages')
             AsyncStorage.setItem(
