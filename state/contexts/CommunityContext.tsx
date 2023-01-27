@@ -549,6 +549,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
 
         // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
+            try {
             if (stanza.is('presence')) {
                 // ignore if there is no presence data
                 const user = stanza.getChild('x')
@@ -591,7 +592,9 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     if (!bodyText) return
 
                     const groupMessageJson = stanza.getChildText('gm')
-                    const parsedMessage = JSON.parse(groupMessageJson as string)
+                        const parsedMessage = JSON.parse(
+                            groupMessageJson as string,
+                        )
                     const newMessage = new Message({
                         ...parsedMessage,
                         receivedAt: Date.now() / 1000,
@@ -656,6 +659,9 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         dispatch(updateGroupMessagePreview(newMessage))
                     }
                 }
+                }
+            } catch (error) {
+                console.error('Error parsing XMPP stanza', error)
             }
         })
 
@@ -665,7 +671,11 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         })
         xmpp.on('online', async _address => {
             // Send a presence message
-            await xmpp.send(xml('presence'))
+            try {
+                xmpp.send(xml('presence'))
+            } catch (error) {
+                console.error('Error sending XMPP presence', error)
+            }
 
             dispatch(changeUserIsOnline(true))
             if (xmpp.jid) {
