@@ -42,11 +42,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
             setInvoice(newInvoice)
         }
         if (generatingInvoice) {
-            // Need this because UI thread gets blocked
-            // Is there a cleaner way to do this?
-            setTimeout(() => {
-                createNewInvoice()
-            }, 1)
+            createNewInvoice()
         }
     }, [amount, generateInvoice, generatingInvoice, memo])
 
