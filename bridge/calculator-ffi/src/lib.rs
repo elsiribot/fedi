@@ -903,7 +903,7 @@ mod tests {
         //     r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#,
         // );
         let connect_string = String::from(
-            r#"{"members":[[0,"wss://alpha.costa-regtest.dev.fedibtc.com/"],[1,"wss://beta.costa-regtest.dev.fedibtc.com/"],[2,"wss://charlie.costa-regtest.dev.fedibtc.com/"],[3,"wss://delta.costa-regtest.dev.fedibtc.com/"]]}"#,
+            r#"{"members":[[0,"wss://alpha.regtest-1.dev.fedibtc.com/"],[1,"wss://beta.regtest-1.dev.fedibtc.com/"],[2,"wss://charlie.regtest-1.dev.fedibtc.com/"],[3,"wss://delta.regtest-1.dev.fedibtc.com/"]]}"#,
         );
         let payload = serde_json::to_string(&JoinFederationPayload { connect_string })?;
         let result = handle_join_federation(payload).await.unwrap();
@@ -978,7 +978,8 @@ mod tests {
             info!("initial mnemnoic {:?}", &words);
 
             // Upload backup
-            let video_file_path = PathBuf::from("/Users/justin/fedi/bridge/fixtures/backup.fedi");
+            let video_file_path =
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
             let video_file_contents = fs::read(&video_file_path)?;
             let payload = serde_json::to_string(&UploadBackupFilePayload {
                 video_file_path,
@@ -1019,14 +1020,16 @@ mod tests {
             let _ = VerificationDocument::from_raw(&contents);
             assert_eq!(contents, video_file_contents);
 
-            // Guardian approves
+            // 3 guardians approves
             let payload = serde_json::to_string(&ApproveSocialRecoveryRequestPayload {
                 recovery_id: recovery_id.clone(),
                 federation_id: federation.id(),
             })?;
-            handle_approve_social_recovery_request(payload)
-                .await
-                .unwrap();
+            for _ in 0..3 {
+                handle_approve_social_recovery_request(payload.clone())
+                    .await
+                    .unwrap();
+            }
 
             // Member checks approval status
             let payload = serde_json::to_string(&SocialRecoveryApprovalsPayload {
