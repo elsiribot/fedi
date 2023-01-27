@@ -35,7 +35,7 @@ export type SitesStackParamList = {
 }
 export type HomeTabsParamList = {
     Admin: undefined
-    Community: undefined
+    Chat: undefined
     Sites: undefined
     Wallet: { offline: boolean }
 }

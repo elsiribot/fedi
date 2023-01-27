@@ -5,12 +5,7 @@ import { t } from 'i18next'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import {
-    CogSvg,
-    FediLogoIconSvg,
-    GlobeSvg,
-    WalletSvg,
-} from '../assets/images/svgs'
+import { ChatSvg, CogSvg, GlobeSvg, WalletSvg } from '../assets/images/svgs'
 
 import CommunityHeader from '../components/feature/community/CommunityHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
@@ -76,9 +71,9 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                                     width={theme.sizes.sm}
                                 />
                             )
-                        case 'Community':
+                        case 'Chat':
                             return (
-                                <FediLogoIconSvg
+                                <ChatSvg
                                     height={theme.sizes.sm}
                                     width={theme.sizes.sm}
                                 />
@@ -124,7 +119,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 {props => <Wallet {...props} offline={offline} />}
             </Tab.Screen>
             <Tab.Screen
-                name="Community"
+                name="Chat"
                 component={Community}
                 options={() => ({
                     header: () => (
