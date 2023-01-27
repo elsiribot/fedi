@@ -38,18 +38,29 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
             try {
                 const credentials = await getXmppCredentials()
                 const { password } = credentials
+                const normalizedUsername = username.toLowerCase()
                 const credentialsAreValid = await checkXmppUser(
-                    username,
+                    normalizedUsername,
                     password,
                 )
                 if (credentialsAreValid) {
                     // TODO: store the password or always fetch from bridge?
-                    dispatch(updateFederationCredentials(username, password))
-                    backupXmppUsername(username)
+                    dispatch(
+                        updateFederationCredentials(
+                            normalizedUsername,
+                            password,
+                        ),
+                    )
+                    backupXmppUsername(normalizedUsername)
                 } else {
-                    await registerXmppUser(username, password)
-                    dispatch(updateFederationCredentials(username, password))
-                    backupXmppUsername(username)
+                    await registerXmppUser(normalizedUsername, password)
+                    dispatch(
+                        updateFederationCredentials(
+                            normalizedUsername,
+                            password,
+                        ),
+                    )
+                    backupXmppUsername(normalizedUsername)
                 }
             } catch (error) {
                 console.info('error', error)

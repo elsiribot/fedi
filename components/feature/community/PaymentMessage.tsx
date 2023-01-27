@@ -19,7 +19,9 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     const { authenticatedMember } = state
     const { payment } = message
 
-    const sentByMe = message.sentBy?.username === authenticatedMember?.username
+    const sentByMe =
+        message.sentBy?.username.toLowerCase() ===
+        authenticatedMember?.username.toLowerCase()
 
     // This is for receiver-initated payments so (counter-intuitively) if I
     // sent the OUTGOING message (payment request), then the payment
