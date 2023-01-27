@@ -87,8 +87,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             if (username != null) {
                 const credentials = await getXmppCredentials()
                 const { password } = credentials
-                dispatch(updateFederationCredentials(username, password))
-                backupXmppUsername(username)
+                const normalizedUsername = username.toLowerCase()
+                dispatch(
+                    updateFederationCredentials(normalizedUsername, password),
+                )
+                backupXmppUsername(normalizedUsername)
             }
             navigation.navigate('SocialRecoverySuccess')
         } catch (e) {

@@ -188,10 +188,14 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                         if (username != null) {
                             const credentials = await getXmppCredentials()
                             const { password } = credentials
+                            const normalizedUsername = username.toLowerCase()
                             dispatch(
-                                updateFederationCredentials(username, password),
+                                updateFederationCredentials(
+                                    normalizedUsername,
+                                    password,
+                                ),
                             )
-                            backupXmppUsername(username)
+                            backupXmppUsername(normalizedUsername)
                         }
                         setIsLoading(false)
                         navigation.replace('PersonalRecoverySuccess')
