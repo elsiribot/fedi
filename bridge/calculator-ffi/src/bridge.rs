@@ -450,7 +450,8 @@ impl Federation {
 
         // FIXME: actually check that a refund happened
         if result.is_err() {
-            self.send_federation_notification().await;
+            // FIXME: this is deceiving ... we're fetching a refund here
+            self.send_federation_event().await;
         }
 
         Ok(result?)
@@ -470,7 +471,6 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.send_federation_notification().await;
                 self.save_transaction(&Transaction::lightning(
                     TransactionDirection::Send,
                     fedimint_api::Amount::from_msats(
@@ -687,7 +687,6 @@ impl Federation {
                 }
 
                 tracing::info!("peg-in successful for {}", address);
-                self.send_federation_notification().await;
                 // FIXME: helper to replace existing transaction
                 let mut tx = self
                     .get_transaction(item.tx_hash.to_string())
@@ -755,7 +754,8 @@ impl Federation {
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         // notify UI
-        self.transaction_event(&tx);
+        self.send_transaction_event(&tx);
+        self.send_federation_event().await;
     }
 
     /// Get transaction from DB
@@ -849,7 +849,7 @@ impl Federation {
     //
 
     /// Send whenever the balance or social recovery state changes
-    pub async fn send_federation_notification(&self) {
+    pub async fn send_federation_event(&self) {
         self.client.fetch_all_coins().await;
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
@@ -857,7 +857,7 @@ impl Federation {
     }
 
     /// Notify React Native that we've observed new or updated transaction
-    fn transaction_event(&self, tx: &Transaction) {
+    fn send_transaction_event(&self, tx: &Transaction) {
         let event = Event::transaction(self.id(), tx.clone());
         self.event_sink.event(&event);
     }
@@ -889,7 +889,7 @@ impl Federation {
         }
 
         // FIXME: should we still do this?
-        self.send_federation_notification().await;
+        self.send_federation_event().await;
         Ok(username)
     }
 
@@ -1247,7 +1247,6 @@ impl Federation {
                         tracing::info!("completed payment: {:?}", &payment_hash);
                         fed.update_payment_status(payment_hash, PaymentStatus::Paid)
                             .await;
-                        fed.send_federation_notification().await;
                         let amount = fedimint_api::Amount::from_msats(
                             payment.invoice.amount_milli_satoshis().expect(
                                 "assuming we only receive payments for invoices with amount",
@@ -1312,7 +1311,7 @@ impl Federation {
                     {
                         Ok(_) => {
                             tracing::info!("got refund");
-                            fed.send_federation_notification().await;
+                            fed.send_federation_event().await;
                         }
                         Err(e) => tracing::info!("refund failed {:?}", e),
                     };
