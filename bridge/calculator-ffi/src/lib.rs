@@ -26,7 +26,7 @@ use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
-use tracing::{debug, info, metadata::LevelFilter};
+use tracing::{debug, error, info, metadata::LevelFilter};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
@@ -67,7 +67,11 @@ async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
     let log_level = LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::INFO);
     RUNTIME.block_on(async {
-        fedimint_initialize_async(data_dir, log_level, event_sink).await;
+        fedimint_initialize_async(data_dir, log_level, event_sink)
+            .await
+            .unwrap_or_else(|e| {
+                error!("Failed to initialize the bridge: {:?}", e);
+            });
     })
 }
 
@@ -771,7 +775,7 @@ async fn handle_set_username(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let federation = get_federation(&federation_id).await;
+    let federation = get_federation(&federation_id).await?;
     federation.set_username(username).await;
     federation.back_up_ecash_to_federation().await?;
     Ok(json!({ "result": () }).to_string())
