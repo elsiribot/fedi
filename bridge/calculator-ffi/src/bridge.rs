@@ -449,6 +449,45 @@ impl Federation {
         Ok(result?)
     }
 
+    pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+        // validate that we can pay this invoice
+        self.can_pay_invoice(&invoice).await?;
+
+        match self.pay_invoice_inner(&invoice).await {
+            Ok(_) => {
+                let fee = Some(hacky_lightning_invoice_fee(invoice)?);
+                self.save_payment(&Payment::new(
+                    invoice.clone(),
+                    PaymentStatus::Paid,
+                    PaymentDirection::Outgoing,
+                ))
+                .await;
+                self.send_federation_notification().await;
+                self.save_transaction(&Transaction::lightning(
+                    TransactionDirection::Send,
+                    fedimint_api::Amount::from_msats(
+                        invoice
+                            .amount_milli_satoshis()
+                            .context("assuming invoice has amount")?,
+                    ),
+                    fee,
+                    invoice.clone(),
+                ))
+                .await;
+                Ok(())
+            }
+            Err(e) => {
+                self.save_payment(&Payment::new(
+                    invoice.clone(),
+                    PaymentStatus::Failed,
+                    PaymentDirection::Outgoing,
+                ))
+                .await;
+                Err(e)
+            }
+        }
+    }
+
     // TODO: make sure we aren't trying to pay invoices twice ...
     pub fn can_pay_address(&self, address: &Address) -> Result<()> {
         if self.network() != address.network {
@@ -612,45 +651,6 @@ impl Federation {
                 // parent span to display the span too in logs
                 .instrument(info_span!(parent: Span::current(), "attempt pegin")),
             );
-        }
-    }
-
-    pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        // validate that we can pay this invoice
-        self.can_pay_invoice(&invoice).await?;
-
-        match self.pay_invoice_inner(&invoice).await {
-            Ok(_) => {
-                let fee = Some(hacky_lightning_invoice_fee(invoice)?);
-                self.save_payment(&Payment::new(
-                    invoice.clone(),
-                    PaymentStatus::Paid,
-                    PaymentDirection::Outgoing,
-                ))
-                .await;
-                self.send_federation_notification().await;
-                self.save_transaction(&Transaction::lightning(
-                    TransactionDirection::Send,
-                    fedimint_api::Amount::from_msats(
-                        invoice
-                            .amount_milli_satoshis()
-                            .context("assuming invoice has amount")?,
-                    ),
-                    fee,
-                    invoice.clone(),
-                ))
-                .await;
-                Ok(())
-            }
-            Err(e) => {
-                self.save_payment(&Payment::new(
-                    invoice.clone(),
-                    PaymentStatus::Failed,
-                    PaymentDirection::Outgoing,
-                ))
-                .await;
-                Err(e)
-            }
         }
     }
 
