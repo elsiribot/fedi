@@ -7,7 +7,12 @@ pub mod recovery;
 pub mod tx;
 pub mod types;
 
-use std::{fs, path::PathBuf, str::FromStr, sync::Arc};
+use std::{
+    fs,
+    path::PathBuf,
+    str::FromStr,
+    sync::{atomic::AtomicU64, Arc},
+};
 
 use bitcoin::{secp256k1::Message, Address};
 use event::{EventSink, SocialRecoveryEvent};
@@ -26,7 +31,7 @@ use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, metadata::LevelFilter};
+use tracing::{error, info, info_span, Instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation};
 
@@ -65,9 +70,8 @@ async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
 
 // TODO: send error message
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
-    let log_level = LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::INFO);
     RUNTIME.block_on(async {
-        fedimint_initialize_async(data_dir, log_level, event_sink)
+        fedimint_initialize_async(data_dir, &log_level, event_sink)
             .await
             .unwrap_or_else(|e| {
                 error!("Failed to initialize the bridge: {:?}", e);
@@ -77,7 +81,7 @@ pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<
 
 async fn fedimint_initialize_async(
     data_dir: String,
-    log_level: LevelFilter,
+    log_level: &str,
     event_sink: Box<dyn EventSink>,
 ) -> anyhow::Result<()> {
     let data_dir = PathBuf::from(data_dir);
@@ -94,6 +98,7 @@ async fn fedimint_initialize_async(
 }
 
 fn rpc_error(description: &str) -> String {
+    tracing::error!(?description, "rpc_error");
     return json!({ "error": description }).to_string();
 }
 
@@ -782,50 +787,59 @@ async fn handle_set_username(payload: String) -> anyhow::Result<String> {
 }
 
 pub fn fedimint_rpc(method: String, payload: String) -> String {
-    RUNTIME.block_on(async {
-        debug!("RPC {} {}", method, payload);
-        let result = match method.as_ref() {
-            "listTransactions" => handle_list_transactions(payload).await,
-            "updateTransactionNotes" => handle_update_transaction_notes(payload).await,
-            "joinFederation" => handle_join_federation(payload).await,
-            "listFederations" => handle_list_federations().await,
-            "generateInvoice" => handle_generate_invoice(payload).await,
-            "decodeInvoice" => handle_decode_invoice(payload).await,
-            "payInvoice" => handle_pay_invoice(payload).await,
-            "generateAddress" => handle_generate_address(payload).await,
-            "payAddress" => handle_pay_address(payload).await,
-            "generateEcash" => handle_generate_ecash(payload).await,
-            "receiveEcash" => handle_receive_ecash(payload).await,
-            "validateEcash" => handle_validate_ecash(payload).await,
-            "addressOrInvoice" => handle_address_or_invoice(payload).await,
-            "listGateways" => handle_list_gateways(payload).await,
-            "switchGateway" => handle_switch_gateway(payload).await,
-            "getMnemonic" => handle_get_mnemonic(payload).await,
-            "recoverFromMnemonic" => handle_recover_from_mnemonic(payload).await,
-            "leaveFederation" => handle_leave_federation(payload).await,
-            // social recovery
-            "uploadBackupFile" => handle_upload_backup_file(payload).await,
-            "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
-            "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
-            "recoveryQr" => handle_recovery_qr(payload).await,
-            "socialRecoveryApprovals" => handle_social_recovery_approvals(payload).await,
-            "completeSocialRecovery" => handle_complete_social_recovery(payload).await,
-            "socialRecoveryDownloadVerificationDoc" => {
-                handle_social_recovery_download_verification_doc(payload).await
-            }
-            "approveSocialRecoveryRequest" => handle_approve_social_recovery_request(payload).await,
-            // authenticatino
-            "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
-            "xmppCredentials" => handle_xmpp_credentials(payload).await,
-            "backupXmppUsername" => handle_set_username(payload).await,
+    static REQUEST_ID: AtomicU64 = AtomicU64::new(0);
+    let request_id = REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    RUNTIME.block_on(
+        async {
+            info!(?payload, "rpc_payload");
+            let result = match method.as_ref() {
+                "listTransactions" => handle_list_transactions(payload).await,
+                "updateTransactionNotes" => handle_update_transaction_notes(payload).await,
+                "joinFederation" => handle_join_federation(payload).await,
+                "listFederations" => handle_list_federations().await,
+                "generateInvoice" => handle_generate_invoice(payload).await,
+                "decodeInvoice" => handle_decode_invoice(payload).await,
+                "payInvoice" => handle_pay_invoice(payload).await,
+                "generateAddress" => handle_generate_address(payload).await,
+                "payAddress" => handle_pay_address(payload).await,
+                "generateEcash" => handle_generate_ecash(payload).await,
+                "receiveEcash" => handle_receive_ecash(payload).await,
+                "validateEcash" => handle_validate_ecash(payload).await,
+                "addressOrInvoice" => handle_address_or_invoice(payload).await,
+                "listGateways" => handle_list_gateways(payload).await,
+                "switchGateway" => handle_switch_gateway(payload).await,
+                "getMnemonic" => handle_get_mnemonic(payload).await,
+                "recoverFromMnemonic" => handle_recover_from_mnemonic(payload).await,
+                "leaveFederation" => handle_leave_federation(payload).await,
+                // social recovery
+                "uploadBackupFile" => handle_upload_backup_file(payload).await,
+                "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
+                "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
+                "recoveryQr" => handle_recovery_qr(payload).await,
+                "socialRecoveryApprovals" => handle_social_recovery_approvals(payload).await,
+                "completeSocialRecovery" => handle_complete_social_recovery(payload).await,
+                "socialRecoveryDownloadVerificationDoc" => {
+                    handle_social_recovery_download_verification_doc(payload).await
+                }
+                "approveSocialRecoveryRequest" => {
+                    handle_approve_social_recovery_request(payload).await
+                }
+                // authenticatino
+                "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
+                "xmppCredentials" => handle_xmpp_credentials(payload).await,
+                "backupXmppUsername" => handle_set_username(payload).await,
 
-            other => Err(anyhow::anyhow!(format!(
-                "Unrecognized RPC command: {}",
-                other
-            ))),
-        };
-        return result.unwrap_or_else(|e| rpc_error(&e.to_string()));
-    })
+                other => Err(anyhow::anyhow!(format!(
+                    "Unrecognized RPC command: {}",
+                    other
+                ))),
+            };
+            let response = result.unwrap_or_else(|e| rpc_error(&e.to_string()));
+            info!(?response, "rpc_response");
+            response
+        }
+        .instrument(info_span!("rpc_request", %request_id, %method)),
+    )
 }
 
 // TODO: Generate these dynamically from the
@@ -894,8 +908,7 @@ mod tests {
         // Intialize bridge
         let event_sink = FakeEventSink::new();
         // TODO: how to grab log level from environment?
-        fedimint_initialize_async(create_data_dir(), LevelFilter::INFO, Box::new(event_sink))
-            .await?;
+        fedimint_initialize_async(create_data_dir(), "info", Box::new(event_sink)).await?;
 
         // Join federation
         // ngrok

@@ -19,6 +19,8 @@ export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
 ./build.sh
 ```
 
+## [Debugging](./debugging.md)
+
 ## Troubleshooting
 
 If you see `ld: error: unable to find library -lgcc` error, create these 4 files:
