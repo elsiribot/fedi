@@ -9,6 +9,7 @@ const JoinGroupHeader: React.FC<{}> = () => {
 
     return (
         <Header
+            backButton
             headerCenter={
                 <Text bold>{t('feature.community.join-a-group')}</Text>
             }
