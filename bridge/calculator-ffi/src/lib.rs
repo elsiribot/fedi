@@ -8,7 +8,6 @@ pub mod tx;
 pub mod types;
 
 use std::{
-    fs,
     path::PathBuf,
     str::FromStr,
     sync::{atomic::AtomicU64, Arc},
@@ -30,6 +29,7 @@ use mint_client::{mint::SpendableNote, social::RecoveryFile};
 use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tokio::fs;
 use tokio::sync::Mutex;
 use tracing::{error, info, info_span, Instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
@@ -588,7 +588,7 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
-    let contents = fs::read(path)?;
+    let contents = fs::read(path).await?;
     // TODO: check that the federation matches and everything
     // also fixed by using federation-specific location
     let valid = match RecoveryFile::from_bytes(&contents) {
@@ -617,7 +617,7 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
     };
     // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
     let recovery_file_path = get_bridge().await?.data_dir.join(RECOVERY_FILENAME);
-    let contents = fs::read(recovery_file_path)?;
+    let contents = fs::read(recovery_file_path).await?;
     let recovery_file = RecoveryFile::from_bytes(&contents)?;
 
     // Return QR code contents
@@ -965,7 +965,7 @@ mod tests {
             // Upload backup
             let video_file_path =
                 PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
-            let video_file_contents = fs::read(&video_file_path)?;
+            let video_file_contents = fs::read(&video_file_path).await?;
             let payload = serde_json::to_string(&UploadBackupFilePayload {
                 video_file_path,
                 federation_id: federation.id(),
@@ -1001,7 +1001,7 @@ mod tests {
                 .unwrap();
             let verification_doc_path: PathBuf =
                 serde_json::from_value(get_result(result)).unwrap();
-            let contents = fs::read(verification_doc_path)?;
+            let contents = fs::read(verification_doc_path).await?;
             let _ = VerificationDocument::from_raw(&contents);
             assert_eq!(contents, video_file_contents);
 
