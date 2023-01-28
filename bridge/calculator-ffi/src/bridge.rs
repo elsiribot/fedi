@@ -1137,15 +1137,6 @@ impl Federation {
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} balance poller", self.name()),
-                |task_handle| async move {
-                    fed.poll_federation(task_handle).await;
-                },
-            )
-            .await;
-        let fed = self.clone();
-        self.task_group
-            .spawn(
                 format!("{} peg-in poller", self.name()),
                 |task_handle| async move {
                     fed.poll_peg_ins(task_handle).await;
@@ -1209,19 +1200,6 @@ impl Federation {
                 self.attempt_pegins().await;
                 last_consensus_block_height = current_block_height;
             }
-            fedimint_api::task::sleep(Duration::from_secs(1)).await;
-        }
-    }
-
-    /// Announces balance to event emitter every second
-    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
-    pub async fn poll_federation(&self, task_handle: TaskHandle) {
-        loop {
-            if task_handle.is_shutting_down() {
-                return;
-            }
-
-            self.send_federation_notification().await;
             fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
