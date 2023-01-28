@@ -17,7 +17,7 @@ use std::{
 use bitcoin::{secp256k1::Message, Address};
 use event::{EventSink, SocialRecoveryEvent};
 use fedi_social::common::RecoveryId;
-use fedimint_api::{Amount, TieredMulti};
+use fedimint_api::Amount;
 use lazy_static::lazy_static;
 
 uniffi_macros::include_scaffolding!("calculator");
@@ -294,25 +294,9 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&federation_id).await?;
-    let rng = rand::rngs::OsRng;
-    let ecash: Vec<NoteWithAmount> = federation
-        .client
-        .spend_ecash(amount, rng)
-        .await?
-        .iter_items()
-        .map(|(amount, note)| NoteWithAmount {
-            amount,
-            note: note.clone(),
-        })
-        .collect();
+    let ecash = federation.generate_ecash(amount).await?;
     // TODO: this should be serialized with Encodable, not Serializable
     let ecash = serde_json::to_string(&ecash).context("could not serialize")?;
-    federation
-        .save_transaction(&Transaction::offline(
-            tx::TransactionDirection::Send,
-            amount,
-        ))
-        .await;
     Ok(json!({ "result": ecash }).to_string())
 }
 
@@ -332,17 +316,8 @@ async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&federation_id).await?;
-    let rng = rand::rngs::OsRng;
-    let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
-    let tiered_multi = TieredMulti::from_iter(input);
-    federation.client.reissue(tiered_multi.clone(), rng).await?;
-    federation
-        .save_transaction(&Transaction::offline(
-            tx::TransactionDirection::Receive,
-            tiered_multi.total_amount(),
-        ))
-        .await;
-    Ok(json!({ "result": { "amount": tiered_multi.total_amount() } }).to_string())
+    let amount = federation.receive_ecash(ecash).await?;
+    Ok(json!({ "result": { "amount": amount } }).to_string())
 }
 
 // FIXME: this is the same as ReceiveOfflinePayload ...
@@ -362,14 +337,7 @@ async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&federation_id).await?;
-    let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
-    let tiered_multi = TieredMulti::from_iter(input);
-    let valid = federation
-        .client
-        .validate_note_signatures(&tiered_multi)
-        .await
-        .is_ok();
-    let amount = tiered_multi.total_amount();
+    let (valid, amount) = federation.validate_ecash(ecash).await;
     Ok(json!({ "result": { "valid": valid, "amount": amount }}).to_string())
 }
 
