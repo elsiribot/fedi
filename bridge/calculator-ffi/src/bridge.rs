@@ -4,7 +4,7 @@ use std::{
     fs::{self, File},
     path::{Path, PathBuf},
     sync::Arc,
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -1166,20 +1166,19 @@ impl Federation {
     /// Make an ecash backup once every minute
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut ticks = 600;
+        let mut last_poll = SystemTime::now();
+
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
-
-            // Run every 10 minutes
-            if ticks < 600 {
-                ticks += 1;
+            // Run once per minute
+            if last_poll.elapsed().expect("clock went backwards").as_secs() < 600 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
+            last_poll = SystemTime::now();
 
-            ticks = 0;
             match self.back_up_ecash_to_federation().await {
                 Ok(_) => info!("ecash backup complete"),
                 Err(_) => error!("ecash backup failed"),
@@ -1276,19 +1275,18 @@ impl Federation {
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
-        let mut ticks = 0;
+        let mut last_poll = SystemTime::now();
 
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
             // Run once per minute
-            if ticks < 60 {
-                ticks += 1;
+            if last_poll.elapsed().expect("clock went backwards").as_secs() < 60 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            ticks = 0;
+            last_poll = SystemTime::now();
 
             let consensus_block_height = fed.fetch_consensus_block_height().await.unwrap_or(0);
             let contracts = fed
