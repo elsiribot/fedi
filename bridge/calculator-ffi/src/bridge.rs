@@ -13,14 +13,14 @@ use crate::{
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     recovery::{SocialRecoveryApproval, SocialRecoveryQr, SocialRecoveryStateKey},
     tx::{
-        IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
+        self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
     },
     types::{
         federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
         LnurlSignedMessage, XmppCredentials,
     },
-    EventSinkWrapper,
+    EventSinkWrapper, NoteWithAmount,
 };
 use anyhow::{anyhow, Context, Result};
 use bitcoin::{
@@ -30,7 +30,7 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::common::{RecoveryId, VerificationDocument};
-use fedimint_api::{config::ConfigResponse, PeerId};
+use fedimint_api::{config::ConfigResponse, Amount, PeerId, TieredMulti};
 use fedimint_api::{db::Database, task::TaskHandle};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
@@ -48,7 +48,7 @@ use mint_client::{
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, info_span, Instrument, Span, instrument};
+use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
 type FederationId = String;
 
@@ -263,48 +263,7 @@ impl Federation {
         }
     }
 
-    pub fn name(&self) -> String {
-        self.client.config().0.federation_name.clone()
-    }
-
-    // FIXME: move this to actually using config.federation_id
-    pub fn id(&self) -> String {
-        self.client.config().0.federation_name.clone()
-    }
-
-    fn txout_proof_url(&self, txid: &Txid) -> Result<String> {
-        match self.network() {
-            Network::Regtest => Ok(format!("https://testfed.xyz/proof/{}", txid)),
-            Network::Bitcoin => Ok(format!(
-                "https://blockstream.info/api/tx/{}/merkleblock-proof",
-                txid
-            )),
-            network => Err(anyhow!(
-                "on-chain deposts not supported on this {}",
-                network
-            )),
-        }
-    }
-
-    fn electrum_url(&self) -> Result<String> {
-        match self.network() {
-            Network::Regtest => Ok("188.166.55.8:60401".into()),
-            Network::Bitcoin => Ok("tcp://electrum.blockstream.info:50001".into()),
-            network => Err(anyhow!(
-                "on-chain deposts not supported on this {}",
-                network
-            )),
-        }
-    }
-
-    async fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.client.db().begin_transaction().await
-    }
-
-    pub fn network(&self) -> bitcoin::Network {
-        self.client.wallet_client().config.network
-    }
-
+    /// Download federation configs using a "connection string". Save client config to `data_dir`.
     pub async fn join(
         connect_string: String,
         data_dir: PathBuf,
@@ -359,9 +318,29 @@ impl Federation {
         Ok(Self::new(client, event_sink, task_group, username))
     }
 
+    //
+    // Helpers
+    //
+    pub fn name(&self) -> String {
+        self.client.config().0.federation_name.clone()
+    }
+
+    // FIXME: move this to actually using config.federation_id
+    pub fn id(&self) -> String {
+        self.client.config().0.federation_name.clone()
+    }
+
+    pub fn network(&self) -> bitcoin::Network {
+        self.client.wallet_client().config.network
+    }
+
     pub fn normalized_federation_name(&self) -> String {
         self.name().replace(" ", "_")
     }
+
+    //
+    // Authentication & cryptography
+    //
 
     pub async fn get_username(&self) -> Option<String> {
         self.username.lock().await.clone()
@@ -371,12 +350,8 @@ impl Federation {
         *self.username.lock().await = Some(username);
     }
 
-    pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
-        let federation_name = self.normalized_federation_name();
-        datadir.join(format!("{}_{}", federation_name, RECOVERY_FILENAME))
-    }
-
-    /// signs a message with "node pubkey" ... used in LNURL RPC call
+    /// Sign LNURL message using a key derived from client secret
+    /// TODO: use different key per "site"
     pub fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
         let secret = self.client.root_secret.child_key(LNURL_CHILD_ID);
         let secp = Secp256k1::new();
@@ -386,7 +361,8 @@ impl Federation {
         LnurlSignedMessage { signature, pubkey }
     }
 
-    /// Returns (username, password)
+    /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
+    /// after recovering wallet.
     pub async fn xmpp_credentials(&self) -> XmppCredentials {
         let xmpp_secret = self.client.root_secret.child_key(XMPP_CHILD_ID);
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
@@ -395,11 +371,11 @@ impl Federation {
         }
     }
 
-    pub async fn generate_address(&self) -> Address {
-        let rng = rand::rngs::OsRng;
-        self.client.get_new_pegin_address(rng).await
-    }
+    //
+    // Lightning
+    //
 
+    /// Generate lightning invoice and save it to the database
     pub async fn generate_invoice(
         &self,
         amount: fedimint_api::Amount,
@@ -419,11 +395,42 @@ impl Federation {
             PaymentDirection::Incoming,
         ))
         .await;
-        tracing::info!("saved invoice to db");
 
         Ok(confirmed_invoice.invoice)
     }
 
+    /// Check whether lightning invoice is safe to pay
+    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+        // We haven't already paid it
+        if self
+            .list_payments()
+            .await
+            .iter()
+            .filter(|payment| payment.outgoing() && &payment.invoice == invoice)
+            .next()
+            .is_some()
+        {
+            return Err(anyhow!("Can't pay invoice twice"));
+        }
+
+        // Has an amount
+        if invoice.amount_milli_satoshis().is_none() {
+            return Err(anyhow!("Invoice is missing amount"));
+        }
+
+        // Same network
+        if network_to_currency(self.network()) != invoice.currency() {
+            return Err(anyhow!(format!(
+                "Invoice is for wrong network. Expected {}, got {}",
+                network_to_currency(self.network()),
+                invoice.currency()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Private method to pay a lightning invoice via federation
     async fn pay_invoice_inner(&self, invoice: &Invoice) -> Result<()> {
         let mut rng = rand::rngs::OsRng;
 
@@ -449,6 +456,7 @@ impl Federation {
         Ok(result?)
     }
 
+    /// Check whether lightning invoice can be paid, pay it, save results in DB
     pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<()> {
         // validate that we can pay this invoice
         self.can_pay_invoice(&invoice).await?;
@@ -488,7 +496,97 @@ impl Federation {
         }
     }
 
-    // TODO: make sure we aren't trying to pay invoices twice ...
+    //
+    // Ecash
+    //
+
+    /// Generate ecash. It's immediately removed from client DB. Transaction saved to DB.
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<Vec<NoteWithAmount>> {
+        let rng = rand::rngs::OsRng;
+        let ecash: Vec<NoteWithAmount> = self
+            .client
+            .spend_ecash(amount, rng)
+            .await?
+            .iter_items()
+            .map(|(amount, note)| NoteWithAmount {
+                amount,
+                note: note.clone(),
+            })
+            .collect();
+        self.save_transaction(&Transaction::offline(
+            tx::TransactionDirection::Send,
+            amount,
+        ))
+        .await;
+        Ok(ecash)
+    }
+
+    /// Validate that string is valid ecash and signed by federation.
+    /// TODO: check that it's unspent in the federation.
+    pub async fn validate_ecash(&self, ecash: Vec<NoteWithAmount>) -> (bool, Amount) {
+        let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
+        let tiered_multi = TieredMulti::from_iter(input);
+        let valid = self
+            .client
+            .validate_note_signatures(&tiered_multi)
+            .await
+            .is_ok();
+        let amount = tiered_multi.total_amount();
+        (valid, amount)
+    }
+
+    /// Receive ecash into wallet. Save transaction to DB.
+    pub async fn receive_ecash(&self, ecash: Vec<NoteWithAmount>) -> Result<Amount> {
+        let rng = rand::rngs::OsRng;
+        let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
+        let tiered_multi = TieredMulti::from_iter(input);
+        self.client.reissue(tiered_multi.clone(), rng).await?;
+        self.save_transaction(&Transaction::offline(
+            tx::TransactionDirection::Receive,
+            tiered_multi.total_amount(),
+        ))
+        .await;
+        Ok(tiered_multi.total_amount())
+    }
+
+    //
+    // On-chain
+    //
+
+    /// Generate on-chain receive address
+    pub async fn generate_address(&self) -> Address {
+        let rng = rand::rngs::OsRng;
+        self.client.get_new_pegin_address(rng).await
+    }
+
+    /// Hack to lookup url where we can fetch txoutproofs
+    fn txout_proof_url(&self, txid: &Txid) -> Result<String> {
+        match self.network() {
+            Network::Regtest => Ok(format!("https://testfed.xyz/proof/{}", txid)),
+            Network::Bitcoin => Ok(format!(
+                "https://blockstream.info/api/tx/{}/merkleblock-proof",
+                txid
+            )),
+            network => Err(anyhow!(
+                "on-chain deposts not supported on this {}",
+                network
+            )),
+        }
+    }
+
+    /// Hack to lookup letrum server URL used for handling peg-ins
+    fn electrum_url(&self) -> Result<String> {
+        match self.network() {
+            Network::Regtest => Ok("188.166.55.8:60401".into()),
+            Network::Bitcoin => Ok("tcp://electrum.blockstream.info:50001".into()),
+            network => Err(anyhow!(
+                "on-chain deposts not supported on this {}",
+                network
+            )),
+        }
+    }
+
+    /// Check that we can safely pay on-chain bitcoin address
     pub fn can_pay_address(&self, address: &Address) -> Result<()> {
         if self.network() != address.network {
             return Err(anyhow!(format!(
@@ -499,36 +597,19 @@ impl Federation {
         }
         Ok(())
     }
-    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        // Check that we haven't already paid it
-        if self
-            .list_payments()
-            .await
-            .iter()
-            .filter(|payment| payment.outgoing() && &payment.invoice == invoice)
-            .next()
-            .is_some()
-        {
-            return Err(anyhow!("Can't pay invoice twice"));
-        }
 
-        // Check that it has an amount;
-        if invoice.amount_milli_satoshis().is_none() {
-            return Err(anyhow!("Invoice is missing amount"));
-        }
-
-        // Check that we're on the same network
-        if network_to_currency(self.network()) != invoice.currency() {
-            return Err(anyhow!(format!(
-                "Invoice is for wrong network. Expected {}, got {}",
-                network_to_currency(self.network()),
-                invoice.currency()
-            )));
-        }
-
-        Ok(())
+    /// Fetch consensus block height from gederatino
+    async fn fetch_consensus_block_height(&self) -> anyhow::Result<u64> {
+        Ok(self
+            .client
+            .wallet_client()
+            .context
+            .api
+            .fetch_consensus_block_height()
+            .await?)
     }
 
+    /// List all the scripts of addresses we've generated. Used to execute peg-ins.
     pub async fn list_scripts(&self) -> Vec<Script> {
         self.dbtx()
             .await
@@ -541,6 +622,7 @@ impl Federation {
             .collect()
     }
 
+    /// Execute peg-in for given script
     pub async fn pegin_script(&self, script: &Script) -> Result<()> {
         let electrum = Client::new(&self.electrum_url()?)?;
         let history = electrum.script_get_history(&script)?;
@@ -548,7 +630,7 @@ impl Federation {
             let url = self.txout_proof_url(&item.tx_hash)?;
             if let Ok(raw_txout_proof) = reqwest::get(url).await?.text().await {
                 // Skip if we've already claimed it
-                match self.fetch_transaction(item.tx_hash.to_string()).await {
+                match self.get_transaction(item.tx_hash.to_string()).await {
                     None => (),
                     Some(tx) => match tx.bitcoin {
                         None => (),
@@ -587,7 +669,7 @@ impl Federation {
                 {
                     // Save pending tx if we haven't already, move on to next one
                     if self
-                        .fetch_transaction(item.tx_hash.to_string())
+                        .get_transaction(item.tx_hash.to_string())
                         .await
                         .is_none()
                     {
@@ -608,7 +690,7 @@ impl Federation {
                 self.send_federation_notification().await;
                 // FIXME: helper to replace existing transaction
                 let mut tx = self
-                    .fetch_transaction(item.tx_hash.to_string())
+                    .get_transaction(item.tx_hash.to_string())
                     .await
                     .unwrap_or(Transaction::bitcoin(
                         TransactionDirection::Receive,
@@ -629,6 +711,7 @@ impl Federation {
         Ok(())
     }
 
+    /// Attempt to peg-in every script in our DB
     pub async fn attempt_pegins(&self) {
         tracing::info!("attempting pegins");
         let fed = self.clone();
@@ -654,6 +737,16 @@ impl Federation {
         }
     }
 
+    //
+    // Database
+    //
+
+    /// Create database transaction
+    async fn dbtx(&self) -> DatabaseTransaction<'_> {
+        self.client.db().begin_transaction().await
+    }
+
+    /// Save transaction to DB
     pub async fn save_transaction(&self, tx: &Transaction) {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx().await;
@@ -665,7 +758,8 @@ impl Federation {
         self.transaction_event(&tx);
     }
 
-    pub async fn fetch_transaction(&self, id: String) -> Option<Transaction> {
+    /// Get transaction from DB
+    pub async fn get_transaction(&self, id: String) -> Option<Transaction> {
         self.dbtx()
             .await
             .get_value(&TransactionKey(id))
@@ -673,8 +767,9 @@ impl Federation {
             .expect("Db error")
     }
 
+    /// Update "notes" on existing transaction record in the DB
     pub async fn update_transaction_notes(&self, id: String, notes: String) -> Result<()> {
-        match self.fetch_transaction(id).await {
+        match self.get_transaction(id).await {
             Some(mut tx) => {
                 tx.notes = notes;
                 self.save_transaction(&tx).await;
@@ -684,7 +779,7 @@ impl Federation {
         }
     }
 
-    // TODO: pagination
+    /// Return all transactions in DB
     pub async fn list_transactions(&self) -> Vec<Transaction> {
         let mut transactions: Vec<Transaction> = self
             .dbtx()
@@ -698,17 +793,16 @@ impl Federation {
         transactions
     }
 
+    /// Save payment to DB
     pub async fn save_payment(&self, payment: &Payment) {
-        // TODO: need to expose the database
-        tracing::info!("saving payment");
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&PaymentKey(payment.invoice.payment_hash().clone()), payment)
             .await
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
-        tracing::info!("saved payment");
     }
 
+    /// Get all payments from DB
     pub async fn list_payments(&self) -> Vec<Payment> {
         self.dbtx()
             .await
@@ -718,6 +812,7 @@ impl Federation {
             .collect()
     }
 
+    /// Fetch single payment from DB by payment hash
     pub async fn fetch_payment(&self, payment_hash: &sha256::Hash) -> Option<Payment> {
         self.dbtx()
             .await
@@ -726,6 +821,7 @@ impl Federation {
             .expect("Db error")
     }
 
+    /// Update payment status of a payment in the DB
     pub async fn update_payment_status(&self, payment_hash: &sha256::Hash, status: PaymentStatus) {
         if let Some(mut payment) = self.fetch_payment(&payment_hash).await {
             payment.status = status;
@@ -738,6 +834,7 @@ impl Federation {
         // TODO: what to do if this payment doesn't exist?
     }
 
+    /// Check the DB to see if we've already attempted to pay an invoice
     pub async fn already_paid_invoice(&self, invoice: &Invoice) -> bool {
         self.list_payments()
             .await
@@ -747,15 +844,9 @@ impl Federation {
             .is_some()
     }
 
-    async fn block_height(&self) -> anyhow::Result<u64> {
-        Ok(self
-            .client
-            .wallet_client()
-            .context
-            .api
-            .fetch_consensus_block_height()
-            .await?)
-    }
+    //
+    // Events
+    //
 
     /// Send whenever the balance or social recovery state changes
     pub async fn send_federation_notification(&self) {
@@ -765,17 +856,24 @@ impl Federation {
         self.event_sink.event(&event);
     }
 
+    /// Notify React Native that we've observed new or updated transaction
     fn transaction_event(&self, tx: &Transaction) {
         let event = Event::transaction(self.id(), tx.clone());
         self.event_sink.event(&event);
     }
 
+    //
+    // Ecash Recovery
+    //
+
+    /// Get 12 seed words associated with client secret
     pub async fn get_mnemonic(&self) -> Mnemonic {
         let client_secret = self.client.get_client_secret().await;
         // FIXME: use all the entropy
         Mnemonic::from_entropy(&client_secret.entropy())
     }
 
+    /// Restore ecash from federation from current client secret
     pub async fn restore_ecash_from_federation(&self) -> Result<Option<String>> {
         let mut task_group = TaskGroup::new();
         let username = self
@@ -795,6 +893,7 @@ impl Federation {
         Ok(username)
     }
 
+    /// Upload ecash backup to the federation
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
         let username = self.get_username().await;
         self.client
@@ -804,6 +903,18 @@ impl Federation {
         Ok(())
     }
 
+    //
+    // Social Recovery
+    //
+
+    /// Path to our copy of the social recovery file saved to our data dir
+    pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
+        let federation_name = self.normalized_federation_name();
+        // FIXME: federation-specific filename
+        datadir.join(format!("{}_{}", federation_name, RECOVERY_FILENAME))
+    }
+
+    /// Upload social recovery recovery file to federation given a recovery video
     pub async fn upload_backup_file(
         &self,
         video_file_path: &PathBuf,
@@ -827,6 +938,7 @@ impl Federation {
         Ok(recovery_file_path)
     }
 
+    /// Attempt to continue a previous social recovery session by loading state from DB
     pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
         let mut dbtx = self.dbtx().await;
         let state = dbtx
@@ -837,6 +949,7 @@ impl Federation {
         Ok(self.client.social_recovery_continue(state))
     }
 
+    /// Save social recovery session state to the DB
     pub async fn social_recovery_save(&self, recovery_client: &SocialRecovery) {
         // FIXME: should I pass dbtx from outside?
         let mut dbtx = self.dbtx().await;
@@ -861,7 +974,12 @@ impl Federation {
         Ok(())
     }
 
-    // TODO: this should probably be able to find recovery file by itself. just need to put it in expected path.
+    /// Exit a social recovery session. Helpful if user choose the wrong recovery file and wants to start over.
+    pub async fn exit_social_recovery(&self) -> Result<()> {
+        todo!()
+    }
+
+    /// Produce social recovery QR
     pub async fn social_recovery_qr(
         &self,
         recovery_file: &RecoveryFile,
@@ -883,6 +1001,7 @@ impl Federation {
         Ok(SocialRecoveryQr { recovery_id })
     }
 
+    /// Get a list of the state of all social recoveries from all guardians
     pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
         let mut recovery_client = self.social_recovery_continue().await?;
         let guardian_peer_ids: Vec<(String, PeerId)> = self
@@ -920,6 +1039,7 @@ impl Federation {
         Ok((approvals, remaining))
     }
 
+    /// Attempt to recovery mnemonic from recovery shares available for download from the federation
     pub async fn social_recovery_combine_shares(&self) -> Result<Mnemonic> {
         let recovery_client = self.social_recovery_continue().await?;
         let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
@@ -927,6 +1047,7 @@ impl Federation {
         Ok(mnemonic)
     }
 
+    /// Download social recovery video to `data_dir`
     pub async fn social_recovery_download_verification_doc(
         &self,
         recovery_id: &RecoveryId,
@@ -952,7 +1073,7 @@ impl Federation {
         Ok(None)
     }
 
-    /// test method to be deleted later
+    /// Hack to figure out lowest peer id of guardian server who hasn't approved a given social recovery attempt
     pub async fn next_peer_id(&self, recovery_id: &RecoveryId) -> Result<PeerId> {
         let guardian_peer_ids: Vec<PeerId> = self
             .client
@@ -976,6 +1097,7 @@ impl Federation {
         Ok(PeerId::from(approvals as u16))
     }
 
+    /// Approve social recovery request. Currently hard-codes guardian authentication credentials.
     pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
         let next_peer_id = self.next_peer_id(recovery_id).await?;
         tracing::info!("approve social recovery {}", next_peer_id);
@@ -993,15 +1115,15 @@ impl Federation {
         Ok(())
     }
 
-    // FIXME: this just hangs forever
+    /// Stop polling tasks
     pub async fn stop_pollers(&self) -> anyhow::Result<()> {
-        // FIXME: is this clone a problem?
         self.task_group
             .clone()
             .shutdown_join_all(Some(Duration::from_secs(3)))
             .await
     }
 
+    /// Start polling tasks
     pub async fn start_pollers(&mut self) {
         let fed = self.clone();
         self.task_group
@@ -1082,7 +1204,7 @@ impl Federation {
             if task_handle.is_shutting_down() {
                 return;
             }
-            let current_block_height = self.block_height().await.ok();
+            let current_block_height = self.fetch_consensus_block_height().await.ok();
             if last_consensus_block_height != current_block_height {
                 self.attempt_pegins().await;
                 last_consensus_block_height = current_block_height;
@@ -1190,7 +1312,7 @@ impl Federation {
             }
             ticks = 0;
 
-            let consensus_block_height = fed.block_height().await.unwrap_or(0);
+            let consensus_block_height = fed.fetch_consensus_block_height().await.unwrap_or(0);
             let contracts = fed
                 .client
                 .ln_client()
