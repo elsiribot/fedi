@@ -1,7 +1,6 @@
 use std::{
     collections::HashMap,
     default::Default,
-    fs::{self, File},
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -47,6 +46,7 @@ use mint_client::{
     UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
+use tokio::fs;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
@@ -226,8 +226,8 @@ impl Bridge {
         let db_path = Path::new(&self.data_dir)
             .join(&federation_id)
             .with_extension("db");
-        fs::remove_file(json_path)?;
-        fs::remove_dir_all(db_path)?;
+        fs::remove_file(json_path).await?;
+        fs::remove_dir_all(db_path).await?;
 
         // Remove from bridge state
         info!("removing from bridge");
@@ -299,9 +299,7 @@ impl Federation {
         // Save config
         let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         tracing::info!("saving file to {}", cfg_path.display());
-        let file = File::create(cfg_path) // FIXME: this should probably use tokio's `File`
-            .context("Could not create cfg file")?;
-        serde_json::to_writer_pretty(file, &fedi_config).context("Could not write fedi cfg")?;
+        fs::write(cfg_path, serde_json::to_string(&fedi_config)?).await?;
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
@@ -921,7 +919,7 @@ impl Federation {
         datadir: &PathBuf,
     ) -> Result<PathBuf> {
         debug!("uploading backup file {:?}", video_file_path);
-        let file_contents = fs::read(video_file_path)?;
+        let file_contents = fs::read(video_file_path).await?;
         let verification_doc = VerificationDocument::from_raw(&file_contents);
         // FIXME: two different forms of seed phrase
         let seed_phrase = UserSeedPhrase::from(self.get_mnemonic().await.to_string());
@@ -934,7 +932,7 @@ impl Federation {
             .await?;
         // FIXME: is this a good filename?
         let recovery_file_path = datadir.join(RECOVERY_FILENAME);
-        fs::write(&recovery_file_path, recovery_file.to_bytes())?;
+        fs::write(&recovery_file_path, recovery_file.to_bytes()).await?;
         Ok(recovery_file_path)
     }
 
@@ -1064,7 +1062,7 @@ impl Federation {
         if let Some(verification_doc) = verification_doc {
             tracing::info!("downloaded verification doc ... saving to filesystem");
             let path = data_dir.join(VERIFICATION_FILENAME);
-            fs::write(&path, verification_doc.to_raw()?)?;
+            fs::write(&path, verification_doc.to_raw()?).await?;
             tracing::info!("saved verificaiton doc");
             return Ok(Some(path));
         };
