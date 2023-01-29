@@ -10,12 +10,15 @@ name = "calculatorffi"
 
 [dependencies]
 # pinned to last commit on fedibtc/release/january-25 branch
-mint-client = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "969b41dcacb67520652f309ead6ae2c90318fe60" }
-fedimint-api = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "969b41dcacb67520652f309ead6ae2c90318fe60" }
-fedimint-core = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "969b41dcacb67520652f309ead6ae2c90318fe60" }
-fedimint-sled = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "969b41dcacb67520652f309ead6ae2c90318fe60" }
-fedi-social = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "969b41dcacb67520652f309ead6ae2c90318fe60" }
-fedimint-derive-secret = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "969b41dcacb67520652f309ead6ae2c90318fe60" }
+mint-client = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedimint-api = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedimint-core = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedimint-sled = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedimint-rocksdb = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedi-social = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedimint-derive-secret = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+
+# Local dependencies that can be handy to uncomment during development
 # mint-client = { path = "../../fedimint/client/client-lib" }
 # fedimint-api = { path = "../../fedimint/fedimint-api" }
 # fedimint-core = { path = "../../fedimint/fedimint-core" }
