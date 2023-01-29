@@ -22,7 +22,7 @@ RCT_EXTERN_METHOD(rpc:(NSString*)method
 
 
 
-@interface RCT_EXTERN_MODULE(FedimintEventEmitter, RCTEventEmitter)
+@interface RCT_EXTERN_MODULE(BridgeNativeEventEmitter, RCTEventEmitter)
 
 RCT_EXTERN_METHOD(supportedEvents)
 

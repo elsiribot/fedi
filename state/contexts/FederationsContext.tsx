@@ -8,11 +8,7 @@ import React, {
     useReducer,
 } from 'react'
 
-import {
-    Federation,
-    FederationEvent,
-    TFedimintEventEmitter,
-} from '../../bridge'
+import { BridgeEventEmitter, Federation, FederationEvent } from '../../bridge'
 import { SELECTED_FEDERATION_ID_DB_KEY } from '../../constants'
 
 // Define the structure of this Context and its initial state
@@ -199,21 +195,16 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     )
 
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
+        const emitter = new BridgeEventEmitter()
         const onFederationUpdate = (event: FederationEvent) => {
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
-
             dispatch(updateFederation(event))
         }
-        emitter.onFederationUpdate(onFederationUpdate)
-
-        // This may be redundant if the event emitter already
-        // removes existing listeners
-        return () => {
-            emitter.removeListener('federation')
-        }
+        const federationListener =
+            emitter.onFederationUpdate(onFederationUpdate)
+        return () => federationListener.remove()
     }, [state])
 
     // Persist currently selected federation

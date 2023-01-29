@@ -6,9 +6,9 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import {
+    BridgeEventEmitter,
     GuardianApproval,
     SocialRecoveryEvent,
-    TFedimintEventEmitter,
 } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -67,12 +67,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }, [socialRecoveryApprovals, setApprovals])
 
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
-        emitter.onSocialRecovery(socialRecoveryHandler)
-
-        return () => {
-            emitter.removeListener('socialRecovery')
-        }
+        const emitter = new BridgeEventEmitter()
+        const listener = emitter.onSocialRecovery(socialRecoveryHandler)
+        return () => listener.remove()
     }, [navigation, socialRecoveryHandler])
 
     const showQrCode = () => {

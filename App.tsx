@@ -1,15 +1,15 @@
 import notifee from '@notifee/react-native'
 import { ThemeProvider } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import {
+    BridgeEventEmitter,
     initializeBridge,
     LogEvent,
-    TFedimintEventEmitter,
     TransactionEvent,
 } from './bridge'
 import CustomToast from './components/ui/CustomToast'
@@ -41,13 +41,13 @@ const App = () => {
     }
 
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
+        const emitter = new BridgeEventEmitter()
 
         // Initialize logger
         const logHandler = (event: LogEvent) => {
             console.log('OS:', Platform.OS, `": log" -> "${event.log}"`)
         }
-        emitter.onLog(logHandler)
+        const logListener = emitter.onLog(logHandler)
 
         // Initialize push notification sender
         async function onDisplayNotification(event: TransactionEvent) {
@@ -73,10 +73,15 @@ const App = () => {
                 },
             })
         }
-        emitter.onTransaction(onDisplayNotification)
+        const transactionListener = emitter.onTransaction(onDisplayNotification)
 
         onInitializeBridge()
         requestPushNotificationPermissions()
+
+        return () => {
+            logListener.remove()
+            transactionListener.remove()
+        }
     }, [t])
 
     return (
