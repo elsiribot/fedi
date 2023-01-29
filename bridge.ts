@@ -315,7 +315,7 @@ export async function receiveEcash(
 ): Promise<ReceiveEcashResponse> {
     return fedimintRpc('receiveEcash', {
         federationId,
-        ecash: JSON.parse(ecash),
+        ecash,
     })
 }
 
@@ -325,7 +325,7 @@ export async function validateEcash(
 ): Promise<ValidateEcashResponse> {
     return fedimintRpc('validateEcash', {
         federationId,
-        ecash: JSON.parse(ecash),
+        ecash,
     })
 }
 
