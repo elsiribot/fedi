@@ -67,6 +67,16 @@ platform :android do
     )
   end
 
+  desc "Build a new app bundle to release for special deployment (Bitcoin Jungle)"
+  lane :build_bitcoin_jungle do
+    gradle(task: 'clean')
+    gradle(
+      task: 'bundle',
+      flavor: 'bitcoinjungle',
+      build_type: 'Release'
+    )
+  end
+
   desc "Upload the latest build for internal testing"
   lane :upload_internal_build do
     upload_to_play_store(
@@ -98,6 +108,16 @@ platform :android do
     )
   end
 
+  desc "Upload the latest build for special deployment (Bitcoin Jungle)"
+  lane :upload_beta_build_bitcoin_jungle do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative.bitcoinjungle',
+      aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
   desc "Submit a new internal build"
   lane :internal do
     increment_version_code
@@ -117,6 +137,13 @@ platform :android do
     increment_version_code
     build_bitcoin_lake
     upload_beta_build_bitcoin_lake
+  end
+
+  desc "Submit a new beta build for special deployment (Bitcoin Jungle)"
+  lane :beta_bitcoin_jungle do
+    increment_version_code
+    build_bitcoin_lake
+    upload_beta_build_bitcoin_jungle
   end
 
   # desc "Deploy a new version to the Google Play"
