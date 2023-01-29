@@ -1,3 +1,4 @@
+import { CommonActions } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -89,7 +90,12 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
             state.selectedFederation?.username &&
             xmppAuthInProgress === false
         ) {
-            navigation.replace('FederationGreeting')
+            navigation.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'FederationGreeting' }],
+                }),
+            )
         }
     }, [
         authenticatedMember,
