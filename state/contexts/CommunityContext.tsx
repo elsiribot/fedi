@@ -41,6 +41,7 @@ interface CommunityContextState {
     messages: Message[]
     groups: Group[]
     membersSeen: Member[]
+    lastFetchedMessageId: string | null
 }
 const initialState: CommunityContextState = {
     xmppClient: null,
@@ -50,6 +51,7 @@ const initialState: CommunityContextState = {
     messages: [],
     groups: DEFAULT_GROUPS,
     membersSeen: [],
+    lastFetchedMessageId: null,
 }
 type AppState = typeof initialState
 
@@ -59,6 +61,7 @@ enum ActionType {
     ADD_TO_MESSAGES = 'ADD_TO_MESSAGES',
     ADD_TO_GROUPS = 'ADD_TO_GROUPS',
     CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
+    CHANGE_LAST_FETCHED_MESSAGE_ID = 'CHANGE_LAST_FETCHED_MESSAGE_ID',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
@@ -100,6 +103,12 @@ export function addToGroups(group: Group): Action {
     return {
         type: ActionType.ADD_TO_GROUPS,
         payload: group,
+    }
+}
+export function changeLastFetchedMessageId(messageId: string): Action {
+    return {
+        type: ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID,
+        payload: messageId,
     }
 }
 export function changeUserIsOnline(online: boolean): Action {
@@ -266,6 +275,11 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
+        case ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID:
+            return {
+                ...state,
+                lastFetchedMessageId: action.payload,
+            }
         case ActionType.CHANGE_USER_IS_ONLINE:
             return {
                 ...state,
@@ -548,7 +562,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         const xmpp = client(xmppConnectionOptions)
         // debug(xmpp, true)
 
-        // debug(xmpp, true, `OS=${Platform.OS}`)
+        debug(xmpp, true, `OS=${Platform.OS}`)
         // This ^ helps debug when testing with both ios + android emulators
         // simultaneously to know which stanzas are coming from which device
 
@@ -672,6 +686,20 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                             dispatch(addToMessages(newMessage))
                             dispatch(updateGroupMessagePreview(newMessage))
                         }
+                    }
+                }
+                if (stanza.is('iq')) {
+                    // Handle pagination for queries to the message archive
+                    if (stanza.getAttr('id') === 'get-messages') {
+                        const results = stanza.getChild('fin')?.getChild('set')
+                        if (!results) return
+
+                        const lastMessageId = results
+                            .getChild('last')
+                            ?.getText()
+                        if (!lastMessageId) return
+
+                        dispatch(changeLastFetchedMessageId(lastMessageId))
                     }
                 }
             } catch (error) {

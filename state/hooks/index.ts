@@ -250,8 +250,14 @@ type OutgoingGroupMessage = {
 type ArchiveQueryFilters = {
     withJid?: string | null
 }
+const DEFAULT_PAGE_LIMIT = '20'
+export type ArchiveQueryPagination = {
+    limit?: string | null
+    after?: string | null
+}
 type MessageArchiveQuery = {
     filters?: ArchiveQueryFilters | null
+    pagination?: ArchiveQueryPagination | null
 }
 export const useXmpp = () => {
     const { state, dispatch } = useCommunityContext()
@@ -366,7 +372,7 @@ export const useXmpp = () => {
             [dispatch, xmppClient],
         ),
         fetchMessagesFromArchive: useCallback(
-            ({ filters }: MessageArchiveQuery) => {
+            ({ filters, pagination }: MessageArchiveQuery) => {
                 const filterQuery = filters?.withJid
                     ? xml(
                           'x',
@@ -386,6 +392,28 @@ export const useXmpp = () => {
                           ),
                       )
                     : xml('x')
+
+                const paginationQuery = pagination?.after
+                    ? xml(
+                          'set',
+                          { xmlns: 'http://jabber.org/protocol/rsm' },
+                          xml(
+                              'max',
+                              {},
+                              pagination?.limit || DEFAULT_PAGE_LIMIT,
+                          ),
+                          xml('after', {}, pagination?.after),
+                      )
+                    : xml(
+                          'set',
+                          { xmlns: 'http://jabber.org/protocol/rsm' },
+                          xml(
+                              'max',
+                              {},
+                              pagination?.limit || DEFAULT_PAGE_LIMIT,
+                          ),
+                      )
+
                 try {
                     xmppClient?.send(
                         xml(
@@ -401,6 +429,7 @@ export const useXmpp = () => {
                                     queryid: 'get-messages',
                                 },
                                 filterQuery,
+                                paginationQuery,
                             ),
                         ),
                     )
