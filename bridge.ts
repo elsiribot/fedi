@@ -102,6 +102,12 @@ export class Transaction extends Base {
         if (this.offline !== null) return null
         throw 'invalid transaction'
     }
+    get isSend(): boolean {
+        return this.direction === TransactionDirection.send
+    }
+    get isReceive(): boolean {
+        return this.direction === TransactionDirection.receive
+    }
 }
 
 export enum AddressOrInvoice {
@@ -155,7 +161,14 @@ export class BridgeEventEmitter {
         listener: (event: TransactionEvent) => void,
         context?: Object,
     ): EmitterSubscription => {
-        return this.addListener('transaction', listener, context)
+        // Instantiate `Transaction` instance so helper methods exist
+        const typedListener = (event: TransactionEvent) => {
+            return listener({
+                ...event,
+                transaction: new Transaction(event.transaction),
+            })
+        }
+        return this.addListener('transaction', typedListener, context)
     }
 
     onSocialRecovery = (

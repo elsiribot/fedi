@@ -57,21 +57,22 @@ const App = () => {
                 name: 'Transactions Channel',
             })
 
-            // Display a notification
-            // TODO: if on-chain, replace existing notification if there is one
-            await notifee.displayNotification({
-                title: t('phrases.transaction-received'),
-                body: `${amountUtils.formatNumber(
-                    amountUtils.msatToSat(event.transaction.amount),
-                )} ${t('words.sats')}`,
-                android: {
-                    channelId,
-                    // pressAction is needed if you want the notification to open the app when pressed
-                    pressAction: {
-                        id: 'transactions',
+            // Display notifications only for incoming transactions
+            if (event.transaction.isReceive) {
+                await notifee.displayNotification({
+                    title: t('phrases.transaction-received'),
+                    body: `${amountUtils.formatNumber(
+                        amountUtils.msatToSat(event.transaction.amount),
+                    )} ${t('words.sats')}`,
+                    android: {
+                        channelId,
+                        // pressAction is needed if you want the notification to open the app when pressed
+                        pressAction: {
+                            id: 'transactions',
+                        },
                     },
-                },
-            })
+                })
+            }
         }
         const transactionListener = emitter.onTransaction(onDisplayNotification)
 
