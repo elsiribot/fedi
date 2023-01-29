@@ -6,9 +6,9 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import {
+    BridgeEventEmitter,
     decodeInvoice,
     Invoice,
-    TFedimintEventEmitter,
     Transaction,
     TransactionEvent,
 } from '../bridge'
@@ -134,12 +134,11 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
 
     // Registers an event handler listening for the invoice to be paid
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
-        emitter.onTransaction(transactionEventHandler)
-
-        return () => {
-            emitter.removeListener('transaction')
-        }
+        const emitter = new BridgeEventEmitter()
+        const transactionListener = emitter.onTransaction(
+            transactionEventHandler,
+        )
+        return () => transactionListener.remove()
     }, [transactionEventHandler])
 
     if (!decodedUri.body) {

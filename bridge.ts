@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { MSats, Sats } from './types'
 
-const { FedimintEventEmitter, FedimintFfi } = NativeModules
+const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 
 export default class Base {
     constructor(data?: any) {
@@ -102,6 +102,12 @@ export class Transaction extends Base {
         if (this.offline !== null) return null
         throw 'invalid transaction'
     }
+    get isSend(): boolean {
+        return this.direction === TransactionDirection.send
+    }
+    get isReceive(): boolean {
+        return this.direction === TransactionDirection.receive
+    }
 }
 
 export enum AddressOrInvoice {
@@ -113,13 +119,16 @@ export type SocialRecoveryQrCode = {
     recoveryId: string
 }
 
-export class TFedimintEventEmitter {
+export class BridgeEventEmitter {
     private emitter: NativeEventEmitter
 
     constructor() {
-        this.emitter = new NativeEventEmitter(FedimintEventEmitter)
+        this.emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
     }
 
+    removeAllListeners = (eventType: string): void => {
+        this.emitter.removeAllListeners(eventType)
+    }
     // json-deserializes events
     addListener = (
         eventType: string,
@@ -127,18 +136,11 @@ export class TFedimintEventEmitter {
         listener: (event: any) => void,
         context?: Object,
     ): EmitterSubscription => {
-        // Remove any existing listeners of this eventType before adding
-        this.removeListener(eventType)
-
         return this.emitter.addListener(
             eventType,
             (serializedEvent: string) => listener(JSON.parse(serializedEvent)),
             context,
         )
-    }
-
-    removeListener = (eventType: string): void => {
-        this.emitter.removeAllListeners(eventType)
     }
 
     onLog = (
@@ -159,7 +161,14 @@ export class TFedimintEventEmitter {
         listener: (event: TransactionEvent) => void,
         context?: Object,
     ): EmitterSubscription => {
-        return this.addListener('transaction', listener, context)
+        // Instantiate `Transaction` instance so helper methods exist
+        const typedListener = (event: TransactionEvent) => {
+            return listener({
+                ...event,
+                transaction: new Transaction(event.transaction),
+            })
+        }
+        return this.addListener('transaction', typedListener, context)
     }
 
     onSocialRecovery = (
