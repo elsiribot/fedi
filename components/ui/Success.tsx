@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 
 import { Images } from '../../assets/images'
+import { reset } from '../../state/navigation'
 import type { NavigationHook, RootStackParamList } from '../../types/navigation'
 
 interface SuccessBase {
@@ -73,7 +74,9 @@ const Success: React.FC<SuccessProps> = ({
                     <Button
                         title={buttonText ? buttonText : t('words.done')}
                         onPress={() => {
-                            navigation.replace(nextScreen, nextScreenProps)
+                            navigation.dispatch(
+                                reset(nextScreen, nextScreenProps),
+                            )
                         }}
                     />
                 )}
