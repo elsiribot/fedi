@@ -264,31 +264,6 @@ export const useXmpp = () => {
     const { xmppClient } = state
 
     return {
-        // subscribeToMessages(room)
-        //      addToMembers
-        // subscribeToMembers(room)
-        //      addToMembers
-        // subscribeToRosterUpdates
-        //      addToMembers
-        // unsubscribeFromRoomMessages
-        // unsubscribeFromRoomMembers
-
-        /*
-            - add easy uuid generation for messages
-            - improve debug logs
-                - add platform
-                - add newlines to XML
-            - exiting a room, clean up and unsubscribe?
-
-            - fetch rooms (server defined)
-            - determine rooms from stored messages
-                - subscribe to all rooms to receive new messages + store them
-            - determine rooms from stored members
-                - subscribe to all rooms to receive new members + store them
-            - subscribe to universal room to enable search
-              by username? performance concerns?
-
-        */
         enterMucRoom: useCallback(
             (group: Group) => {
                 if (!xmppClient?.jid) return
