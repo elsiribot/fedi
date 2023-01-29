@@ -593,6 +593,11 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         )
                     }
 
+                    // don't add ourselves to membersSeen
+                    if (selectedFederation.username === userJid.local) {
+                        return
+                    }
+
                     dispatch(
                         addToMembersSeen(
                             new Member({

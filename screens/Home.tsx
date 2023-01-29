@@ -136,10 +136,14 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
             <Tab.Screen
                 name="Admin"
                 component={Admin}
-                options={{
+                options={() => ({
                     title: t('words.admin'),
-                    headerShown: false,
-                }}
+                    header: () => (
+                        <>
+                            <SelectedFederationHeader />
+                        </>
+                    ),
+                })}
             />
         </Tab.Navigator>
     )
