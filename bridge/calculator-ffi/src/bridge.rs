@@ -19,7 +19,7 @@ use crate::{
         federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
         LnurlSignedMessage, XmppCredentials,
     },
-    EventSinkWrapper, NoteWithAmount,
+    EventSinkWrapper,
 };
 use anyhow::{anyhow, Context, Result};
 use bitcoin::{
@@ -40,6 +40,7 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
     api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
+    mint::SpendableNote,
     module_decode_stubs,
     social::{RecoveryFile, SocialRecovery},
     utils::network_to_currency,
@@ -499,18 +500,9 @@ impl Federation {
     //
 
     /// Generate ecash. It's immediately removed from client DB. Transaction saved to DB.
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<Vec<NoteWithAmount>> {
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<TieredMulti<SpendableNote>> {
         let rng = rand::rngs::OsRng;
-        let ecash: Vec<NoteWithAmount> = self
-            .client
-            .spend_ecash(amount, rng)
-            .await?
-            .iter_items()
-            .map(|(amount, note)| NoteWithAmount {
-                amount,
-                note: note.clone(),
-            })
-            .collect();
+        let ecash: TieredMulti<SpendableNote> = self.client.spend_ecash(amount, rng).await?;
         self.save_transaction(&Transaction::offline(
             tx::TransactionDirection::Send,
             amount,
@@ -521,30 +513,22 @@ impl Federation {
 
     /// Validate that string is valid ecash and signed by federation.
     /// TODO: check that it's unspent in the federation.
-    pub async fn validate_ecash(&self, ecash: Vec<NoteWithAmount>) -> (bool, Amount) {
-        let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
-        let tiered_multi = TieredMulti::from_iter(input);
-        let valid = self
-            .client
-            .validate_note_signatures(&tiered_multi)
-            .await
-            .is_ok();
-        let amount = tiered_multi.total_amount();
+    pub async fn validate_ecash(&self, ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
+        let valid = self.client.validate_note_signatures(&ecash).await.is_ok();
+        let amount = ecash.total_amount();
         (valid, amount)
     }
 
     /// Receive ecash into wallet. Save transaction to DB.
-    pub async fn receive_ecash(&self, ecash: Vec<NoteWithAmount>) -> Result<Amount> {
+    pub async fn receive_ecash(&self, ecash: TieredMulti<SpendableNote>) -> Result<Amount> {
         let rng = rand::rngs::OsRng;
-        let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
-        let tiered_multi = TieredMulti::from_iter(input);
-        self.client.reissue(tiered_multi.clone(), rng).await?;
+        self.client.reissue(ecash.clone(), rng).await?;
         self.save_transaction(&Transaction::offline(
             tx::TransactionDirection::Receive,
-            tiered_multi.total_amount(),
+            ecash.total_amount(),
         ))
         .await;
-        Ok(tiered_multi.total_amount())
+        Ok(ecash.total_amount())
     }
 
     //
