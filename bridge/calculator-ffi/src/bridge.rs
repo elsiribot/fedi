@@ -1229,37 +1229,45 @@ impl Federation {
                     let rng = rand::rngs::OsRng;
                     let payment_hash = payment.invoice.payment_hash();
                     tracing::debug!("fetching incoming contract {:?}", &payment_hash);
-                    let result = &fed
+                    match &fed
                         .client
                         .claim_incoming_contract(
                             ContractId::from_hash(payment_hash.clone()),
                             rng.clone(),
                         )
-                        .await;
-                    if let Err(_) = result {
-                        tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
-                        // Mark it "expired" in db if we couldn't claim it and invoice is expired
-                        if invoice_expired {
-                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
-                                .await;
+                        .await
+                    {
+                        Err(_) => {
+                            tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
+                            // Mark it "expired" in db if we couldn't claim it and invoice is expired
+                            if invoice_expired {
+                                fed.update_payment_status(payment_hash, PaymentStatus::Expired)
+                                    .await;
+                            }
                         }
-                    } else {
-                        tracing::info!("completed payment: {:?}", &payment_hash);
-                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
-                            .await;
-                        let amount = fedimint_api::Amount::from_msats(
-                            payment.invoice.amount_milli_satoshis().expect(
-                                "assuming we only receive payments for invoices with amount",
-                            ),
-                        );
-                        let fee = None;
-                        let tx = Transaction::lightning(
-                            TransactionDirection::Receive,
-                            amount,
-                            fee,
-                            payment.invoice.clone(),
-                        );
-                        fed.save_transaction(&tx).await;
+                        Ok(outpoint) => {
+                            // FIXME: could this lead to funds loss if it errors out? can contracts be claimed a second time? or will next "fetch" find these coins?
+                            if let Err(e) = self.client.await_outpoint_outcome(*outpoint).await {
+                                error!("Failed to claim contract {}", e);
+                                return;
+                            }
+                            tracing::info!("completed payment: {:?}", &payment_hash);
+                            fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                                .await;
+                            let amount = fedimint_api::Amount::from_msats(
+                                payment.invoice.amount_milli_satoshis().expect(
+                                    "assuming we only receive payments for invoices with amount",
+                                ),
+                            );
+                            let fee = None;
+                            let tx = Transaction::lightning(
+                                TransactionDirection::Receive,
+                                amount,
+                                fee,
+                                payment.invoice.clone(),
+                            );
+                            fed.save_transaction(&tx).await;
+                        }
                     }
                 })
                 .collect::<FuturesUnordered<_>>()
