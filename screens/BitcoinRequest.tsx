@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
-import { SwitchLeftSvg, SwitchRightSvg } from '../assets/images/svgs'
 import {
     BridgeEventEmitter,
     decodeInvoice,
@@ -14,6 +13,7 @@ import {
 } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
@@ -171,15 +171,9 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                         : t('words.onchain')}
                 </Text>
                 {requestType === BitcoinOrLightning.lightning ? (
-                    <SwitchLeftSvg
-                        height={theme.sizes.sm}
-                        width={theme.sizes.sm}
-                    />
+                    <SvgImage name="SwitchLeft" />
                 ) : (
-                    <SwitchRightSvg
-                        height={theme.sizes.sm}
-                        width={theme.sizes.sm}
-                    />
+                    <SvgImage name="SwitchRight" />
                 )}
             </Pressable>
             <View style={styles(theme).detailsContainer}>

@@ -4,8 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, View } from 'react-native'
 
-import { WordListSvg } from '../assets/images/svgs'
 import HoloGuidance from '../components/ui/HoloGuidance'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -20,12 +20,7 @@ const StartPersonalBackup: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <HoloGuidance
-                iconImage={
-                    <WordListSvg
-                        height={theme.sizes.lg}
-                        width={theme.sizes.lg}
-                    />
-                }
+                iconImage={<SvgImage name="WordList" size={SvgImageSize.lg} />}
                 title={t('feature.backup.personal-backup')}
                 message={t('feature.backup.start-personal-backup-instructions')}
             />

@@ -4,8 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, View } from 'react-native'
 
-import { SocialPeopleSvg } from '../assets/images/svgs'
 import HoloGuidance from '../components/ui/HoloGuidance'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -21,10 +21,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <HoloGuidance
                 iconImage={
-                    <SocialPeopleSvg
-                        height={theme.sizes.lg}
-                        width={theme.sizes.lg}
-                    />
+                    <SvgImage name="SocialPeople" size={SvgImageSize.lg} />
                 }
                 title={t('feature.backup.social-backup')}
                 message={t('feature.backup.start-social-backup-instructions')}

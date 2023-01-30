@@ -11,9 +11,9 @@ import {
 } from 'react-native'
 
 import { Images } from '../../assets/images'
-import { DoneSvg } from '../../assets/images/svgs'
 import { reset } from '../../state/navigation'
 import type { NavigationHook, RootStackParamList } from '../../types/navigation'
+import SvgImage from './SvgImage'
 
 interface SuccessBase {
     iconImage?: ImageSourcePropType
@@ -58,9 +58,13 @@ const Success: React.FC<SuccessProps> = ({
             source={Images.HoloBackground}
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
-                {/* <Image source={iconImage} style={styles(theme).iconImage} /> */}
-
-                <DoneSvg height={theme.sizes.md} width={theme.sizes.md} />
+                <SvgImage
+                    name="Done"
+                    svgProps={{
+                        height: theme.sizes.md,
+                        width: theme.sizes.md,
+                    }}
+                />
                 {message ? (
                     message
                 ) : (

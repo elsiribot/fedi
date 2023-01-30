@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
-import { FediFileSvg } from '../assets/images/svgs'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
 import {
     completeSocialBackup,
     useBackupRecoveryContext,
@@ -121,12 +121,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <HoloCard
-                iconImage={
-                    <FediFileSvg
-                        height={theme.sizes.sm}
-                        width={theme.sizes.sm}
-                    />
-                }
+                iconImage={<SvgImage name="FediFile" />}
                 title={t('feature.backup.backup-social-recovery-file')}
                 body={
                     <>

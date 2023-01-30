@@ -4,9 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { SocialPeopleSvg } from '../assets/images/svgs'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -24,12 +24,7 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.recovery.recovery-assist-description')}
             </Text>
             <HoloCard
-                iconImage={
-                    <SocialPeopleSvg
-                        height={theme.sizes.lg}
-                        width={theme.sizes.lg}
-                    />
-                }
+                iconImage={<SvgImage name="SocialPeople" />}
                 title={t('feature.recovery.recovery-assist-process')}
                 body={
                     <>

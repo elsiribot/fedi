@@ -4,9 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
-import { NoteSvg, SocialPeopleSvg } from '../assets/images/svgs'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -37,12 +37,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
             </Text>
 
             <HoloCard
-                iconImage={
-                    <SocialPeopleSvg
-                        height={theme.sizes.sm}
-                        width={theme.sizes.sm}
-                    />
-                }
+                iconImage={<SvgImage name="SocialPeople" />}
                 title={t('feature.recovery.social-recovery')}
                 body={
                     <>
@@ -59,9 +54,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
             />
             <LineBreak />
             <HoloCard
-                iconImage={
-                    <NoteSvg height={theme.sizes.sm} width={theme.sizes.sm} />
-                }
+                iconImage={<SvgImage name="Note" />}
                 title={t('feature.recovery.personal-recovery')}
                 body={
                     <>

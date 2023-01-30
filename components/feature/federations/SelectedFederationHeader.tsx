@@ -3,7 +3,6 @@ import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { FedearationxIconSvg } from '../../../assets/images/svgs'
 import { Federation } from '../../../bridge'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import {
@@ -12,6 +11,7 @@ import {
     NavigationHook,
 } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import SvgImage from '../../ui/SvgImage'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -37,7 +37,14 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                 <Pressable
                     style={styles(theme).container}
                     onPress={openFederationsDrawer}>
-                    <FedearationxIconSvg height={20} width={20} />
+                    <SvgImage
+                        name="FedearationxIcon"
+                        svgProps={{
+                            stroke: 'transparent',
+                            height: 20,
+                            width: 20,
+                        }}
+                    />
                     {/* <Image
                         style={styles(theme).image}
                         source={Images.FederationXIconXs}

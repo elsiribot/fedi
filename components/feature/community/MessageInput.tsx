@@ -11,9 +11,9 @@ import {
     View,
 } from 'react-native'
 
-import { SendArrowUpCircleSvg, WalletSvg } from '../../../assets/images/svgs'
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { NavigationHook } from '../../../types/navigation'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type DirectChatRouteProp = DirectChatProps['route']
 
@@ -72,11 +72,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             recipient: member,
                         })
                     }>
-                    <WalletSvg
-                        height={theme.sizes.md}
-                        width={theme.sizes.md}
-                        // marginRight={theme.spacing.md}
-                        // marginBottom={theme.spacing.md}
+                    <SvgImage
+                        name="Wallet"
+                        containerStyle={{
+                            marginRight: theme.spacing.md,
+                            marginBottom: theme.spacing.sm,
+                        }}
+                        size={SvgImageSize.md}
+                        svgProps={{
+                            stroke: theme.colors.primary,
+                        }}
                     />
                 </Pressable>
             )}
@@ -122,9 +127,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         setMessageText('')
                     }
                 }}>
-                <SendArrowUpCircleSvg
-                    height={theme.sizes.md}
-                    width={theme.sizes.md}
+                <SvgImage
+                    name="SendArrowUpCircle"
+                    size={SvgImageSize.md}
+                    svgProps={{
+                        stroke: theme.colors.blue,
+                    }}
                 />
             </Pressable>
         </View>

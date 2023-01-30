@@ -3,7 +3,7 @@ import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { FedearationxIconSvg } from '../assets/images/svgs'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
@@ -22,7 +22,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).innerCardContainer}>
-                    <FedearationxIconSvg height={100} width={100} />
+                    <SvgImage name="FedearationxIcon" size={SvgImageSize.xl} />
                     {/*refer to below image style for above image*/}
                     <Text h2 medium style={styles(theme).welcomeTitle}>
                         {t('feature.onboarding.welcome-to-federation', {

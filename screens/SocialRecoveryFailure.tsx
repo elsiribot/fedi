@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
-import { ErrorSvg } from '../assets/images/svgs'
+import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -22,7 +22,7 @@ const SocialRecoveryFailure: React.FC<Props> = ({ navigation }: Props) => {
             source={Images.HoloBackground}
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
-                <ErrorSvg height={theme.sizes.sm} width={theme.sizes.sm} />
+                <SvgImage name="Error" />
                 <Text h2 h2Style={styles(theme).failureMessage}>
                     {t('feature.recovery.social-recovery-unsuccessful')}
                 </Text>

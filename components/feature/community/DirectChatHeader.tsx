@@ -5,10 +5,10 @@ import { Pressable, StyleSheet } from 'react-native'
 
 import Header from '../../ui/Header'
 
-import { PhoneSvg, VideoSvg } from '../../../assets/images/svgs'
 import { RootStackParamList } from '../../../types/navigation'
 import stringUtils from '../../../utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
+import SvgImage from '../../ui/SvgImage'
 
 type DirectChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 
@@ -48,19 +48,13 @@ const DirectChatHeader: React.FC<{}> = () => {
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <VideoSvg
-                            height={theme.sizes.sm}
-                            width={theme.sizes.sm}
-                        />
+                        <SvgImage name="Video" />
                     </Pressable>
                     <Pressable
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <PhoneSvg
-                            height={theme.sizes.sm}
-                            width={theme.sizes.sm}
-                        />
+                        <SvgImage name="Phone" />
                     </Pressable>
                 </>
             }

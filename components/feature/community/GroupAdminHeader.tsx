@@ -5,9 +5,9 @@ import { Pressable, StyleSheet } from 'react-native'
 
 import Header from '../../ui/Header'
 
-import { EditSvg } from '../../../assets/images/svgs'
 import { Props as GroupAdminProps } from '../../../screens/GroupAdmin'
 import { NavigationHook } from '../../../types/navigation'
+import SvgImage from '../../ui/SvgImage'
 
 type GroupAdminRouteProp = GroupAdminProps['route']
 
@@ -31,10 +31,7 @@ const GroupAdminHeader: React.FC<{}> = () => {
                             })
                         }
                         style={styles(theme).headerIconContainer}>
-                        <EditSvg
-                            height={theme.sizes.sm}
-                            width={theme.sizes.sm}
-                        />
+                        <SvgImage name="Edit" />
                     </Pressable>
                 </>
             }

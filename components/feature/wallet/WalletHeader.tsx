@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useNavigation } from '@react-navigation/native'
-import { OfflineSvg } from '../../../assets/images/svgs'
 import Header from '../../ui/Header'
+import SvgImage from '../../ui/SvgImage'
 
 type WalletHeaderProps = {
     toggleOffline?: () => void
@@ -34,11 +34,14 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                         style={{
                             padding: theme.spacing.sm,
                         }}>
-                        <OfflineSvg
-                            height={theme.sizes.sm}
-                            width={theme.sizes.sm}
-                            color={theme.colors.grey}
-                            opacity={offline ? 1 : 0.1}
+                        <SvgImage
+                            name="Offline"
+                            containerStyle={{
+                                opacity: offline ? 1 : 0.2,
+                            }}
+                            svgProps={{
+                                stroke: theme.colors.primaryLight,
+                            }}
                         />
                         {/* <Image
                             source={Images.Offline}

@@ -4,13 +4,13 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
-import { SocialPeopleSvg } from '../assets/images/svgs'
 import {
     BridgeEventEmitter,
     GuardianApproval,
     SocialRecoveryEvent,
 } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
+import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationCredentials,
@@ -141,7 +141,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.recovery.guardian-approval-instructions')}
             </Text>
             <HoloCard
-                iconImage={<SocialPeopleSvg />}
+                iconImage={<SvgImage name="SocialPeople" />}
                 title={t('feature.recovery.social-recovery-steps')}
                 body={
                     <>

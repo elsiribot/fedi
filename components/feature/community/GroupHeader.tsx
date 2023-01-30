@@ -1,14 +1,13 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
 import { t } from 'i18next'
-import { NewRoomSvg, PhoneSvg } from '../../../assets/images/svgs'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
+import SvgImage from '../../ui/SvgImage'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
 
@@ -35,10 +34,7 @@ const GroupHeader: React.FC<{}> = () => {
                     onPress={() => {
                         navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <NewRoomSvg
-                        height={theme.sizes.sm}
-                        width={theme.sizes.sm}
-                    />
+                    <SvgImage name="NewRoom" />
                     <Text
                         bold
                         numberOfLines={1}
@@ -54,18 +50,18 @@ const GroupHeader: React.FC<{}> = () => {
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <Image
-                            style={styles(theme).headerIcon}
-                            source={Images.Video}
+                        <SvgImage
+                            name="Video"
+                            svgProps={{ stroke: theme.colors.primary }}
                         />
                     </Pressable>
                     <Pressable
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <PhoneSvg
-                            height={theme.sizes.sm}
-                            width={theme.sizes.sm}
+                        <SvgImage
+                            name="Phone"
+                            svgProps={{ stroke: theme.colors.primary }}
                         />
                     </Pressable>
                 </>
@@ -92,10 +88,6 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.sm,
             // Disabled
             opacity: 0.25,
-        },
-        headerIcon: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
         },
         groupNameText: {
             marginLeft: theme.spacing.sm,

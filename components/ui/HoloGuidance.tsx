@@ -1,16 +1,11 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    ImageBackground,
-    ImageSourcePropType,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../assets/images'
 
 type HoloGuidanceProps = {
-    iconImage?: ImageSourcePropType | null
+    iconImage?: React.ReactNode | null
     title?: string | null
     message?: string | null
     body?: React.ReactNode | null

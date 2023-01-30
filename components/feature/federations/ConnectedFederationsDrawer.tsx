@@ -15,10 +15,6 @@ import {
 } from 'react-native'
 
 import { Images } from '../../../assets/images'
-import {
-    FedearationxIconSvg,
-    InviteMembersSvg,
-} from '../../../assets/images/svgs'
 import { Federation } from '../../../bridge'
 import {
     updateSelectedFederationId,
@@ -27,6 +23,7 @@ import {
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
     federation: Federation
@@ -44,14 +41,13 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     return (
         <View style={styles(theme).drawerItemLabel}>
-            <FedearationxIconSvg
-                height={theme.sizes.lg}
-                width={theme.sizes.lg}
+            <SvgImage
+                name="FedearationxIcon"
+                size={SvgImageSize.lg}
+                svgProps={{
+                    stroke: 'transparent',
+                }}
             />
-            {/* <Image
-                style={styles(theme).image}
-                source={Images.FederationXIconSm}
-            /> */}
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
                     {federation.name}
@@ -70,14 +66,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                         inviteLink,
                     })
                 }}>
-                <InviteMembersSvg
-                    height={theme.sizes.sm}
-                    width={theme.sizes.sm}
-                />
-                {/* <Image
-                    style={styles(theme).iconImage}
-                    source={Images.InviteMembers}
-                /> */}
+                <SvgImage name="InviteMembers" />
             </TouchableOpacity>
         </View>
     )
@@ -159,6 +148,7 @@ const styles = (theme: Theme) =>
             flexGrow: 1,
             flexDirection: 'column',
             alignItems: 'flex-start',
+            marginLeft: theme.spacing.sm,
         },
         iconImage: {
             height: theme.sizes.sm,

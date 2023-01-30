@@ -8,6 +8,7 @@ export enum SvgImageSize {
     sm = 'sm',
     md = 'md',
     lg = 'lg',
+    xl = 'xl',
 }
 type SvgImageProps = {
     name: string
@@ -24,6 +25,7 @@ const SvgImage = ({ name, size, containerStyle, svgProps }: SvgImageProps) => {
     const svgSize = size || SvgImageSize.sm
 
     const defaultSvgProps = {
+        stroke: theme.colors.primary,
         height: theme.sizes[svgSize],
         width: theme.sizes[svgSize],
     }

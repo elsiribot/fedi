@@ -5,8 +5,8 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { OfflineSvg } from '../assets/images/svgs'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
@@ -63,10 +63,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
             />
             <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).offlineContainer}>
-                <OfflineSvg
-                    height={theme.sizes.sm}
-                    width={theme.sizes.sm}
-                    marginRight={theme.spacing.md}
+                <SvgImage
+                    name="Offline"
+                    containerStyle={{
+                        marginRight: theme.spacing.md,
+                    }}
                 />
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>

@@ -4,13 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageSourcePropType } from 'react-native'
 
-import {
-    CashSvg,
-    FediLogoIconSvg,
-    FediMintSvg,
-    SocialPeopleSvg,
-} from '../../../assets/images/svgs'
 import HoloGuidance from '../../ui/HoloGuidance'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OnboardingSlideProps = {
     title: string
@@ -49,25 +44,25 @@ const OnboardingSlides: React.FC<Props> = ({ onSlideChanged }: Props) => {
             key: 'welcome-to-fedi',
             title: t('feature.onboarding.welcome-to-fedi'),
             message: t('feature.onboarding.guidance-1'),
-            iconImage: <FediLogoIconSvg />,
+            iconImage: <SvgImage name="FediLogoIcon" size={SvgImageSize.lg} />,
         },
         {
             key: 'commmunity-first',
             title: t('feature.onboarding.community-first'),
             message: t('feature.onboarding.guidance-2'),
-            iconImage: <SocialPeopleSvg />,
+            iconImage: <SvgImage name="SocialPeople" size={SvgImageSize.lg} />,
         },
         {
             key: 'simple-and-private',
             title: t('feature.onboarding.simple-and-private'),
             message: t('feature.onboarding.guidance-3'),
-            iconImage: <FediMintSvg />,
+            iconImage: <SvgImage name="Fedimint" size={SvgImageSize.lg} />,
         },
         {
             key: 'earn-and-save',
             title: t('feature.onboarding.earn-and-save'),
             message: t('feature.onboarding.guidance-4'),
-            iconImage: <CashSvg />,
+            iconImage: <SvgImage name="Cash" size={SvgImageSize.lg} />,
         },
     ]
 

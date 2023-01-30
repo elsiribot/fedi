@@ -7,8 +7,8 @@ import { useCommunityContext } from '../state/contexts/CommunityContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
-import { ScanSvg, SocialPeopleSvg } from '../assets/images/svgs'
 import MembersList from '../components/feature/community/MembersList'
+import SvgImage from '../components/ui/SvgImage'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
 
@@ -47,17 +47,14 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
-                    <ScanSvg height={theme.sizes.sm} width={theme.sizes.sm} />
+                    <SvgImage name="Scan" />
                 </View>
                 <Pressable
                     style={styles(theme).createGroupContainer}
                     onPress={() => {
                         navigation.replace('JoinGroup')
                     }}>
-                    <SocialPeopleSvg
-                        height={theme.sizes.sm}
-                        width={theme.sizes.sm}
-                    />
+                    <SvgImage name="Room" />
                     <Text medium style={styles(theme).createGroupText}>
                         {t('feature.community.or-join-a-group')}
                     </Text>
