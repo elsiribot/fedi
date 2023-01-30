@@ -89,6 +89,7 @@
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
+        "only-group-owners-can-change-name": "Only group owners can change the group name",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username."
     },
@@ -150,6 +151,7 @@
             "disappearing-messages": "Disappearing messages",
             "edit-group": "Edit group",
             "enter-a-username": "Enter a username",
+            "group-name": "Group name",
             "invalid-group": "This is not a valid community group",
             "invite-link-notice": "Anyone with this link can join this group. Link is valid for 2 hours.",
             "invite-to-group": "Invite to group",

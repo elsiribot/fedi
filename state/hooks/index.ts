@@ -33,11 +33,16 @@ import {
     validateEcash,
     validateRecoveryFile,
 } from '../../bridge'
-import { XMPP_MUC_DOMAIN } from '../../constants'
+import { DEFAULT_GROUP_NAME, XMPP_MUC_DOMAIN } from '../../constants'
+import i18n from '../../localization/i18n'
 import { Group, Member, Message, MSats, Sats } from '../../types'
 import amountUtils from '../../utils/AmountUtils'
 import lnurlUtils from '../../utils/LNURLUtils'
-import { addToGroups, useCommunityContext } from '../contexts/CommunityContext'
+import {
+    addToGroups,
+    updateGroup,
+    useCommunityContext,
+} from '../contexts/CommunityContext'
 import { useCurrencyContext } from '../contexts/CurrencyContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
@@ -264,69 +269,197 @@ export const useXmpp = () => {
     const { xmppClient } = state
 
     return {
-        enterMucRoom: useCallback(
-            (group: Group) => {
-                if (!xmppClient?.jid) return
-                const { local, domain, resource } = xmppClient?.jid as JID
-                const fromUser = `${local}@${domain}/${resource}`
-                const onStanzaReceived = async (stanza: Element) => {
-                    // Receive a registration response from the server
-                    if (
-                        stanza.is('presence') &&
-                        stanza.getAttr('id') === 'enter-muc-room'
-                    ) {
-                        const result = stanza.getChild('x')
-                        const statusResults = result?.getChildren('status')
-
-                        statusResults?.map(async sr => {
-                            // status 201 = configuration required, send an "Instant Room"
-                            // configuration query to allow others to join
-                            // https://xmpp.org/extensions/xep-0045.html#createroom-instant
-                            if (sr?.getAttr('code') === '201') {
-                                xmppClient?.send(
-                                    xml(
-                                        'iq',
-                                        {
-                                            from: fromUser,
-                                            to: `${group.id}@${XMPP_MUC_DOMAIN}`,
-                                            id: 'create-instant-muc-room',
-                                            type: 'set',
-                                        },
-                                        xml(
-                                            'query',
-                                            {
-                                                xmlns: 'http://jabber.org/protocol/muc#owner',
-                                            },
-                                            xml('x', {
-                                                xmlns: 'jabber:x:data',
-                                                type: 'submit',
-                                            }),
-                                        ),
-                                    ),
-                                )
-                            }
-                            // status 110 = self-presence message which confirms
-                            // occupancy in room to be added to context
-                            if (sr?.getAttr('code') === '110') {
+        changeMucRoomName: useCallback(
+            (group: Group, updatedName: string) => {
+                return new Promise((resolve, reject) => {
+                    if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+                    try {
+                        const onStanzaReceived = async (stanza: Element) => {
+                            // Listen for matching stanza from the server and remove the
+                            // listener when we get a response
+                            if (stanza.getAttr('id') === 'set-room-config') {
                                 xmppClient?.removeListener(
                                     'stanza',
                                     onStanzaReceived,
                                 )
-                                dispatch(addToGroups(group))
+                                if (stanza.getAttr('type') === 'error') {
+                                    reject(
+                                        i18n.t(
+                                            'errors.only-group-owners-can-change-name',
+                                        ),
+                                    )
+                                } else if (
+                                    stanza.getAttr('type') === 'result'
+                                ) {
+                                    dispatch(
+                                        updateGroup(
+                                            new Group({
+                                                ...group,
+                                                name: updatedName,
+                                            }),
+                                        ),
+                                    )
+                                }
+                                resolve(true)
                             }
-                        })
+                        }
+                        xmppClient?.on('stanza', onStanzaReceived)
+                        const roomNameFieldXml = xml(
+                            'field',
+                            {
+                                var: 'muc#roomconfig_roomname',
+                            },
+                            xml('value', {}, updatedName),
+                        )
+                        // When sending a new configuration for this room we make
+                        // sure the room remains persistent
+                        const persistenceFieldXml = xml(
+                            'field',
+                            {
+                                var: 'muc#roomconfig_persistentroom',
+                            },
+                            xml('value', {}, '1'),
+                        )
+                        const roomConfigQueryXml = xml(
+                            'query',
+                            {
+                                xmlns: 'http://jabber.org/protocol/muc#owner',
+                                queryid: 'set-room-config-query',
+                            },
+                            xml(
+                                'x',
+                                {
+                                    xmlns: 'jabber:x:data',
+                                    type: 'submit',
+                                },
+                                xml(
+                                    'field',
+                                    { var: 'FORM_TYPE' },
+                                    xml(
+                                        'value',
+                                        {},
+                                        'http://jabber.org/protocol/muc#roomconfig',
+                                    ),
+                                ),
+                                roomNameFieldXml,
+                                persistenceFieldXml,
+                            ),
+                        )
+                        xmppClient?.send(
+                            xml(
+                                'iq',
+                                {
+                                    id: 'set-room-config',
+                                    from: xmppClient?.jid?.toString(),
+                                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                    type: 'set',
+                                },
+                                roomConfigQueryXml,
+                            ),
+                        )
+                    } catch (error) {
+                        console.error('changeMucRoomName', error)
                     }
-                }
-                xmppClient?.on('stanza', onStanzaReceived)
-
-                // do we need to clean up listeners if dependencies change
-                // and this callback gets re-run? count listeners to monitor this
-                console.info(
-                    'xmppClient has',
-                    xmppClient?.listenerCount('stanza'),
-                    'listeners',
-                )
+                })
+            },
+            [dispatch, xmppClient],
+        ),
+        enterMucRoom: useCallback(
+            (group: Group) => {
+                if (!xmppClient?.jid) return
                 try {
+                    const { local, domain, resource } = xmppClient?.jid as JID
+                    const fromUser = `${local}@${domain}/${resource}`
+                    const onStanzaReceived = async (stanza: Element) => {
+                        // Receive a registration response from the server
+                        if (
+                            stanza.is('presence') &&
+                            stanza.getAttr('id') === 'enter-muc-room'
+                        ) {
+                            const result = stanza.getChild('x')
+                            const statusResults = result?.getChildren('status')
+
+                            statusResults?.map(async sr => {
+                                // status 201 = configuration required, send an room
+                                // configuration query to allow others to join
+                                // https://xmpp.org/extensions/xep-0045.html#createroom-reserved
+                                if (sr?.getAttr('code') === '201') {
+                                    const roomNameFieldXml = xml(
+                                        'field',
+                                        {
+                                            var: 'muc#roomconfig_roomname',
+                                        },
+                                        xml(
+                                            'value',
+                                            {},
+                                            group.name || DEFAULT_GROUP_NAME,
+                                        ),
+                                    )
+                                    const persistenceFieldXml = xml(
+                                        'field',
+                                        {
+                                            var: 'muc#roomconfig_persistentroom',
+                                        },
+                                        xml('value', {}, '1'),
+                                    )
+                                    const roomConfigQueryXml = xml(
+                                        'query',
+                                        {
+                                            xmlns: 'http://jabber.org/protocol/muc#owner',
+                                        },
+                                        xml(
+                                            'x',
+                                            {
+                                                xmlns: 'jabber:x:data',
+                                                type: 'submit',
+                                            },
+                                            xml(
+                                                'field',
+                                                { var: 'FORM_TYPE' },
+                                                xml(
+                                                    'value',
+                                                    {},
+                                                    'http://jabber.org/protocol/muc#roomconfig',
+                                                ),
+                                            ),
+                                            roomNameFieldXml,
+                                            persistenceFieldXml,
+                                        ),
+                                    )
+                                    xmppClient?.send(
+                                        xml(
+                                            'iq',
+                                            {
+                                                from: fromUser,
+                                                to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                                id: 'create-muc-room',
+                                                type: 'set',
+                                            },
+                                            roomConfigQueryXml,
+                                        ),
+                                    )
+                                }
+                                // status 110 = self-presence message which confirms
+                                // occupancy in room to be added to context
+                                if (sr?.getAttr('code') === '110') {
+                                    xmppClient?.removeListener(
+                                        'stanza',
+                                        onStanzaReceived,
+                                    )
+                                    dispatch(addToGroups(group))
+                                }
+                            })
+                        }
+                    }
+                    xmppClient?.on('stanza', onStanzaReceived)
+
+                    // do we need to clean up listeners if dependencies change
+                    // and this callback gets re-run? count listeners to monitor this
+                    console.info(
+                        'xmppClient has',
+                        xmppClient?.listenerCount('stanza'),
+                        'stanza listeners',
+                    )
                     xmppClient?.send(
                         xml(
                             'presence',
@@ -342,6 +475,66 @@ export const useXmpp = () => {
                     )
                 } catch (error) {
                     console.error('enterMucRoom error', error)
+                }
+            },
+            [dispatch, xmppClient],
+        ),
+        fetchMucRoomConfig: useCallback(
+            (group: Group) => {
+                if (!xmppClient?.jid) return
+                try {
+                    const onStanzaReceived = async (stanza: Element) => {
+                        // Listen for matching stanza from the server and remove the
+                        // listener when we get a response
+                        if (
+                            stanza.getAttr('type') === 'result' &&
+                            stanza.getAttr('id') === 'get-room-config'
+                        ) {
+                            xmppClient?.removeListener(
+                                'stanza',
+                                onStanzaReceived,
+                            )
+
+                            const result = stanza
+                                .getChild('query')
+                                ?.getChild('x')
+                            const nameField = result?.getChildByAttr(
+                                'var',
+                                'muc#roomconfig_roomname',
+                            )
+
+                            if (nameField?.getChild('value')) {
+                                dispatch(
+                                    updateGroup(
+                                        new Group({
+                                            ...group,
+                                            name: nameField.getChildText(
+                                                'value',
+                                            ),
+                                        }),
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                    xmppClient?.on('stanza', onStanzaReceived)
+                    xmppClient?.send(
+                        xml(
+                            'iq',
+                            {
+                                id: 'get-room-config',
+                                from: xmppClient.jid.toString(),
+                                to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                type: 'get',
+                            },
+                            xml('query', {
+                                xmlns: 'http://jabber.org/protocol/disco#info',
+                                queryid: 'get-room-config-query',
+                            }),
+                        ),
+                    )
+                } catch (error) {
+                    console.error('fetchMucRoomConfig', error)
                 }
             },
             [dispatch, xmppClient],

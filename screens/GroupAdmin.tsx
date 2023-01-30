@@ -1,4 +1,4 @@
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,20 +6,14 @@ import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import type { RootStackParamList } from '../types/navigation'
 
-export type Props = BottomTabScreenProps<
-    HomeTabsParamList & RootStackParamList,
-    'GroupAdmin'
->
+export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 
 const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { state, dispatch } = useFederationsContext()
     const { group } = route.params
-    const { selectedFederation } = state
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

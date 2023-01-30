@@ -18,6 +18,7 @@ declare global {
 
 export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
+export const HOME_NAVIGATOR_ID: any = 'HomeTabsNavigator'
 
 export type RouteHook = RouteProp<RootStackParamList>
 export type DrawerNavigationHook = DrawerNavigationProp<ParamListBase>
@@ -53,6 +54,7 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     CreateUsername: undefined
     DirectChat: { member: Member }
+    EditGroup: { group: Group }
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
