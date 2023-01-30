@@ -160,7 +160,7 @@
             "join-a-group": "Join a group",
             "leave-group": "Leave group",
             "money-changing": "Money Changing",
-            "money-changing-message-preview": "Could someone please help me get in touch with a guardian..."
+            "money-changing-message-preview": "Could someone please help me get in touch with a guardian...",
             "new-message": "New message",
             "new-group": "New group",
             "no-one-is-in-this-group": "No one is in this group yet.",
@@ -173,7 +173,7 @@
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
             "view-shared-media": "View shared media",
-            "view-group": "View group",
+            "view-group": "View group"
         },
         "federations": {
             "add-federation": "Add a Federation",
