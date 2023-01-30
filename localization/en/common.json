@@ -89,7 +89,8 @@
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "unknown-error": "An unknown error occurred",
-        "username-already-exists": "This username already exists. Recover your wallet to restore your username."
+        "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
+        "invalid-character": "Invalid character"
     },
     "feature": {
         "backup": {
@@ -201,7 +202,8 @@
             "username-instructions": "Your username will be how other FederationZ members will identify you.",
             "welcome-instructions": "New members receive a fresh wallet. Returning members will be prompted to recover their wallet.",
             "welcome-to-federation": "Welcome to {{federation}}",
-            "welcome-to-fedi": "Welcome to Fedi"
+            "welcome-to-fedi": "Welcome to Fedi",
+            "username-guidance": "Enter an username containing lowercase letters without spaces"
         },
         "send": {
             "camera-access-information": "To send money, you will need to allow Fedi access to your camera to scan a payment request",
