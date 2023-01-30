@@ -39,7 +39,7 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
 export const FEDI_GENERAL_CHANNEL_GROUP = {
     id: 'fedi-general-channel-group',
     icon: Images.FediLogoIcon,
-    name: 'Fedi',
+    name: 'Retreat Chat',
     pinned: true,
     messagePreview:
         'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
@@ -47,7 +47,7 @@ export const FEDI_GENERAL_CHANNEL_GROUP = {
 export const FEDI_RECOVERY_SUPPORT_GROUP = {
     id: 'fedi-recovery-support-group',
     icon: Images.Recovery,
-    name: 'Recovery Support',
+    name: 'Money Changing',
     pinned: true,
     messagePreview:
         'Could someone please help me get in touch with a guardian...',
