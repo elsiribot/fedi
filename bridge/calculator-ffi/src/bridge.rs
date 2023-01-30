@@ -531,7 +531,11 @@ impl Federation {
     /// Receive ecash into wallet. Save transaction to DB.
     pub async fn receive_ecash(&self, ecash: TieredMulti<SpendableNote>) -> Result<Amount> {
         let rng = rand::rngs::OsRng;
-        self.client.reissue(ecash.clone(), rng).await?;
+        let outpoint = self.client.reissue(ecash.clone(), rng).await?;
+        // FIXME: run this in the background?
+        if let Err(e) = self.client.await_outpoint_outcome(outpoint).await {
+            error!("Failed to claim contract {}", e);
+        }
         self.save_transaction(&Transaction::offline(
             tx::TransactionDirection::Receive,
             ecash.total_amount(),
