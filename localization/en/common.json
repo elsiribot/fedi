@@ -164,7 +164,11 @@
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
             "view-shared-media": "View shared media",
-            "view-group": "View group"
+            "view-group": "View group",
+            "retreat-chat": "Retreat Chat",
+            "retreat-chat-message-preview": "Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app",
+            "money-changing": "Money Changing",
+            "money-changing-message-preview": "Could someone please help me get in touch with a guardian..."
         },
         "federations": {
             "add-federation": "Add a Federation",
