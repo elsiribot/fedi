@@ -62,6 +62,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <Input
+                autoFocus
                 onChangeText={onChangeText as (_: string) => any}
                 value={amount}
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
