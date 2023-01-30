@@ -122,7 +122,7 @@ const styles = (theme: Theme) =>
             marginVertical: theme.spacing.sm,
         },
         wordNumber: {
-            color: theme.colors.primaryVeryLight,
+            color: theme.colors.black,
             paddingHorizontal: theme.spacing.md,
             width: '30%',
         },
