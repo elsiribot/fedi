@@ -13,7 +13,7 @@ import React, {
     useReducer,
     useRef,
 } from 'react'
-import { AppState as RNAppState, AppStateStatus, Platform } from 'react-native'
+import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
@@ -568,7 +568,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         const xmpp = client(xmppConnectionOptions)
         // debug(xmpp, true)
 
-        debug(xmpp, true, `OS=${Platform.OS}`)
+        // debug(xmpp, true, `OS=${Platform.OS}`)
         // This ^ helps debug when testing with both ios + android emulators
         // simultaneously to know which stanzas are coming from which device
 
