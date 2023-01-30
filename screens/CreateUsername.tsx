@@ -98,6 +98,13 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         xmppAuthInProgress,
     ])
 
+    const handleUsernameChange = (input: string) => {
+        const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
+        if (!isValid) {
+            toast?.show(t('errors.invalid-character'), 3000)
+        } else setUsername(input.toLowerCase())
+    }
+
     return (
         <View style={styles(theme).container}>
             <Text h2 medium style={styles(theme).titleText}>
@@ -111,7 +118,9 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     {t('words.username')}
                 </Text>
                 <Input
-                    onChangeText={setUsername}
+                    onChangeText={input => {
+                        handleUsernameChange(input)
+                    }}
                     value={username}
                     placeholder={`${t('feature.onboarding.enter-username')}...`}
                     returnKeyType="done"
@@ -120,6 +129,9 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     autoCapitalize={'none'}
                     autoCorrect={false}
                 />
+                <Text caption style={styles(theme).inputGuidance}>
+                    {t('feature.onboarding.username-guidance')}
+                </Text>
             </View>
             <Button
                 fullWidth
@@ -168,6 +180,12 @@ const styles = (theme: Theme) =>
             borderColor: theme.colors.primaryVeryLight,
             borderWidth: 1,
             borderRadius: theme.borders.defaultRadius,
+        },
+        inputGuidance: {
+            textAlign: 'left',
+            marginLeft: theme.spacing.sm,
+            marginTop: theme.spacing.xs,
+            color: theme.colors.grey,
         },
     })
 
