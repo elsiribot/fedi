@@ -97,24 +97,24 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     const renderFirstBackupStatus = () => {
         if (backupsCompleted > 0) {
             return (
-                <Text style={styles(theme).completed}>{`${t(
-                    'words.complete',
-                )}`}</Text>
+                <Text style={styles(theme).completed}>
+                    {`${t('words.complete')}`}
+                </Text>
             )
         } else {
-            return <Text>{`${t('words.pending')}`}</Text>
+            return <Text>{`${t('words.pending').toLowerCase()}`}</Text>
         }
     }
 
     const renderSecondBackupStatus = () => {
         if (backupsCompleted > 1) {
             return (
-                <Text style={styles(theme).completed}>{`${t(
-                    'words.complete',
-                )}`}</Text>
+                <Text style={styles(theme).completed}>
+                    {`${t('words.complete')}`}
+                </Text>
             )
         } else {
-            return <Text>{`${t('words.pending')}`}</Text>
+            return <Text>{`${t('words.pending').toLowerCase()}`}</Text>
         }
     }
 
