@@ -28,7 +28,7 @@ const GroupHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            closeButton
+            backButton
             containerStyle={styles(theme).container}
             headerCenter={
                 <View style={styles(theme).recipientContainer}>
