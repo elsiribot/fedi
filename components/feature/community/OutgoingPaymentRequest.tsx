@@ -59,11 +59,11 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             try {
                 setProcessingRedemption(null)
                 await receiveEcash(payment?.token!)
+                setBroadcastingUpdate(true)
             } catch (error) {
                 console.error('receiveEcash', error)
                 // setTokenWasSpent(true)
             }
-            setBroadcastingUpdate(true)
         }
         if (processingRedemption !== null && payment?.token) {
             redeemEcash()
