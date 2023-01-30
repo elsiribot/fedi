@@ -12,7 +12,7 @@ Set `FM_ROCKSDB=true` environment variable if you'd like to build the bridge wit
 
 `./android.sh` will build the Android package and publish to "maven local". `./ios.sh` build build the ios package which you can add to project via XCode UI.
 
-Justin needs to export the following variables to get Android builds working. You may need to do similar. Ask him if you have any trouble building for Android.
+Export the following variables to get Android builds working. Ask a project maintainer if you have any trouble building for Android.
 
 ```shell
 export ANDROID_NDK_ROOT=/Users/justin/Library/Android/sdk/ndk/25.1.8937393
@@ -25,7 +25,7 @@ export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
 
 ## Troubleshooting
 
-If you see `ld: error: unable to find library -lgcc` error, create these 4 files:
+1. If you see `ld: error: unable to find library -lgcc` error, create these 4 files:
 
 ```
 ~/Library/Android/sdk/ndk/<version>/toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.6/lib/linux/i386/libgcc.a
@@ -38,6 +38,13 @@ Inside them just put the following:
 
 ```
 INPUT(-lunwind)
+```
+
+2. If you see `error occurred: Failed to find tool. Is `arm-linux-androideabi-clang++` installed?`, run these commands to copy the clang files into the appropriate architecture directory:
+
+```
+cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi21-clang $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-clang 
+cp  $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-clang++
 ```
 
 ## Testing
