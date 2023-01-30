@@ -8,6 +8,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { decodeInvoice, Invoice } from '../bridge'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import LineBreak from '../components/ui/LineBreak'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { MSats } from '../types'
@@ -25,6 +26,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const { selectedFederation } = useFederationsContext().state
+    const { toast } = useEnvironmentContext().state
     const { payInvoice } = useBridge()
     const { lightningUri } = route.params
 
@@ -71,8 +73,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (error) {
-            console.error('onSendBtc error')
-            console.error(error)
+            toast?.show((error as Error).message)
             setIsLoading(false)
             setIsPayingInvoice(false)
         }

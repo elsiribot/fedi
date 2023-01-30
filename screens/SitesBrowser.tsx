@@ -118,13 +118,18 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         ],
                     })
                 })
-                const invoice = await generateInvoice(
-                    amountUtils.satToMsat(amount),
-                    description,
-                )
 
-                return {
-                    paymentRequest: invoice,
+                // FIXME: Check webln spec to see what we should return here
+                try {
+                    const invoice = await generateInvoice(
+                        amountUtils.satToMsat(amount),
+                        description,
+                    )
+                    return {
+                        paymentRequest: invoice,
+                    }
+                } catch (error) {
+                    toast?.show((error as Error).message)
                 }
             } catch (e) {
                 console.error('Error creating invoice', e)
@@ -178,7 +183,11 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         5000,
                     )
                 } else {
-                    await payInvoice(paymentRequest)
+                    try {
+                        await payInvoice(paymentRequest)
+                    } catch (error) {
+                        toast?.show((error as Error).message)
+                    }
                 }
 
                 return {
@@ -232,8 +241,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                         token,
                                     )
                                 } catch (e) {
-                                    // FIXME
-                                    console.error('LNURL-Auth failed', e)
+                                    toast?.show('Login failed')
                                 }
                                 setShowOverlay(false)
                             },
