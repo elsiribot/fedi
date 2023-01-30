@@ -154,6 +154,8 @@
             "incoming-chat-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
             "join-a-group": "Join a group",
             "leave-group": "Leave group",
+            "money-changing": "Money Changing",
+            "money-changing-message-preview": "Could someone please help me get in touch with a guardian..."
             "new-message": "New message",
             "new-group": "New group",
             "no-one-is-in-this-group": "No one is in this group yet.",
@@ -161,14 +163,12 @@
             "outgoing-chat-payment": "You requested {{amount}} {{unit}} {{memo}}",
             "payment-requested": "{{name}} requested {{amount}} {{unit}}",
             "group-invite": "Group invite",
+            "retreat-chat": "Retreat Chat",
+            "retreat-chat-message-preview": "Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app",
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
             "view-shared-media": "View shared media",
             "view-group": "View group",
-            "retreat-chat": "Retreat Chat",
-            "retreat-chat-message-preview": "Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app",
-            "money-changing": "Money Changing",
-            "money-changing-message-preview": "Could someone please help me get in touch with a guardian..."
         },
         "federations": {
             "add-federation": "Add a Federation",
