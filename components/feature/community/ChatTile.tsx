@@ -1,11 +1,14 @@
 import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
 import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { Chat } from '../../../types'
+import { Chat, ChatType } from '../../../types'
 import DateUtils from '../../../utils/DateUtils'
+import stringUtils from '../../../utils/StringUtils'
+import HoloAvatar from '../../ui/HoloAvatar'
 
 type ChatTileProps = {
     chat: Chat
@@ -26,10 +29,27 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         chat.hasNewMessages ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
-                <Image
-                    source={chat.icon || Images.FediLogoIcon}
-                    style={styles(theme).icon}
-                />
+                {chat.type === ChatType.direct ? (
+                    <View style={styles(theme).icon}>
+                        {chat.members && chat.members[0]?.username ? (
+                            <HoloAvatar
+                                title={stringUtils.getInitialsFromName(
+                                    chat.members[0].username,
+                                )}
+                            />
+                        ) : (
+                            <Image
+                                source={Images.SocialPeople}
+                                style={styles(theme).icon}
+                            />
+                        )}
+                    </View>
+                ) : (
+                    <Image
+                        source={chat.icon || Images.NewRoom}
+                        style={styles(theme).icon}
+                    />
+                )}
             </View>
             <View style={styles(theme).contents}>
                 <View style={styles(theme).topRow}>
@@ -48,12 +68,22 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     )}
                 </View>
                 <View style={styles(theme).bottomRow}>
-                    <Text
-                        caption
-                        style={styles(theme).messagePreview}
-                        numberOfLines={2}>
-                        {chat.messagePreview || ''}
-                    </Text>
+                    {chat.messagePreview ? (
+                        <Text
+                            caption
+                            style={styles(theme).messagePreview}
+                            numberOfLines={2}>
+                            {chat.messagePreview}
+                        </Text>
+                    ) : (
+                        <Text
+                            caption
+                            style={styles(theme).emptyMessagePreview}
+                            numberOfLines={2}>
+                            {t('feature.community.no-one-is-in-this-group')}
+                        </Text>
+                    )}
+
                     {chat.pinned && (
                         <Icon
                             name="pin"
@@ -103,6 +133,11 @@ const styles = (theme: Theme) =>
         },
         messagePreview: {
             width: '90%',
+        },
+        emptyMessagePreview: {
+            width: '90%',
+            color: theme.colors.grey,
+            fontStyle: 'italic',
         },
         pinIcon: {
             width: '10%',

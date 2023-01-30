@@ -58,7 +58,10 @@ export type UsdString = FiatUnit<string, 'UsdString'>
 
 // Community features
 export type FediGroupLink = string
-
+export enum ChatType {
+    direct = 'direct',
+    group = 'group',
+}
 export class Chat extends Base {
     id: string
     name?: string
@@ -68,6 +71,7 @@ export class Chat extends Base {
     messagePreview?: string
     lastReceivedTimestamp?: number
     members?: Member[]
+    type: ChatType
 
     constructor(data: any) {
         super(data)
