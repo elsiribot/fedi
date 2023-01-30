@@ -45,7 +45,7 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
     const createGroupInvite = async () => {
         const groupId = await getUniqueGroupId()
         const groupName = DEFAULT_GROUP_NAME
-        const groupLink = Group.encodeInvitationLink(groupId, groupName)
+        const groupLink = Group.encodeInvitationLink(groupId)
 
         // TODO: group link should be a deep link with app download fallback
         navigation.replace('GroupInvite', {
