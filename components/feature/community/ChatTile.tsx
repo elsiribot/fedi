@@ -1,14 +1,14 @@
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
 import DateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type ChatTileProps = {
     chat: Chat
@@ -38,16 +38,16 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                                 )}
                             />
                         ) : (
-                            <Image
-                                source={Images.SocialPeople}
-                                style={styles(theme).icon}
+                            <SvgImage
+                                name="SocialPeople"
+                                size={SvgImageSize.md}
                             />
                         )}
                     </View>
                 ) : (
-                    <Image
-                        source={chat.icon || Images.NewRoom}
-                        style={styles(theme).icon}
+                    <SvgImage
+                        name={chat.icon ? chat.icon : 'SocialPeople'}
+                        size={SvgImageSize.md}
                     />
                 )}
             </View>

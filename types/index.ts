@@ -1,6 +1,5 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
-import { ImageSourcePropType } from 'react-native'
 
 import Base, { Invoice } from '../bridge'
 import { DEFAULT_GROUP_NAME } from '../constants'
@@ -65,7 +64,7 @@ export enum ChatType {
 export class Chat extends Base {
     id: string
     name?: string
-    icon?: ImageSourcePropType
+    icon?: string
     pinned?: boolean
     hasNewMessages?: boolean
     messagePreview?: string

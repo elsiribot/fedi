@@ -4,10 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
 import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecoveryFileButton'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
@@ -28,7 +28,7 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                 {t('feature.recovery.social-recovery-instructions')}
             </Text>
             <HoloCard
-                iconImage={Images.FediFile}
+                iconImage={<SvgImage name="FediFile" />}
                 title={t('feature.recovery.locate-social-recovery-file')}
                 body={
                     <>

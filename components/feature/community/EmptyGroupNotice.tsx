@@ -1,12 +1,12 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import { Props as GroupChatProps } from '../../../screens/GroupChat'
 import { NavigationHook } from '../../../types/navigation'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type GroupChatRouteProp = GroupChatProps['route']
 
@@ -19,7 +19,25 @@ const EmptyGroupNotice: React.FC<{}> = () => {
 
     return (
         <View style={styles(theme).container}>
-            <Image style={styles(theme).icon} source={Images.Search} />
+            <SvgImage
+                name="Search"
+                containerStyle={{
+                    marginTop: theme.spacing.xl,
+                    paddingTop: theme.spacing.xl,
+                    paddingBottom: theme.spacing.md,
+                }}
+                size={SvgImageSize.lg}
+            />
+            <SvgImage name="Search" size={SvgImageSize.lg} />
+            <SvgImage
+                name="Search"
+                svgProps={{
+                    stroke: theme.colors.primary,
+                    height: theme.sizes.lg,
+                    width: theme.sizes.lg,
+                }}
+            />
+            <SvgImage name="Video" />
             <Text medium style={styles(theme).text}>
                 {t('feature.community.no-one-is-in-this-group')}
             </Text>

@@ -31,7 +31,7 @@ const FederationInvite: React.FC<Props> = ({ route }: Props) => {
                 <QRCode
                     value={inviteLink}
                     size={QR_CODE_SIZE}
-                    logo={Images.FediQrLogo}
+                    logo={Images.FediQrLogo} //Should not be replaced with svg
                 />
             </View>
             <View style={styles(theme).copyInviteLinkContainer}>

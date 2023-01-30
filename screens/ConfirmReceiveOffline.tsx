@@ -1,10 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
 import { Transaction } from '../bridge'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { useBridge } from '../state/hooks'
@@ -57,9 +56,10 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).offlineContainer}>
-                <Image
-                    source={Images.Offline}
-                    style={styles(theme).offlineIcon}
+                <OfflineSvg
+                    height={theme.sizes.sm}
+                    width={theme.sizes.sm}
+                    // marginRight={theme.spacing.md}
                 />
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>

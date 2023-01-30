@@ -17,7 +17,7 @@ import {
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
-    'Community'
+    'Chat'
 >
 
 const Community: React.FC<Props> = () => {

@@ -1,12 +1,12 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
-import { Icon, Image, Text, useTheme } from '@rneui/themed'
+import { Icon, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
-import { Images } from '../../../assets/images'
 
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type GroupAdminRouteProp = RouteProp<RootStackParamList, 'GroupAdmin'>
 
@@ -50,13 +50,7 @@ const GroupInviteHeader: React.FC<{}> = () => {
                         // Disabled
                         opacity: 0.25,
                     }}>
-                    <Image
-                        style={{
-                            height: theme.sizes.md,
-                            width: theme.sizes.md,
-                        }}
-                        source={Images.Edit}
-                    />
+                    <SvgImage name="Edit" size={SvgImageSize.md} />
                 </Pressable>
             }
         />

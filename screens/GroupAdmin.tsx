@@ -1,11 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
@@ -22,10 +23,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     source={Images.HoloBackground}
                     style={styles(theme).profileCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <Image
-                        style={styles(theme).groupIcon}
-                        source={Images.Room}
-                    />
+                    <SvgImage name="Room" size={SvgImageSize.md} />
                 </ImageBackground>
                 <Text h2 style={styles(theme).groupNameText}>
                     {group.name}
@@ -37,12 +35,12 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Text>
                 <SettingsItem
                     disabled
-                    imageSource={Images.SocialPeople}
+                    image={<SvgImage name="SocialPeople" />}
                     label={t('words.members')}
                     onPress={() => {}}
                 />
                 <SettingsItem
-                    imageSource={Images.Room}
+                    image={<SvgImage name="Room" />}
                     label={t('feature.community.invite-to-group')}
                     onPress={() => {
                         navigation.navigate('GroupInvite', {
@@ -52,13 +50,13 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.LeaveRoom}
+                    image={<SvgImage name="LeaveRoom" />}
                     label={t('feature.community.leave-group')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.InviteMembers}
+                    image={<SvgImage name="InviteMembers" />}
                     label={t('feature.community.broadcast-only')}
                     onPress={() => {}}
                 />
@@ -69,25 +67,25 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Text>
                 <SettingsItem
                     disabled
-                    imageSource={Images.Alarm}
+                    image={<SvgImage name="Alarm" />}
                     label={t('feature.community.disappearing-messages')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.ChatHistory}
+                    image={<SvgImage name="ChatHistory" />}
                     label={t('feature.community.show-history-to-new-members')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.Photo}
+                    image={<SvgImage name="Photo" />}
                     label={t('feature.community.view-shared-media')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
-                    imageSource={Images.Cash}
+                    image={<SvgImage name="Cash" />}
                     label={t('words.payments')}
                     onPress={() => {}}
                 />
