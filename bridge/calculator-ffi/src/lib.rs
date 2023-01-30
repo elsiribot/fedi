@@ -25,7 +25,10 @@ use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};
 use lightning_invoice::Invoice;
 use logging::init_logging;
-use mint_client::{mint::SpendableNote, social::RecoveryFile};
+use mint_client::{
+    social::RecoveryFile,
+    utils::{parse_ecash, serialize_ecash},
+};
 use mnemonic::Mnemonic;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -277,14 +280,6 @@ pub struct GenerateEcashPayload {
     amount: Amount,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NoteWithAmount {
-    amount: Amount,
-    // FIXME: spendable_note
-    note: SpendableNote,
-}
-
 async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
     let GenerateEcashPayload {
         federation_id,
@@ -295,8 +290,7 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
     };
     let federation = get_federation(&federation_id).await?;
     let ecash = federation.generate_ecash(amount).await?;
-    // TODO: this should be serialized with Encodable, not Serializable
-    let ecash = serde_json::to_string(&ecash).context("could not serialize")?;
+    let ecash = serialize_ecash(&ecash);
     Ok(json!({ "result": ecash }).to_string())
 }
 
@@ -304,7 +298,8 @@ async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
 #[serde(rename_all = "camelCase")]
 pub struct ReceiveEcashPayload {
     federation_id: String,
-    ecash: Vec<NoteWithAmount>,
+    // TODO: TieredMulti<SpendableNote>
+    ecash: String,
 }
 
 async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
@@ -316,6 +311,10 @@ async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&federation_id).await?;
+    // TODO: save them to disk in case this call fails.
+    // Add a poller to check for ecash notes in the table and try to redeem them periodically.
+    // If redeemed, send transaction event and update their entry.
+    let ecash = parse_ecash(&ecash)?;
     let amount = federation.receive_ecash(ecash).await?;
     Ok(json!({ "result": { "amount": amount } }).to_string())
 }
@@ -325,7 +324,8 @@ async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
 #[serde(rename_all = "camelCase")]
 pub struct ValidateEcashPayload {
     federation_id: String,
-    ecash: Vec<NoteWithAmount>,
+    // TODO: TieredMulti<SpendableNote>
+    ecash: String,
 }
 
 async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
@@ -337,6 +337,7 @@ async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
     let federation = get_federation(&federation_id).await?;
+    let ecash = parse_ecash(&ecash)?;
     let (valid, amount) = federation.validate_ecash(ecash).await;
     Ok(json!({ "result": { "valid": valid, "amount": amount }}).to_string())
 }
