@@ -1,4 +1,12 @@
-import { Divider, Icon, Input, Text, Theme, useTheme } from '@rneui/themed'
+import {
+    Divider,
+    Icon,
+    Image,
+    Input,
+    Text,
+    Theme,
+    useTheme,
+} from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -9,6 +17,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { Images } from '../../../assets/images'
 
 import {
     IncomingBitcoinTransactionStatus,
@@ -115,12 +124,18 @@ const TransactionDetail = ({
                 {txn.lightning && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
-                        <Text>
-                            {stringUtils.truncateMiddleOfString(
-                                txn.lightning.invoice,
-                                5,
-                            )}
-                        </Text>
+                        <View style={styles(theme).detailItem}>
+                            <Text>
+                                {stringUtils.truncateMiddleOfString(
+                                    txn.lightning.invoice,
+                                    5,
+                                )}
+                            </Text>
+                            <Image
+                                style={styles(theme).icon}
+                                source={Images.Copy}
+                            />
+                        </View>
                     </View>
                 )}
                 {txn.bitcoin && (
@@ -176,6 +191,10 @@ const TransactionDetail = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        icon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+        },
         container: {
             alignItems: 'center',
             margin: theme.spacing.md,
