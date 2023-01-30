@@ -90,7 +90,7 @@
         "invalid-group-code": "This is not a valid group code",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
-        "invalid-character": "Invalid character"
+        "invalid-character": "The following characters are not allowed: \" & ' / : < >"
     },
     "feature": {
         "backup": {
