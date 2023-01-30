@@ -6,11 +6,14 @@ import { JID } from '@xmpp/jid'
 import { isEqual } from 'lodash'
 import React, {
     createContext,
+    MutableRefObject,
     useContext,
     useEffect,
     useMemo,
     useReducer,
+    useRef,
 } from 'react'
+import { AppState as RNAppState, AppStateStatus, Platform } from 'react-native'
 
 import {
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
@@ -537,6 +540,9 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         reducer,
         initialState,
     )
+    const appStateRef = useRef<AppStateStatus>(
+        RNAppState.currentState,
+    ) as MutableRefObject<AppStateStatus>
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
@@ -740,6 +746,55 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         selectedFederation?.username,
         selectedFederation?.password,
     ])
+
+    // This logic is needed to help gracefully resume the XMPP websocket stream
+    // so that the websocket stream resumes properly
+    useEffect(() => {
+        const resumeStream = () => {
+            // the client will likely be instantiated already but guard here
+            try {
+                if (state.xmppClient) {
+                    const xmppClient = state.xmppClient
+
+                    // Sometimes we send a presence message and do not
+                    // get a response which may mean the stream cannot
+                    // be resumed so we need to restart the client
+                    let reconnectTimer = setTimeout(() => {
+                        xmppClient.restart()
+                    }, 5000)
+                    // This expects a response to the presence message which means
+                    // the stream has been resumed successfully so we can clear
+                    // the reconnectTimer and cleanup the listener
+                    const onStanzaReceived = async (_: Element) => {
+                        xmppClient?.removeListener('stanza', onStanzaReceived)
+                        clearTimeout(reconnectTimer)
+                    }
+                    xmppClient?.on('stanza', onStanzaReceived)
+                    xmppClient?.send(xml('presence'))
+                }
+            } catch (error) {
+                console.error('Failed to re-establish XMPP presence')
+            }
+        }
+
+        // Subscribe to changes in AppState
+        const subscription = RNAppState.addEventListener(
+            'change',
+            nextAppState => {
+                if (
+                    appStateRef.current.match(/inactive|background/) &&
+                    nextAppState === 'active'
+                ) {
+                    resumeStream()
+                }
+                appStateRef.current = nextAppState
+            },
+        )
+
+        return () => {
+            subscription.remove()
+        }
+    }, [state.xmppClient])
 
     // Update async storage when groups are added
     useEffect(() => {
