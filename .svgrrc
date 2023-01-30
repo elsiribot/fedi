@@ -1,3 +1,8 @@
+// In order to render the svgs, `react-native-svg-transformer` 
+// library has been used which does not allow us to directly change 
+// the stroke of a Svg. In order to change the stroke using the `stroke` 
+// property inside the Svg component, we have to change the default 
+// stroke of all Svg files to black 
 {
     "replaceAttrValues": {
         "black": "{props.stroke}"

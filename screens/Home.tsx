@@ -69,7 +69,9 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                             return (
                                 <SvgImage
                                     name="Wallet"
-                                    style={{}}
+                                    style={{
+                                        paddingLeft: 12,
+                                    }}
                                     svgStyle={{
                                         stroke: '#6D7071',
                                         width: theme.sizes.sm,
