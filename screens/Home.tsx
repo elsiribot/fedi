@@ -5,7 +5,6 @@ import { t } from 'i18next'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChatSvg, CogSvg, GlobeSvg } from '../assets/images/svgs'
 import SvgImage from '../components/ui/SvgImage'
 
 import CommunityHeader from '../components/feature/community/CommunityHeader'
@@ -63,41 +62,50 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
             initialRouteName="Wallet"
             id={HOME_NAVIGATOR_ID}
             screenOptions={({ route }) => ({
-                tabBarIcon: () => {
+                tabBarIcon: ({ focused }) => {
                     switch (route.name) {
                         case 'Wallet':
                             return (
                                 <SvgImage
                                     name="Wallet"
-                                    style={{
-                                        paddingLeft: 12,
-                                    }}
-                                    svgStyle={{
-                                        stroke: '#6D7071',
-                                        width: theme.sizes.sm,
-                                        height: theme.sizes.sm,
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
                                     }}
                                 />
                             )
                         case 'Chat':
                             return (
-                                <ChatSvg
-                                    height={theme.sizes.sm}
-                                    width={theme.sizes.sm}
+                                <SvgImage
+                                    name="Chat"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
                         case 'Sites':
                             return (
-                                <GlobeSvg
-                                    height={theme.sizes.sm}
-                                    width={theme.sizes.sm}
+                                <SvgImage
+                                    name="Globe"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
                         case 'Admin':
                             return (
-                                <CogSvg
-                                    height={theme.sizes.sm}
-                                    width={theme.sizes.sm}
+                                <SvgImage
+                                    name="Cog"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
                         default:
