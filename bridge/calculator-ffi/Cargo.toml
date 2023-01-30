@@ -13,8 +13,8 @@ name = "calculatorffi"
 mint-client = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
 fedimint-api = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
 fedimint-core = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
-fedimint-sled = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
-fedimint-rocksdb = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
+fedimint-sled = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997", optional = true }
+fedimint-rocksdb = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997", optional = true }
 fedi-social = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
 fedimint-derive-secret = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git", rev = "6f6fb438e835b15a09d5c5c338c3846eba069997" }
 
@@ -22,7 +22,8 @@ fedimint-derive-secret = { git = "ssh://git@github.com/fedibtc/fedimint-fedi.git
 # mint-client = { path = "../../fedimint/client/client-lib" }
 # fedimint-api = { path = "../../fedimint/fedimint-api" }
 # fedimint-core = { path = "../../fedimint/fedimint-core" }
-# fedimint-sled = { path = "../../fedimint/fedimint-sled" }
+# fedimint-sled = { path = "../../fedimint/fedimint-sled", optional=true }
+# fedimint-rocksdb = { path = "../../fedimint/fedimint-rocksdb", optional=true }
 # fedi-social = { path = "../../fedimint/modules/fedi-social" }
 # fedimint-derive-secret = { path = "../../fedimint/crypto/derive-secret" }
 
@@ -46,6 +47,11 @@ hex = "0.4.3"
 
 uniffi_macros = { version = "0.21.0", features = ["builtin-bindgen"] }
 uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
+
+[features]
+default = ["sled"]
+sled = ["dep:fedimint-sled"]
+rocksdb = ["dep:fedimint-rocksdb"]
 
 [build-dependencies]
 uniffi_build = { version = "0.21.0", features = ["builtin-bindgen"] }

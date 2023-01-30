@@ -8,6 +8,8 @@ This is a fork of [uniffi-bindings-template](https://github.com/thunderbiscuit/u
 
 ## Building
 
+Set `FM_ROCKSDB=true` environment variable if you'd like to build the bridge with RocksDB, otherwise Sled will be used.
+
 `./android.sh` will build the Android package and publish to "maven local". `./ios.sh` build build the ios package which you can add to project via XCode UI.
 
 Justin needs to export the following variables to get Android builds working. You may need to do similar. Ask him if you have any trouble building for Android.

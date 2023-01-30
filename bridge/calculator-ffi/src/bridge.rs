@@ -35,6 +35,9 @@ use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
 use fedimint_derive_secret::ChildId;
+#[cfg(feature = "rocksdb")]
+use fedimint_rocksdb::RocksDb;
+#[cfg(feature = "sled")]
 use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
@@ -80,7 +83,10 @@ async fn load_federations_from_disk(
                 let fedi_config: FediConfig =
                     load_from_file(&path).context("invalid cfg on disk")?;
                 path.set_extension("db");
+                #[cfg(feature = "sled")]
                 let db = SledDb::open(path, "client").context("client tree not found")?;
+                #[cfg(feature = "rocksdb")]
+                let db = RocksDb::open(path).context("could not open rocksdb")?;
                 let db = Database::new(db, module_decode_stubs());
                 let client = UserClient::new(
                     fedi_config.client_config,
@@ -304,7 +310,10 @@ impl Federation {
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
+        #[cfg(feature = "sled")]
         let db = SledDb::open(db_path, "client").context("client tree not found")?;
+        #[cfg(feature = "rocksdb")]
+        let db = RocksDb::open(db_path).context("could not open rocksdb")?;
         let db = Database::new(db, module_decode_stubs());
         let client = UserClient::new(
             fedi_config.client_config,

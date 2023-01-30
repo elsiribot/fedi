@@ -758,6 +758,7 @@ async fn handle_set_username(payload: String) -> anyhow::Result<String> {
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     static REQUEST_ID: AtomicU64 = AtomicU64::new(0);
     let request_id = REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    tracing::info!("{} {}", method, payload);
     RUNTIME.block_on(
         async {
             info!(?payload, "rpc_payload");
