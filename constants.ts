@@ -96,7 +96,7 @@ export const SITES = [
     {
         id: 'btcmap',
         title: 'BTCMAP',
-        url: 'https://btcmap.org',
+        url: 'https://btcmap.org/map',
         description: 'See where bitcoin is being used all over the world',
     },
     // {
