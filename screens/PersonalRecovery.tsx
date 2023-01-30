@@ -1,4 +1,3 @@
-import { CommonActions } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef, useState } from 'react'
@@ -199,12 +198,10 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             backupXmppUsername(normalizedUsername)
                         }
                         setIsLoading(false)
-                        navigation.dispatch(
-                            CommonActions.reset({
-                                index: 0,
-                                routes: [{ name: 'PersonalRecoverySuccess' }],
-                            }),
-                        )
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'PersonalRecoverySuccess' }],
+                        })
                     } catch (error) {
                         toast?.show((error as Error)?.message, 3000)
                     }
