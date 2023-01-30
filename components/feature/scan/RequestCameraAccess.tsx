@@ -1,11 +1,11 @@
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 
 import { useEffect, useState } from 'react'
-import { Images } from '../../../assets/images'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 export type RequestCameraAccessProps = {
     alternativeActionButton: React.ReactNode | null
@@ -80,10 +80,7 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).instructions}>
-                <Image
-                    source={Images.AllowCameraAccessIcon}
-                    style={styles(theme).image}
-                />
+                <SvgImage name="AllowCameraAccessIcon" size={SvgImageSize.lg} />
                 <Text h2 style={styles(theme).titleText}>
                     {t('phrases.allow-camera-access')}
                 </Text>

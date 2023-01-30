@@ -1,5 +1,5 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { Image, Input, Theme, useTheme } from '@rneui/themed'
+import { Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -11,9 +11,9 @@ import {
     View,
 } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { NavigationHook } from '../../../types/navigation'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type DirectChatRouteProp = DirectChatProps['route']
 
@@ -72,7 +72,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             recipient: member,
                         })
                     }>
-                    <Image style={styles(theme).icon} source={Images.Wallet} />
+                    <SvgImage
+                        name="Wallet"
+                        containerStyle={{
+                            marginRight: theme.spacing.md,
+                            marginBottom: theme.spacing.sm,
+                        }}
+                        size={SvgImageSize.md}
+                        svgProps={{
+                            stroke: theme.colors.primary,
+                        }}
+                    />
                 </Pressable>
             )}
             <Input
@@ -117,9 +127,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         setMessageText('')
                     }
                 }}>
-                <Image
-                    source={Images.SendArrowUpCircle}
-                    style={styles(theme).sendIcon}
+                <SvgImage
+                    name="SendArrowUpCircle"
+                    size={SvgImageSize.md}
+                    svgProps={{
+                        stroke: theme.colors.blue,
+                    }}
                 />
             </Pressable>
         </View>

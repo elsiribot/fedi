@@ -4,7 +4,7 @@ import {
     DrawerItem,
 } from '@react-navigation/drawer'
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -23,6 +23,7 @@ import {
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
     federation: Federation
@@ -40,9 +41,12 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     return (
         <View style={styles(theme).drawerItemLabel}>
-            <Image
-                style={styles(theme).image}
-                source={Images.FederationXIconSm}
+            <SvgImage
+                name="FedearationxIcon"
+                size={SvgImageSize.lg}
+                svgProps={{
+                    stroke: 'transparent',
+                }}
             />
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
@@ -62,10 +66,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                         inviteLink,
                     })
                 }}>
-                <Image
-                    style={styles(theme).iconImage}
-                    source={Images.InviteMembers}
-                />
+                <SvgImage name="InviteMembers" />
             </TouchableOpacity>
         </View>
     )
@@ -147,6 +148,7 @@ const styles = (theme: Theme) =>
             flexGrow: 1,
             flexDirection: 'column',
             alignItems: 'flex-start',
+            marginLeft: theme.spacing.sm,
         },
         iconImage: {
             height: theme.sizes.sm,

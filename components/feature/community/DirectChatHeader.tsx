@@ -1,14 +1,14 @@
 import { RouteProp, useRoute } from '@react-navigation/native'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
 import { RootStackParamList } from '../../../types/navigation'
 import stringUtils from '../../../utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
+import SvgImage from '../../ui/SvgImage'
 
 type DirectChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 
@@ -48,19 +48,13 @@ const DirectChatHeader: React.FC<{}> = () => {
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <Image
-                            style={styles(theme).headerIcon}
-                            source={Images.Video}
-                        />
+                        <SvgImage name="Video" />
                     </Pressable>
                     <Pressable
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <Image
-                            style={styles(theme).headerIcon}
-                            source={Images.Phone}
-                        />
+                        <SvgImage name="Phone" />
                     </Pressable>
                 </>
             }

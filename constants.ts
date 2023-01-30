@@ -1,5 +1,4 @@
 import { Options } from '@xmpp/client'
-import { Images } from './assets/images'
 
 import i18n from './localization/i18n'
 
@@ -38,14 +37,14 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
 }
 export const FEDI_GENERAL_CHANNEL_GROUP = {
     id: 'fedi-general-channel-group',
-    icon: Images.FediLogoIcon,
+    icon: 'FediLogoIcon',
     name: i18n.t('feature.community.retreat-chat'),
     pinned: true,
     messagePreview: i18n.t('feature.community.retreat-chat-message-preview'),
 }
 export const FEDI_RECOVERY_SUPPORT_GROUP = {
     id: 'fedi-recovery-support-group',
-    icon: Images.Recovery,
+    icon: 'Cash',
     name: i18n.t('feature.community.money-changing'),
     pinned: true,
     messagePreview: i18n.t('feature.community.money-changing-message-preview'),

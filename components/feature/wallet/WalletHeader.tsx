@@ -1,11 +1,11 @@
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useNavigation } from '@react-navigation/native'
-import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
+import SvgImage from '../../ui/SvgImage'
 
 type WalletHeaderProps = {
     toggleOffline?: () => void
@@ -34,13 +34,22 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                         style={{
                             padding: theme.spacing.sm,
                         }}>
-                        <Image
+                        <SvgImage
+                            name="Offline"
+                            containerStyle={{
+                                opacity: offline ? 1 : 0.2,
+                            }}
+                            svgProps={{
+                                stroke: theme.colors.primaryLight,
+                            }}
+                        />
+                        {/* <Image
                             source={Images.Offline}
                             style={[
                                 styles(theme).offlineIcon,
                                 offline ? { opacity: 1 } : { opacity: 0.1 },
                             ]}
-                        />
+                        /> */}
                     </Pressable>
                     <Pressable
                         onPress={() => navigation.navigate('Transactions')}

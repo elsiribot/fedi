@@ -130,6 +130,7 @@ const theme = createTheme({
         sm: 24,
         md: 32,
         lg: 48,
+        xl: 96,
         adminProfileCircle: 90,
         expandedWalletCardHeight: 325,
         smallAvatar: 32,

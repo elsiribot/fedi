@@ -1,10 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
 import {
     BridgeEventEmitter,
     decodeInvoice,
@@ -14,6 +13,7 @@ import {
 } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
@@ -170,14 +170,11 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                         ? t('words.lightning')
                         : t('words.onchain')}
                 </Text>
-                <Image
-                    source={
-                        requestType === BitcoinOrLightning.lightning
-                            ? Images.SwitchLeft
-                            : Images.SwitchRight
-                    }
-                    style={styles(theme).switcherIconImage}
-                />
+                {requestType === BitcoinOrLightning.lightning ? (
+                    <SvgImage name="SwitchLeft" />
+                ) : (
+                    <SvgImage name="SwitchRight" />
+                )}
             </Pressable>
             <View style={styles(theme).detailsContainer}>
                 {requestAmount && (
