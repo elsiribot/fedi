@@ -202,7 +202,7 @@ export function reducer(state: AppState, action: Action): AppState {
             } else {
                 // member is already added but something has changed...
                 const updatedMember = {
-                    ...state.messages[memberIndex],
+                    ...state.membersSeen[memberIndex],
                     ...action.payload,
                 }
                 return {
