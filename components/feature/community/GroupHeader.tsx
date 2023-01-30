@@ -38,7 +38,10 @@ const GroupHeader: React.FC<{}> = () => {
                         style={styles(theme).groupIcon}
                         source={Images.NewRoom}
                     />
-                    <Text bold style={styles(theme).groupNameText}>
+                    <Text
+                        bold
+                        numberOfLines={1}
+                        style={styles(theme).groupNameText}>
                         {headerText}
                     </Text>
                 </Pressable>
@@ -101,6 +104,7 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
         },
         groupNameContainer: {
+            width: '95%',
             padding: theme.spacing.sm,
             flexDirection: 'row',
             alignItems: 'center',

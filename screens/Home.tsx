@@ -12,7 +12,11 @@ import SelectedFederationHeader from '../components/feature/federations/Selected
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import {
+    HomeTabsParamList,
+    HOME_NAVIGATOR_ID,
+    RootStackParamList,
+} from '../types/navigation'
 import Admin from './Admin'
 import Community from './Community'
 import Sites from './Sites'
@@ -56,6 +60,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <Tab.Navigator
             initialRouteName="Wallet"
+            id={HOME_NAVIGATOR_ID}
             screenOptions={({ route }) => ({
                 tabBarIcon: () => {
                     switch (route.name) {

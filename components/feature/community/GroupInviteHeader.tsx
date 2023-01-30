@@ -1,17 +1,21 @@
-import { useNavigation } from '@react-navigation/native'
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Icon, Image, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 import { Images } from '../../../assets/images'
 
-import { NavigationHook } from '../../../types/navigation'
+import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 import Header from '../../ui/Header'
+
+type GroupAdminRouteProp = RouteProp<RootStackParamList, 'GroupAdmin'>
 
 const GroupInviteHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const route = useRoute<GroupAdminRouteProp>()
+    const { group } = route.params
 
     return (
         <Header

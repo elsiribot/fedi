@@ -15,6 +15,7 @@ const GroupAdminHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupAdminRouteProp>()
+    const { group } = route.params
 
     return (
         <Header
@@ -24,8 +25,11 @@ const GroupAdminHeader: React.FC<{}> = () => {
             headerRight={
                 <>
                     <Pressable
-                        disabled
-                        onPress={() => {}}
+                        onPress={() =>
+                            navigation.navigate('EditGroup', {
+                                group,
+                            })
+                        }
                         style={styles(theme).headerIconContainer}>
                         <Image
                             style={styles(theme).headerIcon}
@@ -53,8 +57,6 @@ const styles = (theme: Theme) =>
         },
         headerIconContainer: {
             padding: theme.spacing.sm,
-            // Disabled
-            opacity: 0.25,
         },
         headerIcon: {
             height: theme.sizes.sm,

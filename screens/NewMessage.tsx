@@ -9,15 +9,13 @@ import type { RootStackParamList } from '../types/navigation'
 
 import { Images } from '../assets/images'
 import MembersList from '../components/feature/community/MembersList'
-import { useXmpp } from '../state/hooks'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
 
-const NewMessage: React.FC<Props> = ({ navigation, route }: Props) => {
+const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { state, dispatch } = useCommunityContext()
-    const { enterMucRoom, sendGroupMessage } = useXmpp()
+    const { state } = useCommunityContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
 
     // filter out members if usernameFilter has text to filter with
