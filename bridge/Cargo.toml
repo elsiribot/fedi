@@ -13,3 +13,4 @@ strip = true        # Strip symbols from binary*
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
+rocksdb = { git = "https://github.com/justinmoon/rust-rocksdb", rev = "bcefc573d1c3fad3a1ceceb110e7d6aca2a5d0b4" }

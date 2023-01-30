@@ -1,10 +1,9 @@
 use std::{
     collections::HashMap,
     default::Default,
-    fs::{self, File},
     path::{Path, PathBuf},
     sync::Arc,
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -20,7 +19,7 @@ use crate::{
         federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
         LnurlSignedMessage, XmppCredentials,
     },
-    EventSinkWrapper, NoteWithAmount,
+    EventSinkWrapper,
 };
 use anyhow::{anyhow, Context, Result};
 use bitcoin::{
@@ -36,17 +35,22 @@ use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
 use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
 use fedimint_derive_secret::ChildId;
+#[cfg(feature = "rocksdb")]
+use fedimint_rocksdb::RocksDb;
+#[cfg(feature = "sled")]
 use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
     api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
+    mint::SpendableNote,
     module_decode_stubs,
     social::{RecoveryFile, SocialRecovery},
     utils::network_to_currency,
     UserClient, UserClientConfig, UserSeedPhrase,
 };
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
+use tokio::fs;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
@@ -79,7 +83,10 @@ async fn load_federations_from_disk(
                 let fedi_config: FediConfig =
                     load_from_file(&path).context("invalid cfg on disk")?;
                 path.set_extension("db");
+                #[cfg(feature = "sled")]
                 let db = SledDb::open(path, "client").context("client tree not found")?;
+                #[cfg(feature = "rocksdb")]
+                let db = RocksDb::open(path).context("could not open rocksdb")?;
                 let db = Database::new(db, module_decode_stubs());
                 let client = UserClient::new(
                     fedi_config.client_config,
@@ -226,8 +233,8 @@ impl Bridge {
         let db_path = Path::new(&self.data_dir)
             .join(&federation_id)
             .with_extension("db");
-        fs::remove_file(json_path)?;
-        fs::remove_dir_all(db_path)?;
+        fs::remove_file(json_path).await?;
+        fs::remove_dir_all(db_path).await?;
 
         // Remove from bridge state
         info!("removing from bridge");
@@ -299,13 +306,14 @@ impl Federation {
         // Save config
         let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
         tracing::info!("saving file to {}", cfg_path.display());
-        let file = File::create(cfg_path) // FIXME: this should probably use tokio's `File`
-            .context("Could not create cfg file")?;
-        serde_json::to_writer_pretty(file, &fedi_config).context("Could not write fedi cfg")?;
+        fs::write(cfg_path, serde_json::to_string(&fedi_config)?).await?;
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
+        #[cfg(feature = "sled")]
         let db = SledDb::open(db_path, "client").context("client tree not found")?;
+        #[cfg(feature = "rocksdb")]
+        let db = RocksDb::open(db_path).context("could not open rocksdb")?;
         let db = Database::new(db, module_decode_stubs());
         let client = UserClient::new(
             fedi_config.client_config,
@@ -450,7 +458,8 @@ impl Federation {
 
         // FIXME: actually check that a refund happened
         if result.is_err() {
-            self.send_federation_notification().await;
+            // FIXME: this is deceiving ... we're fetching a refund here
+            self.send_federation_event().await;
         }
 
         Ok(result?)
@@ -470,7 +479,6 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.send_federation_notification().await;
                 self.save_transaction(&Transaction::lightning(
                     TransactionDirection::Send,
                     fedimint_api::Amount::from_msats(
@@ -501,18 +509,9 @@ impl Federation {
     //
 
     /// Generate ecash. It's immediately removed from client DB. Transaction saved to DB.
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<Vec<NoteWithAmount>> {
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<TieredMulti<SpendableNote>> {
         let rng = rand::rngs::OsRng;
-        let ecash: Vec<NoteWithAmount> = self
-            .client
-            .spend_ecash(amount, rng)
-            .await?
-            .iter_items()
-            .map(|(amount, note)| NoteWithAmount {
-                amount,
-                note: note.clone(),
-            })
-            .collect();
+        let ecash: TieredMulti<SpendableNote> = self.client.spend_ecash(amount, rng).await?;
         self.save_transaction(&Transaction::offline(
             tx::TransactionDirection::Send,
             amount,
@@ -523,30 +522,26 @@ impl Federation {
 
     /// Validate that string is valid ecash and signed by federation.
     /// TODO: check that it's unspent in the federation.
-    pub async fn validate_ecash(&self, ecash: Vec<NoteWithAmount>) -> (bool, Amount) {
-        let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
-        let tiered_multi = TieredMulti::from_iter(input);
-        let valid = self
-            .client
-            .validate_note_signatures(&tiered_multi)
-            .await
-            .is_ok();
-        let amount = tiered_multi.total_amount();
+    pub async fn validate_ecash(&self, ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
+        let valid = self.client.validate_note_signatures(&ecash).await.is_ok();
+        let amount = ecash.total_amount();
         (valid, amount)
     }
 
     /// Receive ecash into wallet. Save transaction to DB.
-    pub async fn receive_ecash(&self, ecash: Vec<NoteWithAmount>) -> Result<Amount> {
+    pub async fn receive_ecash(&self, ecash: TieredMulti<SpendableNote>) -> Result<Amount> {
         let rng = rand::rngs::OsRng;
-        let input = ecash.iter().map(|nwa| (nwa.amount, nwa.note.clone()));
-        let tiered_multi = TieredMulti::from_iter(input);
-        self.client.reissue(tiered_multi.clone(), rng).await?;
+        let outpoint = self.client.reissue(ecash.clone(), rng).await?;
+        // FIXME: run this in the background?
+        if let Err(e) = self.client.await_outpoint_outcome(outpoint).await {
+            error!("Failed to claim contract {}", e);
+        }
         self.save_transaction(&Transaction::offline(
             tx::TransactionDirection::Receive,
-            tiered_multi.total_amount(),
+            ecash.total_amount(),
         ))
         .await;
-        Ok(tiered_multi.total_amount())
+        Ok(ecash.total_amount())
     }
 
     //
@@ -687,7 +682,6 @@ impl Federation {
                 }
 
                 tracing::info!("peg-in successful for {}", address);
-                self.send_federation_notification().await;
                 // FIXME: helper to replace existing transaction
                 let mut tx = self
                     .get_transaction(item.tx_hash.to_string())
@@ -755,7 +749,8 @@ impl Federation {
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         // notify UI
-        self.transaction_event(&tx);
+        self.send_transaction_event(&tx);
+        self.send_federation_event().await;
     }
 
     /// Get transaction from DB
@@ -849,7 +844,7 @@ impl Federation {
     //
 
     /// Send whenever the balance or social recovery state changes
-    pub async fn send_federation_notification(&self) {
+    pub async fn send_federation_event(&self) {
         self.client.fetch_all_coins().await;
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
@@ -857,7 +852,7 @@ impl Federation {
     }
 
     /// Notify React Native that we've observed new or updated transaction
-    fn transaction_event(&self, tx: &Transaction) {
+    fn send_transaction_event(&self, tx: &Transaction) {
         let event = Event::transaction(self.id(), tx.clone());
         self.event_sink.event(&event);
     }
@@ -889,7 +884,7 @@ impl Federation {
         }
 
         // FIXME: should we still do this?
-        self.send_federation_notification().await;
+        self.send_federation_event().await;
         Ok(username)
     }
 
@@ -921,7 +916,7 @@ impl Federation {
         datadir: &PathBuf,
     ) -> Result<PathBuf> {
         debug!("uploading backup file {:?}", video_file_path);
-        let file_contents = fs::read(video_file_path)?;
+        let file_contents = fs::read(video_file_path).await?;
         let verification_doc = VerificationDocument::from_raw(&file_contents);
         // FIXME: two different forms of seed phrase
         let seed_phrase = UserSeedPhrase::from(self.get_mnemonic().await.to_string());
@@ -934,7 +929,7 @@ impl Federation {
             .await?;
         // FIXME: is this a good filename?
         let recovery_file_path = datadir.join(RECOVERY_FILENAME);
-        fs::write(&recovery_file_path, recovery_file.to_bytes())?;
+        fs::write(&recovery_file_path, recovery_file.to_bytes()).await?;
         Ok(recovery_file_path)
     }
 
@@ -1064,7 +1059,7 @@ impl Federation {
         if let Some(verification_doc) = verification_doc {
             tracing::info!("downloaded verification doc ... saving to filesystem");
             let path = data_dir.join(VERIFICATION_FILENAME);
-            fs::write(&path, verification_doc.to_raw()?)?;
+            fs::write(&path, verification_doc.to_raw()?).await?;
             tracing::info!("saved verificaiton doc");
             return Ok(Some(path));
         };
@@ -1137,15 +1132,6 @@ impl Federation {
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} balance poller", self.name()),
-                |task_handle| async move {
-                    fed.poll_federation(task_handle).await;
-                },
-            )
-            .await;
-        let fed = self.clone();
-        self.task_group
-            .spawn(
                 format!("{} peg-in poller", self.name()),
                 |task_handle| async move {
                     fed.poll_peg_ins(task_handle).await;
@@ -1175,20 +1161,19 @@ impl Federation {
     /// Make an ecash backup once every minute
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut ticks = 600;
+        let mut last_poll = SystemTime::now();
+
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
-
-            // Run every 10 minutes
-            if ticks < 600 {
-                ticks += 1;
+            // Run once per minute
+            if last_poll.elapsed().expect("clock went backwards").as_secs() < 600 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
+            last_poll = SystemTime::now();
 
-            ticks = 0;
             match self.back_up_ecash_to_federation().await {
                 Ok(_) => info!("ecash backup complete"),
                 Err(_) => error!("ecash backup failed"),
@@ -1209,19 +1194,6 @@ impl Federation {
                 self.attempt_pegins().await;
                 last_consensus_block_height = current_block_height;
             }
-            fedimint_api::task::sleep(Duration::from_secs(1)).await;
-        }
-    }
-
-    /// Announces balance to event emitter every second
-    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
-    pub async fn poll_federation(&self, task_handle: TaskHandle) {
-        loop {
-            if task_handle.is_shutting_down() {
-                return;
-            }
-
-            self.send_federation_notification().await;
             fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
@@ -1252,38 +1224,45 @@ impl Federation {
                     let rng = rand::rngs::OsRng;
                     let payment_hash = payment.invoice.payment_hash();
                     tracing::debug!("fetching incoming contract {:?}", &payment_hash);
-                    let result = &fed
+                    match &fed
                         .client
                         .claim_incoming_contract(
                             ContractId::from_hash(payment_hash.clone()),
                             rng.clone(),
                         )
-                        .await;
-                    if let Err(_) = result {
-                        tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
-                        // Mark it "expired" in db if we couldn't claim it and invoice is expired
-                        if invoice_expired {
-                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
-                                .await;
+                        .await
+                    {
+                        Err(_) => {
+                            tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
+                            // Mark it "expired" in db if we couldn't claim it and invoice is expired
+                            if invoice_expired {
+                                fed.update_payment_status(payment_hash, PaymentStatus::Expired)
+                                    .await;
+                            }
                         }
-                    } else {
-                        tracing::info!("completed payment: {:?}", &payment_hash);
-                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
-                            .await;
-                        fed.send_federation_notification().await;
-                        let amount = fedimint_api::Amount::from_msats(
-                            payment.invoice.amount_milli_satoshis().expect(
-                                "assuming we only receive payments for invoices with amount",
-                            ),
-                        );
-                        let fee = None;
-                        let tx = Transaction::lightning(
-                            TransactionDirection::Receive,
-                            amount,
-                            fee,
-                            payment.invoice.clone(),
-                        );
-                        fed.save_transaction(&tx).await;
+                        Ok(outpoint) => {
+                            // FIXME: could this lead to funds loss if it errors out? can contracts be claimed a second time? or will next "fetch" find these coins?
+                            if let Err(e) = self.client.await_outpoint_outcome(*outpoint).await {
+                                error!("Failed to claim contract {}", e);
+                                return;
+                            }
+                            tracing::info!("completed payment: {:?}", &payment_hash);
+                            fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                                .await;
+                            let amount = fedimint_api::Amount::from_msats(
+                                payment.invoice.amount_milli_satoshis().expect(
+                                    "assuming we only receive payments for invoices with amount",
+                                ),
+                            );
+                            let fee = None;
+                            let tx = Transaction::lightning(
+                                TransactionDirection::Receive,
+                                amount,
+                                fee,
+                                payment.invoice.clone(),
+                            );
+                            fed.save_transaction(&tx).await;
+                        }
                     }
                 })
                 .collect::<FuturesUnordered<_>>()
@@ -1298,19 +1277,18 @@ impl Federation {
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
-        let mut ticks = 0;
+        let mut last_poll = SystemTime::now();
 
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
             // Run once per minute
-            if ticks < 60 {
-                ticks += 1;
+            if last_poll.elapsed().expect("clock went backwards").as_secs() < 60 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            ticks = 0;
+            last_poll = SystemTime::now();
 
             let consensus_block_height = fed.fetch_consensus_block_height().await.unwrap_or(0);
             let contracts = fed
@@ -1336,7 +1314,7 @@ impl Federation {
                     {
                         Ok(_) => {
                             tracing::info!("got refund");
-                            fed.send_federation_notification().await;
+                            fed.send_federation_event().await;
                         }
                         Err(e) => tracing::info!("refund failed {:?}", e),
                     };

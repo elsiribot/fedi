@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "aead"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "rand",
@@ -162,6 +162,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "bindgen"
+version = "0.63.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36d860121800b2a9a94f9b5604b332d5cffb234ce17609ea479d723dbc9d3885"
+dependencies = [
+ "bitflags",
+ "cexpr",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "peeking_take_while",
+ "proc-macro2",
+ "quote 1.0.23",
+ "regex",
+ "rustc-hash",
+ "shlex",
+ "syn 1.0.107",
+]
+
+[[package]]
 name = "bip39"
 version = "1.0.1"
 source = "git+https://github.com/justinmoon/rust-bip39#6748d02be9ee283c28da735a1f9dd898aed3b64a"
@@ -268,6 +288,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
+name = "bzip2-sys"
+version = "0.1.11+1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "736a955f3fa7875102d57c82b8cac37ec45224a07fd32d58f9f7a186b6cd4cdc"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
 name = "calculator-ffi"
 version = "0.1.2"
 dependencies = [
@@ -279,6 +310,7 @@ dependencies = [
  "fedimint-api",
  "fedimint-core",
  "fedimint-derive-secret",
+ "fedimint-rocksdb",
  "fedimint-sled",
  "futures",
  "hex",
@@ -337,12 +369,35 @@ name = "cc"
 version = "1.0.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a20104e2335ce8a659d6dd92a51a767a0c062599c73b343fd152cb401e828c3d"
+dependencies = [
+ "jobserver",
+]
+
+[[package]]
+name = "cexpr"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
+dependencies = [
+ "nom",
+]
 
 [[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "clang-sys"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa2e27ae6ab525c3d369ded447057bca5438d86dc3a68f6faafb8269ba82ebf3"
+dependencies = [
+ "glob",
+ "libc",
+ "libloading",
+]
 
 [[package]]
 name = "clap"
@@ -594,7 +649,7 @@ dependencies = [
 [[package]]
 name = "fedi-social"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "aead",
  "anyhow",
@@ -623,7 +678,7 @@ dependencies = [
 [[package]]
 name = "fedimint-api"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -656,7 +711,7 @@ dependencies = [
 [[package]]
 name = "fedimint-bitcoind"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -672,7 +727,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -701,7 +756,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
@@ -712,7 +767,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive-secret"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "fedimint-api",
@@ -725,7 +780,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -752,7 +807,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -778,9 +833,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedimint-rocksdb"
+version = "0.1.0"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "fedimint-api",
+ "rocksdb",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "fedimint-sled"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -793,7 +861,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1019,6 +1087,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "gloo-net"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1182,7 +1256,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hkdf"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "bitcoin_hashes 0.11.0",
 ]
@@ -1368,6 +1442,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
 
 [[package]]
+name = "jobserver"
+version = "0.1.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "068b1ee6743e4d11fb9c6a1e6064b3693a1b600e7f5f5988047d98b3dc9fb90b"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "js-sys"
 version = "0.3.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1477,16 +1560,58 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "lazycell"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
+
+[[package]]
 name = "libc"
 version = "0.2.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
 
 [[package]]
+name = "libloading"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
+dependencies = [
+ "cfg-if",
+ "winapi",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "348108ab3fba42ec82ff6e9564fc4ca0247bdccdc68dd8af9764bbc79c3c8ffb"
+
+[[package]]
+name = "librocksdb-sys"
+version = "0.10.0+7.9.2"
+source = "git+https://github.com/justinmoon/rust-rocksdb?rev=bcefc573d1c3fad3a1ceceb110e7d6aca2a5d0b4#bcefc573d1c3fad3a1ceceb110e7d6aca2a5d0b4"
+dependencies = [
+ "bindgen",
+ "bzip2-sys",
+ "cc",
+ "glob",
+ "libc",
+ "libz-sys",
+ "lz4-sys",
+ "zstd-sys",
+]
+
+[[package]]
+name = "libz-sys"
+version = "1.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9702761c3935f8cc2f101793272e202c72b99da8f4224a19ddcf1279a6450bbf"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
 
 [[package]]
 name = "lightning"
@@ -1528,6 +1653,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "lz4-sys"
+version = "1.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57d27b317e207b10f69f5e75494119e391a96f48861ae870d1da6edac98ca900"
+dependencies = [
+ "cc",
+ "libc",
 ]
 
 [[package]]
@@ -1594,7 +1729,7 @@ dependencies = [
 [[package]]
 name = "mint-client"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "aead",
  "anyhow",
@@ -1807,6 +1942,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d01a5bd0424d00070b0098dd17ebca6f961a959dead1dbcbbbc1d1cd8d3deeba"
 
 [[package]]
+name = "peeking_take_while"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
+
+[[package]]
 name = "percent-encoding"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1843,6 +1984,12 @@ name = "pin-utils"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
+
+[[package]]
+name = "pkg-config"
+version = "0.3.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
 name = "plain"
@@ -2086,6 +2233,15 @@ dependencies = [
  "untrusted",
  "web-sys",
  "winapi",
+]
+
+[[package]]
+name = "rocksdb"
+version = "0.19.0"
+source = "git+https://github.com/justinmoon/rust-rocksdb?rev=bcefc573d1c3fad3a1ceceb110e7d6aca2a5d0b4#bcefc573d1c3fad3a1ceceb110e7d6aca2a5d0b4"
+dependencies = [
+ "libc",
+ "librocksdb-sys",
 ]
 
 [[package]]
@@ -2339,6 +2495,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "shlex"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2528,7 +2690,7 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 [[package]]
 name = "tbs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=969b41dcacb67520652f309ead6ae2c90318fe60#969b41dcacb67520652f309ead6ae2c90318fe60"
+source = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?rev=6f6fb438e835b15a09d5c5c338c3846eba069997#6f6fb438e835b15a09d5c5c338c3846eba069997"
 dependencies = [
  "bitcoin_hashes 0.11.0",
  "bls12_381",
@@ -3018,6 +3180,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
 name = "vec_map"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3266,3 +3434,14 @@ name = "zeroize"
 version = "1.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c394b5bd0c6f669e7275d9c20aa90ae064cb22e75a1cad54e1b34088034b149f"
+
+[[package]]
+name = "zstd-sys"
+version = "2.0.5+zstd.1.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edc50ffce891ad571e9f9afe5039c4837bede781ac4bb13052ed7ae695518596"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+]

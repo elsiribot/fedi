@@ -13,12 +13,21 @@ pushd calculator-ffi
 cargo run --package ffi-bindgen -- --language swift --out-dir ../calculator-swift/Sources/Calculator
 popd
 
+# If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
+if [[ -z $FM_ROCKSDB ]]; then
+  echo "RUNNING WITH SLED"
+  CARGO_FLAGS=""
+else
+  echo "RUNNING WITH ROCKSDB"
+  CARGO_FLAGS="--no-default-features --features rocksdb"
+fi
+
 # ignoring MacOS for now
 # cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-darwin
 # cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-darwin
-cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-ios
-cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-ios
-cargo +nightly build --package calculator-ffi --release -Z build-std --target aarch64-apple-ios-sim
+cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-ios $CARGO_FLAGS
+cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-ios $CARGO_FLAGS
+cargo +nightly build --package calculator-ffi --release -Z build-std --target aarch64-apple-ios-sim $CARGO_FLAGS
 
 mkdir -p target/lipo-ios-sim/release-smaller
 lipo target/aarch64-apple-ios-sim/release/libcalculatorffi.a target/x86_64-apple-ios/release-smaller/libcalculatorffi.a -create -output target/lipo-ios-sim/release-smaller/libcalculatorffi.a
