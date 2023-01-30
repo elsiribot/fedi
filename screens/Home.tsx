@@ -5,7 +5,8 @@ import { t } from 'i18next'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChatSvg, CogSvg, GlobeSvg, WalletSvg } from '../assets/images/svgs'
+import { ChatSvg, CogSvg, GlobeSvg } from '../assets/images/svgs'
+import SvgImage from '../components/ui/SvgImage'
 
 import CommunityHeader from '../components/feature/community/CommunityHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
@@ -66,9 +67,14 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                     switch (route.name) {
                         case 'Wallet':
                             return (
-                                <WalletSvg
-                                    height={theme.sizes.sm}
-                                    width={theme.sizes.sm}
+                                <SvgImage
+                                    name="Wallet"
+                                    style={{}}
+                                    svgStyle={{
+                                        stroke: '#6D7071',
+                                        width: theme.sizes.sm,
+                                        height: theme.sizes.sm,
+                                    }}
                                 />
                             )
                         case 'Chat':
