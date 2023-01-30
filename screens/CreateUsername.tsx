@@ -89,7 +89,10 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
             state.selectedFederation?.username &&
             xmppAuthInProgress === false
         ) {
-            navigation.replace('FederationGreeting')
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'FederationGreeting' }],
+            })
         }
     }, [
         authenticatedMember,
