@@ -3,7 +3,7 @@ use std::{
     default::Default,
     path::{Path, PathBuf},
     sync::Arc,
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -448,7 +448,8 @@ impl Federation {
 
         // FIXME: actually check that a refund happened
         if result.is_err() {
-            self.send_federation_notification().await;
+            // FIXME: this is deceiving ... we're fetching a refund here
+            self.send_federation_event().await;
         }
 
         Ok(result?)
@@ -468,7 +469,6 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.send_federation_notification().await;
                 self.save_transaction(&Transaction::lightning(
                     TransactionDirection::Send,
                     fedimint_api::Amount::from_msats(
@@ -685,7 +685,6 @@ impl Federation {
                 }
 
                 tracing::info!("peg-in successful for {}", address);
-                self.send_federation_notification().await;
                 // FIXME: helper to replace existing transaction
                 let mut tx = self
                     .get_transaction(item.tx_hash.to_string())
@@ -753,7 +752,8 @@ impl Federation {
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         // notify UI
-        self.transaction_event(&tx);
+        self.send_transaction_event(&tx);
+        self.send_federation_event().await;
     }
 
     /// Get transaction from DB
@@ -847,7 +847,7 @@ impl Federation {
     //
 
     /// Send whenever the balance or social recovery state changes
-    pub async fn send_federation_notification(&self) {
+    pub async fn send_federation_event(&self) {
         self.client.fetch_all_coins().await;
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
@@ -855,7 +855,7 @@ impl Federation {
     }
 
     /// Notify React Native that we've observed new or updated transaction
-    fn transaction_event(&self, tx: &Transaction) {
+    fn send_transaction_event(&self, tx: &Transaction) {
         let event = Event::transaction(self.id(), tx.clone());
         self.event_sink.event(&event);
     }
@@ -887,7 +887,7 @@ impl Federation {
         }
 
         // FIXME: should we still do this?
-        self.send_federation_notification().await;
+        self.send_federation_event().await;
         Ok(username)
     }
 
@@ -1135,15 +1135,6 @@ impl Federation {
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} balance poller", self.name()),
-                |task_handle| async move {
-                    fed.poll_federation(task_handle).await;
-                },
-            )
-            .await;
-        let fed = self.clone();
-        self.task_group
-            .spawn(
                 format!("{} peg-in poller", self.name()),
                 |task_handle| async move {
                     fed.poll_peg_ins(task_handle).await;
@@ -1173,20 +1164,19 @@ impl Federation {
     /// Make an ecash backup once every minute
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut ticks = 600;
+        let mut last_poll = SystemTime::now();
+
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
-
-            // Run every 10 minutes
-            if ticks < 600 {
-                ticks += 1;
+            // Run once per minute
+            if last_poll.elapsed().expect("clock went backwards").as_secs() < 600 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
+            last_poll = SystemTime::now();
 
-            ticks = 0;
             match self.back_up_ecash_to_federation().await {
                 Ok(_) => info!("ecash backup complete"),
                 Err(_) => error!("ecash backup failed"),
@@ -1207,19 +1197,6 @@ impl Federation {
                 self.attempt_pegins().await;
                 last_consensus_block_height = current_block_height;
             }
-            fedimint_api::task::sleep(Duration::from_secs(1)).await;
-        }
-    }
-
-    /// Announces balance to event emitter every second
-    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
-    pub async fn poll_federation(&self, task_handle: TaskHandle) {
-        loop {
-            if task_handle.is_shutting_down() {
-                return;
-            }
-
-            self.send_federation_notification().await;
             fedimint_api::task::sleep(Duration::from_secs(1)).await;
         }
     }
@@ -1250,38 +1227,45 @@ impl Federation {
                     let rng = rand::rngs::OsRng;
                     let payment_hash = payment.invoice.payment_hash();
                     tracing::debug!("fetching incoming contract {:?}", &payment_hash);
-                    let result = &fed
+                    match &fed
                         .client
                         .claim_incoming_contract(
                             ContractId::from_hash(payment_hash.clone()),
                             rng.clone(),
                         )
-                        .await;
-                    if let Err(_) = result {
-                        tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
-                        // Mark it "expired" in db if we couldn't claim it and invoice is expired
-                        if invoice_expired {
-                            fed.update_payment_status(payment_hash, PaymentStatus::Expired)
-                                .await;
+                        .await
+                    {
+                        Err(_) => {
+                            tracing::debug!("couldn't complete payment: {:?}", &payment_hash);
+                            // Mark it "expired" in db if we couldn't claim it and invoice is expired
+                            if invoice_expired {
+                                fed.update_payment_status(payment_hash, PaymentStatus::Expired)
+                                    .await;
+                            }
                         }
-                    } else {
-                        tracing::info!("completed payment: {:?}", &payment_hash);
-                        fed.update_payment_status(payment_hash, PaymentStatus::Paid)
-                            .await;
-                        fed.send_federation_notification().await;
-                        let amount = fedimint_api::Amount::from_msats(
-                            payment.invoice.amount_milli_satoshis().expect(
-                                "assuming we only receive payments for invoices with amount",
-                            ),
-                        );
-                        let fee = None;
-                        let tx = Transaction::lightning(
-                            TransactionDirection::Receive,
-                            amount,
-                            fee,
-                            payment.invoice.clone(),
-                        );
-                        fed.save_transaction(&tx).await;
+                        Ok(outpoint) => {
+                            // FIXME: could this lead to funds loss if it errors out? can contracts be claimed a second time? or will next "fetch" find these coins?
+                            if let Err(e) = self.client.await_outpoint_outcome(*outpoint).await {
+                                error!("Failed to claim contract {}", e);
+                                return;
+                            }
+                            tracing::info!("completed payment: {:?}", &payment_hash);
+                            fed.update_payment_status(payment_hash, PaymentStatus::Paid)
+                                .await;
+                            let amount = fedimint_api::Amount::from_msats(
+                                payment.invoice.amount_milli_satoshis().expect(
+                                    "assuming we only receive payments for invoices with amount",
+                                ),
+                            );
+                            let fee = None;
+                            let tx = Transaction::lightning(
+                                TransactionDirection::Receive,
+                                amount,
+                                fee,
+                                payment.invoice.clone(),
+                            );
+                            fed.save_transaction(&tx).await;
+                        }
                     }
                 })
                 .collect::<FuturesUnordered<_>>()
@@ -1296,19 +1280,18 @@ impl Federation {
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
-        let mut ticks = 0;
+        let mut last_poll = SystemTime::now();
 
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
             // Run once per minute
-            if ticks < 60 {
-                ticks += 1;
+            if last_poll.elapsed().expect("clock went backwards").as_secs() < 60 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            ticks = 0;
+            last_poll = SystemTime::now();
 
             let consensus_block_height = fed.fetch_consensus_block_height().await.unwrap_or(0);
             let contracts = fed
@@ -1334,7 +1317,7 @@ impl Federation {
                     {
                         Ok(_) => {
                             tracing::info!("got refund");
-                            fed.send_federation_notification().await;
+                            fed.send_federation_event().await;
                         }
                         Err(e) => tracing::info!("refund failed {:?}", e),
                     };
