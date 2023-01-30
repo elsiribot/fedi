@@ -91,7 +91,8 @@
         "invalid-group-code": "This is not a valid group code",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "unknown-error": "An unknown error occurred",
-        "username-already-exists": "This username already exists. Recover your wallet to restore your username."
+        "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
+        "invalid-character": "The following characters are not allowed: \" & ' / : < >"
     },
     "feature": {
         "backup": {
@@ -206,6 +207,7 @@
             "guidance-4": "Fedi uses bitcoin and lightning network to connect you to global opportunities to earn money online on your own terms.",
             "nice-to-meet-you": "Nice to meet you, {{username}}",
             "simple-and-private": "Simple and private",
+            "username-guidance": "Enter a username containing lowercase letters without spaces",
             "username-instructions": "Your username will be how other FederationZ members will identify you.",
             "welcome-instructions": "New members receive a fresh wallet. Returning members will be prompted to recover their wallet.",
             "welcome-to-federation": "Welcome to {{federation}}",
