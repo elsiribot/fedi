@@ -1,5 +1,4 @@
 import { Options } from '@xmpp/client'
-import { Images } from './assets/images'
 
 import i18n from './localization/i18n'
 
@@ -38,19 +37,17 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
 }
 export const FEDI_GENERAL_CHANNEL_GROUP = {
     id: 'fedi-general-channel-group',
-    icon: Images.FediLogoIcon,
-    name: 'Fedi',
+    icon: 'FediLogoIcon',
+    name: i18n.t('feature.community.retreat-chat'),
     pinned: true,
-    messagePreview:
-        'Welcome to Fedi! This channel will keep you up to date on events happening within your Fedi app',
+    messagePreview: i18n.t('feature.community.retreat-chat-message-preview'),
 }
 export const FEDI_RECOVERY_SUPPORT_GROUP = {
     id: 'fedi-recovery-support-group',
-    icon: Images.Recovery,
-    name: 'Recovery Support',
+    icon: 'Cash',
+    name: i18n.t('feature.community.money-changing'),
     pinned: true,
-    messagePreview:
-        'Could someone please help me get in touch with a guardian...',
+    messagePreview: i18n.t('feature.community.money-changing-message-preview'),
 }
 
 export const SITES = [
@@ -96,7 +93,7 @@ export const SITES = [
     {
         id: 'btcmap',
         title: 'BTCMAP',
-        url: 'https://btcmap.org',
+        url: 'https://btcmap.org/map',
         description: 'See where bitcoin is being used all over the world',
     },
     // {

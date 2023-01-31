@@ -1,18 +1,22 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Image, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import SvgImage from '../components/ui/SvgImage'
 
-import { Images } from '../assets/images'
 import CommunityHeader from '../components/feature/community/CommunityHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import {
+    HomeTabsParamList,
+    HOME_NAVIGATOR_ID,
+    RootStackParamList,
+} from '../types/navigation'
 import Admin from './Admin'
 import Community from './Community'
 import Sites from './Sites'
@@ -56,35 +60,52 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <Tab.Navigator
             initialRouteName="Wallet"
+            id={HOME_NAVIGATOR_ID}
             screenOptions={({ route }) => ({
-                tabBarIcon: () => {
+                tabBarIcon: ({ focused }) => {
                     switch (route.name) {
                         case 'Wallet':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Wallet}
+                                <SvgImage
+                                    name="Wallet"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
-                        case 'Community':
+                        case 'Chat':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.FediLogoIcon}
+                                <SvgImage
+                                    name="Chat"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
                         case 'Sites':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Globe}
+                                <SvgImage
+                                    name="Globe"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
                         case 'Admin':
                             return (
-                                <Image
-                                    style={styles(theme, insets).iconImage}
-                                    source={Images.Cog}
+                                <SvgImage
+                                    name="Cog"
+                                    svgProps={{
+                                        stroke: focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight,
+                                    }}
                                 />
                             )
                         default:
@@ -114,7 +135,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 {props => <Wallet {...props} offline={offline} />}
             </Tab.Screen>
             <Tab.Screen
-                name="Community"
+                name="Chat"
                 component={Community}
                 options={() => ({
                     header: () => (
@@ -136,10 +157,14 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
             <Tab.Screen
                 name="Admin"
                 component={Admin}
-                options={{
+                options={() => ({
                     title: t('words.admin'),
-                    headerShown: false,
-                }}
+                    header: () => (
+                        <>
+                            <SelectedFederationHeader />
+                        </>
+                    ),
+                })}
             />
         </Tab.Navigator>
     )

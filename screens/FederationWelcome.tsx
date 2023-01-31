@@ -1,9 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Card, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { Images } from '../assets/images'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
@@ -22,10 +22,8 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).innerCardContainer}>
-                    <Image
-                        style={styles(theme).image}
-                        source={Images.FederationXIconLg}
-                    />
+                    <SvgImage name="FedearationxIcon" size={SvgImageSize.xl} />
+                    {/*refer to below image style for above image*/}
                     <Text h2 medium style={styles(theme).welcomeTitle}>
                         {t('feature.onboarding.welcome-to-federation', {
                             federation: selectedFederation?.name,

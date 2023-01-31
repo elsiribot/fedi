@@ -1,15 +1,15 @@
 import notifee from '@notifee/react-native'
 import { ThemeProvider } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import {
+    BridgeEventEmitter,
     initializeBridge,
     LogEvent,
-    TFedimintEventEmitter,
     TransactionEvent,
 } from './bridge'
 import CustomToast from './components/ui/CustomToast'
@@ -41,13 +41,13 @@ const App = () => {
     }
 
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
+        const emitter = new BridgeEventEmitter()
 
         // Initialize logger
         const logHandler = (event: LogEvent) => {
             console.log('OS:', Platform.OS, `": log" -> "${event.log}"`)
         }
-        emitter.onLog(logHandler)
+        const logListener = emitter.onLog(logHandler)
 
         // Initialize push notification sender
         async function onDisplayNotification(event: TransactionEvent) {
@@ -57,26 +57,32 @@ const App = () => {
                 name: 'Transactions Channel',
             })
 
-            // Display a notification
-            // TODO: if on-chain, replace existing notification if there is one
-            await notifee.displayNotification({
-                title: t('phrases.transaction-received'),
-                body: `${amountUtils.formatNumber(
-                    amountUtils.msatToSat(event.transaction.amount),
-                )} ${t('words.sats')}`,
-                android: {
-                    channelId,
-                    // pressAction is needed if you want the notification to open the app when pressed
-                    pressAction: {
-                        id: 'transactions',
+            // Display notifications only for incoming transactions
+            if (event.transaction.isReceive) {
+                await notifee.displayNotification({
+                    title: t('phrases.transaction-received'),
+                    body: `${amountUtils.formatNumber(
+                        amountUtils.msatToSat(event.transaction.amount),
+                    )} ${t('words.sats')}`,
+                    android: {
+                        channelId,
+                        // pressAction is needed if you want the notification to open the app when pressed
+                        pressAction: {
+                            id: 'transactions',
+                        },
                     },
-                },
-            })
+                })
+            }
         }
-        emitter.onTransaction(onDisplayNotification)
+        const transactionListener = emitter.onTransaction(onDisplayNotification)
 
         onInitializeBridge()
         requestPushNotificationPermissions()
+
+        return () => {
+            logListener.remove()
+            transactionListener.remove()
+        }
     }, [t])
 
     return (

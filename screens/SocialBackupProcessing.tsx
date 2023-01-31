@@ -3,8 +3,8 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { BridgeEventEmitter, RecoveryFileCreationEvent } from '../bridge'
 
-import { RecoveryFileCreationEvent, TFedimintEventEmitter } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import LineBreak from '../components/ui/LineBreak'
@@ -31,23 +31,23 @@ const SocialBackupProcessing: React.FC<Props> = ({
 
     // Registers an event handler listening for recovery file creation events
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
-        emitter.onRecoveryFileCreation((event: RecoveryFileCreationEvent) => {
-            console.info(event)
-            if (event.type === 'progress') {
-                setPercentComplete(event.percentComplete)
-            } else if (event.type === 'complete') {
-                navigation.replace('SocialBackupCloudUpload')
-            } else if (event.type === 'failed') {
-                // TODO: Implement localized errors
-                // getError(event.errorCode)
-                toast?.show('Recovery file creation failed', 3000)
-            }
-        })
+        const emitter = new BridgeEventEmitter()
+        const listener = emitter.onRecoveryFileCreation(
+            (event: RecoveryFileCreationEvent) => {
+                console.info(event)
+                if (event.type === 'progress') {
+                    setPercentComplete(event.percentComplete)
+                } else if (event.type === 'complete') {
+                    navigation.replace('SocialBackupCloudUpload')
+                } else if (event.type === 'failed') {
+                    // TODO: Implement localized errors
+                    // getError(event.errorCode)
+                    toast?.show('Recovery file creation failed', 3000)
+                }
+            },
+        )
 
-        return () => {
-            emitter.removeListener('recoveryFileCreation')
-        }
+        return () => listener.remove()
     }, [navigation, toast])
 
     useEffect(() => {

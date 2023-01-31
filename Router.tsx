@@ -18,11 +18,13 @@ import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateUsername from './screens/CreateUsername'
 import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
+import EditGroup from './screens/EditGroup'
 import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
 import FederationWelcome from './screens/FederationWelcome'
 import GroupAdmin from './screens/GroupAdmin'
+import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
 import Home from './screens/Home'
 import Initializing from './screens/Initializing'
@@ -66,6 +68,7 @@ import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import ChatWalletHeader from './components/feature/community/ChatWalletHeader'
 import DirectChatHeader from './components/feature/community/DirectChatHeader'
+import EditGroupHeader from './components/feature/community/EditGroupHeader'
 import GroupAdminHeader from './components/feature/community/GroupAdminHeader'
 import GroupHeader from './components/feature/community/GroupHeader'
 import GroupInviteHeader from './components/feature/community/GroupInviteHeader'
@@ -89,7 +92,6 @@ import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOffli
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
-import GroupChat from './screens/GroupChat'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -236,6 +238,13 @@ const MainNavigator = () => {
                                 component={GroupChat}
                                 options={() => ({
                                     header: () => <GroupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="EditGroup"
+                                component={EditGroup}
+                                options={() => ({
+                                    header: () => <EditGroupHeader />,
                                 })}
                             />
                             <Stack.Screen

@@ -1,12 +1,12 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
@@ -63,9 +63,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
             />
             <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).offlineContainer}>
-                <Image
-                    source={Images.Offline}
-                    style={styles(theme).offlineIcon}
+                <SvgImage
+                    name="Offline"
+                    containerStyle={{
+                        marginRight: theme.spacing.md,
+                    }}
                 />
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>

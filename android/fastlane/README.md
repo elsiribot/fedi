@@ -63,6 +63,14 @@ Build a new app bundle to release for production
 
 Build a new app bundle to release for special deployment (Bitcoin Lake)
 
+### android build_bitcoin_jungle
+
+```sh
+[bundle exec] fastlane android build_bitcoin_jungle
+```
+
+Build a new app bundle to release for special deployment (Bitcoin Jungle)
+
 ### android upload_internal_build
 
 ```sh
@@ -87,6 +95,14 @@ Upload the latest build for beta testing
 
 Upload the latest build for special deployment (Bitcoin Lake)
 
+### android upload_beta_build_bitcoin_jungle
+
+```sh
+[bundle exec] fastlane android upload_beta_build_bitcoin_jungle
+```
+
+Upload the latest build for special deployment (Bitcoin Jungle)
+
 ### android internal
 
 ```sh
@@ -110,6 +126,14 @@ Submit a new beta build
 ```
 
 Submit a new beta build for special deployment (Bitcoin Lake)
+
+### android beta_bitcoin_jungle
+
+```sh
+[bundle exec] fastlane android beta_bitcoin_jungle
+```
+
+Submit a new beta build for special deployment (Bitcoin Jungle)
 
 ----
 

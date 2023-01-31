@@ -1,7 +1,7 @@
 import { Image } from '@rneui/themed'
 import React from 'react'
-import { Images } from '../../../assets/images'
 
+import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
 const EulaHeader: React.FC<{}> = () => {

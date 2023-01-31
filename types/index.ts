@@ -1,6 +1,5 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
-import { ImageSourcePropType } from 'react-native'
 
 import Base, { Invoice } from '../bridge'
 import { DEFAULT_GROUP_NAME } from '../constants'
@@ -58,16 +57,20 @@ export type UsdString = FiatUnit<string, 'UsdString'>
 
 // Community features
 export type FediGroupLink = string
-
+export enum ChatType {
+    direct = 'direct',
+    group = 'group',
+}
 export class Chat extends Base {
     id: string
     name?: string
-    icon?: ImageSourcePropType
+    icon?: string
     pinned?: boolean
     hasNewMessages?: boolean
     messagePreview?: string
     lastReceivedTimestamp?: number
     members?: Member[]
+    type: ChatType
 
     constructor(data: any) {
         super(data)
@@ -80,20 +83,17 @@ export class Group extends Chat {
     // TODO: What exactly is encoded in this invitationCode?
     invitationCode?: FediGroupLink
 
-    static encodeInvitationLink(id: string, name: string): string {
-        return `fedi:group:${id}::${name}`
+    // TODO: Harden this encoding scheme (use standard URL params?)
+    static encodeInvitationLink(id: string): string {
+        return `fedi:group:${id}`
     }
     static decodeInvitationLink(link: string): Group {
-        const contents = link.split('fedi:group:')[1]
-        if (!contents) throw new Error(i18n.t('errors.unknown-error'))
-
-        // TODO: Harden this encoding scheme (use standard URL params?)
-        const id = contents.split('::')[0]
-        const name = contents.split('::')[1] || DEFAULT_GROUP_NAME
+        const groupId = link.split('fedi:group:')[1]
+        if (!groupId) throw new Error(i18n.t('errors.unknown-error'))
 
         return new Group({
-            id,
-            name,
+            id: groupId,
+            name: DEFAULT_GROUP_NAME,
             invitationCode: link,
         })
     }

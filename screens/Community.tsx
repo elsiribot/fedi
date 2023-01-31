@@ -8,7 +8,7 @@ import ChatsList from '../components/feature/community/ChatsList'
 import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
 import { useCommunityContext } from '../state/contexts/CommunityContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useXmpp } from '../state/hooks'
+import { ArchiveQueryPagination, useXmpp } from '../state/hooks'
 import {
     HomeTabsParamList,
     NavigationHook,
@@ -17,7 +17,7 @@ import {
 
 export type Props = BottomTabScreenProps<
     HomeTabsParamList & RootStackParamList,
-    'Community'
+    'Chat'
 >
 
 const Community: React.FC<Props> = () => {
@@ -25,7 +25,8 @@ const Community: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { enterMucRoom, fetchMessagesFromArchive } = useXmpp()
     const { selectedFederation } = useFederationsContext().state
-    const { authenticatedMember } = useCommunityContext().state
+    const { authenticatedMember, lastFetchedMessageId } =
+        useCommunityContext().state
 
     useEffect(() => {
         if (authenticatedMember) {
@@ -33,11 +34,23 @@ const Community: React.FC<Props> = () => {
             // all users announce presence in this MUC room even without clicking it
             // so that presence messages for each new user are sent to all other users
             enterMucRoom(FEDI_GENERAL_CHANNEL_GROUP)
-            // Here we fetch any messages we may have missed while offline
-            // TODO: only fetch messages from after the last received timestamp
-            fetchMessagesFromArchive({ filters: null })
         }
-    }, [authenticatedMember, enterMucRoom, fetchMessagesFromArchive])
+    }, [authenticatedMember, enterMucRoom])
+
+    useEffect(() => {
+        if (authenticatedMember) {
+            // Here we fetch any messages we may have missed while offline
+            // 20 at a time with pagination
+            // TODO: optimize by only fetching messages sent after the last received timestamp
+            const pagination: ArchiveQueryPagination = {
+                limit: '20',
+            }
+            if (lastFetchedMessageId) {
+                pagination.after = lastFetchedMessageId
+            }
+            fetchMessagesFromArchive({ filters: null, pagination })
+        }
+    }, [authenticatedMember, fetchMessagesFromArchive, lastFetchedMessageId])
 
     return (
         <View style={styles(theme).container}>

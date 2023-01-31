@@ -92,7 +92,9 @@ const TransactionDetail = ({
                             IncomingBitcoinTransactionStatus.complete ? (
                                 <Text>{`${t('words.complete')}`}</Text>
                             ) : (
-                                <Text>{`${t('words.pending')}`}</Text>
+                                <Text>
+                                    {`${t('words.pending').toLowerCase()}`}
+                                </Text>
                             )}
                         </View>
                         <Divider />

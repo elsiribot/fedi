@@ -184,20 +184,14 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                 const ecash = await generateEcash(
                     message.payment?.amount as MSats,
                 )
-                setPaymentProcessing(false)
                 setGeneratedEcashToken(ecash)
             } catch (error) {
                 console.error(error)
-                setPaymentProcessing(false)
             }
         }
 
         if (paymentProcessing === true) {
-            // Need this because UI thread gets blocked
-            // Is there a cleaner way to do this?
-            setTimeout(() => {
-                generateAndSendEcash()
-            }, 1)
+            generateAndSendEcash()
         }
     }, [dispatch, generateEcash, paymentProcessing, message.payment?.amount])
 
@@ -222,18 +216,31 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                     message: acceptedPaymentMessage,
                 })
                 dispatch(updateMessage(acceptedPaymentMessage))
+                // Once the token has been generated and sent in a message
+                // we wait for the recipient to redeem the ecash and send
+                // back a message with the payment.status set to 'paid'
+                //
+                // however, if the recipient is not online, we set a 5s timeout
+                // here so that we at least show the sender a pending state
+                // which should update to paid in the useEffect below
+                // as soon as we get the confirmation message...
+                setTimeout(() => {
+                    setPaymentProcessing(false)
+                }, 5000)
             } catch (error) {
                 console.error(error)
             }
         }
         if (generatedEcashToken) {
-            // Need this because UI thread gets blocked
-            // Is there a cleaner way to do this?
-            setTimeout(() => {
-                prepareAndSendPayment()
-            }, 1)
+            prepareAndSendPayment()
         }
     }, [dispatch, generatedEcashToken, message, sendUpdatedPaymentMessage])
+
+    useEffect(() => {
+        if (message.payment?.status === PaymentStatus.paid) {
+            setPaymentProcessing(false)
+        }
+    }, [message.payment?.status])
 
     // TODO: if a payment has a token & a Rebroadcast a payment
     // useEffect(() => {
