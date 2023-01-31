@@ -21,6 +21,13 @@ platform :android do
     gradle(task: "test")
   end
 
+  desc "Increment the versionCode in build.gradle"
+  lane :increment_version_code do
+    android_set_version_code(
+      gradle_file: './app/build.gradle'
+    )
+  end
+
   desc "Build a new apk to debug for production (apk can be found at /android/build/outputs/apk/production/debug/app-production-debug.apk)"
   lane :build_debug do
     gradle(task: 'clean')
@@ -31,14 +38,7 @@ platform :android do
     )
   end
 
-  desc "Increment the versionCode in build.gradle"
-  lane :increment_version_code do
-    android_set_version_code(
-      gradle_file: './app/build.gradle'
-    )
-  end
-
-  desc "Build a new app APK to release for production"
+  desc "Build a new app APK to release for production (apk can be found at /android/build/outputs/apk/productionRelease/app-production-debug.apk)"
   lane :build_production_apk do
     gradle(
       task: 'assemble',
@@ -53,26 +53,6 @@ platform :android do
     gradle(
       task: 'bundle',
       flavor: 'production',
-      build_type: 'Release'
-    )
-  end
-
-  desc "Build a new app bundle to release for special deployment (Bitcoin Lake)"
-  lane :build_bitcoin_lake do
-    gradle(task: 'clean')
-    gradle(
-      task: 'bundle',
-      flavor: 'bitcoinlake',
-      build_type: 'Release'
-    )
-  end
-
-  desc "Build a new app bundle to release for special deployment (Bitcoin Jungle)"
-  lane :build_bitcoin_jungle do
-    gradle(task: 'clean')
-    gradle(
-      task: 'bundle',
-      flavor: 'bitcoinjungle',
       build_type: 'Release'
     )
   end
@@ -98,26 +78,6 @@ platform :android do
     )
   end
 
-  desc "Upload the latest build for special deployment (Bitcoin Lake)"
-  lane :upload_beta_build_bitcoin_lake do
-    upload_to_play_store(
-      track: 'beta',
-      package_name: 'com.fedimintreactnative.bitcoinlake',
-      aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
-      skip_upload_apk: true
-    )
-  end
-
-  desc "Upload the latest build for special deployment (Bitcoin Jungle)"
-  lane :upload_beta_build_bitcoin_jungle do
-    upload_to_play_store(
-      track: 'beta',
-      package_name: 'com.fedimintreactnative.bitcoinjungle',
-      aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
-      skip_upload_apk: true
-    )
-  end
-
   desc "Submit a new internal build"
   lane :internal do
     increment_version_code
@@ -132,17 +92,113 @@ platform :android do
     upload_beta_build_production
   end
 
-  desc "Submit a new beta build for special deployment (Bitcoin Lake)"
+  # Special Deployment - Bitcoin Lake (Guatemala Demo)
+  desc "Build a new APK to release (Bitcoin Lake)"
+  lane :build_bitcoin_lake_apk do
+    gradle(task: 'clean')
+    gradle(
+      task: 'assemble',
+      flavor: 'bitcoinlake',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Build a new app bundle to release (Bitcoin Lake)"
+  lane :build_bitcoin_lake do
+    gradle(task: 'clean')
+    gradle(
+      task: 'bundle',
+      flavor: 'bitcoinlake',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Upload the latest build to internal track (Bitcoin Lake)"
+  lane :upload_internal_build_bitcoin_lake do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative.bitcoinlake',
+      aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new internal build (Bitcoin Lake)"
+  lane :internal_bitcoin_lake do
+    increment_version_code
+    build_bitcoin_lake
+    upload_internal_build_bitcoin_lake
+  end
+
+  desc "Upload the latest build (Bitcoin Lake)"
+  lane :upload_beta_build_bitcoin_lake do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative.bitcoinlake',
+      aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new beta build (Bitcoin Lake)"
   lane :beta_bitcoin_lake do
     increment_version_code
     build_bitcoin_lake
     upload_beta_build_bitcoin_lake
   end
 
-  desc "Submit a new beta build for special deployment (Bitcoin Jungle)"
+  # Special Deployment - Bitcoin Jungle (Costa Rica Demo)
+  desc "Build a new APK to release (Bitcoin Jungle)"
+  lane :build_bitcoin_jungle_apk do
+    gradle(task: 'clean')
+    gradle(
+      task: 'assemble',
+      flavor: 'bitcoinjungle',
+      build_type: 'Release'
+    )
+  end
+  
+  desc "Build a new app bundle to release (Bitcoin Jungle)"
+  lane :build_bitcoin_jungle do
+    gradle(task: 'clean')
+    gradle(
+      task: 'bundle',
+      flavor: 'bitcoinjungle',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Upload the latest build to internal track (Bitcoin Jungle)"
+  lane :upload_internal_build_bitcoin_jungle do
+    upload_to_play_store(
+      track: 'internal',
+      package_name: 'com.fedimintreactnative.bitcoinjungle',
+      aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new internal build (Bitcoin Jungle)"
+  lane :internal_bitcoin_jungle do
+    increment_version_code
+    build_bitcoin_jungle
+    upload_internal_build_bitcoin_jungle
+  end
+
+  desc "Upload the latest build to beta track (Bitcoin Jungle)"
+  lane :upload_beta_build_bitcoin_jungle do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative.bitcoinjungle',
+      aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new beta build (Bitcoin Jungle)"
   lane :beta_bitcoin_jungle do
     increment_version_code
-    build_bitcoin_lake
+    build_bitcoin_jungle
     upload_beta_build_bitcoin_jungle
   end
 

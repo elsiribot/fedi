@@ -21,23 +21,16 @@ const EmptyGroupNotice: React.FC<{}> = () => {
         <View style={styles(theme).container}>
             <SvgImage
                 name="Search"
+                size={SvgImageSize.lg}
                 containerStyle={{
                     marginTop: theme.spacing.xl,
                     paddingTop: theme.spacing.xl,
                     paddingBottom: theme.spacing.md,
                 }}
-                size={SvgImageSize.lg}
-            />
-            <SvgImage name="Search" size={SvgImageSize.lg} />
-            <SvgImage
-                name="Search"
                 svgProps={{
-                    stroke: theme.colors.primary,
-                    height: theme.sizes.lg,
-                    width: theme.sizes.lg,
+                    stroke: theme.colors.primaryLight,
                 }}
             />
-            <SvgImage name="Video" />
             <Text medium style={styles(theme).text}>
                 {t('feature.community.no-one-is-in-this-group')}
             </Text>

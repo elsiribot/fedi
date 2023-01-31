@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { useCommunityContext } from '../state/contexts/CommunityContext'
@@ -9,19 +9,32 @@ import type { RootStackParamList } from '../types/navigation'
 
 import MembersList from '../components/feature/community/MembersList'
 import SvgImage from '../components/ui/SvgImage'
+import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
+import { useXmpp } from '../state/hooks'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
 
 const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { enterMucRoom } = useXmpp()
     const { state } = useCommunityContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
+    const { authenticatedMember } = useCommunityContext().state
 
     // filter out members if usernameFilter has text to filter with
     const filteredMembers = usernameFilter
         ? state.membersSeen.filter(m => m.username.includes(usernameFilter))
         : state.membersSeen
+
+    useEffect(() => {
+        if (authenticatedMember) {
+            // This is a temporary measure to improve member discovery...
+            // all users announce presence in this MUC room even without clicking it
+            // so that presence messages for each new user are sent to all other users
+            enterMucRoom(FEDI_GENERAL_CHANNEL_GROUP)
+        }
+    }, [authenticatedMember, enterMucRoom])
 
     return (
         <View style={styles(theme).container}>
@@ -47,7 +60,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
-                    <SvgImage name="Scan" />
+                    <SvgImage name="Scan" containerStyle={{ opacity: 0.1 }} />
                 </View>
                 <Pressable
                     style={styles(theme).createGroupContainer}
