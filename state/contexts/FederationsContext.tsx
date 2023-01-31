@@ -210,7 +210,11 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     // Persist currently selected federation
     useEffect(() => {
         // Try not to accidentally overwrite real value with null
-        if (state.selectedFederationId != null) {
+        // if we are a member of any federations
+        if (
+            state.selectedFederationId != null ||
+            state.federations.length === 0
+        ) {
             const selectedFederation = state.federations.find(
                 // FIXME: switch to using federation.id
                 f => f.name === state.selectedFederationId,
