@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
 import {
     IncomingBitcoinTransactionStatus,
@@ -39,6 +40,7 @@ const TransactionDetail = ({
     const { t } = useTranslation()
     const [notes, setNotes] = useState(txn.notes)
     const [isFocused, setIsFocused] = useState(false)
+    const { toast } = useEnvironmentContext().state
 
     const onNotesInputChanged = (input: string) => {
         setNotes(input)
@@ -121,9 +123,10 @@ const TransactionDetail = ({
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
                         <Pressable
                             style={styles(theme).detailItem}
-                            onPress={() =>
+                            onPress={() => {
                                 Clipboard.setString(txn.lightning.invoice)
-                            }>
+                                toast?.show('Copied lightning request')
+                            }}>
                             <Text>
                                 {stringUtils.truncateMiddleOfString(
                                     txn.lightning.invoice,
