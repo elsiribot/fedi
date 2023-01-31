@@ -751,6 +751,18 @@ impl Federation {
         // notify UI
         self.send_transaction_event(&tx);
         self.send_federation_event().await;
+        // backup username
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn(format!("{} ecash backup", self.name()), |_| async move {
+                info!("starting ecash backup");
+                match fed.back_up_ecash_to_federation().await {
+                    Ok(_) => info!("ecash backup successful"),
+                    Err(e) => info!("ecash backup failed {:?}", e),
+                }
+            })
+            .await;
     }
 
     /// Get transaction from DB
@@ -1123,15 +1135,6 @@ impl Federation {
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} ecash backup poller", self.name()),
-                |task_handle| async move {
-                    fed.poll_ecash_backup(task_handle).await;
-                },
-            )
-            .await;
-        let fed = self.clone();
-        self.task_group
-            .spawn(
                 format!("{} peg-in poller", self.name()),
                 |task_handle| async move {
                     fed.poll_peg_ins(task_handle).await;
@@ -1156,29 +1159,6 @@ impl Federation {
                 },
             )
             .await;
-    }
-
-    /// Make an ecash backup once every minute
-    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
-    pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut last_poll = SystemTime::now();
-
-        loop {
-            if task_handle.is_shutting_down() {
-                return;
-            }
-            // Run once per minute
-            if last_poll.elapsed().expect("clock went backwards").as_secs() < 600 {
-                fedimint_api::task::sleep(Duration::from_secs(1)).await;
-                continue;
-            }
-            last_poll = SystemTime::now();
-
-            match self.back_up_ecash_to_federation().await {
-                Ok(_) => info!("ecash backup complete"),
-                Err(_) => error!("ecash backup failed"),
-            }
-        }
     }
 
     /// Checks for peg-ins every second
