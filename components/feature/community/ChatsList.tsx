@@ -112,6 +112,13 @@ const ChatsList: React.FC<{}> = () => {
         : []
     // console.debug('directChats', directChats)
 
+    directChats.sort((a, b) => {
+        if (a.lastReceivedTimestamp && b.lastReceivedTimestamp) {
+            return b.lastReceivedTimestamp - a.lastReceivedTimestamp
+        }
+        return 0
+    })
+
     return (
         <FlatList
             style={styles(theme).container}
