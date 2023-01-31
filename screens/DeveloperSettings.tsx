@@ -20,6 +20,7 @@ import {
     receiveMessages,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     resetFederationCredentials,
     useFederationsContext,
@@ -38,6 +39,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { listGateways, switchGateway } = useBridge()
     const { dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
+    const { toast } = useEnvironmentContext().state
     const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
@@ -45,16 +47,22 @@ const DeveloperSettings: React.FC<Props> = () => {
 
     useEffect(() => {
         const getGatewaysList = async () => {
-            setIsLoading(true)
-            const _gateways = await listGateways()
-            setIsLoading(false)
-            setGateways(_gateways)
+            try {
+                setIsLoading(true)
+                // TODO: error handling
+                const _gateways = await listGateways()
+                setIsLoading(false)
+                setGateways(_gateways)
+            } catch (e) {
+                toast?.show('Failed to fetch gateways')
+            }
         }
 
         getGatewaysList()
-    }, [listGateways])
+    }, [toast, listGateways])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
+        // TODO: error handling
         await switchGateway(gateway)
         const updatedGateways = gateways.map((gw: LightningGateway) => {
             gw.active = gateway.nodePubKey === gw.nodePubKey
