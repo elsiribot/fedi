@@ -114,7 +114,7 @@ const DeveloperSettings: React.FC<Props> = () => {
             </View>
             <Button
                 size="sm"
-                title={'Delete all groups, messages, & members'}
+                title={'Delete all groups, messages, & members seen'}
                 onPress={() => {
                     communityDispatch(receiveMembersSeen([]))
                     communityDispatch(receiveMessages([]))
@@ -135,6 +135,40 @@ const DeveloperSettings: React.FC<Props> = () => {
             />
             <Button
                 size="sm"
+                title={'Delete all groups'}
+                onPress={() => {
+                    communityDispatch(receiveGroups(DEFAULT_GROUPS))
+                    AsyncStorage.setItem(
+                        COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                        JSON.stringify({ groups: DEFAULT_GROUPS }),
+                    )
+                }}
+            />
+            <Button
+                size="sm"
+                title={'Delete all messages'}
+                onPress={() => {
+                    communityDispatch(receiveMessages([]))
+                    AsyncStorage.setItem(
+                        COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                        JSON.stringify({ messages: [] }),
+                    )
+                }}
+            />
+            <Button
+                size="sm"
+                title={'Delete all members seen'}
+                onPress={() => {
+                    communityDispatch(receiveMembersSeen([]))
+                    communityDispatch(receiveGroups(DEFAULT_GROUPS))
+                    AsyncStorage.setItem(
+                        COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                        JSON.stringify({ members: [] }),
+                    )
+                }}
+            />
+            <Button
+                size="sm"
                 title="Reset username"
                 onPress={() => {
                     federationsDispatch(resetFederationCredentials())
@@ -142,6 +176,7 @@ const DeveloperSettings: React.FC<Props> = () => {
             />
             <Button
                 size="sm"
+                disabled
                 title="Send XML"
                 onPress={() => {
                     sendTestXml()

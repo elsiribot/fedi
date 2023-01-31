@@ -22,7 +22,13 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).innerCardContainer}>
-                    <SvgImage name="FedearationxIcon" size={SvgImageSize.xl} />
+                    <SvgImage
+                        name="FedearationxIcon"
+                        size={SvgImageSize.xl}
+                        svgProps={{
+                            stroke: 'transparent',
+                        }}
+                    />
                     {/*refer to below image style for above image*/}
                     <Text h2 medium style={styles(theme).welcomeTitle}>
                         {t('feature.onboarding.welcome-to-federation', {
