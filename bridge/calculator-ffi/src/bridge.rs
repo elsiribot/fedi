@@ -143,8 +143,28 @@ impl Bridge {
             .await
     }
 
+    pub async fn already_joined_federation(
+        &self,
+        connect_string: String,
+    ) -> Result<Option<Arc<Federation>>> {
+        let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
+        let api = WsFederationApi::new(connect_cfg.members);
+        let res: ConfigResponse = api.download_client_config().await?;
+        let cfg = res.client;
+        let federations = self.federations.lock().await;
+        let federation = federations.get(&cfg.federation_name).map(|fed| fed.clone());
+        Ok(federation)
+    }
+
     /// Adds federation to "federations" and starts polling (if we haven't already joined)
-    pub async fn join_federation(&self, connect_string: String) -> Result<Federation> {
+    pub async fn join_federation(&self, connect_string: String) -> Result<Arc<Federation>> {
+        // If we've already joined, return the federation we have and skip joining
+        if let Some(federation) = self
+            .already_joined_federation(connect_string.clone())
+            .await?
+        {
+            return Ok(federation);
+        }
         let mut federation = Federation::join(
             connect_string,
             self.data_dir.clone(),
@@ -158,7 +178,7 @@ impl Bridge {
             federation.start_pollers().await;
             federations.insert(federation_name, Arc::new(federation.clone()));
         };
-        Ok(federation)
+        Ok(Arc::new(federation))
     }
 
     pub async fn get_federation(&self, federation_id: &str) -> Option<Arc<Federation>> {
