@@ -206,6 +206,7 @@ impl Bridge {
 
         // recover ecash tokens
         let username = fed.restore_ecash_from_federation().await?;
+        tracing::info!("Ecash recovery complete, username={:?}", username);
 
         Ok(username)
     }
