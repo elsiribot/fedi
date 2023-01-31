@@ -60,6 +60,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 keyboardType="numeric"
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
+                inputStyle={styles(theme).input}
             />
             <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).offlineContainer}>
@@ -76,6 +77,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 title={t('words.next')}
                 onPress={onGenerateEcash}
                 loading={isLoading}
+                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -100,6 +102,12 @@ const styles = (theme: Theme) =>
         },
         textInput: {
             width: '80%',
+        },
+        input: {
+            fontFamily: 'AlbertSans-Regular',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

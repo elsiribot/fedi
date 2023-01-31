@@ -79,6 +79,7 @@ const ReviewVideo = () => {
                     title={t('feature.backup.record-again')}
                     onPress={() => dispatch(resetVideo())}
                     type="clear"
+                    titleStyle={styles(theme).titleButton}
                 />
 
                 <Button
@@ -99,6 +100,7 @@ const ReviewVideo = () => {
                     }}
                     disabled={!confirmFaceChecked || !confirmVoiceChecked}
                     containerStyle={styles(theme).confirmButton}
+                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -155,10 +157,14 @@ const styles = (theme: Theme) =>
             bottom: 0,
             left: 0,
             right: 0,
+            fontFamily: 'AlbertSans-Regular',
         },
         video: {
             height: '100%',
             width: '100%',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

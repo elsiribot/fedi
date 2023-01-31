@@ -72,6 +72,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     inputContainerStyle={styles(theme).textInputInner}
                     autoCapitalize={'none'}
                     autoCorrect={false}
+                    inputStyle={styles(theme).input}
                 />
             </View>
             <Button
@@ -81,6 +82,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 loading={editingGroupName}
                 disabled={!groupName || editingGroupName}
                 containerStyle={styles(theme).button}
+                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -126,6 +128,12 @@ const styles = (theme: Theme) =>
             borderColor: theme.colors.primaryVeryLight,
             borderWidth: 1,
             borderRadius: theme.borders.defaultRadius,
+        },
+        input: {
+            fontFamily: 'AlbertSans-Regular',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

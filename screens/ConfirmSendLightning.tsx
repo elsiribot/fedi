@@ -127,6 +127,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                     onPress={onSendBtc}
                     loading={isLoading}
                     fullWidth
+                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -150,6 +151,9 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             justifyContent: 'space-evenly',
             margin: theme.spacing.md,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

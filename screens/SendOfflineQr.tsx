@@ -62,6 +62,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
                     }}
                     delayLongPress={500}
                     containerStyle={styles(theme).buttonContainer}
+                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -94,6 +95,9 @@ const styles = (theme: Theme) =>
         buttonContainer: {
             marginTop: 'auto',
             marginVertical: theme.spacing.xl,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

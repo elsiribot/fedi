@@ -214,6 +214,7 @@ const styles = (theme: Theme) =>
         input: {
             fontSize: 14,
             textAlign: 'right',
+            fontFamily: 'AlbertSans-Regular',
         },
         focusedInput: {
             // marginBottom: 0,

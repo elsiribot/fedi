@@ -49,6 +49,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('feature.federations.join-federation')}
                     containerStyle={styles(theme).button}
                     onPress={handleJoinFederation}
+                    titleStyle={styles(theme).titleButton}
                 />
                 <Text style={styles(theme).agreementText}>
                     {t('feature.onboarding.by-clicking-you-agree')}
@@ -103,6 +104,9 @@ const styles = (theme: Theme) =>
         agreementText: {
             textAlign: 'center',
             marginVertical: theme.spacing.xl,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

@@ -131,6 +131,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     inputContainerStyle={styles(theme).textInputInner}
                     autoCapitalize={'none'}
                     autoCorrect={false}
+                    inputStyle={styles(theme).input}
                 />
                 <Text caption style={styles(theme).inputGuidance}>
                     {t('feature.onboarding.username-guidance')}
@@ -142,6 +143,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 onPress={handleSubmit}
                 disabled={!username || xmppAuthInProgress}
                 containerStyle={styles(theme).button}
+                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -189,6 +191,12 @@ const styles = (theme: Theme) =>
             marginLeft: theme.spacing.sm,
             marginTop: theme.spacing.xs,
             color: theme.colors.grey,
+        },
+        input: {
+            fontFamily: 'AlbertSans-Regular',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

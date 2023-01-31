@@ -73,6 +73,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             title={t('feature.recovery.search-files')}
             containerStyle={styles.searchButton}
             onPress={openFileExplorer}
+            titleStyle={styles.titleButton}
         />
     )
 }
@@ -81,6 +82,9 @@ const styles = StyleSheet.create({
     searchButton: {
         width: '100%',
         marginTop: 'auto',
+    },
+    titleButton: {
+        fontFamily: 'AlbertSans-Regular',
     },
 })
 

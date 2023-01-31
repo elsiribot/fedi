@@ -39,11 +39,12 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     key={i}
                     containerStyle={styles(theme).buttonContainer}
                     title={button.text}
-                    titleStyle={
+                    titleStyle={[
+                        styles(theme).buttonTitle,
                         button.textColor
                             ? { color: button.textColor }
-                            : { color: theme.colors.white }
-                    }
+                            : { color: theme.colors.white },
+                    ]}
                     buttonStyle={
                         button.backgroundColor
                             ? { backgroundColor: button.backgroundColor }
@@ -110,6 +111,9 @@ const styles = (theme: Theme) =>
             marginHorizontal: theme.spacing.sm,
             flex: 1,
             borderWidth: 1,
+        },
+        buttonTitle: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

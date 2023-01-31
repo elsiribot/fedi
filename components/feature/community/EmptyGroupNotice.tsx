@@ -41,6 +41,7 @@ const EmptyGroupNotice: React.FC<{}> = () => {
                 containerStyle={styles(theme).button}
                 title={t('feature.community.invite-to-group')}
                 onPress={() => navigation.navigate('GroupInvite', { group })}
+                titleStyle={styles(theme).buttonTitle}
             />
         </View>
     )
@@ -70,6 +71,9 @@ const styles = (theme: Theme) =>
         button: {
             marginTop: theme.spacing.lg,
             width: '80%',
+        },
+        buttonTitle: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

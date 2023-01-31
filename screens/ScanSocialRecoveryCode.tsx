@@ -89,6 +89,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                     )}
                     onPress={checkClipboard}
                     type="clear"
+                    titleStyle={styles(theme).titleButton}
                 />
             }
             message={t('feature.recovery.camera-access-information')}>
@@ -105,6 +106,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                             'socialrecovery::pubkey::http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
                         )
                     }
+                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </CameraPermissionsRequired>
@@ -122,6 +124,9 @@ const styles = (theme: Theme) =>
             height: '80%',
             width: '100%',
             margin: theme.spacing.lg,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

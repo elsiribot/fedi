@@ -99,6 +99,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     disabled={joiningFederation !== ''}
                     loading={joiningFederation !== ''}
                     type="clear"
+                    titleStyle={styles(theme).titleButton}
                 />
             }
             message={t('feature.federations.camera-access-information')}>
@@ -113,6 +114,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                         title={t('feature.federations.paste-federation-code')}
                         onPress={checkClipboard}
                         fullWidth
+                        titleStyle={styles(theme).titleButton}
                     />
                 </View>
             </View>
@@ -135,6 +137,9 @@ const styles = (theme: Theme) =>
         buttonContainer: {
             width: '100%',
             paddingHorizontal: theme.spacing.lg,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

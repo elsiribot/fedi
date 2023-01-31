@@ -29,6 +29,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 title={t('words.next')}
                 containerStyle={styles(theme).continueButton}
+                titleStyle={styles(theme).titleButton}
                 onPress={() => {
                     navigation.navigate('SocialBackupGuidance')
                 }}
@@ -73,6 +74,9 @@ const styles = (theme: Theme) =>
         continueButton: {
             width: '100%',
             marginVertical: theme.spacing.md,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

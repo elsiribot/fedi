@@ -78,6 +78,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 keyboardType="numeric"
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
+                inputStyle={styles(theme).input}
             />
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
@@ -85,6 +86,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress={requestEcash}
                     containerStyle={styles(theme).buttonContainer}
                     disabled={!Number(amount) || isLoading}
+                    titleStyle={styles(theme).titleButton}
                 />
                 <Button
                     title={t('words.send')}
@@ -96,6 +98,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                         isLoading ||
                         true
                     }
+                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -129,6 +132,12 @@ const styles = (theme: Theme) =>
         buttonContainer: {
             margin: theme.spacing.sm,
             flex: 1,
+        },
+        input: {
+            fontFamily: 'AlbertSans-Regular',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

@@ -59,6 +59,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         style={styles(theme).filterMembersTextInput}
                         autoCapitalize={'none'}
                         autoCorrect={false}
+                        inputStyle={styles(theme).filterMembersTextInputContent}
                     />
                     <SvgImage name="Scan" containerStyle={{ opacity: 0.1 }} />
                 </View>
@@ -134,6 +135,9 @@ const styles = (theme: Theme) =>
             paddingVertical: theme.spacing.md,
             textAlign: 'left',
             color: theme.colors.darkGrey,
+        },
+        filterMembersTextInputContent: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

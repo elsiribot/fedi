@@ -27,6 +27,7 @@ const StartPersonalBackup: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
+                titleStyle={styles(theme).titleButton}
                 onPress={() => {
                     navigation.navigate('PersonalBackupGuidance')
                 }}
@@ -70,6 +71,9 @@ const styles = (theme: Theme) =>
         continueButton: {
             width: '100%',
             marginVertical: theme.spacing.md,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

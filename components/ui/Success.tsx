@@ -79,6 +79,7 @@ const Success: React.FC<SuccessProps> = ({
                 ) : (
                     <Button
                         title={buttonText ? buttonText : t('words.done')}
+                        titleStyle={styles(theme).titleButton}
                         onPress={() => {
                             navigation.dispatch(
                                 reset(nextScreen, nextScreenProps),
@@ -135,6 +136,9 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
             marginVertical: theme.spacing.xl,
             paddingHorizontal: theme.spacing.xl,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

@@ -60,6 +60,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                         <Button
                             title={t('feature.backup.start-social-backup')}
                             containerStyle={styles(theme).backupMethodButton}
+                            titleStyle={styles(theme).titleButton}
                             onPress={handleStartSocialBackup}
                         />
                     </>
@@ -77,6 +78,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                         <Button
                             title={t('feature.backup.start-personal-backup')}
                             containerStyle={styles(theme).backupMethodButton}
+                            titleStyle={styles(theme).titleButton}
                             onPress={() => {
                                 navigation.navigate('StartPersonalBackup')
                             }}
@@ -109,6 +111,9 @@ const styles = (theme: Theme) =>
             marginBottom: theme.spacing.xl,
             paddingHorizontal: theme.spacing.lg,
             fontWeight: '400',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

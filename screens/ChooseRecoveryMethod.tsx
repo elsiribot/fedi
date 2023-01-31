@@ -48,6 +48,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                             title={t('feature.recovery.start-social-recovery')}
                             containerStyle={styles(theme).recoveryMethodButton}
                             onPress={onChooseSocialRecovery}
+                            titleStyle={styles(theme).titleButton}
                         />
                     </>
                 }
@@ -69,6 +70,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                             onPress={() => {
                                 navigation.navigate('PersonalRecovery')
                             }}
+                            titleStyle={styles(theme).titleButton}
                         />
                     </>
                 }
@@ -96,6 +98,9 @@ const styles = (theme: Theme) =>
         recoveryMethodInstructions: {
             textAlign: 'center',
             paddingVertical: theme.spacing.xs,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

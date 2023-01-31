@@ -46,6 +46,7 @@ const SelectRecoveryFileFailure: React.FC<Props> = ({
                     onPress={() => {
                         navigation.replace('Home')
                     }}
+                    titleStyle={styles(theme).titleButton}
                 />
                 <SelectRecoveryFileButton />
             </View>
@@ -103,6 +104,9 @@ const styles = (theme: Theme) =>
             marginBottom: theme.spacing.xl,
             flexDirection: 'column',
             justifyContent: 'flex-end',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

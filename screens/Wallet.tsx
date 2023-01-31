@@ -159,6 +159,7 @@ const styles = (theme: Theme) =>
         },
         buttonTitle: {
             color: theme.colors.primary,
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

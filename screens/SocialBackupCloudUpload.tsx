@@ -49,6 +49,7 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {
                         navigation.navigate('CompleteSocialBackup')
                     }}
+                    titleStyle={styles(theme).titleButton}
                 />
                 <Button
                     title={t('feature.backup.backup-to-google-drive')}
@@ -56,6 +57,7 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {
                         shareVideo()
                     }}
+                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -102,6 +104,9 @@ const styles = (theme: Theme) =>
         continueButton: {
             width: '100%',
             marginVertical: theme.spacing.md,
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 

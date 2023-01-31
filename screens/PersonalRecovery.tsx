@@ -209,6 +209,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 // TODO: separate loading screen as per designs
                 loading={isLoading}
                 disabled={isLoading || seedWords.some(s => !isValidSeedWord(s))}
+                titleStyle={styles(theme).titleButton}
             />
         </ScrollView>
     )
@@ -262,6 +263,7 @@ const styles = (theme: Theme) =>
         },
         wordInput: {
             fontSize: 16,
+            fontFamily: 'AlbertSans-Regular',
         },
         focusedInputInnerContainer: {
             borderBottomColor: theme.colors.primary,
@@ -272,6 +274,9 @@ const styles = (theme: Theme) =>
         },
         invalidWord: {
             color: 'red',
+        },
+        titleButton: {
+            fontFamily: 'AlbertSans-Regular',
         },
     })
 
