@@ -1,13 +1,5 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import {
-    Divider,
-    Icon,
-    Image,
-    Input,
-    Text,
-    Theme,
-    useTheme,
-} from '@rneui/themed'
+import { Divider, Icon, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -18,7 +10,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { Images } from '../../../assets/images'
 
 import {
     IncomingBitcoinTransactionStatus,
@@ -29,6 +20,7 @@ import { useBridge } from '../../../state/hooks'
 import amountUtils from '../../../utils/AmountUtils'
 import dateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -138,10 +130,7 @@ const TransactionDetail = ({
                                     5,
                                 )}
                             </Text>
-                            <Image
-                                style={styles(theme).icon}
-                                source={Images.Copy}
-                            />
+                            <SvgImage name="Copy" size={SvgImageSize.sm} />
                         </Pressable>
                     </View>
                 )}
