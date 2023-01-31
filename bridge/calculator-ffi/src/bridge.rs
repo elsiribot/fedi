@@ -480,16 +480,19 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.save_transaction(&Transaction::lightning(
-                    TransactionDirection::Send,
-                    fedimint_api::Amount::from_msats(
-                        invoice
-                            .amount_milli_satoshis()
-                            .context("assuming invoice has amount")?,
+                self.save_transaction(
+                    &Transaction::lightning(
+                        TransactionDirection::Send,
+                        fedimint_api::Amount::from_msats(
+                            invoice
+                                .amount_milli_satoshis()
+                                .context("assuming invoice has amount")?,
+                        ),
+                        fee,
+                        invoice.clone(),
                     ),
-                    fee,
-                    invoice.clone(),
-                ))
+                    false,
+                )
                 .await;
                 Ok(())
             }
@@ -513,10 +516,10 @@ impl Federation {
     pub async fn generate_ecash(&self, amount: Amount) -> Result<TieredMulti<SpendableNote>> {
         let rng = rand::rngs::OsRng;
         let ecash: TieredMulti<SpendableNote> = self.client.spend_ecash(amount, rng).await?;
-        self.save_transaction(&Transaction::offline(
-            tx::TransactionDirection::Send,
-            amount,
-        ))
+        self.save_transaction(
+            &Transaction::offline(tx::TransactionDirection::Send, amount),
+            false,
+        )
         .await;
         Ok(ecash)
     }
@@ -537,10 +540,10 @@ impl Federation {
         if let Err(e) = self.client.await_outpoint_outcome(outpoint).await {
             error!("Failed to claim contract {}", e);
         }
-        self.save_transaction(&Transaction::offline(
-            tx::TransactionDirection::Receive,
-            ecash.total_amount(),
-        ))
+        self.save_transaction(
+            &Transaction::offline(tx::TransactionDirection::Receive, ecash.total_amount()),
+            true,
+        )
         .await;
         Ok(ecash.total_amount())
     }
@@ -669,14 +672,17 @@ impl Federation {
                         .await
                         .is_none()
                     {
-                        self.save_transaction(&Transaction::bitcoin(
-                            TransactionDirection::Receive,
-                            amount,
-                            fee,
-                            address,
-                            item.tx_hash,
-                            Some(IncomingBitcoinTransactionStatus::Pending),
-                        ))
+                        self.save_transaction(
+                            &Transaction::bitcoin(
+                                TransactionDirection::Receive,
+                                amount,
+                                fee,
+                                address,
+                                item.tx_hash,
+                                Some(IncomingBitcoinTransactionStatus::Pending),
+                            ),
+                            true,
+                        )
                         .await;
                     }
                     continue;
@@ -699,7 +705,7 @@ impl Federation {
                 let mut details = tx.bitcoin.context("this should exist (fixme)")?;
                 details.incoming_status = Some(IncomingBitcoinTransactionStatus::Complete);
                 tx.bitcoin = Some(details);
-                self.save_transaction(&tx).await;
+                self.save_transaction(&tx, true).await;
             }
         }
 
@@ -742,7 +748,8 @@ impl Federation {
     }
 
     /// Save transaction to DB
-    pub async fn save_transaction(&self, tx: &Transaction) {
+    /// `send_event` is whether to send event to react native, which might send push notifications
+    pub async fn save_transaction(&self, tx: &Transaction, send_event: bool) {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx)
@@ -750,7 +757,9 @@ impl Federation {
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         // notify UI
-        self.send_transaction_event(&tx);
+        if send_event {
+            self.send_transaction_event(&tx);
+        }
         self.send_federation_event().await;
         // backup username
         let fed = self.clone();
@@ -780,7 +789,7 @@ impl Federation {
         match self.get_transaction(id).await {
             Some(mut tx) => {
                 tx.notes = notes;
-                self.save_transaction(&tx).await;
+                self.save_transaction(&tx, false).await;
                 Ok(())
             }
             None => Err(anyhow!("Transaction not found")),
@@ -1242,7 +1251,7 @@ impl Federation {
                                 fee,
                                 payment.invoice.clone(),
                             );
-                            fed.save_transaction(&tx).await;
+                            fed.save_transaction(&tx, true).await;
                         }
                     }
                 })

@@ -400,14 +400,17 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     let amount = fedimint_api::Amount::from(sats);
     let outgoing_status = Some(IncomingBitcoinTransactionStatus::Pending);
     federation
-        .save_transaction(&Transaction::bitcoin(
-            tx::TransactionDirection::Send,
-            amount,
-            fee,
-            address,
-            txid,
-            outgoing_status,
-        ))
+        .save_transaction(
+            &Transaction::bitcoin(
+                tx::TransactionDirection::Send,
+                amount,
+                fee,
+                address,
+                txid,
+                outgoing_status,
+            ),
+            true,
+        )
         .await;
     Ok(json!({ "result": out_point.txid.to_string() }).to_string())
 }
