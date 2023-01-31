@@ -67,7 +67,7 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
-                    navigation.navigate('ConfirmRecoveryAssist')
+                    navigation.navigate('ScanSocialRecoveryCode')
                 }}
             />
         </View>

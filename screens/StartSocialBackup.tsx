@@ -30,7 +30,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('words.next')}
                 containerStyle={styles(theme).continueButton}
                 onPress={() => {
-                    navigation.navigate('SocialBackupGuidance')
+                    navigation.navigate('RecordBackupVideo')
                 }}
             />
         </View>
