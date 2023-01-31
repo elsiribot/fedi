@@ -23,7 +23,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { selectedFederation } = useFederationsContext().state
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<SatsString>('' as SatsString)
-    // const { generateEcash } = useBridge()
     const { sendDirectMessage } = useXmpp()
     const { state, dispatch } = useCommunityContext()
     const { authenticatedMember } = state
