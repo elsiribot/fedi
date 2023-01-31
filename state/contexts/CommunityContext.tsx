@@ -6,11 +6,14 @@ import { JID } from '@xmpp/jid'
 import { isEqual } from 'lodash'
 import React, {
     createContext,
+    MutableRefObject,
     useContext,
     useEffect,
     useMemo,
     useReducer,
+    useRef,
 } from 'react'
+import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
@@ -41,6 +44,7 @@ interface CommunityContextState {
     messages: Message[]
     groups: Group[]
     membersSeen: Member[]
+    lastFetchedMessageId: string | null
 }
 const initialState: CommunityContextState = {
     xmppClient: null,
@@ -50,6 +54,7 @@ const initialState: CommunityContextState = {
     messages: [],
     groups: DEFAULT_GROUPS,
     membersSeen: [],
+    lastFetchedMessageId: null,
 }
 type AppState = typeof initialState
 
@@ -59,6 +64,7 @@ enum ActionType {
     ADD_TO_MESSAGES = 'ADD_TO_MESSAGES',
     ADD_TO_GROUPS = 'ADD_TO_GROUPS',
     CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
+    CHANGE_LAST_FETCHED_MESSAGE_ID = 'CHANGE_LAST_FETCHED_MESSAGE_ID',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
@@ -100,6 +106,12 @@ export function addToGroups(group: Group): Action {
     return {
         type: ActionType.ADD_TO_GROUPS,
         payload: group,
+    }
+}
+export function changeLastFetchedMessageId(messageId: string): Action {
+    return {
+        type: ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID,
+        payload: messageId,
     }
 }
 export function changeUserIsOnline(online: boolean): Action {
@@ -190,7 +202,7 @@ export function reducer(state: AppState, action: Action): AppState {
             } else {
                 // member is already added but something has changed...
                 const updatedMember = {
-                    ...state.messages[memberIndex],
+                    ...state.membersSeen[memberIndex],
                     ...action.payload,
                 }
                 return {
@@ -266,6 +278,11 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
+        case ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID:
+            return {
+                ...state,
+                lastFetchedMessageId: action.payload,
+            }
         case ActionType.CHANGE_USER_IS_ONLINE:
             return {
                 ...state,
@@ -523,6 +540,9 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         reducer,
         initialState,
     )
+    const appStateRef = useRef<AppStateStatus>(
+        RNAppState.currentState,
+    ) as MutableRefObject<AppStateStatus>
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
@@ -591,6 +611,11 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                             XMPP_DOMAIN,
                             XMPP_RESOURCE,
                         )
+                    }
+
+                    // don't add ourselves to membersSeen
+                    if (selectedFederation.username === userJid.local) {
+                        return
                     }
 
                     dispatch(
@@ -669,6 +694,20 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                         }
                     }
                 }
+                if (stanza.is('iq')) {
+                    // Handle pagination for queries to the message archive
+                    if (stanza.getAttr('id') === 'get-messages') {
+                        const results = stanza.getChild('fin')?.getChild('set')
+                        if (!results) return
+
+                        const lastMessageId = results
+                            .getChild('last')
+                            ?.getText()
+                        if (!lastMessageId) return
+
+                        dispatch(changeLastFetchedMessageId(lastMessageId))
+                    }
+                }
             } catch (error) {
                 console.error('Error parsing XMPP stanza', error)
             }
@@ -707,6 +746,55 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         selectedFederation?.username,
         selectedFederation?.password,
     ])
+
+    // This logic is needed to help gracefully resume the XMPP websocket stream
+    // so that the websocket stream resumes properly
+    useEffect(() => {
+        const resumeStream = () => {
+            // the client will likely be instantiated already but guard here
+            try {
+                if (state.xmppClient) {
+                    const xmppClient = state.xmppClient
+
+                    // Sometimes we send a presence message and do not
+                    // get a response which may mean the stream cannot
+                    // be resumed so we need to restart the client
+                    let reconnectTimer = setTimeout(() => {
+                        xmppClient.restart()
+                    }, 5000)
+                    // This expects a response to the presence message which means
+                    // the stream has been resumed successfully so we can clear
+                    // the reconnectTimer and cleanup the listener
+                    const onStanzaReceived = async (_: Element) => {
+                        xmppClient?.removeListener('stanza', onStanzaReceived)
+                        clearTimeout(reconnectTimer)
+                    }
+                    xmppClient?.on('stanza', onStanzaReceived)
+                    xmppClient?.send(xml('presence'))
+                }
+            } catch (error) {
+                console.error('Failed to re-establish XMPP presence')
+            }
+        }
+
+        // Subscribe to changes in AppState
+        const subscription = RNAppState.addEventListener(
+            'change',
+            nextAppState => {
+                if (
+                    appStateRef.current.match(/inactive|background/) &&
+                    nextAppState === 'active'
+                ) {
+                    resumeStream()
+                }
+                appStateRef.current = nextAppState
+            },
+        )
+
+        return () => {
+            subscription.remove()
+        }
+    }, [state.xmppClient])
 
     // Update async storage when groups are added
     useEffect(() => {

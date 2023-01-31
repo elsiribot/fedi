@@ -1,16 +1,11 @@
-import { Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    ImageBackground,
-    ImageSourcePropType,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../assets/images'
 
 type HoloCardProps = {
-    iconImage?: ImageSourcePropType | null
+    iconImage?: React.ReactNode | null
     title?: string | null
     body: React.ReactNode
 }
@@ -28,9 +23,8 @@ const HoloCard: React.FC<HoloCardProps> = ({
             style={styles(theme).container}
             imageStyle={styles(theme).roundedBorder}>
             <View style={styles(theme).innerContainer}>
-                {iconImage && (
-                    <Image source={iconImage} style={styles(theme).iconImage} />
-                )}
+                {iconImage}
+
                 {title && (
                     <Text bold style={styles(theme).titleText}>
                         {title}

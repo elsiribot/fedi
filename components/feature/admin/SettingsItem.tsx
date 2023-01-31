@@ -1,22 +1,16 @@
-import { Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
-import {
-    GestureResponderEvent,
-    ImageSourcePropType,
-    Pressable,
-    StyleSheet,
-} from 'react-native'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { GestureResponderEvent, Pressable, StyleSheet } from 'react-native'
 
 type SettingsItemProps = {
     disabled?: boolean
-    imageSource: ImageSourcePropType
+    image: React.ReactNode
     label: string
     onPress: (event: GestureResponderEvent) => void
 }
 
 const SettingsItem = ({
     disabled = false,
-    imageSource,
+    image,
     label,
     onPress,
 }: SettingsItemProps) => {
@@ -25,7 +19,7 @@ const SettingsItem = ({
         <Pressable
             style={[styles(theme).container, disabled ? { opacity: 0.25 } : {}]}
             onPress={disabled ? () => {} : onPress}>
-            <Image source={imageSource} style={styles(theme).image} />
+            {image}
             <Text style={styles(theme).label}>{label}</Text>
             <Icon
                 name={'angle-right'}

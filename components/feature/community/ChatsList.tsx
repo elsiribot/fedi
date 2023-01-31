@@ -4,9 +4,8 @@ import { t } from 'i18next'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { useCommunityContext } from '../../../state/contexts/CommunityContext'
-import { Chat, Group, Message, MSats } from '../../../types'
+import { Chat, ChatType, Group, Message, MSats } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
 import ChatTile from './ChatTile'
@@ -35,7 +34,6 @@ const ChatsList: React.FC<{}> = () => {
                                 name: chat.name,
                                 invitationCode: Group.encodeInvitationLink(
                                     chat.id,
-                                    chat.name || DEFAULT_GROUP_NAME,
                                 ),
                             }),
                         })
@@ -69,6 +67,7 @@ const ChatsList: React.FC<{}> = () => {
                           id: otherMember?.username,
                           name: otherMember?.username,
                           members: [otherMember],
+                          type: ChatType.direct,
                           lastReceivedTimestamp: m.sentAt,
                           // If last message is a payment, render details
                           messagePreview: m.payment

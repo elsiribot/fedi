@@ -7,14 +7,14 @@ import org.rustylibs.calculator.*
 
 object EventDispatcher : EventSink {
     override fun event(eventType: String, body: String) {
-        FedimintEventEmitter.send(eventType, body)
+        BridgeNativeEventEmitter.send(eventType, body)
     }
 }
 class FedimintFfiModule(reactContext: ReactApplicationContext) :
         ReactContextBaseJavaModule(reactContext) {
 
     init {
-        FedimintEventEmitter.setContext(reactContext)
+        BridgeNativeEventEmitter.setContext(reactContext)
     }
 
     override fun getName(): String {
@@ -39,7 +39,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
 }
 
-object FedimintEventEmitter {
+object BridgeNativeEventEmitter {
     private var reactContext: ReactContext? = null
 
     fun setContext(reactContext: ReactContext) {

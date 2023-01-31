@@ -62,7 +62,6 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                 setBroadcastingUpdate(true)
             } catch (error) {
                 console.error('receiveEcash', error)
-                setBroadcastingUpdate(true)
                 // setTokenWasSpent(true)
             }
         }
@@ -80,14 +79,18 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
 
     useEffect(() => {
         const checkForSpentToken = async (ecash: string) => {
-            const result = await validateEcash(ecash)
-            if (result.valid) {
-                setProcessingRedemption(result)
-            } else {
-                // TODO: Handle invalid ecash tokens
+            try {
+                const result = await validateEcash(ecash)
+                if (result.valid) {
+                    setProcessingRedemption(result)
+                } else {
+                    // TODO: Handle invalid ecash tokens
+                }
+            } catch (error) {
+                console.error('validateEcash', error)
             }
         }
-        if (validatingToken === true) {
+        if (payment?.token && validatingToken === true) {
             checkForSpentToken(payment?.token!)
         }
     }, [validatingToken, payment?.token, validateEcash])

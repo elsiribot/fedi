@@ -1,13 +1,11 @@
-import { useNavigation } from '@react-navigation/native'
-import { Button, Icon, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Linking, StyleSheet, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 
 import { useEffect, useState } from 'react'
-import { Images } from '../../../assets/images'
-import type { NavigationHook } from '../../../types/navigation'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 export type RequestCameraAccessProps = {
     alternativeActionButton: React.ReactNode | null
@@ -22,7 +20,6 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
     onAccessGranted,
     requireMicrophone = false,
 }: RequestCameraAccessProps) => {
-    const navigation = useNavigation<NavigationHook>()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [permissionsGranted, setPermissionsGranted] = useState<string[]>([])
@@ -82,20 +79,8 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
 
     return (
         <View style={styles(theme).container}>
-            <TouchableOpacity
-                style={styles(theme).backIconContainer}
-                onPress={() => navigation.goBack()}>
-                <Icon
-                    name="angle-left"
-                    size={theme.sizes.md}
-                    type="font-awesome"
-                />
-            </TouchableOpacity>
             <View style={styles(theme).instructions}>
-                <Image
-                    source={Images.AllowCameraAccessIcon}
-                    style={styles(theme).image}
-                />
+                <SvgImage name="AllowCameraAccessIcon" size={SvgImageSize.lg} />
                 <Text h2 style={styles(theme).titleText}>
                     {t('phrases.allow-camera-access')}
                 </Text>

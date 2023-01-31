@@ -2,7 +2,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import { orderBy } from 'lodash'
 import React, { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
@@ -12,30 +11,52 @@ import { useCommunityContext } from '../state/contexts/CommunityContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
-import { useXmpp } from '../state/hooks'
+import { usePrevious, useXmpp } from '../state/hooks'
 import { Message } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
+    const { state } = useCommunityContext()
+    const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
     const { group: currentGroup } = route.params
-    const { state, dispatch } = useCommunityContext()
-    const { enterMucRoom, sendGroupMessage } = useXmpp()
+    const previousGroup = usePrevious(currentGroup)
+    // const currentGroup = state.groups.find(g => g.id === group.id)
 
     const messagesInGroup = state.messages.filter(
-        m => m.sentIn?.id === currentGroup.id,
+        m => m.sentIn?.id === currentGroup?.id,
     )
     const sortedMessages = [...orderBy(messagesInGroup, 'sentAt', 'asc')]
 
     useEffect(() => {
-        // announce presence
+        // announce presence + add to state.groups
         enterMucRoom(currentGroup)
         // TODO: some new messages will be received automatically after
         // enterMucRoom is called but we should check archive here
         // to make sure we get them all
     }, [currentGroup, enterMucRoom])
+
+    // fetch room config to see if name has changed
+    useEffect(() => {
+        fetchMucRoomConfig(currentGroup)
+    }, [currentGroup, fetchMucRoomConfig])
+
+    // update route param if name has changed
+    useEffect(() => {
+        // fetchMucRoomConfig will update state.groups if name has changed
+        const storedGroup = state.groups.find(g => g.id === currentGroup.id)
+        if (
+            storedGroup &&
+            storedGroup?.name &&
+            previousGroup?.name &&
+            storedGroup?.name !== previousGroup?.name
+        ) {
+            navigation.setParams({
+                group: storedGroup,
+            })
+        }
+    }, [currentGroup, previousGroup?.name, navigation, state.groups])
 
     return (
         <View style={styles(theme).container}>

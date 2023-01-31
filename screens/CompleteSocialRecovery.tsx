@@ -4,13 +4,13 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
 import {
+    BridgeEventEmitter,
     GuardianApproval,
     SocialRecoveryEvent,
-    TFedimintEventEmitter,
 } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
+import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationCredentials,
@@ -67,12 +67,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }, [socialRecoveryApprovals, setApprovals])
 
     useEffect(() => {
-        const emitter = new TFedimintEventEmitter()
-        emitter.onSocialRecovery(socialRecoveryHandler)
-
-        return () => {
-            emitter.removeListener('socialRecovery')
-        }
+        const emitter = new BridgeEventEmitter()
+        const listener = emitter.onSocialRecovery(socialRecoveryHandler)
+        return () => listener.remove()
     }, [navigation, socialRecoveryHandler])
 
     const showQrCode = () => {
@@ -144,7 +141,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.recovery.guardian-approval-instructions')}
             </Text>
             <HoloCard
-                iconImage={Images.SocialPeople}
+                iconImage={<SvgImage name="SocialPeople" />}
                 title={t('feature.recovery.social-recovery-steps')}
                 body={
                     <>

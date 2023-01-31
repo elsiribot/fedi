@@ -1,13 +1,13 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { Image, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
 import { Props as GroupAdminProps } from '../../../screens/GroupAdmin'
 import { NavigationHook } from '../../../types/navigation'
+import SvgImage from '../../ui/SvgImage'
 
 type GroupAdminRouteProp = GroupAdminProps['route']
 
@@ -15,6 +15,7 @@ const GroupAdminHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupAdminRouteProp>()
+    const { group } = route.params
 
     return (
         <Header
@@ -24,13 +25,13 @@ const GroupAdminHeader: React.FC<{}> = () => {
             headerRight={
                 <>
                     <Pressable
-                        disabled
-                        onPress={() => {}}
+                        onPress={() =>
+                            navigation.navigate('EditGroup', {
+                                group,
+                            })
+                        }
                         style={styles(theme).headerIconContainer}>
-                        <Image
-                            style={styles(theme).headerIcon}
-                            source={Images.EditBlack}
-                        />
+                        <SvgImage name="Edit" />
                     </Pressable>
                 </>
             }
@@ -53,8 +54,6 @@ const styles = (theme: Theme) =>
         },
         headerIconContainer: {
             padding: theme.spacing.sm,
-            // Disabled
-            opacity: 0.25,
         },
         headerIcon: {
             height: theme.sizes.sm,

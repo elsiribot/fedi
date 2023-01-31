@@ -47,7 +47,9 @@ class AmountUtils {
 
     // For BTC unit conversions returned as number
     msatToSat = (msats: MSats): Sats => {
-        return Math.round(msats / AmountUtils.MSATS_PER_SAT) as Sats
+        // Round down so that we never say the user has more than they have,
+        // which could cause "wallet sweep" to fail
+        return Math.floor(msats / AmountUtils.MSATS_PER_SAT) as Sats
     }
     satToMsat = (sats: Sats): MSats => {
         return (sats * AmountUtils.MSATS_PER_SAT) as MSats

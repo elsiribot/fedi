@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
-import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
 import {
     completeSocialBackup,
     useBackupRecoveryContext,
@@ -97,31 +97,31 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     const renderFirstBackupStatus = () => {
         if (backupsCompleted > 0) {
             return (
-                <Text style={styles(theme).completed}>{`${t(
-                    'words.complete',
-                )}`}</Text>
+                <Text style={styles(theme).completed}>
+                    {`${t('words.complete')}`}
+                </Text>
             )
         } else {
-            return <Text>{`${t('words.pending')}`}</Text>
+            return <Text>{`${t('words.pending').toLowerCase()}`}</Text>
         }
     }
 
     const renderSecondBackupStatus = () => {
         if (backupsCompleted > 1) {
             return (
-                <Text style={styles(theme).completed}>{`${t(
-                    'words.complete',
-                )}`}</Text>
+                <Text style={styles(theme).completed}>
+                    {`${t('words.complete')}`}
+                </Text>
             )
         } else {
-            return <Text>{`${t('words.pending')}`}</Text>
+            return <Text>{`${t('words.pending').toLowerCase()}`}</Text>
         }
     }
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <HoloCard
-                iconImage={Images.FediFile}
+                iconImage={<SvgImage name="FediFile" />}
                 title={t('feature.backup.backup-social-recovery-file')}
                 body={
                     <>

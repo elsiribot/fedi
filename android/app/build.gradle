@@ -258,6 +258,10 @@ android {
             dimension "env"
             applicationIdSuffix ".bitcoinlake"
         }
+        bitcoinjungle {
+            dimension "env"
+            applicationIdSuffix ".bitcoinjungle"
+        }
         production {
             dimension "env"
         }

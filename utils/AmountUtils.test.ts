@@ -16,10 +16,10 @@ describe('AmountUtils', () => {
 
             expect(result).toEqual(12)
         })
-        it('should convert millisats to sats and round up', () => {
+        it('should convert millisats to sats and still round down', () => {
             const result = amountUtils.msatToSat(98765)
 
-            expect(result).toEqual(99)
+            expect(result).toEqual(98)
         })
     })
     describe('satToMsat', () => {
@@ -103,10 +103,10 @@ describe('AmountUtils', () => {
 
             expect(result).toEqual('12')
         })
-        it('should convert millisats to sats and round up', () => {
+        it('should convert millisats to sats and still round down', () => {
             const result = amountUtils.msatToSatString(98765)
 
-            expect(result).toEqual('99')
+            expect(result).toEqual('98')
         })
     })
     describe('satToMsatString', () => {

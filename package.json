@@ -1,6 +1,6 @@
 {
     "name": "fedi-react-native",
-    "version": "0.2.1",
+    "version": "0.6.3",
     "private": true,
     "scripts": {
         "android": "sh scripts/run-android.sh",
@@ -80,6 +80,7 @@
         "eslint": "^7.32.0",
         "jest": "^26.6.3",
         "metro-react-native-babel-preset": "0.72.3",
+        "react-native-svg-transformer": "^1.0.0",
         "react-test-renderer": "18.1.0",
         "typescript": "^4.8.3",
         "webln": "^0.3.0"

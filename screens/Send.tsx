@@ -56,7 +56,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
 
     const checkClipboard = useCallback(async () => {
         const text = await Clipboard.getString()
-        handleUserInput(text)
+        handleUserInput(text.trim())
     }, [handleUserInput])
 
     // detect if invoice or address has been pasted or scanned

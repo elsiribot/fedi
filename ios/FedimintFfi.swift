@@ -14,13 +14,13 @@ class FedimintFfi: NSObject {
   }
 }
 
-@objc(FedimintEventEmitter)
-class FedimintEventEmitter: RCTEventEmitter {
-  public static var shared: FedimintEventEmitter!
+@objc(BridgeNativeEventEmitter)
+class BridgeNativeEventEmitter: RCTEventEmitter {
+  public static var shared: BridgeNativeEventEmitter!
 
   override init() {
     super.init()
-    FedimintEventEmitter.shared = self
+    BridgeNativeEventEmitter.shared = self
   }
 
   public func send(withEvent eventType: String, body: Any) {
@@ -34,6 +34,6 @@ class FedimintEventEmitter: RCTEventEmitter {
 
 class EventDispatcher: EventSink {
   func event(eventType: String, body: String) {
-    FedimintEventEmitter.shared.send(withEvent: eventType, body: body);
+    BridgeNativeEventEmitter.shared.send(withEvent: eventType, body: body);
   }
 }

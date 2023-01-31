@@ -58,7 +58,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
 
     const checkClipboard = useCallback(async () => {
         const text = await Clipboard.getString()
-        handleUserInput(text)
+        handleUserInput(text.trim())
     }, [handleUserInput])
 
     const devices = useCameraDevices()
