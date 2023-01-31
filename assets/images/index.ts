@@ -66,4 +66,6 @@ export const SiteImages: ImagesMap = {
     stackernews: require('./sites/stackernews.png'),
     stakwork: require('./sites/stakwork.png'),
     wavlake: require('./sites/wavlake.png'),
+    fedicr: require('./sites/fedicr.png'),
+    fedifeedback: require('./sites/fedifeedback.png'),
 }
