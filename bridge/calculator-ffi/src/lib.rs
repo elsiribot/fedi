@@ -165,7 +165,7 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
 
     let federation = bridge.join_federation(connect_string).await?;
 
-    let fedimint_federation = federation_to_fedimint_federation(&Arc::new(federation)).await;
+    let fedimint_federation = federation_to_fedimint_federation(&federation).await;
     Ok(json!({ "result": fedimint_federation }).to_string())
 }
 
