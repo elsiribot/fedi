@@ -1,6 +1,7 @@
 import { Options } from '@xmpp/client'
 
 import i18n from './localization/i18n'
+import { Group } from './types'
 
 // Regtest feds
 export const FEDERATION_ALPHA =
@@ -35,20 +36,20 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
     resource: XMPP_RESOURCE,
 }
-export const FEDI_GENERAL_CHANNEL_GROUP = {
+export const FEDI_GENERAL_CHANNEL_GROUP = new Group({
     id: 'fedi-general-channel-group',
     icon: 'FediLogoIcon',
     name: i18n.t('feature.community.retreat-chat'),
     pinned: true,
     messagePreview: i18n.t('feature.community.retreat-chat-message-preview'),
-}
-export const FEDI_RECOVERY_SUPPORT_GROUP = {
+})
+export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     id: 'fedi-recovery-support-group',
     icon: 'Cash',
     name: i18n.t('feature.community.money-changing'),
     pinned: true,
     messagePreview: i18n.t('feature.community.money-changing-message-preview'),
-}
+})
 
 export const SITES = [
     // TODO: Show only for regtest federations
