@@ -1,3 +1,4 @@
+import Clipboard from '@react-native-clipboard/clipboard'
 import {
     Divider,
     Icon,
@@ -126,7 +127,11 @@ const TransactionDetail = ({
                 {txn.lightning && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
-                        <View style={styles(theme).detailItem}>
+                        <Pressable
+                            style={styles(theme).detailItem}
+                            onPress={() =>
+                                Clipboard.setString(txn.lightning.invoice)
+                            }>
                             <Text>
                                 {stringUtils.truncateMiddleOfString(
                                     txn.lightning.invoice,
@@ -137,7 +142,7 @@ const TransactionDetail = ({
                                 style={styles(theme).icon}
                                 source={Images.Copy}
                             />
-                        </View>
+                        </Pressable>
                     </View>
                 )}
                 {txn.bitcoin && (
