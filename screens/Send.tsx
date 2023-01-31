@@ -38,8 +38,10 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 let result = await addressOrInvoice(normalized.body)
                 console.info('result', result)
                 if (result === AddressOrInvoice.address) {
-                    normalized.type = BitcoinOrLightning.bitcoin
-                    setPaymentRequestUri(normalized)
+                    // Temporarily disable on-chain spends
+                    // normalized.type = BitcoinOrLightning.bitcoin
+                    // setPaymentRequestUri(normalized)
+                    toast?.show('On-chain sends temporarily disabled', 3000)
                 }
                 if (result === AddressOrInvoice.invoice) {
                     normalized.type = BitcoinOrLightning.lightning
