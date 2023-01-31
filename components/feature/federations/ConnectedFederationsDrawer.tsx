@@ -7,12 +7,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ImageBackground,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../../assets/images'
 import { Federation } from '../../../bridge'
@@ -59,7 +54,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 </Text>
             </View>
 
-            <TouchableOpacity
+            <Pressable
                 style={styles(theme).iconImage}
                 onPress={() => {
                     navigation.navigate('FederationInvite', {
@@ -67,7 +62,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     })
                 }}>
                 <SvgImage name="InviteMembers" />
-            </TouchableOpacity>
+            </Pressable>
         </View>
     )
 }
@@ -103,7 +98,8 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     />
                 ))}
             </DrawerContentScrollView>
-            <TouchableOpacity
+            <Pressable
+                disabled
                 style={styles(theme).addFederationButton}
                 onPress={() => {
                     navigation.navigate('ScanFederationCode')
@@ -112,7 +108,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 <Text style={styles(theme).addFederationText}>
                     {t('feature.federations.add-federation')}
                 </Text>
-            </TouchableOpacity>
+            </Pressable>
         </ImageBackground>
     )
 }
@@ -127,6 +123,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'flex-start',
             padding: theme.spacing.md,
+            opacity: 0.1,
         },
         addFederationText: {
             paddingLeft: theme.spacing.xs,
