@@ -198,7 +198,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             routes: [{ name: 'PersonalRecoverySuccess' }],
                         })
                     } catch (error) {
-                        toast?.show((error as Error)?.message, 3000)
+                        toast?.show('Recovery failed, please try again', 3000)
                     }
                 }}
                 // TODO: separate loading screen as per designs
