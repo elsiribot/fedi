@@ -79,7 +79,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         if (isPayingInvoice && decodedInvoice.invoice) {
             sendPayment()
         }
-    }, [decodedInvoice.invoice, isPayingInvoice, payInvoice])
+    }, [decodedInvoice.invoice, isPayingInvoice, payInvoice, toast])
 
     useEffect(() => {
         if (invoicePaid && isPayingInvoice === false) {

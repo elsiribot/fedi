@@ -12,4 +12,4 @@ pod install
 popd
 
 # launch ios
-arch -x86_64 npx react-native run-ios
+arch -x86_64 npx react-native run-ios --udid 00008101-000535022693001E
