@@ -10,7 +10,9 @@ use crate::{
     event::Event,
     mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
-    recovery::{SocialRecoveryApproval, SocialRecoveryQr, SocialRecoveryStateKey},
+    recovery::{
+        SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
+    },
     tx::{
         self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -143,8 +145,29 @@ impl Bridge {
             .await
     }
 
+    pub async fn already_joined_federation(
+        &self,
+        connect_string: String,
+    ) -> Result<Option<Arc<Federation>>> {
+        let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
+        let api = WsFederationApi::new(connect_cfg.members);
+        let res: ConfigResponse = api.download_client_config().await?;
+        let cfg = res.client;
+        let federations = self.federations.lock().await;
+        let federation = federations.get(&cfg.federation_name).map(|fed| fed.clone());
+        Ok(federation)
+    }
+
     /// Adds federation to "federations" and starts polling (if we haven't already joined)
-    pub async fn join_federation(&self, connect_string: String) -> Result<Federation> {
+    pub async fn join_federation(&self, connect_string: String) -> Result<Arc<Federation>> {
+        // If we've already joined, return the federation we have and skip joining
+        if let Some(federation) = self
+            .already_joined_federation(connect_string.clone())
+            .await?
+        {
+            return Ok(federation);
+        }
+        tracing::info!("joining new federation");
         let mut federation = Federation::join(
             connect_string,
             self.data_dir.clone(),
@@ -158,7 +181,7 @@ impl Bridge {
             federation.start_pollers().await;
             federations.insert(federation_name, Arc::new(federation.clone()));
         };
-        Ok(federation)
+        Ok(Arc::new(federation))
     }
 
     pub async fn get_federation(&self, federation_id: &str) -> Option<Arc<Federation>> {
@@ -206,6 +229,7 @@ impl Bridge {
 
         // recover ecash tokens
         let username = fed.restore_ecash_from_federation().await?;
+        tracing::info!("Ecash recovery complete, username={:?}", username);
 
         Ok(username)
     }
@@ -479,16 +503,19 @@ impl Federation {
                     PaymentDirection::Outgoing,
                 ))
                 .await;
-                self.save_transaction(&Transaction::lightning(
-                    TransactionDirection::Send,
-                    fedimint_api::Amount::from_msats(
-                        invoice
-                            .amount_milli_satoshis()
-                            .context("assuming invoice has amount")?,
+                self.save_transaction(
+                    &Transaction::lightning(
+                        TransactionDirection::Send,
+                        fedimint_api::Amount::from_msats(
+                            invoice
+                                .amount_milli_satoshis()
+                                .context("assuming invoice has amount")?,
+                        ),
+                        fee,
+                        invoice.clone(),
                     ),
-                    fee,
-                    invoice.clone(),
-                ))
+                    false,
+                )
                 .await;
                 Ok(())
             }
@@ -512,10 +539,10 @@ impl Federation {
     pub async fn generate_ecash(&self, amount: Amount) -> Result<TieredMulti<SpendableNote>> {
         let rng = rand::rngs::OsRng;
         let ecash: TieredMulti<SpendableNote> = self.client.spend_ecash(amount, rng).await?;
-        self.save_transaction(&Transaction::offline(
-            tx::TransactionDirection::Send,
-            amount,
-        ))
+        self.save_transaction(
+            &Transaction::offline(tx::TransactionDirection::Send, amount),
+            false,
+        )
         .await;
         Ok(ecash)
     }
@@ -536,10 +563,10 @@ impl Federation {
         if let Err(e) = self.client.await_outpoint_outcome(outpoint).await {
             error!("Failed to claim contract {}", e);
         }
-        self.save_transaction(&Transaction::offline(
-            tx::TransactionDirection::Receive,
-            ecash.total_amount(),
-        ))
+        self.save_transaction(
+            &Transaction::offline(tx::TransactionDirection::Receive, ecash.total_amount()),
+            true,
+        )
         .await;
         Ok(ecash.total_amount())
     }
@@ -668,14 +695,17 @@ impl Federation {
                         .await
                         .is_none()
                     {
-                        self.save_transaction(&Transaction::bitcoin(
-                            TransactionDirection::Receive,
-                            amount,
-                            fee,
-                            address,
-                            item.tx_hash,
-                            Some(IncomingBitcoinTransactionStatus::Pending),
-                        ))
+                        self.save_transaction(
+                            &Transaction::bitcoin(
+                                TransactionDirection::Receive,
+                                amount,
+                                fee,
+                                address,
+                                item.tx_hash,
+                                Some(IncomingBitcoinTransactionStatus::Pending),
+                            ),
+                            true,
+                        )
                         .await;
                     }
                     continue;
@@ -698,7 +728,7 @@ impl Federation {
                 let mut details = tx.bitcoin.context("this should exist (fixme)")?;
                 details.incoming_status = Some(IncomingBitcoinTransactionStatus::Complete);
                 tx.bitcoin = Some(details);
-                self.save_transaction(&tx).await;
+                self.save_transaction(&tx, true).await;
             }
         }
 
@@ -741,7 +771,8 @@ impl Federation {
     }
 
     /// Save transaction to DB
-    pub async fn save_transaction(&self, tx: &Transaction) {
+    /// `send_event` is whether to send event to react native, which might send push notifications
+    pub async fn save_transaction(&self, tx: &Transaction, send_event: bool) {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx)
@@ -749,8 +780,22 @@ impl Federation {
             .expect("Db error");
         dbtx.commit_tx().await.expect("Db error");
         // notify UI
-        self.send_transaction_event(&tx);
+        if send_event {
+            self.send_transaction_event(&tx);
+        }
         self.send_federation_event().await;
+        // backup username
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn(format!("{} ecash backup", self.name()), |_| async move {
+                info!("starting ecash backup");
+                match fed.back_up_ecash_to_federation().await {
+                    Ok(_) => info!("ecash backup successful"),
+                    Err(e) => info!("ecash backup failed {:?}", e),
+                }
+            })
+            .await;
     }
 
     /// Get transaction from DB
@@ -767,7 +812,7 @@ impl Federation {
         match self.get_transaction(id).await {
             Some(mut tx) => {
                 tx.notes = notes;
-                self.save_transaction(&tx).await;
+                self.save_transaction(&tx, false).await;
                 Ok(())
             }
             None => Err(anyhow!("Transaction not found")),
@@ -945,54 +990,88 @@ impl Federation {
     }
 
     /// Save social recovery session state to the DB
-    pub async fn social_recovery_save(&self, recovery_client: &SocialRecovery) {
+    pub async fn social_recovery_save(
+        &self,
+        recovery_client: &SocialRecovery,
+        dbtx: &mut DatabaseTransaction<'_>,
+    ) {
         // FIXME: should I pass dbtx from outside?
-        let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&SocialRecoveryStateKey(self.id()), recovery_client.state())
             .await
             .expect("Db error");
-        dbtx.commit_tx().await.expect("Db error");
+    }
+
+    /// Save social recovery ID to the DB. This is used to generate the recovery QR.
+    pub async fn save_social_recovery_id(
+        &self,
+        recovery_id: &RecoveryId,
+        dbtx: &mut DatabaseTransaction<'_>,
+    ) {
+        dbtx.insert_entry(&SocialRecoveryIdKey(self.id()), &recovery_id)
+            .await
+            .expect("Db error");
+    }
+
+    /// Get social recovery Id from the DB. This is used to generate the recovery QR.
+    pub async fn get_social_recovery_id(&self) -> Option<RecoveryId> {
+        self.dbtx()
+            .await
+            .get_value(&SocialRecoveryIdKey(self.id()))
+            .await
+            .expect("Db error")
     }
 
     /// Start a new social recovery session if one doesn't exist already
     /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
     /// Also won't be able to do simulataneous recoveries in 2 federations.
     pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
-        match self.social_recovery_continue().await {
+        let mut dbtx = self.dbtx().await;
+        let recovery_client = match self.social_recovery_continue().await {
             Ok(recovery_client) => recovery_client,
             Err(_) => {
                 let recovery_client = self.client.social_recovery_start(recovery_file.clone())?;
-                self.social_recovery_save(&recovery_client).await;
+                self.social_recovery_save(&recovery_client, &mut dbtx).await;
                 recovery_client
             }
         };
+        // If we don't have a social recovery ID in the database, create one
+        if self.get_social_recovery_id().await.is_none() {
+            tracing::info!("saving social recovery id");
+            let verification_request = recovery_client
+                .create_verification_request(recovery_file.verification_document.clone())?;
+            recovery_client
+                .upload_verification_request(&verification_request)
+                .await
+                .context("upload verification request")?;
+            let recovery_id = verification_request.recovery_id();
+            self.save_social_recovery_id(&recovery_id, &mut dbtx).await;
+        }
+        dbtx.commit_tx().await.expect("Db error");
+        self.send_federation_event().await;
         Ok(())
     }
 
-    /// Exit a social recovery session. Helpful if user choose the wrong recovery file and wants to start over.
-    pub async fn exit_social_recovery(&self) -> Result<()> {
-        todo!()
+    /// Delete all social recovery state from DB
+    pub async fn delete_social_recovery_state_and_id(&self) {
+        let mut dbtx = self.dbtx().await;
+        dbtx.remove_entry(&SocialRecoveryStateKey(self.id()))
+            .await
+            .expect("Db error");
+        dbtx.remove_entry(&SocialRecoveryIdKey(self.id()))
+            .await
+            .expect("Db error");
+        // TODO: delete the verification file?
+        dbtx.commit_tx().await.expect("Db error");
     }
 
     /// Produce social recovery QR
-    pub async fn social_recovery_qr(
-        &self,
-        recovery_file: &RecoveryFile,
-    ) -> Result<SocialRecoveryQr> {
-        let recovery_client = self.social_recovery_continue().await?;
-
-        // Create and upload verification request
-        // FIXME: probably shouldn't clone verification doc because it might be large
-        let verification_request = recovery_client
-            .create_verification_request(recovery_file.verification_document.clone())?;
-        recovery_client
-            .upload_verification_request(&verification_request)
-            .await
-            .context("upload verification request")?;
-        tracing::info!("verification request uploaded");
-
+    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
         // Return social recovery QR
-        let recovery_id = verification_request.recovery_id();
+        tracing::info!("looking up recovery id for qr");
+        let recovery_id = self
+            .get_social_recovery_id()
+            .await
+            .ok_or(anyhow!("No recovery ID found"))?;
         Ok(SocialRecoveryQr { recovery_id })
     }
 
@@ -1029,7 +1108,9 @@ impl Federation {
         let remaining = approvals_required.saturating_sub(num_approvals);
 
         // Save progress to DB
-        self.social_recovery_save(&recovery_client).await;
+        let mut dbtx = self.dbtx().await;
+        self.social_recovery_save(&recovery_client, &mut dbtx).await;
+        dbtx.commit_tx().await.expect("Db error");
 
         Ok((approvals, remaining))
     }
@@ -1123,15 +1204,6 @@ impl Federation {
         let fed = self.clone();
         self.task_group
             .spawn(
-                format!("{} ecash backup poller", self.name()),
-                |task_handle| async move {
-                    fed.poll_ecash_backup(task_handle).await;
-                },
-            )
-            .await;
-        let fed = self.clone();
-        self.task_group
-            .spawn(
                 format!("{} peg-in poller", self.name()),
                 |task_handle| async move {
                     fed.poll_peg_ins(task_handle).await;
@@ -1156,29 +1228,6 @@ impl Federation {
                 },
             )
             .await;
-    }
-
-    /// Make an ecash backup once every minute
-    #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
-    pub async fn poll_ecash_backup(&self, task_handle: TaskHandle) {
-        let mut last_poll = SystemTime::now();
-
-        loop {
-            if task_handle.is_shutting_down() {
-                return;
-            }
-            // Run once per minute
-            if last_poll.elapsed().expect("clock went backwards").as_secs() < 600 {
-                fedimint_api::task::sleep(Duration::from_secs(1)).await;
-                continue;
-            }
-            last_poll = SystemTime::now();
-
-            match self.back_up_ecash_to_federation().await {
-                Ok(_) => info!("ecash backup complete"),
-                Err(_) => error!("ecash backup failed"),
-            }
-        }
     }
 
     /// Checks for peg-ins every second
@@ -1261,7 +1310,7 @@ impl Federation {
                                 fee,
                                 payment.invoice.clone(),
                             );
-                            fed.save_transaction(&tx).await;
+                            fed.save_transaction(&tx, true).await;
                         }
                     }
                 })

@@ -165,7 +165,7 @@ async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
 
     let federation = bridge.join_federation(connect_string).await?;
 
-    let fedimint_federation = federation_to_fedimint_federation(&Arc::new(federation)).await;
+    let fedimint_federation = federation_to_fedimint_federation(&federation).await;
     Ok(json!({ "result": fedimint_federation }).to_string())
 }
 
@@ -400,14 +400,17 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
     let amount = fedimint_api::Amount::from(sats);
     let outgoing_status = Some(IncomingBitcoinTransactionStatus::Pending);
     federation
-        .save_transaction(&Transaction::bitcoin(
-            tx::TransactionDirection::Send,
-            amount,
-            fee,
-            address,
-            txid,
-            outgoing_status,
-        ))
+        .save_transaction(
+            &Transaction::bitcoin(
+                tx::TransactionDirection::Send,
+                amount,
+                fee,
+                address,
+                txid,
+                outgoing_status,
+            ),
+            true,
+        )
         .await;
     Ok(json!({ "result": out_point.txid.to_string() }).to_string())
 }
@@ -551,6 +554,7 @@ pub struct UploadBackupFilePayload {
     video_file_path: PathBuf,
 }
 
+/// This is when they create the backup initially, NOT when they're recovering
 async fn handle_upload_backup_file(payload: String) -> anyhow::Result<String> {
     let UploadBackupFilePayload {
         video_file_path,
@@ -584,7 +588,7 @@ pub struct ValidateRecoveryFilePayload {
 async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String> {
     let ValidateRecoveryFilePayload {
         path,
-        federation_id,
+        federation_id: _federation_id,
     } = match serde_json::from_str(&payload) {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
@@ -592,15 +596,7 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     let contents = fs::read(path).await?;
     // TODO: check that the federation matches and everything
     // also fixed by using federation-specific location
-    let valid = match RecoveryFile::from_bytes(&contents) {
-        Ok(recovery_file) => {
-            let federation = get_federation(&federation_id).await?;
-            federation.start_social_recovery(&recovery_file).await?;
-            info!("social recovery started");
-            true
-        }
-        Err(_) => false,
-    };
+    let valid = RecoveryFile::from_bytes(&contents).is_ok();
     Ok(json!({ "result": valid }).to_string())
 }
 
@@ -616,14 +612,15 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
+    // Return QR code contents
+    let federation = get_federation(&federation_id).await?;
     // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
     let recovery_file_path = get_bridge().await?.data_dir.join(RECOVERY_FILENAME);
     let contents = fs::read(recovery_file_path).await?;
     let recovery_file = RecoveryFile::from_bytes(&contents)?;
-
-    // Return QR code contents
-    let federation = get_federation(&federation_id).await?;
-    let qr = federation.social_recovery_qr(&recovery_file).await?;
+    // Upload verification document if none exists.
+    federation.start_social_recovery(&recovery_file).await?;
+    let qr = federation.social_recovery_qr().await?;
     Ok(json!({ "result": qr }).to_string())
 }
 
@@ -715,6 +712,8 @@ async fn handle_complete_social_recovery(payload: String) -> anyhow::Result<Stri
     let username = bridge
         .recover_from_mnemonic(&federation_id, &mnemonic)
         .await?;
+    federation.delete_social_recovery_state_and_id().await;
+    federation.send_federation_event().await;
     Ok(json!({ "result": username }).to_string())
 }
 
