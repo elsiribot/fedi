@@ -16,6 +16,8 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { validateRecoveryFile } = useBridge()
     const navigation = useNavigation<NavigationHook>()
+    const [validationInProgress, setValidationInProgress] =
+        useState<boolean>(false)
     const [result, setResult] = useState<
         DocumentPickerResponse | undefined | null
     >()
@@ -27,6 +29,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             })
             console.info(response)
 
+            setValidationInProgress(true)
             setResult(response)
         } catch (error) {
             const typedError = error as Error
@@ -50,29 +53,37 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             await RNFS.copyFile(result!.uri, dest)
             // validate file
             try {
-                await validateRecoveryFile(dest)
-                navigation.replace('SelectRecoveryFileSuccess', {
-                    // fileName: result!.name as string,
-                    fileName: dest,
-                })
+                const valid = await validateRecoveryFile(dest)
+                if (valid) {
+                    navigation.replace('SelectRecoveryFileSuccess', {
+                        fileName: dest,
+                    })
+                } else {
+                    navigation.replace('SelectRecoveryFileFailure', {
+                        fileName: dest,
+                    })
+                }
             } catch (error) {
                 navigation.replace('SelectRecoveryFileFailure', {
-                    // fileName: result!.name as string,
                     fileName: dest,
                 })
             }
+            setValidationInProgress(false)
         }
 
-        if (result?.uri && result?.name) {
-            checkForValidFile()
+        if (validationInProgress && result?.uri && result?.name) {
+            setTimeout(() => {
+                checkForValidFile()
+            })
         }
-    }, [navigation, result, validateRecoveryFile])
+    }, [navigation, result, validateRecoveryFile, validationInProgress])
 
     return (
         <Button
             title={t('feature.recovery.search-files')}
             containerStyle={styles.searchButton}
             onPress={openFileExplorer}
+            loading={validationInProgress}
         />
     )
 }

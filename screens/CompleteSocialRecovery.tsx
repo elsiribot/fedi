@@ -24,6 +24,7 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
+import { resetAfterSocialRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -107,7 +108,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 const { password } = credentials
                 dispatch(updateFederationCredentials(username, password))
             }
-            navigation.navigate('SocialRecoverySuccess')
+            navigation.dispatch(resetAfterSocialRecovery())
         } catch (e) {
             // FIXME: internationalize
             toast?.show("Couldn't complete social recovery", 3000)

@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
@@ -17,11 +17,34 @@ const ReviewVideo = () => {
     const [isPaused, setIsPaused] = useState(true)
     const [confirmFaceChecked, setFaceConfirmChecked] = useState(false)
     const [confirmVoiceChecked, setConfirmVoiceChecked] = useState(false)
+    const [confirmingVideo, setConfirmingVideo] = useState(false)
     const { state, dispatch } = useBackupRecoveryContext()
     const videoFile = state.videoFile
     const videoRef = useRef<Video | null>(null)
 
     console.log('videoFile', videoFile)
+
+    useEffect(() => {
+        const copyVideoAndProceed = async () => {
+            try {
+                // Copy file to our temp directory so rust can read it
+                const filename = Math.random().toString(20)
+                const dest = `${RNFS.TemporaryDirectoryPath}/${filename}.mp4`
+                await RNFS.copyFile(videoFile!.path, dest)
+                navigation.navigate('SocialBackupProcessing', {
+                    videoFilePath: dest,
+                })
+            } catch (e) {
+                console.log('copy failed', e)
+                return
+            }
+        }
+        if (confirmingVideo) {
+            setTimeout(() => {
+                copyVideoAndProceed()
+            })
+        }
+    }, [confirmingVideo, navigation, videoFile])
 
     return (
         <View style={styles(theme).container}>
@@ -88,20 +111,7 @@ const ReviewVideo = () => {
 
                 <Button
                     title={t('feature.backup.confirm-backup-video')}
-                    onPress={async () => {
-                        try {
-                            // Copy file to our temp directory so rust can read it
-                            const filename = Math.random().toString(20)
-                            const dest = `${RNFS.TemporaryDirectoryPath}/${filename}.mp4`
-                            await RNFS.copyFile(videoFile!.path, dest)
-                            navigation.navigate('SocialBackupProcessing', {
-                                videoFilePath: dest,
-                            })
-                        } catch (e) {
-                            console.log('copy failed', e)
-                            return
-                        }
-                    }}
+                    onPress={() => setConfirmingVideo(true)}
                     disabled={!confirmFaceChecked || !confirmVoiceChecked}
                     containerStyle={styles(theme).confirmButton}
                 />

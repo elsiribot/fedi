@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View } from 'react-native'
 
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import SvgImage from '../components/ui/SvgImage'
@@ -40,6 +40,22 @@ const SendOfflineAmount: React.FC<Props> = () => {
         }
     }
 
+    const onNext = () => {
+        Alert.alert(
+            t('phrases.please-confirm'),
+            t('feature.send.offline-send-warning'),
+            [
+                {
+                    text: t('phrases.go-back'),
+                },
+                {
+                    text: t('words.continue'),
+                    onPress: onGenerateEcash,
+                },
+            ],
+        )
+    }
+
     const onChangeText = (updatedValue: SatsString) => {
         setAmount(updatedValue)
     }
@@ -74,7 +90,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
             <Button
                 fullWidth
                 title={t('words.next')}
-                onPress={onGenerateEcash}
+                onPress={onNext}
                 loading={isLoading}
             />
         </View>

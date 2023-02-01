@@ -20,6 +20,14 @@ export type Props = NativeStackScreenProps<
     'ConfirmSendLightning'
 >
 
+const DEFAULT_DECODED_INVOICE = {
+    paymentHash: '',
+    amount: 0 as MSats,
+    description: '',
+    invoice: '',
+    fee: null,
+}
+
 const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -28,55 +36,56 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { payInvoice } = useBridge()
     const { lightningUri } = route.params
 
-    const [isPayingInvoice, setIsPayingInvoice] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
-    const [decodedInvoice, setDecodedInvoice] = useState<Invoice>({
-        paymentHash: '',
-        amount: 0 as MSats,
-        description: '',
-        invoice: '',
-        fee: null,
-    })
     const [unit] = useState('sats')
+    const [invoicePaid, setInvoicePaid] = useState<boolean>(false)
+    const [isPayingInvoice, setIsPayingInvoice] = useState<boolean>(false)
+    const [decodedInvoice, setDecodedInvoice] = useState<Invoice>(
+        DEFAULT_DECODED_INVOICE,
+    )
 
     useEffect(() => {
         const getDecodedInvoice = async () => {
             try {
-                setIsLoading(true)
                 const decoded = await decodeInvoice(lightningUri.body)
                 console.log('decoded invoice', decoded)
                 setDecodedInvoice(decoded)
             } catch (error) {
-                console.error('getDecodedInvoice error')
-                console.error(error)
+                console.error('getDecodedInvoice', error)
             }
-            setIsLoading(false)
         }
 
         getDecodedInvoice()
+
+        return () => {
+            setDecodedInvoice(DEFAULT_DECODED_INVOICE)
+        }
     }, [lightningUri])
 
-    const onSendBtc = async () => {
-        try {
-            if (isPayingInvoice) return
-            console.log('paying invoice', decodedInvoice?.invoice)
-            setIsLoading(true)
-            setIsPayingInvoice(true)
-            await payInvoice(decodedInvoice?.invoice)
-            console.log('invoice paid')
-            setIsLoading(false)
+    useEffect(() => {
+        const sendPayment = async () => {
+            try {
+                console.log('paying invoice', decodedInvoice?.invoice)
+                await payInvoice(decodedInvoice?.invoice)
+                console.log('invoice paid')
+                setInvoicePaid(true)
+            } catch (error) {
+                console.error('onSendBtc', error)
+            }
             setIsPayingInvoice(false)
+        }
+        if (isPayingInvoice && decodedInvoice.invoice) {
+            sendPayment()
+        }
+    }, [decodedInvoice.invoice, isPayingInvoice, payInvoice])
+
+    useEffect(() => {
+        if (invoicePaid && isPayingInvoice === false) {
             navigation.replace('SendSuccess', {
                 amount: decodedInvoice?.amount!,
                 unit,
             })
-        } catch (error) {
-            console.error('onSendBtc error')
-            console.error(error)
-            setIsLoading(false)
-            setIsPayingInvoice(false)
         }
-    }
+    }, [decodedInvoice?.amount, invoicePaid, isPayingInvoice, navigation, unit])
 
     if (!decodedInvoice.amount) return <ActivityIndicator />
 
@@ -124,8 +133,9 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                               )} `
                             : ' '
                     }${t('words.sats').toUpperCase()}`}
-                    onPress={onSendBtc}
-                    loading={isLoading}
+                    onPress={() => setIsPayingInvoice(true)}
+                    loading={isPayingInvoice}
+                    disabled={isPayingInvoice}
                     fullWidth
                 />
             </View>
