@@ -12,6 +12,24 @@ export function reset(
     })
 }
 
+export function resetAfterPersonalRecovery() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'PersonalRecoverySuccess' }],
+        }),
+    }
+}
+
+export function resetAfterSocialRecovery() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'SocialRecoverySuccess' }],
+        }),
+    }
+}
+
 export function resetAfterGroupNameUpdate(group: Group) {
     return {
         ...CommonActions.reset({
