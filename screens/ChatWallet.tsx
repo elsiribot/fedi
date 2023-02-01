@@ -72,6 +72,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <Input
+                autoFocus
                 onChangeText={onChangeText as (_: string) => any}
                 value={amount}
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
