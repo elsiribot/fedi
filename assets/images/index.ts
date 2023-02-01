@@ -19,6 +19,7 @@ export const Images: ImagesMap = {
     Cash: require('./cash.png'),
     ChatHistory: require('./chat-history.png'),
     Cog: require('./cog.png'),
+    Copy: require('./copy.png'),
     Done: require('./done.png'),
     Edit: require('./edit.png'),
     Error: require('./error.png'),

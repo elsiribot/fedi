@@ -1,3 +1,4 @@
+import Clipboard from '@react-native-clipboard/clipboard'
 import { Divider, Icon, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
 import {
     IncomingBitcoinTransactionStatus,
@@ -19,6 +21,7 @@ import { useBridge } from '../../../state/hooks'
 import amountUtils from '../../../utils/AmountUtils'
 import dateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -37,6 +40,7 @@ const TransactionDetail = ({
     const { t } = useTranslation()
     const [notes, setNotes] = useState(txn.notes)
     const [isFocused, setIsFocused] = useState(false)
+    const { toast } = useEnvironmentContext().state
 
     const onNotesInputChanged = (input: string) => {
         setNotes(input)
@@ -117,12 +121,24 @@ const TransactionDetail = ({
                 {txn.lightning && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
-                        <Text>
-                            {stringUtils.truncateMiddleOfString(
-                                txn.lightning.invoice,
-                                5,
-                            )}
-                        </Text>
+                        <Pressable
+                            style={styles(theme).detailItem}
+                            onPress={() => {
+                                Clipboard.setString(txn.lightning?.invoice!)
+                                toast?.show(
+                                    t(
+                                        'feature.wallet.copied-lightning-request',
+                                    ),
+                                )
+                            }}>
+                            <Text>
+                                {stringUtils.truncateMiddleOfString(
+                                    txn.lightning.invoice,
+                                    5,
+                                )}
+                            </Text>
+                            <SvgImage name="Copy" size={SvgImageSize.sm} />
+                        </Pressable>
                     </View>
                 )}
                 {txn.bitcoin && (
@@ -178,6 +194,10 @@ const TransactionDetail = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        icon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+        },
         container: {
             alignItems: 'center',
             margin: theme.spacing.md,
