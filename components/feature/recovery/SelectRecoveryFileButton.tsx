@@ -16,6 +16,8 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { validateRecoveryFile } = useBridge()
     const navigation = useNavigation<NavigationHook>()
+    const [validationInProgress, setValidationInProgress] =
+        useState<boolean>(false)
     const [result, setResult] = useState<
         DocumentPickerResponse | undefined | null
     >()
@@ -27,6 +29,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             })
             console.info(response)
 
+            setValidationInProgress(true)
             setResult(response)
         } catch (error) {
             const typedError = error as Error
@@ -61,18 +64,22 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
                     fileName: dest,
                 })
             }
+            setValidationInProgress(false)
         }
 
-        if (result?.uri && result?.name) {
-            checkForValidFile()
+        if (validationInProgress && result?.uri && result?.name) {
+            setTimeout(() => {
+                checkForValidFile()
+            })
         }
-    }, [navigation, result, validateRecoveryFile])
+    }, [navigation, result, validateRecoveryFile, validationInProgress])
 
     return (
         <Button
             title={t('feature.recovery.search-files')}
             containerStyle={styles.searchButton}
             onPress={openFileExplorer}
+            loading={validationInProgress}
         />
     )
 }
