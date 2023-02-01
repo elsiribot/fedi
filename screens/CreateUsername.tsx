@@ -64,13 +64,12 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 }
             } catch (error) {
                 console.info('error', error)
-                console.info(toast)
                 toast?.show(error as string, 3000)
             }
+            setXmppAuthInProgress(false)
         }
         if (xmppAuthInProgress === true) {
             handleXmppRegistration()
-            setXmppAuthInProgress(false)
         }
     }, [
         backupXmppUsername,
@@ -141,6 +140,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.onboarding.create-username')}
                 onPress={handleSubmit}
                 disabled={!username || xmppAuthInProgress}
+                loading={xmppAuthInProgress}
                 containerStyle={styles(theme).button}
             />
         </View>
