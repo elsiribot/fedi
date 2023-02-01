@@ -89,8 +89,13 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 console.log('failed to get approvals', e)
             }
         }, 1000)
-        return () => clearInterval(interval)
-    }, [toast, socialRecoveryApprovals, setApprovals])
+
+        if (recovering) {
+            clearInterval(interval)
+        } else {
+            return () => clearInterval(interval)
+        }
+    }, [toast, recovering, socialRecoveryApprovals, setApprovals])
 
     useEffect(() => {
         const emitter = new BridgeEventEmitter()
@@ -98,23 +103,34 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         return () => listener.remove()
     }, [navigation, socialRecoveryHandler])
 
-    const handleComplete = async () => {
-        setRecovering(true)
-        try {
-            let username = await completeSocialRecovery()
-            console.log('recovered username', username)
-            if (username != null) {
-                const credentials = await getXmppCredentials()
-                const { password } = credentials
-                dispatch(updateFederationCredentials(username, password))
+    useEffect(() => {
+        const completeRecovery = async () => {
+            try {
+                let username = await completeSocialRecovery()
+                console.log('recovered username', username)
+                if (username != null) {
+                    const credentials = await getXmppCredentials()
+                    const { password } = credentials
+                    dispatch(updateFederationCredentials(username, password))
+                }
+                setRecovering(false)
+                navigation.dispatch(resetAfterSocialRecovery())
+            } catch (e) {
+                // FIXME: internationalize
+                toast?.show("Couldn't complete social recovery", 3000)
             }
-            navigation.dispatch(resetAfterSocialRecovery())
-        } catch (e) {
-            // FIXME: internationalize
-            toast?.show("Couldn't complete social recovery", 3000)
         }
-        setRecovering(false)
-    }
+        if (recovering) {
+            completeRecovery()
+        }
+    }, [
+        completeSocialRecovery,
+        dispatch,
+        getXmppCredentials,
+        navigation,
+        recovering,
+        toast,
+    ])
 
     const renderGuardianApprovalStatus = () => {
         if (approvals?.remaining === 0) {
@@ -189,7 +205,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     approvals?.remaining > 0 ? styles(theme).hidden : {},
                 ]}
                 loading={recovering}
-                onPress={handleComplete}
+                onPress={() => setRecovering(true)}
             />
         </ScrollView>
     )
