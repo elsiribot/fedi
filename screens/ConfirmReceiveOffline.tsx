@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { Transaction } from '../bridge'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
@@ -53,11 +54,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).offlineContainer}>
-                <OfflineSvg
-                    height={theme.sizes.sm}
-                    width={theme.sizes.sm}
-                    // marginRight={theme.spacing.md}
-                />
+                <SvgImage name="Offline" />
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>
             <View style={styles(theme).amountContainer}>

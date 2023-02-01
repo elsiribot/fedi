@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 
 import {
     addToMessages,
@@ -71,6 +72,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
             <Input
+                autoFocus
                 onChangeText={onChangeText as (_: string) => any}
                 value={amount}
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
@@ -78,6 +80,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
+            <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
                     title={t('words.request')}
