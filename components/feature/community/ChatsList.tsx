@@ -111,8 +111,8 @@ const ChatsList: React.FC<{}> = () => {
           }, [] as Chat[])
         : []
 
-    const orderedChats = directChats.concat(unpinnedGroups)
-    orderedChats.sort((a, b) => {
+    const sortedChats = directChats.concat(unpinnedGroups)
+    sortedChats.sort((a, b) => {
         if (!a.lastReceivedTimestamp) return -1
         if (!b.lastReceivedTimestamp) return 1
         if (a.lastReceivedTimestamp && b.lastReceivedTimestamp) {
@@ -124,7 +124,7 @@ const ChatsList: React.FC<{}> = () => {
     return (
         <FlatList
             style={styles(theme).container}
-            data={[...pinnedGroups, ...orderedChats]}
+            data={[...pinnedGroups, ...sortedChats]}
             renderItem={renderChat}
             keyExtractor={(item: Chat) => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content
