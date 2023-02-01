@@ -124,8 +124,12 @@ const TransactionDetail = ({
                         <Pressable
                             style={styles(theme).detailItem}
                             onPress={() => {
-                                Clipboard.setString(txn.lightning.invoice)
-                                toast?.show('Copied lightning request')
+                                Clipboard.setString(txn.lightning?.invoice!)
+                                toast?.show(
+                                    t(
+                                        'feature.wallet.copied-lightning-request',
+                                    ),
+                                )
                             }}>
                             <Text>
                                 {stringUtils.truncateMiddleOfString(

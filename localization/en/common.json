@@ -66,6 +66,7 @@
         "bitcoin-address": "Bitcoin address",
         "backup-your-wallet": "Bitcoin address",
         "connect-to-federation": "Connect to test federation",
+        "copied-lightning-request": "Copied lightning request",
         "expires-in": "Expires in",
         "generate-invoice": "Generate invoice",
         "hold-to-confirm": "Hold to confirm",
