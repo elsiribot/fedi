@@ -85,46 +85,60 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
             </View>
 
             <LineBreak />
-            <Text bold style={styles(theme).instructionsText}>
-                {t('feature.recovery.recovery-confirm-identity-instructions-1')}
-            </Text>
-            <LineBreak />
-            <Text bold style={styles(theme).instructionsText}>
-                {t('feature.recovery.recovery-confirm-identity-instructions-2')}
-            </Text>
-            <LineBreak />
-            <View style={styles(theme).confirmationContainer}>
-                <CheckBox
-                    title={
-                        <Text caption medium style={styles(theme).checkboxText}>
-                            {t(
-                                'feature.recovery.recovery-confirm-identity-yes',
-                            )}
-                        </Text>
-                    }
-                    checkedIcon="dot-circle-o"
-                    uncheckedIcon="circle-o"
-                    checked={approvalSelected}
-                    onPress={() => {
-                        setApprovalSelected(true)
-                        setDenialSelected(false)
-                    }}
-                />
-                <CheckBox
-                    title={
-                        <Text caption medium style={styles(theme).checkboxText}>
-                            {t('feature.recovery.recovery-confirm-identity-no')}
-                        </Text>
-                    }
-                    checkedIcon="dot-circle-o"
-                    uncheckedIcon="circle-o"
-                    checked={denialSelected}
-                    onPress={() => {
-                        setApprovalSelected(false)
-                        setDenialSelected(true)
-                    }}
-                />
-            </View>
+            <ScrollView>
+                <Text bold style={styles(theme).instructionsText}>
+                    {t(
+                        'feature.recovery.recovery-confirm-identity-instructions-1',
+                    )}
+                </Text>
+                <LineBreak />
+                <Text bold style={styles(theme).instructionsText}>
+                    {t(
+                        'feature.recovery.recovery-confirm-identity-instructions-2',
+                    )}
+                </Text>
+                <LineBreak />
+                <View style={styles(theme).confirmationContainer}>
+                    <CheckBox
+                        title={
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).checkboxText}>
+                                {t(
+                                    'feature.recovery.recovery-confirm-identity-yes',
+                                )}
+                            </Text>
+                        }
+                        checkedIcon="dot-circle-o"
+                        uncheckedIcon="circle-o"
+                        checked={approvalSelected}
+                        onPress={() => {
+                            setApprovalSelected(true)
+                            setDenialSelected(false)
+                        }}
+                    />
+                    <CheckBox
+                        title={
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).checkboxText}>
+                                {t(
+                                    'feature.recovery.recovery-confirm-identity-no',
+                                )}
+                            </Text>
+                        }
+                        checkedIcon="dot-circle-o"
+                        uncheckedIcon="circle-o"
+                        checked={denialSelected}
+                        onPress={() => {
+                            setApprovalSelected(false)
+                            setDenialSelected(true)
+                        }}
+                    />
+                </View>
+            </ScrollView>
 
             <Button
                 title={t('words.continue')}
