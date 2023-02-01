@@ -1,7 +1,7 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
@@ -22,21 +22,25 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
     const { toast } = useEnvironmentContext().state
-    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [inputToProcess, setInputToProcess] = useState<string>('')
     const [paymentRequestUri, setPaymentRequestUri] = useState<BtcLnUri | null>(
         null,
     )
 
-    const handleUserInput = useCallback(
-        async (input: string) => {
-            if (isLoading) return
-            console.info('input', input)
-            setIsLoading(true)
-            const normalized = normalizePaymentRequest(input)
+    const handleUserInput = (input: string) => {
+        setInputToProcess(input)
+    }
+
+    const checkClipboard = async () => {
+        const text = await Clipboard.getString()
+        handleUserInput(text.trim())
+    }
+
+    useEffect(() => {
+        const processInput = async () => {
+            const normalized = normalizePaymentRequest(inputToProcess)
             try {
-                console.info('normalized', normalized)
                 let result = await addressOrInvoice(normalized.body)
-                console.info('result', result)
                 if (result === AddressOrInvoice.address) {
                     // Temporarily disable on-chain spends
                     // normalized.type = BitcoinOrLightning.bitcoin
@@ -51,31 +55,26 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 let typedError = error as Error
                 toast?.show(typedError.message, 3000)
             }
-            setIsLoading(false)
-        },
-        [toast, addressOrInvoice, isLoading],
-    )
-
-    const checkClipboard = useCallback(async () => {
-        const text = await Clipboard.getString()
-        handleUserInput(text.trim())
-    }, [handleUserInput])
+            setInputToProcess('')
+        }
+        if (inputToProcess) {
+            processInput()
+        }
+    }, [addressOrInvoice, inputToProcess, toast])
 
     // detect if invoice or address has been pasted or scanned
     useEffect(() => {
-        console.log('useEffect')
-        if (!paymentRequestUri?.body) return
-
-        if (paymentRequestUri?.type === BitcoinOrLightning.lightning) {
-            console.log(paymentRequestUri)
-            navigation.navigate('ConfirmSendLightning', {
-                lightningUri: paymentRequestUri,
-            })
-        }
-        if (paymentRequestUri?.type === BitcoinOrLightning.bitcoin) {
-            navigation.navigate('ConfirmSendOnChain', {
-                bitcoinUri: paymentRequestUri,
-            })
+        if (paymentRequestUri?.body) {
+            if (paymentRequestUri?.type === BitcoinOrLightning.lightning) {
+                navigation.navigate('ConfirmSendLightning', {
+                    lightningUri: paymentRequestUri,
+                })
+            }
+            if (paymentRequestUri?.type === BitcoinOrLightning.bitcoin) {
+                navigation.navigate('ConfirmSendOnChain', {
+                    bitcoinUri: paymentRequestUri,
+                })
+            }
         }
     }, [paymentRequestUri, navigation])
 
@@ -85,6 +84,8 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const renderQrCodeScanner = () => {
         if (device == null) {
             return <ActivityIndicator />
+        } else if (inputToProcess !== '') {
+            return null
         } else {
             return (
                 <QrCodeScanner
@@ -123,6 +124,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                         fullWidth
                         title={t('feature.send.paste-payment-request')}
                         onPress={checkClipboard}
+                        loading={inputToProcess !== ''}
                     />
                 </View>
             </View>
