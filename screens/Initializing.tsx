@@ -138,13 +138,13 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     )
                     const savedJson = saved ? JSON.parse(saved) : null
 
-                    if (savedJson.selectedFederation?.name != null) {
+                    if (savedJson) {
                         // this logic must be reached to trigger any useEffects
                         const { selectedFederation } = savedJson
                         if (selectedFederation?.name) {
                             federationsDispatch(
                                 updateSelectedFederationId(
-                                    selectedFederation.name,
+                                    selectedFederation?.name,
                                 ),
                             )
                             if (selectedFederation.username) {
