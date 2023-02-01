@@ -111,7 +111,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 t('feature.federations.leave-federation-confirmation'),
                 [
                     {
-                        text: 'No',
+                        text: t('words.no'),
                     },
                     {
                         text: t('words.yes'),

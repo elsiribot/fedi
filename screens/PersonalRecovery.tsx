@@ -21,6 +21,7 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
+import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 import stringUtils from '../utils/StringUtils'
 
@@ -87,12 +88,11 @@ const SeedWordInput = ({
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { backupXmppUsername, getXmppCredentials, recoverFromMnemonic } =
-        useBridge()
+    const { getXmppCredentials, recoverFromMnemonic } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
     const { dispatch } = useFederationsContext()
-    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )
@@ -119,6 +119,36 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [])
 
+    useEffect(() => {
+        const recoverFromSeed = async () => {
+            try {
+                let username = await recoverFromMnemonic(seedWords)
+                console.info('recovered username', username)
+                if (username != null) {
+                    const credentials = await getXmppCredentials()
+                    const { password } = credentials
+                    dispatch(updateFederationCredentials(username, password))
+                }
+                setRecoveryInProgress(false)
+                navigation.dispatch(resetAfterPersonalRecovery())
+            } catch (error) {
+                toast?.show((error as Error)?.message, 3000)
+            }
+        }
+
+        if (recoveryInProgress) {
+            recoverFromSeed()
+        }
+    }, [
+        dispatch,
+        getXmppCredentials,
+        navigation,
+        recoverFromMnemonic,
+        recoveryInProgress,
+        seedWords,
+        toast,
+    ])
+
     const handleInputUpdate = (inputValue: string, index: number) => {
         const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)
 
@@ -141,6 +171,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 />
             ))
     }
+
     const renderLastSixSeedWords = () => {
         return seedWords
             .slice(-6)
@@ -180,30 +211,13 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 title={t('feature.recovery.recover-wallet')}
                 containerStyle={styles(theme).continueButton}
-                onPress={async () => {
-                    try {
-                        setIsLoading(true)
-                        let username = await recoverFromMnemonic(seedWords)
-                        console.log('recovered username', username)
-                        if (username != null) {
-                            const credentials = await getXmppCredentials()
-                            const { password } = credentials
-                            dispatch(
-                                updateFederationCredentials(username, password),
-                            )
-                        }
-                        setIsLoading(false)
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'PersonalRecoverySuccess' }],
-                        })
-                    } catch (error) {
-                        toast?.show('Recovery failed, please try again', 3000)
-                    }
-                }}
                 // TODO: separate loading screen as per designs
-                loading={isLoading}
-                disabled={isLoading || seedWords.some(s => !isValidSeedWord(s))}
+                onPress={() => setRecoveryInProgress(true)}
+                loading={recoveryInProgress}
+                disabled={
+                    recoveryInProgress ||
+                    seedWords.some(s => !isValidSeedWord(s))
+                }
             />
         </ScrollView>
     )
