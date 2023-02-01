@@ -5,15 +5,15 @@ import XMPPError from '@xmpp/error'
 import { JID } from '@xmpp/jid'
 import { isEqual } from 'lodash'
 import React, {
-    MutableRefObject,
     createContext,
+    MutableRefObject,
     useContext,
     useEffect,
     useMemo,
     useReducer,
     useRef,
 } from 'react'
-import { AppStateStatus, AppState as RNAppState } from 'react-native'
+import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
