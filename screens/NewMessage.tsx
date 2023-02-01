@@ -69,7 +69,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     }}>
                     <SvgImage name="Room" />
                     <Text medium style={styles(theme).createGroupText}>
-                        {t('feature.community.or-join-a-group')}
+                        {t('feature.community.create-or-join-a-new-group')}
                     </Text>
                 </Pressable>
                 <Text small medium style={styles(theme).membersLabel}>

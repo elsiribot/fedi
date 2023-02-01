@@ -166,7 +166,7 @@
             "new-message": "New message",
             "new-group": "New group",
             "no-one-is-in-this-group": "No one is in this group yet.",
-            "or-join-a-group": "Or join a group",
+            "create-or-join-a-new-group": "Create or join a new group",
             "outgoing-chat-payment": "You requested {{amount}} {{unit}} {{memo}}",
             "payment-requested": "{{name}} requested {{amount}} {{unit}}",
             "group-invite": "Group invite",
