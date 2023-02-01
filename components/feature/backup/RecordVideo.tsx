@@ -62,7 +62,7 @@ const RecordVideo = () => {
                     isActive={true}
                     video={true}
                     audio={true}
-                    preset="high"
+                    preset="medium"
                 />
             </View>
             <Text
