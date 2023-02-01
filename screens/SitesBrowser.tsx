@@ -83,60 +83,64 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     amount = Number.parseInt(data.amount, 10) as Sats
                 } else if (typeof data.amount === 'number') {
                     amount = data.amount as Sats
+                } else if (typeof data.maximumAmount === 'string') {
+                    amount = Number.parseInt(data.maximumAmount, 10) as Sats
+                } else if (typeof data.maximumAmount === 'number') {
+                    amount = data.maximumAmount as Sats
                 } else {
                     amount = 0 as Sats
                 }
                 description = data.defaultMemo || ''
             }
 
-            try {
-                await new Promise((resolve, reject) => {
-                    setOverlayContents({
-                        title: t('feature.sites.wants-to-pay-you', {
-                            site: site.title,
-                        }),
-                        message: `${amountUtils.formatNumber(amount)} ${t(
-                            'words.sats',
-                        ).toUpperCase()}`,
-                        description: `$${convertSatsToUsdString(amount)}`,
-                        buttons: [
-                            {
-                                text: t('words.reject'),
-                                textColor: theme.colors.primary,
-                                backgroundColor: theme.colors.secondary,
-                                onPress: () => {
+            return new Promise((resolve, reject) => {
+                setOverlayContents({
+                    title: t('feature.sites.wants-to-pay-you', {
+                        site: site.title,
+                    }),
+                    message: `${amountUtils.formatNumber(amount)} ${t(
+                        'words.sats',
+                    ).toUpperCase()}`,
+                    description: `$${convertSatsToUsdString(amount)}`,
+                    buttons: [
+                        {
+                            text: t('words.reject'),
+                            textColor: theme.colors.primary,
+                            backgroundColor: theme.colors.secondary,
+                            onPress: () => {
+                                reject()
+                                setShowOverlay(false)
+                            },
+                        },
+                        {
+                            text: t('words.accept'),
+                            onPress: async () => {
+                                try {
+                                    console.log('generate', amount)
+                                    const invoice = await generateInvoice(
+                                        amountUtils.satToMsat(amount),
+                                        description,
+                                    )
+                                    console.log('invoice', invoice)
+                                    resolve({
+                                        paymentRequest: invoice,
+                                    })
+                                } catch (error) {
+                                    toast?.show((error as Error).message, 3000)
                                     reject()
-                                    setShowOverlay(false)
-                                },
+                                }
+                                setShowOverlay(false)
                             },
-                            {
-                                text: t('words.accept'),
-                                onPress: async () => {
-                                    resolve(true)
-                                    setShowOverlay(false)
-                                },
-                            },
-                        ],
-                    })
+                        },
+                    ],
                 })
+            })
 
-                // FIXME: Check webln spec to see what we should return here
-                try {
-                    const invoice = await generateInvoice(
-                        amountUtils.satToMsat(amount),
-                        description,
-                    )
-                    return {
-                        paymentRequest: invoice,
-                    }
-                } catch (error) {
-                    toast?.show((error as Error).message, 3000)
-                    throw error
-                }
-            } catch (error) {
-                toast?.show((error as Error).message, 3000)
-                throw error
-            }
+            //     // FIXME: Check webln spec to see what we should return here
+            // } catch (error) {
+            //     toast?.show((error as Error).message, 3000)
+            //     throw error
+            // }
         },
         sendPayment: async (paymentRequest: string) => {
             var invoice
