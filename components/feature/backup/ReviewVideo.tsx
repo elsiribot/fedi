@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
@@ -19,6 +19,7 @@ const ReviewVideo = () => {
     const [confirmVoiceChecked, setConfirmVoiceChecked] = useState(false)
     const { state, dispatch } = useBackupRecoveryContext()
     const videoFile = state.videoFile
+    const videoRef = useRef<Video | null>(null)
 
     console.log('videoFile', videoFile)
 
@@ -26,6 +27,7 @@ const ReviewVideo = () => {
         <View style={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
                 <Video
+                    ref={videoRef}
                     source={{ uri: videoFile?.path }} // Can be a URL or a local file.
                     style={styles(theme).video}
                     paused={isPaused}
@@ -39,7 +41,10 @@ const ReviewVideo = () => {
                 {isPaused && (
                     <Pressable
                         style={styles(theme).playIconContainer}
-                        onPress={() => setIsPaused(false)}>
+                        onPress={() => {
+                            videoRef.current?.seek(0)
+                            setIsPaused(false)
+                        }}>
                         <Icon
                             name="play"
                             type="font-awesome"

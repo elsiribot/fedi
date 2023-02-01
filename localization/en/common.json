@@ -43,6 +43,7 @@
         "rejected": "Rejected",
         "request": "Request",
         "required": "required",
+        "remaining": "remaining",
         "sats": "sats",
         "send": "Send",
         "sent": "Sent",

@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
@@ -29,6 +29,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const [approvalSelected, setApprovalSelected] = useState(false)
     const [denialSelected, setDenialSelected] = useState(false)
     const [approving, setApproving] = useState(false)
+    const videoRef = useRef<Video | null>(null)
 
     const handleGuardianApproval = async () => {
         try {
@@ -52,6 +53,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).cameraContainer}>
                 <Video
+                    ref={videoRef}
                     source={{ uri: `file://${videoPath}` }} // Can be a URL or a local file.
                     style={[
                         styles(theme).video,
@@ -68,7 +70,10 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 {isPaused && (
                     <Pressable
                         style={styles(theme).playIconContainer}
-                        onPress={() => setIsPaused(false)}>
+                        onPress={() => {
+                            videoRef.current?.seek(0)
+                            setIsPaused(false)
+                        }}>
                         <Icon
                             name="play"
                             type="font-awesome"
@@ -80,46 +85,60 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
             </View>
 
             <LineBreak />
-            <Text bold style={styles(theme).instructionsText}>
-                {t('feature.recovery.recovery-confirm-identity-instructions-1')}
-            </Text>
-            <LineBreak />
-            <Text bold style={styles(theme).instructionsText}>
-                {t('feature.recovery.recovery-confirm-identity-instructions-2')}
-            </Text>
-            <LineBreak />
-            <View style={styles(theme).confirmationContainer}>
-                <CheckBox
-                    title={
-                        <Text caption medium style={styles(theme).checkboxText}>
-                            {t(
-                                'feature.recovery.recovery-confirm-identity-yes',
-                            )}
-                        </Text>
-                    }
-                    checkedIcon="dot-circle-o"
-                    uncheckedIcon="circle-o"
-                    checked={approvalSelected}
-                    onPress={() => {
-                        setApprovalSelected(true)
-                        setDenialSelected(false)
-                    }}
-                />
-                <CheckBox
-                    title={
-                        <Text caption medium style={styles(theme).checkboxText}>
-                            {t('feature.recovery.recovery-confirm-identity-no')}
-                        </Text>
-                    }
-                    checkedIcon="dot-circle-o"
-                    uncheckedIcon="circle-o"
-                    checked={denialSelected}
-                    onPress={() => {
-                        setApprovalSelected(false)
-                        setDenialSelected(true)
-                    }}
-                />
-            </View>
+            <ScrollView>
+                <Text bold style={styles(theme).instructionsText}>
+                    {t(
+                        'feature.recovery.recovery-confirm-identity-instructions-1',
+                    )}
+                </Text>
+                <LineBreak />
+                <Text bold style={styles(theme).instructionsText}>
+                    {t(
+                        'feature.recovery.recovery-confirm-identity-instructions-2',
+                    )}
+                </Text>
+                <LineBreak />
+                <View style={styles(theme).confirmationContainer}>
+                    <CheckBox
+                        title={
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).checkboxText}>
+                                {t(
+                                    'feature.recovery.recovery-confirm-identity-yes',
+                                )}
+                            </Text>
+                        }
+                        checkedIcon="dot-circle-o"
+                        uncheckedIcon="circle-o"
+                        checked={approvalSelected}
+                        onPress={() => {
+                            setApprovalSelected(true)
+                            setDenialSelected(false)
+                        }}
+                    />
+                    <CheckBox
+                        title={
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).checkboxText}>
+                                {t(
+                                    'feature.recovery.recovery-confirm-identity-no',
+                                )}
+                            </Text>
+                        }
+                        checkedIcon="dot-circle-o"
+                        uncheckedIcon="circle-o"
+                        checked={denialSelected}
+                        onPress={() => {
+                            setApprovalSelected(false)
+                            setDenialSelected(true)
+                        }}
+                    />
+                </View>
+            </ScrollView>
 
             <Button
                 title={t('words.continue')}
