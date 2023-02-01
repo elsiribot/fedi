@@ -43,9 +43,9 @@ const ChatsList: React.FC<{}> = () => {
         )
     }
 
-    // console.debug('messages', messages)
+    const pinnedGroups = groups.filter(group => group.pinned === true)
+    const unpinnedGroups = groups.filter(group => group.pinned !== true)
     const directMessages = messages.filter(m => !m.sentIn)
-    // console.debug('directMessages', directMessages)
 
     // Produce a set of direct chats from all direct messages
     const directChats: Chat[] = authenticatedMember?.username
@@ -110,9 +110,11 @@ const ChatsList: React.FC<{}> = () => {
               return chatsResult
           }, [] as Chat[])
         : []
-    // console.debug('directChats', directChats)
 
-    directChats.sort((a, b) => {
+    const orderedChats = directChats.concat(unpinnedGroups)
+    orderedChats.sort((a, b) => {
+        if (!a.lastReceivedTimestamp) return -1
+        if (!b.lastReceivedTimestamp) return 1
         if (a.lastReceivedTimestamp && b.lastReceivedTimestamp) {
             return b.lastReceivedTimestamp - a.lastReceivedTimestamp
         }
@@ -122,7 +124,7 @@ const ChatsList: React.FC<{}> = () => {
     return (
         <FlatList
             style={styles(theme).container}
-            data={[...groups, ...directChats]}
+            data={[...pinnedGroups, ...orderedChats]}
             renderItem={renderChat}
             keyExtractor={(item: Chat) => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content
