@@ -2,7 +2,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
+import QRCode from 'react-native-qrcode-svg'
+import { Images } from '../assets/images'
 
 import {
     BridgeEventEmitter,
@@ -10,7 +18,6 @@ import {
     SocialRecoveryEvent,
 } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
-import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationCredentials,
@@ -23,6 +30,8 @@ export type Props = NativeStackScreenProps<
     RootStackParamList,
     'CompleteSocialRecovery'
 >
+
+const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 
 const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
@@ -41,7 +50,23 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const [approvals, setApprovals] = useState<SocialRecoveryEvent | undefined>(
         undefined,
     )
-    console.log('approvals', approvals)
+    const { recoveryQr } = useBridge()
+    const [recoveryQrCode, setRecoveryQrCode] = useState<string>('')
+
+    useEffect(() => {
+        const getRecoveryAssistCode = async () => {
+            try {
+                const recoveryAssistCode = await recoveryQr()
+                console.info('recoveryAssistCode', recoveryAssistCode)
+                setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
+            } catch (error) {
+                const typedError = error as Error
+                toast?.show(typedError?.message, 3000)
+            }
+        }
+
+        getRecoveryAssistCode()
+    }, [navigation, recoveryQr, toast])
 
     const socialRecoveryHandler = useCallback(
         (event: SocialRecoveryEvent) => {
@@ -71,10 +96,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         const listener = emitter.onSocialRecovery(socialRecoveryHandler)
         return () => listener.remove()
     }, [navigation, socialRecoveryHandler])
-
-    const showQrCode = () => {
-        navigation.navigate('SocialRecoveryQrModal')
-    }
 
     const handleComplete = async () => {
         setRecovering(true)
@@ -137,34 +158,16 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 {t('feature.recovery.guardian-approval-instructions')}
             </Text>
             <HoloCard
-                iconImage={<SvgImage name="SocialPeople" />}
-                title={t('feature.recovery.social-recovery-steps')}
                 body={
-                    <>
-                        <View>
-                            <Text>
-                                {t('feature.recovery.guardian-approval-step-1')}
-                                {'\n'}
-                            </Text>
-                            <Text>
-                                {t('feature.recovery.guardian-approval-step-2')}
-                                {'\n'}
-                            </Text>
-                            <Text>
-                                {t('feature.recovery.guardian-approval-step-3')}
-                                {'\n'}
-                            </Text>
-                            <Text>
-                                {t('feature.recovery.guardian-approval-step-4')}
-                                {'\n'}
-                            </Text>
-                        </View>
-                        <Button
-                            title={t('feature.recovery.open-qr-code')}
-                            containerStyle={styles(theme).openButton}
-                            onPress={showQrCode}
+                    recoveryQrCode ? (
+                        <QRCode
+                            value={recoveryQrCode}
+                            size={QR_CODE_SIZE}
+                            logo={Images.FediQrLogo}
                         />
-                    </>
+                    ) : (
+                        <ActivityIndicator />
+                    )
                 }
             />
 
