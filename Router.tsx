@@ -92,6 +92,7 @@ import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOffli
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
+import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -304,7 +305,9 @@ const MainNavigator = () => {
                                 name="SendOfflineQr"
                                 component={SendOfflineQr}
                                 options={() => ({
-                                    header: () => <SendBitcoinOfflineHeader />,
+                                    header: () => (
+                                        <SendBitcoinOfflineQrHeader />
+                                    ),
                                 })}
                             />
                             {/* Wallet (Receive) */}
