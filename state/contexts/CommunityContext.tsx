@@ -370,13 +370,13 @@ export function reducer(state: AppState, action: Action): AppState {
 
                 if (
                     !updatedGroup.lastReceivedTimestamp ||
-                    updatedGroup.lastReceivedTimestamp < newMessage.receivedAt!
+                    updatedGroup.lastReceivedTimestamp < newMessage.sentAt!
                 ) {
                     // update preview if this is the first message received or
                     // if there this is a newer message
                     updatedGroup = {
                         ...updatedGroup,
-                        lastReceivedTimestamp: newMessage.receivedAt,
+                        lastReceivedTimestamp: newMessage.sentAt,
                         messagePreview: newMessage.content,
                     }
                     return {
