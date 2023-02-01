@@ -132,7 +132,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 setRecoveryInProgress(false)
                 navigation.dispatch(resetAfterPersonalRecovery())
             } catch (error) {
-                toast?.show((error as Error)?.message, 3000)
+                toast?.show('Recovery failed, please try again', 3000)
             }
         }
 
