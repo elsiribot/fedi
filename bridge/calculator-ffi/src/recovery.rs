@@ -22,6 +22,7 @@ pub struct SocialRecoveryApproval {
 }
 
 // FIXME: this is stringified FederationId (which doesn't impl Encodable b/c threshold_crypto::PublicKey doesn't)
+// FIXME: this doesn't actually need a federation id because rocksdb is per-federation
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct SocialRecoveryStateKey(pub String);
 
@@ -31,4 +32,17 @@ impl DatabaseKeyPrefixConst for SocialRecoveryStateKey {
     const DB_PREFIX: u8 = DB_PREFIX_SOCIAL_RECOVERY_STATE;
     type Key = Self;
     type Value = SocialRecoveryState;
+}
+
+// TODO: this should be stored inside SocialRecoveryState
+// FIXME: this doesn't actually need a federation id because rocksdb is per-federation
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct SocialRecoveryIdKey(pub String);
+
+const DB_PREFIX_SOCIAL_RECOVERY_ID_STATE: u8 = 0x54;
+
+impl DatabaseKeyPrefixConst for SocialRecoveryIdKey {
+    const DB_PREFIX: u8 = DB_PREFIX_SOCIAL_RECOVERY_ID_STATE;
+    type Key = Self;
+    type Value = RecoveryId;
 }

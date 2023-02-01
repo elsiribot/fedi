@@ -10,7 +10,9 @@ use crate::{
     event::Event,
     mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
-    recovery::{SocialRecoveryApproval, SocialRecoveryQr, SocialRecoveryStateKey},
+    recovery::{
+        SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
+    },
     tx::{
         self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -165,6 +167,7 @@ impl Bridge {
         {
             return Ok(federation);
         }
+        tracing::info!("joining new federation");
         let mut federation = Federation::join(
             connect_string,
             self.data_dir.clone(),
@@ -987,55 +990,88 @@ impl Federation {
     }
 
     /// Save social recovery session state to the DB
-    pub async fn social_recovery_save(&self, recovery_client: &SocialRecovery) {
+    pub async fn social_recovery_save(
+        &self,
+        recovery_client: &SocialRecovery,
+        dbtx: &mut DatabaseTransaction<'_>,
+    ) {
         // FIXME: should I pass dbtx from outside?
-        let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&SocialRecoveryStateKey(self.id()), recovery_client.state())
             .await
             .expect("Db error");
-        dbtx.commit_tx().await.expect("Db error");
+    }
+
+    /// Save social recovery ID to the DB. This is used to generate the recovery QR.
+    pub async fn save_social_recovery_id(
+        &self,
+        recovery_id: &RecoveryId,
+        dbtx: &mut DatabaseTransaction<'_>,
+    ) {
+        dbtx.insert_entry(&SocialRecoveryIdKey(self.id()), &recovery_id)
+            .await
+            .expect("Db error");
+    }
+
+    /// Get social recovery Id from the DB. This is used to generate the recovery QR.
+    pub async fn get_social_recovery_id(&self) -> Option<RecoveryId> {
+        self.dbtx()
+            .await
+            .get_value(&SocialRecoveryIdKey(self.id()))
+            .await
+            .expect("Db error")
     }
 
     /// Start a new social recovery session if one doesn't exist already
     /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
     /// Also won't be able to do simulataneous recoveries in 2 federations.
     pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
-        match self.social_recovery_continue().await {
+        let mut dbtx = self.dbtx().await;
+        let recovery_client = match self.social_recovery_continue().await {
             Ok(recovery_client) => recovery_client,
             Err(_) => {
                 let recovery_client = self.client.social_recovery_start(recovery_file.clone())?;
-                self.social_recovery_save(&recovery_client).await;
-                self.send_federation_event().await;
+                self.social_recovery_save(&recovery_client, &mut dbtx).await;
                 recovery_client
             }
         };
+        // If we don't have a social recovery ID in the database, create one
+        if self.get_social_recovery_id().await.is_none() {
+            tracing::info!("saving social recovery id");
+            let verification_request = recovery_client
+                .create_verification_request(recovery_file.verification_document.clone())?;
+            recovery_client
+                .upload_verification_request(&verification_request)
+                .await
+                .context("upload verification request")?;
+            let recovery_id = verification_request.recovery_id();
+            self.save_social_recovery_id(&recovery_id, &mut dbtx).await;
+        }
+        dbtx.commit_tx().await.expect("Db error");
+        self.send_federation_event().await;
         Ok(())
     }
 
-    /// Exit a social recovery session. Helpful if user choose the wrong recovery file and wants to start over.
-    pub async fn exit_social_recovery(&self) -> Result<()> {
-        todo!()
+    /// Delete all social recovery state from DB
+    pub async fn delete_social_recovery_state_and_id(&self) {
+        let mut dbtx = self.dbtx().await;
+        dbtx.remove_entry(&SocialRecoveryStateKey(self.id()))
+            .await
+            .expect("Db error");
+        dbtx.remove_entry(&SocialRecoveryIdKey(self.id()))
+            .await
+            .expect("Db error");
+        // TODO: delete the verification file?
+        dbtx.commit_tx().await.expect("Db error");
     }
 
     /// Produce social recovery QR
-    pub async fn social_recovery_qr(
-        &self,
-        recovery_file: &RecoveryFile,
-    ) -> Result<SocialRecoveryQr> {
-        let recovery_client = self.social_recovery_continue().await?;
-
-        // Create and upload verification request
-        // FIXME: probably shouldn't clone verification doc because it might be large
-        let verification_request = recovery_client
-            .create_verification_request(recovery_file.verification_document.clone())?;
-        recovery_client
-            .upload_verification_request(&verification_request)
-            .await
-            .context("upload verification request")?;
-        tracing::info!("verification request uploaded");
-
+    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
         // Return social recovery QR
-        let recovery_id = verification_request.recovery_id();
+        tracing::info!("looking up recovery id for qr");
+        let recovery_id = self
+            .get_social_recovery_id()
+            .await
+            .ok_or(anyhow!("No recovery ID found"))?;
         Ok(SocialRecoveryQr { recovery_id })
     }
 
@@ -1072,7 +1108,9 @@ impl Federation {
         let remaining = approvals_required.saturating_sub(num_approvals);
 
         // Save progress to DB
-        self.social_recovery_save(&recovery_client).await;
+        let mut dbtx = self.dbtx().await;
+        self.social_recovery_save(&recovery_client, &mut dbtx).await;
+        dbtx.commit_tx().await.expect("Db error");
 
         Ok((approvals, remaining))
     }
