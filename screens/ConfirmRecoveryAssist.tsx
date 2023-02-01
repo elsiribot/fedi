@@ -65,7 +65,6 @@ const ConfirmRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                     !surroundingsSafetyConfirmed || !memberSafetyConfirmed
                 }
                 containerStyle={styles(theme).confirmButton}
-                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -97,9 +96,6 @@ const styles = (theme: Theme) =>
             alignSelf: 'flex-start',
             textAlign: 'left',
             paddingHorizontal: theme.spacing.xl,
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

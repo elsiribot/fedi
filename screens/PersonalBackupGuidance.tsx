@@ -60,7 +60,6 @@ const PersonalBackupGuidance: React.FC<Props> = ({ navigation }: Props) => {
                 }}
                 disabled={!checkbox1 || !checkbox2}
                 containerStyle={styles(theme).confirmButton}
-                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -92,9 +91,6 @@ const styles = (theme: Theme) =>
             alignSelf: 'flex-start',
             textAlign: 'left',
             paddingHorizontal: theme.spacing.xl,
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

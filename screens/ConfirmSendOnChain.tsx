@@ -77,7 +77,6 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     keyboardType="numeric"
                     returnKeyType="done"
                     containerStyle={styles(theme).textInput}
-                    inputStyle={styles(theme).input}
                 />
                 <UsdAmount amountSats={Number(amount) as Sats} />
                 <Text>
@@ -98,7 +97,6 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 onPress={onSendBtc}
                 loading={isLoading}
                 fullWidth
-                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -122,12 +120,6 @@ const styles = (theme: Theme) =>
         textInput: {
             width: '90%',
             marginTop: 'auto',
-        },
-        input: {
-            fontFamily: 'AlbertSans-Regular',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

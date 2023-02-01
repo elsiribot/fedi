@@ -42,6 +42,7 @@ const theme = createTheme({
             titleStyle: {
                 paddingLeft: 10,
                 paddingRight: 10,
+                fontFamily: 'AlbertSans-Regular',
             },
             disabledStyle: {
                 opacity: 0.7,
@@ -99,6 +100,9 @@ const theme = createTheme({
         Input: {
             containerStyle: {
                 height: 60,
+            },
+            inputStyle: {
+                fontFamily: 'AlbertSans-Regular',
             },
         },
         Header: {

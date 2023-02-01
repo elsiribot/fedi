@@ -112,9 +112,6 @@ const styles = (theme: Theme) =>
             flex: 1,
             borderWidth: 1,
         },
-        buttonTitle: {
-            fontFamily: 'AlbertSans-Regular',
-        },
     })
 
 export default CustomOverlay

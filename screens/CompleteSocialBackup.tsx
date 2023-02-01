@@ -52,7 +52,6 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 <Button
                     title={t('feature.backup.create-another-backup')}
                     containerStyle={styles(theme).createBackupButton}
-                    titleStyle={styles(theme).titleButton}
                     onPress={() => {
                         createBackup()
                     }}
@@ -63,7 +62,6 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 <Button
                     title={t('feature.backup.create-second-backup')}
                     containerStyle={styles(theme).createBackupButton}
-                    titleStyle={styles(theme).titleButton}
                     onPress={() => {
                         createBackup()
                     }}
@@ -74,7 +72,6 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 <Button
                     title={t('feature.backup.create-first-backup')}
                     containerStyle={styles(theme).createBackupButton}
-                    titleStyle={styles(theme).titleButton}
                     onPress={() => {
                         createBackup()
                     }}
@@ -181,7 +178,6 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
             </View>
             <Button
                 title={t('feature.backup.complete-social-backup')}
-                titleStyle={styles(theme).titleButton}
                 containerStyle={[
                     styles(theme).completeButton,
                     // FIXME: changed 2 to 1 as hack for faster dev
@@ -223,9 +219,6 @@ const styles = (theme: Theme) =>
         },
         hidden: {
             opacity: 0,
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

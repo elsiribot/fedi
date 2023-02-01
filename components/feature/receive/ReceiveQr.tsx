@@ -72,13 +72,11 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
                     title={t('words.share')}
                     onPress={openShareDialog}
                     containerStyle={styles(theme).button}
-                    titleStyle={styles(theme).titleButton}
                 />
                 <Button
                     title={t('words.copy')}
                     onPress={copyToClipboard}
                     containerStyle={styles(theme).button}
-                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -118,9 +116,6 @@ const styles = (theme: Theme) =>
         roundedCardContainer: {
             borderRadius: 20,
             width: '100%',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

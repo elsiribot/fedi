@@ -79,7 +79,6 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
                 onPress={() => {
                     navigation.navigate('PersonalBackupSuccess')
                 }}
-                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -129,9 +128,6 @@ const styles = (theme: Theme) =>
         },
         wordText: {
             fontWeight: '400',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

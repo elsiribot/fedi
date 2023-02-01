@@ -83,13 +83,11 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
                         title={t('phrases.paste-from-clipboard')}
                         onPress={checkClipboard}
                         type="clear"
-                        titleStyle={styles(theme).buttonTitle}
                     />
                     <LineBreak />
                     <Button
                         title={t('feature.community.create-a-group')}
                         onPress={createGroupInvite}
-                        titleStyle={styles(theme).buttonTitle}
                     />
                     <LineBreak />
                 </>
@@ -104,13 +102,11 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('phrases.paste-from-clipboard')}
                     onPress={checkClipboard}
                     type="clear"
-                    titleStyle={styles(theme).buttonTitle}
                 />
                 <Button
                     containerStyle={styles(theme).button}
                     title={t('feature.community.create-a-group')}
                     onPress={createGroupInvite}
-                    titleStyle={styles(theme).buttonTitle}
                 />
             </View>
         </CameraPermissionsRequired>
@@ -133,9 +129,6 @@ const styles = (theme: Theme) =>
         button: {
             width: '90%',
             marginBottom: theme.spacing.md,
-        },
-        buttonTitle: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

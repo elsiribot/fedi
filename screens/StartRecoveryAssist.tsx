@@ -66,7 +66,6 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
-                titleStyle={styles(theme).titleButton}
                 onPress={() => {
                     navigation.navigate('ConfirmRecoveryAssist')
                 }}
@@ -95,9 +94,6 @@ const styles = (theme: Theme) =>
         },
         textContainer: {
             width: '100%',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

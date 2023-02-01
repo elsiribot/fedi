@@ -102,7 +102,6 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('feature.send.paste-payment-request-instead')}
                     onPress={checkClipboard}
                     type="clear"
-                    titleStyle={styles(theme).titleButton}
                 />
             }
             message={t('feature.send.camera-access-information')}>
@@ -117,13 +116,11 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                         type="clear"
                         title={t('feature.send.send-to-offline-user')}
                         onPress={() => navigation.navigate('SendOfflineAmount')}
-                        titleStyle={styles(theme).titleButton}
                     />
                     <Button
                         fullWidth
                         title={t('feature.send.paste-payment-request')}
                         onPress={checkClipboard}
-                        titleStyle={styles(theme).titleButton}
                     />
                 </View>
             </View>
@@ -148,9 +145,6 @@ const styles = (theme: Theme) =>
             justifyContent: 'space-between',
             padding: theme.spacing.xl,
             width: '100%',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

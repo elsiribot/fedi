@@ -68,7 +68,6 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 keyboardType="numeric"
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
-                inputStyle={styles(theme).input}
             />
             <UsdAmount amountSats={Number(amount) as Sats} />
             <Button
@@ -82,7 +81,6 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 disabled={!amountIsValid || generatingInvoice}
                 loading={generatingInvoice}
                 containerStyle={styles(theme).button}
-                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -102,12 +100,6 @@ const styles = (theme: Theme) =>
         textInput: {
             width: '80%',
             marginTop: 'auto',
-        },
-        input: {
-            fontFamily: 'AlbertSans-Regular',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

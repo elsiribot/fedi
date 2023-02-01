@@ -11,7 +11,7 @@ import {
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
-import { MSats, Message, Payment, PaymentStatus } from '../../../types'
+import { Message, MSats, Payment, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 
 type OutgoingPaymentActionsProps = {
@@ -87,7 +87,6 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                                     {t('words.reject')}
                                 </Text>
                             }
-                            titleStyle={styles(theme).titleButton}
                         />
                         <Text>&nbsp;&nbsp;</Text>
                         <Button
@@ -101,7 +100,6 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                                     {t('words.pay')}
                                 </Text>
                             }
-                            titleStyle={styles(theme).titleButton}
                         />
                     </>
                 )
@@ -295,9 +293,6 @@ const styles = (theme: Theme) =>
         messageText: {
             color: theme.colors.secondary,
             paddingBottom: theme.spacing.sm,
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

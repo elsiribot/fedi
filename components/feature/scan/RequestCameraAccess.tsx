@@ -91,7 +91,6 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
                 <Button
                     title={t('phrases.allow-camera-access')}
                     onPress={requestPermissions}
-                    titleStyle={styles(theme).buttonTitle}
                 />
             </View>
         </View>
@@ -133,9 +132,6 @@ const styles = (theme: Theme) =>
         subtitleText: {
             textAlign: 'center',
             marginHorizontal: theme.spacing.xl,
-        },
-        buttonTitle: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

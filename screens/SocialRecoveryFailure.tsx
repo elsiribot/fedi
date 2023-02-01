@@ -40,14 +40,12 @@ const SocialRecoveryFailure: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {
                         navigation.navigate('Home')
                     }}
-                    titleStyle={styles(theme).titleButton}
                 />
                 <Button
                     title={t('feature.recovery.try-social-recovery-again')}
                     onPress={() => {
                         navigation.navigate('LocateSocialRecovery')
                     }}
-                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </ImageBackground>
@@ -104,9 +102,6 @@ const styles = (theme: Theme) =>
             marginBottom: 50,
             flexDirection: 'column',
             justifyContent: 'flex-end',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

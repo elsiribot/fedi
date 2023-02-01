@@ -154,7 +154,6 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                                 {t('words.cancel')}
                             </Text>
                         }
-                        titleStyle={styles(theme).titleButton}
                     />
                 )
                 break
@@ -250,9 +249,6 @@ const styles = (theme: Theme) =>
         messageText: {
             color: theme.colors.secondary,
             paddingBottom: theme.spacing.sm,
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

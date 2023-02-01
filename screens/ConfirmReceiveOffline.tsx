@@ -75,7 +75,6 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 placeholder={t('phrases.add-note')}
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
-                inputStyle={styles(theme).input}
             />
             <View style={styles(theme).actionContainer}>
                 <Text caption style={styles(theme).offlineSpendNotice}>
@@ -89,7 +88,6 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     onPress={onReceive}
                     loading={receiving}
                     containerStyle={styles(theme).buttonContainer}
-                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -134,12 +132,6 @@ const styles = (theme: Theme) =>
         },
         textInput: {
             width: '80%',
-        },
-        input: {
-            fontFamily: 'AlbertSans-Regular',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

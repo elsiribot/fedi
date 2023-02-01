@@ -167,7 +167,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             title={t('feature.recovery.open-qr-code')}
                             containerStyle={styles(theme).openButton}
                             onPress={showQrCode}
-                            titleStyle={styles(theme).titleButton}
                         />
                     </>
                 }
@@ -191,7 +190,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 ]}
                 loading={recovering}
                 onPress={handleComplete}
-                titleStyle={styles(theme).titleButton}
             />
         </ScrollView>
     )
@@ -229,9 +227,6 @@ const styles = (theme: Theme) =>
         },
         openButton: {
             width: '100%',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

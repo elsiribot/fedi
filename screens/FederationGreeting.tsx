@@ -46,7 +46,6 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.replace('Home')
                 }}
                 containerStyle={styles(theme).button}
-                titleStyle={styles(theme).titleButton}
             />
         </View>
     )
@@ -84,9 +83,6 @@ const styles = (theme: Theme) =>
         },
         welcomeText: {
             textAlign: 'center',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

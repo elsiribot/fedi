@@ -53,7 +53,6 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                         navigation.navigate('ChooseRecoveryMethod')
                     }}
                     containerStyle={styles(theme).button}
-                    titleStyle={styles(theme).titleButton}
                 />
                 <Button
                     fullWidth
@@ -62,7 +61,6 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                         navigation.navigate('CreateUsername')
                     }}
                     containerStyle={styles(theme).button}
-                    titleStyle={styles(theme).titleButton}
                 />
             </View>
         </View>
@@ -106,9 +104,6 @@ const styles = (theme: Theme) =>
         },
         welcomeText: {
             textAlign: 'center',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

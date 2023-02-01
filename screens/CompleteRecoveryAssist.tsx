@@ -133,7 +133,6 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 loading={approving}
                 disabled={!approvalSelected && !denialSelected}
                 containerStyle={styles(theme).confirmButton}
-                titleStyle={styles(theme).titleButton}
             />
         </ScrollView>
     )
@@ -189,9 +188,6 @@ const styles = (theme: Theme) =>
         video: {
             height: '100%',
             width: '100%',
-        },
-        titleButton: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 

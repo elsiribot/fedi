@@ -113,7 +113,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 multiline
                 numberOfLines={3}
                 blurOnSubmit={false}
-                inputStyle={styles(theme).input}
             />
             <Pressable
                 style={[
@@ -178,9 +177,6 @@ const styles = (theme: Theme) =>
             borderWidth: 1,
             borderRadius: theme.borders.defaultRadius,
             backgroundColor: theme.colors.white,
-        },
-        input: {
-            fontFamily: 'AlbertSans-Regular',
         },
     })
 
