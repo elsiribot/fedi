@@ -1,6 +1,6 @@
 import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 type CustomOverlayButton = {
     text: string
@@ -20,12 +20,14 @@ type CustomOverlayProps = {
     onBackdropPress?: () => void
     show?: boolean
     contents: CustomOverlayContents | null
+    loading: boolean
 }
 
 const CustomOverlay: React.FC<CustomOverlayProps> = ({
     onBackdropPress,
     show = false,
     contents,
+    loading,
 }) => {
     const { theme } = useTheme()
 
@@ -72,9 +74,13 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     {description}
                 </Text>
             )}
-            <View style={styles(theme).overlayButtonView}>
-                {renderButtons()}
-            </View>
+            {loading ? (
+                <ActivityIndicator />
+            ) : (
+                <View style={styles(theme).overlayButtonView}>
+                    {renderButtons()}
+                </View>
+            )}
         </Overlay>
     )
 }

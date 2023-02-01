@@ -33,6 +33,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
     const [showOverlay, setShowOverlay] = useState<boolean>(false)
+    const [loading, setLoading] = useState<boolean>(false)
     const [overlayContents, setOverlayContents] =
         useState<CustomOverlayContents>({
             title: '',
@@ -118,76 +119,88 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         ],
                     })
                 })
-                const invoice = await generateInvoice(
-                    amountUtils.satToMsat(amount),
-                    description,
-                )
 
-                return {
-                    paymentRequest: invoice,
+                // FIXME: Check webln spec to see what we should return here
+                try {
+                    const invoice = await generateInvoice(
+                        amountUtils.satToMsat(amount),
+                        description,
+                    )
+                    return {
+                        paymentRequest: invoice,
+                    }
+                } catch (error) {
+                    toast?.show((error as Error).message, 3000)
+                    throw error
                 }
-            } catch (e) {
-                console.error('Error creating invoice', e)
-                throw new Error('Denied')
+            } catch (error) {
+                toast?.show((error as Error).message, 3000)
+                throw error
             }
         },
         sendPayment: async (paymentRequest: string) => {
-            const invoice = await decodeInvoice(paymentRequest)
+            var invoice
+            try {
+                invoice = await decodeInvoice(paymentRequest)
+            } catch (error) {
+                toast?.show(t('phrases.failed-to-decode-invoice'), 3000)
+                throw Error(t('phrases.failed-to-decode-invoice'))
+            }
             const amountSats = amountUtils.msatToSat(invoice.amount)
 
-            try {
-                // Wait for user to interact with alert
-                await new Promise((resolve, reject) => {
-                    setOverlayContents({
-                        title: t('feature.sites.payment-request', {
-                            site: site.title,
-                        }),
-                        message: `${amountUtils.formatNumber(amountSats)} ${t(
-                            'words.sats',
-                        ).toUpperCase()}`,
-                        description: `$${convertSatsToUsdString(amountSats)}`,
-                        buttons: [
-                            {
-                                text: t('words.reject'),
-                                textColor: theme.colors.primary,
-                                backgroundColor: theme.colors.secondary,
-                                onPress: () => {
-                                    reject()
-                                    setShowOverlay(false)
-                                },
-                            },
-                            {
-                                text: t('words.accept'),
-                                onPress: async () => {
-                                    resolve(true)
-                                    setShowOverlay(false)
-                                },
-                            },
-                        ],
-                    })
+            if (selectedFederation!.balance < invoice.amount) {
+                const message = t('errors.insufficient-balance', {
+                    balance: `${amountUtils.msatToSat(
+                        selectedFederation?.balance as MSats,
+                    )} SATS`,
                 })
-
-                // Attempt to pay the invoice
-                if (selectedFederation!.balance < invoice.amount) {
-                    toast?.show(
-                        t('errors.insufficient-balance', {
-                            balance: `${amountUtils.msatToSat(
-                                selectedFederation?.balance as MSats,
-                            )} SATS`,
-                        }),
-                        5000,
-                    )
-                } else {
-                    await payInvoice(paymentRequest)
-                }
-
-                return {
-                    preimage: 'fixme',
-                }
-            } catch (e) {
-                console.error('sendPayment failed', e)
-                throw e
+                toast?.show(message, 5000)
+                throw Error(message)
             }
+
+            // Wait for user to interact with alert
+            return new Promise((resolve, reject) => {
+                setOverlayContents({
+                    title: t('feature.sites.payment-request', {
+                        site: site.title,
+                    }),
+                    message: `${amountUtils.formatNumber(amountSats)} ${t(
+                        'words.sats',
+                    ).toUpperCase()}`,
+                    description: `$${convertSatsToUsdString(amountSats)}`,
+                    buttons: [
+                        {
+                            text: t('words.reject'),
+                            textColor: theme.colors.primary,
+                            backgroundColor: theme.colors.secondary,
+                            onPress: () => {
+                                setShowOverlay(false)
+                                reject()
+                            },
+                        },
+                        {
+                            text: t('words.accept'),
+                            onPress: async () => {
+                                try {
+                                    setLoading(true)
+                                    await payInvoice(paymentRequest)
+                                    setShowOverlay(false)
+                                    // resolve(true)
+                                    setLoading(false)
+                                    resolve({
+                                        preimage: 'fixme',
+                                    })
+                                } catch (error) {
+                                    setLoading(false)
+                                    console.log('pay failed')
+                                    toast?.show((error as Error).message, 3000)
+                                    reject()
+                                }
+                            },
+                        },
+                    ],
+                })
+            })
         },
         signMessage: async (message: string) => {
             console.log('signMessage', message)
@@ -223,17 +236,22 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             text: t('words.yes'),
                             onPress: async () => {
                                 try {
+                                    setLoading(true)
                                     const token = await lnurlGetToken(
                                         paymentRequest,
                                     )
+                                    setLoading(false)
                                     setJwt(token)
                                     console.log(
                                         'FIXLN-URL auth successful',
                                         token,
                                     )
                                 } catch (e) {
-                                    // FIXME
-                                    console.error('LNURL-Auth failed', e)
+                                    setLoading(false)
+                                    toast?.show(
+                                        t('feature.sites.login-failed'),
+                                        3000,
+                                    )
                                 }
                                 setShowOverlay(false)
                             },
@@ -267,6 +285,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 show={showOverlay}
                 onBackdropPress={() => setShowOverlay(false)}
                 contents={overlayContents}
+                loading={loading}
             />
         </View>
     )

@@ -2,10 +2,11 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { Transaction } from '../bridge'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -22,6 +23,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { receiveEcash } = useBridge()
+    const { toast } = useEnvironmentContext().state
     const { amount, ecash } = route.params
     const [note, setNote] = useState('')
     const [receiving, setReceiving] = useState(false)
@@ -40,12 +42,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     }),
                 })
             } catch (e: any) {
-                // FIXME: how can we type our error messages better?
-                Alert.alert(t('words.error'), e.message, [
-                    {
-                        text: t('words.done'),
-                    },
-                ])
+                toast?.show(e.message, 3000)
                 setReceiving(false)
             }
         }

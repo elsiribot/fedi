@@ -21,6 +21,7 @@ import {
     receiveMessages,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederations,
     useFederationsContext,
@@ -41,6 +42,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { leaveFederation } = useBridge()
     const { state, dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
+    const { toast } = useEnvironmentContext().state
     const { selectedFederation } = state
     const [userIsGuardian, setUserIsGuardian] = useState(false)
 
@@ -69,8 +71,12 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
     const handleLeaveFederation = async () => {
-        // leave federation
-        await leaveFederation()
+        try {
+            await leaveFederation()
+        } catch (e) {
+            toast?.show('Failed to leave federation', 3000)
+            return
+        }
         resetCommunityState()
 
         // update context and navigate

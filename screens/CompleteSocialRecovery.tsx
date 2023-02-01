@@ -39,7 +39,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const {
-        backupXmppUsername,
         completeSocialRecovery,
         getXmppCredentials,
         socialRecoveryApprovals,
@@ -86,11 +85,12 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 const _approvals = await socialRecoveryApprovals()
                 setApprovals(_approvals)
             } catch (e) {
+                toast?.show('Failed to fetch guardian approval', 3000)
                 console.log('failed to get approvals', e)
             }
         }, 1000)
         return () => clearInterval(interval)
-    }, [socialRecoveryApprovals, setApprovals])
+    }, [toast, socialRecoveryApprovals, setApprovals])
 
     useEffect(() => {
         const emitter = new BridgeEventEmitter()
