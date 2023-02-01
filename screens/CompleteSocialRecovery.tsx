@@ -121,7 +121,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         } else {
             return (
                 <Text bold>
-                    {`(${approvals?.remaining} ${t('words.required')})`}
+                    {`(${approvals?.remaining} ${t('words.remaining')})`}
                 </Text>
             )
         }
