@@ -1,6 +1,6 @@
 {
     "name": "fedi-react-native",
-    "version": "0.6.3",
+    "version": "0.7.1",
     "private": true,
     "scripts": {
         "android": "sh scripts/run-android.sh",

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -16,6 +17,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
+    const { toast } = useEnvironmentContext().state
     const [amount, setAmount] = useState<SatsString | string>('')
     const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
     const [invoice, setInvoice] = useState<string>('')
@@ -35,16 +37,20 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
 
     useEffect(() => {
         const createNewInvoice = async () => {
-            const newInvoice = await generateInvoice(
-                amountUtils.satToMsat(Number(amount) as Sats),
-                memo,
-            )
-            setInvoice(newInvoice)
+            try {
+                const newInvoice = await generateInvoice(
+                    amountUtils.satToMsat(Number(amount) as Sats),
+                    memo,
+                )
+                setInvoice(newInvoice)
+            } catch (error) {
+                toast?.show('Failed to generate invoice', 3000)
+            }
         }
         if (generatingInvoice) {
             createNewInvoice()
         }
-    }, [amount, generateInvoice, generatingInvoice, memo])
+    }, [toast, amount, generateInvoice, generatingInvoice, memo])
 
     useEffect(() => {
         if (invoice) {

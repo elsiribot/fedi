@@ -69,6 +69,7 @@
         "connect-to-federation": "Connect to test federation",
         "copied-lightning-request": "Copied lightning request",
         "expires-in": "Expires in",
+        "failed-to-decode-invoice": "Failed to decode invoice",
         "generate-invoice": "Generate invoice",
         "go-back": "Go back",
         "hold-to-confirm": "Hold to confirm",
@@ -310,6 +311,7 @@
             "wants-to-pay-you": "{{site}} wants to pay you",
             "boost-this-post": "Boost this post on {{site}}?",
             "login-to": "Login to",
+            "login-failed": "Login failed",
             "payment-request": "Payment request from {{site}} "
         }
     }
