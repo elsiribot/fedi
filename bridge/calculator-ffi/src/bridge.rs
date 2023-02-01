@@ -1005,6 +1005,7 @@ impl Federation {
             Err(_) => {
                 let recovery_client = self.client.social_recovery_start(recovery_file.clone())?;
                 self.social_recovery_save(&recovery_client).await;
+                self.send_federation_event().await;
                 recovery_client
             }
         };
