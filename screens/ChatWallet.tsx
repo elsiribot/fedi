@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 
 import {
     addToMessages,
@@ -78,6 +79,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
+            <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
                     title={t('words.request')}
