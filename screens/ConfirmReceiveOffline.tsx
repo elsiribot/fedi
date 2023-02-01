@@ -42,7 +42,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     }),
                 })
             } catch (e: any) {
-                toast?.show(e.message)
+                toast?.show(e.message, 3000)
                 setReceiving(false)
             }
         }

@@ -49,12 +49,11 @@ const DeveloperSettings: React.FC<Props> = () => {
         const getGatewaysList = async () => {
             try {
                 setIsLoading(true)
-                // TODO: error handling
                 const _gateways = await listGateways()
                 setIsLoading(false)
                 setGateways(_gateways)
             } catch (e) {
-                toast?.show('Failed to fetch gateways')
+                toast?.show('Failed to fetch gateways', 3000)
             }
         }
 
@@ -62,8 +61,11 @@ const DeveloperSettings: React.FC<Props> = () => {
     }, [toast, listGateways])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
-        // TODO: error handling
-        await switchGateway(gateway)
+        try {
+            await switchGateway(gateway)
+        } catch (e) {
+            toast?.show('Failed to switch gateway', 3000)
+        }
         const updatedGateways = gateways.map((gw: LightningGateway) => {
             gw.active = gateway.nodePubKey === gw.nodePubKey
             return gw

@@ -73,7 +73,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (error) {
-            toast?.show((error as Error).message)
+            toast?.show((error as Error).message, 3000)
             setIsLoading(false)
             setIsPayingInvoice(false)
         }

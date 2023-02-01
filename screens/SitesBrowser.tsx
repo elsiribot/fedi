@@ -129,7 +129,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         paymentRequest: invoice,
                     }
                 } catch (error) {
-                    toast?.show((error as Error).message)
+                    toast?.show((error as Error).message, 3000)
                 }
             } catch (e) {
                 console.error('Error creating invoice', e)
@@ -186,7 +186,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     try {
                         await payInvoice(paymentRequest)
                     } catch (error) {
-                        toast?.show((error as Error).message)
+                        toast?.show((error as Error).message, 3000)
                     }
                 }
 
@@ -241,7 +241,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                         token,
                                     )
                                 } catch (e) {
-                                    toast?.show('Login failed')
+                                    toast?.show('Login failed', 3000)
                                 }
                                 setShowOverlay(false)
                             },
