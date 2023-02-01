@@ -53,14 +53,18 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             await RNFS.copyFile(result!.uri, dest)
             // validate file
             try {
-                await validateRecoveryFile(dest)
-                navigation.replace('SelectRecoveryFileSuccess', {
-                    // fileName: result!.name as string,
-                    fileName: dest,
-                })
+                const valid = await validateRecoveryFile(dest)
+                if (valid) {
+                    navigation.replace('SelectRecoveryFileSuccess', {
+                        fileName: dest,
+                    })
+                } else {
+                    navigation.replace('SelectRecoveryFileFailure', {
+                        fileName: dest,
+                    })
+                }
             } catch (error) {
                 navigation.replace('SelectRecoveryFileFailure', {
-                    // fileName: result!.name as string,
                     fileName: dest,
                 })
             }
