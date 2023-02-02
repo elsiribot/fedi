@@ -16,6 +16,7 @@ const SelectRecoveryFileSuccess: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { fileName } = route.params
+    console.log(fileName)
 
     return (
         <Success
@@ -23,9 +24,6 @@ const SelectRecoveryFileSuccess: React.FC<Props> = ({ route }: Props) => {
                 <View style={styles(theme).textContainer}>
                     <Text h2 h2Style={styles(theme).successMessage}>
                         {t('feature.recovery.successfully-opened-fedi-file')}
-                    </Text>
-                    <Text bold style={styles(theme).fileNameText}>
-                        {fileName}
                     </Text>
                 </View>
             }
@@ -45,9 +43,6 @@ const styles = (theme: Theme) =>
         successMessage: {
             textAlign: 'center',
             marginBottom: theme.spacing.md,
-        },
-        fileNameText: {
-            fontWeight: '400',
         },
     })
 

@@ -238,7 +238,7 @@
             "choose-method": "Choose a recovery method",
             "choose-method-instructions": "Choose the method you used to back up your wallet when you first joined {{federation}}",
             "complete-social-recovery": "Complete social recovery",
-            "default-fedi-file-format": "fedi-backup_{{federation}}.fedi",
+            "default-fedi-file-format": "backup.fedi",
             "guardian-approvals": "Guardian approvals",
             "guardian-approval-instructions": "Guardians need to confirm you are the person in your Fedi Intro Video to recover your money",
             "guardian-approval-step-1": "1. Arrange meetings with Guardians (see Guardians below)",

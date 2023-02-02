@@ -158,7 +158,7 @@
             "choose-method": "Elige un método de recuperación",
             "choose-method-instructions": "Elige el método que utilizaste para hacer una copia de seguridad de tu cartera cuando primero te uniste a {{federation}}",
             "complete-social-recovery": "Completar recuperación social",
-            "default-fedi-file-format": "fedi-backup_{{federation}}.fedi",
+            "default-fedi-file-format": "backup.fedi",
             "guardian-approvals": "Aprobaciones de Guardianes",
             "guardian-approval-instructions": "Los Guardianes necesitan confirmar que eres la persona en tu video de introducción de Fedi para recuperar tu dinero",
             "guardian-approval-step-1": "1. Organiza reuniones con Guardianes (ve a Guardianes abajo)",
