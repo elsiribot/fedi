@@ -5,7 +5,6 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native'
 import type {
     CameraDevice,
     CameraDeviceFormat,
-    VideoFile,
 } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import {
@@ -13,11 +12,6 @@ import {
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-
-// size shows up when I run it, but for
-export interface VideoFileWrapper extends VideoFile {
-    size?: number
-}
 
 const RecordVideo = () => {
     const { t } = useTranslation()
@@ -42,9 +36,12 @@ const RecordVideo = () => {
 
     const format = useMemo<CameraDeviceFormat | undefined>(() => {
         return device?.formats.reduce(
-            (prev: CameraDeviceFormat, curr: CameraDeviceFormat) => {
+            (
+                prev: CameraDeviceFormat | undefined,
+                curr: CameraDeviceFormat,
+            ) => {
                 // Initialize
-                if (prev == null) return curr
+                if (prev === undefined) return curr
                 // Filter out formats that don't have video dimensions specified, or are smaller than 100 pixels
                 if (curr.videoHeight == null || curr.videoHeight < 100)
                     return prev
@@ -54,7 +51,7 @@ const RecordVideo = () => {
                 if (resolution(curr) < resolution(prev)) return curr
                 else return prev
             },
-            null,
+            undefined,
         )
     }, [device?.formats])
 
