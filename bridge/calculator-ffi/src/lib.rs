@@ -203,6 +203,9 @@ async fn handle_generate_invoice(payload: String) -> anyhow::Result<String> {
         Ok(p) => p,
         Err(_) => return Ok(rpc_error("Invalid payload")),
     };
+    if payload.amount.msats > 200000000 {
+        anyhow::bail!("Maximum invoice amount is 200,000 sats");
+    }
     let federation = get_federation(&payload.federation_id).await?;
     let invoice = federation
         .generate_invoice(payload.amount, payload.description)
