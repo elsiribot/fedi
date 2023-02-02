@@ -11,8 +11,7 @@ import {
     saveVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
-
-import dateUtils from '../../../utils/DateUtils'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
 const RecordVideo = () => {
     const { t } = useTranslation()
@@ -21,6 +20,7 @@ const RecordVideo = () => {
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const device = devices.front
+    const { toast } = useEnvironmentContext().state
     const { dispatch } = useBackupRecoveryContext()
 
     function resolution(format: CameraDeviceFormat): number {
@@ -36,9 +36,12 @@ const RecordVideo = () => {
 
     const format = useMemo<CameraDeviceFormat | undefined>(() => {
         return device?.formats.reduce(
-            (prev: CameraDeviceFormat, curr: CameraDeviceFormat) => {
+            (
+                prev: CameraDeviceFormat | undefined,
+                curr: CameraDeviceFormat,
+            ) => {
                 // Initialize
-                if (prev == null) return curr
+                if (prev === undefined) return curr
                 // Filter out formats that don't have video dimensions specified, or are smaller than 100 pixels
                 if (curr.videoHeight == null || curr.videoHeight < 100)
                     return prev
@@ -48,11 +51,9 @@ const RecordVideo = () => {
                 if (resolution(curr) < resolution(prev)) return curr
                 else return prev
             },
-            null,
+            undefined,
         )
     }, [device?.formats])
-
-    console.log('format', format)
 
     if (devices.front === undefined) return null
 
@@ -60,8 +61,11 @@ const RecordVideo = () => {
         setIsRecording(true)
         camera.current?.startRecording({
             onRecordingFinished: video => {
-                console.log(video)
-                dispatch(saveVideo(video))
+                if (video.size && video.size > 3000) {
+                    toast?.show(t('feature.backup.video-file-too-large'), 4000)
+                } else {
+                    dispatch(saveVideo(video))
+                }
             },
             onRecordingError: error => {
                 console.log(error)
@@ -76,11 +80,6 @@ const RecordVideo = () => {
         setIsRecording(false)
         camera.current?.stopRecording()
     }
-
-    const todaysDate = dateUtils.formatTimestamp(
-        Date.now() / 1000,
-        'MMMM dd, yyyy',
-    )
 
     return (
         <View style={styles(theme).container}>
@@ -126,9 +125,7 @@ const RecordVideo = () => {
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <Text medium>
-                    {t('feature.backup.social-backup-video-prompt', {
-                        date: todaysDate,
-                    })}
+                    {t('feature.backup.social-backup-video-prompt')}
                 </Text>
             </Card>
             <Pressable
@@ -209,7 +206,6 @@ const styles = (theme: Theme) =>
         },
         roundedCardContainer: {
             borderRadius: theme.borders.defaultRadius,
-            width: '100%',
             marginHorizontal: 0,
         },
     })
