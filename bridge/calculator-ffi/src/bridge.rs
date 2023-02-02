@@ -783,7 +783,21 @@ impl Federation {
         if send_event {
             self.send_transaction_event(&tx);
         }
-        self.send_federation_event().await;
+        // send balance update in the background
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn(
+                format!(
+                    "post transaction ({}) federation update for {}",
+                    tx.id,
+                    fed.name()
+                ),
+                |_| async move {
+                    fed.send_federation_event().await;
+                },
+            )
+            .await;
         // backup username
         let fed = self.clone();
         self.task_group
