@@ -28,7 +28,10 @@ const App = () => {
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
 
     async function onInitializeBridge() {
-        console.log('initializing connection to federation')
+        console.log(
+            'initializing connection to federation',
+            RNFS.DocumentDirectoryPath,
+        )
         const start = Date.now()
         await initializeBridge(RNFS.DocumentDirectoryPath)
         setBridgeIsReady(true)
