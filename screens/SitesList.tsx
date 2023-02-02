@@ -26,6 +26,7 @@ const SitesList: React.FC<Props> = ({ navigation }) => {
             <Text h2 medium h2Style={styles(theme).title}>
                 {t('words.sites')}
             </Text>
+            <Text caption>{t('feature.sites.bitcoin-sites-fedi-wallet')}</Text>
             <FlatList
                 data={SITES}
                 renderItem={renderSite}
