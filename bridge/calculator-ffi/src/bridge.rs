@@ -1326,12 +1326,13 @@ impl Federation {
     #[instrument(level = "info", skip_all, fields(fed = ?self.name()))]
     pub async fn poll_ln_refunds(&self, task_handle: TaskHandle) {
         let fed = self.clone();
-        let mut last_poll = SystemTime::now();
+        let mut last_poll = SystemTime::UNIX_EPOCH;
 
         loop {
             if task_handle.is_shutting_down() {
                 return;
             }
+
             // Run once per minute
             if last_poll.elapsed().expect("clock went backwards").as_secs() < 60 {
                 fedimint_api::task::sleep(Duration::from_secs(1)).await;
