@@ -1163,44 +1163,17 @@ impl Federation {
         Ok(None)
     }
 
-    /// Hack to figure out lowest peer id of guardian server who hasn't approved a given social recovery attempt
-    pub async fn next_peer_id(&self, recovery_id: &RecoveryId) -> Result<PeerId> {
-        let guardian_peer_ids: Vec<PeerId> = self
-            .client
-            .config()
-            .0
-            .nodes
-            .iter()
-            .enumerate()
-            .map(|(i, _)| PeerId::from(i as u16)) // FIXME: don't use "as"
-            .collect();
-        let mut approvals = 0;
-        for peer_id in guardian_peer_ids {
-            let mut verification_client = self.client.social_verification(peer_id);
-            if verification_client
-                .decryption_share_exists(recovery_id)
-                .await?
-            {
-                approvals += 1;
-            }
-        }
-        Ok(PeerId::from(approvals as u16))
-    }
-
     /// Approve social recovery request. Currently hard-codes guardian authentication credentials.
-    pub async fn approve_social_recovery_request(&self, recovery_id: &RecoveryId) -> Result<()> {
-        let next_peer_id = self.next_peer_id(recovery_id).await?;
-        tracing::info!("approve social recovery {}", next_peer_id);
-        let verification_client = self.client.social_verification(next_peer_id);
-        let admin_password = match next_peer_id.to_usize() {
-            0 => "1111",
-            1 => "2222",
-            2 => "3333",
-            3 => "4444",
-            _ => panic!("invalid peer id"),
-        };
+    pub async fn approve_social_recovery_request(
+        &self,
+        recovery_id: &RecoveryId,
+        peer_id: PeerId,
+        password: &str,
+    ) -> Result<()> {
+        tracing::info!("approve social recovery {} {}", peer_id, password);
+        let verification_client = self.client.social_verification(peer_id);
         verification_client
-            .approve_recovery(*recovery_id, admin_password)
+            .approve_recovery(*recovery_id, password)
             .await?;
         Ok(())
     }
