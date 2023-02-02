@@ -107,7 +107,7 @@
             "social-backup-instructions": "Grabar un vídeo para probar tu identidad. Esta opción es la mejor si conoces bien a tus tutores.",
             "social-backup-processing-info-1": "Este archivo de recuperación contiene tu vídeo de copia de seguridad y detalles sobre tu Federación.",
             "social-backup-processing-info-2": "Este archivo solo no se puede utilizar para recuperar tu dinero, ya que los tutores comprobarán tu identidad en ese momento de recuperación",
-            "social-backup-video-prompt": "Hoy es {{date}}. Este vídeo me ayudará a recuperar mi cartera.",
+            "social-backup-video-prompt": "Fedi!",
             "start-personal-backup": "Comenzar copia de seguridad personal",
             "start-personal-backup-instructions": "Coge un bolígrafo y un papel y escribe las palabras de recuperación en la siguiente pantalla.",
             "start-recording": "Comenzar a grabar",
