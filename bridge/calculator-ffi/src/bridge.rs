@@ -798,18 +798,6 @@ impl Federation {
                 },
             )
             .await;
-        // backup username
-        let fed = self.clone();
-        self.task_group
-            .clone()
-            .spawn(format!("{} ecash backup", self.name()), |_| async move {
-                info!("starting ecash backup");
-                match fed.back_up_ecash_to_federation().await {
-                    Ok(_) => info!("ecash backup successful"),
-                    Err(e) => info!("ecash backup failed {:?}", e),
-                }
-            })
-            .await;
     }
 
     /// Get transaction from DB
