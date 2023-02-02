@@ -39,6 +39,7 @@ export type Site = {
     url: string
     title: string
     description: string
+    color?: string
 }
 
 // This is an implementation of an opaque type

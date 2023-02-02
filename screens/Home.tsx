@@ -68,6 +68,10 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                             return (
                                 <SvgImage
                                     name="Wallet"
+                                    containerStyle={
+                                        styles(theme, insets)
+                                            .tabBarIconContainer
+                                    }
                                     svgProps={{
                                         stroke: focused
                                             ? theme.colors.primary
@@ -79,6 +83,10 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                             return (
                                 <SvgImage
                                     name="Chat"
+                                    containerStyle={
+                                        styles(theme, insets)
+                                            .tabBarIconContainer
+                                    }
                                     svgProps={{
                                         stroke: focused
                                             ? theme.colors.primary
@@ -90,6 +98,10 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                             return (
                                 <SvgImage
                                     name="Globe"
+                                    containerStyle={
+                                        styles(theme, insets)
+                                            .tabBarIconContainer
+                                    }
                                     svgProps={{
                                         stroke: focused
                                             ? theme.colors.primary
@@ -101,6 +113,10 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                             return (
                                 <SvgImage
                                     name="Cog"
+                                    containerStyle={
+                                        styles(theme, insets)
+                                            .tabBarIconContainer
+                                    }
                                     svgProps={{
                                         stroke: focused
                                             ? theme.colors.primary
@@ -115,7 +131,9 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 tabBarActiveTintColor: theme.colors.primary,
                 tabBarInactiveTintColor: theme.colors.primaryLight,
                 tabBarStyle: styles(theme, insets).tabBar,
+                tabBarItemStyle: styles(theme, insets).tabBarItem,
                 headerTitleStyle: theme.components.Text.style,
+                tabBarLabelStyle: styles(theme, insets).tabBarLabel,
             })}>
             <Tab.Screen
                 name="Wallet"
@@ -174,18 +192,20 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         tabBar: {
             backgroundColor: theme.colors.secondary,
-            paddingBottom: 10 + insets.bottom,
-            height: 63 + insets.bottom,
+            height: theme.sizes.tabBarHeight + insets.bottom,
+            // hides the default top border on nav
+            borderColor: 'transparent',
+            elevation: 0,
         },
-        image: {
-            height: 32,
-            width: 120,
-            color: theme.colors.grey,
-            resizeMode: 'contain',
+        tabBarLabel: {
+            fontFamily: 'AlbertSans-Bold',
         },
-        iconImage: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
+        tabBarIconContainer: {
+            paddingBottom: theme.spacing.xs,
+            marginTop: 'auto',
+        },
+        tabBarItem: {
+            paddingBottom: theme.spacing.lg,
         },
         row: {
             flexDirection: 'row',

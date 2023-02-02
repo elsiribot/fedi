@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import UsdAmount from '../components/feature/wallet/UsdAmount'
+import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
@@ -28,7 +29,12 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const isNumeric = /^-?\d+$/.test(amount)
 
-        if (amount === '' || amount === '0' || isNumeric === false) {
+        if (
+            amount === '' ||
+            amount === '0' ||
+            isNumeric === false ||
+            Number(amount) > MAX_INVOICE_AMOUNT_SATS
+        ) {
             setAmountIsValid(false)
         } else {
             setAmountIsValid(true)
@@ -62,6 +68,11 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }, [invoice, navigation])
 
     const onChangeText = (updatedValue: SatsString) => {
+        if (Number(updatedValue) > MAX_INVOICE_AMOUNT_SATS) {
+            toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
+        } else {
+            toast?.close(0)
+        }
         setAmount(updatedValue)
     }
 

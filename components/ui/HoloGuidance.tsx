@@ -1,4 +1,4 @@
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Text, TextProps, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { ImageBackground, StyleSheet, View } from 'react-native'
 
@@ -7,17 +7,41 @@ import { Images } from '../../assets/images'
 type HoloGuidanceProps = {
     iconImage?: React.ReactNode | null
     title?: string | null
+    titleProps: TextProps | null
     message?: string | null
     body?: React.ReactNode | null
+}
+
+const DEFAULT_TITLE_PROPS = {
+    h2: true,
+    style: {},
 }
 
 const HoloGuidance: React.FC<HoloGuidanceProps> = ({
     iconImage = null,
     title,
+    titleProps = DEFAULT_TITLE_PROPS,
     message,
     body,
 }: HoloGuidanceProps) => {
     const { theme } = useTheme()
+
+    const mergedTitleProps = {
+        ...titleProps,
+    }
+    // Annoying RNE makes us use h2Style instead of style to apply these
+    // if an h2 prop is used
+    if (titleProps?.h2) {
+        mergedTitleProps.h2Style = [
+            styles(theme).title,
+            titleProps.style ? titleProps.style : {},
+        ]
+    } else {
+        mergedTitleProps.style = [
+            styles(theme).title,
+            titleProps?.style ? titleProps.style : {},
+        ]
+    }
 
     return (
         <View style={styles(theme).container}>
@@ -31,9 +55,7 @@ const HoloGuidance: React.FC<HoloGuidanceProps> = ({
                 body
             ) : (
                 <>
-                    <Text h2 h2Style={styles(theme).title}>
-                        {title}
-                    </Text>
+                    <Text {...mergedTitleProps}>{title}</Text>
                     <Text style={styles(theme).message}>{message}</Text>
                 </>
             )}
@@ -50,7 +72,7 @@ const styles = (theme: Theme) =>
         },
         title: {
             textAlign: 'center',
-            marginVertical: theme.spacing.md,
+            marginVertical: theme.spacing.lg,
         },
         message: {
             textAlign: 'center',

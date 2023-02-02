@@ -21,6 +21,15 @@ export function resetAfterPersonalRecovery() {
     }
 }
 
+export function resetAfterFailedSocialRecovery() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'SocialRecoveryFailure' }],
+        }),
+    }
+}
+
 export function resetAfterSocialRecovery() {
     return {
         ...CommonActions.reset({

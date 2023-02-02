@@ -22,29 +22,34 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
 }: RequestCameraAccessProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [permissionsGranted, setPermissionsGranted] = useState<string[]>([])
+    const [cameraPermissionGranted, setCameraPermissionGranted] =
+        useState<Boolean>(false)
+    const [microphonePermissionGranted, setMicrophonePermissionGranted] =
+        useState<Boolean>(false)
 
     useEffect(() => {
         if (
             requireMicrophone === true &&
-            permissionsGranted.includes('CAMERA') &&
-            permissionsGranted.includes('MICROPHONE')
+            cameraPermissionGranted &&
+            microphonePermissionGranted
         ) {
             onAccessGranted && onAccessGranted()
         }
-        if (
-            requireMicrophone === false &&
-            permissionsGranted.includes('CAMERA')
-        ) {
+        if (requireMicrophone === false && cameraPermissionGranted) {
             onAccessGranted && onAccessGranted()
         }
-    }, [onAccessGranted, permissionsGranted, requireMicrophone])
+    }, [
+        onAccessGranted,
+        cameraPermissionGranted,
+        microphonePermissionGranted,
+        requireMicrophone,
+    ])
 
     const requestCameraPermission = async () => {
         const requestResult = await Camera.requestCameraPermission()
         console.info('cameraRequestResult: ', requestResult)
         if (requestResult === 'authorized') {
-            setPermissionsGranted([...permissionsGranted, 'CAMERA'])
+            setCameraPermissionGranted(true)
         }
 
         const status = await Camera.getCameraPermissionStatus()
@@ -59,7 +64,7 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
         const requestResult = await Camera.requestMicrophonePermission()
         console.info('microphoneRequestResult: ', requestResult)
         if (requestResult === 'authorized') {
-            setPermissionsGranted([...permissionsGranted, 'MICROPHONE'])
+            setMicrophonePermissionGranted(true)
         }
 
         const status = await Camera.getMicrophonePermissionStatus()

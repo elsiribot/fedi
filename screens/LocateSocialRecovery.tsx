@@ -38,12 +38,6 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                                     'feature.recovery.locate-social-recovery-instructions-1',
                                 )}
                             </Text>
-                            <LineBreak />
-                            <Text>
-                                {t(
-                                    'feature.recovery.locate-social-recovery-instructions-2',
-                                )}
-                            </Text>
                             <Text>
                                 {'  \u2022 '}
                                 {t(
@@ -75,12 +69,7 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                                 )}
                             </Text>
                             <Text bold>
-                                {t(
-                                    'feature.recovery.default-fedi-file-format',
-                                    {
-                                        federation: selectedFederation?.name,
-                                    },
-                                )}
+                                {t('feature.recovery.default-fedi-file-format')}
                             </Text>
                             <LineBreak />
                         </View>

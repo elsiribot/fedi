@@ -1,15 +1,17 @@
 import { Card, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useRef, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
-import type { CameraDevice } from 'react-native-vision-camera'
+import { Platform, Pressable, StyleSheet, View } from 'react-native'
+import type {
+    CameraDevice,
+    CameraDeviceFormat,
+} from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import {
     saveVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
-
-import dateUtils from '../../../utils/DateUtils'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
 const RecordVideo = () => {
     const { t } = useTranslation()
@@ -18,15 +20,53 @@ const RecordVideo = () => {
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const device = devices.front
+    const { toast } = useEnvironmentContext().state
     const { dispatch } = useBackupRecoveryContext()
+
+    function resolution(format: CameraDeviceFormat): number {
+        return format.videoWidth * format.videoWidth
+    }
+
+    function supports15Fpx(format: CameraDeviceFormat): boolean {
+        return format.frameRateRanges.reduce((prev, curr) => {
+            if (curr.maxFrameRate >= 15 && curr.minFrameRate <= 15) return true
+            else return prev
+        }, false)
+    }
+
+    const format = useMemo<CameraDeviceFormat | undefined>(() => {
+        return device?.formats.reduce(
+            (
+                prev: CameraDeviceFormat | undefined,
+                curr: CameraDeviceFormat,
+            ) => {
+                // Initialize
+                if (prev === undefined) return curr
+                // Filter out formats that don't have video dimensions specified, or are smaller than 100 pixels
+                if (curr.videoHeight == null || curr.videoHeight < 100)
+                    return prev
+                // Filter out formats that don't support 15 frames-per-second
+                if (!supports15Fpx(curr)) return prev
+                // Find the smallest resolution
+                if (resolution(curr) < resolution(prev)) return curr
+                else return prev
+            },
+            undefined,
+        )
+    }, [device?.formats])
 
     if (devices.front === undefined) return null
 
     const startRecording = async () => {
         setIsRecording(true)
-        console.log('codecs', await camera.current?.getAvailableVideoCodecs())
         camera.current?.startRecording({
-            onRecordingFinished: video => dispatch(saveVideo(video)),
+            onRecordingFinished: video => {
+                if (video.size && video.size > 3000) {
+                    toast?.show(t('feature.backup.video-file-too-large'), 4000)
+                } else {
+                    dispatch(saveVideo(video))
+                }
+            },
             onRecordingError: error => {
                 console.log(error)
             },
@@ -41,11 +81,6 @@ const RecordVideo = () => {
         camera.current?.stopRecording()
     }
 
-    const todaysDate = dateUtils.formatTimestamp(
-        Date.now() / 1000,
-        'MMMM dd, yyyy',
-    )
-
     return (
         <View style={styles(theme).container}>
             <View
@@ -55,15 +90,30 @@ const RecordVideo = () => {
                         ? styles(theme).recordingActive
                         : styles(theme).recordingInactive,
                 ]}>
-                <Camera
-                    style={styles(theme).camera}
-                    ref={camera}
-                    device={device as CameraDevice}
-                    isActive={true}
-                    video={true}
-                    audio={true}
-                    preset="medium"
-                />
+                {Platform.OS === 'android' && (
+                    <Camera
+                        style={styles(theme).camera}
+                        ref={camera}
+                        device={device as CameraDevice}
+                        isActive={true}
+                        video={true}
+                        audio={true}
+                        format={format}
+                        fps={15}
+                        hdr={false}
+                    />
+                )}
+                {Platform.OS === 'ios' && (
+                    <Camera
+                        style={styles(theme).camera}
+                        ref={camera}
+                        device={device as CameraDevice}
+                        isActive={true}
+                        video={true}
+                        audio={true}
+                        preset="medium"
+                    />
+                )}
             </View>
             <Text
                 h2
@@ -75,9 +125,7 @@ const RecordVideo = () => {
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <Text medium>
-                    {t('feature.backup.social-backup-video-prompt', {
-                        date: todaysDate,
-                    })}
+                    {t('feature.backup.social-backup-video-prompt')}
                 </Text>
             </Card>
             <Pressable
@@ -158,7 +206,6 @@ const styles = (theme: Theme) =>
         },
         roundedCardContainer: {
             borderRadius: theme.borders.defaultRadius,
-            width: '100%',
             marginHorizontal: 0,
         },
     })

@@ -12,7 +12,7 @@ const CommunityHeader: React.FC<{}> = () => {
             leftContainerStyle={{ flex: 6 }}
             headerLeft={
                 <Text h2 medium>
-                    {t('words.community')}
+                    {t('words.chat')}
                 </Text>
             }
         />
