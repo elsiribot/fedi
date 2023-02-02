@@ -186,9 +186,14 @@ export class BridgeEventEmitter {
     }
 }
 
-export type Node = {
+export class Node extends Base {
     name: string
     url: string
+}
+
+export class Guardian extends Node {
+    peerId: number
+    password: string
 }
 
 export class Federation extends Base {
