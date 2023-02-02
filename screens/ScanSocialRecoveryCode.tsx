@@ -1,7 +1,7 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
@@ -23,20 +23,25 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { socialRecoveryDownloadVerificationDoc } = useBridge()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
+    const [downloading, setDownloading] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
         async (input: string) => {
+            if (downloading) return
             try {
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
                 try {
+                    setDownloading(true)
                     // FIXME: this is getting called over-and-over
                     let videoPath = await socialRecoveryDownloadVerificationDoc(
                         qr.recoveryId,
                     )
                     if (videoPath == null) {
-                        toast?.show(t('nothing-to-download'), 3000)
+                        toast?.show(
+                            t('feature.recovery.nothing-to-download'),
+                            3000,
+                        )
                     } else {
-                        console.log('todo: navigtate')
                         navigation.navigate('CompleteRecoveryAssist', {
                             videoPath: videoPath as string,
                             recoveryId: qr.recoveryId,
@@ -52,8 +57,15 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
             console.log(input)
+            setDownloading(false)
         },
-        [navigation, toast, t, socialRecoveryDownloadVerificationDoc],
+        [
+            downloading,
+            navigation,
+            toast,
+            t,
+            socialRecoveryDownloadVerificationDoc,
+        ],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -65,8 +77,12 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const device = devices.back
 
     const renderQrCodeScanner = () => {
-        if (device == null) {
-            return <ActivityIndicator />
+        if (downloading || device == null) {
+            return (
+                <View style={styles(theme).activityIndicator}>
+                    <ActivityIndicator />
+                </View>
+            )
         } else {
             return (
                 <QrCodeScanner
@@ -96,7 +112,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
-                <Button
+                {/* <Button
                     title={t('feature.recovery.paste-social-recovery-code')}
                     // TODO: Swap commented code when bridge is ready
                     // onPress={checkClipboard}
@@ -105,7 +121,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                             'socialrecovery::pubkey::http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
                         )
                     }
-                />
+                /> */}
             </View>
         </CameraPermissionsRequired>
     )
@@ -113,13 +129,16 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        activityIndicator: {
+            marginVertical: 'auto',
+        },
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
         },
         cameraScannerContainer: {
-            height: '80%',
+            height: '100%',
             width: '100%',
             margin: theme.spacing.lg,
         },
