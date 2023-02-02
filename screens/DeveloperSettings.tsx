@@ -3,12 +3,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 
-import { LightningGateway } from '../bridge'
+import { Guardian, LightningGateway } from '../bridge'
 import {
+    AUTHENTICATED_GUARDIAN_DB_KEY,
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
@@ -22,6 +23,7 @@ import {
 } from '../state/contexts/CommunityContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
+    changeAuthenticatedGuardian,
     resetFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
@@ -37,7 +39,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
-    const { dispatch: federationsDispatch } = useFederationsContext()
+    const { state, dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
     const { toast } = useEnvironmentContext().state
     const { sendTestXml } = useXmpp()
@@ -86,7 +88,7 @@ const DeveloperSettings: React.FC<Props> = () => {
 
     if (isLoading) return <ActivityIndicator />
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <Text>Change your lightning gateway</Text>
             {gateways.map((gw: LightningGateway) => (
                 <View>
@@ -199,20 +201,74 @@ const DeveloperSettings: React.FC<Props> = () => {
                     shareLogs()
                 }}
             />
-        </View>
+            <View style={styles(theme).guardians}>
+                <Text>{'Select a node to simulate Guardian Mode'}</Text>
+                <CheckBox
+                    title={
+                        <Text
+                            caption
+                            style={{
+                                color:
+                                    state.authenticatedGuardian == null
+                                        ? theme.colors.primary
+                                        : theme.colors.red,
+                            }}>
+                            {state.authenticatedGuardian == null
+                                ? 'None'
+                                : 'Reset'}
+                        </Text>
+                    }
+                    checked={state.authenticatedGuardian == null}
+                    checkedIcon="circle"
+                    uncheckedIcon="circle"
+                    checkedColor={theme.colors.lightGrey}
+                    uncheckedColor={theme.colors.red}
+                    onPress={() => {
+                        federationsDispatch(changeAuthenticatedGuardian(null))
+                        AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
+                    }}
+                />
+                {state.selectedFederation?.nodes.map((n, i) => {
+                    const guardian = new Guardian({
+                        ...n,
+                        peerId: i,
+                        password: `${i + 1}${i + 1}${i + 1}${i + 1}`,
+                    })
+                    return (
+                        <CheckBox
+                            title={<Text caption>{guardian.name}</Text>}
+                            checked={
+                                state.authenticatedGuardian?.name ===
+                                guardian.name
+                            }
+                            onPress={() => {
+                                federationsDispatch(
+                                    changeAuthenticatedGuardian(guardian),
+                                )
+                            }}
+                        />
+                    )
+                })}
+            </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
+            padding: theme.spacing.xl,
         },
         checkboxText: {
             paddingHorizontal: theme.spacing.md,
             textAlign: 'left',
+        },
+        guardians: {
+            paddingTop: theme.spacing.lg,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
         },
     })
 
