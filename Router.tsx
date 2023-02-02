@@ -1,7 +1,7 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { useTheme } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
 import BitcoinRequest from './screens/BitcoinRequest'
@@ -93,6 +93,7 @@ import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 
 import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
+import Header from './components/ui/Header'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -563,7 +564,18 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="DeveloperSettings"
                                 component={DeveloperSettings}
-                                options={{ headerShown: false }}
+                                options={() => ({
+                                    header: () => (
+                                        <Header
+                                            backButton
+                                            headerCenter={
+                                                <Text>
+                                                    {'Developer Settings'}
+                                                </Text>
+                                            }
+                                        />
+                                    ),
+                                })}
                             />
                         </Stack.Group>
                         {/* Put all Overlay/Modal screens here */}

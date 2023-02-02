@@ -85,9 +85,11 @@ export const useBridge = () => {
             [selectedFederationId],
         ),
         approveSocialRecoveryRequest: useCallback(
-            (recoveryId: string) => {
+            (recoveryId: string, peerId: number, password: string) => {
                 return approveSocialRecoveryRequest(
                     recoveryId,
+                    peerId,
+                    password,
                     selectedFederationId!,
                 )
             },

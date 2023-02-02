@@ -3,7 +3,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, ScrollView, StyleSheet, View } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import { listFederations } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -21,7 +21,10 @@ import {
     receiveMessages,
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import {
+    changeDeveloperMode,
+    useEnvironmentContext,
+} from '../state/contexts/EnvironmentContext'
 import {
     updateFederations,
     useFederationsContext,
@@ -40,15 +43,14 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { leaveFederation } = useBridge()
-    const { state, dispatch: federationsDispatch } = useFederationsContext()
+    const { state: environmentState, dispatch: environmentDispatch } =
+        useEnvironmentContext()
+    const { state: federationsState, dispatch: federationsDispatch } =
+        useFederationsContext()
     const { dispatch: communityDispatch } = useCommunityContext()
     const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = state
-    const [userIsGuardian, setUserIsGuardian] = useState(false)
-
-    const simulateGuardianAuthentication = async () => {
-        setUserIsGuardian(true)
-    }
+    const { selectedFederation } = federationsState
+    const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
     const resetCommunityState = () => {
         communityDispatch(receiveMembersSeen([]))
@@ -181,7 +183,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                         })
                     }}
                 />
-                {userIsGuardian ? (
+                {federationsState.authenticatedGuardian !== null && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
                         label={t('feature.recovery.recovery-assist')}
@@ -189,14 +191,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                             navigation.navigate('StartRecoveryAssist')
                         }}
                     />
-                ) : (
-                    <SettingsItem
-                        image={<SvgImage name="FediLogoIcon" />}
-                        label={'DEV: Activate Guardian Mode'}
-                        onPress={simulateGuardianAuthentication}
-                    />
                 )}
-
                 <SettingsItem
                     image={<SvgImage name="LeaveFederation" />}
                     label={t('feature.federations.leave-federation')}
@@ -219,19 +214,29 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 />
             </View>
             <View>
-                <Text style={styles(theme).sectionTitle}>
-                    {t('words.general')}
-                </Text>
+                <Pressable
+                    onPress={() => {
+                        setUnlockDevModeCount(unlockDevModeCount + 1)
+                        if (unlockDevModeCount > 10) {
+                            environmentDispatch(changeDeveloperMode(true))
+                        }
+                    }}>
+                    <Text style={styles(theme).sectionTitle}>
+                        {t('words.general')}
+                    </Text>
+                </Pressable>
+                {environmentState.developerMode && (
+                    <SettingsItem
+                        image={<SvgImage name="FediLogoIcon" />}
+                        label={'Developer Settings'}
+                        onPress={() => navigation.navigate('DeveloperSettings')}
+                    />
+                )}
                 <SettingsItem
                     disabled
                     image={<SvgImage name="FediLogoIcon" />}
                     label={t('phrases.app-settings-security')}
-                    onPress={confirmLeaveFederation}
-                />
-                <SettingsItem
-                    image={<SvgImage name="FediLogoIcon" />}
-                    label={'Developer Settings'}
-                    onPress={() => navigation.navigate('DeveloperSettings')}
+                    onPress={() => {}}
                 />
             </View>
         </ScrollView>

@@ -186,9 +186,14 @@ export class BridgeEventEmitter {
     }
 }
 
-export type Node = {
+export class Node extends Base {
     name: string
     url: string
+}
+
+export class Guardian extends Node {
+    peerId: number
+    password: string
 }
 
 export class Federation extends Base {
@@ -464,11 +469,15 @@ export async function denySocialRecoveryRequest(
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
 export async function approveSocialRecoveryRequest(
     recoveryId: string,
+    peerId: number,
+    password: string,
     federationId: string,
 ): Promise<null> {
     return fedimintRpc('approveSocialRecoveryRequest', {
-        federationId,
         recoveryId,
+        peerId,
+        password,
+        federationId,
     })
 }
 

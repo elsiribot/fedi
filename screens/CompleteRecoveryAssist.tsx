@@ -1,12 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -21,33 +22,51 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
 }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { approveSocialRecoveryRequest, denySocialRecoveryRequest } =
-        useBridge()
+    const { approveSocialRecoveryRequest } = useBridge()
+    const { authenticatedGuardian } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
     const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
     const [approvalSelected, setApprovalSelected] = useState(false)
     const [denialSelected, setDenialSelected] = useState(false)
-    const [approving, setApproving] = useState(false)
+    const [approvalInProgress, setApprovalInProgress] = useState(false)
     const videoRef = useRef<Video | null>(null)
-
-    const handleGuardianApproval = async () => {
-        try {
-            setApproving(true)
-            await approveSocialRecoveryRequest(recoveryId)
-            navigation.replace('RecoveryAssistSuccess')
-        } catch (error) {
-            const typedError = error as Error
-            console.error(typedError)
-            toast?.show(typedError?.message, 3000)
-        }
-        setApproving(false)
-    }
 
     const handleGuardianDenial = async () => {
         // FIXME: seeing a success screen when you deny someone is a little unexpected
         navigation.replace('RecoveryAssistSuccess')
     }
+
+    useEffect(() => {
+        const handleGuardianApproval = async () => {
+            try {
+                // FIXME: hard-coded to be peerId 0 each time.
+                if (authenticatedGuardian) {
+                    await approveSocialRecoveryRequest(
+                        recoveryId,
+                        authenticatedGuardian.peerId,
+                        authenticatedGuardian.password,
+                    )
+                    navigation.replace('RecoveryAssistSuccess')
+                }
+            } catch (error) {
+                const typedError = error as Error
+                console.error(typedError)
+                toast?.show(typedError?.message, 3000)
+            }
+            setApprovalInProgress(false)
+        }
+        if (approvalInProgress === true) {
+            handleGuardianApproval()
+        }
+    }, [
+        approvalInProgress,
+        approveSocialRecoveryRequest,
+        authenticatedGuardian,
+        navigation,
+        recoveryId,
+        toast,
+    ])
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -144,12 +163,12 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 title={t('words.continue')}
                 onPress={() => {
                     if (approvalSelected) {
-                        handleGuardianApproval()
+                        setApprovalInProgress(true)
                     } else {
                         handleGuardianDenial()
                     }
                 }}
-                loading={approving}
+                loading={approvalInProgress}
                 disabled={!approvalSelected && !denialSelected}
                 containerStyle={styles(theme).confirmButton}
             />

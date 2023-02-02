@@ -13,6 +13,7 @@ export const FEDERATION_SIGNET =
     '{"members":[[0,"wss://fm-signet.sirion.io:443"]]}'
 
 export const TEST_FEDERATION = FEDERATION_ALPHA
+export const AUTHENTICATED_GUARDIAN_DB_KEY = 'AUTHENTICATED_GUARDIAN_DB_KEY'
 export const SELECTED_FEDERATION_ID_DB_KEY = 'SELECTED_FEDERATION_ID_DB_KEY'
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
