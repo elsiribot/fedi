@@ -196,7 +196,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     })
                                 } catch (error) {
                                     setLoading(false)
-                                    console.log('pay failed')
+                                    console.log('pay failed', error)
                                     toast?.show((error as Error).message, 3000)
                                     reject()
                                 }

@@ -13,6 +13,7 @@ export const FEDERATION_SIGNET =
     '{"members":[[0,"wss://fm-signet.sirion.io:443"]]}'
 
 export const TEST_FEDERATION = FEDERATION_ALPHA
+export const AUTHENTICATED_GUARDIAN_DB_KEY = 'AUTHENTICATED_GUARDIAN_DB_KEY'
 export const SELECTED_FEDERATION_ID_DB_KEY = 'SELECTED_FEDERATION_ID_DB_KEY'
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
 export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
@@ -50,6 +51,8 @@ export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     pinned: true,
     messagePreview: i18n.t('feature.community.money-changing-message-preview'),
 })
+
+export const MAX_INVOICE_AMOUNT_SATS = 200000
 
 export const SITES = [
     // TODO: Show only for regtest federations
@@ -101,13 +104,6 @@ export const SITES = [
         url: 'https://btcmap.org/map',
         description: 'See where bitcoin is being used all over the world',
         color: 'rgba(227, 235, 237, 0.5)',
-    },
-    {
-        id: 'fedicr',
-        title: 'Fedi Costa Rica',
-        url: 'https://www.fedi.xyz/cr',
-        description:
-            'Get information about workshops, the federation, the app and more',
     },
     {
         id: 'fedifeedback',

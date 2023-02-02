@@ -8,6 +8,7 @@ import { ImageBackground, StyleSheet } from 'react-native'
 import { Images } from '../assets/images'
 import { listFederations } from '../bridge'
 import {
+    AUTHENTICATED_GUARDIAN_DB_KEY,
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
@@ -20,6 +21,7 @@ import {
     useCommunityContext,
 } from '../state/contexts/CommunityContext'
 import {
+    changeAuthenticatedGuardian,
     updateFederationCredentials,
     updateFederations,
     updateSelectedFederationId,
@@ -150,6 +152,27 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                             if (selectedFederation.username) {
                                 setUsernameToRestore(
                                     selectedFederation.username,
+                                )
+                            }
+                            // load selected federation id from async storage
+                            const savedGuardian = await AsyncStorage.getItem(
+                                AUTHENTICATED_GUARDIAN_DB_KEY,
+                            )
+                            const savedGuardianJson = savedGuardian
+                                ? JSON.parse(savedGuardian)
+                                : null
+
+                            if (savedGuardianJson) {
+                                const { authenticatedGuardian } =
+                                    savedGuardianJson
+                                console.info(
+                                    'restoring guardian',
+                                    authenticatedGuardian?.name,
+                                )
+                                federationsDispatch(
+                                    changeAuthenticatedGuardian(
+                                        authenticatedGuardian,
+                                    ),
                                 )
                             }
                         }

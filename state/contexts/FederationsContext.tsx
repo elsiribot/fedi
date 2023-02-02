@@ -8,13 +8,22 @@ import React, {
     useReducer,
 } from 'react'
 
-import { BridgeEventEmitter, Federation, FederationEvent } from '../../bridge'
-import { SELECTED_FEDERATION_ID_DB_KEY } from '../../constants'
+import {
+    BridgeEventEmitter,
+    Federation,
+    FederationEvent,
+    Guardian,
+} from '../../bridge'
+import {
+    AUTHENTICATED_GUARDIAN_DB_KEY,
+    SELECTED_FEDERATION_ID_DB_KEY,
+} from '../../constants'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
     federations: Federation[]
     selectedFederationId: string | null
+    authenticatedGuardian: Guardian | null
 }
 
 // We compute the selectedFederation here based on selectedFederationId
@@ -25,11 +34,13 @@ interface ComputedFederationsContextState extends FederationsContextState {
 const initialState: FederationsContextState = {
     federations: [],
     selectedFederationId: null,
+    authenticatedGuardian: null,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
+    CHANGE_AUTHENTICATED_GUARDIAN = 'CHANGE_AUTHENTICATED_GUARDIAN',
     UPDATE_SELECTED_FEDERATION_ID = 'UPDATE_SELECTED_FEDERATION_ID',
     // FIXME: we could just send null with ^^ instead ... or infer it when updated
     // with federation list of []
@@ -53,6 +64,12 @@ type BaseContext = {
 export const FederationsContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
+export function changeAuthenticatedGuardian(guardian: Guardian | null): Action {
+    return {
+        type: ActionType.CHANGE_AUTHENTICATED_GUARDIAN,
+        payload: guardian,
+    }
+}
 export function updateSelectedFederationId(
     federationId: null | string,
 ): Action {
@@ -101,6 +118,11 @@ export function resetFederationsState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
+        case ActionType.CHANGE_AUTHENTICATED_GUARDIAN:
+            return {
+                ...state,
+                authenticatedGuardian: action.payload,
+            }
         case ActionType.UPDATE_SELECTED_FEDERATION_ID:
             // TODO: sanity check that such a federation exists
             return {
@@ -227,6 +249,23 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
             )
         }
     }, [state])
+
+    // Persist authenticatedGuardian state
+    useEffect(() => {
+        console.info(
+            'useEffect authenticatedGuardian',
+            state.authenticatedGuardian,
+        )
+        if (state.authenticatedGuardian != null) {
+            console.info('saving guardian', state.authenticatedGuardian.name)
+            AsyncStorage.setItem(
+                AUTHENTICATED_GUARDIAN_DB_KEY,
+                JSON.stringify({
+                    authenticatedGuardian: state.authenticatedGuardian,
+                }),
+            )
+        }
+    }, [state.authenticatedGuardian])
 
     return (
         <FederationsContext.Provider value={{ ...providerValue }} {...props} />

@@ -18,7 +18,7 @@ const SocialBackupHeader: React.FC<SocialBackupHeaderProps> = ({
     return (
         <Header
             backButton={backButton}
-            headerCenter={<Text bold>{t('feature.backup.social-backup')}</Text>}
+            headerCenter={<Text bold>{t('feature.backup.file-backup')}</Text>}
             closeButton={closeButton}
         />
     )

@@ -24,7 +24,10 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
-import { resetAfterSocialRecovery } from '../state/navigation'
+import {
+    resetAfterFailedSocialRecovery,
+    resetAfterSocialRecovery,
+} from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -62,6 +65,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             } catch (error) {
                 const typedError = error as Error
                 toast?.show(typedError?.message, 3000)
+                navigation.dispatch(resetAfterFailedSocialRecovery())
             }
         }
 
@@ -82,20 +86,24 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
-                const _approvals = await socialRecoveryApprovals()
-                setApprovals(_approvals)
+                if (recovering === false && recoveryQrCode) {
+                    const _approvals = await socialRecoveryApprovals()
+                    setApprovals(_approvals)
+                }
             } catch (e) {
                 toast?.show('Failed to fetch guardian approval', 3000)
                 console.log('failed to get approvals', e)
             }
         }, 1000)
 
-        if (recovering) {
-            clearInterval(interval)
-        } else {
-            return () => clearInterval(interval)
-        }
-    }, [toast, recovering, socialRecoveryApprovals, setApprovals])
+        return () => clearInterval(interval)
+    }, [
+        toast,
+        recovering,
+        recoveryQrCode,
+        socialRecoveryApprovals,
+        setApprovals,
+    ])
 
     useEffect(() => {
         const emitter = new BridgeEventEmitter()

@@ -1,12 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
-import HoloCard from '../components/ui/HoloCard'
-import SvgImage from '../components/ui/SvgImage'
+import HoloGuidance from '../components/ui/HoloGuidance'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import {
     completeSocialBackup,
     useBackupRecoveryContext,
@@ -47,47 +47,41 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
-            <HoloCard
-                iconImage={<SvgImage name="FediFile" />}
+            <HoloGuidance
+                iconImage={<SvgImage name="FediFile" size={SvgImageSize.lg} />}
                 title={t('feature.backup.save-your-wallet-backup-file')}
-                body={
-                    <>
-                        <View>
-                            <Text>
-                                {t(
-                                    'feature.backup.save-your-wallet-backup-file-where',
-                                )}
-                            </Text>
-                        </View>
-                    </>
-                }
+                titleProps={{ bold: true }}
+                message={t('feature.backup.save-your-wallet-backup-file-where')}
             />
-            {backupsCompleted > 0 && (
+            <View style={styles(theme).buttonsContainer}>
+                {backupsCompleted > 0 && (
+                    <Button
+                        fullWidth
+                        type="clear"
+                        title={t(
+                            'feature.backup.save-your-wallet-backup-file-again',
+                        )}
+                        onPress={createBackup}
+                    />
+                )}
                 <Button
                     fullWidth
-                    type="clear"
-                    title={t(
-                        'feature.backup.save-your-wallet-backup-file-again',
-                    )}
-                    onPress={createBackup}
-                />
-            )}
-            <Button
-                title={
-                    backupsCompleted === 0
-                        ? t('feature.backup.save-file')
-                        : t('words.complete')
-                }
-                containerStyle={styles(theme).completeButton}
-                onPress={() => {
-                    if (backupsCompleted === 0) {
-                        createBackup()
-                    } else {
-                        dispatch(completeSocialBackup())
-                        navigation.navigate('SocialBackupSuccess')
+                    title={
+                        backupsCompleted === 0
+                            ? t('feature.backup.save-file')
+                            : t('words.complete')
                     }
-                }}
-            />
+                    containerStyle={styles(theme).saveFileButton}
+                    onPress={() => {
+                        if (backupsCompleted === 0) {
+                            createBackup()
+                        } else {
+                            dispatch(completeSocialBackup())
+                            navigation.navigate('SocialBackupSuccess')
+                        }
+                    }}
+                />
+            </View>
         </ScrollView>
     )
 }
@@ -95,13 +89,19 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
         },
-        completeButton: {
+        buttonsContainer: {
+            marginTop: 'auto',
+            alignItems: 'center',
             width: '100%',
-            marginTop: theme.spacing.xl,
+            marginBottom: theme.spacing.md,
+        },
+        saveFileButton: {
+            marginTop: theme.spacing.md,
         },
     })
 
