@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { useCommunityContext } from '../state/contexts/CommunityContext'
 
 import type { RootStackParamList } from '../types/navigation'
@@ -75,7 +75,9 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                 <Text small medium style={styles(theme).membersLabel}>
                     {t('words.members')}
                 </Text>
-                <MembersList members={filteredMembers} />
+                <ScrollView>
+                    <MembersList members={filteredMembers} />
+                </ScrollView>
             </View>
             {/* <MessageInput onMessageSubmitted={messageText => {}} /> */}
         </View>
