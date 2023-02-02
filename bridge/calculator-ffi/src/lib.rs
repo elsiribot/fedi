@@ -16,7 +16,7 @@ use std::{
 use bitcoin::{secp256k1::Message, Address};
 use event::{EventSink, SocialRecoveryEvent};
 use fedi_social::common::RecoveryId;
-use fedimint_api::Amount;
+use fedimint_api::{Amount, PeerId};
 use lazy_static::lazy_static;
 
 uniffi_macros::include_scaffolding!("calculator");
@@ -677,19 +677,23 @@ async fn handle_social_recovery_download_verification_doc(
 pub struct ApproveSocialRecoveryRequestPayload {
     federation_id: String,
     recovery_id: RecoveryId,
+    peer_id: PeerId,
+    password: String,
 }
 
 async fn handle_approve_social_recovery_request(payload: String) -> anyhow::Result<String> {
     let ApproveSocialRecoveryRequestPayload {
         federation_id,
         recovery_id,
+        peer_id,
+        password,
     } = match serde_json::from_str(&payload) {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
     let federation = get_federation(&federation_id).await?;
     federation
-        .approve_social_recovery_request(&recovery_id)
+        .approve_social_recovery_request(&recovery_id, peer_id, &password)
         .await?;
     Ok(json!({ "result": () }).to_string())
 }
@@ -1007,11 +1011,20 @@ mod tests {
             assert_eq!(contents, video_file_contents);
 
             // 3 guardians approves
-            let payload = serde_json::to_string(&ApproveSocialRecoveryRequestPayload {
-                recovery_id: recovery_id.clone(),
-                federation_id: federation.id(),
-            })?;
-            for _ in 0..3 {
+            for i in 0..3 {
+                let password = match i {
+                    0 => "1111",
+                    1 => "2222",
+                    2 => "3333",
+                    3 => "4444",
+                    _ => panic!("invalid peer id"),
+                };
+                let payload = serde_json::to_string(&ApproveSocialRecoveryRequestPayload {
+                    recovery_id: recovery_id.clone(),
+                    federation_id: federation.id(),
+                    peer_id: PeerId::from(i),
+                    password: password.into(),
+                })?;
                 handle_approve_social_recovery_request(payload.clone())
                     .await
                     .unwrap();
