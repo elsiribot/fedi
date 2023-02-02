@@ -87,6 +87,13 @@ async fn fedimint_initialize_async(
     log_level: &str,
     event_sink: Box<dyn EventSink>,
 ) -> anyhow::Result<()> {
+    let already_init = {
+        BRIDGE.lock().await.is_some()
+    };
+    if already_init {
+        anyhow::bail!("init called again, ignoring");
+    }
+
     let data_dir = PathBuf::from(data_dir);
     let event_sink = Arc::new(EventSinkWrapper { event_sink });
     init_logging(&data_dir, event_sink.clone(), log_level)?;
