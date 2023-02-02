@@ -21,8 +21,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
 }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { approveSocialRecoveryRequest, denySocialRecoveryRequest } =
-        useBridge()
+    const { approveSocialRecoveryRequest } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
@@ -34,7 +33,8 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const handleGuardianApproval = async () => {
         try {
             setApproving(true)
-            await approveSocialRecoveryRequest(recoveryId)
+            // FIXME: hard-coded to be peerId 0 each time.
+            await approveSocialRecoveryRequest(recoveryId, 0, 'aaaa')
             navigation.replace('RecoveryAssistSuccess')
         } catch (error) {
             const typedError = error as Error

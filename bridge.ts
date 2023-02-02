@@ -464,11 +464,15 @@ export async function denySocialRecoveryRequest(
 // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
 export async function approveSocialRecoveryRequest(
     recoveryId: string,
+    peerId: number,
+    password: string,
     federationId: string,
 ): Promise<null> {
     return fedimintRpc('approveSocialRecoveryRequest', {
-        federationId,
         recoveryId,
+        peerId,
+        password,
+        federationId,
     })
 }
 
