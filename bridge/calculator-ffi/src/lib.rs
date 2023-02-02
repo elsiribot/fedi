@@ -598,12 +598,15 @@ pub struct ValidateRecoveryFilePayload {
 async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String> {
     let ValidateRecoveryFilePayload {
         path,
-        federation_id: _federation_id,
+        federation_id,
     } = match serde_json::from_str(&payload) {
         Ok(p) => p,
         Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
     };
     let contents = fs::read(path).await?;
+    let recovery_file = RecoveryFile::from_bytes(&contents)?;
+    let federation = get_federation(&federation_id).await?;
+    federation.start_social_recovery(&recovery_file).await?;
     // TODO: check that the federation matches and everything
     // also fixed by using federation-specific location
     let valid = RecoveryFile::from_bytes(&contents).is_ok();
