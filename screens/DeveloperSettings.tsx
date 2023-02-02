@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, CheckBox, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
@@ -46,6 +46,8 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
+    const [guardianIndex, setGuardianIndex] = useState<number>(0)
+    const [guardianPassword, setGuardianPassword] = useState<string>('')
 
     useEffect(() => {
         const getGatewaysList = async () => {
@@ -85,6 +87,8 @@ const DeveloperSettings: React.FC<Props> = () => {
     useEffect(() => {
         i18n.changeLanguage(selectedLanguage)
     }, [i18n, selectedLanguage])
+
+    useEffect(() => {}, [guardianIndex])
 
     if (isLoading) return <ActivityIndicator />
     return (
@@ -232,7 +236,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     const guardian = new Guardian({
                         ...n,
                         peerId: i,
-                        password: `${i + 1}${i + 1}${i + 1}${i + 1}`,
+                        password: 'aaaa',
                     })
                     return (
                         <CheckBox
@@ -249,6 +253,29 @@ const DeveloperSettings: React.FC<Props> = () => {
                         />
                     )
                 })}
+                {state.authenticatedGuardian && (
+                    <View style={styles(theme).passwordContainer}>
+                        <Text small>{'Confirm guardian password'}</Text>
+                        <Input
+                            onChangeText={input => {
+                                federationsDispatch(
+                                    changeAuthenticatedGuardian(
+                                        new Guardian({
+                                            ...state.authenticatedGuardian,
+                                            password: input,
+                                        }),
+                                    ),
+                                )
+                            }}
+                            value={state.authenticatedGuardian?.password}
+                            returnKeyType="done"
+                            // containerStyle={styles(theme).textInputOuter}
+                            // inputContainerStyle={styles(theme).textInputInner}
+                            autoCapitalize={'none'}
+                            autoCorrect={false}
+                        />
+                    </View>
+                )}
             </View>
         </ScrollView>
     )
@@ -269,6 +296,10 @@ const styles = (theme: Theme) =>
             paddingTop: theme.spacing.lg,
             flexDirection: 'row',
             flexWrap: 'wrap',
+        },
+        passwordContainer: {
+            flexDirection: 'column',
+            width: '100%',
         },
     })
 
