@@ -1201,15 +1201,15 @@ impl Federation {
 
     /// Start polling tasks
     pub async fn start_pollers(&mut self) {
-        let fed = self.clone();
-        self.task_group
-            .spawn(
-                format!("{} peg-in poller", self.name()),
-                |task_handle| async move {
-                    fed.poll_peg_ins(task_handle).await;
-                },
-            )
-            .await;
+        // let fed = self.clone();
+        // self.task_group
+        //     .spawn(
+        //         format!("{} peg-in poller", self.name()),
+        //         |task_handle| async move {
+        //             fed.poll_peg_ins(task_handle).await;
+        //         },
+        //     )
+        //     .await;
         let fed = self.clone();
         self.task_group
             .spawn(
