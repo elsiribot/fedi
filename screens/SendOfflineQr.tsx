@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import { dataToFrames } from 'qrloop'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
@@ -20,7 +20,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const [index, setIndex] = useState(0)
     const [unit] = useState('sats')
 
-    const frames = dataToFrames(ecash)
+    const frames = useMemo(() => dataToFrames(ecash), [ecash])
 
     // show new qr every 100ms
     useEffect(() => {

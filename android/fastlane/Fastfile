@@ -64,6 +64,9 @@ platform :android do
       package_name: 'com.fedimintreactnative',
       aab: './app/build/outputs/bundle/productionRelease/app-production-release.aab',
       release_status: 'draft',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
       skip_upload_apk: true
     )
   end
@@ -74,6 +77,9 @@ platform :android do
       track: 'beta',
       package_name: 'com.fedimintreactnative',
       aab: './app/build/outputs/bundle/productionRelease/app-production-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
       skip_upload_apk: true
     )
   end
@@ -119,6 +125,9 @@ platform :android do
       track: 'beta',
       package_name: 'com.fedimintreactnative.bitcoinlake',
       aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
       skip_upload_apk: true
     )
   end
@@ -136,6 +145,9 @@ platform :android do
       track: 'beta',
       package_name: 'com.fedimintreactnative.bitcoinlake',
       aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
       skip_upload_apk: true
     )
   end
@@ -174,6 +186,9 @@ platform :android do
       track: 'internal',
       package_name: 'com.fedimintreactnative.bitcoinjungle',
       aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
       skip_upload_apk: true
     )
   end
@@ -191,6 +206,9 @@ platform :android do
       track: 'beta',
       package_name: 'com.fedimintreactnative.bitcoinjungle',
       aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
       skip_upload_apk: true
     )
   end
