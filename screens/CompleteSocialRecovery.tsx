@@ -24,7 +24,10 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
-import { resetAfterSocialRecovery } from '../state/navigation'
+import {
+    resetAfterFailedSocialRecovery,
+    resetAfterSocialRecovery,
+} from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -62,6 +65,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             } catch (error) {
                 const typedError = error as Error
                 toast?.show(typedError?.message, 3000)
+                navigation.dispatch(resetAfterFailedSocialRecovery())
             }
         }
 
