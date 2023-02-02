@@ -129,7 +129,7 @@
             "review-voice-confirmation": "I confirm my voice can be clearly heard in this video",
             "save-your-wallet-backup-file": "Save your wallet backup file",
             "save-your-wallet-backup-file-where": "We recommend saving your file in different places (messaging apps, email, cloud storage, etc.)",
-            "save-your-wallet-backup-file-again": "Save file again",
+            "save-your-wallet-backup-file-again": "Save again somewhere else",
             "save-file": "Save file",
             "social-backup": "Social backup",
             "social-backup-guidance-check-1": "You will record a backup video which will be used to create a recovery file which can be used to recover your Federation wallet",
@@ -211,7 +211,7 @@
             "nice-to-meet-you": "Nice to meet you, {{username}}",
             "simple-and-private": "Simple and private",
             "username-guidance": "Enter a username containing lowercase letters without spaces",
-            "username-instructions": "Your username will be how other FederationZ members will identify you.",
+            "username-instructions": "Your username will be how other members will identify you.",
             "welcome-instructions": "New members receive a fresh wallet. Returning members will be prompted to recover their wallet.",
             "welcome-to-federation": "Welcome to {{federation}}",
             "welcome-to-fedi": "Welcome to Fedi"
