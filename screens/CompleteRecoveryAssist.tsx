@@ -7,6 +7,7 @@ import Video from 'react-native-video'
 
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -22,6 +23,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { approveSocialRecoveryRequest } = useBridge()
+    const { authenticatedGuardian } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
     const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
@@ -39,8 +41,14 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         const handleGuardianApproval = async () => {
             try {
                 // FIXME: hard-coded to be peerId 0 each time.
-                await approveSocialRecoveryRequest(recoveryId, 0, 'aaaa')
-                navigation.replace('RecoveryAssistSuccess')
+                if (authenticatedGuardian) {
+                    await approveSocialRecoveryRequest(
+                        recoveryId,
+                        authenticatedGuardian.peerId,
+                        authenticatedGuardian.password,
+                    )
+                    navigation.replace('RecoveryAssistSuccess')
+                }
             } catch (error) {
                 const typedError = error as Error
                 console.error(typedError)
@@ -54,6 +62,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     }, [
         approvalInProgress,
         approveSocialRecoveryRequest,
+        authenticatedGuardian,
         navigation,
         recoveryId,
         toast,
