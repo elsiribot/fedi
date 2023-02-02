@@ -28,8 +28,6 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
         useState<Boolean>(false)
 
     useEffect(() => {
-        console.info('requireMicrophone', requireMicrophone)
-        // console.info('permissionGranted', permissionsGranted)
         if (
             requireMicrophone === true &&
             cameraPermissionGranted &&
@@ -79,10 +77,8 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
 
     const requestPermissions = async () => {
         await requestCameraPermission()
-        // console.info('PermissionGrantedAfterCamera', permissionsGranted)
         if (requireMicrophone === true) {
             await requestMicrophonePermission()
-            // console.info('PermissionGrantedAfterMic', permissionsGranted)
         }
     }
 
