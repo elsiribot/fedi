@@ -146,7 +146,8 @@
             "start-social-backup": "Start social backup",
             "start-social-backup-instructions": "Social backups allow you to safely backup your wallet with friends and family and have Federation guardians assist you recover it if you lose access",
             "successfully-backed-up": "You successfully backed up your Fedi wallet",
-            "stop-recording": "Stop recording"
+            "stop-recording": "Stop recording",
+            "video-file-too-large": "Video file too large, please record a shorter one"
         },
         "community": {
             "broadcast-only": "Broadcast only",

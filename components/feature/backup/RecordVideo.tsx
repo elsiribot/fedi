@@ -55,19 +55,14 @@ const RecordVideo = () => {
         )
     }, [device?.formats])
 
-    console.log('format', format)
-
     if (devices.front === undefined) return null
 
     const startRecording = async () => {
         setIsRecording(true)
         camera.current?.startRecording({
             onRecordingFinished: video => {
-                console.log('video', video)
-                let videoWrapper = video as VideoFileWrapper
-                console.log('video size', videoWrapper.size)
-                if (videoWrapper.size && videoWrapper.size > 3000) {
-                    toast?.show('Video file too large, record a shorter one')
+                if (video.size && video.size > 3000) {
+                    toast?.show(t('feature.backup.video-file-too-large'), 4000)
                 } else {
                     dispatch(saveVideo(video))
                 }
