@@ -98,13 +98,6 @@ export const SITES = [
         description: 'See where bitcoin is being used all over the world',
     },
     {
-        id: 'fedicr',
-        title: 'Fedi Costa Rica',
-        url: 'https://www.fedi.xyz/cr',
-        description:
-            'Get information about workshops, the federation, the app and more',
-    },
-    {
         id: 'fedifeedback',
         title: 'Fedi Feedback',
         url: 'https://docs.google.com/forms/d/e/1FAIpQLSdHH4Sy5z5bW7M-HnK5CcKQEuYhfqfATFJpzh5UhZg4b8Nipw/viewform',
