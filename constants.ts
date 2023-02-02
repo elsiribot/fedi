@@ -51,6 +51,8 @@ export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     messagePreview: i18n.t('feature.community.money-changing-message-preview'),
 })
 
+export const MAX_INVOICE_AMOUNT_SATS = 200000
+
 export const SITES = [
     // TODO: Show only for regtest federations
     // shouldn't be used on mainnet
