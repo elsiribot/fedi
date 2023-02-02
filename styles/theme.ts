@@ -155,6 +155,7 @@ const theme = createTheme({
         socialBackupCameraHeight: dimensions.height * 0.4,
         splashLogoHeight: 32,
         splashLogoWidth: 120,
+        tabBarHeight: 72,
     },
     spacing: {
         xxs: 2,
