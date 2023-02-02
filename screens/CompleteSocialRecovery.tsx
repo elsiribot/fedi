@@ -82,7 +82,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
-                if (recovering === false) {
+                if (recovering === false && recoveryQrCode) {
                     const _approvals = await socialRecoveryApprovals()
                     setApprovals(_approvals)
                 }
@@ -93,7 +93,13 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [toast, recovering, socialRecoveryApprovals, setApprovals])
+    }, [
+        toast,
+        recovering,
+        recoveryQrCode,
+        socialRecoveryApprovals,
+        setApprovals,
+    ])
 
     useEffect(() => {
         const emitter = new BridgeEventEmitter()
