@@ -115,7 +115,10 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                 tabBarActiveTintColor: theme.colors.primary,
                 tabBarInactiveTintColor: theme.colors.primaryLight,
                 tabBarStyle: styles(theme, insets).tabBar,
+                tabBarIconStyle: styles(theme, insets).tabBarIcon,
+                tabBarItemStyle: styles(theme, insets).tabBarItem,
                 headerTitleStyle: theme.components.Text.style,
+                tabBarLabelStyle: styles(theme, insets).tabBarLabel,
             })}>
             <Tab.Screen
                 name="Wallet"
@@ -174,14 +177,25 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         tabBar: {
             backgroundColor: theme.colors.secondary,
-            paddingBottom: 10 + insets.bottom,
-            height: 63 + insets.bottom,
+            height: 64 + insets.bottom,
+            borderColor: 'transparent',
+            elevation: 0,
         },
         image: {
             height: 32,
             width: 120,
             color: theme.colors.grey,
             resizeMode: 'contain',
+        },
+        tabBarLabel: {
+            fontFamily: 'AlbertSans-Bold',
+        },
+        tabBarIcon: {
+            paddingBottom: theme.spacing.sm,
+        },
+        tabBarItem: {
+            paddingTop: theme.spacing.md,
+            paddingBottom: theme.spacing.lg + insets.bottom,
         },
         iconImage: {
             height: theme.sizes.sm,

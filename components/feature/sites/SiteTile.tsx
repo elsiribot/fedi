@@ -1,15 +1,23 @@
 import { Card, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import {
+    Dimensions,
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+    ViewStyle,
+} from 'react-native'
 import { SiteImages } from '../../../assets/images'
 import { Site } from '../../../types'
 
 type SiteTileProps = {
     site: Site
     selectSite: (site: Site) => void
+    style?: ViewStyle
 }
 
-const SiteTile = ({ site, selectSite }: SiteTileProps) => {
+const SiteTile = ({ site, selectSite, style = {} }: SiteTileProps) => {
     const { theme } = useTheme()
     const siteImage = SiteImages[site.id]
     return (
@@ -17,6 +25,7 @@ const SiteTile = ({ site, selectSite }: SiteTileProps) => {
             containerStyle={[
                 styles(theme).cardContainer,
                 { backgroundColor: site.color },
+                style,
             ]}
             wrapperStyle={styles(theme).cardWrapper}>
             <TouchableOpacity onPress={() => selectSite(site)}>
@@ -41,12 +50,6 @@ const SiteTile = ({ site, selectSite }: SiteTileProps) => {
                     <Text caption medium style={styles(theme).siteTitleText}>
                         {site.title}
                     </Text>
-                    <Icon
-                        name="shield-check"
-                        type="material-community"
-                        color={theme.colors.primary}
-                        size={14}
-                    />
                 </View>
                 <Text small style={styles(theme).description}>
                     {site.description}
@@ -56,21 +59,24 @@ const SiteTile = ({ site, selectSite }: SiteTileProps) => {
     )
 }
 
+const WINDOW_WIDTH = Dimensions.get('window').width
+
 const styles = (theme: Theme) =>
     StyleSheet.create({
         cardContainer: {
             borderRadius: theme.borders.defaultRadius,
             padding: theme.spacing.sm,
-            width: '80%',
             marginBottom: theme.spacing.md,
+            marginHorizontal: theme.spacing.sm,
             shadowColor: 'transparent',
+            borderColor: 'transparent',
             shadowOpacity: 0,
             shadowRadius: 0,
             elevation: 0,
+            width: '45%',
         },
         cardWrapper: {
-            padding: theme.spacing.md,
-            flex: 1,
+            padding: theme.spacing.sm,
         },
         icon: {
             width: 32,
@@ -90,10 +96,6 @@ const styles = (theme: Theme) =>
         },
         rightAlignedText: {
             textAlign: 'right',
-        },
-        subText: {
-            fontSize: theme.sizes.xs,
-            opa: theme.colors.primaryLight,
         },
         description: {
             color: theme.colors.primaryLight,
