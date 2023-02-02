@@ -174,7 +174,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     // Show loading indicator until we have approvals
     if (approvals == null) {
-        return <ActivityIndicator />
+        return (
+            <View style={styles(theme).spinnerContainer}>
+                <ActivityIndicator size="large" />
+            </View>
+        )
     }
 
     return (
@@ -251,6 +255,11 @@ const styles = (theme: Theme) =>
         },
         openButton: {
             width: '100%',
+        },
+        spinnerContainer: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 
