@@ -75,12 +75,7 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                                 )}
                             </Text>
                             <Text bold>
-                                {t(
-                                    'feature.recovery.default-fedi-file-format',
-                                    {
-                                        federation: selectedFederation?.name,
-                                    },
-                                )}
+                                {t('feature.recovery.default-fedi-file-format')}
                             </Text>
                             <LineBreak />
                         </View>
