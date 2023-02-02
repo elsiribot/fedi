@@ -236,7 +236,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     const guardian = new Guardian({
                         ...n,
                         peerId: i,
-                        password: 'aaaa',
+                        password: `${i + 1}${i + 1}${i + 1}${i + 1}`,
                     })
                     return (
                         <CheckBox
