@@ -314,7 +314,8 @@
             "boost-this-post": "Boost this post on {{site}}?",
             "login-to": "Login to",
             "login-failed": "Login failed",
-            "payment-request": "Payment request from {{site}} "
+            "payment-request": "Payment request from {{site}}",
+            "bitcoin-sites-fedi-wallet": "Bitcoin sites that work with your Fedi wallet"
         }
     }
 }
