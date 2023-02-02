@@ -38,12 +38,6 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                                     'feature.recovery.locate-social-recovery-instructions-1',
                                 )}
                             </Text>
-                            <LineBreak />
-                            <Text>
-                                {t(
-                                    'feature.recovery.locate-social-recovery-instructions-2',
-                                )}
-                            </Text>
                             <Text>
                                 {'  \u2022 '}
                                 {t(
