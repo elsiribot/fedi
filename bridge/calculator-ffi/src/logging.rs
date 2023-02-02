@@ -106,7 +106,7 @@ pub fn init_logging(
             )
             .with(
                 log_file_layer
-                    .with_filter(EnvFilter::new("info,mint_client=trace,calculatorffi=trace")),
+                    .with_filter(EnvFilter::new("info,mint_client=debug,calculatorffi=trace")),
             );
 
         let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
