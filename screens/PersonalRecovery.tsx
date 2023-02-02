@@ -187,6 +187,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <ScrollView
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={[
                 styles(theme).container,
                 keyboardHeight > 0 && Platform.OS === 'ios'
