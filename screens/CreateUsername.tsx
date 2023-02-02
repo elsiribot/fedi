@@ -63,10 +63,10 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     backupXmppUsername(normalizedUsername)
                 }
             } catch (error) {
+                setXmppAuthInProgress(false)
                 console.info('error', error)
                 toast?.show(error as string, 3000)
             }
-            setXmppAuthInProgress(false)
         }
         if (xmppAuthInProgress === true) {
             handleXmppRegistration()
@@ -83,22 +83,14 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     // if we have a successfully authed xmppClient and username set
     // continue to the FederationGreeting screen
     useEffect(() => {
-        if (
-            authenticatedMember &&
-            state.selectedFederation?.username &&
-            xmppAuthInProgress === false
-        ) {
+        if (authenticatedMember && state.selectedFederation?.username) {
+            setXmppAuthInProgress(false)
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'FederationGreeting' }],
             })
         }
-    }, [
-        authenticatedMember,
-        navigation,
-        state.selectedFederation?.username,
-        xmppAuthInProgress,
-    ])
+    }, [authenticatedMember, navigation, state.selectedFederation?.username])
 
     const handleUsernameChange = (input: string) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
