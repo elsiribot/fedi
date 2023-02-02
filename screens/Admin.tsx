@@ -10,6 +10,7 @@ import SettingsItem from '../components/feature/admin/SettingsItem'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import SvgImage from '../components/ui/SvgImage'
 import {
+    AUTHENTICATED_GUARDIAN_DB_KEY,
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
@@ -26,6 +27,7 @@ import {
     useEnvironmentContext,
 } from '../state/contexts/EnvironmentContext'
 import {
+    changeAuthenticatedGuardian,
     updateFederations,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
@@ -69,6 +71,10 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
             JSON.stringify({ groups: DEFAULT_GROUPS }),
         )
     }
+    const resetGuardiansState = () => {
+        federationsDispatch(changeAuthenticatedGuardian(null))
+        AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
+    }
 
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
@@ -80,6 +86,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
             return
         }
         resetCommunityState()
+        resetGuardiansState()
 
         // update context and navigate
         const federations = await listFederations()
