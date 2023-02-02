@@ -1,4 +1,4 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Card, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { SiteImages } from '../../../assets/images'
@@ -13,27 +13,30 @@ const SiteTile = ({ site, selectSite }: SiteTileProps) => {
     const { theme } = useTheme()
     const siteImage = SiteImages[site.id]
     return (
-        <TouchableOpacity
-            onPress={() => selectSite(site)}
-            style={styles(theme).container}>
-            <View style={styles(theme).leftContainer}>
-                {siteImage ? (
-                    <Image
-                        style={styles(theme).icon}
-                        source={siteImage}
-                        resizeMode="contain"
-                    />
-                ) : (
-                    <Icon
-                        style={styles(theme).icon}
-                        name="web-box"
-                        type="material-community"
-                        color={theme.colors.orange}
-                        size={32}
-                    />
-                )}
-            </View>
-            <View style={styles(theme).centerContainer}>
+        <Card
+            containerStyle={[
+                styles(theme).cardContainer,
+                { backgroundColor: site.color },
+            ]}
+            wrapperStyle={styles(theme).cardWrapper}>
+            <TouchableOpacity onPress={() => selectSite(site)}>
+                <View>
+                    {siteImage ? (
+                        <Image
+                            style={styles(theme).icon}
+                            source={siteImage}
+                            resizeMode="contain"
+                        />
+                    ) : (
+                        <Icon
+                            style={styles(theme).icon}
+                            name="web-box"
+                            type="material-community"
+                            color={theme.colors.orange}
+                            size={32}
+                        />
+                    )}
+                </View>
                 <View style={styles(theme).siteTitle}>
                     <Text caption medium style={styles(theme).siteTitleText}>
                         {site.title}
@@ -48,36 +51,33 @@ const SiteTile = ({ site, selectSite }: SiteTileProps) => {
                 <Text small style={styles(theme).description}>
                     {site.description}
                 </Text>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+        </Card>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            justifyContent: 'flex-start',
-            backgroundColor: theme.colors.secondary,
-            width: '100%',
-            marginBottom: theme.spacing.xl,
+        cardContainer: {
+            borderRadius: theme.borders.defaultRadius,
+            padding: theme.spacing.sm,
+            width: '80%',
+            marginBottom: theme.spacing.md,
+            shadowColor: 'transparent',
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            elevation: 0,
         },
-        leftContainer: {
-            width: 32,
-            flexShrink: 0,
+        cardWrapper: {
+            padding: theme.spacing.md,
+            flex: 1,
         },
         icon: {
             width: 32,
             height: 32,
             overflow: 'hidden',
             borderRadius: 4,
-        },
-        centerContainer: {
-            flex: 1,
-            alignItems: 'flex-start',
-            paddingHorizontal: theme.spacing.md,
-            flexDirection: 'column',
+            marginBottom: theme.spacing.sm,
         },
         siteTitle: {
             flexDirection: 'row',
@@ -87,11 +87,6 @@ const styles = (theme: Theme) =>
         },
         siteTitleText: {
             paddingRight: theme.spacing.xs,
-        },
-        rightContainer: {
-            width: '30%',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
         },
         rightAlignedText: {
             textAlign: 'right',
