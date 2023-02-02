@@ -5,14 +5,19 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native'
 import type {
     CameraDevice,
     CameraDeviceFormat,
+    VideoFile,
 } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import {
     saveVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
-import dateUtils from '../../../utils/DateUtils'
+// size shows up when I run it, but for
+export interface VideoFileWrapper extends VideoFile {
+    size?: number
+}
 
 const RecordVideo = () => {
     const { t } = useTranslation()
@@ -21,6 +26,7 @@ const RecordVideo = () => {
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const device = devices.front
+    const { toast } = useEnvironmentContext().state
     const { dispatch } = useBackupRecoveryContext()
 
     function resolution(format: CameraDeviceFormat): number {
@@ -60,8 +66,14 @@ const RecordVideo = () => {
         setIsRecording(true)
         camera.current?.startRecording({
             onRecordingFinished: video => {
-                console.log(video)
-                dispatch(saveVideo(video))
+                console.log('video', video)
+                let videoWrapper = video as VideoFileWrapper
+                console.log('video size', videoWrapper.size)
+                if (videoWrapper.size && videoWrapper.size > 3000) {
+                    toast?.show('Video file too large, record a shorter one')
+                } else {
+                    dispatch(saveVideo(video))
+                }
             },
             onRecordingError: error => {
                 console.log(error)
@@ -76,11 +88,6 @@ const RecordVideo = () => {
         setIsRecording(false)
         camera.current?.stopRecording()
     }
-
-    const todaysDate = dateUtils.formatTimestamp(
-        Date.now() / 1000,
-        'MMMM dd, yyyy',
-    )
 
     return (
         <View style={styles(theme).container}>
@@ -126,9 +133,7 @@ const RecordVideo = () => {
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <Text medium>
-                    {t('feature.backup.social-backup-video-prompt', {
-                        date: todaysDate,
-                    })}
+                    {t('feature.backup.social-backup-video-prompt')}
                 </Text>
             </Card>
             <Pressable
@@ -209,7 +214,6 @@ const styles = (theme: Theme) =>
         },
         roundedCardContainer: {
             borderRadius: theme.borders.defaultRadius,
-            width: '100%',
             marginHorizontal: 0,
         },
     })
