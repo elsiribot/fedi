@@ -30,10 +30,11 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                         }}
                     />
                     {/*refer to below image style for above image*/}
+                    <Text h2 medium style={styles(theme).welcome}>
+                        {t('feature.onboarding.welcome-to-federation')}
+                    </Text>
                     <Text h2 medium style={styles(theme).welcomeTitle}>
-                        {t('feature.onboarding.welcome-to-federation', {
-                            federation: selectedFederation?.name,
-                        })}
+                        {selectedFederation?.name}
                     </Text>
                     <Text caption style={styles(theme).welcomeText}>
                         {/*
@@ -98,8 +99,12 @@ const styles = (theme: Theme) =>
         innerCardContainer: {
             alignItems: 'center',
         },
+        welcome: {
+            marginTop: theme.spacing.md,
+            textAlign: 'center',
+        },
         welcomeTitle: {
-            marginVertical: theme.spacing.md,
+            marginBottom: theme.spacing.md,
             textAlign: 'center',
         },
         welcomeText: {
