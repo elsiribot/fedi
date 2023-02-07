@@ -76,6 +76,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 keyboardType="numeric"
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
+                textAlign="center"
             />
             <UsdAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).offlineContainer}>
