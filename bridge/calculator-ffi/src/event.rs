@@ -1,42 +1,58 @@
 use serde::Serialize;
+use ts_rs::TS;
 
 use crate::{recovery::SocialRecoveryApproval, tx::Transaction, types::FedimintFederation};
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct TransactionEvent {
     pub federation_id: String,
     pub transaction: Transaction,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct SocialRecoveryEvent {
     pub federation_id: String,
     pub approvals: Vec<SocialRecoveryApproval>,
     pub remaining: usize,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct RecoveryFileCreationEvent {
     pub federation_id: String,
     // TODO: add payload
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct LogEvent {
     pub log: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, TS)]
+#[ts(export, export_to = "target/bindings/")]
 pub enum Event {
-    Federation { event: FedimintFederation },
-    Transaction { event: TransactionEvent },
-    SocialRecovery { event: SocialRecoveryEvent },
-    RecoveryFileCreation { event: RecoveryFileCreationEvent },
-    Log { event: LogEvent },
+    Federation {
+        event: FedimintFederation,
+    },
+    Transaction {
+        event: TransactionEvent,
+    },
+    SocialRecovery {
+        event: SocialRecoveryEvent,
+    },
+    RecoveryFileCreation {
+        event: RecoveryFileCreationEvent,
+    },
+    Log {
+        event: LogEvent,
+    },
 }
 
 impl Event {

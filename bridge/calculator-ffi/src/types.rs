@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
 use anyhow::anyhow;
-use bitcoin::secp256k1::{ecdsa::Signature, PublicKey};
-use fedimint_api::config::ApiEndpoint;
+use bitcoin::secp256k1::ecdsa::Signature;
+use fedimint_api::{
+    config::ApiEndpoint,
+    encoding::{Decodable, Encodable},
+};
 use mint_client::{api::WsFederationConnect, UserClientConfig};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::bridge::Federation;
 
@@ -20,32 +24,63 @@ pub fn hacky_lightning_invoice_fee(
         .ok_or(anyhow!("Invoice missing amount"))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
+#[serde(transparent)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct Amount(#[ts(type = "Opaque<number, 'fedimint_api::Amount'>")] pub fedimint_api::Amount);
+
+#[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
+#[serde(transparent)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct PeerId(#[ts(type = "number")] pub fedimint_api::PeerId);
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
+#[serde(transparent)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RecoveryId(
+    #[ts(type = "Opaque<string, 'RecoveryId'>")]
+    pub fedi_social::common::RecoveryId,
+);
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
+#[serde(transparent)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct PublicKey(#[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::secp256k1::PublicKey);
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "target/bindings/")]
 pub struct FediConfig {
+    #[ts(type = "any")]
     pub client_config: UserClientConfig,
     pub username: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct FedimintFederation {
     pub name: String,
+    #[ts(type = "any")]
     pub connect_info: WsFederationConnect,
+    #[ts(type = "Array<{url: string, name: string}>")]
     pub nodes: Vec<ApiEndpoint>,
-    pub balance: fedimint_api::Amount,
+    pub balance: Amount,
     pub social_recovery_active: bool,
 }
 
 // FIXME: should probaby type these as bytes, but don't want to figure out serialization right now
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct XmppCredentials {
     pub password: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct LnurlSignedMessage {
+    #[ts(type = "string")]
     pub signature: Signature,
     pub pubkey: PublicKey,
 }
@@ -60,15 +95,18 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         name: client_config.federation_name.clone(),
         connect_info: WsFederationConnect::from(&client_config),
         nodes: client_config.nodes.clone(),
-        balance,
+        balance: Amount(balance),
         social_recovery_active,
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct BridgeLightningGateway {
+    #[ts(type = "Opaque<string, 'XOnlyPublicKey'>")]
     pub mint_pub_key: bitcoin::secp256k1::XOnlyPublicKey,
+    #[ts(type = "Opaque<string, 'PublicKey'>")]
     pub node_pub_key: bitcoin::secp256k1::PublicKey,
     pub api: String, // TODO: url::Ur;
     pub active: bool,

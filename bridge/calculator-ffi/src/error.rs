@@ -1,5 +1,9 @@
-#[derive(Debug, thiserror::Error, Copy, Clone, PartialEq, Eq)]
-#[repr(u32)]
+use serde::Serialize;
+use thiserror::Error;
+use ts_rs::TS;
+#[derive(Debug, Error, Copy, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export, export_to = "target/bindings/")]
+#[serde(rename_all = "camelCase")]
 pub enum ErrorCode {
     #[error("Intialization failed")]
     InitializationFailed,

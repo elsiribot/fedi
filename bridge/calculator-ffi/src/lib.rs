@@ -19,10 +19,10 @@ use std::{
 use bitcoin::{secp256k1::Message, Address};
 use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
-use fedi_social::common::RecoveryId;
-use fedimint_api::{Amount, PeerId};
 use futures::Future;
 use lazy_static::lazy_static;
+use types::RecoveryId;
+use types::{Amount, PeerId, PublicKey};
 
 uniffi_macros::include_scaffolding!("calculator");
 
@@ -133,17 +133,31 @@ async fn get_federation(federation_id: &str) -> anyhow::Result<Arc<Federation>> 
         .context(ErrorCode::InitializationFailed)
 }
 
+use ts_rs::TS;
+
 macro_rules! rpc_method {
-    ($vis:vis async fn $name:ident ($($arg_name:ident: $arg_ty:ty),* $(,)?) -> $ret:ty $body:block) => {
+    (
+        $vis:vis async fn $name:ident (
+            $(
+                $arg_name:ident: $arg_ty:ty
+            ),*
+            $(,)?
+        ) -> anyhow::Result<$ret:ty>
+
+        $body:block
+    ) => {
         mod $name {
             use super::*;
-            #[derive(Debug, Serialize, Deserialize)]
+            #[derive(Debug, Serialize, Deserialize, TS)]
             #[serde(rename_all = "camelCase")]
             pub struct Args {
-                $( pub $arg_name: $arg_ty, )*
+            $(
+                pub $arg_name: $arg_ty,
+            )*
             }
 
-            pub async fn handle($name::Args { $( $arg_name ),* }: $name::Args) -> $ret {
+            pub type Return = $ret;
+            pub async fn handle($name::Args { $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
                 super::$name($($arg_name),*).await
             }
         }
@@ -203,11 +217,11 @@ async fn generateInvoice(
     amount: Amount,
     description: String,
 ) -> anyhow::Result<String> {
-    if amount.msats > 200000000 {
+    if amount.0.msats > 200000000 {
         anyhow::bail!("Maximum invoice amount is 200,000 sats");
     }
     let federation = get_federation(&federation_id).await?;
-    let invoice = federation.generate_invoice(amount, description).await?;
+    let invoice = federation.generate_invoice(amount.0, description).await?;
     Ok(invoice.to_string())
 }
 
@@ -218,8 +232,9 @@ async fn payInvoice(federation_id: String, invoice: String) -> anyhow::Result<()
     federation.pay_invoice(&invoice).await
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub enum AddressOrInvoice {
     Address,
     Invoice,
@@ -254,7 +269,7 @@ async fn generateAddress(federation_id: String) -> anyhow::Result<String> {
 #[macro_rules_derive(rpc_method!)]
 async fn generateEcash(federation_id: String, amount: Amount) -> anyhow::Result<String> {
     let federation = get_federation(&federation_id).await?;
-    let ecash = federation.generate_ecash(amount).await?;
+    let ecash = federation.generate_ecash(amount.0).await?;
     let ecash = serialize_ecash(&ecash);
     Ok(ecash)
 }
@@ -270,10 +285,10 @@ async fn receiveEcash(
     // Add a poller to check for ecash notes in the table and try to redeem them periodically.
     // If redeemed, send transaction event and update their entry.
     let ecash = parse_ecash(&ecash)?;
-    Ok(federation.receive_ecash(ecash).await?)
+    Ok(Amount(federation.receive_ecash(ecash).await?))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 pub struct ValidateEcashResponse {
     valid: bool,
     amount: Amount,
@@ -288,7 +303,10 @@ async fn validateEcash(
     let federation = get_federation(&federation_id).await?;
     let ecash = parse_ecash(&ecash)?;
     let (valid, amount) = federation.validate_ecash(ecash).await;
-    Ok(ValidateEcashResponse { valid, amount })
+    Ok(ValidateEcashResponse {
+        valid,
+        amount: Amount(amount),
+    })
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -381,14 +399,11 @@ async fn listGateways(federation_id: String) -> anyhow::Result<Vec<BridgeLightni
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn switchGateway(
-    federation_id: String,
-    node_pubkey: bitcoin::secp256k1::PublicKey,
-) -> anyhow::Result<()> {
+async fn switchGateway(federation_id: String, node_pubkey: PublicKey) -> anyhow::Result<()> {
     let federation = get_federation(&federation_id).await?;
     federation
         .client
-        .switch_active_gateway(Some(node_pubkey))
+        .switch_active_gateway(Some(node_pubkey.0))
         .await?;
     Ok(())
 }
@@ -493,7 +508,7 @@ async fn socialRecoveryDownloadVerificationDoc(
     // Return QR code contents
     let federation = get_federation(&federation_id).await?;
     let path = federation
-        .social_recovery_download_verification_doc(&recovery_id, datadir)
+        .social_recovery_download_verification_doc(&recovery_id.0, datadir)
         .await?;
     Ok(path)
 }
@@ -507,7 +522,7 @@ async fn approveSocialRecoveryRequest(
 ) -> anyhow::Result<()> {
     let federation = get_federation(&federation_id).await?;
     federation
-        .approve_social_recovery_request(&recovery_id, peer_id, &password)
+        .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
         .await?;
     Ok(())
 }
@@ -562,10 +577,12 @@ macro_rules! rpc_methods {
         // all variants are unused
         // just used for typeshare
         #[allow(unused)]
-        enum $name {
+        #[derive(TS)]
+        #[ts(export, export_to = "target/bindings/")]
+        pub struct $name {
         $(
-            #[allow(non_camel_case_types)]
-            $method($method::Args),
+            #[ts(inline)]
+            $method: ($method::Args, $method::Return),
         )*
         }
 
@@ -818,7 +835,7 @@ mod tests {
                 approveSocialRecoveryRequest(
                     federation.id(),
                     recovery_id.clone(),
-                    PeerId::from(i),
+                    PeerId(fedimint_api::PeerId::from(i)),
                     password.into(),
                 )
                 .await?;
