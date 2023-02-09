@@ -214,7 +214,7 @@
             "username-guidance": "Enter a username containing lowercase letters without spaces",
             "username-instructions": "Your username will be how other members will identify you.",
             "welcome-instructions": "New members receive a fresh wallet. Returning members will be prompted to recover their wallet.",
-            "welcome-to-federation": "Welcome to {{federation}}",
+            "welcome-to-federation": "Welcome to",
             "welcome-to-fedi": "Welcome to Fedi"
         },
         "send": {
