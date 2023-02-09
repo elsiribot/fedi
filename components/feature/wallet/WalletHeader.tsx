@@ -32,7 +32,7 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                     <Pressable
                         onPress={toggleOffline}
                         style={{
-                            padding: theme.spacing.sm,
+                            marginRight: theme.spacing.sm,
                         }}>
                         <SvgImage
                             name="Offline"
@@ -54,7 +54,7 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                     <Pressable
                         onPress={() => navigation.navigate('Transactions')}
                         style={{
-                            padding: theme.spacing.sm,
+                            marginLeft: theme.spacing.sm,
                         }}>
                         <Icon name={'format-list-bulleted'} />
                     </Pressable>
