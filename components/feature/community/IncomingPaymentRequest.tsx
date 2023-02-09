@@ -211,11 +211,11 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                     },
                 })
                 setGeneratedEcashToken('')
+                dispatch(updateMessage(acceptedPaymentMessage))
                 sendUpdatedPaymentMessage({
                     to: message.sentBy,
                     message: acceptedPaymentMessage,
                 })
-                dispatch(updateMessage(acceptedPaymentMessage))
                 // Once the token has been generated and sent in a message
                 // we wait for the recipient to redeem the ecash and send
                 // back a message with the payment.status set to 'paid'
