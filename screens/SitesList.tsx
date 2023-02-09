@@ -67,6 +67,7 @@ const styles = (theme: Theme) =>
         },
         title: {
             marginBottom: theme.spacing.md,
+            paddingTop: theme.spacing.xl,
         },
         listContainer: {
             // paddingHorizontal: 0,
