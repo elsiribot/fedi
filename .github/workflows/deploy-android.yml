@@ -9,13 +9,19 @@ jobs:
         name: Build and release Android app
         runs-on: buildjet-2vcpu-ubuntu-2204
         steps:
-            - uses: actions/checkout@v2
+            - name: Checkout repo
+              uses: actions/checkout@v2
+            - name: Setup JDK
+              uses: actions/setup-java@v1
+              with:
+                  java-version: 11
+            - name: Setup Node
             - uses: actions/setup-node@v1
               with:
-                  node-version: '10.x'
+                  node-version: '16.18.X'
             - uses: ruby/setup-ruby@v1
               with:
-                  ruby-version: '3.1.2'
+                  ruby-version: '2.7.5'
             - name: Install packages
               run: npm install
             - name: Install Fastlane
