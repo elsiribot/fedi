@@ -3,6 +3,7 @@
     "version": "0.7.1",
     "private": true,
     "scripts": {
+        "build-android": "sh scripts/build-android.sh",
         "android": "sh scripts/run-android.sh",
         "ios": "sh scripts/run-ios.sh",
         "start": "react-native start",
