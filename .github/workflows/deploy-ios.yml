@@ -1,8 +1,9 @@
 name: Publish iOS to TestFlight
 on:
+    workflow_dispatch:
     push:
         branches:
-            - 'master'
+            - 'release/**'
 jobs:
     release-ios:
         name: Build and release iOS app
