@@ -1,6 +1,6 @@
 name: Publish Android App to Play Dev Console
 on:
-    workflow_dispatch
+    workflow_dispatch:
     push:
         branches:
             - 'release/**'
