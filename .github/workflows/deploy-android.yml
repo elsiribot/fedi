@@ -1,0 +1,24 @@
+name: Publish Android App to Play Dev Console
+on:
+    workflow_dispatch
+    push:
+        branches:
+            - 'release/**'
+jobs:
+    release-android:
+        name: Build and release Android app
+        runs-on: buildjet-2vcpu-ubuntu-2204
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v1
+              with:
+                  node-version: '10.x'
+            - uses: ruby/setup-ruby@v1
+              with:
+                  ruby-version: '3.1.2'
+            - name: Install packages
+              run: npm install
+            - name: Install Fastlane
+              run: cd android && bundle install && cd ..
+            - name: Execute Fastlane command
+              run: cd android && fastlane internal
