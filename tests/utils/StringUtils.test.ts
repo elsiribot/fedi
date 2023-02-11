@@ -1,4 +1,4 @@
-import stringUtils from './StringUtils'
+import stringUtils from '../../utils/StringUtils'
 
 describe('StringUtils', () => {
     describe('truncateMiddleOfString', () => {

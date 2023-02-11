@@ -1,4 +1,4 @@
-import lnurlUtils from './LNURLUtils'
+import lnurlUtils from '../../utils/LNURLUtils'
 
 describe('lnurl', () => {
     describe('decode', () => {
