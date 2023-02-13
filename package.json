@@ -9,7 +9,7 @@
         "start": "react-native start",
         "test": "jest",
         "clean": "sh scripts/clean.sh",
-        "clean-code": "sh scripts/clean-code.sh",
+        "check-code": "sh scripts/check-code.sh",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
     },
     "dependencies": {
