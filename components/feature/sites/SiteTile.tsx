@@ -1,7 +1,6 @@
 import { Card, Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
-    Dimensions,
     Image,
     StyleSheet,
     TouchableOpacity,
@@ -58,8 +57,6 @@ const SiteTile = ({ site, selectSite, style = {} }: SiteTileProps) => {
         </Card>
     )
 }
-
-const WINDOW_WIDTH = Dimensions.get('window').width
 
 const styles = (theme: Theme) =>
     StyleSheet.create({

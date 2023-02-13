@@ -52,7 +52,14 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             })
             dispatch(updateMessage(acceptedPaymentMessage))
         }
-    }, [broadcastingUpdate, dispatch, message])
+    }, [
+        broadcastingUpdate,
+        dispatch,
+        message,
+        payment,
+        sendUpdatedPaymentMessage,
+        sentTo,
+    ])
 
     useEffect(() => {
         const redeemEcash = async () => {
@@ -68,7 +75,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         if (processingRedemption !== null && payment?.token) {
             redeemEcash()
         }
-    }, [payment?.token!, processingRedemption, receiveEcash])
+    }, [payment?.token, processingRedemption, receiveEcash])
 
     // TODO: Handle if a token is already spent
     // useEffect(() => {
@@ -173,13 +180,12 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
 
 type OutgoingPaymentRequestProps = {
     message: Message
-    incomingPayment: Payment
+    incomingPayment?: Payment
     text: string
 }
 
 const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
     message,
-    incomingPayment,
     text,
 }: OutgoingPaymentRequestProps) => {
     const { theme } = useTheme()

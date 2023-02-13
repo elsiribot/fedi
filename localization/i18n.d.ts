@@ -2,7 +2,8 @@ import 'i18next'
 import { resources } from './i18n'
 
 declare module 'react-i18next' {
+    type ResourceType = typeof resources
     interface CustomTypeOptions {
-        resources: typeof resources['en']
+        resources: ResourceType['en']
     }
 }
