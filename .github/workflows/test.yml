@@ -1,0 +1,49 @@
+name: Run test suites
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - 'release/**'
+jobs:
+    build-development:
+        name: Run the commands needed for development
+        runs-on: buildjet-2vcpu-ubuntu-2204
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v2
+            - name: Setup Node
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '16.18.X'
+            - name: Install dependencies
+              run: npm ci --cache .npm
+            - name: Run metro server
+              run: npx react-native start
+    check-code:
+        name: Check for Prettier, ESLint, + Typescript errors
+        runs-on: buildjet-2vcpu-ubuntu-2204
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v2
+            - name: Setup Node
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '16.18.X'
+            - name: Install dependencies
+              run: npm ci --cache .npm
+            - name: Run check-code script
+              run: npm run check-code
+    run-tests:
+        name: Run all tests
+        runs-on: buildjet-2vcpu-ubuntu-2204
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v2
+            - name: Setup Node
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '16.18.X'
+            - name: Install dependencies
+              run: npm ci --cache .npm
+            - name: Execute test commands
+              run: npm run test

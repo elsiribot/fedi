@@ -1,8 +1,7 @@
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { EventMapBase, NavigationState } from '@react-navigation/native'
-import React from 'react'
+import React, { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageSourcePropType } from 'react-native'
 
 import HoloGuidance from '../../ui/HoloGuidance'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -10,7 +9,7 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 type OnboardingSlideProps = {
     title: string
     message: string
-    iconImage: ImageSourcePropType
+    iconImage: ReactNode
 }
 
 const OnboardingSlide: React.FC<OnboardingSlideProps> = ({

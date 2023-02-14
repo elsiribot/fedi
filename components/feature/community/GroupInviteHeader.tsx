@@ -43,7 +43,11 @@ const GroupInviteHeader: React.FC<{}> = () => {
             }
             headerRight={
                 <Pressable
-                    // onPress={() => navigation.navigate('EditGroup')}
+                    onPress={() => {
+                        // TODO: implement EditGroup
+                        console.info('TODO: implement EditGroup', group)
+                        // navigation.navigate('EditGroup', { group })
+                    }}
                     disabled
                     style={{
                         padding: theme.spacing.sm,

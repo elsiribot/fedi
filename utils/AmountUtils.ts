@@ -1,4 +1,4 @@
-import accounting from 'accounting-js'
+import accounting from 'accounting'
 import {
     Btc,
     BtcString,
@@ -106,7 +106,7 @@ class AmountUtils {
                 : btc.toFixed(AmountUtils.BTC_MAX_DECIMAL_PLACES)
         ) as BtcString
     }
-    formatNumber = (amount: Number) => {
+    formatNumber = (amount: number): string => {
         return accounting.formatNumber(amount, { precision: 0 })
     }
 }

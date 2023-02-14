@@ -1,6 +1,5 @@
 import { Text, TextProps, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { Sats } from '../../../types'
@@ -18,7 +17,6 @@ const UsdAmount = ({
     amountSats,
     textProps = DEFAULT_TEXT_PROPS,
 }: UsdAmountProps) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const { convertSatsToUsdString } = useBtcUsdPrice()
 

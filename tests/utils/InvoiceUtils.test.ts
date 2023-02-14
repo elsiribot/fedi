@@ -1,4 +1,4 @@
-import invoiceUtils from './InvoiceUtils'
+import invoiceUtils from '../../utils/InvoiceUtils'
 
 describe('InvoiceUtils', () => {
     describe('getAmountFromInvoice', () => {

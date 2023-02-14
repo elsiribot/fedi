@@ -2,7 +2,7 @@
 // For simplicity's sake we ignore type-checking here to protect
 // readability since each test already describes which type of
 // units are involved
-import amountUtils from './AmountUtils'
+import amountUtils from '../../utils/AmountUtils'
 
 describe('AmountUtils', () => {
     describe('msatToSat', () => {
