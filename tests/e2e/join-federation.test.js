@@ -11,7 +11,7 @@ describe('Splash Screen', () => {
         await expect(element(by.id('JoinFederationButton'))).toBeVisible()
     })
 
-    it('should render a link to the EULA', async () => {
-        await expect(element(by.id('JoinFederationButton'))).toBeVisible()
+    it.skip('should render a link to the EULA', async () => {
+        // TODO
     })
 })
