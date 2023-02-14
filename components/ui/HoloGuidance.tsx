@@ -7,7 +7,7 @@ import { Images } from '../../assets/images'
 type HoloGuidanceProps = {
     iconImage?: React.ReactNode | null
     title?: string | null
-    titleProps: TextProps | null
+    titleProps?: TextProps | null
     message?: string | null
     body?: React.ReactNode | null
 }

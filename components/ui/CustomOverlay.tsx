@@ -42,7 +42,6 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     containerStyle={styles(theme).buttonContainer}
                     title={button.text}
                     titleStyle={[
-                        styles(theme).buttonTitle,
                         button.textColor
                             ? { color: button.textColor }
                             : { color: theme.colors.white },
