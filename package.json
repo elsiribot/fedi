@@ -7,7 +7,9 @@
         "android": "sh scripts/run-android.sh",
         "ios": "sh scripts/run-ios.sh",
         "start": "react-native start",
-        "test": "jest",
+        "test:functional": "jest",
+        "test:e2e:regtest": "sh scripts/run-e2e-tests.sh -n regtest",
+        "test:e2e:mainnet": "sh scripts/run-e2e-tests.sh -n mainnet",
         "clean": "sh scripts/clean.sh",
         "check-code": "sh scripts/check-code.sh",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
