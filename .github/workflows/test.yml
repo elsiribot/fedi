@@ -1,12 +1,13 @@
 name: Run test suites
 on:
     workflow_dispatch:
-    push:
+    pull_request:
         branches:
+            - 'develop'
             - 'release/**'
 jobs:
-    build-development:
-        name: Run the commands needed for development
+    run:
+        name: Check code & run tests
         runs-on: buildjet-2vcpu-ubuntu-2204
         steps:
             - name: Checkout repo
@@ -17,33 +18,11 @@ jobs:
                   node-version: '16.18.X'
             - name: Install dependencies
               run: npm ci --cache .npm
-            - name: Run metro server
-              run: npx react-native start
-    check-code:
-        name: Check for Prettier, ESLint, + Typescript errors
-        runs-on: buildjet-2vcpu-ubuntu-2204
-        steps:
-            - name: Checkout repo
-              uses: actions/checkout@v2
-            - name: Setup Node
-              uses: actions/setup-node@v1
-              with:
-                  node-version: '16.18.X'
-            - name: Install dependencies
-              run: npm ci --cache .npm
-            - name: Run check-code script
+            - name: Check for Prettier, ESLint, + Typescript errors
               run: npm run check-code
-    run-tests:
-        name: Run all tests
-        runs-on: buildjet-2vcpu-ubuntu-2204
-        steps:
-            - name: Checkout repo
-              uses: actions/checkout@v2
-            - name: Setup Node
-              uses: actions/setup-node@v1
-              with:
-                  node-version: '16.18.X'
-            - name: Install dependencies
-              run: npm ci --cache .npm
-            - name: Execute test commands
-              run: npm run test
+            - name: Run functional tests with Jest
+              run: npm run test:functional
+            - name: Run end-to-end tests with Detox with Regtest federation
+              run: npm run test:e2e:regtest
+            - name: Run end-to-end tests with Detox with Mainnet federation
+              run: npm run test:e2e:mainnet

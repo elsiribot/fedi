@@ -1,0 +1,92 @@
+name: Deploy to Google Play Dev Console - Internal Testing
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - 'release/**'
+            - 'ol/cicd-testing'
+jobs:
+    release-android:
+        name: Build Android AAB & Upload to Google Play Dev Console
+        runs-on: buildjet-8vcpu-ubuntu-2204
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v2
+              with:
+                  submodules: true
+
+            - name: Cache
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      ./bridge/target
+                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+
+            - name: Setup JDK
+              uses: actions/setup-java@v3
+              with:
+                  distribution: 'zulu'
+                  java-version: 11
+                  cache: 'gradle'
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: nightly
+                  override: true
+                  components: rustfmt, clippy
+
+            - name: Add Rust targets for Android
+              run: |
+                  rustup target add x86_64-linux-android
+                  rustup target add aarch64-linux-android
+                  rustup target add armv7-linux-androideabi
+
+            - name: Setup Android NDK
+              id: setup-ndk
+              uses: nttld/setup-ndk@v1
+              with:
+                  ndk-version: r25c
+                  local-cache: true
+
+            - name: Save ANDROID_NDK_ROOT to environment
+              run: |
+                  echo $'ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}' >> $GITHUB_ENV
+
+            - name: Configure environment for all targets
+              run: |
+                  echo AR=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar >> $GITHUB_ENV
+                  echo "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+                  cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang
+                  cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
+
+            - name: Build bridge
+              env:
+                  FM_ROCKSDB: true
+              run: |
+                  npm run build-bridge-android
+
+            - name: Setup Node
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '16.18.X'
+
+            - name: Install Node dependencies
+              run: npm ci --cache .npm
+
+            - name: Setup Ruby
+              uses: ruby/setup-ruby@v1
+              with:
+                  ruby-version: '2.7.5'
+
+            - name: Generate private-decoded-key.json file
+              run: |
+                  echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} | base64 -d > ./android/decoded-service-account-credentials.json
+
+            - name: Install Fastlane
+              run: cd android && bundle install && cd ..
+
+            - name: Execute Fastlane command
+              run: cd android && bundle exec fastlane internal && cd ..
