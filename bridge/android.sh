@@ -7,7 +7,7 @@ rustup target add aarch64-linux-android
 rustup target add armv7-linux-androideabi
 
 # build maven package
-pushd calculator-android
+cd calculator-android
 ./gradlew buildAndroidLib
 ./gradlew publishToMavenLocal
-popd
+cd ..
