@@ -1,2 +1,2 @@
 json_key_file("../.local/pc-api-5515229017025140225-167-4feea2452747.json") # Path to the json secret file - Follow https://docs.fastlane.tools/actions/supply/#setup to get one
-package_name("com.fedimintreactnative") # e.g. com.krausefx.app
+package_name("com.fedimintreactnative")
