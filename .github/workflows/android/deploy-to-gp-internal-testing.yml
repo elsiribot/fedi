@@ -1,16 +1,12 @@
-name: Publish Android APK to GitHub
+name: Deploy to Google Play Dev Console - Internal Testing
 on:
     workflow_dispatch:
     push:
         branches:
             - 'release/**'
-<<<<<<<< HEAD:.github/workflows/publish-android-apk.yml
-            - 'ol/cicd-testing'
-========
->>>>>>>> 312cf1d (Organize workflows):.github/workflows/android/publish-android-apk.yml
 jobs:
     release-android:
-        name: Build Android APK and publish in GitHub draft release
+        name: Build Android AAB & Upload to Google Play Dev Console
         runs-on: buildjet-8vcpu-ubuntu-2204
         steps:
             - name: Checkout repo
@@ -84,16 +80,12 @@ jobs:
               with:
                   ruby-version: '2.7.5'
 
+            - name: Generate private-decoded-key.json file
+              run: |
+                  echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} | base64 -d > ./android/decoded-service-account-credentials.json
+
             - name: Install Fastlane
               run: cd android && bundle install && cd ..
 
             - name: Execute Fastlane command
-              run: cd android && bundle exec fastlane build_production_apk && cd ..
-
-            - name: Create draft GitHub release with APK
-              uses: softprops/action-gh-release@v1
-              with:
-                  name: 'Automated APK Upload'
-                  body: 'This is an automated CI release'
-                  draft: true
-                  files: ./android/app/build/outputs/apk/productionRelease/app-production-release.apk
+              run: cd android && bundle exec fastlane internal && cd ..
