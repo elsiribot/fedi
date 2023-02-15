@@ -5,16 +5,20 @@ use fedimint_api::{
 };
 use mint_client::social::SocialRecoveryState;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Serialize, Deserialize)]
+use crate::types;
+
+#[derive(Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialRecoveryQr {
-    pub recovery_id: RecoveryId,
+    pub recovery_id: types::RecoveryId,
 }
 
 /// This type is set to React Native and displayed in the UI
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct SocialRecoveryApproval {
     // FIXME: perhaps this should be peer id and client can look up the name ???
     pub guardian_name: String,

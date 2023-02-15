@@ -19,7 +19,7 @@ use crate::{
     },
     types::{
         federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
-        LnurlSignedMessage, XmppCredentials,
+        LnurlSignedMessage, XmppCredentials, self,
     },
     EventSinkWrapper,
 };
@@ -390,7 +390,7 @@ impl Federation {
         let keypair = secret.to_secp_key(&Secp256k1::new());
         let pubkey = keypair.public_key();
         let signature = secp.sign_ecdsa(msg, &keypair.secret_key());
-        LnurlSignedMessage { signature, pubkey }
+        LnurlSignedMessage { signature, pubkey: types::PublicKey(pubkey) }
     }
 
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
@@ -1015,12 +1015,13 @@ impl Federation {
     }
 
     /// Get social recovery Id from the DB. This is used to generate the recovery QR.
-    pub async fn get_social_recovery_id(&self) -> Option<RecoveryId> {
+    pub async fn get_social_recovery_id(&self) -> Option<types::RecoveryId> {
         self.dbtx()
             .await
             .get_value(&SocialRecoveryIdKey(self.id()))
             .await
             .expect("Db error")
+            .map(types::RecoveryId)
     }
 
     /// Start a new social recovery session if one doesn't exist already
@@ -1074,7 +1075,7 @@ impl Federation {
             .get_social_recovery_id()
             .await
             .ok_or(anyhow!("No recovery ID found"))?;
-        Ok(SocialRecoveryQr { recovery_id })
+        Ok(SocialRecoveryQr { recovery_id  })
     }
 
     /// Get a list of the state of all social recoveries from all guardians

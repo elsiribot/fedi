@@ -47,6 +47,8 @@ hex = "0.4.3"
 
 uniffi_macros = { version = "0.21.0", features = ["builtin-bindgen"] }
 uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
+macro_rules_attribute = "0.1.3"
+ts-rs = { git = "https://github.com/maan2003/ts-rs", branch = "fix-type-struct-zero" }
 
 [features]
 default = ["sled"]

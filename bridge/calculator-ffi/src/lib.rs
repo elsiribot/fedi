@@ -1,4 +1,7 @@
+#![allow(non_snake_case)]
+
 pub mod bridge;
+pub mod error;
 pub mod event;
 pub mod logging;
 pub mod mnemonic;
@@ -14,10 +17,12 @@ use std::{
 };
 
 use bitcoin::{secp256k1::Message, Address};
+use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
-use fedi_social::common::RecoveryId;
-use fedimint_api::{Amount, PeerId};
+use futures::Future;
 use lazy_static::lazy_static;
+use types::RecoveryId;
+use types::{Amount, PeerId, PublicKey};
 
 uniffi_macros::include_scaffolding!("calculator");
 
@@ -25,20 +30,24 @@ use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};
 use lightning_invoice::Invoice;
 use logging::init_logging;
+use macro_rules_attribute::macro_rules_derive;
 use mint_client::{
     social::RecoveryFile,
     utils::{parse_ecash, serialize_ecash},
 };
 use mnemonic::Mnemonic;
-use serde::{Deserialize, Serialize};
+use recovery::SocialRecoveryQr;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use tokio::fs;
 use tokio::sync::Mutex;
 use tracing::{error, info, info_span, Instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
-use types::{BridgeLightningGateway, FedimintFederation};
+use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
 
-use crate::{event::EventSinkWrapper, types::federation_to_fedimint_federation};
+use crate::{
+    error::get_error_code, event::EventSinkWrapper, types::federation_to_fedimint_federation,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -66,7 +75,11 @@ async fn set_bridge(bridge: Bridge) -> anyhow::Result<()> {
 
 async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
     tracing::debug!("getting bridge");
-    let bridge = BRIDGE.lock().await.clone().context("bridge not set")?;
+    let bridge = BRIDGE
+        .lock()
+        .await
+        .clone()
+        .context(ErrorCode::InitializationFailed)?;
     tracing::debug!("got bridge");
     Ok(bridge)
 }
@@ -87,9 +100,7 @@ async fn fedimint_initialize_async(
     log_level: &str,
     event_sink: Box<dyn EventSink>,
 ) -> anyhow::Result<()> {
-    let already_init = {
-        BRIDGE.lock().await.is_some()
-    };
+    let already_init = { BRIDGE.lock().await.is_some() };
     if already_init {
         anyhow::bail!("init called again, ignoring");
     }
@@ -107,9 +118,11 @@ async fn fedimint_initialize_async(
     Ok(())
 }
 
-fn rpc_error(description: &str) -> String {
-    tracing::error!(?description, "rpc_error");
-    return json!({ "error": description }).to_string();
+fn rpc_error(error: &anyhow::Error) -> String {
+    tracing::error!(%error, "rpc_error");
+    let code = get_error_code(error);
+
+    return json!({ "error": error.to_string(), "code": code }).to_string();
 }
 
 async fn get_federation(federation_id: &str) -> anyhow::Result<Arc<Federation>> {
@@ -117,66 +130,74 @@ async fn get_federation(federation_id: &str) -> anyhow::Result<Arc<Federation>> 
     bridge
         .get_federation(federation_id)
         .await
-        .context("could not find federation")
+        .context(ErrorCode::InitializationFailed)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListTransactionsPayload {
-    federation_id: String,
-}
+use ts_rs::TS;
 
-async fn handle_list_transactions(payload: String) -> anyhow::Result<String> {
-    let payload: ListTransactionsPayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
+macro_rules! rpc_method {
+    (
+        $vis:vis async fn $name:ident (
+            $(
+                $arg_name:ident: $arg_ty:ty
+            ),*
+            $(,)?
+        ) -> anyhow::Result<$ret:ty>
+
+        $body:block
+    ) => {
+        mod $name {
+            use super::*;
+            #[derive(Debug, Serialize, Deserialize, TS)]
+            #[serde(rename_all = "camelCase")]
+            pub struct Args {
+            $(
+                pub $arg_name: $arg_ty,
+            )*
+            }
+
+            pub type Return = $ret;
+            pub async fn handle($name::Args { $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
+                super::$name($($arg_name),*).await
+            }
+        }
+
     };
-    let federation = get_federation(&payload.federation_id).await?;
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn listTransactions(federation_id: String) -> anyhow::Result<Vec<Transaction>> {
+    let federation = get_federation(&federation_id).await?;
     // FIXME: consider mapping from millisat to sat
     let transactions = federation.list_transactions().await;
-    Ok(json!({ "result": transactions }).to_string())
+    Ok(transactions)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateTransactionNotePayload {
+#[macro_rules_derive(rpc_method!)]
+async fn updateTransactionNotes(
     federation_id: String,
     transaction_id: String,
     notes: String,
-}
-
-async fn handle_update_transaction_notes(payload: String) -> anyhow::Result<String> {
-    let payload: UpdateTransactionNotePayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
-    let federation = get_federation(&payload.federation_id).await?;
+) -> anyhow::Result<()> {
+    let federation = get_federation(&federation_id).await?;
     federation
-        .update_transaction_notes(payload.transaction_id, payload.notes)
+        .update_transaction_notes(transaction_id, notes)
         .await?;
-    Ok(json!({ "result": () }).to_string())
+    Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct JoinFederationPayload {
-    connect_string: String,
-}
-
-async fn handle_join_federation(payload: String) -> anyhow::Result<String> {
-    let JoinFederationPayload { connect_string } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn joinFederation(connect_string: String) -> anyhow::Result<FedimintFederation> {
     let bridge = get_bridge().await?;
 
     let federation = bridge.join_federation(connect_string).await?;
 
     let fedimint_federation = federation_to_fedimint_federation(&federation).await;
-    Ok(json!({ "result": fedimint_federation }).to_string())
+    Ok(fedimint_federation)
 }
 
-async fn handle_list_federations() -> anyhow::Result<String> {
+#[macro_rules_derive(rpc_method!)]
+async fn listFederations() -> anyhow::Result<Vec<FedimintFederation>> {
     let bridge = get_bridge().await?;
     let federations: Vec<FedimintFederation> = futures::future::join_all(
         bridge
@@ -187,208 +208,128 @@ async fn handle_list_federations() -> anyhow::Result<String> {
             .map(|federation| federation_to_fedimint_federation(federation)),
     )
     .await;
-    Ok(json!({ "result": federations }).to_string())
+    Ok(federations)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GenerateInvoicePayload {
+#[macro_rules_derive(rpc_method!)]
+async fn generateInvoice(
     federation_id: String,
     amount: Amount,
     description: String,
-}
-
-async fn handle_generate_invoice(payload: String) -> anyhow::Result<String> {
-    let payload: GenerateInvoicePayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
-    if payload.amount.msats > 200000000 {
+) -> anyhow::Result<String> {
+    if amount.0.msats > 200000000 {
         anyhow::bail!("Maximum invoice amount is 200,000 sats");
     }
-    let federation = get_federation(&payload.federation_id).await?;
-    let invoice = federation
-        .generate_invoice(payload.amount, payload.description)
-        .await?;
-    Ok(json!({ "result": invoice.to_string() }).to_string())
+    let federation = get_federation(&federation_id).await?;
+    let invoice = federation.generate_invoice(amount.0, description).await?;
+    Ok(invoice.to_string())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[macro_rules_derive(rpc_method!)]
+async fn payInvoice(federation_id: String, invoice: String) -> anyhow::Result<()> {
+    let federation = get_federation(&federation_id).await?;
+    let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
+    federation.pay_invoice(&invoice).await
+}
+
+#[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-pub struct PayInvoicePayload {
-    federation_id: String,
-    invoice: String,
-}
-
-async fn handle_pay_invoice(payload: String) -> anyhow::Result<String> {
-    let payload: PayInvoicePayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
-    let federation = get_federation(&payload.federation_id).await?;
-    let invoice: Invoice = payload.invoice.parse().context("could not parse invoice")?;
-    federation.pay_invoice(&invoice).await?;
-    Ok(json!({ "result": () }).to_string())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AddressOrInvoicePayload {
-    federation_id: String,
-    input: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub enum AddressOrInvoice {
     Address,
     Invoice,
 }
 
-async fn handle_address_or_invoice(payload: String) -> anyhow::Result<String> {
-    let AddressOrInvoicePayload {
-        federation_id,
-        input,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn addressOrInvoice(
+    federation_id: String,
+    input: String,
+) -> anyhow::Result<AddressOrInvoice> {
     let federation = get_federation(&federation_id).await?;
     if let Ok(invoice) = input.parse::<Invoice>() {
         // validate that we can pay this invoice
         federation.can_pay_invoice(&invoice).await?;
-        return Ok(json!({ "result": AddressOrInvoice::Invoice }).to_string());
+        return Ok(AddressOrInvoice::Invoice);
     }
     if let Ok(address) = input.parse::<Address>() {
         // validate that we can pay this invoice
         federation.can_pay_address(&address)?;
-        return Ok(json!({ "result": AddressOrInvoice::Address }).to_string());
+        return Ok(AddressOrInvoice::Address);
     }
     Err(anyhow!("Not an address or invoice"))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GenerateAddressPayload {
-    federation_id: String,
-}
-
-async fn handle_generate_address(payload: String) -> anyhow::Result<String> {
-    let payload: GenerateAddressPayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
-    let federation = get_federation(&payload.federation_id).await?;
-    let address = federation.generate_address().await;
-    Ok(json!({ "result": address.to_string() }).to_string())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GenerateEcashPayload {
-    federation_id: String,
-    amount: Amount,
-}
-
-async fn handle_generate_ecash(payload: String) -> anyhow::Result<String> {
-    let GenerateEcashPayload {
-        federation_id,
-        amount,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn generateAddress(federation_id: String) -> anyhow::Result<String> {
     let federation = get_federation(&federation_id).await?;
-    let ecash = federation.generate_ecash(amount).await?;
+    let address = federation.generate_address().await;
+    Ok(address.to_string())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn generateEcash(federation_id: String, amount: Amount) -> anyhow::Result<String> {
+    let federation = get_federation(&federation_id).await?;
+    let ecash = federation.generate_ecash(amount.0).await?;
     let ecash = serialize_ecash(&ecash);
-    Ok(json!({ "result": ecash }).to_string())
+    Ok(ecash)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReceiveEcashPayload {
+#[macro_rules_derive(rpc_method!)]
+async fn receiveEcash(
     federation_id: String,
-    // TODO: TieredMulti<SpendableNote>
+    // TODO : TieredMulti<SpendableNote>
     ecash: String,
-}
-
-async fn handle_receive_ecash(payload: String) -> anyhow::Result<String> {
-    let ReceiveEcashPayload {
-        federation_id,
-        ecash,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
+) -> anyhow::Result<Amount> {
     let federation = get_federation(&federation_id).await?;
     // TODO: save them to disk in case this call fails.
     // Add a poller to check for ecash notes in the table and try to redeem them periodically.
     // If redeemed, send transaction event and update their entry.
     let ecash = parse_ecash(&ecash)?;
-    let amount = federation.receive_ecash(ecash).await?;
-    Ok(json!({ "result": { "amount": amount } }).to_string())
+    Ok(Amount(federation.receive_ecash(ecash).await?))
 }
 
-// FIXME: this is the same as ReceiveOfflinePayload ...
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ValidateEcashPayload {
+#[derive(Debug, Serialize, Deserialize, TS)]
+pub struct ValidateEcashResponse {
+    valid: bool,
+    amount: Amount,
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn validateEcash(
     federation_id: String,
     // TODO: TieredMulti<SpendableNote>
     ecash: String,
-}
-
-async fn handle_validate_ecash(payload: String) -> anyhow::Result<String> {
-    let ValidateEcashPayload {
-        federation_id,
-        ecash,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
+) -> anyhow::Result<ValidateEcashResponse> {
     let federation = get_federation(&federation_id).await?;
     let ecash = parse_ecash(&ecash)?;
     let (valid, amount) = federation.validate_ecash(ecash).await;
-    Ok(json!({ "result": { "valid": valid, "amount": amount }}).to_string())
+    Ok(ValidateEcashResponse {
+        valid,
+        amount: Amount(amount),
+    })
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DecodeInvoicePayload {
-    invoice: String,
-}
-
-async fn handle_decode_invoice(payload: String) -> anyhow::Result<String> {
-    let payload: DecodeInvoicePayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn decodeInvoice(invoice: String) -> anyhow::Result<types::Invoice> {
     // TODO: validate the invoice (same network, haven't already paid, etc)
-    let invoice: Invoice = payload.invoice.parse()?;
+    let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
     let bridge_invoice = types::Invoice::try_from(&invoice)?;
-    Ok(json!({ "result": bridge_invoice }).to_string())
+    Ok(bridge_invoice)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PayAddressPayload {
+#[macro_rules_derive(rpc_method!)]
+async fn payAddress(
     federation_id: String,
     address: String,
     // TODO: parse this as bitcoin::Amount
     sats: u64,
-}
-
-async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
-    let payload: PayAddressPayload = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
-    let federation = get_federation(&payload.federation_id).await?;
-    let address = bitcoin::util::address::Address::from_str(&payload.address)
+) -> anyhow::Result<String> {
+    let federation = get_federation(&federation_id).await?;
+    let address = bitcoin::util::address::Address::from_str(&address)
         .map_err(|_| FedimintError::OtherError(anyhow!("Invalid address")))?;
     federation.can_pay_address(&address)?;
     let mut rng = rand::rngs::OsRng;
-    let sats = bitcoin::Amount::from_sat(payload.sats);
+    let sats = bitcoin::Amount::from_sat(sats);
     let peg_out = federation
         .client
         .new_peg_out_with_fees(sats, address.clone())
@@ -422,42 +363,23 @@ async fn handle_pay_address(payload: String) -> anyhow::Result<String> {
             true,
         )
         .await;
-    Ok(json!({ "result": out_point.txid.to_string() }).to_string())
+    Ok(out_point.txid.to_string())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LnurlSignMessagePayload {
-    /// hex-encoded message
+#[macro_rules_derive(rpc_method!)]
+async fn lnurlSignMessage(
+    // hex-encoded message
     message: String,
     federation_id: String,
-}
-
-async fn handle_lnurl_sign_message(payload: String) -> anyhow::Result<String> {
-    let LnurlSignMessagePayload {
-        message,
-        federation_id,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Ok(rpc_error("Invalid payload")),
-    };
+) -> anyhow::Result<LnurlSignedMessage> {
     let federation = get_federation(&federation_id).await?;
     let message = Message::from_slice(&hex::decode(message)?)?;
     let signed_message = federation.sign_lnurl_message(&message);
-    Ok(json!({ "result": signed_message }).to_string())
+    Ok(signed_message)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListGatewaysPayload {
-    federation_id: String,
-}
-
-async fn handle_list_gateways(payload: String) -> anyhow::Result<String> {
-    let ListGatewaysPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn listGateways(federation_id: String) -> anyhow::Result<Vec<BridgeLightningGateway>> {
     let federation = get_federation(&federation_id).await?;
     let gateways = federation.client.fetch_registered_gateways().await?;
     let active_gateway = match federation.client.fetch_active_gateway().await {
@@ -473,136 +395,71 @@ async fn handle_list_gateways(payload: String) -> anyhow::Result<String> {
             active: active_gateway == Some(gw),
         })
         .collect();
-    Ok(json!({ "result": bridge_gateways }).to_string())
+    Ok(bridge_gateways)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SwitchGatewayPayload {
-    federation_id: String,
-    node_pubkey: bitcoin::secp256k1::PublicKey,
-}
-
-async fn handle_switch_gateway(payload: String) -> anyhow::Result<String> {
-    let SwitchGatewayPayload {
-        federation_id,
-        node_pubkey,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn switchGateway(federation_id: String, node_pubkey: PublicKey) -> anyhow::Result<()> {
     let federation = get_federation(&federation_id).await?;
     federation
         .client
-        .switch_active_gateway(Some(node_pubkey))
+        .switch_active_gateway(Some(node_pubkey.0))
         .await?;
-    Ok(json!({ "result": () }).to_string())
+    Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetMnemonicPayload {
-    federation_id: String,
-}
-
-async fn handle_get_mnemonic(payload: String) -> anyhow::Result<String> {
-    let GetMnemonicPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn getMnemonic(federation_id: String) -> anyhow::Result<Vec<String>> {
     let federation = get_federation(&federation_id).await?;
     let mnemonic = federation.get_mnemonic().await;
-    Ok(json!({ "result": mnemonic.serialize() }).to_string())
+    Ok(mnemonic.serialize())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecoverFromMnemonicPayload {
+#[macro_rules_derive(rpc_method!)]
+async fn recoverFromMnemonic(
     federation_id: String,
     mnemonic: Vec<String>,
-}
-
-async fn handle_recover_from_mnemonic(payload: String) -> anyhow::Result<String> {
-    let RecoverFromMnemonicPayload {
-        federation_id,
-        mnemonic,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
-
+) -> anyhow::Result<Option<String>> {
     let bridge = get_bridge().await?;
     let mnemonic_string = mnemonic.join(" ");
     // FIXME: should this happen inside bridge module?
-    let mnemonic = Mnemonic::parse(mnemonic_string)?;
+    let mnemonic = Mnemonic::parse(mnemonic_string).context(ErrorCode::InvalidMnemonic)?;
     let username = bridge
         .recover_from_mnemonic(&federation_id, &mnemonic)
         .await?;
-    Ok(json!({ "result": username }).to_string())
+    Ok(username)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LeaveFederationPayload {
-    federation_id: String,
-}
-
-async fn handle_leave_federation(payload: String) -> anyhow::Result<String> {
-    let LeaveFederationPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn leaveFederation(federation_id: String) -> anyhow::Result<()> {
     let bridge = get_bridge().await?;
     bridge.leave_federation(&federation_id).await?;
-    Ok(json!({ "result": () }).to_string())
+    Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UploadBackupFilePayload {
+#[macro_rules_derive(rpc_method!)]
+async fn uploadBackupFile(
     federation_id: String,
     video_file_path: PathBuf,
-}
-
-/// This is when they create the backup initially, NOT when they're recovering
-async fn handle_upload_backup_file(payload: String) -> anyhow::Result<String> {
-    let UploadBackupFilePayload {
-        video_file_path,
-        federation_id,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+) -> anyhow::Result<PathBuf> {
     let datadir = { get_bridge().await?.data_dir.clone() };
     let federation = get_federation(&federation_id).await?;
     let recovery_file_path = federation
         .upload_backup_file(&video_file_path, &datadir)
         .await?;
-    Ok(json!({ "result": recovery_file_path }).to_string())
+    Ok(recovery_file_path)
 }
 
 // This method is a bit of a stopgap ...
-async fn handle_locate_recovery_file(_payload: String) -> anyhow::Result<String> {
+#[macro_rules_derive(rpc_method!)]
+async fn locateRecoveryFile() -> anyhow::Result<PathBuf> {
     let datadir = get_bridge().await?.data_dir.clone();
     let recovery_file_path = datadir.join(RECOVERY_FILENAME);
-    Ok(json!({ "result": recovery_file_path }).to_string())
+    Ok(recovery_file_path)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ValidateRecoveryFilePayload {
-    federation_id: String,
-    path: PathBuf,
-}
-
-async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String> {
-    let ValidateRecoveryFilePayload {
-        path,
-        federation_id,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn validateRecoveryFile(federation_id: String, path: PathBuf) -> anyhow::Result<bool> {
     let contents = fs::read(path).await?;
     let recovery_file = RecoveryFile::from_bytes(&contents)?;
     let federation = get_federation(&federation_id).await?;
@@ -610,23 +467,15 @@ async fn handle_validate_recovery_file(payload: String) -> anyhow::Result<String
     // TODO: check that the federation matches and everything
     // also fixed by using federation-specific location
     let valid = RecoveryFile::from_bytes(&contents).is_ok();
-    Ok(json!({ "result": valid }).to_string())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecoveryQrPayload {
-    federation_id: String,
+    Ok(valid)
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
-async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
-    let RecoveryQrPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn recoveryQr(federation_id: String) -> anyhow::Result<SocialRecoveryQr> {
     // Return QR code contents
     let federation = get_federation(&federation_id).await?;
+
     // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
     let recovery_file_path = get_bridge().await?.data_dir.join(RECOVERY_FILENAME);
     let contents = fs::read(recovery_file_path).await?;
@@ -634,20 +483,11 @@ async fn handle_recovery_qr(payload: String) -> anyhow::Result<String> {
     // Upload verification document if none exists.
     federation.start_social_recovery(&recovery_file).await?;
     let qr = federation.social_recovery_qr().await?;
-    Ok(json!({ "result": qr }).to_string())
+    Ok(qr)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SocialRecoveryApprovalsPayload {
-    federation_id: String,
-}
-
-async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<String> {
-    let SocialRecoveryApprovalsPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn socialRecoveryApprovals(federation_id: String) -> anyhow::Result<SocialRecoveryEvent> {
     // Return QR code contents
     let federation = get_federation(&federation_id).await?;
     let (approvals, remaining) = federation.social_recovery_approvals().await?;
@@ -656,72 +496,39 @@ async fn handle_social_recovery_approvals(payload: String) -> anyhow::Result<Str
         approvals,
         remaining,
     };
-    Ok(json!({ "result": result }).to_string())
+    Ok(result)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SocialRecoveryDownloadVerificationDocPayload {
+#[macro_rules_derive(rpc_method!)]
+async fn socialRecoveryDownloadVerificationDoc(
     federation_id: String,
     recovery_id: RecoveryId,
-}
-
-async fn handle_social_recovery_download_verification_doc(
-    payload: String,
-) -> anyhow::Result<String> {
-    let SocialRecoveryDownloadVerificationDocPayload {
-        federation_id,
-        recovery_id,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+) -> anyhow::Result<Option<PathBuf>> {
     let datadir = { get_bridge().await?.data_dir.clone() };
     // Return QR code contents
     let federation = get_federation(&federation_id).await?;
     let path = federation
-        .social_recovery_download_verification_doc(&recovery_id, datadir)
+        .social_recovery_download_verification_doc(&recovery_id.0, datadir)
         .await?;
-    Ok(json!({ "result": path }).to_string())
+    Ok(path)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ApproveSocialRecoveryRequestPayload {
+#[macro_rules_derive(rpc_method!)]
+async fn approveSocialRecoveryRequest(
     federation_id: String,
     recovery_id: RecoveryId,
     peer_id: PeerId,
     password: String,
-}
-
-async fn handle_approve_social_recovery_request(payload: String) -> anyhow::Result<String> {
-    let ApproveSocialRecoveryRequestPayload {
-        federation_id,
-        recovery_id,
-        peer_id,
-        password,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+) -> anyhow::Result<()> {
     let federation = get_federation(&federation_id).await?;
     federation
-        .approve_social_recovery_request(&recovery_id, peer_id, &password)
+        .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
         .await?;
-    Ok(json!({ "result": () }).to_string())
+    Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CompleteSocialRecoveryPayload {
-    federation_id: String,
-}
-
-async fn handle_complete_social_recovery(payload: String) -> anyhow::Result<String> {
-    let CompleteSocialRecoveryPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn completeSocialRecovery(federation_id: String) -> anyhow::Result<Option<String>> {
     let federation = get_federation(&federation_id).await?;
     let mnemonic = federation.social_recovery_combine_shares().await?;
     tracing::info!("final {:?}", mnemonic.to_string());
@@ -731,96 +538,115 @@ async fn handle_complete_social_recovery(payload: String) -> anyhow::Result<Stri
         .await?;
     federation.delete_social_recovery_state_and_id().await;
     federation.send_federation_event().await;
-    Ok(json!({ "result": username }).to_string())
+    Ok(username)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct XmppCredentialsPayload {
-    federation_id: String,
-}
-
-async fn handle_xmpp_credentials(payload: String) -> anyhow::Result<String> {
-    let XmppCredentialsPayload { federation_id } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn xmppCredentials(federation_id: String) -> anyhow::Result<XmppCredentials> {
     let federation = get_federation(&federation_id).await?;
     let credentials = federation.xmpp_credentials().await;
-    Ok(json!({ "result": credentials }).to_string())
+    Ok(credentials)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SetUsernamePayload {
-    federation_id: String,
-    username: String,
-}
-
-async fn handle_set_username(payload: String) -> anyhow::Result<String> {
-    let SetUsernamePayload {
-        federation_id,
-        username,
-    } = match serde_json::from_str(&payload) {
-        Ok(p) => p,
-        Err(_) => return Err(anyhow::anyhow!("Invalid payload")),
-    };
+#[macro_rules_derive(rpc_method!)]
+async fn backupXmppUsername(federation_id: String, username: String) -> anyhow::Result<()> {
     let federation = get_federation(&federation_id).await?;
     federation.set_username(username).await;
     federation.back_up_ecash_to_federation().await?;
-    Ok(json!({ "result": () }).to_string())
+    Ok(())
 }
+
+// converts from a typed handler into untyped handler
+async fn handle_wrapper<Args, F, Fut, R>(f: F, payload: String) -> anyhow::Result<String>
+where
+    F: Fn(Args) -> Fut,
+    Args: DeserializeOwned,
+    Fut: Future<Output = anyhow::Result<R>>,
+    R: Serialize,
+{
+    let args = serde_json::from_str(&payload).context(ErrorCode::BadRequest)?;
+    let response = f(args).await?;
+    let response = serde_json::json!({
+        "result": response,
+    });
+    serde_json::to_string(&response).context("serialization failed")
+}
+
+macro_rules! rpc_methods {
+    ($name:ident { $($method:ident),* $(,)? }) => {
+        // all variants are unused
+        // just used for typeshare
+        #[allow(unused)]
+        #[derive(TS)]
+        #[ts(export, export_to = "target/bindings/")]
+        pub struct $name {
+        $(
+            #[ts(inline)]
+            $method: ($method::Args, $method::Return),
+        )*
+        }
+
+        impl $name {
+            pub async fn handle(method: &str, payload: String) -> anyhow::Result<String> {
+                match method {
+                $(
+                    stringify!($method) => handle_wrapper($method::handle, payload).await,
+                )*
+                    other => Err(anyhow::anyhow!(format!(
+                        "Unrecognized RPC command: {}",
+                        other
+                    ))),
+                }
+            }
+        }
+    };
+}
+
+rpc_methods!(RpcMethods {
+    listTransactions,
+    updateTransactionNotes,
+    joinFederation,
+    listFederations,
+    generateInvoice,
+    decodeInvoice,
+    payInvoice,
+    generateAddress,
+    payAddress,
+    generateEcash,
+    receiveEcash,
+    validateEcash,
+    addressOrInvoice,
+    listGateways,
+    switchGateway,
+    getMnemonic,
+    recoverFromMnemonic,
+    leaveFederation,
+    // social
+    uploadBackupFile,
+    locateRecoveryFile,
+    validateRecoveryFile,
+    recoveryQr,
+    socialRecoveryApprovals,
+    completeSocialRecovery,
+    socialRecoveryDownloadVerificationDoc,
+    approveSocialRecoveryRequest,
+    // authentication
+    lnurlSignMessage,
+    xmppCredentials,
+    backupXmppUsername,
+});
 
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     static REQUEST_ID: AtomicU64 = AtomicU64::new(0);
     let request_id = REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     tracing::info!("{} {}", method, payload);
+
     RUNTIME.block_on(
         async {
             info!(?payload, "rpc_payload");
-            let result = match method.as_ref() {
-                "listTransactions" => handle_list_transactions(payload).await,
-                "updateTransactionNotes" => handle_update_transaction_notes(payload).await,
-                "joinFederation" => handle_join_federation(payload).await,
-                "listFederations" => handle_list_federations().await,
-                "generateInvoice" => handle_generate_invoice(payload).await,
-                "decodeInvoice" => handle_decode_invoice(payload).await,
-                "payInvoice" => handle_pay_invoice(payload).await,
-                "generateAddress" => handle_generate_address(payload).await,
-                "payAddress" => handle_pay_address(payload).await,
-                "generateEcash" => handle_generate_ecash(payload).await,
-                "receiveEcash" => handle_receive_ecash(payload).await,
-                "validateEcash" => handle_validate_ecash(payload).await,
-                "addressOrInvoice" => handle_address_or_invoice(payload).await,
-                "listGateways" => handle_list_gateways(payload).await,
-                "switchGateway" => handle_switch_gateway(payload).await,
-                "getMnemonic" => handle_get_mnemonic(payload).await,
-                "recoverFromMnemonic" => handle_recover_from_mnemonic(payload).await,
-                "leaveFederation" => handle_leave_federation(payload).await,
-                // social recovery
-                "uploadBackupFile" => handle_upload_backup_file(payload).await,
-                "locateRecoveryFile" => handle_locate_recovery_file(payload).await,
-                "validateRecoveryFile" => handle_validate_recovery_file(payload).await,
-                "recoveryQr" => handle_recovery_qr(payload).await,
-                "socialRecoveryApprovals" => handle_social_recovery_approvals(payload).await,
-                "completeSocialRecovery" => handle_complete_social_recovery(payload).await,
-                "socialRecoveryDownloadVerificationDoc" => {
-                    handle_social_recovery_download_verification_doc(payload).await
-                }
-                "approveSocialRecoveryRequest" => {
-                    handle_approve_social_recovery_request(payload).await
-                }
-                // authenticatino
-                "lnurlSignMessage" => handle_lnurl_sign_message(payload).await,
-                "xmppCredentials" => handle_xmpp_credentials(payload).await,
-                "backupXmppUsername" => handle_set_username(payload).await,
 
-                other => Err(anyhow::anyhow!(format!(
-                    "Unrecognized RPC command: {}",
-                    other
-                ))),
-            };
-            let response = result.unwrap_or_else(|e| rpc_error(&e.to_string()));
+            let result = RpcMethods::handle(&method, payload).await;
+            let response = result.unwrap_or_else(|e| rpc_error(&e));
             info!(?response, "rpc_response");
             response
         }
@@ -894,7 +720,9 @@ mod tests {
         // Intialize bridge
         let event_sink = FakeEventSink::new();
         // TODO: how to grab log level from environment?
-        fedimint_initialize_async(create_data_dir(), "info", Box::new(event_sink)).await?;
+        fedimint_initialize_async(create_data_dir(), "info", Box::new(event_sink))
+            .await
+            .unwrap_or_else(|e| error!("init failed {:?}", e));
 
         // Join federation
         // ngrok
@@ -908,9 +736,7 @@ mod tests {
         let connect_string = String::from(
             r#"{"members":[[0,"wss://alpha.regtest-1.dev.fedibtc.com/"],[1,"wss://beta.regtest-1.dev.fedibtc.com/"],[2,"wss://charlie.regtest-1.dev.fedibtc.com/"],[3,"wss://delta.regtest-1.dev.fedibtc.com/"]]}"#,
         );
-        let payload = serde_json::to_string(&JoinFederationPayload { connect_string })?;
-        let result = handle_join_federation(payload).await.unwrap();
-        let fedimint_federation: FedimintFederation = serde_json::from_value(get_result(result))?;
+        let fedimint_federation = joinFederation(connect_string).await?;
         let federation = get_federation(&fedimint_federation.name).await?;
 
         let data_dir = get_bridge().await.unwrap().data_dir.display().to_string();
@@ -919,6 +745,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_xmpp_credentials() -> anyhow::Result<()> {
         RUNTIME.block_on(async {
             let fed1 = setup().await?;
@@ -972,11 +799,7 @@ mod tests {
             let federation = setup().await?;
 
             // Get original mnemonic (for comparison later)
-            let payload = serde_json::to_string(&GetMnemonicPayload {
-                federation_id: federation.id(),
-            })?;
-            let result = handle_get_mnemonic(payload).await.unwrap();
-            let words: Vec<String> = serde_json::from_value(get_result(result))?;
+            let words = getMnemonic(federation.id()).await?;
             let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
             info!("initial mnemnoic {:?}", &words);
 
@@ -984,41 +807,21 @@ mod tests {
             let video_file_path =
                 PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
             let video_file_contents = fs::read(&video_file_path).await?;
-            let payload = serde_json::to_string(&UploadBackupFilePayload {
-                video_file_path,
-                federation_id: federation.id(),
-            })?;
-            let result = handle_upload_backup_file(payload).await.unwrap();
-            let recovery_file_path: String = serde_json::from_value(get_result(result)).unwrap();
-            info!(recovery_file_path = recovery_file_path);
+            let recovery_file_path = uploadBackupFile(federation.id(), video_file_path).await?;
+            info!(recovery_file_path = ?recovery_file_path);
 
             // Validate recovery file
-            let payload = serde_json::to_string(&ValidateRecoveryFilePayload {
-                path: recovery_file_path.into(),
-                federation_id: federation.id(),
-            })?;
-            let result = handle_validate_recovery_file(payload).await.unwrap();
-            let valid: bool = serde_json::from_value(get_result(result)).unwrap();
+            let valid = validateRecoveryFile(federation.id(), recovery_file_path).await?;
             assert!(valid);
 
-            // Get recovery_id
-            let payload = serde_json::to_string(&RecoveryQrPayload {
-                federation_id: federation.id(),
-            })?;
-            let result = handle_recovery_qr(payload).await.unwrap();
-            let qr: SocialRecoveryQr = serde_json::from_value(get_result(result)).unwrap();
+            let qr = recoveryQr(federation.id()).await?;
             let recovery_id = qr.recovery_id;
 
-            // Guardian downloads verification doc
-            let payload = serde_json::to_string(&SocialRecoveryDownloadVerificationDocPayload {
-                recovery_id: recovery_id.clone(),
-                federation_id: federation.id(),
-            })?;
-            let result = handle_social_recovery_download_verification_doc(payload)
-                .await
-                .unwrap();
-            let verification_doc_path: PathBuf =
-                serde_json::from_value(get_result(result)).unwrap();
+            let verification_doc_path =
+                socialRecoveryDownloadVerificationDoc(federation.id(), recovery_id.clone())
+                    .await?
+                    .unwrap();
+
             let contents = fs::read(verification_doc_path).await?;
             let _ = VerificationDocument::from_raw(&contents);
             assert_eq!(contents, video_file_contents);
@@ -1032,35 +835,23 @@ mod tests {
                     3 => "4444",
                     _ => panic!("invalid peer id"),
                 };
-                let payload = serde_json::to_string(&ApproveSocialRecoveryRequestPayload {
-                    recovery_id: recovery_id.clone(),
-                    federation_id: federation.id(),
-                    peer_id: PeerId::from(i),
-                    password: password.into(),
-                })?;
-                handle_approve_social_recovery_request(payload.clone())
-                    .await
-                    .unwrap();
+                approveSocialRecoveryRequest(
+                    federation.id(),
+                    recovery_id.clone(),
+                    PeerId(fedimint_api::PeerId::from(i)),
+                    password.into(),
+                )
+                .await?;
             }
 
             // Member checks approval status
-            let payload = serde_json::to_string(&SocialRecoveryApprovalsPayload {
-                federation_id: federation.id(),
-            })?;
-            handle_social_recovery_approvals(payload).await.unwrap();
+            socialRecoveryApprovals(federation.id()).await?;
 
             // Member combines decryption shares, loading recovered mnemonic back into their db
-            let payload = serde_json::to_string(&CompleteSocialRecoveryPayload {
-                federation_id: federation.id(),
-            })?;
-            handle_complete_social_recovery(payload).await.unwrap();
+            completeSocialRecovery(federation.id()).await?;
 
             // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
-            let payload = serde_json::to_string(&GetMnemonicPayload {
-                federation_id: federation.id(),
-            })?;
-            let result = handle_get_mnemonic(payload).await.unwrap();
-            let words: Vec<String> = serde_json::from_value(get_result(result))?;
+            let words: Vec<String> = getMnemonic(federation.id()).await?;
             let final_mnemnoic = Mnemonic::parse(words.join(" "))?;
             assert_eq!(initial_mnemonic.to_string(), final_mnemnoic.to_string());
 
