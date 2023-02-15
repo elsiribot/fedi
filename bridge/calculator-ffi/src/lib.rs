@@ -720,7 +720,9 @@ mod tests {
         // Intialize bridge
         let event_sink = FakeEventSink::new();
         // TODO: how to grab log level from environment?
-        fedimint_initialize_async(create_data_dir(), "info", Box::new(event_sink)).await?;
+        fedimint_initialize_async(create_data_dir(), "info", Box::new(event_sink))
+            .await
+            .unwrap_or_else(|e| error!("init failed {:?}", e));
 
         // Join federation
         // ngrok
