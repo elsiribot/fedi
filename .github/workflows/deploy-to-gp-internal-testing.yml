@@ -66,7 +66,17 @@ jobs:
               env:
                   FM_ROCKSDB: true
               run: |
-                  npm run build-bridge-android
+                  echo "ls ~"
+                  ls ~
+                  echo "ls ."
+                  ls .
+                  echo "pwd ~"
+                  pwd ~
+                  echo "pwd ."
+                  pwd .
+                  echo "pwd ./bridge/target"
+                  pwd ./bridge/target
+                  # npm run build-bridge-android
 
             - name: Setup Node
               uses: actions/setup-node@v1
