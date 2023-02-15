@@ -66,6 +66,7 @@ jobs:
               env:
                   FM_ROCKSDB: true
               run: |
+                  ls $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin
                   npm run build-bridge-android
 
             - name: Setup Node
