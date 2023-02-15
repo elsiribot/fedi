@@ -1,4 +1,4 @@
-name: Deploy to Google Play Dev Console - Internal Testing
+name: Deploy Android to Google Play Dev Console - Internal Testing
 on:
     workflow_dispatch:
     push:
