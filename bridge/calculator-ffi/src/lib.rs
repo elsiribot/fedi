@@ -310,11 +310,11 @@ async fn validateEcash(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn decodeInvoice(invoice: String) -> anyhow::Result<String> {
+async fn decodeInvoice(invoice: String) -> anyhow::Result<types::Invoice> {
     // TODO: validate the invoice (same network, haven't already paid, etc)
     let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
     let bridge_invoice = types::Invoice::try_from(&invoice)?;
-    Ok(json!({ "result": bridge_invoice }).to_string())
+    Ok(bridge_invoice)
 }
 
 #[macro_rules_derive(rpc_method!)]

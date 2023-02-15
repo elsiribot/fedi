@@ -38,8 +38,7 @@ pub struct PeerId(#[ts(type = "number")] pub fedimint_api::PeerId);
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RecoveryId(
-    #[ts(type = "Opaque<string, 'RecoveryId'>")]
-    pub fedi_social::common::RecoveryId,
+    #[ts(type = "Opaque<string, 'RecoveryId'>")] pub fedi_social::common::RecoveryId,
 );
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
@@ -112,12 +111,13 @@ pub struct BridgeLightningGateway {
     pub active: bool,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct Invoice {
     pub payment_hash: String,
-    pub amount: fedimint_api::Amount,
-    pub fee: fedimint_api::Amount,
+    pub amount: Amount,
+    pub fee: Amount,
     pub description: String,
     pub invoice: String,
 }
@@ -140,8 +140,8 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
         let fee = hacky_lightning_invoice_fee(invoice)?;
 
         Ok(Invoice {
-            amount,
-            fee,
+            amount: Amount(amount),
+            fee: Amount(fee),
             description,
             invoice: invoice.to_string(),
             payment_hash: invoice.payment_hash().to_string(),
