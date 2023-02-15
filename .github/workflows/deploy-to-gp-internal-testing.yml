@@ -4,7 +4,6 @@ on:
     push:
         branches:
             - 'release/**'
-            - 'ol/cicd-testing'
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
