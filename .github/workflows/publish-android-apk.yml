@@ -4,10 +4,6 @@ on:
     push:
         branches:
             - 'release/**'
-<<<<<<<< HEAD:.github/workflows/publish-android-apk.yml
-            - 'ol/cicd-testing'
-========
->>>>>>>> 312cf1d (Organize workflows):.github/workflows/android/publish-android-apk.yml
 jobs:
     release-android:
         name: Build Android APK and publish in GitHub draft release
