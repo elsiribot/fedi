@@ -4,6 +4,8 @@ on:
     push:
         branches:
             - 'release/**'
+            # TODO: remove after development
+            - 'ol/cicd-testing'
 jobs:
     release-android:
         name: Build and release Android app
