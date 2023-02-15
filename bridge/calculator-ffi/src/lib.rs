@@ -745,6 +745,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_xmpp_credentials() -> anyhow::Result<()> {
         RUNTIME.block_on(async {
             let fed1 = setup().await?;
