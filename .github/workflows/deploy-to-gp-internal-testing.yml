@@ -85,8 +85,8 @@ jobs:
               run: |
                   echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} | base64 -d > ./android/decoded-service-account-credentials.json
 
-            # - name: Install Fastlane
-            #   run: cd android && bundle install && cd ..
+            - name: Install Fastlane
+              run: cd android && bundle install && cd ..
 
             - name: Execute Fastlane command
               run: cd android && bundle exec fastlane internal && cd ..

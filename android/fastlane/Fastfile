@@ -91,12 +91,6 @@ platform :android do
     upload_internal_build
   end
 
-  desc "Submit a new internal build (CI)"
-  lane :internal_ci do
-    json_key_file("/home/runner/work/decoded-service-account-credentials.json")
-    build_production
-  end
-
   desc "Submit a new beta build"
   lane :beta do
     increment_version_code
