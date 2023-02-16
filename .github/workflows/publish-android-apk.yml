@@ -64,8 +64,6 @@ jobs:
                   cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
 
             - name: Build bridge
-              env:
-                  FM_ROCKSDB: true
               run: |
                   npm run build-bridge-android
 

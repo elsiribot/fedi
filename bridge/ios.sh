@@ -13,15 +13,6 @@ cd fedi-ffi
 cargo run --package ffi-bindgen -- --language swift --out-dir ../fedi-swift/Sources/Fedi
 cd ..
 
-# If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
-if [[ -z $FM_ROCKSDB ]]; then
-  echo "RUNNING WITH SLED"
-  CARGO_FLAGS=""
-else
-  echo "RUNNING WITH ROCKSDB"
-  CARGO_FLAGS="--no-default-features --features rocksdb"
-fi
-
 # ignoring MacOS for now
 # cargo build --package fedi-ffi --profile release-smaller --target x86_64-apple-darwin
 # cargo build --package fedi-ffi --profile release-smaller --target aarch64-apple-darwin

@@ -6,7 +6,8 @@ use fedimint_api::{
     config::ApiEndpoint,
     encoding::{Decodable, Encodable},
 };
-use mint_client::{api::WsFederationConnect, UserClientConfig};
+use fedimint_core::api::WsClientConnectInfo;
+use mint_client::{UserClientConfig};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -60,7 +61,7 @@ pub struct FediConfig {
 pub struct FedimintFederation {
     pub name: String,
     #[ts(type = "any")]
-    pub connect_info: WsFederationConnect,
+    pub connect_info: WsClientConnectInfo,
     #[ts(type = "Array<{url: string, name: string}>")]
     pub nodes: Vec<ApiEndpoint>,
     pub balance: Amount,
@@ -87,12 +88,12 @@ pub struct LnurlSignedMessage {
 // FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
     let client_config = federation.client.config().0;
-    let balance = federation.client.coins().await.total_amount();
+    let balance = federation.client.notes().await.total_amount();
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
 
     FedimintFederation {
         name: client_config.federation_name.clone(),
-        connect_info: WsFederationConnect::from(&client_config),
+        connect_info: WsClientConnectInfo::from(&client_config),
         nodes: client_config.nodes.clone(),
         balance: Amount(balance),
         social_recovery_active,

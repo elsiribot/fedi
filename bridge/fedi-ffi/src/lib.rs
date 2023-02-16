@@ -190,6 +190,9 @@ async fn updateTransactionNotes(
 async fn joinFederation(connect_string: String) -> anyhow::Result<FedimintFederation> {
     let bridge = get_bridge().await?;
 
+    if let Err(e) = bridge.join_federation(connect_string.clone()).await {
+        info!("joinfederation result {:?}", e);
+    };
     let federation = bridge.join_federation(connect_string).await?;
 
     let fedimint_federation = federation_to_fedimint_federation(&federation).await;
@@ -671,10 +674,7 @@ mod tests {
     use std::path;
 
     use fedi_social::common::VerificationDocument;
-    use serde_json::Value;
-    use tracing::{debug, metadata::LevelFilter};
-
-    use crate::recovery::SocialRecoveryQr;
+    use tracing::debug;
 
     use super::*;
 
@@ -710,10 +710,10 @@ mod tests {
     // }
 
     // FIXME: make this generic
-    fn get_result(result: String) -> Value {
-        let v: Value = serde_json::from_str(&result).unwrap();
-        v["result"].clone()
-    }
+    // fn get_result(result: String) -> Value {
+    //     let v: Value = serde_json::from_str(&result).unwrap();
+    //     v["result"].clone()
+    // }
 
     // TODO: should we return the bridge here?
     async fn setup() -> anyhow::Result<Arc<Federation>> {

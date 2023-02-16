@@ -30,27 +30,25 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
-use fedi_social::common::{RecoveryId, VerificationDocument};
-use fedimint_api::{config::ConfigResponse, Amount, PeerId, TieredMulti};
+use fedi_social::{common::{RecoveryId, VerificationDocument}, FediSocialGen};
+use fedimint_api::{config::{ModuleGenRegistry, ClientConfig}, Amount, PeerId, TieredMulti, module::DynModuleGen};
 use fedimint_api::{db::Database, task::TaskHandle};
 use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
-use fedimint_core::modules::ln::contracts::{ContractId, IdentifyableContract};
-use fedimint_core::{config::load_from_file, modules::wallet::txoproof::TxOutProof};
+use fedimint_core::{config::load_from_file};
+use fedimint_core::api::{GlobalFederationApi, WsFederationApi, WsClientConnectInfo};
 use fedimint_derive_secret::ChildId;
-#[cfg(feature = "rocksdb")]
 use fedimint_rocksdb::RocksDb;
-#[cfg(feature = "sled")]
-use fedimint_sled::SledDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
-    api::{GlobalFederationApi, WalletFederationApi, WsFederationApi, WsFederationConnect},
+    api::{WalletFederationApi},
     mint::SpendableNote,
     module_decode_stubs,
     social::{RecoveryFile, SocialRecovery},
     utils::network_to_currency,
-    UserClient, UserClientConfig, UserSeedPhrase,
+    UserClient, UserClientConfig, UserSeedPhrase, modules::{ln::{contracts::{ContractId, IdentifyableContract}, LightningGen}, wallet::{WalletGen, txoproof::TxOutProof}, mint::MintGen},
 };
+
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::fs;
 use tokio::sync::Mutex;
@@ -71,6 +69,15 @@ fn required_threashold_of(n: usize) -> usize {
     n - ((n - 1) / 3)
 }
 
+fn module_gens() -> ModuleGenRegistry {
+    ModuleGenRegistry::from(vec![
+        DynModuleGen::from(WalletGen),
+        DynModuleGen::from(MintGen),
+        DynModuleGen::from(LightningGen),
+        DynModuleGen::from(FediSocialGen),
+    ])
+}
+
 async fn load_federations_from_disk(
     data_dir: &PathBuf,
     event_sink: Arc<EventSinkWrapper>,
@@ -85,14 +92,12 @@ async fn load_federations_from_disk(
                 let fedi_config: FediConfig =
                     load_from_file(&path).context("invalid cfg on disk")?;
                 path.set_extension("db");
-                #[cfg(feature = "sled")]
-                let db = SledDb::open(path, "client").context("client tree not found")?;
-                #[cfg(feature = "rocksdb")]
                 let db = RocksDb::open(path).context("could not open rocksdb")?;
                 let db = Database::new(db, module_decode_stubs());
                 let client = UserClient::new(
                     fedi_config.client_config,
                     module_decode_stubs(),
+                    module_gens(),
                     db,
                     Default::default(),
                 )
@@ -149,10 +154,9 @@ impl Bridge {
         &self,
         connect_string: String,
     ) -> Result<Option<Arc<Federation>>> {
-        let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
-        let api = WsFederationApi::new(connect_cfg.members);
-        let res: ConfigResponse = api.download_client_config().await?;
-        let cfg = res.client;
+        let connect_cfg: WsClientConnectInfo = serde_json::from_str(&connect_string)?;
+        let api = WsFederationApi::from_urls(&connect_cfg);
+        let cfg: ClientConfig = api.download_client_config(&connect_cfg.id, module_gens()).await?;
         let federations = self.federations.lock().await;
         let federation = federations.get(&cfg.federation_name).map(|fed| fed.clone());
         Ok(federation)
@@ -217,7 +221,7 @@ impl Bridge {
             let config = fed.client.config();
             let db = fed.client.db();
             let secp = Secp256k1::new();
-            let new_client = UserClient::new(config, module_decode_stubs(), db.clone(), secp).await;
+            let new_client = UserClient::new(config, module_decode_stubs(), module_gens(), db.clone(), secp).await;
             fed.client = Arc::new(new_client);
 
             // start pollers
@@ -302,12 +306,11 @@ impl Federation {
         task_group: TaskGroup,
     ) -> Result<Self> {
         // Download federation config
-        let connect_cfg: WsFederationConnect = serde_json::from_str(&connect_string)?;
+        let connect_cfg: WsClientConnectInfo = serde_json::from_str(&connect_string)?;
         tracing::info!("parsed connection string");
-        let api = WsFederationApi::new(connect_cfg.members);
+        let api = WsFederationApi::from_urls(&connect_cfg);
         tracing::info!("fetching config");
-        let res: ConfigResponse = api.download_client_config().await?;
-        let cfg = res.client;
+        let cfg: ClientConfig = api.download_client_config(&connect_cfg.id, module_gens()).await?;
 
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).context("unable to serialize cfg")?;
@@ -334,14 +337,12 @@ impl Federation {
 
         // Create user client
         let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
-        #[cfg(feature = "sled")]
-        let db = SledDb::open(db_path, "client").context("client tree not found")?;
-        #[cfg(feature = "rocksdb")]
         let db = RocksDb::open(db_path).context("could not open rocksdb")?;
         let db = Database::new(db, module_decode_stubs());
         let client = UserClient::new(
             fedi_config.client_config,
             module_decode_stubs(),
+            module_gens(),
             db,
             Default::default(),
         )
@@ -417,7 +418,7 @@ impl Federation {
 
         let confirmed_invoice = self
             .client
-            .generate_invoice(amount, description, &mut rng, None)
+            .generate_confirmed_invoice(amount, description, &mut rng, None)
             .await?;
 
         // Save the keys and invoice for later polling`
@@ -642,6 +643,7 @@ impl Federation {
                 key.peg_in_script
             })
             .collect()
+            .await
     }
 
     /// Execute peg-in for given script
@@ -829,7 +831,8 @@ impl Federation {
             .find_by_prefix(&TransactionKeyPrefix)
             .await
             .map(|res| res.expect("Db error").1)
-            .collect();
+            .collect()
+            .await;
         // Sort by timestamp, descending
         transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         transactions
@@ -852,6 +855,7 @@ impl Federation {
             .await
             .map(|res| res.expect("Db error").1)
             .collect()
+            .await
     }
 
     /// Fetch single payment from DB by payment hash
@@ -892,7 +896,11 @@ impl Federation {
 
     /// Send whenever the balance or social recovery state changes
     pub async fn send_federation_event(&self) {
-        self.client.fetch_all_coins().await;
+        // FIXME: should handle this result
+        self.client.fetch_all_notes().await.unwrap_or_else(|e| {
+            error!("Failed to fetch notes: {:?}", e);
+            vec![]
+        });
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
         self.event_sink.event(&event);

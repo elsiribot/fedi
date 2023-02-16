@@ -69,7 +69,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleUserInput = useCallback(
         async (input: string) => {
-            if (input.startsWith('{"members":')) {
+            if (input.startsWith('{"urls":')) {
                 console.info('fedi qr code detected', input)
                 // Set the federation string to trigger the useEffect above
                 setFederationToJoin(input)
