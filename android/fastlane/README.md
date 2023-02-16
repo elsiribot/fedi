@@ -23,14 +23,6 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Runs all the tests
 
-### android increment_version_code
-
-```sh
-[bundle exec] fastlane android increment_version_code
-```
-
-Increment the versionCode in build.gradle
-
 ### android build_debug
 
 ```sh
