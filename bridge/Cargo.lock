@@ -305,43 +305,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "calculator-ffi"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "bip39",
- "bitcoin",
- "electrum-client",
- "fedi-social",
- "fedimint-api",
- "fedimint-core",
- "fedimint-derive-secret",
- "fedimint-rocksdb",
- "fedimint-sled",
- "futures",
- "hex",
- "lazy_static",
- "lightning-invoice",
- "macro_rules_attribute",
- "mint-client",
- "paranoid-android",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "sled",
- "tempfile",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "ts-rs",
- "uniffi",
- "uniffi_build",
- "uniffi_macros",
-]
-
-[[package]]
 name = "camino"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -652,6 +615,43 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a407cfaa3385c4ae6b23e84623d48c2798d06e3e6a1878f7f59f17b3f86499"
 dependencies = [
  "instant",
+]
+
+[[package]]
+name = "fedi-ffi"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "bip39",
+ "bitcoin",
+ "electrum-client",
+ "fedi-social",
+ "fedimint-api",
+ "fedimint-core",
+ "fedimint-derive-secret",
+ "fedimint-rocksdb",
+ "fedimint-sled",
+ "futures",
+ "hex",
+ "lazy_static",
+ "lightning-invoice",
+ "macro_rules_attribute",
+ "mint-client",
+ "paranoid-android",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sled",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "ts-rs",
+ "uniffi",
+ "uniffi_build",
+ "uniffi_macros",
 ]
 
 [[package]]

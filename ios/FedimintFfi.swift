@@ -1,4 +1,4 @@
-import Calculator
+import Fedi
 
 @objc(FedimintFfi)
 class FedimintFfi: NSObject {

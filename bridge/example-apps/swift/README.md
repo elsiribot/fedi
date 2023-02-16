@@ -7,5 +7,5 @@ To create your own example app:
     ./build-local-swift.sh
    ```
 2. Create your new xcode project
-3. Add the local calculator-swift package
-4. Select your app Target and add "Calculator" framework
+3. Add the local fedi-swift package
+4. Select your app Target and add "Fedi" framework

@@ -1,6 +1,6 @@
 npx react-native clean
 
 # clean rust code
-pushd ../bridge
+pushd bridge
 cargo clean
 popd

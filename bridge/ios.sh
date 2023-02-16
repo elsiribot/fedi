@@ -9,9 +9,9 @@ rustup target add aarch64-apple-ios x86_64-apple-ios
 rustup target add aarch64-apple-ios-sim --toolchain nightly
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
-pushd calculator-ffi
-cargo run --package ffi-bindgen -- --language swift --out-dir ../calculator-swift/Sources/Calculator
-popd
+cd fedi-ffi
+cargo run --package ffi-bindgen -- --language swift --out-dir ../fedi-swift/Sources/Fedi
+cd ..
 
 # If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
 if [[ -z $FM_ROCKSDB ]]; then
@@ -23,26 +23,26 @@ else
 fi
 
 # ignoring MacOS for now
-# cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-darwin
-# cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-darwin
-cargo build --package calculator-ffi --profile release-smaller --target x86_64-apple-ios $CARGO_FLAGS
-cargo build --package calculator-ffi --profile release-smaller --target aarch64-apple-ios $CARGO_FLAGS
-cargo +nightly build --package calculator-ffi --release -Z build-std --target aarch64-apple-ios-sim $CARGO_FLAGS
+# cargo build --package fedi-ffi --profile release-smaller --target x86_64-apple-darwin
+# cargo build --package fedi-ffi --profile release-smaller --target aarch64-apple-darwin
+cargo build --package fedi-ffi --profile release-smaller --target x86_64-apple-ios $CARGO_FLAGS
+cargo build --package fedi-ffi --profile release-smaller --target aarch64-apple-ios $CARGO_FLAGS
+cargo +nightly build --package fedi-ffi --release -Z build-std --target aarch64-apple-ios-sim $CARGO_FLAGS
 
 mkdir -p target/lipo-ios-sim/release-smaller
-lipo target/aarch64-apple-ios-sim/release/libcalculatorffi.a target/x86_64-apple-ios/release-smaller/libcalculatorffi.a -create -output target/lipo-ios-sim/release-smaller/libcalculatorffi.a
+lipo target/aarch64-apple-ios-sim/release/libfediffi.a target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output target/lipo-ios-sim/release-smaller/libfediffi.a
 # mkdir -p target/lipo-macos/release-smaller
-# lipo target/aarch64-apple-darwin/release-smaller/libcalculatorffi.a target/x86_64-apple-darwin/release-smaller/libcalculatorffi.a -create -output target/lipo-macos/release-smaller/libcalculatorffi.a
+# lipo target/aarch64-apple-darwin/release-smaller/libfediffi.a target/x86_64-apple-darwin/release-smaller/libfediffi.a -create -output target/lipo-macos/release-smaller/libfediffi.a
 
-pushd calculator-swift
-mv Sources/Calculator/calculator.swift Sources/Calculator/Calculator.swift
-cp Sources/Calculator/calculatorFFI.h calculatorFFI.xcframework/ios-arm64/calculatorFFI.framework/Headers
-cp Sources/Calculator/calculatorFFI.h calculatorFFI.xcframework/ios-arm64_x86_64-simulator/calculatorFFI.framework/Headers
-cp Sources/Calculator/calculatorFFI.h calculatorFFI.xcframework/macos-arm64_x86_64/calculatorFFI.framework/Headers
-cp ../target/aarch64-apple-ios/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/ios-arm64/calculatorFFI.framework/calculatorFFI
-cp ../target/lipo-ios-sim/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/ios-arm64_x86_64-simulator/calculatorFFI.framework/calculatorFFI
-# cp ../target/lipo-macos/release-smaller/libcalculatorffi.a calculatorFFI.xcframework/macos-arm64_x86_64/calculatorFFI.framework/calculatorFFI
-rm Sources/Calculator/calculatorFFI.h
-rm Sources/Calculator/calculatorFFI.modulemap
-#rm calculatorFFI.xcframework.zip || true
-#zip -9 -r calculatorFFI.xcframework.zip calculatorFFI.xcframework
+pushd fedi-swift
+mv Sources/Fedi/fedi.swift Sources/Fedi/Fedi.swift
+cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64/fediFFI.framework/Headers
+cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/Headers
+cp Sources/Fedi/fediFFI.h fediFFI.xcframework/macos-arm64_x86_64/fediFFI.framework/Headers
+cp ../target/aarch64-apple-ios/release-smaller/libfediffi.a fediFFI.xcframework/ios-arm64/fediFFI.framework/fediFFI
+cp ../target/lipo-ios-sim/release-smaller/libfediffi.a fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
+# cp ../target/lipo-macos/release-smaller/libfediffi.a fediFFI.xcframework/macos-arm64_x86_64/fediFFI.framework/fediFFI
+rm Sources/Fedi/fediFFI.h
+rm Sources/Fedi/fediFFI.modulemap
+#rm fediFFI.xcframework.zip || true
+#zip -9 -r fediFFI.xcframework.zip fediFFI.xcframework

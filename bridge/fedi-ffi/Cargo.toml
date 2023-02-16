@@ -1,0 +1,68 @@
+[package]
+name = "fedi-ffi"
+version = "0.1.2"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+name = "fediffi"
+
+
+[dependencies]
+# pinned to commit on fedibtc/fedimint-fedi branch
+mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
+fedimint-api = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
+fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
+fedimint-sled = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814", optional = true }
+fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814", optional = true }
+fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
+fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
+
+# Local dependencies that can be handy to uncomment during development
+# mint-client = { path = "../../fedimint/client/client-lib" }
+# fedimint-api = { path = "../../fedimint/fedimint-api" }
+# fedimint-core = { path = "../../fedimint/fedimint-core" }
+# fedimint-sled = { path = "../../fedimint/fedimint-sled", optional=true }
+# fedimint-rocksdb = { path = "../../fedimint/fedimint-rocksdb", optional=true }
+# fedi-social = { path = "../../fedimint/modules/fedi-social" }
+# fedimint-derive-secret = { path = "../../fedimint/crypto/derive-secret" }
+
+bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
+anyhow = "1"
+serde = { version = "1.0.142", features = [ "derive" ] }
+serde_json = "1.0.79"
+rand = "0.8.5"
+bitcoin = "0.29.2"
+lazy_static = "1.4.0"
+lightning-invoice = "0.21.0"
+futures = "0.3"
+tracing = "0.1.26"
+electrum-client = "0.12.0"
+reqwest = { version = "0.11.12", features = [ "json", "rustls-tls" ], default-features = false }
+tracing-subscriber = { version = "0.3.1", features = [ "env-filter", "json" ] }
+sled = "0.34.6"
+tokio = {version = "1.0", features = ["full"]}
+thiserror = "1.0.37"
+hex = "0.4.3"
+
+uniffi_macros = { version = "0.21.0", features = ["builtin-bindgen"] }
+uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
+macro_rules_attribute = "0.1.3"
+ts-rs = { git = "https://github.com/maan2003/ts-rs", branch = "fix-type-struct-zero" }
+
+[features]
+default = ["sled"]
+sled = ["dep:fedimint-sled"]
+rocksdb = ["dep:fedimint-rocksdb"]
+
+[build-dependencies]
+uniffi_build = { version = "0.21.0", features = ["builtin-bindgen"] }
+
+[dev-dependencies]
+tempfile = "3.3.0"
+
+# [target.'cfg(target_os = "ios")'.dependencies]
+# tracing-oslog = "0.1.2"
+
+[target.'cfg(target_os = "android")'.dependencies]
+paranoid-android = { git = "https://github.com/justinmoon/paranoid-android", branch="c_char" }
