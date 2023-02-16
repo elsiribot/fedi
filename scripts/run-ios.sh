@@ -2,7 +2,7 @@
 set -e
 
 # re-build bridge bindings for ios
-pushd ../bridge
+pushd bridge
 ./ios.sh
 popd
 
