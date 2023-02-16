@@ -3,7 +3,7 @@ package com.fedimintreactnative
 import android.util.Log
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import org.rustylibs.calculator.*
+import org.rustylibs.fedi.*
 
 object EventDispatcher : EventSink {
     override fun event(eventType: String, body: String) {

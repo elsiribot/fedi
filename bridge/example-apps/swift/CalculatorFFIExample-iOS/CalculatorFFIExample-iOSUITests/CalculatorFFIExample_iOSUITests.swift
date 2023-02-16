@@ -1,13 +1,13 @@
 //
-//  CalculatorFFIExample_iOSUITests.swift
-//  CalculatorFFIExample-iOSUITests
+//  FediFFIExample_iOSUITests.swift
+//  FediFFIExample-iOSUITests
 //
 //  Created by Steven Myers on 11/18/22.
 //
 
 import XCTest
 
-final class CalculatorFFIExample_iOSUITests: XCTestCase {
+final class FediFFIExample_iOSUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

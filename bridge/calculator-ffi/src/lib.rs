@@ -24,7 +24,7 @@ use lazy_static::lazy_static;
 use types::RecoveryId;
 use types::{Amount, PeerId, PublicKey};
 
-uniffi_macros::include_scaffolding!("calculator");
+uniffi_macros::include_scaffolding!("fedi");
 
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};

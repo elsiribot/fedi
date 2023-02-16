@@ -1,6 +1,6 @@
 //
-//  CalculatorFFIExample_iOSApp.swift
-//  CalculatorFFIExample-iOS
+//  FediFFIExample_iOSApp.swift
+//  FediFFIExample-iOS
 //
 //  Created by Steven Myers on 11/18/22.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct CalculatorFFIExample_iOSApp: App {
+struct FediFFIExample_iOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

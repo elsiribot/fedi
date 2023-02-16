@@ -1,9 +1,9 @@
 target
 
 .idea/
-calculator-bindings.iml
-libcalculatorffi.so
-calculator.kt
+fedi-bindings.iml
+libfediffi.so
+fedi.kt
 local.properties
 .DS_Store
 
@@ -15,11 +15,11 @@ local.properties
 xcuserdata/
 DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
-calculatorFFI.xcframework.zip
-calculatorFFI
+fediFFI.xcframework.zip
+fediFFI
 *.a
-Calculator.swift
-calculatorFFI.h
+Fedi.swift
+fediFFI.h
 .build
 .swiftpm
-calculator-swift/Sources/
+fedi-swift/Sources/

@@ -1,3 +1,3 @@
-rootProject.name = "calculator-android"
+rootProject.name = "fedi-android"
 include("lib")
 includeBuild("plugins")

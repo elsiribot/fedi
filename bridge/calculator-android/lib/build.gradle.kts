@@ -56,13 +56,13 @@ afterEvaluate {
         publications {
             create<MavenPublication>("maven") {
                 groupId = "org.rustylibs"
-                artifactId = "calculator-android"
+                artifactId = "fedi-android"
                 version = "0.1.2"
 
                 from(components["release"])
                 pom {
-                    name.set("calculator-android")
-                    description.set("Calculator Kotlin language bindings.")
+                    name.set("fedi-android")
+                    description.set("Fedi Kotlin language bindings.")
                     url.set("https://rustylibs.org")
                     licenses {
                         license {

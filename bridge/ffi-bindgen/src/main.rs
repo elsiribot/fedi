@@ -68,7 +68,7 @@ fn fixup_python_lib_path(
 
     const LOAD_INDIRECT_DEF: &str = "def loadIndirect():";
 
-    let bindings_file = out_dir.join("calculator.py");
+    let bindings_file = out_dir.join("fedi.py");
     let mut data = fs::read_to_string(&bindings_file)?;
 
     let pos = data
@@ -99,11 +99,11 @@ def _loadIndirectOld():"#,
 #[derive(Debug, StructOpt)]
 #[structopt(
     name = "ffi-bindgen",
-    about = "A tool to generate the calculator library language bindings"
+    about = "A tool to generate the fedi library language bindings"
 )]
 struct Opt {
     /// UDL file
-    #[structopt(env = "FFI_BINDGEN_UDL", short, long, default_value("src/calculator.udl"), parse(try_from_str = PathBuf::from_str))]
+    #[structopt(env = "FFI_BINDGEN_UDL", short, long, default_value("src/fedi.udl"), parse(try_from_str = PathBuf::from_str))]
     udl_file: PathBuf,
 
     /// Language to generate bindings for

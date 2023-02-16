@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA09500B2927DF42001D493C /* Calculator in Frameworks */ = {isa = PBXBuildFile; productRef = AA09500A2927DF42001D493C /* Calculator */; };
-		AA4A804829259546006CB0B4 /* CalculatorFFIExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A804729259546006CB0B4 /* CalculatorFFIExampleApp.swift */; };
+		AA09500B2927DF42001D493C /* Fedi in Frameworks */ = {isa = PBXBuildFile; productRef = AA09500A2927DF42001D493C /* Fedi */; };
+		AA4A804829259546006CB0B4 /* FediFFIExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A804729259546006CB0B4 /* FediFFIExampleApp.swift */; };
 		AA4A804A29259546006CB0B4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A804929259546006CB0B4 /* ContentView.swift */; };
 		AA4A804C29259548006CB0B4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA4A804B29259548006CB0B4 /* Assets.xcassets */; };
 		AA4A804F29259548006CB0B4 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA4A804E29259548006CB0B4 /* Preview Assets.xcassets */; };
-		AA4A805A29259548006CB0B4 /* CalculatorFFIExampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A805929259548006CB0B4 /* CalculatorFFIExampleTests.swift */; };
-		AA4A806429259548006CB0B4 /* CalculatorFFIExampleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A806329259548006CB0B4 /* CalculatorFFIExampleUITests.swift */; };
-		AA4A806629259548006CB0B4 /* CalculatorFFIExampleUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A806529259548006CB0B4 /* CalculatorFFIExampleUITestsLaunchTests.swift */; };
+		AA4A805A29259548006CB0B4 /* FediFFIExampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A805929259548006CB0B4 /* FediFFIExampleTests.swift */; };
+		AA4A806429259548006CB0B4 /* FediFFIExampleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A806329259548006CB0B4 /* FediFFIExampleUITests.swift */; };
+		AA4A806629259548006CB0B4 /* FediFFIExampleUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4A806529259548006CB0B4 /* FediFFIExampleUITestsLaunchTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -23,30 +23,30 @@
 			containerPortal = AA4A803C29259546006CB0B4 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AA4A804329259546006CB0B4;
-			remoteInfo = CalculatorFFIExample;
+			remoteInfo = FediFFIExample;
 		};
 		AA4A806029259548006CB0B4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA4A803C29259546006CB0B4 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AA4A804329259546006CB0B4;
-			remoteInfo = CalculatorFFIExample;
+			remoteInfo = FediFFIExample;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AA0950082927DE8C001D493C /* calculator-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "calculator-swift"; path = "../../../calculator-swift"; sourceTree = "<group>"; };
-		AA4A804429259546006CB0B4 /* CalculatorFFIExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalculatorFFIExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA4A804729259546006CB0B4 /* CalculatorFFIExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorFFIExampleApp.swift; sourceTree = "<group>"; };
+		AA0950082927DE8C001D493C /* fedi-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "fedi-swift"; path = "../../../fedi-swift"; sourceTree = "<group>"; };
+		AA4A804429259546006CB0B4 /* FediFFIExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FediFFIExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA4A804729259546006CB0B4 /* FediFFIExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FediFFIExampleApp.swift; sourceTree = "<group>"; };
 		AA4A804929259546006CB0B4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA4A804B29259548006CB0B4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA4A804E29259548006CB0B4 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		AA4A805029259548006CB0B4 /* CalculatorFFIExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CalculatorFFIExample.entitlements; sourceTree = "<group>"; };
-		AA4A805529259548006CB0B4 /* CalculatorFFIExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalculatorFFIExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA4A805929259548006CB0B4 /* CalculatorFFIExampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorFFIExampleTests.swift; sourceTree = "<group>"; };
-		AA4A805F29259548006CB0B4 /* CalculatorFFIExampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalculatorFFIExampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA4A806329259548006CB0B4 /* CalculatorFFIExampleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorFFIExampleUITests.swift; sourceTree = "<group>"; };
-		AA4A806529259548006CB0B4 /* CalculatorFFIExampleUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorFFIExampleUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		AA4A805029259548006CB0B4 /* FediFFIExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FediFFIExample.entitlements; sourceTree = "<group>"; };
+		AA4A805529259548006CB0B4 /* FediFFIExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FediFFIExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA4A805929259548006CB0B4 /* FediFFIExampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FediFFIExampleTests.swift; sourceTree = "<group>"; };
+		AA4A805F29259548006CB0B4 /* FediFFIExampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FediFFIExampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA4A806329259548006CB0B4 /* FediFFIExampleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FediFFIExampleUITests.swift; sourceTree = "<group>"; };
+		AA4A806529259548006CB0B4 /* FediFFIExampleUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FediFFIExampleUITestsLaunchTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,7 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA09500B2927DF42001D493C /* Calculator in Frameworks */,
+				AA09500B2927DF42001D493C /* Fedi in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,9 +86,9 @@
 			isa = PBXGroup;
 			children = (
 				AA4A807229259689006CB0B4 /* Packages */,
-				AA4A804629259546006CB0B4 /* CalculatorFFIExample */,
-				AA4A805829259548006CB0B4 /* CalculatorFFIExampleTests */,
-				AA4A806229259548006CB0B4 /* CalculatorFFIExampleUITests */,
+				AA4A804629259546006CB0B4 /* FediFFIExample */,
+				AA4A805829259548006CB0B4 /* FediFFIExampleTests */,
+				AA4A806229259548006CB0B4 /* FediFFIExampleUITests */,
 				AA4A804529259546006CB0B4 /* Products */,
 				AA0950092927DF42001D493C /* Frameworks */,
 			);
@@ -97,23 +97,23 @@
 		AA4A804529259546006CB0B4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA4A804429259546006CB0B4 /* CalculatorFFIExample.app */,
-				AA4A805529259548006CB0B4 /* CalculatorFFIExampleTests.xctest */,
-				AA4A805F29259548006CB0B4 /* CalculatorFFIExampleUITests.xctest */,
+				AA4A804429259546006CB0B4 /* FediFFIExample.app */,
+				AA4A805529259548006CB0B4 /* FediFFIExampleTests.xctest */,
+				AA4A805F29259548006CB0B4 /* FediFFIExampleUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		AA4A804629259546006CB0B4 /* CalculatorFFIExample */ = {
+		AA4A804629259546006CB0B4 /* FediFFIExample */ = {
 			isa = PBXGroup;
 			children = (
-				AA4A804729259546006CB0B4 /* CalculatorFFIExampleApp.swift */,
+				AA4A804729259546006CB0B4 /* FediFFIExampleApp.swift */,
 				AA4A804929259546006CB0B4 /* ContentView.swift */,
 				AA4A804B29259548006CB0B4 /* Assets.xcassets */,
-				AA4A805029259548006CB0B4 /* CalculatorFFIExample.entitlements */,
+				AA4A805029259548006CB0B4 /* FediFFIExample.entitlements */,
 				AA4A804D29259548006CB0B4 /* Preview Content */,
 			);
-			path = CalculatorFFIExample;
+			path = FediFFIExample;
 			sourceTree = "<group>";
 		};
 		AA4A804D29259548006CB0B4 /* Preview Content */ = {
@@ -124,27 +124,27 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		AA4A805829259548006CB0B4 /* CalculatorFFIExampleTests */ = {
+		AA4A805829259548006CB0B4 /* FediFFIExampleTests */ = {
 			isa = PBXGroup;
 			children = (
-				AA4A805929259548006CB0B4 /* CalculatorFFIExampleTests.swift */,
+				AA4A805929259548006CB0B4 /* FediFFIExampleTests.swift */,
 			);
-			path = CalculatorFFIExampleTests;
+			path = FediFFIExampleTests;
 			sourceTree = "<group>";
 		};
-		AA4A806229259548006CB0B4 /* CalculatorFFIExampleUITests */ = {
+		AA4A806229259548006CB0B4 /* FediFFIExampleUITests */ = {
 			isa = PBXGroup;
 			children = (
-				AA4A806329259548006CB0B4 /* CalculatorFFIExampleUITests.swift */,
-				AA4A806529259548006CB0B4 /* CalculatorFFIExampleUITestsLaunchTests.swift */,
+				AA4A806329259548006CB0B4 /* FediFFIExampleUITests.swift */,
+				AA4A806529259548006CB0B4 /* FediFFIExampleUITestsLaunchTests.swift */,
 			);
-			path = CalculatorFFIExampleUITests;
+			path = FediFFIExampleUITests;
 			sourceTree = "<group>";
 		};
 		AA4A807229259689006CB0B4 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				AA0950082927DE8C001D493C /* calculator-swift */,
+				AA0950082927DE8C001D493C /* fedi-swift */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -152,9 +152,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA4A804329259546006CB0B4 /* CalculatorFFIExample */ = {
+		AA4A804329259546006CB0B4 /* FediFFIExample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA4A806929259548006CB0B4 /* Build configuration list for PBXNativeTarget "CalculatorFFIExample" */;
+			buildConfigurationList = AA4A806929259548006CB0B4 /* Build configuration list for PBXNativeTarget "FediFFIExample" */;
 			buildPhases = (
 				AA4A804029259546006CB0B4 /* Sources */,
 				AA4A804129259546006CB0B4 /* Frameworks */,
@@ -164,17 +164,17 @@
 			);
 			dependencies = (
 			);
-			name = CalculatorFFIExample;
+			name = FediFFIExample;
 			packageProductDependencies = (
-				AA09500A2927DF42001D493C /* Calculator */,
+				AA09500A2927DF42001D493C /* Fedi */,
 			);
-			productName = CalculatorFFIExample;
-			productReference = AA4A804429259546006CB0B4 /* CalculatorFFIExample.app */;
+			productName = FediFFIExample;
+			productReference = AA4A804429259546006CB0B4 /* FediFFIExample.app */;
 			productType = "com.apple.product-type.application";
 		};
-		AA4A805429259548006CB0B4 /* CalculatorFFIExampleTests */ = {
+		AA4A805429259548006CB0B4 /* FediFFIExampleTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA4A806C29259548006CB0B4 /* Build configuration list for PBXNativeTarget "CalculatorFFIExampleTests" */;
+			buildConfigurationList = AA4A806C29259548006CB0B4 /* Build configuration list for PBXNativeTarget "FediFFIExampleTests" */;
 			buildPhases = (
 				AA4A805129259548006CB0B4 /* Sources */,
 				AA4A805229259548006CB0B4 /* Frameworks */,
@@ -185,14 +185,14 @@
 			dependencies = (
 				AA4A805729259548006CB0B4 /* PBXTargetDependency */,
 			);
-			name = CalculatorFFIExampleTests;
-			productName = CalculatorFFIExampleTests;
-			productReference = AA4A805529259548006CB0B4 /* CalculatorFFIExampleTests.xctest */;
+			name = FediFFIExampleTests;
+			productName = FediFFIExampleTests;
+			productReference = AA4A805529259548006CB0B4 /* FediFFIExampleTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		AA4A805E29259548006CB0B4 /* CalculatorFFIExampleUITests */ = {
+		AA4A805E29259548006CB0B4 /* FediFFIExampleUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA4A806F29259548006CB0B4 /* Build configuration list for PBXNativeTarget "CalculatorFFIExampleUITests" */;
+			buildConfigurationList = AA4A806F29259548006CB0B4 /* Build configuration list for PBXNativeTarget "FediFFIExampleUITests" */;
 			buildPhases = (
 				AA4A805B29259548006CB0B4 /* Sources */,
 				AA4A805C29259548006CB0B4 /* Frameworks */,
@@ -203,9 +203,9 @@
 			dependencies = (
 				AA4A806129259548006CB0B4 /* PBXTargetDependency */,
 			);
-			name = CalculatorFFIExampleUITests;
-			productName = CalculatorFFIExampleUITests;
-			productReference = AA4A805F29259548006CB0B4 /* CalculatorFFIExampleUITests.xctest */;
+			name = FediFFIExampleUITests;
+			productName = FediFFIExampleUITests;
+			productReference = AA4A805F29259548006CB0B4 /* FediFFIExampleUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -231,7 +231,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AA4A803F29259546006CB0B4 /* Build configuration list for PBXProject "CalculatorFFIExample" */;
+			buildConfigurationList = AA4A803F29259546006CB0B4 /* Build configuration list for PBXProject "FediFFIExample" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -244,9 +244,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA4A804329259546006CB0B4 /* CalculatorFFIExample */,
-				AA4A805429259548006CB0B4 /* CalculatorFFIExampleTests */,
-				AA4A805E29259548006CB0B4 /* CalculatorFFIExampleUITests */,
+				AA4A804329259546006CB0B4 /* FediFFIExample */,
+				AA4A805429259548006CB0B4 /* FediFFIExampleTests */,
+				AA4A805E29259548006CB0B4 /* FediFFIExampleUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -283,7 +283,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA4A804A29259546006CB0B4 /* ContentView.swift in Sources */,
-				AA4A804829259546006CB0B4 /* CalculatorFFIExampleApp.swift in Sources */,
+				AA4A804829259546006CB0B4 /* FediFFIExampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -291,7 +291,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA4A805A29259548006CB0B4 /* CalculatorFFIExampleTests.swift in Sources */,
+				AA4A805A29259548006CB0B4 /* FediFFIExampleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,8 +299,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA4A806429259548006CB0B4 /* CalculatorFFIExampleUITests.swift in Sources */,
-				AA4A806629259548006CB0B4 /* CalculatorFFIExampleUITestsLaunchTests.swift in Sources */,
+				AA4A806429259548006CB0B4 /* FediFFIExampleUITests.swift in Sources */,
+				AA4A806629259548006CB0B4 /* FediFFIExampleUITestsLaunchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,12 +309,12 @@
 /* Begin PBXTargetDependency section */
 		AA4A805729259548006CB0B4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AA4A804329259546006CB0B4 /* CalculatorFFIExample */;
+			target = AA4A804329259546006CB0B4 /* FediFFIExample */;
 			targetProxy = AA4A805629259548006CB0B4 /* PBXContainerItemProxy */;
 		};
 		AA4A806129259548006CB0B4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AA4A804329259546006CB0B4 /* CalculatorFFIExample */;
+			target = AA4A804329259546006CB0B4 /* FediFFIExample */;
 			targetProxy = AA4A806029259548006CB0B4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -438,11 +438,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = CalculatorFFIExample/CalculatorFFIExample.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FediFFIExample/FediFFIExample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"CalculatorFFIExample/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"FediFFIExample/Preview Content\"";
 				DEVELOPMENT_TEAM = GAU324YPR8;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -454,7 +454,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.CalculatorFFIExample;
+				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.FediFFIExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -466,11 +466,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = CalculatorFFIExample/CalculatorFFIExample.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FediFFIExample/FediFFIExample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"CalculatorFFIExample/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"FediFFIExample/Preview Content\"";
 				DEVELOPMENT_TEAM = GAU324YPR8;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -482,7 +482,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.CalculatorFFIExample;
+				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.FediFFIExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -500,11 +500,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.CalculatorFFIExampleTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.FediFFIExampleTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalculatorFFIExample.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CalculatorFFIExample";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FediFFIExample.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FediFFIExample";
 			};
 			name = Debug;
 		};
@@ -519,11 +519,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.CalculatorFFIExampleTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.FediFFIExampleTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalculatorFFIExample.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CalculatorFFIExample";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FediFFIExample.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FediFFIExample";
 			};
 			name = Release;
 		};
@@ -536,11 +536,11 @@
 				DEVELOPMENT_TEAM = GAU324YPR8;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.CalculatorFFIExampleUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.FediFFIExampleUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = CalculatorFFIExample;
+				TEST_TARGET_NAME = FediFFIExample;
 			};
 			name = Debug;
 		};
@@ -553,18 +553,18 @@
 				DEVELOPMENT_TEAM = GAU324YPR8;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.CalculatorFFIExampleUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.thunderbiscuit.FediFFIExampleUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = CalculatorFFIExample;
+				TEST_TARGET_NAME = FediFFIExample;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA4A803F29259546006CB0B4 /* Build configuration list for PBXProject "CalculatorFFIExample" */ = {
+		AA4A803F29259546006CB0B4 /* Build configuration list for PBXProject "FediFFIExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A806729259548006CB0B4 /* Debug */,
@@ -573,7 +573,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA4A806929259548006CB0B4 /* Build configuration list for PBXNativeTarget "CalculatorFFIExample" */ = {
+		AA4A806929259548006CB0B4 /* Build configuration list for PBXNativeTarget "FediFFIExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A806A29259548006CB0B4 /* Debug */,
@@ -582,7 +582,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA4A806C29259548006CB0B4 /* Build configuration list for PBXNativeTarget "CalculatorFFIExampleTests" */ = {
+		AA4A806C29259548006CB0B4 /* Build configuration list for PBXNativeTarget "FediFFIExampleTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A806D29259548006CB0B4 /* Debug */,
@@ -591,7 +591,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA4A806F29259548006CB0B4 /* Build configuration list for PBXNativeTarget "CalculatorFFIExampleUITests" */ = {
+		AA4A806F29259548006CB0B4 /* Build configuration list for PBXNativeTarget "FediFFIExampleUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A807029259548006CB0B4 /* Debug */,
@@ -603,9 +603,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AA09500A2927DF42001D493C /* Calculator */ = {
+		AA09500A2927DF42001D493C /* Fedi */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Calculator;
+			productName = Fedi;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

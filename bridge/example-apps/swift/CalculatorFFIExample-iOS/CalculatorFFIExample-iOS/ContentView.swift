@@ -1,12 +1,12 @@
 //
 //  ContentView.swift
-//  CalculatorFFIExample-iOS
+//  FediFFIExample-iOS
 //
 //  Created by Steven Myers on 11/18/22.
 //
 
 import SwiftUI
-import Calculator
+import Fedi
 
 struct ContentView: View {
     var body: some View {
@@ -14,9 +14,9 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundColor(.accentColor)
-            let calcSize = CalculatorSize.small
-            let calcData = CalculatorData(model: "test", size: calcSize)
-            let calc = Calculator(info: calcData)
+            let calcSize = FediSize.small
+            let calcData = FediData(model: "test", size: calcSize)
+            let calc = Fedi(info: calcData)
             let two = calc.add(a: 1, b: 1)
             Text("1 + 1 = " + String(two))
         }

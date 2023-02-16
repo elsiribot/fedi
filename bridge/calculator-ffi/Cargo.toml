@@ -1,11 +1,11 @@
 [package]
-name = "calculator-ffi"
+name = "fedi-ffi"
 version = "0.1.2"
 edition = "2021"
 
 [lib]
 crate-type = ["staticlib", "cdylib"]
-name = "calculatorffi"
+name = "fediffi"
 
 
 [dependencies]

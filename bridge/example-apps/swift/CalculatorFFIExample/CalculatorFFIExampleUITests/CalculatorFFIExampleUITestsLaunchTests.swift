@@ -1,13 +1,13 @@
 //
-//  CalculatorFFIExampleUITestsLaunchTests.swift
-//  CalculatorFFIExampleUITests
+//  FediFFIExampleUITestsLaunchTests.swift
+//  FediFFIExampleUITests
 //
 //  Created by Steven Myers on 11/16/22.
 //
 
 import XCTest
 
-final class CalculatorFFIExampleUITestsLaunchTests: XCTestCase {
+final class FediFFIExampleUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

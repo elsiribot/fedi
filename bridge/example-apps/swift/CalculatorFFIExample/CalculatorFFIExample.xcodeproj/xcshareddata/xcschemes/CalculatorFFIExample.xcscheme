@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AA4A804329259546006CB0B4"
-               BuildableName = "CalculatorFFIExample.app"
-               BlueprintName = "CalculatorFFIExample"
-               ReferencedContainer = "container:CalculatorFFIExample.xcodeproj">
+               BuildableName = "FediFFIExample.app"
+               BlueprintName = "FediFFIExample"
+               ReferencedContainer = "container:FediFFIExample.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,9 +34,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AA4A805429259548006CB0B4"
-               BuildableName = "CalculatorFFIExampleTests.xctest"
-               BlueprintName = "CalculatorFFIExampleTests"
-               ReferencedContainer = "container:CalculatorFFIExample.xcodeproj">
+               BuildableName = "FediFFIExampleTests.xctest"
+               BlueprintName = "FediFFIExampleTests"
+               ReferencedContainer = "container:FediFFIExample.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -45,9 +45,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AA4A805E29259548006CB0B4"
-               BuildableName = "CalculatorFFIExampleUITests.xctest"
-               BlueprintName = "CalculatorFFIExampleUITests"
-               ReferencedContainer = "container:CalculatorFFIExample.xcodeproj">
+               BuildableName = "FediFFIExampleUITests.xctest"
+               BlueprintName = "FediFFIExampleUITests"
+               ReferencedContainer = "container:FediFFIExample.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -67,9 +67,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AA4A804329259546006CB0B4"
-            BuildableName = "CalculatorFFIExample.app"
-            BlueprintName = "CalculatorFFIExample"
-            ReferencedContainer = "container:CalculatorFFIExample.xcodeproj">
+            BuildableName = "FediFFIExample.app"
+            BlueprintName = "FediFFIExample"
+            ReferencedContainer = "container:FediFFIExample.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -84,9 +84,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AA4A804329259546006CB0B4"
-            BuildableName = "CalculatorFFIExample.app"
-            BlueprintName = "CalculatorFFIExample"
-            ReferencedContainer = "container:CalculatorFFIExample.xcodeproj">
+            BuildableName = "FediFFIExample.app"
+            BlueprintName = "FediFFIExample"
+            ReferencedContainer = "container:FediFFIExample.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
