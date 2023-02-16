@@ -165,7 +165,6 @@ describe('AmountUtils', () => {
     describe('msatToBtcString', () => {
         it('should convert 10 millisats to 0 bitcoins (rounded down)', () => {
             const result = amountUtils.msatToBtcString(10)
-            console.log(typeof result)
 
             expect(result).toEqual('0')
         })

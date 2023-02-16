@@ -2,9 +2,7 @@
 set -e
 
 # re-build bridge bindings for android
-pushd ../bridge
-./android.sh
-popd
+./build-bridge-android.sh
 
 # launch android
 npx react-native run-android --variant=ProductionDebug
