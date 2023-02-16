@@ -2,14 +2,12 @@
 set -e
 
 # re-build bridge bindings for ios
-pushd bridge
-./ios.sh
-popd
+npm run build-bridge-ios
 
 # make sure we've installed pods
-pushd ios
+cd ios
 pod install
-popd
+cd ..
 
 # launch ios
 npx react-native run-ios

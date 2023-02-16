@@ -9,9 +9,9 @@ rustup target add aarch64-apple-ios x86_64-apple-ios
 rustup target add aarch64-apple-ios-sim --toolchain nightly
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
-pushd fedi-ffi
+cd fedi-ffi
 cargo run --package ffi-bindgen -- --language swift --out-dir ../fedi-swift/Sources/Fedi
-popd
+cd ..
 
 # If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
 if [[ -z $FM_ROCKSDB ]]; then

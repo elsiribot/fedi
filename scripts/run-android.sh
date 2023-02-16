@@ -2,7 +2,7 @@
 set -e
 
 # re-build bridge bindings for android
-./build-bridge-android.sh
+npm run build-bridge-android
 
-# launch android
+# launch android production flavor in debug mode
 npx react-native run-android --variant=ProductionDebug
