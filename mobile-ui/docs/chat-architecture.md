@@ -18,9 +18,13 @@ https://xmpp.org/extensions/
 Building with XMPP means interoperability is a viable option for development and Fedi chat servers can be community-driven and customized while maintaining a level of compatibility with each other. This could make things like switching federations or currency conversion smoother for federation members.
 
 
-### Alternative Technologies
+### Alternative / Complementary Technologies
 
 #### Matrix
+
+#### Nostr
+
+#### Holepunch
 
 ### Modules
 
