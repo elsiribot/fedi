@@ -23,7 +23,6 @@ platform :android do
 
   desc "Build a new apk to debug for production (apk can be found at /android/build/outputs/apk/production/debug/app-production-debug.apk)"
   lane :build_debug do
-    gradle(task: 'clean')
     gradle(
       task: 'assemble',
       flavor: 'production',
@@ -31,7 +30,7 @@ platform :android do
     )
   end
 
-  desc "Build a new app APK to release for production (apk can be found at /android/build/outputs/apk/productionRelease/app-production-debug.apk)"
+  desc "Build a new app APK to release for production (apk can be found at /android/build/outputs/apk/production/release/app-production-release.apk)"
   lane :build_production_apk do
     gradle(
       task: 'assemble',
@@ -42,7 +41,6 @@ platform :android do
 
   desc "Build a new app bundle to release for production"
   lane :build_production do
-    gradle(task: 'clean')
     gradle(
       task: 'bundle',
       flavor: 'production',
@@ -50,7 +48,7 @@ platform :android do
     )
   end
 
-  desc "Upload the latest build for internal testing"
+  desc "Upload the latest build to Play Store Console for internal testing"
   lane :upload_internal_build do
     upload_to_play_store(
       track: 'internal',
@@ -64,7 +62,7 @@ platform :android do
     )
   end
 
-  desc "Upload the latest build for beta testing"
+  desc "Upload the latest build to Play Store Console for beta testing"
   lane :upload_beta_build_production do
     upload_to_play_store(
       track: 'beta',
@@ -92,7 +90,6 @@ platform :android do
   # Special Deployment - Bitcoin Lake (Guatemala Demo)
   desc "Build a new APK to release (Bitcoin Lake)"
   lane :build_bitcoin_lake_apk do
-    gradle(task: 'clean')
     gradle(
       task: 'assemble',
       flavor: 'bitcoinlake',
@@ -102,7 +99,6 @@ platform :android do
 
   desc "Build a new app bundle to release (Bitcoin Lake)"
   lane :build_bitcoin_lake do
-    gradle(task: 'clean')
     gradle(
       task: 'bundle',
       flavor: 'bitcoinlake',
@@ -151,7 +147,6 @@ platform :android do
   # Special Deployment - Bitcoin Jungle (Costa Rica Demo)
   desc "Build a new APK to release (Bitcoin Jungle)"
   lane :build_bitcoin_jungle_apk do
-    gradle(task: 'clean')
     gradle(
       task: 'assemble',
       flavor: 'bitcoinjungle',
@@ -161,7 +156,6 @@ platform :android do
   
   desc "Build a new app bundle to release (Bitcoin Jungle)"
   lane :build_bitcoin_jungle do
-    gradle(task: 'clean')
     gradle(
       task: 'bundle',
       flavor: 'bitcoinjungle',
@@ -205,6 +199,63 @@ platform :android do
   lane :beta_bitcoin_jungle do
     build_bitcoin_jungle
     upload_beta_build_bitcoin_jungle
+  end
+
+  # Special Deployment - Bitcoin Ekasi (South Africa Demo)
+  desc "Build a new APK to release (Bitcoin Ekasi)"
+  lane :build_bitcoin_ekasi_apk do
+    gradle(
+      task: 'assemble',
+      flavor: 'bitcoinekasi',
+      build_type: 'Release'
+    )
+  end
+  
+  desc "Build a new app bundle to release (Bitcoin Ekasi)"
+  lane :build_bitcoin_ekasi do
+    gradle(
+      task: 'bundle',
+      flavor: 'bitcoinekasi',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Upload the latest build to internal track (Bitcoin Ekasi)"
+  lane :upload_internal_build_bitcoin_ekasi do
+    upload_to_play_store(
+      track: 'internal',
+      package_name: 'com.fedimintreactnative.bitcoinekasi',
+      aab: './app/build/outputs/bundle/bitcoinekasi/release/app-bitcoinekasi-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new internal build (Bitcoin Ekasi)"
+  lane :internal_bitcoin_ekasi do
+    build_bitcoin_ekasi
+    upload_internal_build_bitcoin_ekasi
+  end
+
+  desc "Upload the latest build to beta track (Bitcoin Ekasi)"
+  lane :upload_beta_build_bitcoin_ekasi do
+    upload_to_play_store(
+      track: 'beta',
+      package_name: 'com.fedimintreactnative.bitcoinekasi',
+      aab: './app/build/outputs/bundle/bitcoinekasi/release/app-bitcoinekasi-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new beta build (Bitcoin Ekasi)"
+  lane :beta_bitcoin_ekasi do
+    build_bitcoin_ekasi
+    upload_beta_build_bitcoin_ekasi
   end
 
   # desc "Deploy a new version to the Google Play"

@@ -265,6 +265,10 @@ android {
             dimension "env"
             applicationIdSuffix ".bitcoinjungle"
         }
+        bitcoinekasi {
+            dimension "env"
+            applicationIdSuffix ".bitcoinekasi"
+        }
         production {
             dimension "env"
         }
