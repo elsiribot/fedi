@@ -23,14 +23,6 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Runs all the tests
 
-### android increment_version_code
-
-```sh
-[bundle exec] fastlane android increment_version_code
-```
-
-Increment the versionCode in build.gradle
-
 ### android build_debug
 
 ```sh
@@ -45,7 +37,7 @@ Build a new apk to debug for production (apk can be found at /android/build/outp
 [bundle exec] fastlane android build_production_apk
 ```
 
-Build a new app APK to release for production (apk can be found at /android/build/outputs/apk/productionRelease/app-production-debug.apk)
+Build a new app APK to release for production (apk can be found at /android/build/outputs/apk/production/release/app-production-release.apk)
 
 ### android build_production
 
@@ -61,7 +53,7 @@ Build a new app bundle to release for production
 [bundle exec] fastlane android upload_internal_build
 ```
 
-Upload the latest build for internal testing
+Upload the latest build to Play Store Console for internal testing
 
 ### android upload_beta_build_production
 
@@ -69,7 +61,7 @@ Upload the latest build for internal testing
 [bundle exec] fastlane android upload_beta_build_production
 ```
 
-Upload the latest build for beta testing
+Upload the latest build to Play Store Console for beta testing
 
 ### android internal
 
@@ -182,6 +174,54 @@ Upload the latest build to beta track (Bitcoin Jungle)
 ```
 
 Submit a new beta build (Bitcoin Jungle)
+
+### android build_bitcoin_ekasi_apk
+
+```sh
+[bundle exec] fastlane android build_bitcoin_ekasi_apk
+```
+
+Build a new APK to release (Bitcoin Ekasi)
+
+### android build_bitcoin_ekasi
+
+```sh
+[bundle exec] fastlane android build_bitcoin_ekasi
+```
+
+Build a new app bundle to release (Bitcoin Ekasi)
+
+### android upload_internal_build_bitcoin_ekasi
+
+```sh
+[bundle exec] fastlane android upload_internal_build_bitcoin_ekasi
+```
+
+Upload the latest build to internal track (Bitcoin Ekasi)
+
+### android internal_bitcoin_ekasi
+
+```sh
+[bundle exec] fastlane android internal_bitcoin_ekasi
+```
+
+Submit a new internal build (Bitcoin Ekasi)
+
+### android upload_beta_build_bitcoin_ekasi
+
+```sh
+[bundle exec] fastlane android upload_beta_build_bitcoin_ekasi
+```
+
+Upload the latest build to beta track (Bitcoin Ekasi)
+
+### android beta_bitcoin_ekasi
+
+```sh
+[bundle exec] fastlane android beta_bitcoin_ekasi
+```
+
+Submit a new beta build (Bitcoin Ekasi)
 
 ----
 
