@@ -85,20 +85,25 @@ jobs:
             - name: Install Fastlane
               run: cd android && bundle install && cd ..
 
-            - name: Execute Fastlane command
-              run: cd android && bundle exec fastlane build_production_apk && cd ..
-
-            - name: Bump version and prep APK
+            - name: Bump version & prep for APK build
               id: versioning
               run: |
                   git config --global user.email "dev@fedibtc.com"
                   git config --global user.name "Fedi Dev CI"
-                  npm run bump:patch
+                  npm version --allow-same-version --force patch
+                  react-native-version --amend
                   git push
                   NEW_VERSION="$(npm pkg get version | sed 's/"//g')"
-                  mv ./android/app/build/outputs/apk/production/release/app-production-release.apk ./android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk
                   echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_OUTPUT
                   echo "APK_PATH=./android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
+
+            - name: Build APK
+              run: |
+                  cd android && bundle exec fastlane build_production_apk && cd ..
+
+            - name: Rename APK with version
+              run: |
+                  mv ./android/app/build/outputs/apk/production/release/app-production-release.apk ./android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk
 
             - name: Create draft GitHub release with APK
               uses: softprops/action-gh-release@v1
