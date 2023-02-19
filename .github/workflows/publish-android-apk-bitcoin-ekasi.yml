@@ -5,7 +5,7 @@ on:
 jobs:
     release-android:
         name: Build Android APK (Bitcoin Ekasi) and publish in GitHub draft release
-        runs-on: buildjet-8vcpu-ubuntu-2204
+        runs-on: buildjet-4vcpu-ubuntu-2204
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
