@@ -1,12 +1,11 @@
 {
     "name": "fedi-react-native",
-    "version": "0.7.11",
+    "version": "0.7.12",
     "private": true,
     "scripts": {
         "build-bridge-android": "sh scripts/build-bridge-android.sh",
         "build-bridge-ios": "sh scripts/build-bridge-ios.sh",
         "build-android": "sh scripts/build-android.sh",
-        "bump:patch": "npm version --allow-same-version --force patch && react-native-version --amend",
         "android": "sh scripts/run-android.sh",
         "ios": "sh scripts/run-ios.sh",
         "start": "react-native start",
