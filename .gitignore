@@ -57,6 +57,11 @@ buck-out/
 **/fastlane/Preview.html
 **/fastlane/screenshots
 **/fastlane/test_output
+android/builds/*
+
+# deployment credentials
+ios/decoded-asc-api-key-credentials.json
+android/decoded-service-account-credentials.json
 
 # Bundle artifact
 *.jsbundle
