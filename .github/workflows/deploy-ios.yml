@@ -52,7 +52,10 @@ jobs:
 
             - name: Generate JSON credentials file
               run: |
-                  base64 -d -i ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }} > ./ios/decoded-asc-api-key-credentials.json
+                  mkdir tmp
+                  echo ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }} >> ./tmp/asc-api-key-credentials.txt
+                  base64 --decode -i ./tmp/asc-api-key-credentials.txt -o ./ios/decoded-asc-api-key-credentials.json
+                  rm -rf ./tmp
 
             - name: Install Fastlane
               run: cd android && bundle install && cd ..
