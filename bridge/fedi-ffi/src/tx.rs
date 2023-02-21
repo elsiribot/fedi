@@ -1,8 +1,8 @@
 use std::time::SystemTime;
 
 use bitcoin::{Address, Txid};
-use fedimint_api::{
-    db::DatabaseKeyPrefixConst,
+use fedimint_core::{
+    db::DatabaseRecord,
     encoding::{Decodable, Encodable},
 };
 use lightning_invoice::Invoice;
@@ -85,8 +85,8 @@ pub struct Transaction {
 impl Transaction {
     pub fn lightning(
         direction: TransactionDirection,
-        amount: fedimint_api::Amount,
-        fee: Option<fedimint_api::Amount>,
+        amount: fedimint_core::Amount,
+        fee: Option<fedimint_core::Amount>,
         invoice: Invoice,
     ) -> Self {
         let notes = "".into(); // FIXME
@@ -109,7 +109,7 @@ impl Transaction {
                 .as_secs(),
         }
     }
-    pub fn offline(direction: TransactionDirection, amount: fedimint_api::Amount) -> Self {
+    pub fn offline(direction: TransactionDirection, amount: fedimint_core::Amount) -> Self {
         let notes = "".into(); // FIXME
         let id: u64 = rand::thread_rng().gen();
         // TODO: don't hard-code this
@@ -131,8 +131,8 @@ impl Transaction {
 
     pub fn bitcoin(
         direction: TransactionDirection,
-        amount: fedimint_api::Amount,
-        fee: Option<fedimint_api::Amount>,
+        amount: fedimint_core::Amount,
+        fee: Option<fedimint_core::Amount>,
         address: Address,
         txid: Txid,
         incoming_status: Option<IncomingBitcoinTransactionStatus>,
@@ -165,7 +165,7 @@ impl Transaction {
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct TransactionKey(pub String);
 
-impl DatabaseKeyPrefixConst for TransactionKey {
+impl DatabaseRecord for TransactionKey {
     const DB_PREFIX: u8 = DB_PREFIX_TRANSACTIONS;
     type Key = Self;
     type Value = Transaction;
@@ -174,7 +174,7 @@ impl DatabaseKeyPrefixConst for TransactionKey {
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct TransactionKeyPrefix;
 
-impl DatabaseKeyPrefixConst for TransactionKeyPrefix {
+impl DatabaseRecord for TransactionKeyPrefix {
     const DB_PREFIX: u8 = DB_PREFIX_TRANSACTIONS;
     type Key = Self;
 

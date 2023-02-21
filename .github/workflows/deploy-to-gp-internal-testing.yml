@@ -1,9 +1,7 @@
 name: Deploy Android to Google Play Dev Console - Internal Testing
 on:
     workflow_dispatch:
-    push:
-        branches:
-            - 'release/**'
+
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
@@ -62,8 +60,6 @@ jobs:
                   cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
 
             - name: Build bridge
-              env:
-                  FM_ROCKSDB: true
               run: |
                   npm run build-bridge-android
 
@@ -80,9 +76,12 @@ jobs:
               with:
                   ruby-version: '2.7.5'
 
-            - name: Generate private-decoded-key.json file
+            - name: Generate JSON credentials file
               run: |
-                  echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} | base64 -d > ./android/decoded-service-account-credentials.json
+                  mkdir tmp
+                  echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} >> ./tmp/service-account-credentials.txt
+                  base64 --decode -i ./tmp/service-account-credentials.txt -o ./android/decoded-service-account-credentials.json
+                  rm -rf ./tmp
 
             - name: Install Fastlane
               run: cd android && bundle install && cd ..

@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
-use fedimint_api::{
+use fedimint_core::{
     config::ApiEndpoint,
     encoding::{Decodable, Encodable},
 };
-use mint_client::{api::WsFederationConnect, UserClientConfig};
+use fedimint_core::api::WsClientConnectInfo;
+use mint_client::{UserClientConfig};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -15,11 +16,11 @@ use crate::bridge::Federation;
 /// FIXME: probably shouldn't return option
 pub fn hacky_lightning_invoice_fee(
     invoice: &lightning_invoice::Invoice,
-) -> anyhow::Result<fedimint_api::Amount> {
+) -> anyhow::Result<fedimint_core::Amount> {
     invoice
         .amount_milli_satoshis()
         .map(|msat| {
-            fedimint_api::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
+            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
         })
         .ok_or(anyhow!("Invoice missing amount"))
 }
@@ -27,12 +28,12 @@ pub fn hacky_lightning_invoice_fee(
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct Amount(#[ts(type = "Opaque<number, 'fedimint_api::Amount'>")] pub fedimint_api::Amount);
+pub struct Amount(#[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount);
 
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct PeerId(#[ts(type = "number")] pub fedimint_api::PeerId);
+pub struct PeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[serde(transparent)]
@@ -60,7 +61,7 @@ pub struct FediConfig {
 pub struct FedimintFederation {
     pub name: String,
     #[ts(type = "any")]
-    pub connect_info: WsFederationConnect,
+    pub connect_info: WsClientConnectInfo,
     #[ts(type = "Array<{url: string, name: string}>")]
     pub nodes: Vec<ApiEndpoint>,
     pub balance: Amount,
@@ -87,12 +88,12 @@ pub struct LnurlSignedMessage {
 // FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
     let client_config = federation.client.config().0;
-    let balance = federation.client.coins().await.total_amount();
+    let balance = federation.client.notes().await.total_amount();
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
 
     FedimintFederation {
         name: client_config.federation_name.clone(),
-        connect_info: WsFederationConnect::from(&client_config),
+        connect_info: WsClientConnectInfo::from(&client_config),
         nodes: client_config.nodes.clone(),
         balance: Amount(balance),
         social_recovery_active,
@@ -129,7 +130,7 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
         let amount_msat = invoice
             .amount_milli_satoshis()
             .ok_or(anyhow!("Invoice missing amount"))?;
-        let amount = fedimint_api::Amount::from_msats(amount_msat);
+        let amount = fedimint_core::Amount::from_msats(amount_msat);
 
         // We might get no description
         let description = match invoice.description() {

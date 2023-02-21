@@ -1,9 +1,7 @@
 name: Publish iOS to TestFlight
 on:
     workflow_dispatch:
-    push:
-        branches:
-            - 'release/**'
+
 jobs:
     release-ios:
         name: Build and release iOS app
@@ -11,19 +9,57 @@ jobs:
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
+              with:
+                  submodules: true
+
+            - name: Cache
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      ./bridge/target
+                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: nightly
+                  override: true
+                  components: rustfmt, clippy
+
+            - name: Build bridge
+              env:
+                  FM_ROCKSDB: true
+              run: |
+                  npm run build-bridge-ios
+
             - name: Setup Node
               uses: actions/setup-node@v1
               with:
                   node-version: '16.18.X'
+
+            - name: Install Node dependencies
+              run: npm ci --cache .npm
+
             - name: Setup Ruby
               uses: ruby/setup-ruby@v1
               with:
                   ruby-version: '2.7.5'
-            - name: Install packages
-              run: npm install
-            - name: Install Fastlane
-              run: cd ios && bundle install && cd ..
+
             - name: Install pods
               run: cd ios && pod install && cd ..
-            - name: Execute Fastlane command
-              run: cd ios && fastlane beta
+
+            - name: Generate JSON credentials file
+              run: |
+                  mkdir tmp
+                  echo ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }} >> ./tmp/asc-api-key-credentials.txt
+                  base64 --decode -i ./tmp/asc-api-key-credentials.txt -o ./ios/decoded-asc-api-key-credentials.json
+                  rm -rf ./tmp
+
+            - name: Install Fastlane
+              run: cd android && bundle install && cd ..
+
+            - name: Build APK
+              run: |
+                  cd ios && bundle exec fastlane beta && cd ..

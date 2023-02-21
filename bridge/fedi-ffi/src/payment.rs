@@ -1,8 +1,8 @@
 use std::time::SystemTime;
 
 use bitcoin::hashes::sha256;
-use fedimint_api::{
-    db::DatabaseKeyPrefixConst,
+use fedimint_core::{
+    db::DatabaseRecord,
     encoding::{Decodable, Encodable},
 };
 use lightning_invoice::Invoice;
@@ -64,7 +64,7 @@ impl Payment {
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct PaymentKey(pub sha256::Hash);
 
-impl DatabaseKeyPrefixConst for PaymentKey {
+impl DatabaseRecord for PaymentKey {
     const DB_PREFIX: u8 = DB_PREFIX_PAYMENTS;
     type Key = Self;
     type Value = Payment;
@@ -73,7 +73,7 @@ impl DatabaseKeyPrefixConst for PaymentKey {
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct PaymentKeyPrefix;
 
-impl DatabaseKeyPrefixConst for PaymentKeyPrefix {
+impl DatabaseRecord for PaymentKeyPrefix {
     const DB_PREFIX: u8 = DB_PREFIX_PAYMENTS;
     type Key = PaymentKey;
 

@@ -24,11 +24,6 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
             val cargoArgs: MutableList<String> =
                 mutableListOf("build", "--release", "--target", "aarch64-linux-android")
 
-            // If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
-            if (System.getenv("FM_ROCKSDB") != null) {
-                cargoArgs.addAll(mutableListOf("--no-default-features", "--features", "rocksdb"));
-            }
-
             executable("cargo")
             args(cargoArgs)
 
@@ -61,11 +56,6 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
             val cargoArgs: MutableList<String> =
                 mutableListOf("build", "--release", "--target", "x86_64-linux-android")
 
-            // If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
-            if (System.getenv("FM_ROCKSDB") != null) {
-                cargoArgs.addAll(mutableListOf("--no-default-features", "--features", "rocksdb"));
-            }
-
             executable("cargo")
             args(cargoArgs)
 
@@ -97,11 +87,6 @@ internal class UniFfiAndroidPlugin : Plugin<Project> {
             workingDir("${project.projectDir}/../../fedi-ffi")
             val cargoArgs: MutableList<String> =
                 mutableListOf("build", "--release", "--target", "armv7-linux-androideabi")
-
-            // If FM_ROCKSDB environment variable set, disable "sled" feature and enable "rocksdb" feature
-            if (System.getenv("FM_ROCKSDB") != null) {
-                cargoArgs.addAll(mutableListOf("--no-default-features", "--features", "rocksdb"));
-            }
 
             executable("cargo")
             args(cargoArgs)
