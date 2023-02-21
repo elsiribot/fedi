@@ -11,19 +11,78 @@ jobs:
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
+              with:
+                  submodules: true
+
+            - name: Cache
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      ./bridge/target
+                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: nightly
+                  override: true
+                  components: rustfmt, clippy
+
+            # - name: Add Rust targets for iOS
+            #   run: |
+            #       rustup component add rust-src --toolchain nightly-x86_64-apple-darwin
+            #       rustup component add rust-src --toolchain nightly-aarch64-apple-darwin
+            #       rustup target add aarch64-apple-ios x86_64-apple-ios
+            #       rustup target add aarch64-apple-ios-sim --toolchain nightly
+            #       rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+            - name: Build bridge
+              env:
+                  FM_ROCKSDB: true
+              run: |
+                  npm run build-bridge-ios
+
             - name: Setup Node
               uses: actions/setup-node@v1
               with:
                   node-version: '16.18.X'
+
+            - name: Install Node dependencies
+              run: npm ci --cache .npm
+
             - name: Setup Ruby
               uses: ruby/setup-ruby@v1
               with:
                   ruby-version: '2.7.5'
-            - name: Install packages
-              run: npm install
-            - name: Install Fastlane
-              run: cd ios && bundle install && cd ..
+
             - name: Install pods
               run: cd ios && pod install && cd ..
-            - name: Execute Fastlane command
-              run: cd ios && fastlane beta
+
+            - name: Install Fastlane
+              run: cd android && bundle install && cd ..
+
+            - name: Bump version & prep for build
+              id: versioning
+              run: |
+                  git config --global user.email "dev@fedibtc.com"
+                  git config --global user.name "Fedi Dev CI"
+                  RELASE_BRANCH_VERSION="${GITHUB_REF##*/}"
+                  CURRENT_VERSION="$(npm pkg get version | sed 's/"//g')"
+                  CURRENT_MINOR_VERSION="$(cut -d '.' -f 1,2 <<< "$CURRENT_VERSION")"
+                  if [ "$CURRENT_MINOR_VERSION" != $RELASE_BRANCH_VERSION ] && [ "$RELASE_BRANCH_VERSION" == *"."* ];
+                  then
+                      npm version --allow-same-version --force $RELASE_BRANCH_VERSION.0
+                  else
+                      npm version --allow-same-version --force patch
+                  fi
+                  npx react-native-version --amend
+                  # git push
+                  NEW_VERSION="$(npm pkg get version | sed 's/"//g')"
+                  echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_OUTPUT
+                  echo "APK_PATH=./android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
+
+            - name: Build APK
+              run: |
+                  cd ios && bundle exec fastlane beta && cd ..
