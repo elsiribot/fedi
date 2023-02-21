@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
-use fedimint_api::{
+use fedimint_core::{
     config::ApiEndpoint,
     encoding::{Decodable, Encodable},
 };
@@ -16,11 +16,11 @@ use crate::bridge::Federation;
 /// FIXME: probably shouldn't return option
 pub fn hacky_lightning_invoice_fee(
     invoice: &lightning_invoice::Invoice,
-) -> anyhow::Result<fedimint_api::Amount> {
+) -> anyhow::Result<fedimint_core::Amount> {
     invoice
         .amount_milli_satoshis()
         .map(|msat| {
-            fedimint_api::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
+            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
         })
         .ok_or(anyhow!("Invoice missing amount"))
 }
@@ -28,12 +28,12 @@ pub fn hacky_lightning_invoice_fee(
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct Amount(#[ts(type = "Opaque<number, 'fedimint_api::Amount'>")] pub fedimint_api::Amount);
+pub struct Amount(#[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount);
 
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct PeerId(#[ts(type = "number")] pub fedimint_api::PeerId);
+pub struct PeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[serde(transparent)]
@@ -130,7 +130,7 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
         let amount_msat = invoice
             .amount_milli_satoshis()
             .ok_or(anyhow!("Invoice missing amount"))?;
-        let amount = fedimint_api::Amount::from_msats(amount_msat);
+        let amount = fedimint_core::Amount::from_msats(amount_msat);
 
         // We might get no description
         let description = match invoice.description() {

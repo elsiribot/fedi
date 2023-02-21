@@ -350,8 +350,8 @@ async fn payAddress(
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
     federation.send_federation_event().await;
-    let fee = Some(fedimint_api::Amount::from(peg_out.fees.amount()));
-    let amount = fedimint_api::Amount::from(sats);
+    let fee = Some(fedimint_core::Amount::from(peg_out.fees.amount()));
+    let amount = fedimint_core::Amount::from(sats);
     let outgoing_status = Some(IncomingBitcoinTransactionStatus::Pending);
     federation
         .save_transaction(
@@ -838,7 +838,7 @@ mod tests {
                 approveSocialRecoveryRequest(
                     federation.id(),
                     recovery_id.clone(),
-                    PeerId(fedimint_api::PeerId::from(i)),
+                    PeerId(fedimint_core::PeerId::from(i)),
                     password.into(),
                 )
                 .await?;

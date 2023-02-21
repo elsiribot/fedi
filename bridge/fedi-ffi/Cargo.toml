@@ -19,7 +19,7 @@ name = "fediffi"
 
 # Local dependencies that can be handy to uncomment during development
 mint-client = { path = "../../../fedimint/client/client-lib" }
-fedimint-api = { path = "../../../fedimint/fedimint-api" }
+# fedimint-api = { path = "../../../fedimint/fedimint-api" }
 fedimint-core = { path = "../../../fedimint/fedimint-core" }
 fedimint-rocksdb = { path = "../../../fedimint/fedimint-rocksdb" }
 fedi-social = { path = "../../../fedimint/modules/fedi-social" }

@@ -3,7 +3,7 @@ use std::{
     default::Default,
     path::{Path, PathBuf},
     sync::Arc,
-    time::{Duration, SystemTime},
+    time::{Duration, SystemTime}, str::FromStr,
 };
 
 use crate::{
@@ -31,9 +31,9 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use fedi_social::{common::{RecoveryId, VerificationDocument}, FediSocialGen};
-use fedimint_api::{config::{ModuleGenRegistry, ClientConfig}, Amount, PeerId, TieredMulti, module::DynModuleGen};
-use fedimint_api::{db::Database, task::TaskHandle};
-use fedimint_api::{db::DatabaseTransaction, task::TaskGroup};
+use fedimint_core::{config::{ModuleGenRegistry, ClientConfig}, Amount, PeerId, TieredMulti, module::DynModuleGen};
+use fedimint_core::{db::Database, task::TaskHandle};
+use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_core::{config::load_from_file};
 use fedimint_core::api::{GlobalFederationApi, WsFederationApi, WsClientConnectInfo};
 use fedimint_derive_secret::ChildId;
@@ -154,7 +154,7 @@ impl Bridge {
         &self,
         connect_string: String,
     ) -> Result<Option<Arc<Federation>>> {
-        let connect_cfg: WsClientConnectInfo = serde_json::from_str(&connect_string)?;
+        let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         let api = WsFederationApi::from_urls(&connect_cfg);
         let cfg: ClientConfig = api.download_client_config(&connect_cfg.id, module_gens()).await?;
         let federations = self.federations.lock().await;
@@ -306,7 +306,8 @@ impl Federation {
         task_group: TaskGroup,
     ) -> Result<Self> {
         // Download federation config
-        let connect_cfg: WsClientConnectInfo = serde_json::from_str(&connect_string)?;
+        tracing::info!("parsing connection string");
+        let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         tracing::info!("parsed connection string");
         let api = WsFederationApi::from_urls(&connect_cfg);
         tracing::info!("fetching config");
@@ -411,7 +412,7 @@ impl Federation {
     /// Generate lightning invoice and save it to the database
     pub async fn generate_invoice(
         &self,
-        amount: fedimint_api::Amount,
+        amount: fedimint_core::Amount,
         description: String,
     ) -> Result<Invoice> {
         let mut rng = rand::rngs::OsRng;
@@ -507,7 +508,7 @@ impl Federation {
                 self.save_transaction(
                     &Transaction::lightning(
                         TransactionDirection::Send,
-                        fedimint_api::Amount::from_msats(
+                        fedimint_core::Amount::from_msats(
                             invoice
                                 .amount_milli_satoshis()
                                 .context("assuming invoice has amount")?,
@@ -685,7 +686,7 @@ impl Federation {
                     .1
                     .tx_output()
                     .value;
-                let amount = fedimint_api::Amount::from_sats(amount_sats);
+                let amount = fedimint_core::Amount::from_sats(amount_sats);
                 if let Err(_) = self
                     .client
                     .peg_in(txout_proof.clone(), btc_transaction.clone(), rng)
@@ -1227,7 +1228,7 @@ impl Federation {
                 self.attempt_pegins().await;
                 last_consensus_block_height = current_block_height;
             }
-            fedimint_api::task::sleep(Duration::from_secs(1)).await;
+            fedimint_core::task::sleep(Duration::from_secs(1)).await;
         }
     }
 
@@ -1282,7 +1283,7 @@ impl Federation {
                             tracing::info!("completed payment: {:?}", &payment_hash);
                             fed.update_payment_status(payment_hash, PaymentStatus::Paid)
                                 .await;
-                            let amount = fedimint_api::Amount::from_msats(
+                            let amount = fedimint_core::Amount::from_msats(
                                 payment.invoice.amount_milli_satoshis().expect(
                                     "assuming we only receive payments for invoices with amount",
                                 ),
@@ -1302,7 +1303,7 @@ impl Federation {
                 .collect::<Vec<()>>()
                 .await;
 
-            fedimint_api::task::sleep(Duration::from_secs(1)).await;
+            fedimint_core::task::sleep(Duration::from_secs(1)).await;
         }
     }
 
@@ -1319,7 +1320,7 @@ impl Federation {
 
             // Run once per minute
             if last_poll.elapsed().expect("clock went backwards").as_secs() < 60 {
-                fedimint_api::task::sleep(Duration::from_secs(1)).await;
+                fedimint_core::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
             last_poll = SystemTime::now();

@@ -1,6 +1,6 @@
 use fedi_social::common::RecoveryId;
-use fedimint_api::{
-    db::DatabaseKeyPrefixConst,
+use fedimint_core::{
+    db::DatabaseRecord,
     encoding::{Decodable, Encodable},
 };
 use mint_client::social::SocialRecoveryState;
@@ -32,7 +32,7 @@ pub struct SocialRecoveryStateKey(pub String);
 
 const DB_PREFIX_SOCIAL_RECOVERY_STATE: u8 = 0x53;
 
-impl DatabaseKeyPrefixConst for SocialRecoveryStateKey {
+impl DatabaseRecord for SocialRecoveryStateKey {
     const DB_PREFIX: u8 = DB_PREFIX_SOCIAL_RECOVERY_STATE;
     type Key = Self;
     type Value = SocialRecoveryState;
@@ -45,7 +45,7 @@ pub struct SocialRecoveryIdKey(pub String);
 
 const DB_PREFIX_SOCIAL_RECOVERY_ID_STATE: u8 = 0x54;
 
-impl DatabaseKeyPrefixConst for SocialRecoveryIdKey {
+impl DatabaseRecord for SocialRecoveryIdKey {
     const DB_PREFIX: u8 = DB_PREFIX_SOCIAL_RECOVERY_ID_STATE;
     type Key = Self;
     type Value = RecoveryId;
