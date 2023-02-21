@@ -10,20 +10,18 @@ name = "fediffi"
 
 [dependencies]
 # pinned to commit on fedibtc/fedimint-fedi branch
-# mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
-# fedimint-api = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
-# fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
-# fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
-# fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
-# fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "5aa6c28099fa036c093b4109815a4e47c4d7d814" }
+mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
 
 # Local dependencies that can be handy to uncomment during development
-mint-client = { path = "../../../fedimint/client/client-lib" }
-# fedimint-api = { path = "../../../fedimint/fedimint-api" }
-fedimint-core = { path = "../../../fedimint/fedimint-core" }
-fedimint-rocksdb = { path = "../../../fedimint/fedimint-rocksdb" }
-fedi-social = { path = "../../../fedimint/modules/fedi-social" }
-fedimint-derive-secret = { path = "../../../fedimint/crypto/derive-secret" }
+# mint-client = { path = "../../../fedimint/client/client-lib" }
+# fedimint-core = { path = "../../../fedimint/fedimint-core" }
+# fedimint-rocksdb = { path = "../../../fedimint/fedimint-rocksdb" }
+# fedi-social = { path = "../../../fedimint/modules/fedi-social" }
+# fedimint-derive-secret = { path = "../../../fedimint/crypto/derive-secret" }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"
