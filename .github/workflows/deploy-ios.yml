@@ -12,27 +12,27 @@ jobs:
               with:
                   submodules: true
 
-            - name: Cache
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ~/.cargo/registry
-                      ~/.cargo/git
-                      ./bridge/target
-                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+            # - name: Cache
+            #   uses: actions/cache@v3
+            #   with:
+            #       path: |
+            #           ~/.cargo/registry
+            #           ~/.cargo/git
+            #           ./bridge/target
+            #       key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
 
-            - name: Install Rust
-              uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: nightly
-                  override: true
-                  components: rustfmt, clippy
+            # - name: Install Rust
+            #   uses: actions-rs/toolchain@v1
+            #   with:
+            #       toolchain: nightly
+            #       override: true
+            #       components: rustfmt, clippy
 
-            - name: Build bridge
-              env:
-                  FM_ROCKSDB: true
-              run: |
-                  npm run build-bridge-ios
+            # - name: Build bridge
+            #   env:
+            #       FM_ROCKSDB: true
+            #   run: |
+            #       npm run build-bridge-ios
 
             - name: Setup Node
               uses: actions/setup-node@v1
@@ -60,6 +60,6 @@ jobs:
             - name: Install Fastlane
               run: cd android && bundle install && cd ..
 
-            - name: Execute fastlane beta lane
+            - name: Execute fastlane beta lane for CI
               run: |
-                  cd ios && bundle exec fastlane beta && cd ..
+                  cd ios && bundle exec fastlane beta_ci && cd ..

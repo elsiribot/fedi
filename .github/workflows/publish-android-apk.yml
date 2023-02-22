@@ -100,7 +100,7 @@ jobs:
                       npm version --allow-same-version --force patch
                   fi
                   npx react-native-version --amend
-                  git push
+                  # git push
                   NEW_VERSION="$(npm pkg get version | sed 's/"//g')"
                   echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_OUTPUT
                   echo "APK_PATH=./android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
