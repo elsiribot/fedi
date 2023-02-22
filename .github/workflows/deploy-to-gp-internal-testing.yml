@@ -1,4 +1,4 @@
-name: Deploy Android to Google Play Dev Console - Internal Testing
+name: Deploy to Google Play - Internal Testing
 on:
     workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
                       ~/.cargo/registry
                       ~/.cargo/git
                       ./bridge/target
-                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+                  key: ${{ runner.os }}
 
             - name: Setup JDK
               uses: actions/setup-java@v3

@@ -1,4 +1,4 @@
-name: Publish Android APK to GitHub
+name: Publish APK to GitHub
 on:
     workflow_dispatch:
     push:
@@ -22,7 +22,7 @@ jobs:
                       ~/.cargo/registry
                       ~/.cargo/git
                       ./bridge/target
-                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+                  key: ${{ runner.os }}
 
             - name: Setup JDK
               uses: actions/setup-java@v3

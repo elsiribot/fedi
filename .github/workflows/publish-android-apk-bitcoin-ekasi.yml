@@ -1,4 +1,4 @@
-name: Publish Android APK (Bitcoin Ekasi) to GitHub
+name: Publish APK (Bitcoin Ekasi) to GitHub
 on:
     workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
                       ~/.cargo/registry
                       ~/.cargo/git
                       ./bridge/target
-                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+                  key: ${{ runner.os }}
 
             - name: Setup JDK
               uses: actions/setup-java@v3
