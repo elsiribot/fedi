@@ -1,6 +1,6 @@
 {
     "name": "fedi-react-native",
-    "version": "0.7.14",
+    "version": "0.8.0",
     "private": true,
     "scripts": {
         "build-bridge-android": "sh scripts/build-bridge-android.sh",
