@@ -19,8 +19,6 @@ import {
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
-    FEDI_GENERAL_CHANNEL_GROUP,
-    FEDI_RECOVERY_SUPPORT_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
     XMPP_MUC_DOMAIN,
@@ -31,8 +29,8 @@ import { Group, Member, Message } from '../../types'
 import { useFederationsContext } from './FederationsContext'
 
 export const DEFAULT_GROUPS: Group[] = [
-    FEDI_GENERAL_CHANNEL_GROUP,
-    FEDI_RECOVERY_SUPPORT_GROUP,
+    // FEDI_GENERAL_CHANNEL_GROUP,
+    // FEDI_RECOVERY_SUPPORT_GROUP,
 ]
 
 // Define the structure of this Context and its initial state
