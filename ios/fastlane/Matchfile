@@ -1,4 +1,4 @@
-git_url("https://github.com/fedibtc/fedi-react-native-certs")
+git_url("https://x-access-token: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@github.com/fedibtc/fedi-react-native-certs")
 
 storage_mode("git")
 
