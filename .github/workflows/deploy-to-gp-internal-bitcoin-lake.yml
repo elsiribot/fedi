@@ -65,6 +65,7 @@ jobs:
                   node-version: '16.18.X'
 
             - name: Build bridge
+              env:
                   FM_ROCKSDB: true
               run: |
                   npm run build-bridge-android
