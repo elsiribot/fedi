@@ -66,16 +66,12 @@ use mint_client::{
 };
 
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
-use tokio::fs;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
 type FederationId = String;
 
 const GAP_LIMIT: usize = 100;
-pub const RECOVERY_FILENAME: &str = "backup.fedi";
-pub const VERIFICATION_FILENAME: &str = "verification.mp4";
-
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
@@ -992,22 +988,9 @@ impl Federation {
     // Social Recovery
     //
 
-    /// Path to our copy of the social recovery file saved to our data dir
-    pub fn recovery_filename(&self, datadir: &PathBuf) -> PathBuf {
-        let federation_name = self.normalized_federation_name();
-        // FIXME: federation-specific filename
-        datadir.join(format!("{}_{}", federation_name, RECOVERY_FILENAME))
-    }
-
     /// Upload social recovery recovery file to federation given a recovery video
-    pub async fn upload_backup_file(
-        &self,
-        video_file_path: &PathBuf,
-        datadir: &PathBuf,
-    ) -> Result<PathBuf> {
-        debug!("uploading backup file {:?}", video_file_path);
-        let file_contents = fs::read(video_file_path).await?;
-        let verification_doc = VerificationDocument::from_raw(&file_contents);
+    pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
+        let verification_doc = VerificationDocument::from_raw(&video_file);
         // FIXME: two different forms of seed phrase
         let seed_phrase = UserSeedPhrase::from(self.get_mnemonic().await.to_string());
 
@@ -1017,10 +1000,7 @@ impl Federation {
         backup_client
             .upload_backup_to_federation(&recovery_file)
             .await?;
-        // FIXME: is this a good filename?
-        let recovery_file_path = datadir.join(RECOVERY_FILENAME);
-        fs::write(&recovery_file_path, recovery_file.to_bytes()).await?;
-        Ok(recovery_file_path)
+        Ok(recovery_file.to_bytes())
     }
 
     /// Attempt to continue a previous social recovery session by loading state from DB
@@ -1173,9 +1153,7 @@ impl Federation {
     pub async fn social_recovery_download_verification_doc(
         &self,
         recovery_id: &RecoveryId,
-        // FIXME: remove this argument
-        data_dir: PathBuf,
-    ) -> Result<Option<PathBuf>> {
+    ) -> Result<Option<Vec<u8>>> {
         // FIXME: what to do for peer id?
         tracing::info!("downloading verificaiton doc {}", recovery_id);
         // FIXME: maybe shouldn't download from only one peer?
@@ -1184,11 +1162,8 @@ impl Federation {
             .download_verification_doc(*recovery_id)
             .await?;
         if let Some(verification_doc) = verification_doc {
-            tracing::info!("downloaded verification doc ... saving to filesystem");
-            let path = data_dir.join(VERIFICATION_FILENAME);
-            fs::write(&path, verification_doc.to_raw()?).await?;
-            tracing::info!("saved verificaiton doc");
-            return Ok(Some(path));
+            tracing::info!("downloaded verification doc");
+            return Ok(Some(verification_doc.to_raw()?));
         };
         tracing::info!("no verificaiton doc found");
 

@@ -28,7 +28,7 @@ use types::RecoveryId;
 use types::{Amount, PeerId, PublicKey};
 
 use anyhow::{anyhow, Context};
-use bridge::{Bridge, Federation, RECOVERY_FILENAME};
+use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use logging::init_logging;
 use macro_rules_attribute::macro_rules_derive;
@@ -427,6 +427,10 @@ async fn leaveFederation(federation_id: String) -> anyhow::Result<()> {
     Ok(())
 }
 
+// FIXME: federation-specific filename
+pub const RECOVERY_FILENAME: &str = "backup.fedi";
+pub const VERIFICATION_FILENAME: &str = "verification.mp4";
+
 #[macro_rules_derive(rpc_method!)]
 async fn uploadBackupFile(
     federation_id: String,
@@ -434,9 +438,13 @@ async fn uploadBackupFile(
 ) -> anyhow::Result<PathBuf> {
     let datadir = { get_bridge().await?.data_dir.clone() };
     let federation = get_federation(&federation_id).await?;
-    let recovery_file_path = federation
-        .upload_backup_file(&video_file_path, &datadir)
-        .await?;
+    debug!("uploading backup file {:?}", video_file_path);
+    let video_file = fs::read(video_file_path).await?;
+
+    let recovery_file = federation.upload_backup_file(video_file).await?;
+
+    let recovery_file_path = datadir.join(RECOVERY_FILENAME);
+    fs::write(&recovery_file_path, recovery_file).await?;
     Ok(recovery_file_path)
 }
 
@@ -497,10 +505,19 @@ async fn socialRecoveryDownloadVerificationDoc(
     let datadir = { get_bridge().await?.data_dir.clone() };
     // Return QR code contents
     let federation = get_federation(&federation_id).await?;
-    let path = federation
-        .social_recovery_download_verification_doc(&recovery_id.0, datadir)
+
+    let verification_doc = federation
+        .social_recovery_download_verification_doc(&recovery_id.0)
         .await?;
-    Ok(path)
+
+    if let Some(verification_doc) = verification_doc {
+        let path = datadir.join(VERIFICATION_FILENAME);
+        fs::write(&path, verification_doc).await?;
+        tracing::info!("saved verificaiton doc");
+        Ok(Some(path))
+    } else {
+        Ok(None)
+    }
 }
 
 #[macro_rules_derive(rpc_method!)]
