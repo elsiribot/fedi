@@ -62,14 +62,14 @@ jobs:
                   cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang
                   cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
 
-            - name: Build bridge
-              run: |
-                  npm run build-bridge-android
-
             - name: Setup Node
               uses: actions/setup-node@v1
               with:
                   node-version: '16.18.X'
+
+            - name: Build bridge
+              run: |
+                  npm run build-bridge-android
 
             - name: Install Node dependencies
               run: npm ci --cache .npm
