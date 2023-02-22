@@ -80,7 +80,7 @@ jobs:
               run: |
                   mkdir tmp
                   echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} >> ./tmp/service-account-credentials.txt
-                  base64 --decode -i ./tmp/service-account-credentials.txt -o ./android/decoded-service-account-credentials.json
+                  base64 --decode ./tmp/service-account-credentials.txt >> ./android/decoded-service-account-credentials.json
                   rm -rf ./tmp
 
             - name: Install Fastlane

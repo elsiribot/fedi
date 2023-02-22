@@ -54,7 +54,7 @@ jobs:
               run: |
                   mkdir tmp
                   echo ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }} >> ./tmp/asc-api-key-credentials.txt
-                  base64 --decode -i ./tmp/asc-api-key-credentials.txt -o ./ios/decoded-asc-api-key-credentials.json
+                  base64 --decode ./tmp/asc-api-key-credentials.txt >> ./ios/decoded-asc-api-key-credentials.json
                   rm -rf ./tmp
 
             - name: Install Fastlane
