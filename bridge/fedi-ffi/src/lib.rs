@@ -3,6 +3,8 @@
 pub mod bridge;
 pub mod error;
 pub mod event;
+#[cfg(not(target_family = "wasm"))]
+mod ffi;
 pub mod logging;
 pub mod mnemonic;
 pub mod payment;
@@ -11,6 +13,7 @@ pub mod tx;
 pub mod types;
 
 use std::{
+    cell::RefCell,
     path::PathBuf,
     str::FromStr,
     sync::{atomic::AtomicU64, Arc},
@@ -23,8 +26,6 @@ use futures::Future;
 use lazy_static::lazy_static;
 use types::RecoveryId;
 use types::{Amount, PeerId, PublicKey};
-
-uniffi_macros::include_scaffolding!("fedi");
 
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation, RECOVERY_FILENAME};
@@ -41,7 +42,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use tokio::fs;
 use tokio::sync::Mutex;
-use tracing::{error, info, info_span, Instrument};
+use tracing::{debug, error, info, info_span, instrument, Instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
 
@@ -55,20 +56,19 @@ pub enum FedimintError {
     OtherError(#[from] anyhow::Error),
 }
 
-lazy_static! {
-    static ref RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .expect("failed to build runtime");
-    static ref BRIDGE: Mutex<Option<Arc<Bridge>>> = Mutex::new(None);
+thread_local! {
+    static BRIDGE: RefCell<Option<Arc<Bridge>>> = RefCell::new(None);
 }
 
-async fn set_bridge(bridge: Bridge) -> anyhow::Result<()> {
+async fn set_bridge(new_bridge: Bridge) -> anyhow::Result<()> {
     tracing::debug!("resetting bridge");
-    if let Some(b) = BRIDGE.lock().await.clone() {
-        b.stop_pollers().await.context("couldn't stop pollers")?;
+    let old_bridge = BRIDGE.with(|bridge| bridge.replace(Some(Arc::new(new_bridge))));
+    if let Some(old_bridge) = old_bridge {
+        old_bridge
+            .stop_pollers()
+            .await
+            .context("couldn't stop pollers")?;
     }
-    *BRIDGE.lock().await = Some(Arc::new(bridge));
     tracing::debug!("reset bridge");
     Ok(())
 }
@@ -76,23 +76,10 @@ async fn set_bridge(bridge: Bridge) -> anyhow::Result<()> {
 async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
     tracing::debug!("getting bridge");
     let bridge = BRIDGE
-        .lock()
-        .await
-        .clone()
-        .context(ErrorCode::InitializationFailed)?;
+        .with(|b| b.borrow().clone())
+        .context("bridge not set")?;
     tracing::debug!("got bridge");
     Ok(bridge)
-}
-
-// TODO: send error message
-pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
-    RUNTIME.block_on(async {
-        fedimint_initialize_async(data_dir, &log_level, event_sink)
-            .await
-            .unwrap_or_else(|e| {
-                error!("Failed to initialize the bridge: {:?}", e);
-            });
-    })
 }
 
 async fn fedimint_initialize_async(
@@ -100,7 +87,7 @@ async fn fedimint_initialize_async(
     log_level: &str,
     event_sink: Box<dyn EventSink>,
 ) -> anyhow::Result<()> {
-    let already_init = { BRIDGE.lock().await.is_some() };
+    let already_init = BRIDGE.with(|b| b.borrow().is_some());
     if already_init {
         anyhow::bail!("init called again, ignoring");
     }
@@ -639,34 +626,23 @@ rpc_methods!(RpcMethods {
     backupXmppUsername,
 });
 
-pub fn fedimint_rpc(method: String, payload: String) -> String {
-    static REQUEST_ID: AtomicU64 = AtomicU64::new(0);
-    let request_id = REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    tracing::info!("{} {}", method, payload);
-
-    RUNTIME.block_on(
-        async {
-            info!(?payload, "rpc_payload");
-
-            let result = RpcMethods::handle(&method, payload).await;
-            let response = result.unwrap_or_else(|e| rpc_error(&e));
-            info!(?response, "rpc_response");
-            response
+#[instrument(
+    name = "fedimint_rpc_request",
+    skip(payload),
+    fields(
+        request_id = %{
+            static REQUEST_ID: AtomicU64 = AtomicU64::new(0);
+            REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
         }
-        .instrument(info_span!("rpc_request", %request_id, %method)),
     )
-}
+)]
+pub async fn fedimint_rpc_async(method: String, payload: String) -> String {
+    info!(?payload, "rpc_payload");
 
-// TODO: Generate these dynamically from the
-// Event enum/impl in event.rs?
-pub fn fedimint_get_supported_events() -> Vec<String> {
-    return vec![
-        String::from("federation"),
-        String::from("transaction"),
-        String::from("socialRecovery"),
-        String::from("recoveryFileCreation"),
-        String::from("log"),
-    ];
+    let result = RpcMethods::handle(&method, payload).await;
+    let response = result.unwrap_or_else(|e| rpc_error(&e));
+    info!(?response, "rpc_response");
+    response
 }
 
 #[cfg(test)]
