@@ -1,4 +1,4 @@
-name: Publish Android APK to GitHub
+name: Publish APK to GitHub
 on:
     workflow_dispatch:
     push:

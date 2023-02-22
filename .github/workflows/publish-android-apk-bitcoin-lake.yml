@@ -1,4 +1,4 @@
-name: Publish Android APK (Bitcoin Lake) to GitHub
+name: Publish APK (Bitcoin Lake) to GitHub
 on:
     workflow_dispatch:
 

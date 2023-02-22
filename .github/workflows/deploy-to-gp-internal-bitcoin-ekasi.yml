@@ -1,4 +1,4 @@
-name: Deploy Android to Google Play Dev Console - Internal Testing (Bitcoin Ekasi)
+name: Deploy (Bitcoin Ekasi) to Google Play - Internal Testing
 on:
     workflow_dispatch:
 

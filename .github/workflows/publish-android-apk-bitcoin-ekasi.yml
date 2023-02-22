@@ -1,4 +1,4 @@
-name: Publish Android APK (Bitcoin Ekasi) to GitHub
+name: Publish APK (Bitcoin Ekasi) to GitHub
 on:
     workflow_dispatch:
 
