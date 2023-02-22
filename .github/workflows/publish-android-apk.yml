@@ -2,10 +2,9 @@ name: Publish Android APK to GitHub
 on:
     workflow_dispatch:
     push:
-        tags-ignore:
-            - v*
         branches:
-            - 'release/**'
+            - 'release/**.**'
+            - '!release/**.**.**'
 jobs:
     release-android:
         name: Build Android APK and publish in GitHub draft release
