@@ -60,6 +60,6 @@ jobs:
             - name: Install Fastlane
               run: cd android && bundle install && cd ..
 
-            - name: Execute fastlane beta lane
+            - name: Execute fastlane beta lane for CI
               run: |
-                  cd ios && bundle exec fastlane beta && cd ..
+                  cd ios && bundle exec fastlane beta_ci && cd ..
