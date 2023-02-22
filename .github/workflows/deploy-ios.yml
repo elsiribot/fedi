@@ -28,16 +28,16 @@ jobs:
                   override: true
                   components: rustfmt, clippy
 
+            - name: Setup Node
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '16.18.X'
+
             - name: Build bridge
               env:
                   FM_ROCKSDB: true
               run: |
                   npm run build-bridge-ios
-
-            - name: Setup Node
-              uses: actions/setup-node@v1
-              with:
-                  node-version: '16.18.X'
 
             - name: Install Node dependencies
               run: npm ci --cache .npm

@@ -1,11 +1,16 @@
-name: Deploy (Bitcoin Lake) to Google Play - Internal Testing
+name: Build bridge
 on:
     workflow_dispatch:
+    # runs on release/X.Y branches but not release/X.Y.Z branches
+    # push:
+    #     branches:
+    #         - 'release/**.**'
+    #         - '!release/**.**.**'
 
 jobs:
     release-android:
-        name: Build Android AAB (Bitcoin Lake) & Upload to Google Play Dev Console
-        runs-on: buildjet-8vcpu-ubuntu-2204
+        name: Build bridge binaries for both iOS and Android
+        runs-on: buildjet-16vcpu-ubuntu-2204
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
@@ -59,33 +64,16 @@ jobs:
                   cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang
                   cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
 
-            - name: Setup Node
-              uses: actions/setup-node@v1
-              with:
-                  node-version: '16.18.X'
-
-            - name: Build bridge
+            - name: Build bridge for Android
+              env:
                   FM_ROCKSDB: true
               run: |
                   npm run build-bridge-android
 
-            - name: Install Node dependencies
-              run: npm ci --cache .npm
-
-            - name: Setup Ruby
-              uses: ruby/setup-ruby@v1
-              with:
-                  ruby-version: '2.7.5'
-
-            - name: Generate JSON credentials file
+            - name: Build bridge for iOS
+              env:
+                  FM_ROCKSDB: true
               run: |
-                  mkdir tmp
-                  echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} >> ./tmp/service-account-credentials.txt
-                  base64 --decode ./tmp/service-account-credentials.txt >> ./android/decoded-service-account-credentials.json
-                  rm -rf ./tmp
+                  npm run build-bridge-ios
 
-            - name: Install Fastlane
-              run: cd android && bundle install && cd ..
-
-            - name: Execute Fastlane command
-              run: cd android && bundle exec fastlane internal_bitcoin_lake && cd ..
+            # TODO: Upload bridge artifacts somewhere that other workflows can use to download
