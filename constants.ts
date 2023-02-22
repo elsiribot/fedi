@@ -38,11 +38,11 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
     resource: XMPP_RESOURCE,
 }
 export const FEDI_GENERAL_CHANNEL_GROUP = new Group({
-    id: 'fedi-general-channel-group',
+    id: 'fedi-community-group',
     icon: 'FediLogoIcon',
-    name: i18n.t('feature.community.retreat-chat'),
+    name: i18n.t('feature.community.fedi-community'),
     pinned: true,
-    messagePreview: i18n.t('feature.community.retreat-chat-message-preview'),
+    messagePreview: i18n.t('feature.community.fedi-community-message-preview'),
 })
 export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     id: 'fedi-recovery-support-group',
