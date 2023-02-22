@@ -2,8 +2,9 @@ use std::{
     collections::HashMap,
     default::Default,
     path::{Path, PathBuf},
+    str::FromStr,
     sync::Arc,
-    time::{Duration, SystemTime}, str::FromStr,
+    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -18,8 +19,8 @@ use crate::{
         TransactionKeyPrefix,
     },
     types::{
-        federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
-        LnurlSignedMessage, XmppCredentials, self,
+        self, federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
+        LnurlSignedMessage, XmppCredentials,
     },
     EventSinkWrapper,
 };
@@ -30,23 +31,38 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use electrum_client::{Client, ElectrumApi};
-use fedi_social::{common::{RecoveryId, VerificationDocument}, FediSocialGen};
-use fedimint_core::{config::{ModuleGenRegistry, ClientConfig}, Amount, PeerId, TieredMulti, module::DynModuleGen};
+use fedi_social::{
+    common::{RecoveryId, VerificationDocument},
+    FediSocialGen,
+};
+use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
+use fedimint_core::config::load_from_file;
+use fedimint_core::{
+    config::{ClientConfig, ModuleGenRegistry},
+    module::DynModuleGen,
+    Amount, PeerId, TieredMulti,
+};
 use fedimint_core::{db::Database, task::TaskHandle};
 use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
-use fedimint_core::{config::load_from_file};
-use fedimint_core::api::{GlobalFederationApi, WsFederationApi, WsClientConnectInfo};
 use fedimint_derive_secret::ChildId;
 use fedimint_rocksdb::RocksDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
-    api::{WalletFederationApi},
+    api::WalletFederationApi,
     mint::SpendableNote,
     module_decode_stubs,
+    modules::{
+        ln::{
+            contracts::{ContractId, IdentifyableContract},
+            LightningGen,
+        },
+        mint::MintGen,
+        wallet::{txoproof::TxOutProof, WalletGen},
+    },
     social::{RecoveryFile, SocialRecovery},
     utils::network_to_currency,
-    UserClient, UserClientConfig, UserSeedPhrase, modules::{ln::{contracts::{ContractId, IdentifyableContract}, LightningGen}, wallet::{WalletGen, txoproof::TxOutProof}, mint::MintGen},
+    UserClient, UserClientConfig, UserSeedPhrase,
 };
 
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
@@ -157,7 +173,9 @@ impl Bridge {
     ) -> Result<Option<Arc<Federation>>> {
         let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         let api = WsFederationApi::from_urls(&connect_cfg);
-        let cfg: ClientConfig = api.download_client_config(&connect_cfg.id, module_gens()).await?;
+        let cfg: ClientConfig = api
+            .download_client_config(&connect_cfg.id, module_gens())
+            .await?;
         let federations = self.federations.lock().await;
         let federation = federations.get(&cfg.federation_name).map(|fed| fed.clone());
         Ok(federation)
@@ -222,7 +240,14 @@ impl Bridge {
             let config = fed.client.config();
             let db = fed.client.db();
             let secp = Secp256k1::new();
-            let new_client = UserClient::new(config, module_decode_stubs(), module_gens(), db.clone(), secp).await;
+            let new_client = UserClient::new(
+                config,
+                module_decode_stubs(),
+                module_gens(),
+                db.clone(),
+                secp,
+            )
+            .await;
             fed.client = Arc::new(new_client);
 
             // start pollers
@@ -312,7 +337,9 @@ impl Federation {
         tracing::info!("parsed connection string");
         let api = WsFederationApi::from_urls(&connect_cfg);
         tracing::info!("fetching config");
-        let cfg: ClientConfig = api.download_client_config(&connect_cfg.id, module_gens()).await?;
+        let cfg: ClientConfig = api
+            .download_client_config(&connect_cfg.id, module_gens())
+            .await?;
 
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).context("unable to serialize cfg")?;
@@ -393,7 +420,10 @@ impl Federation {
         let keypair = secret.to_secp_key(&Secp256k1::new());
         let pubkey = keypair.public_key();
         let signature = secp.sign_ecdsa(msg, &keypair.secret_key());
-        LnurlSignedMessage { signature, pubkey: types::PublicKey(pubkey) }
+        LnurlSignedMessage {
+            signature,
+            pubkey: types::PublicKey(pubkey),
+        }
     }
 
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
@@ -1088,7 +1118,7 @@ impl Federation {
             .get_social_recovery_id()
             .await
             .ok_or(anyhow!("No recovery ID found"))?;
-        Ok(SocialRecoveryQr { recovery_id  })
+        Ok(SocialRecoveryQr { recovery_id })
     }
 
     /// Get a list of the state of all social recoveries from all guardians

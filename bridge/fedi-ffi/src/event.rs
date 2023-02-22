@@ -38,21 +38,11 @@ pub struct LogEvent {
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub enum Event {
-    Federation {
-        event: FedimintFederation,
-    },
-    Transaction {
-        event: TransactionEvent,
-    },
-    SocialRecovery {
-        event: SocialRecoveryEvent,
-    },
-    RecoveryFileCreation {
-        event: RecoveryFileCreationEvent,
-    },
-    Log {
-        event: LogEvent,
-    },
+    Federation { event: FedimintFederation },
+    Transaction { event: TransactionEvent },
+    SocialRecovery { event: SocialRecoveryEvent },
+    RecoveryFileCreation { event: RecoveryFileCreationEvent },
+    Log { event: LogEvent },
 }
 
 impl Event {
