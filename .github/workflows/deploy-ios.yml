@@ -19,7 +19,7 @@ jobs:
                       ~/.cargo/registry
                       ~/.cargo/git
                       ./bridge/target
-                  key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml','**/Cargo.lock') }}
+                  key: ${{ runner.os }}
 
             - name: Install Rust
               uses: actions-rs/toolchain@v1
