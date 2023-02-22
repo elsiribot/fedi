@@ -823,6 +823,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedi-fedimint-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fedimint-build",
+ "fedimint-cli",
+ "tokio",
+]
+
+[[package]]
+name = "fedi-fedimintd"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fedi-social-server",
+ "fedimint-build",
+ "fedimint-core",
+ "fedimintd",
+ "stabilitypool-server",
+ "tokio",
+]
+
+[[package]]
 name = "fedi-social-client"
 version = "0.1.0"
 dependencies = [
@@ -952,16 +975,6 @@ dependencies = [
 name = "fedimint-build"
 version = "0.1.0"
 source = "git+https://github.com/fedimint/fedimint?rev=b283f4e2c5d4ccacd1293276e4880a5918013981#b283f4e2c5d4ccacd1293276e4880a5918013981"
-
-[[package]]
-name = "fedimint-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fedimint-build",
- "fedimint-cli 0.1.0 (git+https://github.com/fedimint/fedimint?rev=b283f4e2c5d4ccacd1293276e4880a5918013981)",
- "tokio",
-]
 
 [[package]]
 name = "fedimint-cli"
@@ -1466,19 +1479,6 @@ dependencies = [
  "tower",
  "tracing",
  "url",
-]
-
-[[package]]
-name = "fedimintd-fedi"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fedi-social-server",
- "fedimint-build",
- "fedimint-core",
- "fedimintd",
- "stabilitypool-server",
- "tokio",
 ]
 
 [[package]]
