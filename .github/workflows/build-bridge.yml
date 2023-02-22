@@ -1,0 +1,79 @@
+name: Build bridge
+on:
+    workflow_dispatch:
+    # runs on release/X.Y branches but not release/X.Y.Z branches
+    # push:
+    #     branches:
+    #         - 'release/**.**'
+    #         - '!release/**.**.**'
+
+jobs:
+    release-android:
+        name: Build bridge binaries for both iOS and Android
+        runs-on: buildjet-16vcpu-ubuntu-2204
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v2
+              with:
+                  submodules: true
+
+            - name: Cache
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      ./bridge/target
+                  key: ${{ runner.os }}
+
+            - name: Setup JDK
+              uses: actions/setup-java@v3
+              with:
+                  distribution: 'zulu'
+                  java-version: 11
+                  cache: 'gradle'
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: nightly
+                  override: true
+                  components: rustfmt, clippy
+
+            - name: Add Rust targets for Android
+              run: |
+                  rustup target add x86_64-linux-android
+                  rustup target add aarch64-linux-android
+                  rustup target add armv7-linux-androideabi
+
+            - name: Setup Android NDK
+              id: setup-ndk
+              uses: nttld/setup-ndk@v1
+              with:
+                  ndk-version: r25c
+                  local-cache: true
+
+            - name: Save ANDROID_NDK_ROOT to environment
+              run: |
+                  echo $'ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}' >> $GITHUB_ENV
+
+            - name: Configure environment for all targets
+              run: |
+                  echo AR=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar >> $GITHUB_ENV
+                  echo "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+                  cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang
+                  cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
+
+            - name: Build bridge for Android
+              env:
+                  FM_ROCKSDB: true
+              run: |
+                  npm run build-bridge-android
+
+            - name: Build bridge for iOS
+              env:
+                  FM_ROCKSDB: true
+              run: |
+                  npm run build-bridge-ios
+
+            # TODO: Upload bridge artifacts somewhere that other workflows can use to download
