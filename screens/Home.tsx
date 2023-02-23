@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import SvgImage from '../components/ui/SvgImage'
 
+import AdminHeader from '../components/feature/admin/AdminHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
@@ -180,6 +181,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
                     header: () => (
                         <>
                             <SelectedFederationHeader />
+                            <AdminHeader />
                         </>
                     ),
                 })}

@@ -152,10 +152,6 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
-                <Text bold>{t('words.admin')}</Text>
-                {/*
-                    TODO: Replace with username set during onboarding
-                */}
                 <View style={styles(theme).avatarContainer}>
                     <HoloAvatar
                         size={AvatarSize.lg}

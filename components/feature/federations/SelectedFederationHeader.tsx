@@ -82,7 +82,6 @@ const styles = (theme: Theme) =>
         },
         headerContainer: {
             marginTop: theme.spacing.lg,
-            marginBottom: theme.spacing.lg,
         },
     })
 

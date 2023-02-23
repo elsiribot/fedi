@@ -7,11 +7,13 @@ import WebView from 'react-native-webview'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 
-type SitesHeaderProps = {
+type SitesBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
 }
 
-const SitesHeader: React.FC<SitesHeaderProps> = ({ webViewRef }) => {
+const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
+    webViewRef,
+}) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
@@ -68,4 +70,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default SitesHeader
+export default SitesBrowserHeader
