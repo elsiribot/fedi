@@ -9,7 +9,8 @@ import {
     updateMessage,
     useChatContext,
 } from '../../../state/contexts/ChatContext'
-import { useBridge, useXmpp } from '../../../state/hooks'
+import { useBridge } from '../../../state/hooks'
+import { useXmpp } from '../../../state/hooks/chat'
 import { Message, Payment, PaymentStatus } from '../../../types'
 
 type IncomingPaymentActionsProps = {

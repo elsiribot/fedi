@@ -27,7 +27,8 @@ import {
     resetFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
-import { useBridge, useXmpp } from '../state/hooks'
+import { useBridge } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

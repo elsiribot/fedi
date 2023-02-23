@@ -9,7 +9,7 @@ import uuid from 'react-native-uuid'
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import { addToMessages, useChatContext } from '../state/contexts/ChatContext'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 

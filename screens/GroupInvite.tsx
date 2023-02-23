@@ -7,7 +7,7 @@ import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>

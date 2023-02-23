@@ -10,7 +10,8 @@ import {
 } from '../../../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
-import { useBridge, useXmpp } from '../../../state/hooks'
+import { useBridge } from '../../../state/hooks'
+import { useXmpp } from '../../../state/hooks/chat'
 import { Message, MSats, Payment, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 

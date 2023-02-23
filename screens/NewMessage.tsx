@@ -9,7 +9,7 @@ import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
 import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>

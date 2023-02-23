@@ -11,7 +11,8 @@ import { useChatContext } from '../state/contexts/ChatContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
-import { usePrevious, useXmpp } from '../state/hooks'
+import { usePrevious } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { Message } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>

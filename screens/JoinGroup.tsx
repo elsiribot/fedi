@@ -11,7 +11,7 @@ import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 

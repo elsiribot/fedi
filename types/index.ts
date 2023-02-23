@@ -182,3 +182,29 @@ export enum PaymentStatus {
     rejected,
     paid,
 }
+
+export type OutgoingMessage = {
+    text?: string
+    from?: Member
+    to?: Member
+    message: Message
+}
+
+export type OutgoingGroupMessage = {
+    message: Message
+    toRoom: string
+}
+
+export type ArchiveQueryFilters = {
+    withJid?: string | null
+}
+
+export type ArchiveQueryPagination = {
+    limit?: string | null
+    after?: string | null
+}
+
+export type MessageArchiveQuery = {
+    filters?: ArchiveQueryFilters | null
+    pagination?: ArchiveQueryPagination | null
+}

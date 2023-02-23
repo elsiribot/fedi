@@ -8,7 +8,8 @@ import ChatsList from '../components/feature/chat/ChatsList'
 import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { ArchiveQueryPagination, useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
+import { ArchiveQueryPagination } from '../types'
 import {
     HomeTabsParamList,
     NavigationHook,

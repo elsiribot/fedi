@@ -8,7 +8,7 @@ import UsdAmount from '../components/feature/wallet/UsdAmount'
 
 import { addToMessages, useChatContext } from '../state/contexts/ChatContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'

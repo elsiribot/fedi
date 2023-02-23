@@ -54,6 +54,7 @@ export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     pinned: true,
     messagePreview: i18n.t('feature.chat.money-changing-message-preview'),
 })
+export const XMPP_DEFAULT_PAGE_LIMIT = '20'
 
 export const MAX_INVOICE_AMOUNT_SATS = 200000
 
