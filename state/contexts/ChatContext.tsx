@@ -16,9 +16,9 @@ import React, {
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
-    COMMUNITY_GROUPS_PERSISTENCE_KEY,
-    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
-    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    CHAT_GROUPS_PERSISTENCE_KEY,
+    CHAT_MEMBERS_PERSISTENCE_KEY,
+    CHAT_MESSAGES_PERSISTENCE_KEY,
     FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
@@ -35,7 +35,7 @@ export const DEFAULT_GROUPS: Group[] = [
 ]
 
 // Define the structure of this Context and its initial state
-interface CommunityContextState {
+interface ChatContextState {
     xmppClient: Client | null
     authenticatedMember: Member | null
     username: string | null
@@ -45,7 +45,7 @@ interface CommunityContextState {
     membersSeen: Member[]
     lastFetchedMessageId: string | null
 }
-const initialState: CommunityContextState = {
+const initialState: ChatContextState = {
     xmppClient: null,
     username: null,
     userIsOnline: false,
@@ -67,7 +67,7 @@ enum ActionType {
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
-    RESET_COMMUNITY_STATE = 'RESET_COMMUNITY_STATE',
+    RESET_CHAT_STATE = 'RESET_CHAT_STATE',
     SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_GROUP = 'UPDATE_GROUP',
@@ -83,10 +83,10 @@ interface Action {
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {
-    state: CommunityContextState
+    state: ChatContextState
     dispatch: React.Dispatch<Action>
 }
-export const CommunityContext = createContext({} as BaseContext)
+export const ChatContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
 export function addToMembersSeen(member: Member): Action {
@@ -167,9 +167,9 @@ export function updateGroup(group: Group): Action {
         payload: group,
     }
 }
-export function resetCommunityState(): Action {
+export function resetChatState(): Action {
     return {
-        type: ActionType.RESET_COMMUNITY_STATE,
+        type: ActionType.RESET_CHAT_STATE,
     }
 }
 
@@ -430,7 +430,7 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
-        case ActionType.RESET_COMMUNITY_STATE:
+        case ActionType.RESET_CHAT_STATE:
             return { ...initialState }
         default:
             return state
@@ -543,7 +543,7 @@ export const checkXmppUser = async (
     })
 }
 
-function CommunityProvider(props: React.PropsWithChildren<{}>) {
+function ChatProvider(props: React.PropsWithChildren<{}>) {
     const { state: federationsState, dispatch: federationsDispatch } =
         useFederationsContext()
     const { selectedFederationId, selectedFederation } = federationsState
@@ -615,7 +615,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
                     let userJid: JID = fromJid
 
                     // This came from a user through the MUC domain, reformat JID
-                    // to main domain with the /community resource
+                    // to main domain with the /chat resource
                     if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
                         userJid = jid(
                             fromJid.getResource(),
@@ -812,7 +812,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         if (state.groups.length > DEFAULT_GROUPS.length) {
             console.log('storing', state.groups.length, 'groups')
             AsyncStorage.setItem(
-                COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                CHAT_GROUPS_PERSISTENCE_KEY,
                 JSON.stringify({ groups: state.groups }),
             )
         }
@@ -823,7 +823,7 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         if (state.membersSeen.length > 0) {
             console.log('storing', state.membersSeen.length, 'members')
             AsyncStorage.setItem(
-                COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                CHAT_MEMBERS_PERSISTENCE_KEY,
                 JSON.stringify({ members: state.membersSeen }),
             )
         }
@@ -834,17 +834,17 @@ function CommunityProvider(props: React.PropsWithChildren<{}>) {
         if (state.messages.length > 0) {
             console.log('storing', state.messages.length, 'messages')
             AsyncStorage.setItem(
-                COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                CHAT_MESSAGES_PERSISTENCE_KEY,
                 JSON.stringify({ messages: state.messages }),
             )
         }
     }, [state.messages])
 
-    return <CommunityContext.Provider value={providerValue} {...props} />
+    return <ChatContext.Provider value={providerValue} {...props} />
 }
 
-function useCommunityContext() {
-    return useContext(CommunityContext)
+function useChatContext() {
+    return useContext(ChatContext)
 }
 
-export { CommunityProvider, useCommunityContext }
+export { ChatProvider, useChatContext }

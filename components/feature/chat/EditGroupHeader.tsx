@@ -10,7 +10,7 @@ const EditGroupHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            headerCenter={<Text bold>{t('feature.community.edit-group')}</Text>}
+            headerCenter={<Text bold>{t('feature.chat.edit-group')}</Text>}
         />
     )
 }

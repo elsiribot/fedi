@@ -10,24 +10,25 @@ import Share from 'react-native-share'
 import { Guardian, LightningGateway } from '../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    COMMUNITY_GROUPS_PERSISTENCE_KEY,
-    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
-    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    CHAT_GROUPS_PERSISTENCE_KEY,
+    CHAT_MEMBERS_PERSISTENCE_KEY,
+    CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
 import {
     DEFAULT_GROUPS,
     receiveGroups,
     receiveMembersSeen,
     receiveMessages,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     changeAuthenticatedGuardian,
     resetFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
-import { useBridge, useXmpp } from '../state/hooks'
+import { useBridge } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -40,7 +41,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
     const { state, dispatch: federationsDispatch } = useFederationsContext()
-    const { dispatch: communityDispatch } = useCommunityContext()
+    const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -132,19 +133,19 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title={'Delete all groups, messages, & members seen'}
                 onPress={() => {
-                    communityDispatch(receiveMembersSeen([]))
-                    communityDispatch(receiveMessages([]))
-                    communityDispatch(receiveGroups(DEFAULT_GROUPS))
+                    chatDispatch(receiveMembersSeen([]))
+                    chatDispatch(receiveMessages([]))
+                    chatDispatch(receiveGroups(DEFAULT_GROUPS))
                     AsyncStorage.setItem(
-                        COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                        CHAT_MEMBERS_PERSISTENCE_KEY,
                         JSON.stringify({ members: [] }),
                     )
                     AsyncStorage.setItem(
-                        COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                        CHAT_MESSAGES_PERSISTENCE_KEY,
                         JSON.stringify({ messages: [] }),
                     )
                     AsyncStorage.setItem(
-                        COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                        CHAT_GROUPS_PERSISTENCE_KEY,
                         JSON.stringify({ groups: DEFAULT_GROUPS }),
                     )
                 }}
@@ -153,9 +154,9 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title={'Delete all groups'}
                 onPress={() => {
-                    communityDispatch(receiveGroups(DEFAULT_GROUPS))
+                    chatDispatch(receiveGroups(DEFAULT_GROUPS))
                     AsyncStorage.setItem(
-                        COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                        CHAT_GROUPS_PERSISTENCE_KEY,
                         JSON.stringify({ groups: DEFAULT_GROUPS }),
                     )
                 }}
@@ -164,9 +165,9 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title={'Delete all messages'}
                 onPress={() => {
-                    communityDispatch(receiveMessages([]))
+                    chatDispatch(receiveMessages([]))
                     AsyncStorage.setItem(
-                        COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+                        CHAT_MESSAGES_PERSISTENCE_KEY,
                         JSON.stringify({ messages: [] }),
                     )
                 }}
@@ -175,10 +176,10 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title={'Delete all members seen'}
                 onPress={() => {
-                    communityDispatch(receiveMembersSeen([]))
-                    communityDispatch(receiveGroups(DEFAULT_GROUPS))
+                    chatDispatch(receiveMembersSeen([]))
+                    chatDispatch(receiveGroups(DEFAULT_GROUPS))
                     AsyncStorage.setItem(
-                        COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+                        CHAT_MEMBERS_PERSISTENCE_KEY,
                         JSON.stringify({ members: [] }),
                     )
                 }}

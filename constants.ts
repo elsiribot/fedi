@@ -16,23 +16,26 @@ export const TEST_FEDERATION = FEDERATION_ALPHA
 export const AUTHENTICATED_GUARDIAN_DB_KEY = 'AUTHENTICATED_GUARDIAN_DB_KEY'
 export const SELECTED_FEDERATION_ID_DB_KEY = 'SELECTED_FEDERATION_ID_DB_KEY'
 export const FEDERATIONS_PERSISTENCE_KEY = 'AsyncStorage-FederationsContext'
-export const COMMUNITY_MEMBERS_PERSISTENCE_KEY =
-    'AsyncStorage-CommunityContext-members'
-export const COMMUNITY_MESSAGES_PERSISTENCE_KEY =
-    'AsyncStorage-CommunityContext-messages'
-export const COMMUNITY_GROUPS_PERSISTENCE_KEY =
-    'AsyncStorage-CommunityContext-groups'
+export const CHAT_MEMBERS_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-members'
+export const CHAT_MESSAGES_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-messages'
+export const CHAT_GROUPS_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-groups'
 
 export const BITFINEX_BTCUSD_WEBSOCKET_URL = 'wss://api-pub.bitfinex.com/ws/2'
-export const DEFAULT_GROUP_NAME = i18n.t('feature.community.new-group')
+export const DEFAULT_GROUP_NAME = i18n.t('feature.chat.new-group')
+
+// The URL where the Prosody chat server is hosted
 export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
+// The resource on the server designated for all chat operations...
+// use cases for changing this are not clear so it is fixed for now
+// https://xmpp.org/rfcs/rfc6120.html#bind
+export const XMPP_RESOURCE = 'chat'
+// We connect via websocket
+export const XMPP_SERVICE = `wss://${XMPP_DOMAIN}:5281/xmpp-websocket`
 // This is the XMPP Multi-User-Chat (MUC) domain defined
 // in prosody.config.lua on the XMPP server
 // https://prosody.im/doc/modules/mod_muc
 export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
-export const XMPP_SERVICE = 'wss://xmpp.dev.fedibtc.com:5281/xmpp-websocket'
-export const XMPP_MOCK_PASSWORD = 'abcdefgh12345678'
-export const XMPP_RESOURCE = 'community'
+
 export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
     resource: XMPP_RESOURCE,
@@ -40,17 +43,18 @@ export const XMPP_CONNECTION_OPTIONS: Options = {
 export const FEDI_GENERAL_CHANNEL_GROUP = new Group({
     id: 'fedi-community-group',
     icon: 'FediLogoIcon',
-    name: i18n.t('feature.community.fedi-community'),
+    name: i18n.t('feature.chat.fedi-community'),
     pinned: true,
-    messagePreview: i18n.t('feature.community.fedi-community-message-preview'),
+    messagePreview: i18n.t('feature.chat.fedi-community-message-preview'),
 })
 export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     id: 'fedi-recovery-support-group',
     icon: 'Cash',
-    name: i18n.t('feature.community.money-changing'),
+    name: i18n.t('feature.chat.money-changing'),
     pinned: true,
-    messagePreview: i18n.t('feature.community.money-changing-message-preview'),
+    messagePreview: i18n.t('feature.chat.money-changing-message-preview'),
 })
+export const XMPP_DEFAULT_PAGE_LIMIT = '20'
 
 export const MAX_INVOICE_AMOUNT_SATS = 200000
 

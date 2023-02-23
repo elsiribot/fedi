@@ -11,7 +11,7 @@ import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -26,12 +26,12 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
     const handleUserInput = useCallback(
         async (input: string) => {
             if (input.startsWith('fedi:group:')) {
-                console.info('fedi community group detected', input)
+                console.info('fedi chat group detected', input)
                 navigation.replace('GroupChat', {
                     group: Group.decodeInvitationLink(input),
                 })
             } else {
-                toast?.show(t('feature.community.invalid-group'), 3000)
+                toast?.show(t('feature.chat.invalid-group'), 3000)
             }
         },
         [navigation, toast, t],
@@ -86,13 +86,13 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
                     />
                     <LineBreak />
                     <Button
-                        title={t('feature.community.create-a-group')}
+                        title={t('feature.chat.create-a-group')}
                         onPress={createGroupInvite}
                     />
                     <LineBreak />
                 </>
             }
-            message={t('feature.community.camera-access-information')}>
+            message={t('feature.chat.camera-access-information')}>
             <View style={styles(theme).container}>
                 <View style={styles(theme).cameraScannerContainer}>
                     {renderQrCodeScanner()}
@@ -105,7 +105,7 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <Button
                     containerStyle={styles(theme).button}
-                    title={t('feature.community.create-a-group')}
+                    title={t('feature.chat.create-a-group')}
                     onPress={createGroupInvite}
                 />
             </View>

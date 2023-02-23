@@ -6,8 +6,8 @@ import { StyleSheet, View } from 'react-native'
 import {
     checkXmppUser,
     registerXmppUser,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationCredentials,
@@ -25,7 +25,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const [username, setUsername] = useState<string>('')
     const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
     const { state, dispatch } = useFederationsContext()
-    const { authenticatedMember } = useCommunityContext().state
+    const { authenticatedMember } = useChatContext().state
     const { toast } = useEnvironmentContext().state
     const { backupXmppUsername, getXmppCredentials } = useBridge()
 

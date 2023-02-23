@@ -4,7 +4,7 @@ import { t } from 'i18next'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { useCommunityContext } from '../../../state/contexts/CommunityContext'
+import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Chat, ChatType, Group, Message, MSats } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
@@ -15,8 +15,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const ChatsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { authenticatedMember, groups, messages } =
-        useCommunityContext().state
+    const { authenticatedMember, groups, messages } = useChatContext().state
 
     const renderChat: ListRenderItem<Chat> = ({ item }) => {
         return (
@@ -71,7 +70,7 @@ const ChatsList: React.FC<{}> = () => {
                           lastReceivedTimestamp: m.sentAt,
                           // If last message is a payment, render details
                           messagePreview: m.payment
-                              ? t('feature.community.payment-requested', {
+                              ? t('feature.chat.payment-requested', {
                                     name: m.sentBy?.username,
                                     amount: amountUtils.formatNumber(
                                         amountUtils.msatToSat(
@@ -91,7 +90,7 @@ const ChatsList: React.FC<{}> = () => {
                       updatedChat.lastReceivedTimestamp = m.sentAt
                       // If last message is a payment, render details
                       updatedChat.messagePreview = m.payment
-                          ? t('feature.community.payment-requested', {
+                          ? t('feature.chat.payment-requested', {
                                 name: m.sentBy?.username,
                                 amount: amountUtils.formatNumber(
                                     amountUtils.msatToSat(

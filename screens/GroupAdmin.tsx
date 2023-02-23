@@ -41,7 +41,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 />
                 <SettingsItem
                     image={<SvgImage name="Room" />}
-                    label={t('feature.community.invite-to-group')}
+                    label={t('feature.chat.invite-to-group')}
                     onPress={() => {
                         navigation.navigate('GroupInvite', {
                             group,
@@ -51,13 +51,13 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <SettingsItem
                     disabled
                     image={<SvgImage name="LeaveRoom" />}
-                    label={t('feature.community.leave-group')}
+                    label={t('feature.chat.leave-group')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
                     image={<SvgImage name="InviteMembers" />}
-                    label={t('feature.community.broadcast-only')}
+                    label={t('feature.chat.broadcast-only')}
                     onPress={() => {}}
                 />
             </View>
@@ -68,19 +68,19 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <SettingsItem
                     disabled
                     image={<SvgImage name="Alarm" />}
-                    label={t('feature.community.disappearing-messages')}
+                    label={t('feature.chat.disappearing-messages')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
                     image={<SvgImage name="ChatHistory" />}
-                    label={t('feature.community.show-history-to-new-members')}
+                    label={t('feature.chat.show-history-to-new-members')}
                     onPress={() => {}}
                 />
                 <SettingsItem
                     disabled
                     image={<SvgImage name="Photo" />}
-                    label={t('feature.community.view-shared-media')}
+                    label={t('feature.chat.view-shared-media')}
                     onPress={() => {}}
                 />
                 <SettingsItem

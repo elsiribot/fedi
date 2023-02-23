@@ -59,6 +59,7 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                     />
                 </Pressable>
             }
+            containerStyle={styles(theme).headerContainer}
         />
     )
 }
@@ -78,6 +79,9 @@ const styles = (theme: Theme) =>
             height: 20,
             width: 20,
             resizeMode: 'contain',
+        },
+        headerContainer: {
+            marginTop: theme.spacing.lg,
         },
     })
 

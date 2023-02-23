@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useCommunityContext } from '../../../state/contexts/CommunityContext'
+import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Message, MSats } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 import IncomingPaymentRequest from './IncomingPaymentRequest'
@@ -15,7 +15,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     message,
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
-    const { state } = useCommunityContext()
+    const { state } = useChatContext()
     const { authenticatedMember } = state
     const { payment } = message
 
@@ -31,7 +31,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             <OutgoingPaymentRequest
                 message={message}
                 incomingPayment={message.payment!}
-                text={`${t('feature.community.outgoing-chat-payment', {
+                text={`${t('feature.chat.outgoing-chat-payment', {
                     amount: amountUtils.msatToSat(payment?.amount as MSats),
                     unit: 'SATS',
                     name: message.sentBy?.username,
@@ -44,7 +44,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
             <IncomingPaymentRequest
                 message={message}
                 outgoingPayment={message.payment!}
-                text={`${t('feature.community.incoming-chat-payment', {
+                text={`${t('feature.chat.incoming-chat-payment', {
                     amount: amountUtils.msatToSat(payment?.amount as MSats),
                     unit: 'SATS',
                     name: message.sentBy?.username,

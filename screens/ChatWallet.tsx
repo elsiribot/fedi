@@ -6,12 +6,9 @@ import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 
-import {
-    addToMessages,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
+import { addToMessages, useChatContext } from '../state/contexts/ChatContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useXmpp } from '../state/hooks'
+import { useXmpp } from '../state/hooks/chat'
 import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
@@ -25,7 +22,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<SatsString>('' as SatsString)
     const { sendDirectMessage } = useXmpp()
-    const { state, dispatch } = useCommunityContext()
+    const { state, dispatch } = useChatContext()
     const { authenticatedMember } = state
     const { recipient } = route.params
 

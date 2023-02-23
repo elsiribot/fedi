@@ -38,7 +38,7 @@ const GroupInviteHeader: React.FC<{}> = () => {
             }
             headerCenter={
                 <Text bold style={{ color: theme.colors.secondary }}>
-                    {t('feature.community.group-invite')}
+                    {t('feature.chat.group-invite')}
                 </Text>
             }
             headerRight={

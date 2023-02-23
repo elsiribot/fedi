@@ -66,14 +66,14 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
-import ChatWalletHeader from './components/feature/community/ChatWalletHeader'
-import DirectChatHeader from './components/feature/community/DirectChatHeader'
-import EditGroupHeader from './components/feature/community/EditGroupHeader'
-import GroupAdminHeader from './components/feature/community/GroupAdminHeader'
-import GroupHeader from './components/feature/community/GroupHeader'
-import GroupInviteHeader from './components/feature/community/GroupInviteHeader'
-import JoinGroupHeader from './components/feature/community/JoinGroupHeader'
-import NewMessageHeader from './components/feature/community/NewMessageHeader'
+import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
+import DirectChatHeader from './components/feature/chat/DirectChatHeader'
+import EditGroupHeader from './components/feature/chat/EditGroupHeader'
+import GroupAdminHeader from './components/feature/chat/GroupAdminHeader'
+import GroupHeader from './components/feature/chat/GroupHeader'
+import GroupInviteHeader from './components/feature/chat/GroupInviteHeader'
+import JoinGroupHeader from './components/feature/chat/JoinGroupHeader'
+import NewMessageHeader from './components/feature/chat/NewMessageHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
@@ -206,7 +206,7 @@ const MainNavigator = () => {
                                 component={FederationGreeting}
                                 options={{ headerShown: false }}
                             />
-                            {/* Community */}
+                            {/* Chat */}
                             <Stack.Screen
                                 name="NewMessage"
                                 component={NewMessage}

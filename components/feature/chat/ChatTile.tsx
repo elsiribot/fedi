@@ -80,7 +80,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                             caption
                             style={styles(theme).emptyMessagePreview}
                             numberOfLines={2}>
-                            {t('feature.community.no-one-is-in-this-group')}
+                            {t('feature.chat.no-one-is-in-this-group')}
                         </Text>
                     )}
 

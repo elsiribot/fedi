@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const CommunityHeader: React.FC<{}> = () => {
+const AdminHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
@@ -12,11 +12,11 @@ const CommunityHeader: React.FC<{}> = () => {
             leftContainerStyle={{ flex: 6 }}
             headerLeft={
                 <Text h2 medium>
-                    {t('words.chat')}
+                    {t('words.admin')}
                 </Text>
             }
         />
     )
 }
 
-export default CommunityHeader
+export default AdminHeader

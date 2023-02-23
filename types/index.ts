@@ -56,7 +56,7 @@ export type MsatsString = BitcoinUnit<string, 'MsatsString'>
 export type Usd = FiatUnit<number, 'Usd'>
 export type UsdString = FiatUnit<string, 'UsdString'>
 
-// Community features
+// Chat features
 export type FediGroupLink = string
 export enum ChatType {
     direct = 'direct',
@@ -181,4 +181,30 @@ export enum PaymentStatus {
     canceled,
     rejected,
     paid,
+}
+
+export type OutgoingMessage = {
+    text?: string
+    from?: Member
+    to?: Member
+    message: Message
+}
+
+export type OutgoingGroupMessage = {
+    message: Message
+    toRoom: string
+}
+
+export type ArchiveQueryFilters = {
+    withJid?: string | null
+}
+
+export type ArchiveQueryPagination = {
+    limit?: string | null
+    after?: string | null
+}
+
+export type MessageArchiveQuery = {
+    filters?: ArchiveQueryFilters | null
+    pagination?: ArchiveQueryPagination | null
 }

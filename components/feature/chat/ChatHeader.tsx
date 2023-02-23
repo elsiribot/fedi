@@ -4,17 +4,19 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const NewMessageHeader: React.FC<{}> = () => {
+const ChatHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
         <Header
-            backButton
-            headerCenter={
-                <Text bold>{t('feature.community.new-message')}</Text>
+            leftContainerStyle={{ flex: 6 }}
+            headerLeft={
+                <Text h2 medium>
+                    {t('words.chat')}
+                </Text>
             }
         />
     )
 }
 
-export default NewMessageHeader
+export default ChatHeader

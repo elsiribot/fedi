@@ -8,7 +8,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { decodeInvoice } from '../bridge'
-import SitesHeader from '../components/feature/sites/SitesHeader'
+import SitesBrowserHeader from '../components/feature/sites/SitesBrowserHeader'
 import CustomOverlay, {
     CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
@@ -271,7 +271,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     console.log('uri: ', uri)
     return (
         <View style={styles.container}>
-            <SitesHeader webViewRef={webview} />
+            <SitesBrowserHeader webViewRef={webview} />
             <WebView
                 ref={webview}
                 source={{ uri: site.url }}

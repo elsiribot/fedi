@@ -32,7 +32,7 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                     <Pressable
                         onPress={toggleOffline}
                         style={{
-                            padding: theme.spacing.sm,
+                            marginRight: theme.spacing.sm,
                         }}>
                         <SvgImage
                             name="Offline"
@@ -43,18 +43,11 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                                 stroke: theme.colors.primaryLight,
                             }}
                         />
-                        {/* <Image
-                            source={Images.Offline}
-                            style={[
-                                styles(theme).offlineIcon,
-                                offline ? { opacity: 1 } : { opacity: 0.1 },
-                            ]}
-                        /> */}
                     </Pressable>
                     <Pressable
                         onPress={() => navigation.navigate('Transactions')}
                         style={{
-                            padding: theme.spacing.sm,
+                            marginLeft: theme.spacing.sm,
                         }}>
                         <Icon name={'format-list-bulleted'} />
                     </Pressable>

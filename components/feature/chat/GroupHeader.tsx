@@ -19,7 +19,7 @@ const GroupHeader: React.FC<{}> = () => {
 
     // Mocked groupLink format: fedi:group:uniqueGroupId::userDefinedGroupName
     // If userDefinedGroupName is not provided, assume it is a new group
-    const headerText = group.name || t('feature.community.new-group')
+    const headerText = group.name || t('feature.chat.new-group')
 
     return (
         <Header
