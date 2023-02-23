@@ -14,12 +14,12 @@ import {
     OutgoingGroupMessage,
     OutgoingMessage,
 } from '../../types'
-import { changeMucRoomName } from '../actions/chat'
 import {
     addToGroups,
     updateGroup,
     useChatContext,
 } from '../contexts/ChatContext'
+import { changeMucRoomName } from '../operations/chat'
 
 export const useXmpp = () => {
     const { state, dispatch } = useChatContext()
