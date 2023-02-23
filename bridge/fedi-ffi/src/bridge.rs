@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    event::Event,
+    event::{Event, TypedEventExt},
     mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     recovery::{
@@ -22,7 +22,7 @@ use crate::{
         self, federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
         LnurlSignedMessage, XmppCredentials,
     },
-    EventSinkWrapper,
+    EventSink,
 };
 use anyhow::{anyhow, Context, Result};
 use bitcoin::{
@@ -91,7 +91,7 @@ fn module_gens() -> ModuleGenRegistry {
 
 async fn load_federations(
     storage: &Storage,
-    event_sink: Arc<EventSinkWrapper>,
+    event_sink: EventSink,
     task_group: &TaskGroup,
 ) -> anyhow::Result<Vec<Federation>> {
     let db = storage.global_db().await?;
@@ -117,12 +117,12 @@ async fn load_federations(
 pub struct Bridge {
     pub storage: Storage,
     pub federations: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
-    pub event_sink: Arc<EventSinkWrapper>,
+    pub event_sink: EventSink,
     pub task_group: TaskGroup,
 }
 
 impl Bridge {
-    pub async fn new(storage: Storage, event_sink: Arc<EventSinkWrapper>) -> anyhow::Result<Self> {
+    pub async fn new(storage: Storage, event_sink: EventSink) -> anyhow::Result<Self> {
         // load federations from disk
         let task_group = TaskGroup::new();
         let mut federations_map = HashMap::new();
@@ -284,7 +284,7 @@ impl Bridge {
 #[derive(Clone)]
 pub struct Federation {
     pub client: Arc<UserClient>,
-    pub event_sink: Arc<EventSinkWrapper>,
+    pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub username: Arc<Mutex<Option<String>>>,
 }
@@ -292,7 +292,7 @@ pub struct Federation {
 impl Federation {
     pub async fn load(
         db: Database,
-        event_sink: Arc<EventSinkWrapper>,
+        event_sink: EventSink,
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
         let mut dbtx = db.begin_transaction().await;
@@ -309,7 +309,7 @@ impl Federation {
     pub async fn from_config(
         config: FediConfig,
         db: Database,
-        event_sink: Arc<EventSinkWrapper>,
+        event_sink: EventSink,
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
         let user_client = UserClient::new(
@@ -333,7 +333,7 @@ impl Federation {
     pub async fn join(
         connect_string: String,
         storage: &Storage,
-        event_sink: Arc<EventSinkWrapper>,
+        event_sink: EventSink,
         task_group: TaskGroup,
     ) -> Result<Self> {
         // Download federation config
@@ -940,13 +940,13 @@ impl Federation {
         });
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
-        self.event_sink.event(&event);
+        self.event_sink.typed_event(&event);
     }
 
     /// Notify React Native that we've observed new or updated transaction
     fn send_transaction_event(&self, tx: &Transaction) {
         let event = Event::transaction(self.id(), tx.clone());
-        self.event_sink.event(&event);
+        self.event_sink.typed_event(&event);
     }
 
     //

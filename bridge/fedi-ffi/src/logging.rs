@@ -13,9 +13,9 @@ use anyhow::Context;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, prelude::*, EnvFilter, Layer};
 
-use crate::{event::Event, EventSinkWrapper};
+use crate::event::{Event, EventSink, TypedEventExt};
 
-pub struct ReactNativeLayer(pub Arc<EventSinkWrapper>);
+pub struct ReactNativeLayer(pub EventSink);
 
 impl<S> Layer<S> for ReactNativeLayer
 where
@@ -37,7 +37,7 @@ where
                 message
             );
             let event = Event::log(log);
-            self.0.event(&event);
+            self.0.typed_event(&event);
         }
     }
 }
@@ -82,7 +82,7 @@ impl<'a> tracing::field::Visit for StringVisitor<'a> {
 // TODO: configurable log level
 pub fn init_logging(
     data_dir: &Path,
-    event_sink: Arc<EventSinkWrapper>,
+    event_sink: EventSink,
     log_filter: &str,
 ) -> anyhow::Result<()> {
     // react native

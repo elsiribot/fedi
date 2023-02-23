@@ -5,6 +5,7 @@ pub mod error;
 pub mod event;
 #[cfg(not(target_family = "wasm"))]
 mod ffi;
+#[cfg(not(target_family = "wasm"))]
 pub mod logging;
 pub mod mnemonic;
 pub mod payment;
@@ -47,9 +48,7 @@ use tracing::{debug, error, info, info_span, instrument, Instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
 
-use crate::{
-    error::get_error_code, event::EventSinkWrapper, types::federation_to_fedimint_federation,
-};
+use crate::{error::get_error_code, types::federation_to_fedimint_federation};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -83,17 +82,12 @@ async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
     Ok(bridge)
 }
 
-async fn fedimint_initialize_async(
-    storage: Storage,
-    log_level: &str,
-    event_sink: Box<dyn EventSink>,
-) -> anyhow::Result<()> {
+async fn fedimint_initialize_async(storage: Storage, event_sink: EventSink) -> anyhow::Result<()> {
     let already_init = BRIDGE.with(|b| b.borrow().is_some());
     if already_init {
         anyhow::bail!("init called again, ignoring");
     }
 
-    let event_sink = Arc::new(EventSinkWrapper { event_sink });
     init_logging(&data_dir, event_sink.clone(), log_level)?;
     tracing::info!("init called ...");
 

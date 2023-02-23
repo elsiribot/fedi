@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use fedimint_core::db::Database;
 use lazy_static::lazy_static;
 use mint_client::module_decode_stubs;
+use std::sync::Arc;
 use tracing::error;
 
 use std::path::{Path, PathBuf};
@@ -72,10 +73,10 @@ impl IStorage for PathBasedStorage {
 // TODO: send error message
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
     RUNTIME.block_on(async {
-        let storage = Storage::from(PathBasedStorage {
-            data_dir: data_dir.into(),
-        });
-        fedimint_initialize_async(storage, &log_level, event_sink)
+        let event_sink: Arc<dyn EventSink> = event_sink.into();
+        let data_dir: PathBuf = data_dir.into();
+        let storage = Arc::new(PathBasedStorage { data_dir });
+        fedimint_initialize_async(storage, event_sink)
             .await
             .unwrap_or_else(|e| {
                 error!("Failed to initialize the bridge: {:?}", e);
