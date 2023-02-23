@@ -56,7 +56,7 @@ export type MsatsString = BitcoinUnit<string, 'MsatsString'>
 export type Usd = FiatUnit<number, 'Usd'>
 export type UsdString = FiatUnit<string, 'UsdString'>
 
-// Community features
+// Chat features
 export type FediGroupLink = string
 export enum ChatType {
     direct = 'direct',

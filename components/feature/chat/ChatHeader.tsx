@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const CommunityHeader: React.FC<{}> = () => {
+const ChatHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
@@ -19,4 +19,4 @@ const CommunityHeader: React.FC<{}> = () => {
     )
 }
 
-export default CommunityHeader
+export default ChatHeader

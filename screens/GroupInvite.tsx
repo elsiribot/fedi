@@ -60,14 +60,14 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                 </TouchableOpacity>
             </View>
             <Text style={styles(theme).inviteLinkNotice} numberOfLines={2}>
-                {t('feature.community.invite-link-notice')}
+                {t('feature.chat.invite-link-notice')}
             </Text>
             <Button
                 fullWidth
                 containerStyle={styles(theme).buttonContainer}
                 titleStyle={styles(theme).buttonTitle}
                 buttonStyle={styles(theme).button}
-                title={t('feature.community.view-group')}
+                title={t('feature.chat.view-group')}
                 onPress={viewGroup}
             />
         </View>

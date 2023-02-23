@@ -3,10 +3,10 @@ import { useNavigation } from '@react-navigation/native'
 import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
-import ChatsList from '../components/feature/community/ChatsList'
+import ChatsList from '../components/feature/chat/ChatsList'
 
 import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
-import { useCommunityContext } from '../state/contexts/CommunityContext'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { ArchiveQueryPagination, useXmpp } from '../state/hooks'
 import {
@@ -20,13 +20,12 @@ export type Props = BottomTabScreenProps<
     'Chat'
 >
 
-const Community: React.FC<Props> = () => {
+const Chat: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const { enterMucRoom, fetchMessagesFromArchive } = useXmpp()
     const { selectedFederation } = useFederationsContext().state
-    const { authenticatedMember, lastFetchedMessageId } =
-        useCommunityContext().state
+    const { authenticatedMember, lastFetchedMessageId } = useChatContext().state
 
     useEffect(() => {
         if (authenticatedMember) {
@@ -76,4 +75,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default Community
+export default Chat

@@ -11,17 +11,17 @@ import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import SvgImage from '../components/ui/SvgImage'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    COMMUNITY_GROUPS_PERSISTENCE_KEY,
-    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
-    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    CHAT_GROUPS_PERSISTENCE_KEY,
+    CHAT_MEMBERS_PERSISTENCE_KEY,
+    CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
 import {
     DEFAULT_GROUPS,
     receiveGroups,
     receiveMembersSeen,
     receiveMessages,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import {
     changeDeveloperMode,
     useEnvironmentContext,
@@ -49,25 +49,25 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         useEnvironmentContext()
     const { state: federationsState, dispatch: federationsDispatch } =
         useFederationsContext()
-    const { dispatch: communityDispatch } = useCommunityContext()
+    const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = federationsState
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
-    const resetCommunityState = () => {
-        communityDispatch(receiveMembersSeen([]))
-        communityDispatch(receiveMessages([]))
-        communityDispatch(receiveGroups(DEFAULT_GROUPS))
+    const resetChatState = () => {
+        chatDispatch(receiveMembersSeen([]))
+        chatDispatch(receiveMessages([]))
+        chatDispatch(receiveGroups(DEFAULT_GROUPS))
         AsyncStorage.setItem(
-            COMMUNITY_MEMBERS_PERSISTENCE_KEY,
+            CHAT_MEMBERS_PERSISTENCE_KEY,
             JSON.stringify({ members: [] }),
         )
         AsyncStorage.setItem(
-            COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+            CHAT_MESSAGES_PERSISTENCE_KEY,
             JSON.stringify({ messages: [] }),
         )
         AsyncStorage.setItem(
-            COMMUNITY_GROUPS_PERSISTENCE_KEY,
+            CHAT_GROUPS_PERSISTENCE_KEY,
             JSON.stringify({ groups: DEFAULT_GROUPS }),
         )
     }
@@ -85,7 +85,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
             toast?.show('Failed to leave federation', 3000)
             return
         }
-        resetCommunityState()
+        resetChatState()
         resetGuardiansState()
 
         // update context and navigate

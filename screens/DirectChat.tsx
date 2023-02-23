@@ -6,12 +6,9 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
-import MessageInput from '../components/feature/community/MessageInput'
-import MessagesList from '../components/feature/community/MessagesList'
-import {
-    addToMessages,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
+import MessageInput from '../components/feature/chat/MessageInput'
+import MessagesList from '../components/feature/chat/MessagesList'
+import { addToMessages, useChatContext } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks'
 import { Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -22,7 +19,7 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { member } = route.params
-    const { state, dispatch } = useCommunityContext()
+    const { state, dispatch } = useChatContext()
     const { sendDirectMessage } = useXmpp()
 
     const messagesWithMember = state.messages.filter(m => {

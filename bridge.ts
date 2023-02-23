@@ -203,7 +203,7 @@ export class Federation extends Base {
     balance: MSats
     // Leaving this on the federation object for now
     // until/unless we find a better place...
-    // used for XMPP login for chat/community features
+    // used for XMPP login for chat features
     username?: string | null
     password?: string | null
     socialRecoveryActive: boolean
@@ -514,14 +514,3 @@ export type RecoveryFileCreationEvent =
     | { type: 'progress'; percentComplete: number }
     | { type: 'failed'; errorCode: string }
     | { type: 'complete' }
-
-// For the Community feature, the user needs to authenticate with
-// a password automatically derived from their seed/privkey
-export async function generateCommunitySecret(
-    _federationId: string,
-    _username: string,
-): Promise<string> {
-    // Simulate success/failure modes
-    return Promise.resolve('abcdefg1234567')
-    // return Promise.reject('error generating secret')
-}

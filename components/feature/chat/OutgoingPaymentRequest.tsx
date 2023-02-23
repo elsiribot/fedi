@@ -7,8 +7,8 @@ import { Images } from '../../../assets/images'
 import { ValidateEcashResponse } from '../../../bridge'
 import {
     updateMessage,
-    useCommunityContext,
-} from '../../../state/contexts/CommunityContext'
+    useChatContext,
+} from '../../../state/contexts/ChatContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
 import { Message, Payment, PaymentStatus } from '../../../types'
 
@@ -25,7 +25,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
     const { sendUpdatedPaymentMessage } = useXmpp()
-    const { dispatch } = useCommunityContext()
+    const { dispatch } = useChatContext()
     const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
     // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
     const [validatingToken, setValidatingToken] = useState<boolean>(false)
@@ -190,7 +190,7 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
 }: OutgoingPaymentRequestProps) => {
     const { theme } = useTheme()
     const { sendUpdatedPaymentMessage } = useXmpp()
-    const { dispatch } = useCommunityContext()
+    const { dispatch } = useChatContext()
 
     const cancelPayment = () => {
         try {

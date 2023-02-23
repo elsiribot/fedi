@@ -9,17 +9,17 @@ import { Images } from '../assets/images'
 import { listFederations } from '../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    COMMUNITY_GROUPS_PERSISTENCE_KEY,
-    COMMUNITY_MEMBERS_PERSISTENCE_KEY,
-    COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    CHAT_GROUPS_PERSISTENCE_KEY,
+    CHAT_MEMBERS_PERSISTENCE_KEY,
+    CHAT_MESSAGES_PERSISTENCE_KEY,
     SELECTED_FEDERATION_ID_DB_KEY,
 } from '../constants'
 import {
     receiveGroups,
     receiveMembersSeen,
     receiveMessages,
-    useCommunityContext,
-} from '../state/contexts/CommunityContext'
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import {
     changeAuthenticatedGuardian,
     updateFederationCredentials,
@@ -39,7 +39,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const [usernameRequired, setUsernameRequired] = useState<boolean>(true)
     const [usernameToRestore, setUsernameToRestore] = useState<string>('')
     const { state, dispatch: federationsDispatch } = useFederationsContext()
-    const { dispatch: communityDispatch } = useCommunityContext()
+    const { dispatch: chatDispatch } = useChatContext()
     const { backupXmppUsername, getXmppCredentials } = useBridge()
 
     // restoreState changes usernameToRestore if it finds a username
@@ -188,27 +188,23 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
             const restoreMessages = async () => {
                 try {
-                    const savedCommunityMessagesJson =
-                        await AsyncStorage.getItem(
-                            COMMUNITY_MESSAGES_PERSISTENCE_KEY,
-                        )
-
-                    const savedCommunityMessages = savedCommunityMessagesJson
-                        ? JSON.parse(savedCommunityMessagesJson)
-                        : null
-
-                    console.info(
-                        'savedCommunityMessages',
-                        savedCommunityMessages,
+                    const savedChatMessagesJson = await AsyncStorage.getItem(
+                        CHAT_MESSAGES_PERSISTENCE_KEY,
                     )
 
-                    if (savedCommunityMessages !== null) {
-                        const { messages } = savedCommunityMessages
+                    const savedChatMessages = savedChatMessagesJson
+                        ? JSON.parse(savedChatMessagesJson)
+                        : null
+
+                    console.info('savedChatMessages', savedChatMessages)
+
+                    if (savedChatMessages !== null) {
+                        const { messages } = savedChatMessages
 
                         console.debug('recovering messages')
 
                         if (messages) {
-                            communityDispatch(receiveMessages(messages))
+                            chatDispatch(receiveMessages(messages))
                         }
                     }
                 } catch (error) {
@@ -218,23 +214,23 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
             const restoreGroups = async () => {
                 try {
-                    const savedCommunityGroupsJson = await AsyncStorage.getItem(
-                        COMMUNITY_GROUPS_PERSISTENCE_KEY,
+                    const savedChatGroupsJson = await AsyncStorage.getItem(
+                        CHAT_GROUPS_PERSISTENCE_KEY,
                     )
 
-                    const savedCommunityGroups = savedCommunityGroupsJson
-                        ? JSON.parse(savedCommunityGroupsJson)
+                    const savedChatGroups = savedChatGroupsJson
+                        ? JSON.parse(savedChatGroupsJson)
                         : null
 
-                    console.info('savedCommunityGroups', savedCommunityGroups)
+                    console.info('savedChatGroups', savedChatGroups)
 
-                    if (savedCommunityGroups !== null) {
-                        const { groups } = savedCommunityGroups
+                    if (savedChatGroups !== null) {
+                        const { groups } = savedChatGroups
 
                         console.debug('recovering groups')
 
                         if (groups) {
-                            communityDispatch(receiveGroups(groups))
+                            chatDispatch(receiveGroups(groups))
                         }
                     }
                 } catch (error) {
@@ -244,24 +240,23 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
             const restoreMembers = async () => {
                 try {
-                    const savedCommunityMembersJson =
-                        await AsyncStorage.getItem(
-                            COMMUNITY_MEMBERS_PERSISTENCE_KEY,
-                        )
+                    const savedChatMembersJson = await AsyncStorage.getItem(
+                        CHAT_MEMBERS_PERSISTENCE_KEY,
+                    )
 
-                    const savedCommunityMembers = savedCommunityMembersJson
-                        ? JSON.parse(savedCommunityMembersJson)
+                    const savedChatMembers = savedChatMembersJson
+                        ? JSON.parse(savedChatMembersJson)
                         : null
 
-                    console.info('savedCommunityMembers', savedCommunityMembers)
+                    console.info('savedChatMembers', savedChatMembers)
 
-                    if (savedCommunityMembers !== null) {
-                        const { members } = savedCommunityMembers
+                    if (savedChatMembers !== null) {
+                        const { members } = savedChatMembers
 
                         console.debug('recovering members')
 
                         if (members) {
-                            communityDispatch(receiveMembersSeen(members))
+                            chatDispatch(receiveMembersSeen(members))
                         }
                     }
                 } catch (error) {
@@ -269,13 +264,13 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 }
             }
 
-            const restoreCommunityState = async () => {
+            const restoreChatState = async () => {
                 restoreMessages()
                 restoreGroups()
                 restoreMembers()
             }
 
-            restoreCommunityState()
+            restoreChatState()
             restoreFederationsState()
         }
 
@@ -283,7 +278,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             restoreState()
         }
     }, [
-        communityDispatch,
+        chatDispatch,
         getXmppCredentials,
         federationsDispatch,
         navigation,

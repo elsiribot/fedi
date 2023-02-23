@@ -4,17 +4,16 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const NewMessageHeader: React.FC<{}> = () => {
+const JoinGroupHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
         <Header
             backButton
-            headerCenter={
-                <Text bold>{t('feature.community.new-message')}</Text>
-            }
+            headerCenter={<Text bold>{t('feature.chat.join-a-group')}</Text>}
+            closeButton
         />
     )
 }
 
-export default NewMessageHeader
+export default JoinGroupHeader

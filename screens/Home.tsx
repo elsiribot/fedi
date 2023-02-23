@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import SvgImage from '../components/ui/SvgImage'
 
-import CommunityHeader from '../components/feature/community/CommunityHeader'
+import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -18,7 +18,7 @@ import {
     RootStackParamList,
 } from '../types/navigation'
 import Admin from './Admin'
-import Community from './Community'
+import Chat from './Chat'
 import Sites from './Sites'
 import Wallet from './Wallet'
 
@@ -154,12 +154,12 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
             </Tab.Screen>
             <Tab.Screen
                 name="Chat"
-                component={Community}
+                component={Chat}
                 options={() => ({
                     header: () => (
                         <>
                             <SelectedFederationHeader />
-                            <CommunityHeader />
+                            <ChatHeader />
                         </>
                     ),
                 })}

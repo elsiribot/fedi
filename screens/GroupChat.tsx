@@ -5,9 +5,9 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
-import MessageInput from '../components/feature/community/MessageInput'
-import MessagesList from '../components/feature/community/MessagesList'
-import { useCommunityContext } from '../state/contexts/CommunityContext'
+import MessageInput from '../components/feature/chat/MessageInput'
+import MessagesList from '../components/feature/chat/MessagesList'
+import { useChatContext } from '../state/contexts/ChatContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -18,7 +18,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
-    const { state } = useCommunityContext()
+    const { state } = useChatContext()
     const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
     const { group: currentGroup } = route.params
     const previousGroup = usePrevious(currentGroup)

@@ -6,8 +6,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Images } from '../../../assets/images'
 import {
     updateMessage,
-    useCommunityContext,
-} from '../../../state/contexts/CommunityContext'
+    useChatContext,
+} from '../../../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge, useXmpp } from '../../../state/hooks'
@@ -134,7 +134,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
     const { sendUpdatedPaymentMessage } = useXmpp()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
-    const { dispatch } = useCommunityContext()
+    const { dispatch } = useChatContext()
     const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
     const [generatedEcashToken, setGeneratedEcashToken] = useState<string>('')
 

@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import MembersList from '../components/feature/community/MembersList'
+import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
 import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
-import { useCommunityContext } from '../state/contexts/CommunityContext'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -19,9 +19,9 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { enterMucRoom } = useXmpp()
-    const { state } = useCommunityContext()
+    const { state } = useChatContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
-    const { authenticatedMember } = useCommunityContext().state
+    const { authenticatedMember } = useChatContext().state
 
     // filter out members if usernameFilter has text to filter with
     const filteredMembers = usernameFilter
@@ -50,9 +50,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     <Input
                         onChangeText={setUsernameFilter}
                         value={usernameFilter}
-                        placeholder={`${t(
-                            'feature.community.enter-a-username',
-                        )}`}
+                        placeholder={`${t('feature.chat.enter-a-username')}`}
                         returnKeyType="done"
                         containerStyle={
                             styles(theme, insets).filterMembersTextInputOuter
@@ -73,7 +71,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     }}>
                     <SvgImage name="Room" />
                     <Text medium style={styles(theme, insets).createGroupText}>
-                        {t('feature.community.create-or-join-a-new-group')}
+                        {t('feature.chat.create-or-join-a-new-group')}
                     </Text>
                 </Pressable>
                 <Text small medium style={styles(theme, insets).membersLabel}>

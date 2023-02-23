@@ -32,14 +32,14 @@ const EmptyGroupNotice: React.FC<{}> = () => {
                 }}
             />
             <Text medium style={styles(theme).text}>
-                {t('feature.community.no-one-is-in-this-group')}
+                {t('feature.chat.no-one-is-in-this-group')}
             </Text>
             <Text medium style={styles(theme).text}>
-                {t('feature.community.try-inviting-someone')}
+                {t('feature.chat.try-inviting-someone')}
             </Text>
             <Button
                 containerStyle={styles(theme).button}
-                title={t('feature.community.invite-to-group')}
+                title={t('feature.chat.invite-to-group')}
                 onPress={() => navigation.navigate('GroupInvite', { group })}
             />
         </View>

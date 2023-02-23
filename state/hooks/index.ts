@@ -41,8 +41,8 @@ import lnurlUtils from '../../utils/LNURLUtils'
 import {
     addToGroups,
     updateGroup,
-    useCommunityContext,
-} from '../contexts/CommunityContext'
+    useChatContext,
+} from '../contexts/ChatContext'
 import { useCurrencyContext } from '../contexts/CurrencyContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
 
@@ -267,7 +267,7 @@ type MessageArchiveQuery = {
     pagination?: ArchiveQueryPagination | null
 }
 export const useXmpp = () => {
-    const { state, dispatch } = useCommunityContext()
+    const { state, dispatch } = useChatContext()
     const { xmppClient } = state
 
     return {

@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
 import { DEFAULT_GROUP_NAME } from '../constants'
-import { useCommunityContext } from '../state/contexts/CommunityContext'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { usePrevious, useXmpp } from '../state/hooks'
 import { resetAfterGroupNameUpdate } from '../state/navigation'
@@ -23,7 +23,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         group.name || DEFAULT_GROUP_NAME,
     )
     const [editingGroupName, setEditingGroupName] = useState<boolean>(false)
-    const { groups } = useCommunityContext().state
+    const { groups } = useChatContext().state
     const { toast } = useEnvironmentContext().state
     const { changeMucRoomName } = useXmpp()
     const currentGroup = groups.find(g => g.id === group.id)
@@ -61,12 +61,12 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
             <Image style={styles(theme).groupIcon} source={Images.NewRoom} />
             <View style={styles(theme).inputWrapper}>
                 <Text caption style={styles(theme).inputLabel}>
-                    {t('feature.community.group-name')}
+                    {t('feature.chat.group-name')}
                 </Text>
                 <Input
                     onChangeText={setGroupName}
                     value={groupName}
-                    placeholder={`${t('feature.community.group-name')}`}
+                    placeholder={`${t('feature.chat.group-name')}`}
                     returnKeyType="done"
                     containerStyle={styles(theme).textInputOuter}
                     inputContainerStyle={styles(theme).textInputInner}
