@@ -19,6 +19,7 @@ import {
     COMMUNITY_GROUPS_PERSISTENCE_KEY,
     COMMUNITY_MEMBERS_PERSISTENCE_KEY,
     COMMUNITY_MESSAGES_PERSISTENCE_KEY,
+    FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
     XMPP_MUC_DOMAIN,
@@ -248,6 +249,12 @@ export function reducer(state: AppState, action: Action): AppState {
                 (g: Group) => g.id === action.payload.id,
             )
 
+            // Exclude default group from local store
+            // use only for member discovery
+            if (action.payload.id === FEDI_GENERAL_CHANNEL_GROUP.id) {
+                return state
+            }
+
             if (groupIndex === -1) {
                 // New groups get added
                 return {
@@ -393,6 +400,12 @@ export function reducer(state: AppState, action: Action): AppState {
             const groupIndex = state.groups.findIndex(
                 (g: Group) => g.id === action.payload.id,
             )
+
+            // Exclude default group from local store
+            // use only for member discovery
+            if (action.payload.id === FEDI_GENERAL_CHANNEL_GROUP.id) {
+                return state
+            }
 
             if (groupIndex === -1) {
                 // New groups get added

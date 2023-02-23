@@ -448,14 +448,7 @@ export const useXmpp = () => {
                                         'stanza',
                                         onStanzaReceived,
                                     )
-                                    // Exclude default group from local store
-                                    // use only for member discovery
-                                    if (
-                                        group.id !==
-                                        'fedi-general-channel-group'
-                                    ) {
-                                        dispatch(addToGroups(group))
-                                    }
+                                    dispatch(addToGroups(group))
                                 }
                             })
                         }
