@@ -33,7 +33,6 @@ use types::{Amount, PeerId, PublicKey};
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
-use logging::init_logging;
 use macro_rules_attribute::macro_rules_derive;
 use mint_client::{
     social::RecoveryFile,
@@ -88,7 +87,6 @@ async fn fedimint_initialize_async(storage: Storage, event_sink: EventSink) -> a
         anyhow::bail!("init called again, ignoring");
     }
 
-    init_logging(&data_dir, event_sink.clone(), log_level)?;
     tracing::info!("init called ...");
 
     let bridge = Bridge::new(storage, event_sink.clone())

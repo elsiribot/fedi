@@ -2,7 +2,7 @@ use crate::event::IEventSink as EventSink;
 use crate::logging;
 use crate::storage::{IStorage, Storage};
 use crate::FedimintError;
-use crate::{fedimint_initialize_async, fedimint_rpc_async}; // renamed to match fedi.udl
+use crate::{event::EventSink, fedimint_initialize_async, fedimint_rpc_async};
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -75,6 +75,7 @@ pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<
     RUNTIME.block_on(async {
         let event_sink: Arc<dyn EventSink> = event_sink.into();
         let data_dir: PathBuf = data_dir.into();
+        logging::init_logging(&data_dir, event_sink.clone(), &log_level).unwrap();
         let storage = Arc::new(PathBasedStorage { data_dir });
         fedimint_initialize_async(storage, event_sink)
             .await
