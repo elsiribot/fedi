@@ -2,18 +2,19 @@ import { xml } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
 import { useCallback } from 'react'
+
 import {
     DEFAULT_GROUP_NAME,
     XMPP_DEFAULT_PAGE_LIMIT,
     XMPP_MUC_DOMAIN,
 } from '../../constants'
-import i18n from '../../localization/i18n'
 import {
     Group,
     MessageArchiveQuery,
     OutgoingGroupMessage,
     OutgoingMessage,
 } from '../../types'
+import { changeMucRoomName } from '../actions/chat'
 import {
     addToGroups,
     updateGroup,
@@ -27,96 +28,12 @@ export const useXmpp = () => {
     return {
         changeMucRoomName: useCallback(
             (group: Group, updatedName: string) => {
-                return new Promise((resolve, reject) => {
-                    if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
-                    try {
-                        const onStanzaReceived = async (stanza: Element) => {
-                            // Listen for matching stanza from the server and remove the
-                            // listener when we get a response
-                            if (stanza.getAttr('id') === 'set-room-config') {
-                                xmppClient?.removeListener(
-                                    'stanza',
-                                    onStanzaReceived,
-                                )
-                                if (stanza.getAttr('type') === 'error') {
-                                    reject(
-                                        i18n.t(
-                                            'errors.only-group-owners-can-change-name',
-                                        ),
-                                    )
-                                } else if (
-                                    stanza.getAttr('type') === 'result'
-                                ) {
-                                    dispatch(
-                                        updateGroup(
-                                            new Group({
-                                                ...group,
-                                                name: updatedName,
-                                            }),
-                                        ),
-                                    )
-                                }
-                                resolve(true)
-                            }
-                        }
-                        xmppClient?.on('stanza', onStanzaReceived)
-                        const roomNameFieldXml = xml(
-                            'field',
-                            {
-                                var: 'muc#roomconfig_roomname',
-                            },
-                            xml('value', {}, updatedName),
-                        )
-                        // When sending a new configuration for this room we make
-                        // sure the room remains persistent
-                        const persistenceFieldXml = xml(
-                            'field',
-                            {
-                                var: 'muc#roomconfig_persistentroom',
-                            },
-                            xml('value', {}, '1'),
-                        )
-                        const roomConfigQueryXml = xml(
-                            'query',
-                            {
-                                xmlns: 'http://jabber.org/protocol/muc#owner',
-                                queryid: 'set-room-config-query',
-                            },
-                            xml(
-                                'x',
-                                {
-                                    xmlns: 'jabber:x:data',
-                                    type: 'submit',
-                                },
-                                xml(
-                                    'field',
-                                    { var: 'FORM_TYPE' },
-                                    xml(
-                                        'value',
-                                        {},
-                                        'http://jabber.org/protocol/muc#roomconfig',
-                                    ),
-                                ),
-                                roomNameFieldXml,
-                                persistenceFieldXml,
-                            ),
-                        )
-                        xmppClient?.send(
-                            xml(
-                                'iq',
-                                {
-                                    id: 'set-room-config',
-                                    from: xmppClient?.jid?.toString(),
-                                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
-                                    type: 'set',
-                                },
-                                roomConfigQueryXml,
-                            ),
-                        )
-                    } catch (error) {
-                        console.error('changeMucRoomName', error)
-                    }
-                })
+                return changeMucRoomName(
+                    group,
+                    updatedName,
+                    dispatch,
+                    xmppClient,
+                )
             },
             [dispatch, xmppClient],
         ),

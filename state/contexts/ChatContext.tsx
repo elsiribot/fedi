@@ -76,7 +76,7 @@ enum ActionType {
     UPDATE_MESSAGE = 'UPDATE_MESSAGE',
     UPDATE_MEMBERS_SEEN = 'UPDATE_MEMBERS_SEEN',
 }
-interface Action {
+export interface Action {
     type: ActionType
     payload?: any
 }
