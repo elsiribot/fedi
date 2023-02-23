@@ -20,7 +20,7 @@ export type Props = BottomTabScreenProps<
     'Chat'
 >
 
-const Chat: React.FC<Props> = () => {
+const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const { enterMucRoom, fetchMessagesFromArchive } = useXmpp()
@@ -75,4 +75,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default Chat
+export default ChatScreen

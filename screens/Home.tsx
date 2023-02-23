@@ -18,7 +18,7 @@ import {
     RootStackParamList,
 } from '../types/navigation'
 import Admin from './Admin'
-import Chat from './Chat'
+import ChatScreen from './ChatScreen'
 import Sites from './Sites'
 import Wallet from './Wallet'
 
@@ -154,7 +154,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
             </Tab.Screen>
             <Tab.Screen
                 name="Chat"
-                component={Chat}
+                component={ChatScreen}
                 options={() => ({
                     header: () => (
                         <>
