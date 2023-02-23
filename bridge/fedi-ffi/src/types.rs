@@ -60,8 +60,7 @@ pub struct FediConfig {
 #[ts(export, export_to = "target/bindings/")]
 pub struct FedimintFederation {
     pub name: String,
-    #[ts(type = "any")]
-    pub connect_info: WsClientConnectInfo,
+    pub connect_info: String,
     #[ts(type = "Array<{url: string, name: string}>")]
     pub nodes: Vec<ApiEndpoint>,
     pub balance: Amount,
@@ -93,7 +92,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
 
     FedimintFederation {
         name: client_config.federation_name.clone(),
-        connect_info: WsClientConnectInfo::from(&client_config),
+        connect_info: WsClientConnectInfo::from(&client_config).to_string(),
         nodes: client_config.nodes.clone(),
         balance: Amount(balance),
         social_recovery_active,

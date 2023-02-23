@@ -30,8 +30,6 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { t } = useTranslation()
     const { convertSatsToUsdString } = useBtcUsdPrice()
 
-    const inviteLink = JSON.stringify(federation.connectInfo)
-
     const amountInSats = amountUtils.msatToSat(federation.balance)
 
     return (
@@ -58,7 +56,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 style={styles(theme).iconImage}
                 onPress={() => {
                     navigation.navigate('FederationInvite', {
-                        inviteLink,
+                        inviteLink: federation.connectInfo,
                     })
                 }}>
                 <SvgImage name="InviteMembers" />

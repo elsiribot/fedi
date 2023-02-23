@@ -198,9 +198,7 @@ export class Guardian extends Node {
 
 export class Federation extends Base {
     name: string
-    connectInfo: {
-        members: [number, string][]
-    }
+    connectInfo: string
     nodes: Node[]
     balance: MSats
     // Leaving this on the federation object for now
