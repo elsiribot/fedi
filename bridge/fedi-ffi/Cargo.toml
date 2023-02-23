@@ -10,11 +10,11 @@ name = "fediffi"
 
 [dependencies]
 # pinned to commit on fedibtc/fedimint-fedi branch
-mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
 
 # Local dependencies that can be handy to uncomment during development
 # mint-client = { path = "../../../fedimint/client/client-lib" }
