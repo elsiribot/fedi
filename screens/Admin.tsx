@@ -184,8 +184,9 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.federations.invite-members')}
                     onPress={() => {
                         navigation.navigate('FederationInvite', {
+                            // FIXME: we should know that we have a selectedFederation here ...
                             inviteLink: selectedFederation
-                                ? JSON.stringify(selectedFederation.connectInfo)
+                                ? selectedFederation.connectInfo
                                 : '',
                         })
                     }}
