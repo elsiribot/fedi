@@ -100,7 +100,7 @@ jobs:
                       echo 'Bumping patch version'
                       npm version --allow-same-version --force patch
                   fi
-                  npx react-native-version --amend
+                  npx react-native-version --amend --target android
                   git push
                   NEW_VERSION="$(npm pkg get version | sed 's/"//g')"
                   echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_OUTPUT
