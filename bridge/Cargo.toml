@@ -1,7 +1,7 @@
 [workspace]
 members = ["fedi-ffi", "ffi-bindgen"]
 default-members = ["fedi-ffi", "ffi-bindgen"]
-exclude = ["fedi-android", "fedi-swift", "example-apps"]
+exclude = ["fedi-android", "fedi-wasm", "fedi-swift", "example-apps"]
 
 [profile.release-smaller]
 inherits = "release"

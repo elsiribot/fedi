@@ -21,6 +21,9 @@ use std::{
     sync::{atomic::AtomicU64, Arc},
 };
 
+pub use fedimint_core;
+pub use mint_client;
+
 use bitcoin::{secp256k1::Message, Address};
 use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
