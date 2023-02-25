@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -79,7 +80,7 @@ impl Event {
 }
 
 /// Sends events to iOS / Android layer
-pub trait IEventSink: Send + Sync + 'static {
+pub trait IEventSink: MaybeSend + MaybeSync + 'static {
     /// Send event. Body is JSON-serialized
     fn event(&self, event_type: String, body: String);
 }
