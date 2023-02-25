@@ -9,6 +9,7 @@ pub mod logging;
 pub mod mnemonic;
 pub mod payment;
 pub mod recovery;
+pub mod storage;
 pub mod tx;
 pub mod types;
 
@@ -24,6 +25,7 @@ use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
 use futures::Future;
 use lazy_static::lazy_static;
+use storage::Storage;
 use types::RecoveryId;
 use types::{Amount, PeerId, PublicKey};
 
@@ -40,7 +42,6 @@ use mnemonic::Mnemonic;
 use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
-use tokio::fs;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
@@ -83,7 +84,7 @@ async fn get_bridge() -> anyhow::Result<Arc<Bridge>> {
 }
 
 async fn fedimint_initialize_async(
-    data_dir: String,
+    storage: Storage,
     log_level: &str,
     event_sink: Box<dyn EventSink>,
 ) -> anyhow::Result<()> {
@@ -92,12 +93,11 @@ async fn fedimint_initialize_async(
         anyhow::bail!("init called again, ignoring");
     }
 
-    let data_dir = PathBuf::from(data_dir);
     let event_sink = Arc::new(EventSinkWrapper { event_sink });
     init_logging(&data_dir, event_sink.clone(), log_level)?;
     tracing::info!("init called ...");
 
-    let bridge = Bridge::new(data_dir, event_sink.clone())
+    let bridge = Bridge::new(storage, event_sink.clone())
         .await
         .context("could not create a bridge")?;
 
@@ -436,29 +436,29 @@ async fn uploadBackupFile(
     federation_id: String,
     video_file_path: PathBuf,
 ) -> anyhow::Result<PathBuf> {
-    let datadir = { get_bridge().await?.data_dir.clone() };
+    let storage = { get_bridge().await?.storage.clone() };
     let federation = get_federation(&federation_id).await?;
     debug!("uploading backup file {:?}", video_file_path);
-    let video_file = fs::read(video_file_path).await?;
+    let video_file = storage.read_file(&video_file_path).await?;
 
     let recovery_file = federation.upload_backup_file(video_file).await?;
 
-    let recovery_file_path = datadir.join(RECOVERY_FILENAME);
-    fs::write(&recovery_file_path, recovery_file).await?;
-    Ok(recovery_file_path)
+    storage
+        .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
+        .await?;
+    Ok(RECOVERY_FILENAME.into())
 }
 
 // This method is a bit of a stopgap ...
 #[macro_rules_derive(rpc_method!)]
 async fn locateRecoveryFile() -> anyhow::Result<PathBuf> {
-    let datadir = get_bridge().await?.data_dir.clone();
-    let recovery_file_path = datadir.join(RECOVERY_FILENAME);
-    Ok(recovery_file_path)
+    Ok(RECOVERY_FILENAME.into())
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn validateRecoveryFile(federation_id: String, path: PathBuf) -> anyhow::Result<bool> {
-    let contents = fs::read(path).await?;
+    let storage = get_bridge().await?.storage.clone();
+    let contents = storage.read_file(&path).await?;
     let recovery_file = RecoveryFile::from_bytes(&contents)?;
     let federation = get_federation(&federation_id).await?;
     federation.start_social_recovery(&recovery_file).await?;
@@ -475,8 +475,8 @@ async fn recoveryQr(federation_id: String) -> anyhow::Result<SocialRecoveryQr> {
     let federation = get_federation(&federation_id).await?;
 
     // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
-    let recovery_file_path = get_bridge().await?.data_dir.join(RECOVERY_FILENAME);
-    let contents = fs::read(recovery_file_path).await?;
+    let storage = get_bridge().await?.storage.clone();
+    let contents = storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
     let recovery_file = RecoveryFile::from_bytes(&contents)?;
     // Upload verification document if none exists.
     federation.start_social_recovery(&recovery_file).await?;
@@ -502,7 +502,7 @@ async fn socialRecoveryDownloadVerificationDoc(
     federation_id: String,
     recovery_id: RecoveryId,
 ) -> anyhow::Result<Option<PathBuf>> {
-    let datadir = { get_bridge().await?.data_dir.clone() };
+    let storage = { get_bridge().await?.storage.clone() };
     // Return QR code contents
     let federation = get_federation(&federation_id).await?;
 
@@ -511,10 +511,11 @@ async fn socialRecoveryDownloadVerificationDoc(
         .await?;
 
     if let Some(verification_doc) = verification_doc {
-        let path = datadir.join(VERIFICATION_FILENAME);
-        fs::write(&path, verification_doc).await?;
+        storage
+            .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
+            .await?;
         tracing::info!("saved verificaiton doc");
-        Ok(Some(path))
+        Ok(Some(VERIFICATION_FILENAME.into()))
     } else {
         Ok(None)
     }

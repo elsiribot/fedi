@@ -1,7 +1,6 @@
 use std::{
     collections::HashMap,
     default::Default,
-    path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
     time::{Duration, SystemTime},
@@ -14,6 +13,7 @@ use crate::{
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
     },
+    storage::{FediClientConfigKey, IStorage, JoinedFederationsKey, JoinedFederationsPrefix, Storage},
     tx::{
         self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -36,7 +36,6 @@ use fedi_social::{
     FediSocialGen,
 };
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
-use fedimint_core::config::load_from_file;
 use fedimint_core::{
     config::{ClientConfig, ModuleGenRegistry},
     module::DynModuleGen,
@@ -45,7 +44,6 @@ use fedimint_core::{
 use fedimint_core::{db::Database, task::TaskHandle};
 use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_derive_secret::ChildId;
-use fedimint_rocksdb::RocksDb;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 use mint_client::{
@@ -91,55 +89,44 @@ fn module_gens() -> ModuleGenRegistry {
     ])
 }
 
-async fn load_federations_from_disk(
-    data_dir: &PathBuf,
+async fn load_federations(
+    storage: &Storage,
     event_sink: Arc<EventSinkWrapper>,
     task_group: &TaskGroup,
 ) -> anyhow::Result<Vec<Federation>> {
-    let mut federations = vec![];
-    for element in data_dir.read_dir().context("read dir")? {
-        let mut path = element.context("read dir")?.path();
-        if let Some(extension) = path.extension() {
-            if extension == "json" {
-                // TODO: perhaps this should be a federation method?
-                let fedi_config: FediConfig =
-                    load_from_file(&path).context("invalid cfg on disk")?;
-                path.set_extension("db");
-                let db = RocksDb::open(path).context("could not open rocksdb")?;
-                let db = Database::new(db, module_decode_stubs());
-                let client = UserClient::new(
-                    fedi_config.client_config,
-                    module_decode_stubs(),
-                    module_gens(),
-                    db,
-                    Default::default(),
-                )
-                .await;
-                let subgroup = task_group.make_subgroup().await;
-                let federation =
-                    Federation::new(client, event_sink.clone(), subgroup, fedi_config.username);
-                federations.push(federation)
-            }
-        }
-    }
-    Ok(federations)
+    let db = storage.global_db().await?;
+    let mut dbtx = db.begin_transaction().await;
+    let iter = dbtx
+        .find_by_prefix(&JoinedFederationsPrefix)
+        .await
+        .collect::<Vec<_>>()
+        .await
+        .into_iter()
+        .map(|kv| async {
+            let subgroup = task_group.make_subgroup().await;
+            Federation::load(
+                storage.federation_db(&kv?.1).await?,
+                event_sink.clone(),
+                subgroup,
+            )
+            .await
+        });
+    futures::future::try_join_all(iter).await
 }
 
 pub struct Bridge {
-    /// Where dbs & configs are stored. Result of calling getApplicationDocumentsDirectory() in Dart.
-    pub data_dir: PathBuf,
+    pub storage: Storage,
     pub federations: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
     pub event_sink: Arc<EventSinkWrapper>,
     pub task_group: TaskGroup,
 }
 
 impl Bridge {
-    pub async fn new(data_dir: PathBuf, event_sink: Arc<EventSinkWrapper>) -> anyhow::Result<Self> {
+    pub async fn new(storage: Storage, event_sink: Arc<EventSinkWrapper>) -> anyhow::Result<Self> {
         // load federations from disk
         let task_group = TaskGroup::new();
         let mut federations_map = HashMap::new();
-        let federations_vec =
-            load_federations_from_disk(&data_dir, event_sink.clone(), &task_group).await?;
+        let federations_vec = load_federations(&storage, event_sink.clone(), &task_group).await?;
 
         // start pollers
         for mut federation in federations_vec.into_iter() {
@@ -148,7 +135,7 @@ impl Bridge {
         }
 
         let bridge = Self {
-            data_dir,
+            storage,
             federations: Arc::new(Mutex::new(federations_map)),
             task_group,
             event_sink,
@@ -189,13 +176,20 @@ impl Bridge {
         tracing::info!("joining new federation");
         let mut federation = Federation::join(
             connect_string,
-            self.data_dir.clone(),
+            &self.storage,
             self.event_sink.clone(),
             self.task_group.make_subgroup().await,
         )
         .await?;
-        let mut federations = self.federations.lock().await;
         let federation_name = federation.name();
+        {
+            let global_db = self.storage.global_db().await?;
+            let mut dbtx = global_db.begin_transaction().await;
+            dbtx.insert_entry(&JoinedFederationsKey, &federation_name).await?;
+            dbtx.commit_tx().await?;
+            info!("saved joined")
+        }
+        let mut federations = self.federations.lock().await;
         if !federations.contains_key(&federation_name) {
             federation.start_pollers().await;
             federations.insert(federation_name, Arc::new(federation.clone()));
@@ -274,17 +268,7 @@ impl Bridge {
         info!("stopping pollers");
         federation.stop_pollers().await?;
 
-        // Remove config and db
-        // FIXME: this should all be atomic
-        info!("deleting configs");
-        let json_path = Path::new(&self.data_dir)
-            .join(&federation_id)
-            .with_extension("json");
-        let db_path = Path::new(&self.data_dir)
-            .join(&federation_id)
-            .with_extension("db");
-        fs::remove_file(json_path).await?;
-        fs::remove_dir_all(db_path).await?;
+        self.storage.delete_federation_db(federation_id).await?;
 
         // Remove from bridge state
         info!("removing from bridge");
@@ -306,24 +290,49 @@ pub struct Federation {
 }
 
 impl Federation {
-    pub fn new(
-        client: UserClient,
+    pub async fn load(
+        db: Database,
         event_sink: Arc<EventSinkWrapper>,
         task_group: TaskGroup,
-        username: Option<String>,
-    ) -> Self {
-        Self {
-            client: Arc::new(client),
-            event_sink,
-            task_group,
-            username: Arc::new(Mutex::new(username)),
-        }
+    ) -> anyhow::Result<Self> {
+        let mut dbtx = db.begin_transaction().await;
+        let config = dbtx
+            .get_value(&FediClientConfigKey)
+            .await
+            .expect("Db error")
+            .context("config not present in db")?;
+        let fedi_config: FediConfig = serde_json::from_str(&config).context("invalid config")?;
+        dbtx.commit_tx().await.expect("Db error");
+        Self::from_config(fedi_config, db, event_sink, task_group).await
     }
 
-    /// Download federation configs using a "connection string". Save client config to `data_dir`.
+    pub async fn from_config(
+        config: FediConfig,
+        db: Database,
+        event_sink: Arc<EventSinkWrapper>,
+        task_group: TaskGroup,
+    ) -> anyhow::Result<Self> {
+        let user_client = UserClient::new(
+            config.client_config,
+            module_decode_stubs(),
+            module_gens(),
+            db,
+            Default::default(),
+        )
+        .await;
+        Ok(Self {
+            client: Arc::new(user_client),
+            event_sink,
+            task_group,
+            username: Arc::new(Mutex::new(config.username)),
+        })
+    }
+
+    /// Download federation configs using a "connection string". Save client config to correct
+    /// database with Storage.
     pub async fn join(
         connect_string: String,
-        data_dir: PathBuf,
+        storage: &Storage,
         event_sink: Arc<EventSinkWrapper>,
         task_group: TaskGroup,
     ) -> Result<Self> {
@@ -355,25 +364,19 @@ impl Federation {
             client_config,
         };
 
-        // Save config
-        let cfg_path = Path::new(&data_dir).join(format!("{}.json", cfg.federation_name));
-        tracing::info!("saving file to {}", cfg_path.display());
-        fs::write(cfg_path, serde_json::to_string(&fedi_config)?).await?;
+        let federation_id: String = fedi_config.client_config.0.federation_name.clone();
 
-        // Create user client
-        let db_path = Path::new(&data_dir).join(format!("{}.db", cfg.federation_name));
-        let db = RocksDb::open(db_path).context("could not open rocksdb")?;
-        let db = Database::new(db, module_decode_stubs());
-        let client = UserClient::new(
-            fedi_config.client_config,
-            module_decode_stubs(),
-            module_gens(),
-            db,
-            Default::default(),
-        )
-        .await;
-        let username = None;
-        Ok(Self::new(client, event_sink, task_group, username))
+        let db = storage.federation_db(&federation_id).await?;
+        // Save config to db
+        {
+            let mut dbtx = db.begin_transaction().await;
+            dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
+                .await?;
+            dbtx.commit_tx().await?;
+        }
+        // TODO: delete the database if failed
+
+        Self::from_config(fedi_config, db, event_sink, task_group).await
     }
 
     //
@@ -776,21 +779,24 @@ impl Federation {
         for script in scripts.iter() {
             let f = fed.clone();
             let s = script.clone();
-            tokio::spawn(
-                async move {
-                    if let Err(e) = f.pegin_script(&s).await {
-                        tracing::debug!(
-                            "Failed to pegin address: {}",
-                            Address::from_script(&s, f.client.wallet_client().config.network)
-                                .unwrap()
-                        );
-                        tracing::debug!("{:?}", e);
+            self.task_group
+                .clone()
+                .spawn("pegin script", |_| {
+                    async move {
+                        if let Err(e) = f.pegin_script(&s).await {
+                            tracing::debug!(
+                                "Failed to pegin address: {}",
+                                Address::from_script(&s, f.client.wallet_client().config.network)
+                                    .unwrap()
+                            );
+                            tracing::debug!("{:?}", e);
+                        }
+                        tracing::info!("Finished pegins for {:?}", s);
                     }
-                    tracing::info!("Finished pegins for {:?}", s);
-                }
-                // parent span to display the span too in logs
-                .instrument(info_span!(parent: Span::current(), "attempt pegin")),
-            );
+                    // parent span to display the span too in logs
+                    .instrument(info_span!(parent: Span::current(), "attempt pegin"))
+                })
+                .await;
         }
     }
 
