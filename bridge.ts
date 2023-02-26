@@ -3,18 +3,9 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
-import { MSats, Sats } from './types'
+import Base, { MSats, Sats } from './types'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
-
-export default class Base {
-    constructor(data?: any) {
-        Object.keys(data).forEach((field: any) => {
-            // @ts-ignore
-            this[field] = data[field]
-        })
-    }
-}
 
 export type LogEvent = {
     log: string
