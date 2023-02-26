@@ -109,7 +109,7 @@ platform :android do
   desc "Upload the latest build to internal track (Bitcoin Lake)"
   lane :upload_internal_build_bitcoin_lake do
     upload_to_play_store(
-      track: 'beta',
+      track: 'internal',
       package_name: 'com.fedimintreactnative.bitcoinlake',
       aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
       skip_upload_images: true,
@@ -225,7 +225,7 @@ platform :android do
     upload_to_play_store(
       track: 'internal',
       package_name: 'com.fedimintreactnative.bitcoinekasi',
-      aab: './app/build/outputs/bundle/bitcoinekasi/release/app-bitcoinekasi-release.aab',
+      aab: './app/build/outputs/bundle/bitcoinekasiRelease/app-bitcoinekasi-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
       skip_upload_metadata: true,

@@ -14,6 +14,8 @@ jobs:
 
             - name: Cache
               uses: actions/cache@v3
+              env:
+                  SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
               with:
                   path: |
                       ~/.cargo/registry
@@ -34,8 +36,6 @@ jobs:
                   node-version: '16.18.X'
 
             - name: Build bridge
-              env:
-                  FM_ROCKSDB: true
               run: |
                   npm run build-bridge-ios
 
