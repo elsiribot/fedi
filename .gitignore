@@ -75,3 +75,6 @@ android/decoded-service-account-credentials.json
 
 # local files
 .local
+
+# bridge
+bridge/fedi-android/plugins/bin/
