@@ -1,12 +1,14 @@
 import xmlUtils from '../../utils/XmlUtils'
 
 describe('XmlUtils', () => {
-    describe('generateRoomConfigQueryXml', () => {
+    describe('buildQuery: SetRoomConfig', () => {
         it('response contains all of the provided values', () => {
-            const result = xmlUtils.generateRoomConfigQueryXml(
-                'a new room name',
-                'fromjid@domain',
-                'tojid@domain',
+            const result = xmlUtils.buildQuery(
+                new SetRoomConfigQuery({
+                    roomName: 'a new room name',
+                    from: 'fromjid@domain',
+                    to: 'tojid@domain',
+                }),
             )
             const stringified = result.toString()
 
@@ -15,10 +17,12 @@ describe('XmlUtils', () => {
             expect(stringified).toContain('tojid')
         })
         it('response contains the correct query ID', () => {
-            const result = xmlUtils.generateRoomConfigQueryXml(
-                'a new room name',
-                'fromjid@domain',
-                'tojid@domain',
+            const result = xmlUtils.buildQuery(
+                new SetRoomConfigQuery({
+                    roomName: 'a new room name',
+                    from: 'fromjid@domain',
+                    to: 'tojid@domain',
+                }),
             )
             const queryId = result.getAttr('id')
 

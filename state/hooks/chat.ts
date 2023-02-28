@@ -3,29 +3,36 @@ import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
 import { useCallback } from 'react'
 
+import { DEFAULT_GROUP_NAME, XMPP_MUC_DOMAIN } from '../../constants'
 import {
-    DEFAULT_GROUP_NAME,
-    XMPP_DEFAULT_PAGE_LIMIT,
-    XMPP_MUC_DOMAIN,
-} from '../../constants'
-import {
+    ArchiveQueryFilters,
+    ArchiveQueryPagination,
     Group,
-    MessageArchiveQuery,
+    Member,
     OutgoingGroupMessage,
     OutgoingMessage,
 } from '../../types'
+import { addToGroups, useChatContext } from '../contexts/ChatContext'
 import {
-    addToGroups,
-    updateGroup,
-    useChatContext,
-} from '../contexts/ChatContext'
-import { changeMucRoomName } from '../operations/chat'
+    addMemberToRoster,
+    changeMucRoomName,
+    fetchMessagesFromArchive,
+    fetchMucRoomConfig,
+    fetchRoster,
+    getUniqueGroupId,
+} from '../operations/chat'
 
 export const useXmpp = () => {
     const { state, dispatch } = useChatContext()
     const { xmppClient } = state
 
     return {
+        addMemberToRoster: useCallback(
+            (member: Member) => {
+                return addMemberToRoster(member, xmppClient)
+            },
+            [xmppClient],
+        ),
         changeMucRoomName: useCallback(
             (group: Group, updatedName: string) => {
                 return changeMucRoomName(
@@ -37,6 +44,39 @@ export const useXmpp = () => {
             },
             [dispatch, xmppClient],
         ),
+        fetchMucRoomConfig: useCallback(
+            (group: Group) => {
+                return fetchMucRoomConfig(group, dispatch, xmppClient)
+            },
+            [dispatch, xmppClient],
+        ),
+        fetchMessagesFromArchive: useCallback(
+            (
+                filters: ArchiveQueryFilters | null,
+                pagination: ArchiveQueryPagination | null,
+            ) => {
+                return fetchMessagesFromArchive(
+                    filters,
+                    pagination,
+                    dispatch,
+                    xmppClient,
+                )
+            },
+            [dispatch, xmppClient],
+        ),
+        fetchRoster: useCallback(() => {
+            return fetchRoster(dispatch, xmppClient)
+        }, [dispatch, xmppClient]),
+        getUniqueGroupId: useCallback((): Promise<string> => {
+            return getUniqueGroupId(xmppClient)
+        }, [xmppClient]),
+        // TODO: Refactor remaining functions to use operations/chat.ts
+        // enterMucRoom: useCallback(
+        //     (group: Group) => {
+        //         return enterMucRoom(group, dispatch, xmppClient)
+        //     },
+        //     [dispatch, xmppClient],
+        // ),
         enterMucRoom: useCallback(
             (group: Group) => {
                 if (!xmppClient?.jid) return
@@ -152,176 +192,6 @@ export const useXmpp = () => {
             },
             [dispatch, xmppClient],
         ),
-        fetchMucRoomConfig: useCallback(
-            (group: Group) => {
-                if (!xmppClient?.jid) return
-                try {
-                    const onStanzaReceived = async (stanza: Element) => {
-                        // Listen for matching stanza from the server and remove the
-                        // listener when we get a response
-                        if (
-                            stanza.getAttr('type') === 'result' &&
-                            stanza.getAttr('id') === 'get-room-config'
-                        ) {
-                            xmppClient?.removeListener(
-                                'stanza',
-                                onStanzaReceived,
-                            )
-
-                            const result = stanza
-                                .getChild('query')
-                                ?.getChild('x')
-                            const nameField = result?.getChildByAttr(
-                                'var',
-                                'muc#roomconfig_roomname',
-                            )
-
-                            if (nameField?.getChild('value')) {
-                                dispatch(
-                                    updateGroup(
-                                        new Group({
-                                            ...group,
-                                            name: nameField.getChildText(
-                                                'value',
-                                            ),
-                                        }),
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                    xmppClient?.on('stanza', onStanzaReceived)
-                    xmppClient?.send(
-                        xml(
-                            'iq',
-                            {
-                                id: 'get-room-config',
-                                from: xmppClient.jid.toString(),
-                                to: `${group.id}@${XMPP_MUC_DOMAIN}`,
-                                type: 'get',
-                            },
-                            xml('query', {
-                                xmlns: 'http://jabber.org/protocol/disco#info',
-                                queryid: 'get-room-config-query',
-                            }),
-                        ),
-                    )
-                } catch (error) {
-                    console.error('fetchMucRoomConfig', error)
-                }
-            },
-            [dispatch, xmppClient],
-        ),
-        fetchMessagesFromArchive: useCallback(
-            ({ filters, pagination }: MessageArchiveQuery) => {
-                const filterQuery = filters?.withJid
-                    ? xml(
-                          'x',
-                          {
-                              xmlns: 'jabber:x:data',
-                              type: 'submit',
-                          },
-                          xml(
-                              'field',
-                              { var: 'FORM_TYPE', type: 'hidden' },
-                              xml('value', {}, 'urn:xmpp:mam:2'),
-                          ),
-                          xml(
-                              'field',
-                              { var: 'with' },
-                              xml('value', {}, filters.withJid),
-                          ),
-                      )
-                    : xml('x')
-
-                const paginationQuery = pagination?.after
-                    ? xml(
-                          'set',
-                          { xmlns: 'http://jabber.org/protocol/rsm' },
-                          xml(
-                              'max',
-                              {},
-                              pagination?.limit || XMPP_DEFAULT_PAGE_LIMIT,
-                          ),
-                          xml('after', {}, pagination?.after),
-                      )
-                    : xml(
-                          'set',
-                          { xmlns: 'http://jabber.org/protocol/rsm' },
-                          xml(
-                              'max',
-                              {},
-                              pagination?.limit || XMPP_DEFAULT_PAGE_LIMIT,
-                          ),
-                      )
-
-                try {
-                    xmppClient?.send(
-                        xml(
-                            'iq',
-                            {
-                                id: 'get-messages',
-                                type: 'set',
-                            },
-                            xml(
-                                'query',
-                                {
-                                    xmlns: 'urn:xmpp:mam:2',
-                                    queryid: 'get-messages',
-                                },
-                                filterQuery,
-                                paginationQuery,
-                            ),
-                        ),
-                    )
-                } catch (error) {
-                    console.error('sendDirectMessage error', error)
-                }
-            },
-            [xmppClient],
-        ),
-        getUniqueGroupId: useCallback((): Promise<string> => {
-            return new Promise(resolve => {
-                // Make sure the stream is open before sending the
-                // registration request
-                const uniqueRoomListener = async (stanza: Element) => {
-                    console.log(stanza)
-                    // Receive a registration response from the server
-                    if (
-                        stanza.is('iq') &&
-                        stanza.getAttr('id') === 'get-unique-room-name'
-                    ) {
-                        xmppClient?.removeListener('stanza', uniqueRoomListener)
-                        // Resolve or reject the promise based on registration response
-                        if (stanza.getAttr('type') === 'result') {
-                            console.log(stanza.getChild('unique'))
-                            const roomName = stanza.getChildText(
-                                'unique',
-                            ) as string
-
-                            resolve(roomName)
-                        }
-                    }
-                }
-                xmppClient?.on('stanza', uniqueRoomListener)
-
-                xmppClient
-                    ?.send(
-                        xml(
-                            'iq',
-                            {
-                                type: 'get',
-                                to: XMPP_MUC_DOMAIN,
-                                id: 'get-unique-room-name',
-                            },
-                            xml('unique', {
-                                xmlns: 'http://jabber.org/protocol/muc#unique',
-                            }),
-                        ),
-                    )
-                    .catch(console.error)
-            })
-        }, [xmppClient]),
         sendUpdatedPaymentMessage: useCallback(
             ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()

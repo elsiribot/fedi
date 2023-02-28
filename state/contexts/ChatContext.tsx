@@ -620,46 +620,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         // Monitor for incoming messages to add to state
         xmpp.on('stanza', async stanza => {
             try {
-                if (stanza.is('presence')) {
-                    // ignore if there is no presence data
-                    const user = stanza.getChild('x')
-                    if (!user) return
-
-                    const statusCode = user?.getChild('status')?.getAttr('code')
-
-                    // This is a self-presence code, we don't
-                    // need to add to membersSeen
-                    if (statusCode === '110') return
-
-                    // Make sure this presence stanza came from the main domain
-                    // so we can create a member with the JID
-                    const from = stanza.getAttr('from')
-                    const fromJid = jid(from)
-                    let userJid: JID = fromJid
-
-                    // This came from a user through the MUC domain, reformat JID
-                    // to main domain with the /chat resource
-                    if (fromJid.getDomain() === XMPP_MUC_DOMAIN) {
-                        userJid = jid(
-                            fromJid.getResource(),
-                            XMPP_DOMAIN,
-                            XMPP_RESOURCE,
-                        )
-                    }
-
-                    // don't add ourselves to membersSeen
-                    if (selectedFederation.username === userJid.local) {
-                        return
-                    }
-
-                    dispatch(
-                        addToMembersSeen(
-                            new Member({
-                                jid: userJid,
-                            }),
-                        ),
-                    )
-                }
                 if (stanza.is('message')) {
                     if (stanza.getAttr('type') === 'groupchat') {
                         // Handle incoming messages from GroupChat
@@ -769,17 +729,25 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     }
                 }
                 if (stanza.is('iq')) {
-                    // Handle pagination for queries to the message archive
-                    if (stanza.getAttr('id') === 'get-messages') {
-                        const results = stanza.getChild('fin')?.getChild('set')
-                        if (!results) return
+                    // Needed for handling roster pushes from server
+                    if (
+                        stanza.getChild('query')?.getNS() === 'jabber:iq:roster'
+                    ) {
+                        const rosterItem = stanza
+                            .getChild('query')
+                            ?.getChild('item')
+                        if (!rosterItem) return
 
-                        const lastMessageId = results
-                            .getChild('last')
-                            ?.getText()
-                        if (!lastMessageId) return
+                        const userJid = rosterItem?.getAttr('jid')
 
-                        dispatch(changeLastFetchedMessageId(lastMessageId))
+                        console.debug('received roster item', userJid)
+                        dispatch(
+                            addToMembersSeen(
+                                new Member({
+                                    jid: userJid,
+                                }),
+                            ),
+                        )
                     }
                 }
             } catch (error) {
