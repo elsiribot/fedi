@@ -176,9 +176,10 @@ export function resetChatState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case ActionType.ADD_TO_MEMBERS_SEEN:
+        case ActionType.ADD_TO_MEMBERS_SEEN: {
+            const memberToAdd = new Member({ jid: action.payload.jid })
             const memberIndex = state.membersSeen.findIndex(
-                (m: Member) => m.username === action.payload.username,
+                (m: Member) => m.username === memberToAdd.username,
             )
 
             if (memberIndex === -1) {
@@ -192,18 +193,17 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             } else if (
                 // Should we deep compare or just use username?
-                isEqual(action.payload, state.membersSeen[memberIndex])
-                // action.payload.username === state.membersSeen[memberIndex].username
+                memberToAdd.username === state.membersSeen[memberIndex].username
             ) {
                 // Avoid re-render, this member is already added
                 // and has not changed
                 return state
             } else {
                 // member is already added but something has changed...
-                const updatedMember = {
+                const updatedMember = new Member({
                     ...state.membersSeen[memberIndex],
-                    ...action.payload,
-                }
+                    ...memberToAdd,
+                })
                 return {
                     ...state,
                     membersSeen: state.membersSeen.map((m: Member, i) =>
@@ -211,6 +211,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     ),
                 }
             }
+        }
         case ActionType.ADD_TO_MESSAGES: {
             const messageIndex = state.messages.findIndex(
                 (m: Message) => m.id === action.payload.id,
@@ -293,10 +294,32 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 userIsOnline: action.payload,
             }
-        case ActionType.RECEIVE_MEMBERS_SEEN:
+        case ActionType.RECEIVE_MEMBERS_SEEN: {
+            const incomingMembers = action.payload
+            const newMembersSeen = incomingMembers
+                .map((im: Member) => new Member({ jid: im.jid }))
+                .filter((im: Member) => {
+                    const memberExists = state.membersSeen.find(
+                        (m: Member) => m.username === im.username,
+                    )
+                    if (
+                        memberExists ||
+                        // Never add ourselves to the roster
+                        im.username === state.authenticatedMember?.username
+                    ) {
+                        return false
+                    } else {
+                        return true
+                    }
+                })
+            // No new members received, avoid re-render
+            if (newMembersSeen.length === 0) {
+                return state
+            }
             return {
                 ...state,
-                membersSeen: [...action.payload].map(m => new Member(m)),
+                membersSeen: newMembersSeen.map((m: Member) => new Member(m)),
+            }
             }
         case ActionType.RECEIVE_MESSAGES:
             return {
@@ -653,8 +676,24 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
                         dispatch(addToMessages(newMessage))
                         dispatch(updateGroupMessagePreview(newMessage))
+
+                        // This came from a user through the MUC domain, reformat JID
+                        // to main domain with the /chat resource
+                        const from = stanza.getAttr('from')
+                        const fromJid = jid(from)
+                        let userJid: JID = jid(
+                            fromJid.getResource(),
+                            XMPP_DOMAIN,
+                            XMPP_RESOURCE,
+                        )
+                        // don't add ourselves to membersSeen
+                        if (selectedFederation.username !== userJid.local) {
+                            dispatch(
+                                addToMembersSeen(new Member({ jid: userJid })),
+                            )
+                        }
                     } else if (stanza.getAttr('type') === 'chat') {
-                        // Handle incoming messages from DirectChat
+                        // Handle incoming messages from DirectChat while online
                         const bodyText = stanza.getChildText('body')
                         if (!bodyText) return
 
@@ -674,6 +713,18 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         } else {
                             dispatch(addToMessages(newMessage))
                             dispatch(updateGroupMessagePreview(newMessage))
+
+                            const from = stanza.getAttr('from')
+                            const fromJid = jid(from)
+                            const userJid: JID = fromJid
+                            // don't add ourselves to membersSeen
+                            if (selectedFederation.username !== userJid.local) {
+                                dispatch(
+                                    addToMembersSeen(
+                                        new Member({ jid: userJid }),
+                                    ),
+                                )
+                            }
                         }
                     } else if (
                         stanza.getChild('result')?.getAttr('queryid') ===
@@ -702,6 +753,18 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         } else {
                             dispatch(addToMessages(newMessage))
                             dispatch(updateGroupMessagePreview(newMessage))
+
+                            const from = message.getAttr('from')
+                            const fromJid = jid(from)
+                            const userJid: JID = fromJid
+                            // don't add ourselves to membersSeen
+                            if (selectedFederation.username !== userJid.local) {
+                                dispatch(
+                                    addToMembersSeen(
+                                        new Member({ jid: userJid }),
+                                    ),
+                                )
+                            }
                         }
                     }
                 }
