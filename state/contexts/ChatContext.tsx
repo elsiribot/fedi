@@ -630,6 +630,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         const parsedMessage = JSON.parse(
                             groupMessageJson as string,
                         )
+                        if (!parsedMessage) return
+
                         const newMessage = new Message({
                             ...parsedMessage,
                         })
@@ -661,6 +663,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         const parsedMessage = JSON.parse(
                             directMessageJson as string,
                         )
+                        if (!parsedMessage) return
+
                         const newMessage = new Message({
                             ...parsedMessage,
                         })
@@ -701,6 +705,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         const parsedMessage = JSON.parse(
                             directMessageJson as string,
                         )
+                        if (!parsedMessage) return
                         const newMessage = new Message({
                             ...parsedMessage,
                         })
