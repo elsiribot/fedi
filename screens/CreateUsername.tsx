@@ -2,7 +2,14 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import {
+    Keyboard,
+    KeyboardEvent,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 import {
     checkXmppUser,
     registerXmppUser,
@@ -22,12 +29,56 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const [username, setUsername] = useState<string>('')
-    const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
     const { state, dispatch } = useFederationsContext()
     const { authenticatedMember } = useChatContext().state
     const { toast } = useEnvironmentContext().state
     const { backupXmppUsername, getXmppCredentials } = useBridge()
+    const [username, setUsername] = useState<string>('')
+    const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
+    const [buttonIsOverlapping, setButtonIsOverlapping] =
+        useState<boolean>(false)
+    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+    const [buttonYPosition, setButtonYPosition] = useState<number>(0)
+    const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
+
+    // when the keyboard is opened and content layouts change, this effect
+    // determines whether the Create username button is overlapping with
+    // the input wrapper.
+    useEffect(() => {
+        if (
+            keyboardHeight > 0 &&
+            buttonYPosition > 0 &&
+            overlapThreshold > 0 &&
+            buttonYPosition < overlapThreshold
+        ) {
+            setButtonIsOverlapping(true)
+        }
+        // when keyboard closes be sure to reset buttonIsOverlapping
+        // state so the button remains flexed to the bottom of the view
+        if (keyboardHeight === 0 && buttonIsOverlapping === true) {
+            setButtonIsOverlapping(false)
+        }
+    }, [buttonIsOverlapping, buttonYPosition, overlapThreshold, keyboardHeight])
+
+    useEffect(() => {
+        const keyboardShownListener = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            (e: KeyboardEvent) => {
+                setKeyboardHeight(e.endCoordinates.height)
+            },
+        )
+        const keyboardHiddenListener = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => {
+                setKeyboardHeight(0)
+            },
+        )
+
+        return () => {
+            keyboardShownListener.remove()
+            keyboardHiddenListener.remove()
+        }
+    }, [])
 
     const handleSubmit = async () => {
         setXmppAuthInProgress(true)
@@ -100,14 +151,29 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[
+                styles(theme).container,
+                keyboardHeight > 0 && Platform.OS === 'ios'
+                    ? { paddingBottom: keyboardHeight + theme.spacing.xl }
+                    : {},
+                buttonIsOverlapping ? { flex: 0 } : {},
+            ]}>
             <Text h2 medium style={styles(theme).titleText}>
                 {t('feature.onboarding.create-your-username')}
             </Text>
             <Text caption style={styles(theme).instructionsText}>
                 {t('feature.onboarding.username-instructions')}
             </Text>
-            <View style={styles(theme).inputWrapper}>
+            <View
+                style={styles(theme).inputWrapper}
+                onLayout={event => {
+                    setOverlapThreshold(
+                        event.nativeEvent.layout.height +
+                            event.nativeEvent.layout.y,
+                    )
+                }}>
                 <Text caption style={styles(theme).inputLabel}>
                     {t('words.username')}
                 </Text>
@@ -127,15 +193,23 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     {t('feature.onboarding.username-guidance')}
                 </Text>
             </View>
-            <Button
-                fullWidth
-                title={t('feature.onboarding.create-username')}
-                onPress={handleSubmit}
-                disabled={!username || xmppAuthInProgress}
-                loading={xmppAuthInProgress}
-                containerStyle={styles(theme).button}
-            />
-        </View>
+            <View
+                style={[
+                    styles(theme).buttonContainer,
+                    buttonIsOverlapping ? { marginTop: theme.sizes.md } : {},
+                ]}
+                onLayout={event => {
+                    setButtonYPosition(event.nativeEvent.layout.y)
+                }}>
+                <Button
+                    fullWidth
+                    title={t('feature.onboarding.create-username')}
+                    onPress={handleSubmit}
+                    disabled={!username || xmppAuthInProgress}
+                    loading={xmppAuthInProgress}
+                />
+            </View>
+        </ScrollView>
     )
 }
 
@@ -144,11 +218,12 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             padding: theme.spacing.xl,
         },
-        button: {
+        buttonContainer: {
             marginTop: 'auto',
+            width: '100%',
         },
         instructionsText: {
             marginVertical: theme.spacing.md,

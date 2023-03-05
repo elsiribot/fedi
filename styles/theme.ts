@@ -107,9 +107,10 @@ const theme = createTheme({
         },
         Header: {
             containerStyle: {
-                paddingVertical: 0,
                 paddingHorizontal: 24,
                 borderBottomColor: colors.secondary,
+                // This helps maximize the clickable area for any header buttons
+                paddingVertical: 0,
             },
             leftContainerStyle: {
                 flex: 1,

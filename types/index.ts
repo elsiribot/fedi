@@ -1,9 +1,18 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 
-import Base, { Invoice } from '../bridge'
+import { Invoice } from '../bridge'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
+
+export default class Base {
+    constructor(data?: any) {
+        Object.keys(data).forEach((field: any) => {
+            // @ts-ignore
+            this[field] = data[field]
+        })
+    }
+}
 
 export enum BitcoinOrLightning {
     bitcoin = 'bitcoin',

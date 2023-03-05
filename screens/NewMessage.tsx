@@ -1,15 +1,18 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import { jid } from '@xmpp/client'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
+import { XMPP_DOMAIN, XMPP_RESOURCE } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
+import { useDebouncedEffect } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
+import { Member } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
@@ -18,7 +21,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
-    const { enterMucRoom } = useXmpp()
+    const { fetchRoster } = useXmpp()
     const { state } = useChatContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
     const { authenticatedMember } = useChatContext().state
@@ -28,14 +31,18 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
         ? state.membersSeen.filter(m => m.username.includes(usernameFilter))
         : state.membersSeen
 
-    useEffect(() => {
-        if (authenticatedMember) {
-            // This is a temporary measure to improve member discovery...
-            // all users announce presence in this MUC room even without clicking it
-            // so that presence messages for each new user are sent to all other users
-            enterMucRoom(FEDI_GENERAL_CHANNEL_GROUP)
-        }
-    }, [authenticatedMember, enterMucRoom])
+    useDebouncedEffect(
+        () => {
+            if (usernameFilter.length > 1 && authenticatedMember) {
+                fetchRoster()
+            }
+        },
+        [usernameFilter],
+        500,
+    )
+
+    const showSendMessage =
+        filteredMembers.length === 0 && usernameFilter.length > 1
 
     return (
         <View style={styles(theme, insets).container}>
@@ -78,6 +85,27 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     {t('words.members')}
                 </Text>
                 <View style={styles(theme, insets).membersListContainer}>
+                    {showSendMessage && (
+                        <Pressable
+                            style={styles(theme, insets).createGroupContainer}
+                            onPress={async () => {
+                                const newMember = new Member({
+                                    jid: jid(
+                                        `${usernameFilter}@${XMPP_DOMAIN}/${XMPP_RESOURCE}`,
+                                    ),
+                                })
+                                navigation.replace('DirectChat', {
+                                    member: newMember,
+                                })
+                            }}>
+                            <SvgImage name="SocialPeople" />
+                            <Text
+                                medium
+                                style={styles(theme, insets).createGroupText}>
+                                {`Send a message to ${usernameFilter}`}
+                            </Text>
+                        </Pressable>
+                    )}
                     <MembersList members={filteredMembers} />
                 </View>
             </View>

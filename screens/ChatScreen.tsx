@@ -5,9 +5,7 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import ChatsList from '../components/feature/chat/ChatsList'
 
-import { FEDI_GENERAL_CHANNEL_GROUP } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useXmpp } from '../state/hooks/chat'
 import { ArchiveQueryPagination } from '../types'
 import {
@@ -24,18 +22,8 @@ export type Props = BottomTabScreenProps<
 const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { enterMucRoom, fetchMessagesFromArchive } = useXmpp()
-    const { selectedFederation } = useFederationsContext().state
+    const { fetchMessagesFromArchive, fetchRoster } = useXmpp()
     const { authenticatedMember, lastFetchedMessageId } = useChatContext().state
-
-    useEffect(() => {
-        if (authenticatedMember) {
-            // This is a temporary measure to improve member discovery...
-            // all users announce presence in this MUC room even without clicking it
-            // so that presence messages for each new user are sent to all other users
-            enterMucRoom(FEDI_GENERAL_CHANNEL_GROUP)
-        }
-    }, [authenticatedMember, enterMucRoom])
 
     useEffect(() => {
         if (authenticatedMember) {
@@ -48,9 +36,16 @@ const ChatScreen: React.FC<Props> = () => {
             if (lastFetchedMessageId) {
                 pagination.after = lastFetchedMessageId
             }
-            fetchMessagesFromArchive({ filters: null, pagination })
+            fetchMessagesFromArchive(null, pagination)
         }
     }, [authenticatedMember, fetchMessagesFromArchive, lastFetchedMessageId])
+
+    useEffect(() => {
+        if (authenticatedMember) {
+            // Here we fetch the roster and store the results in local storage
+            fetchRoster()
+        }
+    }, [authenticatedMember, fetchRoster])
 
     return (
         <View style={styles(theme).container}>

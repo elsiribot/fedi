@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react'
+import {
+    DependencyList,
+    EffectCallback,
+    useCallback,
+    useEffect,
+    useRef,
+} from 'react'
 import {
     addressOrInvoice,
     approveSocialRecoveryRequest,
@@ -35,6 +41,19 @@ import amountUtils from '../../utils/AmountUtils'
 import lnurlUtils from '../../utils/LNURLUtils'
 import { useCurrencyContext } from '../contexts/CurrencyContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
+
+export const useDebouncedEffect = (
+    effect: EffectCallback,
+    deps: DependencyList,
+    delay: number,
+) => {
+    useEffect(() => {
+        const handler = setTimeout(() => effect(), delay)
+
+        return () => clearTimeout(handler)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [...(deps || []), delay])
+}
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
     const ref = useRef<T>()

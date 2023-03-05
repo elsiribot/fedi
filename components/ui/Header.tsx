@@ -35,9 +35,9 @@ const Header: React.FC<HeaderProps> = ({
     headerLeft,
     headerCenter,
     headerRight,
-    leftContainerStyle,
-    centerContainerStyle,
-    rightContainerStyle,
+    leftContainerStyle = {},
+    centerContainerStyle = {},
+    rightContainerStyle = {},
     containerStyle = {},
     backgroundColor,
     backButton,
@@ -45,18 +45,6 @@ const Header: React.FC<HeaderProps> = ({
 }: HeaderProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-
-    // This style is reserved for anything that should always be on the container
-    // They will be merged with any incoming containerStyle props and therefore
-    // can only be expicitly overriden by the same CSS rule inside containerStyle
-    const DEFAULT_REQUIRED_CONTAINER_STYLES = {
-        // This helps maximize the clickable area for any header buttons
-        paddingBottom: 0,
-    }
-    const mergedContainerStyle = {
-        ...DEFAULT_REQUIRED_CONTAINER_STYLES,
-        ...containerStyle,
-    }
 
     // This logic allows for custom UI in the left side of the Header
     // but the backButton prop overrides any custom headerLeft component
@@ -93,18 +81,23 @@ const Header: React.FC<HeaderProps> = ({
         leftContainerStyle: defaultLeftContainerStyle,
         centerContainerStyle: defaultCenterContainerStyle,
         rightContainerStyle: defaultRightContainerStyle,
+        containerStyle: defaultContainerStyle,
     } = theme.components.Header
     const mergedLeftContainerStyle = {
         ...defaultLeftContainerStyle,
-        ...(leftContainerStyle ? leftContainerStyle : {}),
+        ...leftContainerStyle,
     }
     const mergedCenterContainerStyle = {
         ...defaultCenterContainerStyle,
-        ...(centerContainerStyle ? centerContainerStyle : {}),
+        ...centerContainerStyle,
     }
     const mergedRightContainerStyle = {
         ...defaultRightContainerStyle,
-        ...(rightContainerStyle ? rightContainerStyle : {}),
+        ...rightContainerStyle,
+    }
+    const mergedContainerStyle = {
+        ...defaultContainerStyle,
+        ...containerStyle,
     }
 
     return (
