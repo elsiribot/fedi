@@ -1,11 +1,12 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import type { Theme } from '@rneui/themed'
-import { Button, Card, Icon, Text, useTheme } from '@rneui/themed'
+import { Button, Card, Text, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBtcUsdPrice } from '../state/hooks'
 import { MSats } from '../types'
@@ -67,12 +68,7 @@ const Home: React.FC<Props> = ({ navigation, offline }: Props) => {
                     containerStyle={styles(theme).cardContainer}
                     wrapperStyle={styles(theme).cardWrapper}>
                     <View style={styles(theme).titleContainer}>
-                        <Icon
-                            name="bitcoin"
-                            type="material-community"
-                            color={theme.colors.secondary}
-                            size={theme.sizes.sm}
-                        />
+                        <SvgImage name="Bitcoin" />
                         <Text medium style={styles(theme).titleText}>
                             {t('words.bitcoin')}
                         </Text>

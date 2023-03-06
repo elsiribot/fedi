@@ -1,5 +1,6 @@
 export { default as AlarmSvg } from './alarm.svg'
 export { default as AllowCameraAccessIconSvg } from './allow-camera-access-icon.svg'
+export { default as BitcoinSvg } from './bitcoin.svg'
 export { default as CashSvg } from './cash.svg'
 export { default as ChatHistorySvg } from './chat-history.svg'
 export { default as ChatSvg } from './chat.svg'
