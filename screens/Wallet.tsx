@@ -9,11 +9,17 @@ import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecov
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBtcUsdPrice } from '../state/hooks'
 import { MSats } from '../types'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import type {
+    RootStackParamList,
+    TabsNavigatorParamList,
+} from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
 export type Props =
-    | BottomTabScreenProps<HomeTabsParamList & RootStackParamList, 'Wallet'> & {
+    | BottomTabScreenProps<
+          TabsNavigatorParamList & RootStackParamList,
+          'Wallet'
+      > & {
           offline: boolean
       }
 

@@ -7,13 +7,13 @@ import SitesList from './SitesList'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import type {
-    HomeTabsParamList,
     RootStackParamList,
     SitesStackParamList,
+    TabsNavigatorParamList,
 } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
-    HomeTabsParamList & RootStackParamList,
+    TabsNavigatorParamList & RootStackParamList,
     'Sites'
 >
 

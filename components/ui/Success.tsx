@@ -44,7 +44,7 @@ type SuccessProps =
 const Success: React.FC<SuccessProps> = ({
     message,
     messageText,
-    nextScreen = 'Home',
+    nextScreen = 'TabsNavigator',
     nextScreenProps = undefined,
     button,
     buttonText,

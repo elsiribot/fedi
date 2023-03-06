@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
     if (closeButton) {
         rightComponent = (
             <Pressable
-                onPress={() => navigation.dispatch(reset('Home'))}
+                onPress={() => navigation.dispatch(reset('TabsNavigator'))}
                 style={{
                     padding: theme.spacing.xs,
                 }}>

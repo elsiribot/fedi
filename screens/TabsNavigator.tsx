@@ -14,20 +14,20 @@ import WalletHeader from '../components/feature/wallet/WalletHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import {
-    HomeTabsParamList,
-    HOME_NAVIGATOR_ID,
     RootStackParamList,
+    TabsNavigatorParamList,
+    TABS_NAVIGATOR_ID,
 } from '../types/navigation'
 import Admin from './Admin'
 import ChatScreen from './ChatScreen'
 import Sites from './Sites'
 import Wallet from './Wallet'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
-const Tab = createBottomTabNavigator<HomeTabsParamList>()
+const Tab = createBottomTabNavigator<TabsNavigatorParamList>()
 
-const Home: React.FC<Props> = ({ navigation }: Props) => {
+const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
@@ -61,7 +61,7 @@ const Home: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <Tab.Navigator
             initialRouteName="Wallet"
-            id={HOME_NAVIGATOR_ID}
+            id={TABS_NAVIGATOR_ID}
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ focused }) => {
                     switch (route.name) {
@@ -214,4 +214,4 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
     })
 
-export default Home
+export default TabsNavigator

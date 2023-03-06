@@ -26,7 +26,6 @@ import FederationWelcome from './screens/FederationWelcome'
 import GroupAdmin from './screens/GroupAdmin'
 import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
-import Home from './screens/Home'
 import Initializing from './screens/Initializing'
 import JoinGroup from './screens/JoinGroup'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
@@ -60,6 +59,7 @@ import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
 import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
+import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
@@ -171,8 +171,8 @@ const MainNavigator = () => {
                                 animationDuration: 250,
                             }}>
                             <Stack.Screen
-                                name="Home"
-                                component={Home}
+                                name="TabsNavigator"
+                                component={TabsNavigator}
                                 options={() => ({
                                     headerShown: false,
                                 })}
@@ -609,7 +609,7 @@ const linking: NavigationLinkingConfig = {
         screens: {
             MainNavigator: {
                 screens: {
-                    Home: 'home',
+                    TabsNavigator: 'tabs-navigator',
                     // Wallet (Send)
                     Send: 'send',
                     ConfirmSendLightning: 'confirm-send-lightning',

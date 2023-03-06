@@ -18,7 +18,7 @@ declare global {
 
 export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
 export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
-export const HOME_NAVIGATOR_ID: any = 'HomeTabsNavigator'
+export const TABS_NAVIGATOR_ID: any = 'TabsNavigator'
 
 export type RouteHook = RouteProp<RootStackParamList>
 export type DrawerNavigationHook = DrawerNavigationProp<ParamListBase>
@@ -33,7 +33,7 @@ export type SitesStackParamList = {
     SitesBrowser: { site: Site }
     SitesList: undefined
 }
-export type HomeTabsParamList = {
+export type TabsNavigatorParamList = {
     Admin: undefined
     Chat: undefined
     Sites: undefined
@@ -59,7 +59,6 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
     FederationWelcome: undefined
-    Home: undefined
     Initializing: { reset: boolean }
     JoinGroup: undefined
     NewMessage: undefined
@@ -96,6 +95,7 @@ export type RootStackParamList = {
     SocialRecoveryQrModal: undefined
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
+    TabsNavigator: undefined
     Transactions: undefined
     DeveloperSettings: undefined
 }

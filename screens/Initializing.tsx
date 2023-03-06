@@ -114,13 +114,13 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     ])
 
     // if federations have been stored and a username has been restored
-    // navigate to Home
+    // navigate to TabsNavigator
     useEffect(() => {
         if (
             state.federations.length > 0 &&
             state.selectedFederation?.username
         ) {
-            navigation.replace('Home')
+            navigation.replace('TabsNavigator')
         }
     }, [
         navigation,

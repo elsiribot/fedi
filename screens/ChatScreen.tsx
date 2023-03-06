@@ -9,13 +9,13 @@ import { useChatContext } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks/chat'
 import { ArchiveQueryPagination } from '../types'
 import {
-    HomeTabsParamList,
     NavigationHook,
     RootStackParamList,
+    TabsNavigatorParamList,
 } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
-    HomeTabsParamList & RootStackParamList,
+    TabsNavigatorParamList & RootStackParamList,
     'Chat'
 >
 

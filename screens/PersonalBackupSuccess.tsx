@@ -30,7 +30,7 @@ const PersonalBackupSuccess: React.FC<Props> = ({ navigation }: Props) => {
                 <Button
                     title={t('words.done')}
                     onPress={() => {
-                        navigation.navigate('Home')
+                        navigation.navigate('TabsNavigator')
                     }}
                 />
             </View>
