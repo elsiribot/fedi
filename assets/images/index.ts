@@ -56,8 +56,10 @@ export const Images: ImagesMap = {
 }
 
 export const SiteImages: ImagesMap = {
-    btcmap: require('./sites/btcmap.png'),
+    bitcoinco: require('./sites/bitcoinco.png'),
     bitrefill: require('./sites/bitrefill.png'),
+    btcmap: require('./sites/btcmap.png'),
+    fedifeedback: require('./sites/fedifeedback.png'),
     geyser: require('./sites/geyser.png'),
     hrf: require('./sites/hrf.png'),
     ibex: require('./sites/ibex.png'),
@@ -67,5 +69,4 @@ export const SiteImages: ImagesMap = {
     stackernews: require('./sites/stackernews.png'),
     stakwork: require('./sites/stakwork.png'),
     wavlake: require('./sites/wavlake.png'),
-    fedifeedback: require('./sites/fedifeedback.png'),
 }
