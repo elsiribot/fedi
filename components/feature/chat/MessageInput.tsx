@@ -146,7 +146,9 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'flex-end',
             marginTop: 'auto',
-            backgroundColor: theme.colors.keyboardGrey,
+            backgroundColor: theme.colors.secondary,
+            borderTopColor: theme.colors.primaryVeryLight,
+            borderTopWidth: 1,
             paddingHorizontal: theme.spacing.lg,
             paddingVertical: theme.spacing.md,
             position: 'relative',
@@ -173,9 +175,7 @@ const styles = (theme: Theme) =>
         },
         textInputOuter: {
             flex: 1,
-            borderColor: theme.colors.primaryVeryLight,
-            borderWidth: 1,
-            borderRadius: theme.borders.defaultRadius,
+            borderWidth: 0,
             backgroundColor: theme.colors.white,
         },
     })
