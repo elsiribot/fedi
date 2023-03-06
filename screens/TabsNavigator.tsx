@@ -10,7 +10,7 @@ import SvgImage from '../components/ui/SvgImage'
 import AdminHeader from '../components/feature/admin/AdminHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
-import WalletHeader from '../components/feature/wallet/WalletHeader'
+import HomeHeader from '../components/feature/home/HomeHeader'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import {
@@ -20,8 +20,8 @@ import {
 } from '../types/navigation'
 import Admin from './Admin'
 import ChatScreen from './ChatScreen'
+import Home from './Home'
 import Sites from './Sites'
-import Wallet from './Wallet'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
@@ -60,15 +60,15 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <Tab.Navigator
-            initialRouteName="Wallet"
+            initialRouteName="Home"
             id={TABS_NAVIGATOR_ID}
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ focused }) => {
                     switch (route.name) {
-                        case 'Wallet':
+                        case 'Home':
                             return (
                                 <SvgImage
-                                    name="Wallet"
+                                    name="Home"
                                     containerStyle={
                                         styles(theme, insets)
                                             .tabBarIconContainer
@@ -137,21 +137,21 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 tabBarLabelStyle: styles(theme, insets).tabBarLabel,
             })}>
             <Tab.Screen
-                name="Wallet"
+                name="Home"
                 initialParams={{ offline }}
                 options={() => ({
-                    title: t('words.wallet'),
+                    title: t('words.home'),
                     header: () => (
                         <>
                             <SelectedFederationHeader />
-                            <WalletHeader
+                            <HomeHeader
                                 toggleOffline={toggleOffline}
                                 offline={offline}
                             />
                         </>
                     ),
                 })}>
-                {props => <Wallet {...props} offline={offline} />}
+                {props => <Home {...props} offline={offline} />}
             </Tab.Screen>
             <Tab.Screen
                 name="Chat"

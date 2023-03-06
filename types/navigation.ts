@@ -37,7 +37,7 @@ export type TabsNavigatorParamList = {
     Admin: undefined
     Chat: undefined
     Sites: undefined
-    Wallet: { offline: boolean }
+    Home: { offline: boolean }
 }
 export type RootStackParamList = {
     BitcoinRequest: { uri: string }

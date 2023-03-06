@@ -7,15 +7,15 @@ import { useNavigation } from '@react-navigation/native'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
-type WalletHeaderProps = {
+type HomeHeaderProps = {
     toggleOffline?: () => void
     offline: boolean
 }
 
-const WalletHeader: React.FC<WalletHeaderProps> = ({
+const HomeHeader: React.FC<HomeHeaderProps> = ({
     toggleOffline,
     offline = false,
-}: WalletHeaderProps) => {
+}: HomeHeaderProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()
@@ -24,7 +24,7 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
         <Header
             headerLeft={
                 <Text onPress={toggleOffline} h2 medium>
-                    {t('words.wallet')}
+                    {t('words.home')}
                 </Text>
             }
             headerRight={
@@ -54,7 +54,7 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                 </View>
             }
             rightContainerStyle={styles(theme).rightContainer}
-            // Needed to make more room for Wallet title in headerLeft
+            // Needed to make more room for title in headerLeft
             centerContainerStyle={{ flex: 1 }}
         />
     )
@@ -79,4 +79,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default WalletHeader
+export default HomeHeader

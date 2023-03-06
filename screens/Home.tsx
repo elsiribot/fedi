@@ -18,7 +18,7 @@ import amountUtils from '../utils/AmountUtils'
 export type Props =
     | BottomTabScreenProps<
           TabsNavigatorParamList & RootStackParamList,
-          'Wallet'
+          'Home'
       > & {
           offline: boolean
       }
@@ -51,7 +51,7 @@ const Balance = ({ balance }: BalanceProps) => {
     }
 }
 
-const Wallet: React.FC<Props> = ({ navigation, offline }: Props) => {
+const Home: React.FC<Props> = ({ navigation, offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { selectedFederation } = useFederationsContext().state
@@ -160,4 +160,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default Wallet
+export default Home
