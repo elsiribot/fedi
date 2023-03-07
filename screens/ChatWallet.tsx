@@ -6,7 +6,11 @@ import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 
-import { addToMessages, useChatContext } from '../state/contexts/ChatContext'
+import {
+    addToMembersSeen,
+    addToMessages,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useXmpp } from '../state/hooks/chat'
 import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
@@ -47,6 +51,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 message: ecashRequest,
             })
             dispatch(addToMessages(ecashRequest))
+            dispatch(addToMembersSeen(recipient))
             setIsLoading(false)
             navigation.goBack()
         } catch (error) {
