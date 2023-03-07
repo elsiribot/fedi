@@ -94,6 +94,7 @@ import TransactionsHeader from './components/feature/transaction-history/Transac
 
 import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
 import Header from './components/ui/Header'
+import SitesBrowser from './screens/SitesBrowser'
 import { useFederationsContext } from './state/contexts/FederationsContext'
 import { MSats } from './types'
 import {
@@ -176,6 +177,14 @@ const MainNavigator = () => {
                                 options={() => ({
                                     headerShown: false,
                                 })}
+                            />
+                            {/* Sites */}
+                            <Stack.Screen
+                                name="SitesBrowser"
+                                component={SitesBrowser}
+                                options={{
+                                    headerShown: false,
+                                }}
                             />
                             {/* Federation Onboarding */}
                             <Stack.Screen

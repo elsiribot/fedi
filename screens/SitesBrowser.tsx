@@ -16,10 +16,10 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge, useBtcUsdPrice } from '../state/hooks'
 import { MSats, Sats } from '../types'
-import type { SitesStackParamList } from '../types/navigation'
+import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
-export type Props = NativeStackScreenProps<SitesStackParamList, 'SitesBrowser'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { theme } = useTheme()
@@ -298,8 +298,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        // justifyContent: 'space-evenly',
-        // alignItems: 'center',
     },
 })
 

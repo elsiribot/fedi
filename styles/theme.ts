@@ -169,6 +169,7 @@ const theme = createTheme({
     },
     borders: {
         defaultRadius: 16,
+        siteTileRadius: 12,
         progressBarRadius: 4,
     },
     styles: {

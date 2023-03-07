@@ -1,20 +1,16 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import type { Theme } from '@rneui/themed'
-import { Button, Card, Text, useTheme } from '@rneui/themed'
+import { useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
-import SvgImage from '../components/ui/SvgImage'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBtcUsdPrice } from '../state/hooks'
-import { MSats } from '../types'
+import SitesList from '../components/feature/sites/SitesList'
+import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
 } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
 
 export type Props =
     | BottomTabScreenProps<
@@ -24,93 +20,44 @@ export type Props =
           offline: boolean
       }
 
-type BalanceProps = {
-    balance: MSats | null
-}
-
-const Balance = ({ balance }: BalanceProps) => {
-    const { t } = useTranslation()
+const Home: React.FC<Props> = ({ offline }: Props) => {
     const { theme } = useTheme()
-    const { convertSatsToUsdString } = useBtcUsdPrice()
-
-    if (balance !== null) {
-        const amountInSats = amountUtils.msatToSat(balance)
-        return (
-            <View>
-                <Text h2 medium style={styles(theme).balanceText}>
-                    {`$${convertSatsToUsdString(amountInSats)}`}
-                </Text>
-                <Text caption medium style={styles(theme).balanceText}>
-                    {`${amountUtils.formatNumber(amountInSats)} ${t(
-                        'words.sats',
-                    ).toUpperCase()}`}
-                </Text>
-            </View>
-        )
-    } else {
-        return <ActivityIndicator />
-    }
-}
-
-const Home: React.FC<Props> = ({ navigation, offline }: Props) => {
-    const { t } = useTranslation()
-    const { theme } = useTheme()
-    const { selectedFederation } = useFederationsContext().state
     // TODO: Hoist state and listen to bridge for updates
     const [recoveryInProgress] = useState(false)
 
     return (
-        <View style={styles(theme).container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             {recoveryInProgress ? (
                 <SocialRecoveryProcessing />
             ) : (
-                <Card
-                    containerStyle={styles(theme).cardContainer}
-                    wrapperStyle={styles(theme).cardWrapper}>
-                    <View style={styles(theme).titleContainer}>
-                        <SvgImage name="Bitcoin" />
-                        <Text medium style={styles(theme).titleText}>
-                            {t('words.bitcoin')}
-                        </Text>
-                    </View>
-                    <Balance balance={selectedFederation!.balance} />
-                    <View style={styles(theme).buttonsGroupContainer}>
-                        <Button
-                            title={t('words.request')}
-                            onPress={() =>
-                                navigation.navigate(
-                                    offline ? 'ReceiveOffline' : 'Receive',
-                                )
-                            }
-                            containerStyle={styles(theme).buttonContainer}
-                            titleStyle={styles(theme).buttonTitle}
-                            buttonStyle={styles(theme).button}
-                        />
-                        <Button
-                            title={t('words.send')}
-                            onPress={() =>
-                                navigation.navigate(
-                                    offline ? 'SendOfflineAmount' : 'Send',
-                                )
-                            }
-                            containerStyle={styles(theme).buttonContainer}
-                            titleStyle={styles(theme).buttonTitle}
-                            buttonStyle={styles(theme).button}
-                            disabled={!(selectedFederation!.balance > 0)}
-                        />
-                    </View>
-                </Card>
+                <>
+                    <BitcoinWallet offline={offline} />
+                    <SitesList />
+                </>
             )}
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
+        },
+        sitesContainer: {
+            flex: 1,
+            width: '88%',
+            marginVertical: theme.spacing.xl,
+        },
+        sitesTitle: {
+            color: theme.colors.primaryLight,
+            marginBottom: theme.spacing.lg,
+        },
+        sitesListContainer: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
         },
         cardContainer: {
             backgroundColor: theme.colors.orange,
@@ -137,7 +84,7 @@ const styles = (theme: Theme) =>
         balanceText: {
             textAlign: 'center',
             color: theme.colors.secondary,
-            marginBottom: theme.spacing.sm,
+            marginBottom: theme.spacing.xs,
         },
         buttonsGroupContainer: {
             margin: theme.spacing.sm,

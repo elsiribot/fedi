@@ -29,10 +29,6 @@ export type NavigationLinkingConfig = LinkingOptions<
 export type MainNavigatorDrawerParamList = {
     MainNavigator: undefined
 }
-export type SitesStackParamList = {
-    SitesBrowser: { site: Site }
-    SitesList: undefined
-}
 export type TabsNavigatorParamList = {
     Admin: undefined
     Chat: undefined
@@ -84,6 +80,7 @@ export type RootStackParamList = {
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
     SendSuccess: { amount: MSats; unit: string }
+    SitesBrowser: { site: Site }
     Splash: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined
