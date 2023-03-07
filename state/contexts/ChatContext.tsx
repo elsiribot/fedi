@@ -857,6 +857,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     console.info(
                         'no response from XMPP server after 3s, rebuilding XMPP client',
                     )
+                    state.xmppClient?.reconnect.stop()
                     state.xmppClient?.stop()
                     // this will re-trigger the XMPP instantiation effect above
                     dispatch(resetXmppClient())
