@@ -21,7 +21,6 @@ import {
 import Admin from './Admin'
 import ChatScreen from './ChatScreen'
 import Home from './Home'
-import Sites from './Sites'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
@@ -95,21 +94,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                     }}
                                 />
                             )
-                        case 'Sites':
-                            return (
-                                <SvgImage
-                                    name="Globe"
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    svgProps={{
-                                        stroke: focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
-                                />
-                            )
                         case 'Admin':
                             return (
                                 <SvgImage
@@ -163,14 +147,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                             <ChatHeader />
                         </>
                     ),
-                })}
-            />
-            <Tab.Screen
-                name="Sites"
-                component={Sites}
-                options={() => ({
-                    title: t('words.sites'),
-                    headerShown: false,
                 })}
             />
             <Tab.Screen
