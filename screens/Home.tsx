@@ -117,7 +117,7 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
             padding: theme.spacing.sm,
             width: '88%',
-            height: theme.sizes.expandedWalletCardHeight,
+            minHeight: theme.sizes.walletCardHeight,
         },
         cardWrapper: {
             flex: 1,

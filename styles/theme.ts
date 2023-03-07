@@ -137,7 +137,7 @@ const theme = createTheme({
         lg: 48,
         xl: 96,
         adminProfileCircle: 90,
-        expandedWalletCardHeight: 325,
+        walletCardHeight: 200,
         smallAvatar: 32,
         mediumAvatar: 48,
         largeAvatar: 88,
