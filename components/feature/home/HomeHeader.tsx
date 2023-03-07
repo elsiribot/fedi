@@ -1,9 +1,8 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useNavigation } from '@react-navigation/native'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
@@ -17,7 +16,6 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
     offline = false,
 }: HomeHeaderProps) => {
     const { theme } = useTheme()
-    const navigation = useNavigation()
     const { t } = useTranslation()
 
     return (
@@ -44,17 +42,10 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                             }}
                         />
                     </Pressable>
-                    <Pressable
-                        onPress={() => navigation.navigate('Transactions')}
-                        style={{
-                            marginLeft: theme.spacing.sm,
-                        }}>
-                        <Icon name={'format-list-bulleted'} />
-                    </Pressable>
                 </View>
             }
             rightContainerStyle={styles(theme).rightContainer}
-            // Needed to make more room for title in headerLeft
+            // Needed to make more room for Wallet title in headerLeft
             centerContainerStyle={{ flex: 1 }}
         />
     )

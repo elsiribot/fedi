@@ -3,11 +3,11 @@ import type { Theme } from '@rneui/themed'
 import { Button, Card, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { NavigationHook } from '../../../types/navigation'
-import SvgImage from '../../ui/SvgImage'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 import Balance from './Balance'
 
@@ -26,10 +26,16 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
             containerStyle={styles(theme).container}
             wrapperStyle={styles(theme).cardWrapper}>
             <View style={styles(theme).titleContainer}>
-                <SvgImage name="Bitcoin" />
+                <SvgImage name="Bitcoin" size={SvgImageSize.md} />
                 <Text medium style={styles(theme).titleText}>
                     {t('words.bitcoin')}
                 </Text>
+                <Pressable onPress={() => navigation.navigate('Transactions')}>
+                    <SvgImage
+                        name="List"
+                        svgProps={{ stroke: theme.colors.secondary }}
+                    />
+                </Pressable>
             </View>
             <Balance balance={selectedFederation!.balance} />
             <View style={styles(theme).buttonsGroupContainer}>
@@ -90,6 +96,10 @@ const styles = (theme: Theme) =>
             color: theme.colors.secondary,
             paddingHorizontal: theme.spacing.sm,
             flex: 1,
+        },
+        iconsContainer: {
+            flexDirection: 'row',
+            alignItems: 'flex-end',
         },
         buttonsGroupContainer: {
             margin: theme.spacing.sm,
