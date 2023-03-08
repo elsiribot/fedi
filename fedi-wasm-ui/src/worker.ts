@@ -2,7 +2,11 @@
 // request: {token: int, method: string, data: string}
 // response: {event: string, data: string} | {token: int, result: string} | {error: string}
 
-import init, { fedimint_initialize, fedimint_rpc } from "./wasm/fedi_wasm.js";
+import init, {
+  fedimint_initialize,
+  fedimint_rpc,
+  get_logs,
+} from "./wasm/fedi_wasm.js";
 
 const globalInit = (async () => {
   await init("/fedi.wasm");
@@ -23,6 +27,17 @@ async function rpcRequest(method: string, data: string): Promise<string> {
 // handle the request
 onmessage = function (e) {
   const { token, method, data } = e.data;
+  if (method == "getLogs") {
+    (async () => {
+      const file = await get_logs();
+      postMessage({
+        token,
+        // TODO: release data??
+        result: JSON.stringify({ result: URL.createObjectURL(file) }),
+      });
+    })();
+    return;
+  }
   rpcRequest(method, data)
     .then((result) => postMessage({ token, result }))
     .catch((error) => postMessage({ error: String(error) }));

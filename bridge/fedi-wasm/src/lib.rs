@@ -7,6 +7,7 @@ use fediffi::fedimint_core::db::mem_impl::MemDatabase;
 use fediffi::mint_client::module_decode_stubs;
 
 mod db;
+mod db2;
 
 #[wasm_bindgen]
 extern "C" {
@@ -46,11 +47,56 @@ impl fediffi::event::IEventSink for EventSink {
     }
 }
 
+use std::sync::Mutex as StdMutex;
+thread_local! {
+    static LOG_BUFFER: Arc<StdMutex<Vec<u8>>> = Arc::new(StdMutex::new(Vec::new()));
+}
+
 #[wasm_bindgen]
 pub async fn fedimint_initialize(event_sink: EventSink) {
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    tracing_wasm::set_as_global_default();
-    let db = MemDatabase::new();
+    std::panic::set_hook(Box::new(|p| {
+        let buffer = LOG_BUFFER.with(Arc::clone);
+        // the error case should never happen but still avoid a double panic => abort here
+        if let Ok(mut buffer) = buffer.lock() {
+            // Add the panic info to the buffer, so it shows in future get_info calls.
+            buffer.extend_from_slice(&p.to_string().into_bytes());
+            buffer.push(b'\n');
+        }
+
+        console_error_panic_hook::hook(p);
+    }));
+    let buffer = LOG_BUFFER.with(Arc::clone);
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter(tracing_subscriber::EnvFilter::new("info,fediffi=debug,mint_client=trace,fedimint_core::api=trace"))
+        .with_writer({
+            use std::io::{Write, self};
+            use tracing_subscriber::fmt::MakeWriter;
+
+            struct MemWriter<'a, T>(std::sync::MutexGuard<'a, T>);
+            impl<'a, T: Write> Write for MemWriter<'a, T> {
+                fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+                    (*self.0).write(buf)
+                }
+                fn flush(&mut self) -> std::io::Result<()> {
+                    (*self.0).flush()
+                }
+            }
+
+            struct MemMakeWriter<T>(Arc<StdMutex<T>>);
+            impl<'a, T: 'a + Write> MakeWriter<'a> for MemMakeWriter<T> {
+                type Writer = MemWriter<'a, T>;
+                fn make_writer(&'a self) -> Self::Writer {
+                    MemWriter(self.0.lock().expect("lock got posioned"))
+                }
+            }
+
+            MemMakeWriter(LOG_BUFFER.with(Arc::clone))
+        })
+        .without_time()
+        .init();
+
+    let db = db2::MemDatabase::new("main").await.unwrap();
     let db = Database::new(db, module_decode_stubs());
     fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink)).await.unwrap();
 }
@@ -58,4 +104,15 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
 #[wasm_bindgen]
 pub async fn fedimint_rpc(method: String, payload: String) -> String {
     fediffi::fedimint_rpc_async(method, payload).await
+}
+
+#[wasm_bindgen]
+/// Returns a blob with log contents
+pub fn get_logs() -> wasm_bindgen::JsValue {
+    let buffer = LOG_BUFFER.with(Arc::clone);
+    let buffer = buffer.lock().unwrap();
+    // application/octet-stream to convince the browser to download the file
+    (*gloo_file::File::new_with_options("fedi-wasm.log", &**buffer, Some("application/octet-stream"), None))
+        .clone()
+        .into()
 }

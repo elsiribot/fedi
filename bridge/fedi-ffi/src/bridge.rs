@@ -1272,7 +1272,7 @@ impl Federation {
                 .map(|payment| async {
                     // FIXME: don't create rng in here ...
                     let invoice_expired = payment.invoice.would_expire(
-                        SystemTime::now()
+                        fedimint_core::time::now()
                             .duration_since(SystemTime::UNIX_EPOCH)
                             .expect("now should be creater than unix epoch"),
                     );
@@ -1340,7 +1340,7 @@ impl Federation {
             }
 
             // Run once per minute
-            if SystemTime::now()
+            if fedimint_core::time::now()
                 .duration_since(last_poll.clone())
                 .expect("clock went backwards")
                 .as_secs()
@@ -1349,7 +1349,7 @@ impl Federation {
                 fedimint_core::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            last_poll = SystemTime::now();
+            last_poll = fedimint_core::time::now();
 
             let consensus_block_height = fed.fetch_consensus_block_height().await.unwrap_or(0);
             let contracts = fed

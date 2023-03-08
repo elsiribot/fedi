@@ -23,6 +23,7 @@ use std::{
 
 pub use fedimint_core;
 pub use mint_client;
+pub use tokio;
 
 use bitcoin::{secp256k1::Message, Address};
 use error::ErrorCode;
