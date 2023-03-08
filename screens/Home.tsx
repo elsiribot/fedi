@@ -1,216 +1,105 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
-import { t } from 'i18next'
-import React, { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import SvgImage from '../components/ui/SvgImage'
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import type { Theme } from '@rneui/themed'
+import { useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
+import { ScrollView, StyleSheet } from 'react-native'
 
-import AdminHeader from '../components/feature/admin/AdminHeader'
-import ChatHeader from '../components/feature/chat/ChatHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
-import WalletHeader from '../components/feature/wallet/WalletHeader'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import {
-    HomeTabsParamList,
-    HOME_NAVIGATOR_ID,
+import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import SitesList from '../components/feature/sites/SitesList'
+import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
+import type {
     RootStackParamList,
+    TabsNavigatorParamList,
 } from '../types/navigation'
-import Admin from './Admin'
-import ChatScreen from './ChatScreen'
-import Sites from './Sites'
-import Wallet from './Wallet'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
+export type Props =
+    | BottomTabScreenProps<
+          TabsNavigatorParamList & RootStackParamList,
+          'Home'
+      > & {
+          offline: boolean
+      }
 
-const Tab = createBottomTabNavigator<HomeTabsParamList>()
-
-const Home: React.FC<Props> = ({ navigation }: Props) => {
+const Home: React.FC<Props> = ({ offline }: Props) => {
     const { theme } = useTheme()
-    const insets = useSafeAreaInsets()
-    const [offline, setOffline] = useState(false)
-    const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = useFederationsContext().state
-
-    const toggleOffline = () => {
-        if (!offline) {
-            toast?.show('Simulating offline mode ON', 3000)
-        } else {
-            toast?.show('Simulating offline mode OFF', 3000)
-        }
-        setOffline(!offline)
-    }
-
-    // Make sure all users have a username and push them to the
-    // FederationWelcome screen if they don't have one
-    useEffect(() => {
-        if (!selectedFederation?.username) {
-            navigation.replace('FederationWelcome')
-        }
-    }, [navigation, selectedFederation?.username])
-
-    // If we don't have a selected federation, there's nothing to display here
-    // Redirect user to splash screen and render nothing.
-    if (!selectedFederation) {
-        navigation.navigate('Splash')
-        return <View />
-    }
+    // TODO: Hoist state and listen to bridge for updates
+    const [recoveryInProgress] = useState(false)
 
     return (
-        <Tab.Navigator
-            initialRouteName="Wallet"
-            id={HOME_NAVIGATOR_ID}
-            screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused }) => {
-                    switch (route.name) {
-                        case 'Wallet':
-                            return (
-                                <SvgImage
-                                    name="Wallet"
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    svgProps={{
-                                        stroke: focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
-                                />
-                            )
-                        case 'Chat':
-                            return (
-                                <SvgImage
-                                    name="Chat"
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    svgProps={{
-                                        stroke: focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
-                                />
-                            )
-                        case 'Sites':
-                            return (
-                                <SvgImage
-                                    name="Globe"
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    svgProps={{
-                                        stroke: focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
-                                />
-                            )
-                        case 'Admin':
-                            return (
-                                <SvgImage
-                                    name="Cog"
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    svgProps={{
-                                        stroke: focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
-                                />
-                            )
-                        default:
-                            return null
-                    }
-                },
-                tabBarActiveTintColor: theme.colors.primary,
-                tabBarInactiveTintColor: theme.colors.primaryLight,
-                tabBarStyle: styles(theme, insets).tabBar,
-                tabBarItemStyle: styles(theme, insets).tabBarItem,
-                headerTitleStyle: theme.components.Text.style,
-                tabBarLabelStyle: styles(theme, insets).tabBarLabel,
-            })}>
-            <Tab.Screen
-                name="Wallet"
-                initialParams={{ offline }}
-                options={() => ({
-                    title: t('words.wallet'),
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <WalletHeader
-                                toggleOffline={toggleOffline}
-                                offline={offline}
-                            />
-                        </>
-                    ),
-                })}>
-                {props => <Wallet {...props} offline={offline} />}
-            </Tab.Screen>
-            <Tab.Screen
-                name="Chat"
-                component={ChatScreen}
-                options={() => ({
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <ChatHeader />
-                        </>
-                    ),
-                })}
-            />
-            <Tab.Screen
-                name="Sites"
-                component={Sites}
-                options={() => ({
-                    title: t('words.sites'),
-                    headerShown: false,
-                })}
-            />
-            <Tab.Screen
-                name="Admin"
-                component={Admin}
-                options={() => ({
-                    title: t('words.admin'),
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <AdminHeader />
-                        </>
-                    ),
-                })}
-            />
-        </Tab.Navigator>
+        <ScrollView contentContainerStyle={styles(theme).container}>
+            {recoveryInProgress ? (
+                <SocialRecoveryProcessing />
+            ) : (
+                <>
+                    <BitcoinWallet offline={offline} />
+                    <SitesList />
+                </>
+            )}
+        </ScrollView>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
-        tabBar: {
-            backgroundColor: theme.colors.secondary,
-            height: theme.sizes.tabBarHeight + insets.bottom,
-            // hides the default top border on nav
-            borderColor: 'transparent',
-            elevation: 0,
+        container: {
+            alignItems: 'center',
+            justifyContent: 'flex-start',
         },
-        tabBarLabel: {
-            fontFamily: 'AlbertSans-Bold',
+        sitesContainer: {
+            flex: 1,
+            width: '88%',
+            marginVertical: theme.spacing.xl,
         },
-        tabBarIconContainer: {
-            paddingBottom: theme.spacing.xs,
-            marginTop: 'auto',
+        sitesTitle: {
+            color: theme.colors.primaryLight,
+            marginBottom: theme.spacing.lg,
         },
-        tabBarItem: {
-            paddingBottom: theme.spacing.lg,
-        },
-        row: {
+        sitesListContainer: {
             flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+        },
+        cardContainer: {
+            backgroundColor: theme.colors.orange,
+            borderRadius: theme.borders.defaultRadius,
+            padding: theme.spacing.sm,
+            width: '88%',
+            minHeight: theme.sizes.walletCardHeight,
+        },
+        cardWrapper: {
+            flex: 1,
+            justifyContent: 'space-between',
+        },
+        titleContainer: {
+            textAlign: 'left',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: theme.spacing.md,
+        },
+        titleText: {
+            color: theme.colors.secondary,
+            paddingHorizontal: theme.spacing.sm,
+            flex: 1,
+        },
+        balanceText: {
+            textAlign: 'center',
+            color: theme.colors.secondary,
+            marginBottom: theme.spacing.xs,
+        },
+        buttonsGroupContainer: {
+            margin: theme.spacing.sm,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
+        button: {
+            backgroundColor: theme.colors.secondary,
+        },
+        buttonContainer: {
+            margin: theme.spacing.sm,
+            flex: 1,
+        },
+        buttonTitle: {
+            color: theme.colors.primary,
         },
     })
 

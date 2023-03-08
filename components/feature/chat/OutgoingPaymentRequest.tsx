@@ -1,9 +1,8 @@
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import { ValidateEcashResponse } from '../../../bridge'
 import {
     updateMessage,
@@ -12,6 +11,7 @@ import {
 import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
 import { Message, Payment, PaymentStatus } from '../../../types'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPaymentActionsProps = {
     message: Message
@@ -122,9 +122,10 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             case PaymentStatus.paid:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
-                        <Image
-                            source={Images.DoneWhite}
-                            style={styles(theme).paidIcon}
+                        <SvgImage
+                            name="Done"
+                            size={SvgImageSize.xs}
+                            svgProps={{ stroke: theme.colors.secondary }}
                         />
                         <Text medium caption style={styles(theme).statusText}>
                             {t('words.paid')}
@@ -240,10 +241,6 @@ const styles = (theme: Theme) =>
         statusContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-        },
-        paidIcon: {
-            height: theme.sizes.xs,
-            width: theme.sizes.xs,
         },
         statusText: {
             color: theme.colors.secondary,

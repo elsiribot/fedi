@@ -1,10 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../assets/images'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -59,7 +59,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Image style={styles(theme).groupIcon} source={Images.NewRoom} />
+            <SvgImage name="NewRoom" size={SvgImageSize.lg} />
             <View style={styles(theme).inputWrapper}>
                 <Text caption style={styles(theme).inputLabel}>
                     {t('feature.chat.group-name')}
@@ -97,10 +97,6 @@ const styles = (theme: Theme) =>
         },
         button: {
             marginTop: 'auto',
-        },
-        groupIcon: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
         },
         instructionsText: {
             marginVertical: theme.spacing.md,

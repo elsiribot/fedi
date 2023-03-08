@@ -1,30 +1,28 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useNavigation } from '@react-navigation/native'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
-type WalletHeaderProps = {
+type HomeHeaderProps = {
     toggleOffline?: () => void
     offline: boolean
 }
 
-const WalletHeader: React.FC<WalletHeaderProps> = ({
+const HomeHeader: React.FC<HomeHeaderProps> = ({
     toggleOffline,
     offline = false,
-}: WalletHeaderProps) => {
+}: HomeHeaderProps) => {
     const { theme } = useTheme()
-    const navigation = useNavigation()
     const { t } = useTranslation()
 
     return (
         <Header
             headerLeft={
                 <Text onPress={toggleOffline} h2 medium>
-                    {t('words.wallet')}
+                    {t('words.home')}
                 </Text>
             }
             headerRight={
@@ -43,13 +41,6 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({
                                 stroke: theme.colors.primaryLight,
                             }}
                         />
-                    </Pressable>
-                    <Pressable
-                        onPress={() => navigation.navigate('Transactions')}
-                        style={{
-                            marginLeft: theme.spacing.sm,
-                        }}>
-                        <Icon name={'format-list-bulleted'} />
                     </Pressable>
                 </View>
             }
@@ -79,4 +70,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default WalletHeader
+export default HomeHeader

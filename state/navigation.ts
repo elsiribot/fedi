@@ -44,7 +44,7 @@ export function resetAfterGroupNameUpdate(group: Group) {
         ...CommonActions.reset({
             index: 2,
             routes: [
-                { name: 'Home', params: { screen: 'Chat' } },
+                { name: 'TabsNavigator', params: { screen: 'Chat' } },
                 { name: 'GroupChat', params: { group } },
                 {
                     name: 'GroupAdmin',

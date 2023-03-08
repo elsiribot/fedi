@@ -1,9 +1,8 @@
-import { Button, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { Images } from '../../../assets/images'
 import {
     updateMessage,
     useChatContext,
@@ -46,9 +45,10 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
             case PaymentStatus.paid:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
-                        <Image
-                            source={Images.DoneWhite}
-                            style={styles(theme).paidIcon}
+                        <SvgImage
+                            name="Done"
+                            size={SvgImageSize.xs}
+                            svgProps={{ stroke: theme.colors.secondary }}
                         />
                         <Text medium caption style={styles(theme).statusText}>
                             {t('words.paid')}
@@ -278,10 +278,6 @@ const styles = (theme: Theme) =>
         statusContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-        },
-        paidIcon: {
-            height: theme.sizes.xs,
-            width: theme.sizes.xs,
         },
         statusText: {
             color: theme.colors.secondary,

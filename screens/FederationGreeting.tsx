@@ -43,7 +43,7 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
                 fullWidth
                 title={t('feature.onboarding.continue-to-fedi')}
                 onPress={() => {
-                    navigation.replace('Home')
+                    navigation.replace('TabsNavigator')
                 }}
                 containerStyle={styles(theme).button}
             />

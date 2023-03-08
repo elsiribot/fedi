@@ -41,6 +41,7 @@ declare module '@rneui/themed' {
         }
         borders: {
             defaultRadius: number
+            siteTileRadius: number
             progressBarRadius: number
         }
     }

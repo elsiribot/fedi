@@ -44,7 +44,7 @@ const SelectRecoveryFileFailure: React.FC<Props> = ({
                     title={t('phrases.back-to-app')}
                     containerStyle={styles(theme).backToAppButton}
                     onPress={() => {
-                        navigation.replace('Home')
+                        navigation.replace('TabsNavigator')
                     }}
                 />
                 <SelectRecoveryFileButton />

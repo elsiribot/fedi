@@ -38,7 +38,7 @@ const SocialRecoveryFailure: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('phrases.back-to-app')}
                     containerStyle={styles(theme).backToAppButton}
                     onPress={() => {
-                        navigation.navigate('Home')
+                        navigation.navigate('TabsNavigator')
                     }}
                 />
                 <Button

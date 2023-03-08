@@ -45,10 +45,6 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                             width: 20,
                         }}
                     />
-                    {/* <Image
-                        style={styles(theme).image}
-                        source={Images.FederationXIconXs}
-                    /> */}
                     <Text medium small style={styles(theme).federationName}>
                         {selectedFederation?.name}
                     </Text>

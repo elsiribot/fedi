@@ -1,86 +1,60 @@
-import { Card, Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Icon, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    Image,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-    ViewStyle,
-} from 'react-native'
+import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { SiteImages } from '../../../assets/images'
 import { Site } from '../../../types'
 
 type SiteTileProps = {
     site: Site
     selectSite: (site: Site) => void
-    style?: ViewStyle
 }
 
-const SiteTile = ({ site, selectSite, style = {} }: SiteTileProps) => {
+const SiteTile = ({ site, selectSite }: SiteTileProps) => {
     const { theme } = useTheme()
     const siteImage = SiteImages[site.id]
     return (
-        <Card
-            containerStyle={[
-                styles(theme).cardContainer,
-                { backgroundColor: site.color },
-                style,
-            ]}
-            wrapperStyle={styles(theme).cardWrapper}>
-            <TouchableOpacity onPress={() => selectSite(site)}>
-                <View>
-                    {siteImage ? (
-                        <Image
-                            style={styles(theme).icon}
-                            source={siteImage}
-                            resizeMode="contain"
-                        />
-                    ) : (
-                        <Icon
-                            style={styles(theme).icon}
-                            name="web-box"
-                            type="material-community"
-                            color={theme.colors.orange}
-                            size={32}
-                        />
-                    )}
-                </View>
-                <View style={styles(theme).siteTitle}>
-                    <Text caption medium style={styles(theme).siteTitleText}>
-                        {site.title}
-                    </Text>
-                </View>
-                <Text small style={styles(theme).description}>
-                    {site.description}
+        <Pressable
+            style={styles(theme).container}
+            onPress={() => selectSite(site)}>
+            <View>
+                {siteImage ? (
+                    <Image
+                        style={styles(theme).icon}
+                        source={siteImage}
+                        resizeMode="contain"
+                    />
+                ) : (
+                    <Icon
+                        style={styles(theme).icon}
+                        name="web-box"
+                        type="material-community"
+                        color={theme.colors.orange}
+                        size={theme.sizes.lg}
+                    />
+                )}
+            </View>
+            <View style={styles(theme).siteTitle}>
+                <Text caption medium style={styles(theme).siteTitleText}>
+                    {site.title}
                 </Text>
-            </TouchableOpacity>
-        </Card>
+            </View>
+        </Pressable>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        cardContainer: {
-            borderRadius: theme.borders.defaultRadius,
-            padding: theme.spacing.sm,
-            marginBottom: theme.spacing.md,
-            marginHorizontal: theme.spacing.sm,
-            shadowColor: 'transparent',
-            borderColor: 'transparent',
-            shadowOpacity: 0,
-            shadowRadius: 0,
-            elevation: 0,
-            width: '45%',
-        },
-        cardWrapper: {
-            padding: theme.spacing.sm,
+        container: {
+            alignItems: 'center',
+            width: '33%',
+            marginVertical: theme.spacing.md,
         },
         icon: {
-            width: 32,
-            height: 32,
+            width: theme.sizes.lg,
+            height: theme.sizes.lg,
             overflow: 'hidden',
-            borderRadius: 4,
-            marginBottom: theme.spacing.sm,
+            borderRadius: theme.borders.siteTileRadius,
+            marginBottom: theme.spacing.xs,
         },
         siteTitle: {
             flexDirection: 'row',
@@ -89,13 +63,8 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.xs,
         },
         siteTitleText: {
+            textAlign: 'center',
             paddingRight: theme.spacing.xs,
-        },
-        rightAlignedText: {
-            textAlign: 'right',
-        },
-        description: {
-            color: theme.colors.primaryLight,
         },
     })
 

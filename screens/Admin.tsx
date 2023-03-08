@@ -32,12 +32,15 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
-import type { HomeTabsParamList, RootStackParamList } from '../types/navigation'
+import type {
+    RootStackParamList,
+    TabsNavigatorParamList,
+} from '../types/navigation'
 import AmountUtils from '../utils/AmountUtils'
 import stringUtils from '../utils/StringUtils'
 
 export type Props = BottomTabScreenProps<
-    HomeTabsParamList & RootStackParamList,
+    TabsNavigatorParamList & RootStackParamList,
     'Admin'
 >
 
@@ -95,7 +98,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 updateFederations(federations[0].name, federations),
             )
             // FIXME: this doesn't do enough ...
-            navigation.navigate('Home')
+            navigation.navigate('TabsNavigator')
         } else {
             navigation.navigate('Splash')
             federationsDispatch(updateFederations(null, federations))

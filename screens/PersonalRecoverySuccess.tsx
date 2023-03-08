@@ -21,7 +21,9 @@ const PersonalRecoverySuccess: React.FC<Props> = () => {
             buttonText={t('words.okay')}
             // returning members might still need to set their username
             nextScreen={
-                selectedFederation?.username ? 'Home' : 'CreateUsername'
+                selectedFederation?.username
+                    ? 'TabsNavigator'
+                    : 'CreateUsername'
             }
         />
     )
