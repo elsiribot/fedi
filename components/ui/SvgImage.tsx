@@ -5,6 +5,7 @@ import { SvgProps } from 'react-native-svg'
 import * as Svgs from '../../assets/images/svgs'
 
 export enum SvgImageSize {
+    xs = 'xs',
     sm = 'sm',
     md = 'md',
     lg = 'lg',

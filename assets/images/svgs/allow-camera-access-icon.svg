@@ -1,6 +1,6 @@
 <svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="44" cy="44" r="44" fill="white"/>
-<circle cx="44" cy="44" r="44" fill="url(#paint0_radial_4700_47986)" fill-opacity="0.3"/>
+<circle cx="44" cy="44" r="44" fill="white" stroke="white" stroke-opacity="0.01"/>
+<circle cx="44" cy="44" r="44" fill="url(#paint0_radial_4700_47986)" fill-opacity="0.3" stroke="white" stroke-opacity="0.01"/>
 <g clip-path="url(#clip0_4700_47986)">
 <path d="M30.6666 35.6667V34.0001C30.6666 33.116 31.0178 32.2682 31.6429 31.6431C32.2681 31.0179 33.1159 30.6667 34 30.6667H37.3333" stroke="black" stroke-width="3.33333" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M30.6666 52.3333V53.9999C30.6666 54.884 31.0178 55.7318 31.6429 56.3569C32.2681 56.9821 33.1159 57.3333 34 57.3333H37.3333" stroke="black" stroke-width="3.33333" stroke-linecap="round" stroke-linejoin="round"/>
