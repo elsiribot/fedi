@@ -13,6 +13,7 @@ import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
 import { Message, MSats, Payment, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPaymentActionsProps = {
     message: Message
