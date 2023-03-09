@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+
+
 rm fedi-ffi/target/bindings/*.ts
 cargo test -- export_bindings
 # concat all .ts files, remove imports, remove comments, add manual.ts.inc at top
