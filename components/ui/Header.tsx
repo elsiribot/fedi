@@ -53,6 +53,7 @@ const Header: React.FC<HeaderProps> = ({
         leftComponent = (
             <Pressable
                 onPress={() => navigation.goBack()}
+                hitSlop={5}
                 style={{
                     padding: theme.spacing.sm,
                 }}>
@@ -68,6 +69,7 @@ const Header: React.FC<HeaderProps> = ({
         rightComponent = (
             <Pressable
                 onPress={() => navigation.dispatch(reset('TabsNavigator'))}
+                hitSlop={5}
                 style={{
                     padding: theme.spacing.xs,
                 }}>
