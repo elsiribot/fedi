@@ -7,6 +7,7 @@ import { isEqual } from 'lodash'
 import React, {
     createContext,
     MutableRefObject,
+    useCallback,
     useContext,
     useEffect,
     useMemo,
@@ -22,7 +23,6 @@ import {
     FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
-    XMPP_MUC_DOMAIN,
     XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
@@ -68,6 +68,7 @@ enum ActionType {
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
     RESET_CHAT_STATE = 'RESET_CHAT_STATE',
+    RESET_XMPP_CLIENT = 'RESET_XMPP_CLIENT',
     SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_GROUP = 'UPDATE_GROUP',
@@ -167,6 +168,11 @@ export function updateGroup(group: Group): Action {
         payload: group,
     }
 }
+export function resetXmppClient(): Action {
+    return {
+        type: ActionType.RESET_XMPP_CLIENT,
+    }
+}
 export function resetChatState(): Action {
     return {
         type: ActionType.RESET_CHAT_STATE,
@@ -181,6 +187,11 @@ export function reducer(state: AppState, action: Action): AppState {
             const memberIndex = state.membersSeen.findIndex(
                 (m: Member) => m.username === memberToAdd.username,
             )
+
+            // don't add ourselves to membersSeen
+            if (state.xmppClient?.jid?.getLocal() === memberToAdd.username) {
+                return state
+            }
 
             if (memberIndex === -1) {
                 // New members get added
@@ -320,7 +331,7 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 membersSeen: newMembersSeen.map((m: Member) => new Member(m)),
             }
-            }
+        }
         case ActionType.RECEIVE_MESSAGES:
             return {
                 ...state,
@@ -330,6 +341,11 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 groups: [...action.payload].map(r => new Group(r)),
+            }
+        case ActionType.RESET_XMPP_CLIENT:
+            return {
+                ...state,
+                xmppClient: initialState.xmppClient,
             }
         case ActionType.SET_AUTHENTICATED_MEMBER:
             return {
@@ -585,40 +601,107 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         [state, dispatch],
     )
 
+    // Takes a username + password to construct a new XMPP client
+    // and store it in state for later use
+    const buildXmppClient = useCallback(
+        (username: string, password: string) => {
+            try {
+                const xmppConnectionOptions = {
+                    ...XMPP_CONNECTION_OPTIONS,
+                    username: username as string,
+                    password: password as string,
+                }
+                console.info('xmppConnectionOptions', xmppConnectionOptions)
+
+                const xmpp = client(xmppConnectionOptions)
+
+                // debug(xmpp, true)
+                // debug(xmpp, true, `OS=${Platform.OS}`)
+                /*
+                    This ^ helps debug when testing with both ios + android
+                    emulators simultaneously to know which stanzas are coming
+                    from which device
+
+                    requires that you edit @xmpp/debug/index.js in your
+                    node_modules to accept a 3rd parameter and intercept the logs
+                    you want to debug... for example:
+
+                    @xmpp/debug/index.js
+                    module.exports = function debug(entity, force, tag) {
+                        if (process.env.XMPP_DEBUG || force === true) {
+                            entity.on("element", (data) => {
+                                console.debug(`IN (${tag})\n${format(data)}`);
+                            }
+                        }
+                    }
+                    ...
+                */
+
+                // For updating the user's online status
+                xmpp.on('offline', () => {
+                    dispatch(changeUserIsOnline(false))
+                })
+                xmpp.on('online', async _address => {
+                    // Send a presence message
+                    try {
+                        xmpp.send(xml('presence'))
+                    } catch (error) {
+                        console.error('Error sending XMPP presence', error)
+                    }
+
+                    dispatch(changeUserIsOnline(true))
+                    if (xmpp.jid) {
+                        dispatch(
+                            setAuthenticatedMember(
+                                new Member({
+                                    jid: jid(xmpp.jid.toString()),
+                                }),
+                            ),
+                        )
+                    }
+                })
+
+                xmpp.start().catch(console.error)
+
+                // Store the xmppClient in state to be used throughout the app
+                dispatch(setXmppClient(xmpp))
+            } catch (error) {
+                console.error('Failed to build XMPP client')
+            }
+        },
+        [],
+    )
+
+    // This effect instantiates the XMPP client with a websocket connection
+    // and requires a selectedFederation with username + password
     useEffect(() => {
-        // Only attempt XMPP connection if there is a selectedFederation
-        // and a username+password has been created for it
         if (selectedFederationId === null) return
+        // a username must be set before an XMPP connection is attempted
+        // this should be set after creating a username for new members
+        // or after recovering from backup for existing members
         if (!selectedFederation?.username) return
+        // password is derived from seed after joining a federation
         if (!selectedFederation?.password) return
 
-        const xmppConnectionOptions = {
-            ...XMPP_CONNECTION_OPTIONS,
-            username: selectedFederation.username,
-            password: selectedFederation.password,
+        // Only build an XMPP client if none exists in state
+        if (state.xmppClient === null) {
+            buildXmppClient(
+                selectedFederation.username,
+                selectedFederation.password,
+            )
         }
-        console.info('xmppConnectionOptions', xmppConnectionOptions)
+    }, [
+        buildXmppClient,
+        federationsDispatch,
+        selectedFederationId,
+        selectedFederation?.username,
+        selectedFederation?.password,
+        state.xmppClient,
+    ])
 
-        const xmpp = client(xmppConnectionOptions)
-        // debug(xmpp, true)
-
-        // debug(xmpp, true, `OS=${Platform.OS}`)
-        // This ^ helps debug when testing with both ios + android emulators
-        // simultaneously to know which stanzas are coming from which device
-
-        // requires that you edit @xmpp/debug/index.js in your
-        // node_modules to accept a 3rd parameter and intercept the logs
-        // you want to debug... for example:
-
-        // @xmpp/debug/index.js
-        // module.exports = function debug(entity, force, tag) {
-        //     if (process.env.XMPP_DEBUG || force === true) {
-        //       entity.on("element", (data) => {
-        //         console.debug(`IN (${tag})\n${format(data)}`);
-        //      ...
-
-        // Monitor for incoming messages to add to state
-        xmpp.on('stanza', async stanza => {
+    const configureXmppMessageListeners = useCallback(() => {
+        // Monitor for incoming messages
+        state.xmppClient?.on('stanza', async stanza => {
             try {
                 if (stanza.is('message')) {
                     if (stanza.getAttr('type') === 'groupchat') {
@@ -648,12 +731,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                             XMPP_DOMAIN,
                             XMPP_RESOURCE,
                         )
-                        // don't add ourselves to membersSeen
-                        if (selectedFederation.username !== userJid.local) {
-                            dispatch(
-                                addToMembersSeen(new Member({ jid: userJid })),
-                            )
-                        }
+                        dispatch(addToMembersSeen(new Member({ jid: userJid })))
                     } else if (stanza.getAttr('type') === 'chat') {
                         // Handle incoming messages from DirectChat while online
                         const bodyText = stanza.getChildText('body')
@@ -681,14 +759,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                             const from = stanza.getAttr('from')
                             const fromJid = jid(from)
                             const userJid: JID = fromJid
-                            // don't add ourselves to membersSeen
-                            if (selectedFederation.username !== userJid.local) {
-                                dispatch(
-                                    addToMembersSeen(
-                                        new Member({ jid: userJid }),
-                                    ),
-                                )
-                            }
+                            dispatch(
+                                addToMembersSeen(new Member({ jid: userJid })),
+                            )
                         }
                     } else if (
                         stanza.getChild('result')?.getAttr('queryid') ===
@@ -722,17 +795,22 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                             const from = message.getAttr('from')
                             const fromJid = jid(from)
                             const userJid: JID = fromJid
-                            // don't add ourselves to membersSeen
-                            if (selectedFederation.username !== userJid.local) {
-                                dispatch(
-                                    addToMembersSeen(
-                                        new Member({ jid: userJid }),
-                                    ),
-                                )
-                            }
+                            dispatch(
+                                addToMembersSeen(new Member({ jid: userJid })),
+                            )
                         }
                     }
                 }
+            } catch (error) {
+                console.error('Error parsing XMPP stanza', error)
+            }
+        })
+    }, [state.xmppClient])
+
+    const configureXmppQueryListeners = useCallback(() => {
+        // Monitor for incoming iq responses
+        state.xmppClient?.on('stanza', async stanza => {
+            try {
                 if (stanza.is('iq')) {
                     // Needed for handling roster pushes from server
                     if (
@@ -759,72 +837,53 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 console.error('Error parsing XMPP stanza', error)
             }
         })
-
-        // For updating the user's online status
-        xmpp.on('offline', () => {
-            dispatch(changeUserIsOnline(false))
-        })
-        xmpp.on('online', async _address => {
-            // Send a presence message
-            try {
-                xmpp.send(xml('presence'))
-            } catch (error) {
-                console.error('Error sending XMPP presence', error)
-            }
-
-            dispatch(changeUserIsOnline(true))
-            if (xmpp.jid) {
-                dispatch(
-                    setAuthenticatedMember(
-                        new Member({
-                            jid: jid(xmpp.jid.toString()),
-                        }),
-                    ),
-                )
-            }
-        })
-
-        xmpp.start().catch(console.error)
-
-        dispatch(setXmppClient(xmpp))
-    }, [
-        federationsDispatch,
-        selectedFederationId,
-        selectedFederation?.username,
-        selectedFederation?.password,
-    ])
+    }, [state.xmppClient])
 
     // This logic is needed to help gracefully resume the XMPP websocket stream
-    // so that the websocket stream resumes properly
     useEffect(() => {
-        const resumeStream = () => {
-            // the client will likely be instantiated already but guard here
-            try {
-                if (state.xmppClient) {
-                    const xmppClient = state.xmppClient
+        if (state.xmppClient === null) return
 
-                    // Sometimes we send a presence message and do not
-                    // get a response which may mean the stream cannot
-                    // be resumed so we need to restart the client
-                    let reconnectTimer = setTimeout(() => {
-                        xmppClient.restart()
-                    }, 5000)
-                    // This expects a response to the presence message which means
-                    // the stream has been resumed successfully so we can clear
-                    // the reconnectTimer and cleanup the listener
-                    const onStanzaReceived = async (_: Element) => {
-                        xmppClient?.removeListener('stanza', onStanzaReceived)
-                        clearTimeout(reconnectTimer)
-                    }
-                    xmppClient?.on('stanza', onStanzaReceived)
-                    xmppClient?.send(xml('presence'))
+        const resumeXmppStream = () => {
+            console.info(
+                'resuming xmpp stream after coming back into foreground',
+            )
+            try {
+                const xmppClient = state.xmppClient
+
+                // Sometimes we send a presence message and do not
+                // get a response which may mean the stream cannot
+                // be resumed so we need to stop and rebuild the client
+                let reconnectTimer = setTimeout(() => {
+                    console.info(
+                        'no response from XMPP server after 3s, rebuilding XMPP client',
+                    )
+                    state.xmppClient?.reconnect.stop()
+                    state.xmppClient?.stop()
+                    // this will re-trigger the XMPP instantiation effect above
+                    dispatch(resetXmppClient())
+                }, 3000)
+                // This expects a response to the presence message which means
+                // the stream has been resumed successfully so we can clear
+                // the reconnectTimer and cleanup the listener
+                const onStanzaReceived = async (_: Element) => {
+                    xmppClient?.removeListener('stanza', onStanzaReceived)
+                    console.info(
+                        'XMPP server responded, do not rebuild XMPP client',
+                    )
+                    clearTimeout(reconnectTimer)
                 }
+                state.xmppClient?.on('stanza', onStanzaReceived)
+                console.info(
+                    'sending presence to XMPP server to test for stable stream',
+                )
+                state.xmppClient?.send(xml('presence'))
             } catch (error) {
-                console.error('Failed to re-establish XMPP presence')
+                console.error('Failed to resume XMPP stream')
             }
         }
 
-        // Subscribe to changes in AppState
+        // Subscribe to changes in AppState to detect when app goes from
+        // background to foreground
         const subscription = RNAppState.addEventListener(
             'change',
             nextAppState => {
@@ -832,21 +891,32 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     appStateRef.current.match(/inactive|background/) &&
                     nextAppState === 'active'
                 ) {
-                    resumeStream()
+                    resumeXmppStream()
                 }
                 appStateRef.current = nextAppState
             },
         )
-
-        return () => {
-            subscription.remove()
-        }
+        return () => subscription.remove()
     }, [state.xmppClient])
+
+    // This effect adds event listeners to the xmppClient so it can react
+    // to various kinds of XMPP stanzas sent by the server
+    useEffect(() => {
+        if (state.xmppClient !== null) {
+            console.info('setting up XMPP listeners')
+            configureXmppMessageListeners()
+            configureXmppQueryListeners()
+        }
+    }, [
+        configureXmppMessageListeners,
+        configureXmppQueryListeners,
+        state.xmppClient,
+    ])
 
     // Update async storage when groups are added
     useEffect(() => {
         if (state.groups.length > DEFAULT_GROUPS.length) {
-            console.log('storing', state.groups.length, 'groups')
+            console.info('storing', state.groups.length, 'groups')
             AsyncStorage.setItem(
                 CHAT_GROUPS_PERSISTENCE_KEY,
                 JSON.stringify({ groups: state.groups }),
@@ -857,7 +927,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // Update async storage when members are added
     useEffect(() => {
         if (state.membersSeen.length > 0) {
-            console.log('storing', state.membersSeen.length, 'members')
+            console.info('storing', state.membersSeen.length, 'members')
             AsyncStorage.setItem(
                 CHAT_MEMBERS_PERSISTENCE_KEY,
                 JSON.stringify({ members: state.membersSeen }),
@@ -868,7 +938,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // Update async storage when messages are added
     useEffect(() => {
         if (state.messages.length > 0) {
-            console.log('storing', state.messages.length, 'messages')
+            console.info('storing', state.messages.length, 'messages')
             AsyncStorage.setItem(
                 CHAT_MESSAGES_PERSISTENCE_KEY,
                 JSON.stringify({ messages: state.messages }),
