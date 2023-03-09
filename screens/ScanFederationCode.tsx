@@ -4,6 +4,7 @@ import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 import { joinFederation, listFederations } from '../bridge'
 
@@ -22,6 +23,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { state, dispatch } = useFederationsContext()
@@ -117,11 +119,11 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 />
             }
             message={t('feature.federations.camera-access-information')}>
-            <View style={styles(theme).container}>
-                <View style={styles(theme).cameraScannerContainer}>
+            <View style={styles(theme, insets).container}>
+                <View style={styles(theme, insets).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
-                <View style={styles(theme).buttonContainer}>
+                <View style={styles(theme, insets).buttonContainer}>
                     <Button
                         disabled={federationToJoin !== ''}
                         loading={federationToJoin !== ''}
@@ -135,12 +137,12 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
         },
         cameraScannerContainer: {
             height: '80%',
@@ -149,7 +151,9 @@ const styles = (theme: Theme) =>
         },
         buttonContainer: {
             width: '100%',
-            paddingHorizontal: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.xl,
+            marginTop: 'auto',
+            marginBottom: theme.spacing.xl + insets.bottom,
         },
     })
 

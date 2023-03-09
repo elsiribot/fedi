@@ -4,6 +4,7 @@ import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
 import { AddressOrInvoice } from '../bridge'
@@ -18,6 +19,7 @@ import { normalizePaymentRequest } from '../utils/UriUtils'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { addressOrInvoice } = useBridge()
@@ -108,12 +110,12 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 />
             }
             message={t('feature.send.camera-access-information')}>
-            <View style={styles(theme).container}>
-                <View style={styles(theme).cameraScannerContainer}>
+            <View style={styles(theme, insets).container}>
+                <View style={styles(theme, insets).cameraScannerContainer}>
                     {renderQrCodeScanner()}
                 </View>
 
-                <View style={styles(theme).buttonsContainer}>
+                <View style={styles(theme, insets).buttonsContainer}>
                     <Button
                         fullWidth
                         type="clear"
@@ -125,6 +127,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                         title={t('feature.send.paste-payment-request')}
                         onPress={checkClipboard}
                         loading={inputToProcess !== ''}
+                        containerStyle={styles(theme, insets).bottomButton}
                     />
                 </View>
             </View>
@@ -132,23 +135,31 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
+            paddingTop: theme.spacing.lg,
         },
+        // flex: 0 takes only the space it needs to render the buttons while
+        // flex: 1 makes sure to take the remaining available space
         cameraScannerContainer: {
-            height: '75%',
+            flex: 1,
             width: '100%',
-            margin: theme.spacing.md,
         },
         buttonsContainer: {
-            height: '25%',
-            justifyContent: 'space-between',
-            padding: theme.spacing.xl,
+            flex: 0,
+            justifyContent: 'flex-end',
+            paddingHorizontal: theme.spacing.xl,
             width: '100%',
+            marginTop: theme.spacing.xl,
+            marginBottom: theme.spacing.xl + insets.bottom,
+        },
+        // adds space between the 2 buttons
+        bottomButton: {
+            marginTop: theme.spacing.lg,
         },
     })
 
