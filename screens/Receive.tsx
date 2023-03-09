@@ -3,6 +3,7 @@ import { Button, Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
@@ -15,6 +16,7 @@ import amountUtils from '../utils/AmountUtils'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
 const Receive: React.FC<Props> = ({ navigation }: Props) => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
@@ -77,7 +79,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <View style={styles(theme, insets).container}>
             <Input
                 autoFocus
                 onChangeText={onChangeText as (_: string) => any}
@@ -85,7 +87,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 placeholder={`${t('words.amount')} (${t('words.sats')})`}
                 keyboardType="numeric"
                 returnKeyType="done"
-                containerStyle={styles(theme).textInput}
+                containerStyle={styles(theme, insets).textInput}
             />
             <UsdAmount amountSats={Number(amount) as Sats} />
             <Button
@@ -98,22 +100,23 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 onPress={() => setGeneratingInvoice(true)}
                 disabled={!amountIsValid || generatingInvoice}
                 loading={generatingInvoice}
-                containerStyle={styles(theme).button}
+                containerStyle={styles(theme, insets).button}
             />
         </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
         },
         button: {
             marginTop: 'auto',
+            marginBottom: theme.spacing.xl + insets.bottom,
         },
         textInput: {
             width: '80%',
