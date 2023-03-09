@@ -30,6 +30,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             style={styles(theme).container}
             contentContainerStyle={styles(theme).contentContainer}
             onContentSizeChange={() => listRef.current?.scrollToEnd()}
+            removeClippedSubviews={false}
             ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
         />
     )
