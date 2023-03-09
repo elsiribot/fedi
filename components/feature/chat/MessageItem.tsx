@@ -18,6 +18,7 @@ import { NavigationHook } from '../../../types/navigation'
 import dateUtils from '../../../utils/DateUtils'
 import stringUtils from '../../../utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
+import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
@@ -114,9 +115,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
                                         : styles(theme).incomingLinkedText
                                 }
                                 onPress={url => Linking.openURL(url)}>
-                                <Text caption medium style={textStyles}>
-                                    {message.content}
-                                </Text>
+                                <MessageContents
+                                    content={message.content}
+                                    textStyles={textStyles}
+                                />
                             </Hyperlink>
                         )}
                     </View>
