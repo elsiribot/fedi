@@ -17,8 +17,6 @@ const GroupHeader: React.FC<{}> = () => {
     const route = useRoute<GroupChatRouteProp>()
     const { group } = route.params
 
-    // Mocked groupLink format: fedi:group:uniqueGroupId::userDefinedGroupName
-    // If userDefinedGroupName is not provided, assume it is a new group
     const headerText = group.name || t('feature.chat.new-group')
 
     return (

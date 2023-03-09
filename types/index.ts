@@ -90,15 +90,15 @@ export class Chat extends Base {
 export class Group extends Chat {
     description?: string
     settings?: GroupSettings
-    // TODO: What exactly is encoded in this invitationCode?
     invitationCode?: FediGroupLink
 
     // TODO: Harden this encoding scheme (use standard URL params?)
     static encodeInvitationLink(id: string): string {
-        return `fedi:group:${id}`
+        return `fedi:group:${id}:::`
     }
     static decodeInvitationLink(link: string): Group {
-        const groupId = link.split('fedi:group:')[1]
+        const afterPrefix = link.split('fedi:group:')[1]
+        const groupId = afterPrefix.slice(0, -3)
         if (!groupId) throw new Error(i18n.t('errors.unknown-error'))
 
         return new Group({

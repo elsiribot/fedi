@@ -46,9 +46,9 @@ export const useXmpp = () => {
         ),
         fetchMucRoomConfig: useCallback(
             (group: Group) => {
-                return fetchMucRoomConfig(group, dispatch, xmppClient)
+                return fetchMucRoomConfig(group, xmppClient)
             },
-            [dispatch, xmppClient],
+            [xmppClient],
         ),
         fetchMessagesFromArchive: useCallback(
             (

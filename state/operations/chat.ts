@@ -1,7 +1,11 @@
 import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 
-import { XMPP_DOMAIN, XMPP_MUC_DOMAIN } from '../../constants'
+import {
+    DEFAULT_GROUP_NAME,
+    XMPP_DOMAIN,
+    XMPP_MUC_DOMAIN,
+} from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
@@ -163,9 +167,8 @@ export const fetchRoster = (
 
 export const fetchMucRoomConfig = (
     group: Group,
-    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<boolean> => {
+): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
 
@@ -176,9 +179,9 @@ export const fetchMucRoomConfig = (
                     from: xmppClient!.jid!.toString(),
                     to: `${group.id}@${XMPP_MUC_DOMAIN}`,
                 }),
-                        )
+            )
             const result = await iqCaller.request(roomConfigQueryXml)
-            console.log('fetchMucRoomConfig', result)
+            console.info('fetchMucRoomConfig', result)
             if (result.getChild('query')) {
                 const groupName = result
                     .getChild('query')
@@ -186,20 +189,16 @@ export const fetchMucRoomConfig = (
                     ?.getChildByAttr('var', 'muc#roomconfig_roomname')
                     ?.getChildText('value')
 
-                        dispatch(
-                            updateGroup(
-                                new Group({
-                                    ...group,
-                            name: groupName,
-                                }),
-                            ),
-                        )
-                    }
+                console.info('result:groupName', groupName)
+
+                resolve(groupName || DEFAULT_GROUP_NAME)
+            }
         } catch (error) {
             console.error('fetchMucRoomConfig', error)
-                }
+            reject(i18n.t('errors.unknown-error'))
+        }
     })
-            }
+}
 
 export const getUniqueGroupId = (
     xmppClient: Client | null,

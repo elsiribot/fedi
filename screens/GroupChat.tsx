@@ -7,19 +7,19 @@ import uuid from 'react-native-uuid'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import { useChatContext } from '../state/contexts/ChatContext'
+import { updateGroup, useChatContext } from '../state/contexts/ChatContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
 import { usePrevious } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Message } from '../types'
+import { Group, Message } from '../types'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
-    const { state } = useChatContext()
+    const { state, dispatch } = useChatContext()
     const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
     const { group: currentGroup } = route.params
     const previousGroup = usePrevious(currentGroup)
@@ -40,8 +40,17 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
 
     // fetch room config to see if name has changed
     useEffect(() => {
-        fetchMucRoomConfig(currentGroup)
-    }, [currentGroup, fetchMucRoomConfig])
+        fetchMucRoomConfig(currentGroup).then(groupName => {
+            dispatch(
+                updateGroup(
+                    new Group({
+                        ...currentGroup,
+                        name: groupName,
+                    }),
+                ),
+            )
+        })
+    }, [currentGroup, dispatch, fetchMucRoomConfig])
 
     // update route param if name has changed
     useEffect(() => {
