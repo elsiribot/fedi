@@ -29,6 +29,7 @@ const FederationInviteHeader: React.FC<{}> = () => {
             headerRight={
                 <Pressable
                     onPress={() => navigation.replace('TabsNavigator')}
+                    hitSlop={5}
                     style={{
                         padding: theme.spacing.sm,
                     }}>

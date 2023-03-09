@@ -29,6 +29,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 <View style={styles(theme).iconsContainer}>
                     <Pressable
                         onPress={toggleOffline}
+                        hitSlop={5}
                         style={{
                             marginRight: theme.spacing.sm,
                         }}>

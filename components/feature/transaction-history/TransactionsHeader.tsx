@@ -17,6 +17,7 @@ const TransactionsHeader: React.FC<{}> = () => {
             headerRight={
                 <Pressable
                     onPress={() => navigation.goBack()}
+                    hitSlop={5}
                     style={{
                         padding: theme.spacing.sm,
                     }}>

@@ -24,6 +24,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
                 <View style={styles(theme).container}>
                     <Pressable
                         onPress={() => webViewRef.current.goBack()}
+                        hitSlop={10}
                         style={styles(theme).padded}>
                         <Icon
                             size={30}
@@ -33,6 +34,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
+                        hitSlop={10}
                         style={[
                             styles(theme).rightArrow,
                             styles(theme).padded,
@@ -48,6 +50,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
             headerRight={
                 <Pressable
                     style={styles(theme).padded}
+                    hitSlop={10}
                     onPress={() => navigation.goBack()}>
                     <Icon size={30} name={'close'} />
                 </Pressable>
