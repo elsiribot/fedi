@@ -1,0 +1,20 @@
+[package]
+name = "fedimintd-fedi"
+version = "0.1.0"
+authors = ["The Fedi Developers"]
+edition = "2021"
+description = "fedimintd with custom fedi modules"
+
+[[bin]]
+name = "fedimintd"
+path = "src/main.rs"
+
+
+[dependencies]
+anyhow = "1.0.66"
+fedimintd = { workspace = true}
+tokio = { version = "1.25.0", features = ["full", "tracing"] }
+fedi-social-server = { path = "../fedi-social-server" }
+
+[build-dependencies]
+fedimint-build = {  git = "https://github.com/fedimint/fedimint" }
