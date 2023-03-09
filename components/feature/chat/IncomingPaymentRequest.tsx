@@ -189,13 +189,23 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                 setGeneratedEcashToken(ecash)
             } catch (error) {
                 console.error(error)
+                toast?.show(t('errors.unknown-error'), 3000)
+                // Reset the action buttons here to try again
+                setPaymentProcessing(false)
             }
         }
 
         if (paymentProcessing === true) {
             generateAndSendEcash()
         }
-    }, [dispatch, generateEcash, paymentProcessing, message.payment?.amount])
+    }, [
+        dispatch,
+        generateEcash,
+        paymentProcessing,
+        message.payment?.amount,
+        toast,
+        t,
+    ])
 
     useEffect(() => {
         const prepareAndSendPayment = async () => {
