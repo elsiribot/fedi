@@ -11,7 +11,7 @@ checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 [[package]]
 name = "aead"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "hex",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "fedi-social"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "aead",
  "anyhow",
@@ -685,7 +685,7 @@ dependencies = [
 [[package]]
 name = "fedimint-bitcoind"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -701,7 +701,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -743,7 +743,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
@@ -754,7 +754,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive-secret"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "fedimint-core",
@@ -767,7 +767,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -795,7 +795,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -823,7 +823,7 @@ dependencies = [
 [[package]]
 name = "fedimint-rocksdb"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -837,7 +837,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1145,7 +1145,7 @@ checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 [[package]]
 name = "hbbft"
 version = "0.1.1"
-source = "git+https://github.com/jkitman/hbbft?branch=upgrade-threshold-crypto-libs#3951544ab6834f56d300d065f43e673a6009ecad"
+source = "git+https://github.com/fedimint/hbbft#ff7069e7a276e35ded01a0f376986cbe00433031"
 dependencies = [
  "bincode",
  "byteorder",
@@ -1214,7 +1214,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hkdf"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "bitcoin_hashes 0.11.0",
 ]
@@ -1704,7 +1704,7 @@ dependencies = [
 [[package]]
 name = "mint-client"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "aead",
  "anyhow",
@@ -2652,7 +2652,7 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 [[package]]
 name = "tbs"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rev=39c0f39119586aa3551719da9efe5f6a60bde82e#39c0f39119586aa3551719da9efe5f6a60bde82e"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?branch=rel-a01-bridge#fcc31c41ecb5b08b61b5bc790452e172ce77017e"
 dependencies = [
  "bitcoin_hashes 0.11.0",
  "bls12_381",
@@ -2734,7 +2734,7 @@ dependencies = [
 [[package]]
 name = "threshold_crypto"
 version = "0.4.0"
-source = "git+https://github.com/jkitman/threshold_crypto?branch=upgrade-threshold-crypto-libs#82146b3eecd6602231c7741f508f9d910e887072"
+source = "git+https://github.com/fedimint/threshold_crypto#f5b283e74268f566eae7439a2b82bef14cdd0b2a"
 dependencies = [
  "bls12_381",
  "byteorder",
