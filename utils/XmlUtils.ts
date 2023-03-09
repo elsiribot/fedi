@@ -1,5 +1,7 @@
 import { xml } from '@xmpp/client'
 import { Element } from 'ltx'
+import uuid from 'react-native-uuid'
+
 import { XMPP_DEFAULT_PAGE_LIMIT, XMPP_MUC_DOMAIN } from '../constants'
 import { ArchiveQueryFilters, ArchiveQueryPagination } from '../types'
 
@@ -54,7 +56,7 @@ export class AddToRosterQuery extends XmppQuery {
         return xml(
             'iq',
             {
-                id: 'add-to-roster',
+                id: `add-to-roster-${uuid.v4()}`,
                 from,
                 type: 'set',
             },
@@ -108,7 +110,7 @@ export class GetMessagesQuery extends XmppQuery {
         return xml(
             'iq',
             {
-                id: 'get-messages',
+                id: `get-messages-${uuid.v4()}`,
                 type: 'set',
             },
             xml(
@@ -141,7 +143,7 @@ export class GetRoomConfigQuery extends XmppQuery {
         return xml(
             'iq',
             {
-                id: 'get-room-config',
+                id: `get-room-config-${uuid.v4()}`,
                 from,
                 to,
                 type: 'get',
@@ -167,7 +169,7 @@ export class GetRosterQuery extends XmppQuery {
         return xml(
             'iq',
             {
-                id: 'get-roster',
+                id: `get-roster-${uuid.v4()}`,
                 from,
                 type: 'get',
             },
@@ -231,7 +233,7 @@ export class SetRoomConfigQuery extends XmppQuery {
         return xml(
             'iq',
             {
-                id: 'set-room-config',
+                id: `set-room-config-${uuid.v4()}`,
                 from,
                 to,
                 type: 'set',
@@ -248,7 +250,7 @@ export class UniqueRoomNameQuery extends XmppQuery {
             {
                 type: 'get',
                 to: XMPP_MUC_DOMAIN,
-                id: 'get-unique-room-name',
+                id: `get-unique-room-name-${uuid.v4()}`,
             },
             xml('unique', {
                 xmlns: 'http://jabber.org/protocol/muc#unique',
@@ -262,7 +264,6 @@ class XmlUtils {
         console.debug('buildQuery', 'name:', query.name, 'args:', query.args)
         return query.build()
     }
-
 }
 
 const xmlUtils = new XmlUtils()
