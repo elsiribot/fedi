@@ -1,9 +1,7 @@
 import { xml } from '@xmpp/client'
-import { JID } from '@xmpp/jid'
-import { Element } from 'ltx'
 import { useCallback } from 'react'
 
-import { DEFAULT_GROUP_NAME, XMPP_MUC_DOMAIN } from '../../constants'
+import { XMPP_MUC_DOMAIN } from '../../constants'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
@@ -12,16 +10,19 @@ import {
     OutgoingGroupMessage,
     OutgoingMessage,
 } from '../../types'
-import { addToGroups, useChatContext } from '../contexts/ChatContext'
+import { useChatContext } from '../contexts/ChatContext'
 import {
     addMemberToRoster,
     changeMucRoomName,
+    enterMucRoom,
     fetchMessagesFromArchive,
     fetchMucRoomConfig,
     fetchRoster,
     getUniqueGroupId,
 } from '../operations/chat'
 
+// This is a React hook providing the full set of functions that use the
+// xmppClient to perform chat operations
 export const useXmpp = () => {
     const { state, dispatch } = useChatContext()
     const { xmppClient } = state
@@ -70,128 +71,13 @@ export const useXmpp = () => {
         getUniqueGroupId: useCallback((): Promise<string> => {
             return getUniqueGroupId(xmppClient)
         }, [xmppClient]),
-        // TODO: Refactor remaining functions to use operations/chat.ts
-        // enterMucRoom: useCallback(
-        //     (group: Group) => {
-        //         return enterMucRoom(group, dispatch, xmppClient)
-        //     },
-        //     [dispatch, xmppClient],
-        // ),
         enterMucRoom: useCallback(
-            (group: Group) => {
-                if (!xmppClient?.jid) return
-                try {
-                    const { local, domain, resource } = xmppClient?.jid as JID
-                    const fromUser = `${local}@${domain}/${resource}`
-                    const onStanzaReceived = async (stanza: Element) => {
-                        // Receive a registration response from the server
-                        if (
-                            stanza.is('presence') &&
-                            stanza.getAttr('id') === 'enter-muc-room'
-                        ) {
-                            const result = stanza.getChild('x')
-                            const statusResults = result?.getChildren('status')
-
-                            statusResults?.map(async sr => {
-                                // status 201 = configuration required, send an room
-                                // configuration query to allow others to join
-                                // https://xmpp.org/extensions/xep-0045.html#createroom-reserved
-                                if (sr?.getAttr('code') === '201') {
-                                    const roomNameFieldXml = xml(
-                                        'field',
-                                        {
-                                            var: 'muc#roomconfig_roomname',
-                                        },
-                                        xml(
-                                            'value',
-                                            {},
-                                            group.name || DEFAULT_GROUP_NAME,
-                                        ),
-                                    )
-                                    const persistenceFieldXml = xml(
-                                        'field',
-                                        {
-                                            var: 'muc#roomconfig_persistentroom',
-                                        },
-                                        xml('value', {}, '1'),
-                                    )
-                                    const roomConfigQueryXml = xml(
-                                        'query',
-                                        {
-                                            xmlns: 'http://jabber.org/protocol/muc#owner',
-                                        },
-                                        xml(
-                                            'x',
-                                            {
-                                                xmlns: 'jabber:x:data',
-                                                type: 'submit',
-                                            },
-                                            xml(
-                                                'field',
-                                                { var: 'FORM_TYPE' },
-                                                xml(
-                                                    'value',
-                                                    {},
-                                                    'http://jabber.org/protocol/muc#roomconfig',
-                                                ),
-                                            ),
-                                            roomNameFieldXml,
-                                            persistenceFieldXml,
-                                        ),
-                                    )
-                                    xmppClient?.send(
-                                        xml(
-                                            'iq',
-                                            {
-                                                from: fromUser,
-                                                to: `${group.id}@${XMPP_MUC_DOMAIN}`,
-                                                id: 'create-muc-room',
-                                                type: 'set',
-                                            },
-                                            roomConfigQueryXml,
-                                        ),
-                                    )
-                                }
-                                // status 110 = self-presence message which confirms
-                                // occupancy in room to be added to context
-                                if (sr?.getAttr('code') === '110') {
-                                    xmppClient?.removeListener(
-                                        'stanza',
-                                        onStanzaReceived,
-                                    )
-                                    dispatch(addToGroups(group))
-                                }
-                            })
-                        }
-                    }
-                    xmppClient?.on('stanza', onStanzaReceived)
-
-                    // do we need to clean up listeners if dependencies change
-                    // and this callback gets re-run? count listeners to monitor this
-                    console.info(
-                        'xmppClient has',
-                        xmppClient?.listenerCount('stanza'),
-                        'stanza listeners',
-                    )
-                    xmppClient?.send(
-                        xml(
-                            'presence',
-                            {
-                                from: fromUser,
-                                to: `${group.id}@${XMPP_MUC_DOMAIN}/${local}`,
-                                id: 'enter-muc-room',
-                            },
-                            xml('x', {
-                                xmlns: 'http://jabber.org/protocol/muc',
-                            }),
-                        ),
-                    )
-                } catch (error) {
-                    console.error('enterMucRoom error', error)
-                }
+            async (group: Group) => {
+                return enterMucRoom(group, xmppClient)
             },
-            [dispatch, xmppClient],
+            [xmppClient],
         ),
+        // TODO: Refactor remaining functions to use operations/chat.ts
         sendUpdatedPaymentMessage: useCallback(
             ({ message, to }: OutgoingMessage) => {
                 const fromJid = xmppClient?.jid?.toString()
@@ -290,6 +176,7 @@ export const useXmpp = () => {
             },
             [xmppClient],
         ),
+        // For development purposes only
         sendTestXml: useCallback(() => {
             xmppClient?.send(
                 xml(

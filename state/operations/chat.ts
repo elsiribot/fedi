@@ -1,5 +1,9 @@
+// This file contains logic for preparing XML, sending XMPP stanzas
+// to the chat server, and handling responses (if any)
+
 import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
+import { Element } from 'ltx'
 
 import {
     DEFAULT_GROUP_NAME,
@@ -15,6 +19,7 @@ import {
 } from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
+    EnterMucRoomPresence,
     GetMessagesQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
@@ -217,6 +222,69 @@ export const getUniqueGroupId = (
             resolve(roomName)
         } catch (error: any) {
             console.error('getUniqueGroupId', error)
+        }
+    })
+}
+
+export const enterMucRoom = (
+    group: Group,
+    xmppClient: Client | null,
+): Promise<Group> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromUser = xmppClient!.jid!.toString()
+
+            const enterMucRoomPresence = xmlUtils.buildPresence(
+                new EnterMucRoomPresence({
+                    from: fromUser,
+                    groupId: group.id,
+                }),
+            )
+            const onStanzaReceived = async (stanza: Element) => {
+                // Receive a registration response from the server
+                if (
+                    stanza.is('presence') &&
+                    stanza.getAttr('id') === 'enter-muc-room'
+                ) {
+                    const result = stanza.getChild('x')
+                    const statusResults = result?.getChildren('status')
+
+                    statusResults?.map(async sr => {
+                        // status 201 = configuration required, send a room
+                        // configuration query to allow others to join
+                        // https://xmpp.org/extensions/xep-0045.html#createroom-reserved
+                        if (sr?.getAttr('code') === '201') {
+                            console.info('Received room configuration required')
+                            const { iqCaller } = xmppClient! as Client
+                            const roomConfigQueryXml = xmlUtils.buildQuery(
+                                new SetRoomConfigQuery({
+                                    roomName: group.name || DEFAULT_GROUP_NAME,
+                                    from: fromUser,
+                                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                }),
+                            )
+                            console.info('Sending config for new group')
+                            iqCaller.request(roomConfigQueryXml)
+                        }
+                        // status 110 = self-presence message which confirms
+                        // occupancy in room to be added to context
+                        if (sr?.getAttr('code') === '110') {
+                            xmppClient?.removeListener(
+                                'stanza',
+                                onStanzaReceived,
+                            )
+                            resolve(group)
+                        }
+                    })
+                }
+            }
+            xmppClient?.on('stanza', onStanzaReceived)
+            xmppClient?.send(enterMucRoomPresence)
+        } catch (error) {
+            console.error('enterMucRoom', error)
+            reject(i18n.t('errors.unknown-error'))
         }
     })
 }

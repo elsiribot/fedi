@@ -7,7 +7,11 @@ import uuid from 'react-native-uuid'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import { updateGroup, useChatContext } from '../state/contexts/ChatContext'
+import {
+    addToGroups,
+    updateGroup,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -32,11 +36,13 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
 
     useEffect(() => {
         // announce presence + add to state.groups
-        enterMucRoom(currentGroup)
+        enterMucRoom(currentGroup).then((group: Group) => {
+            dispatch(addToGroups(group))
+        })
         // TODO: some new messages will be received automatically after
         // enterMucRoom is called but we should check archive here
         // to make sure we get them all
-    }, [currentGroup, enterMucRoom])
+    }, [currentGroup, dispatch, enterMucRoom])
 
     // fetch room config to see if name has changed
     useEffect(() => {

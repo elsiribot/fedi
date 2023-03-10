@@ -1,4 +1,5 @@
-import { xml } from '@xmpp/client'
+import { jid, xml } from '@xmpp/client'
+import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
 import uuid from 'react-native-uuid'
 
@@ -21,18 +22,33 @@ export type GetRosterArgs = CommonXmppAttributes
 export interface SetRoomConfigArgs extends CommonXmppAttributes {
     roomName: string
 }
-type XmppQueryArgs =
+export interface EnterMucRoomArgs extends CommonXmppAttributes {
+    groupId: string
+}
+
+type XmppArgs =
     | AddToRosterArgs
     | GetMessagesArgs
     | GetRoomConfigArgs
     | SetRoomConfigArgs
     | GetRosterArgs
+    | EnterMucRoomArgs
 
-class XmppQuery {
+class XmppStanza {
+    tag: string
     name: string
-    args?: XmppQueryArgs
+    args?: XmppArgs
     build: () => Element
 }
+
+class XmppQuery extends XmppStanza {
+    tag = 'iq'
+}
+
+class XmppPresence extends XmppStanza {
+    tag = 'presence'
+}
+
 export class AddToRosterQuery extends XmppQuery {
     name = 'addToRoster'
     args: AddToRosterArgs
@@ -53,17 +69,16 @@ export class AddToRosterQuery extends XmppQuery {
             }),
         )
 
-        return xml(
-            'iq',
-            {
-                id: `add-to-roster-${uuid.v4()}`,
-                from,
-                type: 'set',
-            },
-            queryBodyXml,
-        )
+        const attributes = {
+            id: `add-to-roster-${uuid.v4()}`,
+            from,
+            type: 'set',
+        }
+
+        return xml(this.tag, attributes, queryBodyXml)
     }
 }
+
 export class GetMessagesQuery extends XmppQuery {
     name = 'getMessages'
     args: GetMessagesArgs
@@ -107,12 +122,14 @@ export class GetMessagesQuery extends XmppQuery {
                   xml('max', {}, pagination?.limit || XMPP_DEFAULT_PAGE_LIMIT),
               )
 
+        const attributes = {
+            id: `get-messages-${uuid.v4()}`,
+            type: 'set',
+        }
+
         return xml(
-            'iq',
-            {
-                id: `get-messages-${uuid.v4()}`,
-                type: 'set',
-            },
+            this.tag,
+            attributes,
             xml(
                 'query',
                 {
@@ -125,6 +142,7 @@ export class GetMessagesQuery extends XmppQuery {
         )
     }
 }
+
 export class GetRoomConfigQuery extends XmppQuery {
     name = 'getRoomConfig'
     args: GetRoomConfigArgs
@@ -140,18 +158,17 @@ export class GetRoomConfigQuery extends XmppQuery {
             queryid: 'get-room-config-query',
         })
 
-        return xml(
-            'iq',
-            {
-                id: `get-room-config-${uuid.v4()}`,
-                from,
-                to,
-                type: 'get',
-            },
-            queryBodyXml,
-        )
+        const attributes = {
+            id: `get-room-config-${uuid.v4()}`,
+            from,
+            to,
+            type: 'get',
+        }
+
+        return xml(this.tag, attributes, queryBodyXml)
     }
 }
+
 export class GetRosterQuery extends XmppQuery {
     name = 'getRoster'
     args: GetRosterArgs
@@ -166,17 +183,15 @@ export class GetRosterQuery extends XmppQuery {
             xmlns: 'jabber:iq:roster',
         })
 
-        return xml(
-            'iq',
-            {
-                id: `get-roster-${uuid.v4()}`,
-                from,
-                type: 'get',
-            },
-            queryBodyXml,
-        )
+        const attributes = {
+            id: `get-roster-${uuid.v4()}`,
+            from,
+            type: 'get',
+        }
+        return xml(this.tag, attributes, queryBodyXml)
     }
 }
+
 export class SetRoomConfigQuery extends XmppQuery {
     name = 'setRoomConfig'
     args: SetRoomConfigArgs
@@ -230,30 +245,57 @@ export class SetRoomConfigQuery extends XmppQuery {
             ),
         )
 
-        return xml(
-            'iq',
-            {
-                id: `set-room-config-${uuid.v4()}`,
-                from,
-                to,
-                type: 'set',
-            },
-            queryBodyXml,
-        )
+        const attributes = {
+            id: `set-room-config-${uuid.v4()}`,
+            from,
+            to,
+            type: 'set',
+        }
+
+        return xml(this.tag, attributes, queryBodyXml)
     }
 }
 export class UniqueRoomNameQuery extends XmppQuery {
     name = 'uniqueRoomName'
     build = (): Element => {
+        const attributes = {
+            type: 'get',
+            to: XMPP_MUC_DOMAIN,
+            id: `get-unique-room-name-${uuid.v4()}`,
+        }
+
         return xml(
-            'iq',
-            {
-                type: 'get',
-                to: XMPP_MUC_DOMAIN,
-                id: `get-unique-room-name-${uuid.v4()}`,
-            },
+            this.tag,
+            attributes,
             xml('unique', {
                 xmlns: 'http://jabber.org/protocol/muc#unique',
+            }),
+        )
+    }
+}
+
+export class EnterMucRoomPresence extends XmppPresence {
+    name = 'enterMucRoom'
+    args: EnterMucRoomArgs
+    constructor(args: EnterMucRoomArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { from, groupId } = this.args
+        const fromJid: JID = jid(from!)
+        const memberNickname = fromJid.local
+        const attributes = {
+            from,
+            to: `${groupId}@${XMPP_MUC_DOMAIN}/${memberNickname}`,
+            id: 'enter-muc-room',
+        }
+
+        return xml(
+            this.tag,
+            attributes,
+            xml('x', {
+                xmlns: 'http://jabber.org/protocol/muc',
             }),
         )
     }
@@ -263,6 +305,16 @@ class XmlUtils {
     buildQuery(query: XmppQuery): Element {
         console.debug('buildQuery', 'name:', query.name, 'args:', query.args)
         return query.build()
+    }
+    buildPresence(presence: XmppPresence): Element {
+        console.debug(
+            'buildPresence',
+            'name:',
+            presence.name,
+            'args:',
+            presence.args,
+        )
+        return presence.build()
     }
 }
 
