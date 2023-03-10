@@ -23,10 +23,10 @@ const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const { fetchMessagesFromArchive, fetchRoster } = useXmpp()
-    const { authenticatedMember, lastFetchedMessageId } = useChatContext().state
+    const { websocketIsHealthy, lastFetchedMessageId } = useChatContext().state
 
     useEffect(() => {
-        if (authenticatedMember) {
+        if (websocketIsHealthy) {
             // Here we fetch any messages we may have missed while offline
             // 20 at a time with pagination
             // TODO: optimize by only fetching messages sent after the last received timestamp
@@ -38,14 +38,14 @@ const ChatScreen: React.FC<Props> = () => {
             }
             fetchMessagesFromArchive(null, pagination)
         }
-    }, [authenticatedMember, fetchMessagesFromArchive, lastFetchedMessageId])
+    }, [websocketIsHealthy, fetchMessagesFromArchive, lastFetchedMessageId])
 
     useEffect(() => {
-        if (authenticatedMember) {
+        if (websocketIsHealthy) {
             // Here we fetch the roster and store the results in local storage
             fetchRoster()
         }
-    }, [authenticatedMember, fetchRoster])
+    }, [websocketIsHealthy, fetchRoster])
 
     return (
         <View style={styles(theme).container}>

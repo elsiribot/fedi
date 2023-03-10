@@ -12,6 +12,8 @@ import {
 } from 'react-native'
 
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
+import { useChatContext } from '../../../state/contexts/ChatContext'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -29,6 +31,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<DirectChatRouteProp>()
     const { member } = route.params
+    const { toast } = useEnvironmentContext().state
+    const { websocketIsHealthy } = useChatContext().state
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
@@ -67,11 +71,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
             {/* in-chat payments only available for DirectChat */}
             {member && (
                 <Pressable
-                    onPress={() =>
+                    onPress={() => {
+                        if (websocketIsHealthy === false) {
+                            toast?.show(
+                                t('errors.chat-connection-unhealthy'),
+                                5000,
+                            )
+                            return
+                        }
                         navigation.navigate('ChatWallet', {
                             recipient: member,
                         })
-                    }>
+                    }}>
                     <SvgImage
                         name="Wallet"
                         containerStyle={{
@@ -80,7 +91,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         }}
                         size={SvgImageSize.md}
                         svgProps={{
-                            stroke: theme.colors.primary,
+                            stroke: websocketIsHealthy
+                                ? theme.colors.primary
+                                : theme.colors.primaryVeryLight,
                         }}
                     />
                 </Pressable>
@@ -122,6 +135,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         : {},
                 ]}
                 onPress={() => {
+                    if (websocketIsHealthy === false) {
+                        toast?.show(t('errors.chat-connection-unhealthy'), 5000)
+                        return
+                    }
                     if (messageText) {
                         onMessageSubmitted(messageText)
                         setMessageText('')
@@ -131,7 +148,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     name="SendArrowUpCircle"
                     size={SvgImageSize.md}
                     svgProps={{
-                        stroke: theme.colors.blue,
+                        stroke: websocketIsHealthy
+                            ? theme.colors.blue
+                            : theme.colors.primaryVeryLight,
                     }}
                 />
             </Pressable>

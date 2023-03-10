@@ -1,7 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
@@ -26,24 +26,20 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 </Text>
             }
             headerRight={
-                <View style={styles(theme).iconsContainer}>
-                    <Pressable
-                        onPress={toggleOffline}
-                        hitSlop={5}
-                        style={{
-                            marginRight: theme.spacing.sm,
-                        }}>
-                        <SvgImage
-                            name="Offline"
-                            containerStyle={{
-                                opacity: offline ? 1 : 0.2,
-                            }}
-                            svgProps={{
-                                stroke: theme.colors.primaryLight,
-                            }}
-                        />
-                    </Pressable>
-                </View>
+                <Pressable
+                    onPress={toggleOffline}
+                    hitSlop={5}
+                    style={styles(theme).iconContainer}>
+                    <SvgImage
+                        name="Offline"
+                        containerStyle={{
+                            opacity: offline ? 1 : 0.2,
+                        }}
+                        svgProps={{
+                            stroke: theme.colors.primaryLight,
+                        }}
+                    />
+                </Pressable>
             }
             rightContainerStyle={styles(theme).rightContainer}
             // Needed to make more room for Wallet title in headerLeft
@@ -54,13 +50,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        offlineIcon: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
-            color: theme.colors.grey,
-            resizeMode: 'contain',
-        },
-        iconsContainer: {
+        iconContainer: {
             flexDirection: 'row',
             alignItems: 'flex-end',
         },

@@ -1,5 +1,9 @@
+// This file contains logic for preparing XML, sending XMPP stanzas
+// to the chat server, and handling responses (if any)
+
 import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
+import { Element } from 'ltx'
 
 import {
     DEFAULT_GROUP_NAME,
@@ -12,14 +16,19 @@ import {
     ArchiveQueryPagination,
     Group,
     Member,
+    Message,
 } from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
+    DirectChatMessage,
+    EnterMucRoomPresence,
     GetMessagesQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
+    GroupChatMessage,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
+    UpdatePaymentMessage,
 } from '../../utils/XmlUtils'
 import {
     Action as ChatAction,
@@ -33,7 +42,7 @@ export const addMemberToRoster = (
     xmppClient: Client | null,
 ): Promise<Member> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -58,7 +67,7 @@ export const changeMucRoomName = (
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -99,7 +108,9 @@ export const fetchMessagesFromArchive = (
     xmppClient: Client | null,
 ): Promise<null> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid) {
+            return reject(i18n.t('errors.unknown-error'))
+        }
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -131,7 +142,8 @@ export const fetchRoster = (
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -170,7 +182,8 @@ export const fetchMucRoomConfig = (
     xmppClient: Client | null,
 ): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -204,7 +217,8 @@ export const getUniqueGroupId = (
     xmppClient: Client | null,
 ): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -217,6 +231,153 @@ export const getUniqueGroupId = (
             resolve(roomName)
         } catch (error: any) {
             console.error('getUniqueGroupId', error)
+        }
+    })
+}
+
+export const enterMucRoom = (
+    group: Group,
+    xmppClient: Client | null,
+): Promise<Group> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromUser = xmppClient!.jid!.toString()
+
+            const enterMucRoomPresence = xmlUtils.buildPresence(
+                new EnterMucRoomPresence({
+                    from: fromUser,
+                    groupId: group.id,
+                }),
+            )
+            const onStanzaReceived = async (stanza: Element) => {
+                // Receive a registration response from the server
+                if (
+                    stanza.is('presence') &&
+                    stanza.getAttr('id') === 'enter-muc-room'
+                ) {
+                    const result = stanza.getChild('x')
+                    const statusResults = result?.getChildren('status')
+
+                    statusResults?.map(async sr => {
+                        // status 201 = configuration required, send a room
+                        // configuration query to allow others to join
+                        // https://xmpp.org/extensions/xep-0045.html#createroom-reserved
+                        if (sr?.getAttr('code') === '201') {
+                            console.info('Received room configuration required')
+                            const { iqCaller } = xmppClient! as Client
+                            const roomConfigQueryXml = xmlUtils.buildQuery(
+                                new SetRoomConfigQuery({
+                                    roomName: group.name || DEFAULT_GROUP_NAME,
+                                    from: fromUser,
+                                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                }),
+                            )
+                            console.info('Sending config for new group')
+                            iqCaller.request(roomConfigQueryXml)
+                        }
+                        // status 110 = self-presence message which confirms
+                        // occupancy in room to be added to context
+                        if (sr?.getAttr('code') === '110') {
+                            xmppClient?.removeListener(
+                                'stanza',
+                                onStanzaReceived,
+                            )
+                            resolve(group)
+                        }
+                    })
+                }
+            }
+            xmppClient?.on('stanza', onStanzaReceived)
+            xmppClient?.send(enterMucRoomPresence)
+        } catch (error) {
+            console.error('enterMucRoom', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const sendDirectMessage = (
+    to: Member,
+    message: Message,
+    xmppClient: Client | null,
+): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromJid = xmppClient!.jid?.toString()
+            const toJid = to.jid.toString()
+
+            const directChatMessageXml = xmlUtils.buildMessage(
+                new DirectChatMessage({
+                    from: fromJid,
+                    to: toJid,
+                    message,
+                }),
+            )
+            xmppClient!.send(directChatMessageXml)
+        } catch (error) {
+            console.error('sendDirectMessage', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const sendGroupMessage = (
+    to: Group,
+    message: Message,
+    xmppClient: Client | null,
+): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromJid = xmppClient!.jid?.toString()
+
+            const groupChatMessageXml = xmlUtils.buildMessage(
+                new GroupChatMessage({
+                    from: fromJid,
+                    toGroup: to,
+                    message,
+                }),
+            )
+            xmppClient!.send(groupChatMessageXml)
+        } catch (error) {
+            console.error('sendDirectMessage', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const sendUpdatePaymentMessage = (
+    to: Member,
+    message: Message,
+    xmppClient: Client | null,
+): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromJid = xmppClient!.jid?.toString()
+            const toJid = to.jid.toString()
+
+            const updatePaymentMessageXml = xmlUtils.buildMessage(
+                new UpdatePaymentMessage({
+                    from: fromJid,
+                    to: toJid,
+                    message,
+                }),
+            )
+            xmppClient!.send(updatePaymentMessageXml)
+        } catch (error) {
+            console.error('sendUpdatePaymentMessage', error)
+            reject(i18n.t('errors.unknown-error'))
         }
     })
 }
