@@ -69,6 +69,7 @@
         "bitcoin-address": "Bitcoin address",
         "backup-your-wallet": "Bitcoin address",
         "connect-to-federation": "Connect to test federation",
+        "copied-group-invite-code": "Copied group invite code",
         "copied-lightning-request": "Copied lightning request",
         "expires-in": "Expires in",
         "failed-to-decode-invoice": "Failed to decode invoice",
