@@ -4,6 +4,7 @@ members = [
     "fedimint-client-fedi",
     "fedi-social-common",
     "fedi-social-server",
+    "fedi-social-client",
 ]
 resolver = "2"
 
@@ -22,7 +23,11 @@ keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 fedimint-derive-secret = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 mint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 fedimint-aead = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }

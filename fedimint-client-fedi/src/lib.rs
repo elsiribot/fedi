@@ -1,14 +1,22 @@
 use std::fmt;
 
+use fedi_social_client::FediSocialClientGen;
+use fedimint_client::module::gen::{ClientModuleGenRegistry, DynClientModuleGen};
 use fedimint_derive_secret::DerivableSecret;
+use fedimint_ln_client::LightningClientGen;
+use fedimint_mint_client::MintClientGen;
+use fedimint_wallet_client::WalletClientGen;
 pub use mint_client::*;
 
 use fedimint_core::{
     config::ClientConfig,
+    db::Database,
     encoding::{Decodable, Encodable},
+    module::registry::ModuleDecoderRegistry,
     PeerId,
 };
 
+use secp256k1::{All, Secp256k1};
 use serde::{Deserialize, Serialize};
 
 mod social;
@@ -46,6 +54,21 @@ impl<T> std::ops::Deref for FediClient<T> {
     }
 }
 
+impl<T> FediClient<T>
+where
+    T: AsRef<ClientConfig> + Clone + Send,
+{
+    pub async fn new(
+        config: T,
+        module_gens: ClientModuleGenRegistry,
+        decoders: ModuleDecoderRegistry,
+        db: Database,
+        secp: Secp256k1<All>,
+    ) -> Self {
+        Self(Client::new(config, decoders, module_gens, db, secp).await)
+    }
+}
+
 impl<T> FediClient<T> {
     pub fn social_recovery_secret_static(root_secret: &DerivableSecret) -> DerivableSecret {
         assert_eq!(root_secret.level(), 0);
@@ -58,7 +81,7 @@ impl<T: AsRef<ClientConfig> + Clone + Send> FediClient<T> {
         let (module_id, cfg) = self
             .config()
             .as_ref()
-            .get_first_module_by_kind::<fedi_social_common::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -77,7 +100,7 @@ impl<T: AsRef<ClientConfig> + Clone + Send> FediClient<T> {
         let (module_id, cfg) = self
             .config()
             .as_ref()
-            .get_first_module_by_kind::<fedi_social_common::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -88,7 +111,7 @@ impl<T: AsRef<ClientConfig> + Clone + Send> FediClient<T> {
         let (module_id, cfg) = self
             .config()
             .as_ref()
-            .get_first_module_by_kind::<fedi_social_common::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -99,10 +122,19 @@ impl<T: AsRef<ClientConfig> + Clone + Send> FediClient<T> {
         let (module_id, _cfg) = self
             .config()
             .as_ref()
-            .get_first_module_by_kind::<fedi_social_common::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
         SocialVerification::new(module_id, self.0.context().clone(), peer_id)
     }
+}
+
+pub fn module_gens() -> ClientModuleGenRegistry {
+    ClientModuleGenRegistry::from(vec![
+        DynClientModuleGen::from(WalletClientGen),
+        DynClientModuleGen::from(MintClientGen),
+        DynClientModuleGen::from(LightningClientGen),
+        DynClientModuleGen::from(FediSocialClientGen),
+    ])
 }
