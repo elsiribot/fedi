@@ -33,6 +33,9 @@ declare module '@rneui/themed' {
             border: string
             notification: string
         }
+        percentages: {
+            [key: string]: string
+        }
         sizes: {
             [key: string]: number
         }
