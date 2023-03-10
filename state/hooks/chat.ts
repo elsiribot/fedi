@@ -29,13 +29,13 @@ export const useXmpp = () => {
 
     return {
         addMemberToRoster: useCallback(
-            (member: Member) => {
+            (member: Member): Promise<Member> => {
                 return addMemberToRoster(member, xmppClient)
             },
             [xmppClient],
         ),
         changeMucRoomName: useCallback(
-            (group: Group, updatedName: string) => {
+            (group: Group, updatedName: string): Promise<boolean> => {
                 return changeMucRoomName(
                     group,
                     updatedName,
@@ -46,7 +46,7 @@ export const useXmpp = () => {
             [dispatch, xmppClient],
         ),
         fetchMucRoomConfig: useCallback(
-            (group: Group) => {
+            (group: Group): Promise<string> => {
                 return fetchMucRoomConfig(group, xmppClient)
             },
             [xmppClient],
@@ -55,7 +55,7 @@ export const useXmpp = () => {
             (
                 filters: ArchiveQueryFilters | null,
                 pagination: ArchiveQueryPagination | null,
-            ) => {
+            ): Promise<null> => {
                 return fetchMessagesFromArchive(
                     filters,
                     pagination,
@@ -65,14 +65,14 @@ export const useXmpp = () => {
             },
             [dispatch, xmppClient],
         ),
-        fetchRoster: useCallback(() => {
+        fetchRoster: useCallback((): Promise<boolean> => {
             return fetchRoster(dispatch, xmppClient)
         }, [dispatch, xmppClient]),
         getUniqueGroupId: useCallback((): Promise<string> => {
             return getUniqueGroupId(xmppClient)
         }, [xmppClient]),
         enterMucRoom: useCallback(
-            async (group: Group) => {
+            (group: Group): Promise<Group> => {
                 return enterMucRoom(group, xmppClient)
             },
             [xmppClient],
