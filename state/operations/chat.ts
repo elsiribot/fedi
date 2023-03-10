@@ -42,7 +42,7 @@ export const addMemberToRoster = (
     xmppClient: Client | null,
 ): Promise<Member> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -67,7 +67,7 @@ export const changeMucRoomName = (
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -108,7 +108,9 @@ export const fetchMessagesFromArchive = (
     xmppClient: Client | null,
 ): Promise<null> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid) {
+            return reject(i18n.t('errors.unknown-error'))
+        }
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -140,7 +142,8 @@ export const fetchRoster = (
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -179,7 +182,8 @@ export const fetchMucRoomConfig = (
     xmppClient: Client | null,
 ): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -213,7 +217,8 @@ export const getUniqueGroupId = (
     xmppClient: Client | null,
 ): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const { iqCaller } = xmppClient! as Client
@@ -235,7 +240,8 @@ export const enterMucRoom = (
     xmppClient: Client | null,
 ): Promise<Group> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const fromUser = xmppClient!.jid!.toString()
@@ -299,7 +305,8 @@ export const sendDirectMessage = (
     xmppClient: Client | null,
 ): Promise<void> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const fromJid = xmppClient!.jid?.toString()
@@ -326,7 +333,8 @@ export const sendGroupMessage = (
     xmppClient: Client | null,
 ): Promise<void> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const fromJid = xmppClient!.jid?.toString()
@@ -352,7 +360,8 @@ export const sendUpdatePaymentMessage = (
     xmppClient: Client | null,
 ): Promise<void> => {
     return new Promise(async (resolve, reject) => {
-        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
 
         try {
             const fromJid = xmppClient!.jid?.toString()
