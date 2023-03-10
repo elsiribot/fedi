@@ -10,7 +10,7 @@ import {
 } from '../../../state/contexts/ChatContext'
 import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import { Message, Payment, PaymentStatus } from '../../../types'
+import { Member, Message, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPaymentActionsProps = {
@@ -25,7 +25,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
-    const { sendUpdatedPaymentMessage } = useXmpp()
+    const { sendUpdatePaymentMessage } = useXmpp()
     const { dispatch } = useChatContext()
     const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
     // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
@@ -47,10 +47,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     token: null,
                 },
             })
-            sendUpdatedPaymentMessage({
-                to: sentTo,
-                message: acceptedPaymentMessage,
-            })
+            sendUpdatePaymentMessage(sentTo as Member, acceptedPaymentMessage)
             dispatch(updateMessage(acceptedPaymentMessage))
         }
     }, [
@@ -58,7 +55,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         dispatch,
         message,
         payment,
-        sendUpdatedPaymentMessage,
+        sendUpdatePaymentMessage,
         sentTo,
     ])
 
@@ -191,7 +188,7 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
     text,
 }: OutgoingPaymentRequestProps) => {
     const { theme } = useTheme()
-    const { sendUpdatedPaymentMessage } = useXmpp()
+    const { sendUpdatePaymentMessage } = useXmpp()
     const { dispatch } = useChatContext()
 
     const cancelPayment = () => {
@@ -204,10 +201,10 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
                     status: PaymentStatus.canceled,
                 },
             })
-            sendUpdatedPaymentMessage({
-                to: message.sentTo,
-                message: canceledPaymentMessage,
-            })
+            sendUpdatePaymentMessage(
+                message.sentTo as Member,
+                canceledPaymentMessage,
+            )
             dispatch(updateMessage(canceledPaymentMessage))
         } catch (error) {
             console.log(error)
