@@ -4,11 +4,11 @@ use std::time::SystemTime;
 
 use anyhow::format_err;
 use async_trait::async_trait;
-use fedi_social_common::common::{
+use fedi_social_client::common::{
     BackupId, BackupRequest, DoubleEncryptedData, EncryptedRecoveryShare, RecoveryId,
     RecoveryRequest, SignedBackupRequest, SignedRecoveryRequest, VerificationDocument,
 };
-use fedi_social_common::config::FediSocialClientConfig;
+use fedi_social_client::config::FediSocialClientConfig;
 use fedimint_core::api::{
     erased_multi_param, erased_single_param, FederationApiExt, FederationResult, IFederationApi,
 };
@@ -61,7 +61,7 @@ pub struct SocialBackup {
 
     pub module_id: ModuleInstanceId,
 
-    pub config: fedi_social_common::config::FediSocialClientConfig,
+    pub config: fedi_social_client::config::FediSocialClientConfig,
 
     pub context: Arc<ClientContext>,
 }

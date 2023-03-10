@@ -779,6 +779,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedi-social-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bincode",
+ "bitcoin_hashes",
+ "counter",
+ "erased-serde",
+ "fedi-social-common",
+ "fedimint-client",
+ "fedimint-core",
+ "futures",
+ "hex",
+ "impl-tools 0.6.2",
+ "itertools",
+ "rand",
+ "rayon",
+ "secp256k1",
+ "secp256k1-zkp",
+ "serde",
+ "strum",
+ "strum_macros",
+ "tbs",
+ "thiserror",
+ "threshold_crypto",
+ "tracing",
+]
+
+[[package]]
 name = "fedi-social-common"
 version = "0.1.0"
 dependencies = [
@@ -789,6 +819,7 @@ dependencies = [
  "counter",
  "erased-serde",
  "fedimint-aead",
+ "fedimint-client",
  "fedimint-core",
  "futures",
  "hex",
@@ -906,10 +937,14 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "fedi-social-common",
+ "fedi-social-client",
  "fedimint-aead",
+ "fedimint-client",
  "fedimint-core",
  "fedimint-derive-secret",
+ "fedimint-ln-client",
+ "fedimint-mint-client",
+ "fedimint-wallet-client",
  "mint-client",
  "ring",
  "secp256k1",
