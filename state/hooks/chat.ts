@@ -1,14 +1,12 @@
 import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
-import { XMPP_MUC_DOMAIN } from '../../constants'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
     Member,
-    OutgoingGroupMessage,
-    OutgoingMessage,
+    Message,
 } from '../../types'
 import { useChatContext } from '../contexts/ChatContext'
 import {
@@ -19,6 +17,9 @@ import {
     fetchMucRoomConfig,
     fetchRoster,
     getUniqueGroupId,
+    sendDirectMessage,
+    sendGroupMessage,
+    sendUpdatePaymentMessage,
 } from '../operations/chat'
 
 // This is a React hook providing the full set of functions that use the
@@ -77,102 +78,21 @@ export const useXmpp = () => {
             },
             [xmppClient],
         ),
-        // TODO: Refactor remaining functions to use operations/chat.ts
-        sendUpdatedPaymentMessage: useCallback(
-            ({ message, to }: OutgoingMessage) => {
-                const fromJid = xmppClient?.jid?.toString()
-                const toJid = to?.jid.toString()
-                try {
-                    xmppClient?.send(
-                        xml(
-                            'message',
-                            {
-                                id: message.id,
-                                type: 'chat',
-                                from: fromJid,
-                                to: toJid,
-                            },
-                            xml(
-                                'body',
-                                { xmlns: 'jabber:client' },
-                                message.content as string,
-                            ),
-                            xml(
-                                'dm',
-                                { xmlns: 'fedi:direct-message' },
-                                JSON.stringify(message),
-                            ),
-                            xml('action', { xmlns: 'fedi:update-payment' }),
-                        ),
-                    )
-                } catch (error) {
-                    console.error('sendUpdatedPaymentMessage error', error)
-                }
-            },
-            [xmppClient],
-        ),
         sendDirectMessage: useCallback(
-            ({ message, to }: OutgoingMessage) => {
-                const fromJid = xmppClient?.jid?.toString()
-                const toJid = to?.jid.toString()
-
-                try {
-                    xmppClient?.send(
-                        xml(
-                            'message',
-                            {
-                                id: message.id,
-                                type: 'chat',
-                                from: fromJid,
-                                to: toJid,
-                            },
-                            xml(
-                                'body',
-                                { xmlns: 'jabber:client' },
-                                message.content as string,
-                            ),
-                            xml(
-                                'dm',
-                                { xmlns: 'fedi:direct-message' },
-                                JSON.stringify(message),
-                            ),
-                        ),
-                    )
-                } catch (error) {
-                    console.error('sendDirectMessage error', error)
-                }
+            (to: Member, message: Message): Promise<void> => {
+                return sendDirectMessage(to, message, xmppClient)
             },
             [xmppClient],
         ),
         sendGroupMessage: useCallback(
-            ({ message, toRoom }: OutgoingGroupMessage) => {
-                const fromJid = xmppClient?.jid?.toString()
-                const to = `${toRoom}@${XMPP_MUC_DOMAIN}`
-                try {
-                    xmppClient?.send(
-                        xml(
-                            'message',
-                            {
-                                id: message.id,
-                                from: fromJid,
-                                type: 'groupchat',
-                                to,
-                            },
-                            xml(
-                                'body',
-                                { xmlns: 'jabber:client' },
-                                message.content as string,
-                            ),
-                            xml(
-                                'gm',
-                                { xmlns: 'fedi:group-message' },
-                                JSON.stringify(message),
-                            ),
-                        ),
-                    )
-                } catch (error) {
-                    console.error('sendGroupMessage error', error)
-                }
+            (to: Group, message: Message): Promise<void> => {
+                return sendGroupMessage(to, message, xmppClient)
+            },
+            [xmppClient],
+        ),
+        sendUpdatePaymentMessage: useCallback(
+            (to: Member, message: Message): Promise<void> => {
+                return sendUpdatePaymentMessage(to, message, xmppClient)
             },
             [xmppClient],
         ),

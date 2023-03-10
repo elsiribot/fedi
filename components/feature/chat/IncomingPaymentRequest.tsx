@@ -11,7 +11,7 @@ import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContex
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import { Message, MSats, Payment, PaymentStatus } from '../../../types'
+import { Member, Message, MSats, Payment, PaymentStatus } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -133,7 +133,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateEcash } = useBridge()
-    const { sendUpdatedPaymentMessage } = useXmpp()
+    const { sendUpdatePaymentMessage } = useXmpp()
     const { toast } = useEnvironmentContext().state
     const { selectedFederation } = useFederationsContext().state
     const { dispatch } = useChatContext()
@@ -150,10 +150,10 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                     status: PaymentStatus.rejected,
                 },
             })
-            sendUpdatedPaymentMessage({
-                to: message.sentBy,
-                message: rejectedPaymentMessage,
-            })
+            sendUpdatePaymentMessage(
+                message.sentBy as Member,
+                rejectedPaymentMessage,
+            )
             dispatch(updateMessage(rejectedPaymentMessage))
         } catch (error) {
             console.log(error)
@@ -224,10 +224,10 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                 })
                 setGeneratedEcashToken('')
                 dispatch(updateMessage(acceptedPaymentMessage))
-                sendUpdatedPaymentMessage({
-                    to: message.sentBy,
-                    message: acceptedPaymentMessage,
-                })
+                sendUpdatePaymentMessage(
+                    message.sentBy as Member,
+                    acceptedPaymentMessage,
+                )
                 // Once the token has been generated and sent in a message
                 // we wait for the recipient to redeem the ecash and send
                 // back a message with the payment.status set to 'paid'
@@ -246,7 +246,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
         if (generatedEcashToken) {
             prepareAndSendPayment()
         }
-    }, [dispatch, generatedEcashToken, message, sendUpdatedPaymentMessage])
+    }, [dispatch, generatedEcashToken, message, sendUpdatePaymentMessage])
 
     useEffect(() => {
         if (message.payment?.status === PaymentStatus.paid) {

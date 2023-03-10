@@ -86,10 +86,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
                         sentBy: state.authenticatedMember,
                         sentIn: currentGroup,
                     })
-                    sendGroupMessage({
-                        toRoom: currentGroup.id,
-                        message: newMessage,
-                    })
+                    sendGroupMessage(currentGroup, newMessage)
                     // TODO: add message locally and validate later
                     // when server confirms sent message (smoother UX)
                     // dispatch(

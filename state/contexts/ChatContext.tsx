@@ -616,7 +616,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 const xmpp = client(xmppConnectionOptions)
 
                 // debug(xmpp, true)
-                // debug(xmpp, true, `OS=${Platform.OS}`)
+                debug(xmpp, true, `OS=${Platform.OS}`)
                 /*
                     This ^ helps debug when testing with both ios + android
                     emulators simultaneously to know which stanzas are coming

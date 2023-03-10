@@ -16,15 +16,19 @@ import {
     ArchiveQueryPagination,
     Group,
     Member,
+    Message,
 } from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
+    DirectChatMessage,
     EnterMucRoomPresence,
     GetMessagesQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
+    GroupChatMessage,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
+    UpdatePaymentMessage,
 } from '../../utils/XmlUtils'
 import {
     Action as ChatAction,
@@ -284,6 +288,86 @@ export const enterMucRoom = (
             xmppClient?.send(enterMucRoomPresence)
         } catch (error) {
             console.error('enterMucRoom', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const sendDirectMessage = (
+    to: Member,
+    message: Message,
+    xmppClient: Client | null,
+): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromJid = xmppClient!.jid?.toString()
+            const toJid = to.jid.toString()
+
+            const directChatMessageXml = xmlUtils.buildMessage(
+                new DirectChatMessage({
+                    from: fromJid,
+                    to: toJid,
+                    message,
+                }),
+            )
+            xmppClient!.send(directChatMessageXml)
+        } catch (error) {
+            console.error('sendDirectMessage', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const sendGroupMessage = (
+    to: Group,
+    message: Message,
+    xmppClient: Client | null,
+): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromJid = xmppClient!.jid?.toString()
+
+            const groupChatMessageXml = xmlUtils.buildMessage(
+                new GroupChatMessage({
+                    from: fromJid,
+                    toGroup: to,
+                    message,
+                }),
+            )
+            xmppClient!.send(groupChatMessageXml)
+        } catch (error) {
+            console.error('sendDirectMessage', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const sendUpdatePaymentMessage = (
+    to: Member,
+    message: Message,
+    xmppClient: Client | null,
+): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const fromJid = xmppClient!.jid?.toString()
+            const toJid = to.jid.toString()
+
+            const updatePaymentMessageXml = xmlUtils.buildMessage(
+                new UpdatePaymentMessage({
+                    from: fromJid,
+                    to: toJid,
+                    message,
+                }),
+            )
+            xmppClient!.send(updatePaymentMessageXml)
+        } catch (error) {
+            console.error('sendUpdatePaymentMessage', error)
             reject(i18n.t('errors.unknown-error'))
         }
     })
