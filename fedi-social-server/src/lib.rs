@@ -23,8 +23,8 @@ use fedimint_core::module::audit::Audit;
 use fedimint_core::module::interconnect::ModuleInterconect;
 use fedimint_core::module::{
     api_endpoint, ApiEndpoint, ApiError, ApiVersion, ConsensusProposal, CoreConsensusVersion,
-    InputMeta, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleGen,
-    TransactionItemAmount,
+    ExtendsCommonModuleGen, InputMeta, ModuleConsensusVersion, ModuleError, PeerHandle,
+    ServerModuleGen, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::TaskGroup;
@@ -49,9 +49,12 @@ use common::db::{
 #[derive(Clone, Debug)]
 pub struct FediSocialGen;
 
+impl ExtendsCommonModuleGen for FediSocialGen {
+    type Common = FediSocialCommonGen;
+}
+
 #[async_trait]
 impl ServerModuleGen for FediSocialGen {
-    type Common = FediSocialCommonGen;
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {

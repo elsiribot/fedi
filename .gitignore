@@ -84,3 +84,4 @@ bridge/fedi-android/plugins/bin/
 
 # Nix
 /result
+/.direnv

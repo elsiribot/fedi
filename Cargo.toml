@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "fedimintd",
+    "fedimint-client-fedi",
     "fedi-social-common",
     "fedi-social-server",
 ]
@@ -18,12 +19,14 @@ license-file = "LICENSE"
 keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 
 [workspace.dependencies]
-fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "2e432f1f3e02869f85a216b835aaa7fa67c9699d" }
-fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "2e432f1f3e02869f85a216b835aaa7fa67c9699d" }
-fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "2e432f1f3e02869f85a216b835aaa7fa67c9699d" }
-aead = { git = "https://github.com/fedimint/fedimint", rev = "2e432f1f3e02869f85a216b835aaa7fa67c9699d" }
+fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-derive-secret = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+mint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-aead = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
-tbs = { git = "https://github.com/fedimint/fedimint", rev = "2e432f1f3e02869f85a216b835aaa7fa67c9699d" }
+tbs = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
 
 [profile.dev]
 split-debuginfo = "packed"
