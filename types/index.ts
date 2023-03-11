@@ -1,9 +1,12 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
+import { ImageSourcePropType } from 'react-native'
+import { SiteImages } from '../assets/images'
 
 import { Invoice } from '../bridge'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
+import { RootStackParamList } from './navigation'
 
 export default class Base {
     constructor(data?: any) {
@@ -43,12 +46,36 @@ export class BtcLnUri extends Base {
     }
 }
 
-export type Site = {
-    id: string
-    url: string
+export enum ShortcutType {
+    site = 'site',
+    screen = 'screen',
+}
+export type ShortcutIcon = {
+    svg?: string
+    url?: string
+    image?: ImageSourcePropType
+}
+export class Shortcut extends Base {
     title: string
-    description: string
+    description?: string
+    icon: ShortcutIcon
+    type: ShortcutType
     color?: string
+}
+export class Site extends Shortcut {
+    id: string
+    type = ShortcutType.site
+    url: string
+    constructor(data: any) {
+        super(data)
+        this.icon = {
+            image: SiteImages[data.id],
+        }
+    }
+}
+export class Screen extends Shortcut {
+    type = ShortcutType.screen
+    screenName: keyof RootStackParamList
 }
 
 // This is an implementation of an opaque type

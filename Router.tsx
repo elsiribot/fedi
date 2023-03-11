@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
+import Admin from './screens/Admin'
 import BitcoinRequest from './screens/BitcoinRequest'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
@@ -62,6 +63,7 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 
+import AdminHeader from './components/feature/admin/AdminHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
@@ -89,10 +91,9 @@ import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHe
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
+import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
-
-import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
 import Header from './components/ui/Header'
 import SitesBrowser from './screens/SitesBrowser'
 import { useFederationsContext } from './state/contexts/FederationsContext'
@@ -186,6 +187,20 @@ const MainNavigator = () => {
                                     headerShown: false,
                                 }}
                             />
+                            {/* Admin */}
+                            <Stack.Screen
+                                name="Admin"
+                                component={Admin}
+                                options={() => ({
+                                    header: () => (
+                                        <>
+                                            <SelectedFederationHeader />
+                                            <AdminHeader />
+                                        </>
+                                    ),
+                                })}
+                            />
+
                             {/* Federation Onboarding */}
                             <Stack.Screen
                                 name="FederationWelcome"

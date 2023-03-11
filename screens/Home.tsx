@@ -4,8 +4,8 @@ import { useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 
+import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
-import SitesList from '../components/feature/sites/SitesList'
 import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
 import type {
     RootStackParamList,
@@ -32,7 +32,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             ) : (
                 <>
                     <BitcoinWallet offline={offline} />
-                    <SitesList />
+                    <ShortcutsList />
                 </>
             )}
         </ScrollView>
