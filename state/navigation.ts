@@ -2,6 +2,13 @@ import { CommonActions } from '@react-navigation/native'
 import { Group } from '../types'
 import { RootStackParamList } from '../types/navigation'
 
+export function navigate(
+    screenName: keyof RootStackParamList,
+    params?: RootStackParamList[keyof RootStackParamList],
+) {
+    return CommonActions.navigate(screenName, params)
+}
+
 export function reset(
     screenName: keyof RootStackParamList,
     params?: RootStackParamList[keyof RootStackParamList],
