@@ -7,6 +7,7 @@ import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -19,10 +20,12 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 const FederationInvite: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { toast } = useEnvironmentContext().state
     const { inviteLink } = route.params
 
     const copyToClipboard = () => {
         Clipboard.setString(inviteLink)
+        toast?.show(t('feature.federations.copied-federation-invite'))
     }
 
     return (
