@@ -8,6 +8,7 @@ import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
 import { addToGroups, useChatContext } from '../state/contexts/ChatContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useXmpp } from '../state/hooks/chat'
 import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -21,6 +22,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { group } = route.params
     const { dispatch } = useChatContext()
+    const { toast } = useEnvironmentContext().state
     const { enterMucRoom } = useXmpp()
 
     useEffect(() => {
@@ -31,6 +33,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const copyToClipboard = () => {
         Clipboard.setString(group.invitationCode as string)
+        toast?.show(t('feature.chat.copied-group-invite-code'))
     }
 
     const viewGroup = () => {
