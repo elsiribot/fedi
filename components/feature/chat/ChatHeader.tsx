@@ -71,7 +71,7 @@ const ChatHeader: React.FC<{}> = () => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (_theme: Theme) =>
     StyleSheet.create({
         iconContainer: {
             flexDirection: 'row',

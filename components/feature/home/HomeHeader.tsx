@@ -48,7 +48,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (_theme: Theme) =>
     StyleSheet.create({
         iconContainer: {
             flexDirection: 'row',
