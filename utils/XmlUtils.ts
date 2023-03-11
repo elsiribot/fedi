@@ -423,27 +423,12 @@ export class UniqueRoomNameQuery extends XmppQuery {
 
 class XmlUtils {
     buildPresence(presence: XmppPresence): Element {
-        console.debug(
-            'buildPresence',
-            'name:',
-            presence.name,
-            'args:',
-            presence.args,
-        )
         return presence.build()
     }
     buildQuery(query: XmppQuery): Element {
-        console.debug('buildQuery', 'name:', query.name, 'args:', query.args)
         return query.build()
     }
     buildMessage(message: XmppMessage): Element {
-        console.debug(
-            'buildMessage',
-            'name:',
-            message.name,
-            'args:',
-            message.args,
-        )
         return message.build()
     }
 }
