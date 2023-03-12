@@ -26,7 +26,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ group }: Props) => {
 
     const copyToClipboard = () => {
         Clipboard.setString(group.invitationCode as string)
-        toast?.show(t('phrases.copied-group-invite-code'), 3000)
+        toast?.show(t('feature.chat.copied-group-invite-code'), 3000)
     }
 
     useEffect(() => {
