@@ -1,0 +1,78 @@
+use fedimint_core::config::{
+    ClientModuleConfig, TypedClientModuleConfig, TypedServerModuleConfig,
+    TypedServerModuleConsensusConfig,
+};
+use fedimint_core::core::ModuleKind;
+use fedimint_core::encoding::Encodable;
+use fedimint_core::PeerId;
+use serde::{Deserialize, Serialize};
+
+use crate::KIND;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SocialConfig {
+    pub private: SocialPrivateConfig,
+    pub consensus: FediSocialConsensusConfig,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SocialPrivateConfig {
+    /// Our share of decryption key
+    pub sk_share: threshold_crypto::serde_impl::SerdeSecret<threshold_crypto::SecretKeyShare>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Encodable)]
+pub struct FediSocialConsensusConfig {
+    pub pk_set: threshold_crypto::PublicKeySet,
+    pub threshold: u32,
+}
+
+impl TypedServerModuleConsensusConfig for FediSocialConsensusConfig {
+    fn to_client_config(&self) -> ClientModuleConfig {
+        ClientModuleConfig::from_typed(
+            KIND,
+            &FediSocialClientConfig {
+                federation_pk_set: self.pk_set.clone(),
+            },
+        )
+        .expect("Serialization can't fail")
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable)]
+pub struct FediSocialClientConfig {
+    pub federation_pk_set: threshold_crypto::PublicKeySet,
+}
+
+impl FediSocialClientConfig {
+    /// Get the combined public key
+    pub fn pk(&self) -> threshold_crypto::PublicKey {
+        self.federation_pk_set.public_key()
+    }
+}
+
+impl TypedClientModuleConfig for FediSocialClientConfig {
+    fn kind(&self) -> ModuleKind {
+        KIND
+    }
+}
+
+impl TypedServerModuleConfig for SocialConfig {
+    type Local = ();
+    type Private = SocialPrivateConfig;
+    type Consensus = FediSocialConsensusConfig;
+
+    fn from_parts(_local: Self::Local, private: Self::Private, consensus: Self::Consensus) -> Self {
+        Self { private, consensus }
+    }
+
+    fn to_parts(self) -> (ModuleKind, Self::Local, Self::Private, Self::Consensus) {
+        (KIND, (), self.private, self.consensus)
+    }
+
+    fn validate_config(&self, _identity: &PeerId) -> anyhow::Result<()> {
+        // TODO: validate anything?
+
+        Ok(())
+    }
+}

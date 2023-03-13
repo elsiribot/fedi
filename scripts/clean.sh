@@ -1,6 +1,8 @@
+#!/usr/bin/env bash
+
 npx react-native clean
 
 # clean rust code
-pushd bridge
+pushd bridge || exit 1
 cargo clean
-popd
+popd || exit 1

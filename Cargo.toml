@@ -1,0 +1,60 @@
+[workspace]
+members = [
+    "fedimintd",
+    "fedimint-client-fedi",
+    "fedi-social-common",
+    "fedi-social-server",
+    "fedi-social-client",
+]
+resolver = "2"
+
+[workspace.metadata]
+authors = ["The Fedi Developers"]
+edition = "2021"
+description = "Fedi"
+documentation = "https://github.com/fedimint/fedimintd-fedi"
+readme = "README.md"
+homepage = "https://fedi.xyz"
+repository = "https://github.com/fedibtc/fedimintd-fedi"
+license-file = "LICENSE"
+keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
+
+[workspace.dependencies]
+fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-derive-secret = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+mint-client = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+fedimint-aead = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
+tbs = { git = "https://github.com/fedimint/fedimint", rev = "746dab041b0982612336f80e9c8d0773c3ba755e" }
+
+[profile.dev]
+split-debuginfo = "packed"
+
+# in dev mode optimize crates that are perf-critical (usually just crypto crates)
+[profile.dev.package]
+secp256k1 = { opt-level = 3 }
+secp256k1-zkp = { opt-level = 3 }
+secp256k1-sys = { opt-level = 3 }
+secp256k1-zkp-sys = { opt-level = 3 }
+bitcoin_hashes = { opt-level = 3 }
+ff = { opt-level = 3 }
+group = { opt-level = 3 }
+pairing = { opt-level = 3 }
+rand_core = { opt-level = 3 }
+byteorder = { opt-level = 3 }
+zeroize = { opt-level = 3 }
+bls12_381 = { opt-level = 3 }
+subtle = { opt-level = 3 }
+ring = { opt-level = 3 }
+threshold_crypto = { opt-level = 3 }
+
+
+[patch.crates-io]
+secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
+

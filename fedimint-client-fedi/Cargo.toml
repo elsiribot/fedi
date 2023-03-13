@@ -1,0 +1,31 @@
+[package]
+name = "fedimint-client-fedi"
+version = "0.1.0"
+authors = ["The Fedi Developers"]
+edition = "2021"
+description = "Fedimint client library extended with client side custom modules"
+
+[lib]
+name = "fedimint_client_fedi"
+path = "src/lib.rs"
+
+
+[dependencies]
+async-trait = "*"
+anyhow = "1.0.66"
+tokio = { version = "1.25.0", features = ["full", "tracing"] }
+fedi-social-client = { path = "../fedi-social-client" }
+fedimint-core = { workspace = true }
+fedimint-client = { workspace = true }
+fedimint-derive-secret = { workspace = true }
+fedimint-wallet-client = { workspace = true }
+fedimint-mint-client = { workspace = true }
+fedimint-ln-client = { workspace = true }
+threshold_crypto = { workspace = true }
+fedimint-aead = { workspace = true }
+mint-client = { workspace = true }
+secp256k1 = "*"
+serde_json = "*"
+serde = "*"
+ring = "*"
+

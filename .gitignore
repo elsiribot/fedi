@@ -78,3 +78,10 @@ android/decoded-service-account-credentials.json
 
 # bridge
 bridge/fedi-android/plugins/bin/
+
+# Rust
+/target
+
+# Nix
+/result
+/.direnv
