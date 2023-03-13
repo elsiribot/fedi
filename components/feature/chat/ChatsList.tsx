@@ -5,7 +5,7 @@ import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { useChatContext } from '../../../state/contexts/ChatContext'
-import { Chat, ChatType, Group, Message, MSats } from '../../../types'
+import { Chat, ChatType, Group, Member, Message, MSats } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import amountUtils from '../../../utils/AmountUtils'
 import ChatTile from './ChatTile'
@@ -15,7 +15,8 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const ChatsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { authenticatedMember, groups, messages } = useChatContext().state
+    const { authenticatedMember, groups, messages, membersSeen } =
+        useChatContext().state
 
     const renderChat: ListRenderItem<Chat> = ({ item }) => {
         return (
@@ -48,64 +49,53 @@ const ChatsList: React.FC<{}> = () => {
 
     // Produce a set of direct chats from all direct messages
     const directChats: Chat[] = authenticatedMember?.username
-        ? directMessages.reduce((chatsResult: Chat[], m: Message) => {
-              // Determine the other member that is not the authenticatedMember
-              // since they may have sent or received the message
-              let otherMember = m.sentTo
-              if (m.sentTo?.username === authenticatedMember?.username) {
-                  otherMember = m.sentBy
+        ? membersSeen.reduce((chatsResult: Chat[], m: Member) => {
+              const messagesWithMember = directMessages.filter(
+                  dm =>
+                      dm.sentBy?.username === m.username ||
+                      dm.sentTo?.username === m.username,
+              )
+              // Do not add to the chats list if there are no messages
+              // with this member
+              if (messagesWithMember.length === 0) {
+                  return chatsResult
               }
-              const existingChatIndex = chatsResult.findIndex(
-                  c => c.id === otherMember?.username,
+
+              // Find the latest message to show as a preview
+              const lastMessageWithMember: Message = messagesWithMember.reduce(
+                  (latestMessage: Message, dm: Message) => {
+                      if (dm.sentAt! > latestMessage.sentAt!) {
+                          return dm
+                      } else {
+                          return latestMessage
+                      }
+                  },
+                  messagesWithMember[0],
               )
 
-              if (existingChatIndex === -1) {
-                  // Add the chat if it doesn't exist
-                  chatsResult.push(
-                      new Chat({
-                          id: otherMember?.username,
-                          name: otherMember?.username,
-                          members: [otherMember],
-                          type: ChatType.direct,
-                          lastReceivedTimestamp: m.sentAt,
-                          // If last message is a payment, render details
-                          messagePreview: m.payment
-                              ? t('feature.chat.payment-requested', {
-                                    name: m.sentBy?.username,
-                                    amount: amountUtils.formatNumber(
-                                        amountUtils.msatToSat(
-                                            m.payment.amount as MSats,
-                                        ),
-                                    ),
-                                    unit: 'SATS',
-                                })
-                              : m.content,
-                      }),
-                  )
-                  return chatsResult
-              } else {
-                  // Chat exists, check if message previews should be updated
-                  const updatedChat = chatsResult[existingChatIndex]
-                  if (updatedChat.lastReceivedTimestamp! < m.sentAt!) {
-                      updatedChat.lastReceivedTimestamp = m.sentAt
+              const { sentAt, payment, sentBy, content } = lastMessageWithMember
+
+              chatsResult.push(
+                  new Chat({
+                      id: m.username,
+                      name: m.username,
+                      members: [m],
+                      type: ChatType.direct,
+                      lastReceivedTimestamp: sentAt,
                       // If last message is a payment, render details
-                      updatedChat.messagePreview = m.payment
+                      messagePreview: payment
                           ? t('feature.chat.payment-requested', {
-                                name: m.sentBy?.username,
+                                name: sentBy?.username,
                                 amount: amountUtils.formatNumber(
                                     amountUtils.msatToSat(
-                                        m.payment.amount as MSats,
+                                        payment.amount as MSats,
                                     ),
                                 ),
                                 unit: 'SATS',
                             })
-                          : m.content
-
-                      chatsResult = chatsResult.map((c: Chat, i) =>
-                          i === existingChatIndex ? updatedChat : c,
-                      )
-                  }
-              }
+                          : content,
+                  }),
+              )
               return chatsResult
           }, [] as Chat[])
         : []
