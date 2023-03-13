@@ -1,0 +1,30 @@
+name: Test callable workflow
+on:
+    workflow_dispatch:
+
+jobs:
+    build-publish-android-apk:
+        name: Test callable workflow
+        runs-on: buildjet-4vcpu-ubuntu-2204
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v2
+              with:
+                  submodules: true
+
+            - name: Test
+              run: |
+                  git config --global user.name "Fedi Dev CI"
+                  RELEASE_BRANCH_VERSION="${GITHUB_REF##*/}"
+                  CURRENT_VERSION="$(npm pkg get version | sed 's/"//g')"
+                  CURRENT_MINOR_VERSION="$(cut -d '.' -f 1,2 <<< "$CURRENT_VERSION")"
+                  echo "test"
+                  echo "$GITHUB_REF"
+                  echo "$RELEASE_BRANCH_VERSION"
+                  echo "$CURRENT_VERSION"
+                  echo "$CURRENT_MINOR_VERSION"
+
+    call-deployment-workflow:
+        name: Trigger deployment to Google Play for Internal Testing
+        needs: build-publish-android-apk
+        uses: ./.github/workflows/test-callable-workflow.yml
