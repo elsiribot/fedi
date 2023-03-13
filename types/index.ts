@@ -125,13 +125,21 @@ export class Group extends Chat {
     }
     static decodeInvitationLink(link: string): Group {
         const afterPrefix = link.split('fedi:group:')[1]
-        const groupId = afterPrefix.slice(0, -3)
-        if (!groupId) throw new Error(i18n.t('errors.unknown-error'))
+        let groupId = afterPrefix.slice(0, -3)
+
+        // handle old group invite codes for backwards compatibility
+        // new group codes have 3 trailing colons `:::` after the group ID
+        const encodingSuffix = afterPrefix.slice(-3)
+        if (encodingSuffix !== ':::') {
+            groupId = afterPrefix
+        }
+
+        if (!groupId) throw new Error(i18n.t('feature.chat.invalid-group'))
 
         return new Group({
             id: groupId,
             name: DEFAULT_GROUP_NAME,
-            invitationCode: link,
+            invitationCode: Group.encodeInvitationLink(groupId),
         })
     }
 }
