@@ -1,6 +1,11 @@
 name: Deploy to Google Play - Internal Testing
 on:
     workflow_dispatch:
+    workflow_call:
+        inputs:
+            commit-to-deploy:
+                required: false
+                type: string
 
 jobs:
     release-android:
@@ -11,6 +16,7 @@ jobs:
               uses: actions/checkout@v2
               with:
                   submodules: true
+                  ref: ${{ inputs.commit-to-deploy }}
 
             - name: Cache
               uses: actions/cache@v3
