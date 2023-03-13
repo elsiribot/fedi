@@ -39,21 +39,21 @@ interface ChatContextState {
     xmppClient: Client | null
     authenticatedMember: Member | null
     username: string | null
-    userIsOnline: boolean
     messages: Message[]
     groups: Group[]
     membersSeen: Member[]
     lastFetchedMessageId: string | null
+    websocketIsHealthy: boolean
 }
 const initialState: ChatContextState = {
     xmppClient: null,
     username: null,
-    userIsOnline: false,
     authenticatedMember: null,
     messages: [],
     groups: DEFAULT_GROUPS,
     membersSeen: [],
     lastFetchedMessageId: null,
+    websocketIsHealthy: false,
 }
 type AppState = typeof initialState
 
@@ -62,7 +62,7 @@ enum ActionType {
     ADD_TO_MEMBERS_SEEN = 'ADD_TO_MEMBERS_SEEN',
     ADD_TO_MESSAGES = 'ADD_TO_MESSAGES',
     ADD_TO_GROUPS = 'ADD_TO_GROUPS',
-    CHANGE_USER_IS_ONLINE = 'CHANGE_USER_IS_ONLINE',
+    CHANGE_WEBSOCKET_IS_HEALTHY = 'CHANGE_WEBSOCKET_IS_HEALTHY',
     CHANGE_LAST_FETCHED_MESSAGE_ID = 'CHANGE_LAST_FETCHED_MESSAGE_ID',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
@@ -108,16 +108,16 @@ export function addToGroups(group: Group): Action {
         payload: group,
     }
 }
+export function changeWebsocketIsHealthy(healthy: boolean): Action {
+    return {
+        type: ActionType.CHANGE_WEBSOCKET_IS_HEALTHY,
+        payload: healthy,
+    }
+}
 export function changeLastFetchedMessageId(messageId: string): Action {
     return {
         type: ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID,
         payload: messageId,
-    }
-}
-export function changeUserIsOnline(online: boolean): Action {
-    return {
-        type: ActionType.CHANGE_USER_IS_ONLINE,
-        payload: online,
     }
 }
 export function receiveMembersSeen(members: Member[]): Action {
@@ -300,10 +300,10 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 lastFetchedMessageId: action.payload,
             }
-        case ActionType.CHANGE_USER_IS_ONLINE:
+        case ActionType.CHANGE_WEBSOCKET_IS_HEALTHY:
             return {
                 ...state,
-                userIsOnline: action.payload,
+                websocketIsHealthy: action.payload,
             }
         case ActionType.RECEIVE_MEMBERS_SEEN: {
             const incomingMembers = action.payload
@@ -637,10 +637,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     ...
                 */
 
-                // For updating the user's online status
-                xmpp.on('offline', () => {
-                    dispatch(changeUserIsOnline(false))
-                })
                 xmpp.on('online', async _address => {
                     // Send a presence message
                     try {
@@ -649,7 +645,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         console.error('Error sending XMPP presence', error)
                     }
 
-                    dispatch(changeUserIsOnline(true))
+                    dispatch(changeWebsocketIsHealthy(true))
                     if (xmpp.jid) {
                         dispatch(
                             setAuthenticatedMember(
@@ -849,6 +845,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             )
             try {
                 const xmppClient = state.xmppClient
+                dispatch(changeWebsocketIsHealthy(false))
 
                 // Sometimes we send a presence message and do not
                 // get a response which may mean the stream cannot
@@ -866,6 +863,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 // the stream has been resumed successfully so we can clear
                 // the reconnectTimer and cleanup the listener
                 const onStanzaReceived = async (_: Element) => {
+                    dispatch(changeWebsocketIsHealthy(true))
                     xmppClient?.removeListener('stanza', onStanzaReceived)
                     console.info(
                         'XMPP server responded, do not rebuild XMPP client',
@@ -913,6 +911,10 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         state.xmppClient,
     ])
 
+    // These effects handle saving any state that should persist after the app
+    // is killed by the OS
+    // TODO: consider refactoring to use SQLite
+
     // Update async storage when groups are added
     useEffect(() => {
         if (state.groups.length > DEFAULT_GROUPS.length) {
@@ -923,7 +925,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             )
         }
     }, [state.groups])
-
     // Update async storage when members are added
     useEffect(() => {
         if (state.membersSeen.length > 0) {
@@ -934,7 +935,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             )
         }
     }, [state.membersSeen])
-
     // Update async storage when messages are added
     useEffect(() => {
         if (state.messages.length > 0) {

@@ -1,7 +1,7 @@
 import { Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import type {
     CameraDevice,
     CameraDeviceFormat,
@@ -40,6 +40,7 @@ const RecordVideo = () => {
                 prev: CameraDeviceFormat | undefined,
                 curr: CameraDeviceFormat,
             ) => {
+                console.info('CameraDeviceFormat: ', curr)
                 // Initialize
                 if (prev === undefined) return curr
                 // Filter out formats that don't have video dimensions specified, or are smaller than 100 pixels
@@ -90,30 +91,17 @@ const RecordVideo = () => {
                         ? styles(theme).recordingActive
                         : styles(theme).recordingInactive,
                 ]}>
-                {Platform.OS === 'android' && (
-                    <Camera
-                        style={styles(theme).camera}
-                        ref={camera}
-                        device={device as CameraDevice}
-                        isActive={true}
-                        video={true}
-                        audio={true}
-                        format={format}
-                        fps={15}
-                        hdr={false}
-                    />
-                )}
-                {Platform.OS === 'ios' && (
-                    <Camera
-                        style={styles(theme).camera}
-                        ref={camera}
-                        device={device as CameraDevice}
-                        isActive={true}
-                        video={true}
-                        audio={true}
-                        preset="medium"
-                    />
-                )}
+                <Camera
+                    style={styles(theme).camera}
+                    ref={camera}
+                    device={device as CameraDevice}
+                    isActive={true}
+                    video={true}
+                    audio={true}
+                    format={format}
+                    fps={15}
+                    hdr={false}
+                />
             </View>
             <Text
                 h2

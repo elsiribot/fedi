@@ -129,6 +129,9 @@ const theme = createTheme({
     colors: {
         ...colors,
     },
+    percentages: {
+        shortcutTileWidth: '33%',
+    },
     sizes: {
         xxs: 12,
         xs: 16,

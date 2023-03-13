@@ -52,10 +52,7 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
                         sentBy: state.authenticatedMember,
                         sentTo: member,
                     })
-                    sendDirectMessage({
-                        to: member,
-                        message: newMessage,
-                    })
+                    sendDirectMessage(member, newMessage)
                     // TODO: add message locally and validate later
                     // when server confirms sent message (smoother UX)
                     dispatch(addToMessages(newMessage))

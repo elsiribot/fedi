@@ -46,10 +46,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     updatedAt: Date.now() / 1000,
                 }),
             })
-            sendDirectMessage({
-                to: recipient,
-                message: ecashRequest,
-            })
+            sendDirectMessage(recipient, ecashRequest)
             dispatch(addToMessages(ecashRequest))
             dispatch(addToMembersSeen(recipient))
             setIsLoading(false)

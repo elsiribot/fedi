@@ -7,7 +7,6 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import SvgImage from '../components/ui/SvgImage'
 
-import AdminHeader from '../components/feature/admin/AdminHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
@@ -18,7 +17,6 @@ import {
     TabsNavigatorParamList,
     TABS_NAVIGATOR_ID,
 } from '../types/navigation'
-import Admin from './Admin'
 import ChatScreen from './ChatScreen'
 import Home from './Home'
 
@@ -94,21 +92,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                     }}
                                 />
                             )
-                        case 'Admin':
-                            return (
-                                <SvgImage
-                                    name="Cog"
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    svgProps={{
-                                        stroke: focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
-                                />
-                            )
                         default:
                             return null
                     }
@@ -145,19 +128,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         <>
                             <SelectedFederationHeader />
                             <ChatHeader />
-                        </>
-                    ),
-                })}
-            />
-            <Tab.Screen
-                name="Admin"
-                component={Admin}
-                options={() => ({
-                    title: t('words.admin'),
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <AdminHeader />
                         </>
                     ),
                 })}

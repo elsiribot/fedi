@@ -30,12 +30,11 @@ export type MainNavigatorDrawerParamList = {
     MainNavigator: undefined
 }
 export type TabsNavigatorParamList = {
-    Admin: undefined
     Chat: undefined
-    Sites: undefined
     Home: { offline: boolean }
 }
 export type RootStackParamList = {
+    Admin: undefined
     BitcoinRequest: { uri: string }
     ChatWallet: { recipient: Member }
     ChooseBackupMethod: undefined

@@ -137,5 +137,6 @@ jobs:
         name: Trigger deployment to Google Play for Internal Testing
         needs: release-android
         uses: ./.github/workflows/deploy-to-gp-internal-testing.yml
+        secrets: inherit
         with:
             commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}

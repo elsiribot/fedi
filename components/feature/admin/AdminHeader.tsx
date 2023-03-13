@@ -15,6 +15,7 @@ const AdminHeader: React.FC<{}> = () => {
                     {t('words.admin')}
                 </Text>
             }
+            closeButton
         />
     )
 }

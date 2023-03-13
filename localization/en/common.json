@@ -91,6 +91,7 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
+        "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",
@@ -153,6 +154,7 @@
         "chat": {
             "broadcast-only": "Broadcast only",
             "camera-access-information": "To join a group, you will need to allow Fedi access to your camera to scan a group invite link",
+            "copied-group-invite-code": "Copied group invite code",
             "create-a-group": "Create a group",
             "disappearing-messages": "Disappearing messages",
             "edit-group": "Edit group",
@@ -183,6 +185,7 @@
         "federations": {
             "add-federation": "Add a Federation",
             "camera-access-information": "To join a Federation, you will need to allow Fedi access to your camera to scan the Federation invite code",
+            "copied-group-invite-code": "Copied federation invite link",
             "federation-details": "Federation Details",
             "invite-members": "Invite members",
             "federation-invite": "Federation invite",
@@ -301,6 +304,7 @@
             "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
             "bitcoin-request": "Bitcoin request",
             "camera-access-information": "To receive money offline, you will need to allow Fedi access to your camera to scan an offline payment code",
+            "copied-payment-code": "Copied payment request",
             "create-lightning-request": "Create lightning request",
             "instructions": "Enter how much you want to receive",
             "maximum-invoice-amount": "Maximum invoice amount is 200,000 sats",

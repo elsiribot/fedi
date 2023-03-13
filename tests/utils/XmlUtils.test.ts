@@ -1,4 +1,17 @@
-import xmlUtils from '../../utils/XmlUtils'
+import xmlUtils, { SetRoomConfigQuery } from '../../utils/XmlUtils'
+
+// Mock types to prevent further imports from pulling in dependencies
+// that cause these tests to fail
+jest.mock('../../constants', () => ({
+    XMPP_DEFAULT_PAGE_LIMIT: 10,
+    XMPP_MUC_DOMAIN: 'domain',
+}))
+jest.mock('../../types', () => ({
+    ArchiveQueryFilters: {},
+    ArchiveQueryPagination: {},
+    Group: {},
+    Message: {},
+}))
 
 describe('XmlUtils', () => {
     describe('buildQuery: SetRoomConfig', () => {

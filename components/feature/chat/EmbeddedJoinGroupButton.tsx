@@ -1,8 +1,10 @@
+import Clipboard from '@react-native-clipboard/clipboard'
 import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
 import { useXmpp } from '../../../state/hooks/chat'
 import { Group } from '../../../types'
@@ -17,9 +19,15 @@ type Props = {
 const EmbeddedJoinGroupButton: React.FC<Props> = ({ group }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { fetchMucRoomConfig } = useXmpp()
+    const { toast } = useEnvironmentContext().state
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [groupName, setGroupName] = useState<string>('')
+
+    const copyToClipboard = () => {
+        Clipboard.setString(group.invitationCode as string)
+        toast?.show(t('feature.chat.copied-group-invite-code'), 3000)
+    }
 
     useEffect(() => {
         if (group.id) {
@@ -35,6 +43,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ group }: Props) => {
             color={theme.colors.secondary}
             containerStyle={styles(theme).container}
             onPress={() => navigation.navigate('GroupChat', { group })}
+            onLongPress={copyToClipboard}
             title={
                 <View style={styles(theme).contents}>
                     <SvgImage

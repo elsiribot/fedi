@@ -7,7 +7,10 @@ import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
+import { addToGroups, useChatContext } from '../state/contexts/ChatContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useXmpp } from '../state/hooks/chat'
+import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>
@@ -18,14 +21,19 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { group } = route.params
+    const { dispatch } = useChatContext()
+    const { toast } = useEnvironmentContext().state
     const { enterMucRoom } = useXmpp()
 
     useEffect(() => {
-        enterMucRoom(group)
-    }, [group, enterMucRoom])
+        enterMucRoom(group).then((enteredGroup: Group) => {
+            dispatch(addToGroups(enteredGroup))
+        })
+    }, [dispatch, enterMucRoom, group])
 
     const copyToClipboard = () => {
         Clipboard.setString(group.invitationCode as string)
+        toast?.show(t('feature.chat.copied-group-invite-code'))
     }
 
     const viewGroup = () => {

@@ -1,6 +1,6 @@
 {
     "name": "fedi-react-native",
-    "version": "0.8.3",
+    "version": "1.8.7",
     "private": true,
     "scripts": {
         "build-bridge-android": "sh scripts/build-bridge-android.sh",
@@ -96,6 +96,9 @@
     },
     "jest": {
         "preset": "react-native",
+        "testPathIgnorePatterns": [
+            "tests/e2e"
+        ],
         "moduleFileExtensions": [
             "ts",
             "tsx",

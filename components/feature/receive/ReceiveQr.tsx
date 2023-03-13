@@ -6,6 +6,7 @@ import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../../../assets/images'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { BitcoinOrLightning, BtcLnUri } from '../../../types'
 import stringUtils from '../../../utils/StringUtils'
 
@@ -19,9 +20,11 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.8
 const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { toast } = useEnvironmentContext().state
 
     const copyToClipboard = () => {
         Clipboard.setString(uri.fullString!)
+        toast?.show(t('feature.receive.copied-payment-code'))
     }
 
     const openShareDialog = async () => {
