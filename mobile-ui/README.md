@@ -2,61 +2,77 @@
 
 To set up the development environment you will need to make sure you can build React Native applications.
 
-Follow the guide here for your OS of choice: https://reactnative.dev/docs/environment-setup
+Follow the guide here for your OS of choice: https://reactnative.dev/docs/environment-setup (be sure you are reading the React Native CLI Quickstart, not the Expo Go Quickstart)
 
-You will also need to [install Rust](https://www.rust-lang.org/tools/install) because all the actual interaction with the Federation happens via [this rust code](https://github.com/fedibtc/bridge) which is built automatically by `npm run ios` / `npm run android`.
+1. Install dependencies
 
-1. Start Metro
-
-First, you will need to start Metro, the JavaScript bundler that ships with React Native.
-
-`npx react-native start` inside the root of the React Native project folder (same level as `/android` and `/ios` folders)
-
-2. Clone the bridge in same directory as you cloned this repo.
+First install your Node modules with
 
 ```
-git clone git@github.com:fedibtc/bridge.git
+npm install
 ```
 
-The [Rust bridge](https://github.com/fedibtc/bridge) gets built automatically by our `npm run ios` / `npm run android` commands, but to simplify things just try building it independently. Android is trickier to build than iOS. If you have trouble on Android, message Justin.
+You will also need to [install Rust](https://www.rust-lang.org/tools/install) because all the actual interaction with the Federation happens via [this rust code](https://github.com/fedibtc/fedi-react-native/tree/master/bridge).
+
+2. Start Metro
+
+The Metro server is the JavaScript bundler that ships with React Native.
+
+Make sure you are inside the root of the React Native project folder (this should be the `/mobile-ui` directory, at the same level as `/android` and `/ios` folders) then run:
+
+```
+npx react-native start
+```
+
+3. Build the bridge
+
+The [Rust bridge](https://github.com/fedibtc/fedi-react-native/tree/master/bridge) gets built automatically by the `npm run android` and `npm run ios` commands, but as a first run try building it independently with `npm run build-bridge-android` and `npm run build-bridge-ios`. You can build these in parallel with separate terminals.
 
 ```
 # builds ios
-./ios.sh
+npm run build-bridge-ios
 
 # builds android
-./android.sh
+npm run build-bridge-android
 ```
 
-3. Run the app
+If you have any trouble, check the [bridge/README](https://github.com/fedibtc/fedi-react-native/blob/master/bridge/README.md) and if your problem isn't covered there, open an issue.
 
-In one terminal run the Metro Bundler:
+If there are no changes to the bridge since your last build, this process should be pretty quick as it does not rebuild from scratch.
 
-```
-npm run start
-```
+4. Run the app
 
-In a separate terminal run the ios or android app
+Making sure your Metro Bundler is running from step 2, open a separate terminal to run the android app:
 
 ```
-npm run ios
-
-or
-
 npm run android
 ```
 
-You should see your new app running in the iOS Simulator or Android Studio emulator shortly.
+Open an additional terminal to run the iOS app:
+
+```
+npm run ios
+```
+
+You should see the app running in the iOS Simulator or Android Studio emulator shortly.
+
+If you are running an M1 Mac and/or see an error when running `npm run ios` instead try:
+
+```
+arch -x86_64 npm run ios
+```
+
+If you still have trouble, open the `/mobile-ui/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
 
 ## Directory Structure
 
--   `/screens`
-    -   contains React components that are directly accessible by the navigator
-    -   need to be properly typed and added to the `Router`
--   `/components` folder
-    -   contains React components categorized by `/feature`
-    -   consider creating a new folder if building something that does not fall into one of the existing `/feature` categories
-    -   `/components/ui` is for more generalized components expected to be reused in many (3+) different components or screens
+- `/screens`
+  - contains React components that are directly accessible by the navigator
+  - need to be properly typed and added to the `Router`
+- `/components` folder
+  - contains React components categorized by `/feature`
+  - consider creating a new folder if building something that does not fall into one of the existing `/feature` categories
+  - `/components/ui` is for more generalized components expected to be reused in many (3+) different components or screens
 
 ## Style Guide
 
