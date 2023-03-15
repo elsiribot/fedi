@@ -17,7 +17,6 @@ https://xmpp.org/extensions/
 
 Building with XMPP means interoperability is a viable option for development and Fedi chat servers can be community-driven and customized while maintaining a level of compatibility with each other. This could make things like switching federations or currency conversion smoother for federation members.
 
-
 ### Alternative / Complementary Technologies
 
 #### Matrix
@@ -38,10 +37,31 @@ Uses [xmpp.js](https://github.com/xmppjs/xmpp.js)
 
 ### State Management
 
-CommunityContext.ts
+ChatContext.ts
 
-- initializes client-server connection via websocket
-- manages local updates to messages, groups, members seen and persists via AsyncStorage
+- Initializes client-server connection via websocket
+- Establishes an XMPP client & stores reference in context
+- Listens for new messages & members sent from server
+- Pings the server when app returns to foreground to detect websocket health and rebuild + reconnect if necessary
+- Manages local updates to messages, groups, members seen and persists via AsyncStorage
+
+CreateUsername.tsx
+
+- Allows the user to set a username and triggers registration with the server
+- Handles failed registrations for unavailable username or invalid password
+
+Initializing.tsx
+
+- Retrieves messages, groups, & members seen from persistent storage and stores them in context
+- Determines whether the current client has a username stored locally or recoverable from seed backup
+
+operations/chat.ts
+
+- Implements functions for sending XML queries & messages to XMPP server and handling responses and state changes
+
+hooks/chat.ts
+
+- Exposes functions to use the XMPP client stored in context to perform chat operations
 
 ### Data Models / Types
 
