@@ -118,8 +118,14 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 console.log('recovered username', username)
                 if (username != null) {
                     const credentials = await getXmppCredentials()
-                    const { password } = credentials
-                    dispatch(updateFederationCredentials(username, password))
+                    const { password, keypairSeed } = credentials
+                    dispatch(
+                        updateFederationCredentials(
+                            username,
+                            password,
+                            keypairSeed,
+                        ),
+                    )
                 }
                 setRecovering(false)
                 navigation.dispatch(resetAfterSocialRecovery())
