@@ -56,10 +56,10 @@ npm run ios
 
 You should see the app running in the iOS Simulator or Android Studio emulator shortly.
 
-If you are running an M1 Mac and/or see an error when running `npm run ios` instead try:
+If you are running an AArch64 Mac (M1/M2) and see an error when running `npm run ios` instead try:
 
 ```
-arch -x86_64 npm run ios
+npm run ios-arm64
 ```
 
 If you still have trouble, open the `/mobile-ui/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
