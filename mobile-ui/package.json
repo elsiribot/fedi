@@ -8,6 +8,7 @@
         "build-android": "sh scripts/build-android.sh",
         "android": "sh scripts/run-android.sh",
         "ios": "sh scripts/run-ios.sh",
+        "ios-arm64": "arch -x86_64 sh scripts/run-ios.sh",
         "start": "react-native start",
         "test:functional": "jest",
         "test:e2e:regtest": "sh scripts/run-e2e-tests.sh -n regtest",
