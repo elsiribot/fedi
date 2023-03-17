@@ -73,6 +73,7 @@ pub struct FedimintFederation {
 #[ts(export, export_to = "target/bindings/")]
 pub struct XmppCredentials {
     pub password: String,
+    pub keypair_seed: String,
 }
 
 #[derive(Debug, Serialize, TS)]
