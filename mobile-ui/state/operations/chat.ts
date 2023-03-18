@@ -18,14 +18,18 @@ import {
     Member,
     Message,
 } from '../../types'
+import { Key } from '../../types/chat'
 import xmlUtils, {
     AddToRosterQuery,
     DirectChatMessage,
     EnterMucRoomPresence,
     GetMessagesQuery,
+    GetPublicKeyQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
     GroupChatMessage,
+    PublishPublicKeyQuery,
+    SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
     UpdatePaymentMessage,
@@ -213,6 +217,31 @@ export const fetchMucRoomConfig = (
     })
 }
 
+export const getPublicKeyFor = (
+    member: Member,
+    xmppClient: Client | null,
+): Promise<boolean> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const getPubkeyQueryXml = xmlUtils.buildQuery(
+                new GetPublicKeyQuery({
+                    from: xmppClient!.jid!.toString(),
+                    to: member.jid.toString(),
+                }),
+            )
+            const result = await iqCaller.request(getPubkeyQueryXml)
+            console.info('getPublicKeyFor', result)
+            resolve(true)
+        } catch (error: any) {
+            console.error('getPublicKeyFor', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
 export const getUniqueGroupId = (
     xmppClient: Client | null,
 ): Promise<string> => {
@@ -294,6 +323,38 @@ export const enterMucRoom = (
             xmppClient?.send(enterMucRoomPresence)
         } catch (error) {
             console.error('enterMucRoom', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const publishPublicKey = (
+    pubkey: Key,
+    xmppClient: Client | null,
+): Promise<boolean> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+        console.info('pubkey', pubkey.hex)
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const publishPubkeyQueryXml = xmlUtils.buildQuery(
+                new PublishPublicKeyQuery({
+                    pubkey: pubkey.hex,
+                    from: xmppClient!.jid!.toString(),
+                }),
+            )
+            const result = await iqCaller.request(publishPubkeyQueryXml)
+            console.info('publishPublicKey', result)
+            const setPubsubNodeConfigQueryXml = xmlUtils.buildQuery(
+                new SetPubsubNodeConfigQuery({
+                    from: xmppClient!.jid!.toString(),
+                }),
+            )
+            await iqCaller.request(setPubsubNodeConfigQueryXml)
+            resolve(true)
+        } catch (error: any) {
+            console.error('publishPublicKey', error)
             reject(i18n.t('errors.unknown-error'))
         }
     })

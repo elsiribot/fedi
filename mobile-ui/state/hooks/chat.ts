@@ -16,6 +16,7 @@ import {
     fetchMessagesFromArchive,
     fetchMucRoomConfig,
     fetchRoster,
+    getPublicKeyFor,
     getUniqueGroupId,
     sendDirectMessage,
     sendGroupMessage,
@@ -69,6 +70,12 @@ export const useXmpp = () => {
         fetchRoster: useCallback((): Promise<boolean> => {
             return fetchRoster(dispatch, xmppClient)
         }, [dispatch, xmppClient]),
+        getPublicKeyFor: useCallback(
+            (member: Member): Promise<boolean> => {
+                return getPublicKeyFor(member, xmppClient)
+            },
+            [xmppClient],
+        ),
         getUniqueGroupId: useCallback((): Promise<string> => {
             return getUniqueGroupId(xmppClient)
         }, [xmppClient]),
