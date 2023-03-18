@@ -24,6 +24,7 @@ import {
     FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
+    XMPP_MESSAGE_TYPES,
     XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
@@ -869,39 +870,37 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             }
         }
 
-        // Monitor for incoming messages
+        // Listen for incoming messages
         state.xmppClient?.on('stanza', async stanza => {
             try {
                 if (stanza.is('message')) {
                     switch (stanza.getAttr('type')) {
                         // Handle incoming messages from GroupChat
-                        case 'groupchat': {
+                        case XMPP_MESSAGE_TYPES.GROUPCHAT: {
                             handleIncomingGroupMessage(stanza)
                             break
                         }
                         // Handle incoming messages from DirectChat while online
-                        case 'chat': {
+                        case XMPP_MESSAGE_TYPES.CHAT: {
                             handleIncomingDirectMessage(stanza)
                             break
                         }
                         // Handle incoming messages after subscribing to user
                         // public key for e2e encryption
-                        case 'headline': {
+                        case XMPP_MESSAGE_TYPES.HEADLINE: {
                             handleSubscriptionEvent(stanza)
                             break
                         }
+                        default:
+                            break
+                    }
                         // Handle messages received while offline, typically
                         // triggered by the fetchMessagesFromArchive hook
-                        default: {
                             if (
-                                stanza
-                                    .getChild('result')
-                                    ?.getAttr('queryid') === 'get-messages'
+                        stanza.getChild('result')?.getAttr('queryid') ===
+                        'get-messages'
                             ) {
                                 handleIncomingMessageArchives(stanza)
-                            }
-                            break
-                        }
                     }
                 }
             } catch (error) {
