@@ -3,6 +3,7 @@ import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
 import XMPPError from '@xmpp/error'
 import { JID } from '@xmpp/jid'
+import { Element } from 'ltx'
 import { isEqual } from 'lodash'
 import React, {
     createContext,
@@ -27,6 +28,9 @@ import {
 } from '../../constants'
 import i18n from '../../localization/i18n'
 import { Group, Member, Message } from '../../types'
+import { Keypair } from '../../types/chat'
+import encryptionUtils from '../../utils/EncryptionUtils'
+import { publishPublicKey } from '../operations/chat'
 import { useFederationsContext } from './FederationsContext'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -177,6 +181,12 @@ export function updateGroup(group: Group): Action {
         payload: group,
     }
 }
+export function updateMember(member: Member): Action {
+    return {
+        type: ActionType.UPDATE_MEMBER,
+        payload: member,
+    }
+}
 export function resetXmppClient(): Action {
     return {
         type: ActionType.RESET_XMPP_CLIENT,
@@ -317,7 +327,13 @@ export function reducer(state: AppState, action: Action): AppState {
         case ActionType.RECEIVE_MEMBERS_SEEN: {
             const incomingMembers = action.payload
             const newMembersSeen = incomingMembers
-                .map((im: Member) => new Member({ jid: im.jid }))
+                .map(
+                    (im: Member) =>
+                        new Member({
+                            ...im,
+                            jid: im.jid,
+                        }),
+                )
                 .filter((im: Member) => {
                     const memberExists = state.membersSeen.find(
                         (m: Member) => m.username === im.username,
@@ -483,6 +499,42 @@ export function reducer(state: AppState, action: Action): AppState {
                 }
             }
         }
+        case ActionType.UPDATE_MEMBER: {
+            const memberToUpdate = action.payload
+            const memberIndex = state.membersSeen.findIndex(
+                (m: Member) => m.username === memberToUpdate.username,
+            )
+
+            // don't update ourselves
+            if (state.xmppClient?.jid?.getLocal() === memberToUpdate.username) {
+                return state
+            }
+
+            if (memberIndex === -1) {
+                // New members get added
+                return {
+                    ...state,
+                    membersSeen: [...state.membersSeen, memberToUpdate],
+                }
+            } else if (
+                isEqual(memberToUpdate, state.membersSeen[memberIndex])
+            ) {
+                // Avoid re-render, this member has not changed
+                return state
+            } else {
+                // member needs an update...
+                const updatedMember = new Member({
+                    ...state.membersSeen[memberIndex],
+                    ...memberToUpdate,
+                })
+                return {
+                    ...state,
+                    membersSeen: state.membersSeen.map((m: Member, i) =>
+                        i === memberIndex ? updatedMember : m,
+                    ),
+                }
+            }
+        }
         case ActionType.RESET_CHAT_STATE:
             return { ...initialState }
         default:
@@ -630,7 +682,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 const xmpp = client(xmppConnectionOptions)
 
                 // debug(xmpp, true)
-                // debug(xmpp, true, `OS=${Platform.OS}`)
+                debug(xmpp, true, `OS=${Platform.OS}`)
                 /*
                     This ^ helps debug when testing with both ios + android
                     emulators simultaneously to know which stanzas are coming
@@ -710,104 +762,145 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     ])
 
     const configureXmppMessageListeners = useCallback(() => {
+        const handleIncomingGroupMessage = (stanza: Element) => {
+            const bodyText = stanza.getChildText('body')
+            if (!bodyText) return
+
+            const groupMessageJson = stanza.getChildText('gm')
+            const parsedMessage = JSON.parse(groupMessageJson as string)
+            if (!parsedMessage) return
+
+            const newMessage = new Message({
+                ...parsedMessage,
+            })
+
+            dispatch(addToMessages(newMessage))
+            dispatch(updateGroupMessagePreview(newMessage))
+
+            // This came from a user through the MUC domain, reformat JID
+            // to main domain with the /chat resource
+            const from = stanza.getAttr('from')
+            const fromJid = jid(from)
+            let userJid: JID = jid(
+                fromJid.getResource(),
+                XMPP_DOMAIN,
+                XMPP_RESOURCE,
+            )
+            dispatch(addToMembersSeen(new Member({ jid: userJid })))
+        }
+        const handleIncomingDirectMessage = (stanza: Element) => {
+            const bodyText = stanza.getChildText('body')
+            if (!bodyText) return
+
+            const directMessageJson = stanza.getChildText('dm')
+            const parsedMessage = JSON.parse(directMessageJson as string)
+            if (!parsedMessage) return
+
+            const newMessage = new Message({
+                ...parsedMessage,
+            })
+
+            const action = stanza.getChild('action')
+            if (action?.getNS() === 'fedi:update-payment') {
+                // find message and replace with updated version
+                // with canceled or rejected payment
+                dispatch(updateMessage(newMessage))
+            } else {
+                dispatch(addToMessages(newMessage))
+                dispatch(updateGroupMessagePreview(newMessage))
+
+                const from = stanza.getAttr('from')
+                const fromJid = jid(from)
+                const userJid: JID = fromJid
+                dispatch(addToMembersSeen(new Member({ jid: userJid })))
+            }
+        }
+        const handleSubscriptionEvent = (stanza: Element) => {
+            const event = stanza.getChild('event')
+
+            const items = event?.getChild('items')
+            const nodeId = items?.getAttr('node') as string
+
+            const publishedItem = items?.getChild('item')
+            const publisher = publishedItem?.getAttr('publisher')
+            const publisherJid: JID = jid(publisher)
+            const publishingMember = new Member({ jid: publisherJid })
+            // if the node ID does not match the publisher JID... this pubkey
+            // was not published by Fedi source code...
+            // do not overwrite the locally stored pubkey for this member
+            // TODO: implement signature validation for authentication?
+            if (!nodeId.includes(publishingMember.username)) {
+                console.error('node ID does not match the publisher JID')
+                return
+            }
+            const pubkey = publishedItem?.getChildText('entry')
+            console.info('pubkey', pubkey)
+            publishingMember.publicKeyHex = pubkey as string
+            console.info('publishingMember', publishingMember)
+
+            dispatch(updateMember(publishingMember))
+        }
+        const handleIncomingMessageArchives = (stanza: Element) => {
+            const result = stanza.getChild('result')
+            const forwarded = result?.getChild('forwarded')
+            const message = forwarded?.getChild('message')
+            if (!message) return
+
+            const directMessageJson = message.getChildText('dm')
+            const parsedMessage = JSON.parse(directMessageJson as string)
+            if (!parsedMessage) return
+            const newMessage = new Message({
+                ...parsedMessage,
+            })
+
+            const action = message.getChild('action')
+            if (action?.getNS() === 'fedi:update-payment') {
+                // find message and replace with updated version
+                // with canceled or rejected payment
+                dispatch(updateMessage(newMessage))
+            } else {
+                dispatch(addToMessages(newMessage))
+                dispatch(updateGroupMessagePreview(newMessage))
+
+                const from = message.getAttr('from')
+                const fromJid = jid(from)
+                const userJid: JID = fromJid
+                dispatch(addToMembersSeen(new Member({ jid: userJid })))
+            }
+        }
+
         // Monitor for incoming messages
         state.xmppClient?.on('stanza', async stanza => {
             try {
                 if (stanza.is('message')) {
-                    if (stanza.getAttr('type') === 'groupchat') {
+                    switch (stanza.getAttr('type')) {
                         // Handle incoming messages from GroupChat
-                        const bodyText = stanza.getChildText('body')
-                        if (!bodyText) return
-
-                        const groupMessageJson = stanza.getChildText('gm')
-                        const parsedMessage = JSON.parse(
-                            groupMessageJson as string,
-                        )
-                        if (!parsedMessage) return
-
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                        })
-
-                        dispatch(addToMessages(newMessage))
-                        dispatch(updateGroupMessagePreview(newMessage))
-
-                        // This came from a user through the MUC domain, reformat JID
-                        // to main domain with the /chat resource
-                        const from = stanza.getAttr('from')
-                        const fromJid = jid(from)
-                        let userJid: JID = jid(
-                            fromJid.getResource(),
-                            XMPP_DOMAIN,
-                            XMPP_RESOURCE,
-                        )
-                        dispatch(addToMembersSeen(new Member({ jid: userJid })))
-                    } else if (stanza.getAttr('type') === 'chat') {
-                        // Handle incoming messages from DirectChat while online
-                        const bodyText = stanza.getChildText('body')
-                        if (!bodyText) return
-
-                        const directMessageJson = stanza.getChildText('dm')
-                        const parsedMessage = JSON.parse(
-                            directMessageJson as string,
-                        )
-                        if (!parsedMessage) return
-
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                        })
-
-                        const action = stanza.getChild('action')
-                        if (action?.getNS() === 'fedi:update-payment') {
-                            // find message and replace with updated version
-                            // with canceled or rejected payment
-                            dispatch(updateMessage(newMessage))
-                        } else {
-                            dispatch(addToMessages(newMessage))
-                            dispatch(updateGroupMessagePreview(newMessage))
-
-                            const from = stanza.getAttr('from')
-                            const fromJid = jid(from)
-                            const userJid: JID = fromJid
-                            dispatch(
-                                addToMembersSeen(new Member({ jid: userJid })),
-                            )
+                        case 'groupchat': {
+                            handleIncomingGroupMessage(stanza)
+                            break
                         }
-                    } else if (
-                        stanza.getChild('result')?.getAttr('queryid') ===
-                        'get-messages'
-                    ) {
+                        // Handle incoming messages from DirectChat while online
+                        case 'chat': {
+                            handleIncomingDirectMessage(stanza)
+                            break
+                        }
+                        // Handle incoming messages after subscribing to user
+                        // public key for e2e encryption
+                        case 'headline': {
+                            handleSubscriptionEvent(stanza)
+                            break
+                        }
                         // Handle messages received while offline, typically
                         // triggered by the fetchMessagesFromArchive hook
-                        const result = stanza.getChild('result')
-                        const forwarded = result?.getChild('forwarded')
-                        const message = forwarded?.getChild('message')
-                        if (!message) return
-
-                        const directMessageJson = message.getChildText('dm')
-                        const parsedMessage = JSON.parse(
-                            directMessageJson as string,
-                        )
-                        if (!parsedMessage) return
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                        })
-
-                        const action = message.getChild('action')
-                        if (action?.getNS() === 'fedi:update-payment') {
-                            // find message and replace with updated version
-                            // with canceled or rejected payment
-                            dispatch(updateMessage(newMessage))
-                        } else {
-                            dispatch(addToMessages(newMessage))
-                            dispatch(updateGroupMessagePreview(newMessage))
-
-                            const from = message.getAttr('from')
-                            const fromJid = jid(from)
-                            const userJid: JID = fromJid
-                            dispatch(
-                                addToMembersSeen(new Member({ jid: userJid })),
-                            )
+                        default: {
+                            if (
+                                stanza
+                                    .getChild('result')
+                                    ?.getAttr('queryid') === 'get-messages'
+                            ) {
+                                handleIncomingMessageArchives(stanza)
+                            }
+                            break
                         }
                     }
                 }

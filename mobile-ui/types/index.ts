@@ -170,6 +170,7 @@ export type GroupSettings = {
 
 export class Member extends Base {
     jid: JID
+    publicKeyHex?: String
     constructor(data: any) {
         super(data)
         this.jid = jid(data.jid._local, data.jid._domain, data.jid._resource)
