@@ -5,35 +5,29 @@ import {
     encodeBase64,
     decodeBase64,
 } from 'tweetnacl-util'
-import { createHash } from 'crypto'
-
-type Key = {
-    hex: string
-    bytes: Uint8Array
-}
-type Keypair = {
-    publicKey: Key
-    privateKey: Key
-}
-
-const newNonce = () => randomBytes(box.nonceLength)
+import { Buffer } from 'buffer'
+import { Key, Keypair } from '../types/chat'
 
 class EncryptionUtils {
+    static newNonce = () => randomBytes(box.nonceLength)
+    static hexToUint8Array = (hex: string): Uint8Array => {
+        const length = hex.length / 2
+        const result = new Uint8Array(length)
+
+        for (let i = 0; i < length; i++) {
+            result[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+        }
+
+        return result
+    }
     generateDeterministicKeyPair = (seed: string): Keypair => {
-        // Hash the keypair seed and use it to derive a keypair
-        const hash = createHash('sha256')
-        hash.update(seed)
-        const hashedSeed = new Uint8Array(hash.digest())
-        const keyPair = box.keyPair.fromSecretKey(hashedSeed)
+        // use the keypair seed and to derive a keypair
+        const seedBytes = new Uint8Array(EncryptionUtils.hexToUint8Array(seed))
+        const keyPair = box.keyPair.fromSecretKey(seedBytes)
 
         // Extract the public and private keys
         const publicKeyHex = Buffer.from(keyPair.publicKey).toString('hex')
         const privateKeyHex = Buffer.from(keyPair.secretKey).toString('hex')
-
-        console.log('keys:', {
-            publicKeyHex,
-            privateKeyHex,
-        })
 
         return {
             publicKey: {
@@ -51,14 +45,11 @@ class EncryptionUtils {
         publicKey: Key,
         privateKey: Key,
     ): string => {
-        console.info('message', message)
-        const nonce = newNonce()
+        const nonce = EncryptionUtils.newNonce()
         const messageUint8 = decodeUTF8(message)
 
         const sharedKey = box.before(publicKey.bytes, privateKey.bytes)
         const encrypted = box.after(messageUint8, nonce, sharedKey)
-
-        console.info('encrypted', encrypted)
 
         const fullMessage = new Uint8Array(nonce.length + encrypted.length)
         fullMessage.set(nonce)
@@ -72,7 +63,6 @@ class EncryptionUtils {
         publicKey: Key,
         privateKey: Key,
     ): string => {
-        console.info('message', messageWithNonce)
         const messageWithNonceAsUint8Array = decodeBase64(messageWithNonce)
         const nonce = messageWithNonceAsUint8Array.slice(0, box.nonceLength)
         const message = messageWithNonceAsUint8Array.slice(
@@ -89,7 +79,6 @@ class EncryptionUtils {
 
         const base64DecryptedMessage = encodeUTF8(decrypted)
 
-        console.info('base64DecryptedMessage', base64DecryptedMessage)
         return base64DecryptedMessage
     }
 }
