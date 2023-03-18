@@ -44,6 +44,7 @@ interface ChatContextState {
     membersSeen: Member[]
     lastFetchedMessageId: string | null
     websocketIsHealthy: boolean
+    encryptionKeys: Keypair | null
 }
 const initialState: ChatContextState = {
     xmppClient: null,
@@ -54,6 +55,7 @@ const initialState: ChatContextState = {
     membersSeen: [],
     lastFetchedMessageId: null,
     websocketIsHealthy: false,
+    encryptionKeys: null,
 }
 type AppState = typeof initialState
 
@@ -70,6 +72,7 @@ enum ActionType {
     RESET_CHAT_STATE = 'RESET_CHAT_STATE',
     RESET_XMPP_CLIENT = 'RESET_XMPP_CLIENT',
     SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
+    SET_ENCRYPTION_KEYS = 'SET_ENCRYPTION_KEYS',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_GROUP = 'UPDATE_GROUP',
     UPDATE_GROUP_MESSAGE_PREVIEW = 'UPDATE_GROUP_MESSAGE_PREVIEW',
@@ -142,6 +145,12 @@ export function setAuthenticatedMember(member: Member): Action {
     return {
         type: ActionType.SET_AUTHENTICATED_MEMBER,
         payload: member,
+    }
+}
+export function setEncryptionKeys(keys: Keypair): Action {
+    return {
+        type: ActionType.SET_ENCRYPTION_KEYS,
+        payload: keys,
     }
 }
 export function setXmppClient(xmpp: Client): Action {
@@ -351,6 +360,11 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 authenticatedMember: action.payload,
+            }
+        case ActionType.SET_ENCRYPTION_KEYS:
+            return {
+                ...state,
+                encryptionKeys: action.payload,
             }
         case ActionType.SET_XMPP_CLIENT:
             return {
@@ -910,6 +924,29 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         configureXmppQueryListeners,
         state.xmppClient,
     ])
+
+    // This effect derives a keypair when the keypair seed is returned
+    // from the bridge and handled in FederationsContext
+    useEffect(() => {
+        if (selectedFederation?.keypairSeed) {
+            const derivedKeypair = encryptionUtils.generateDeterministicKeyPair(
+                selectedFederation.keypairSeed,
+            )
+            dispatch(setEncryptionKeys(derivedKeypair))
+        }
+    }, [selectedFederation?.keypairSeed])
+
+    useEffect(() => {
+        if (
+            state.xmppClient &&
+            state.authenticatedMember &&
+            state.encryptionKeys
+        ) {
+            const { publicKey } = state.encryptionKeys as Keypair
+            // console.info('publicKey', publicKey.hex)
+            publishPublicKey(publicKey, state.xmppClient)
+        }
+    }, [state.encryptionKeys, state.authenticatedMember, state.xmppClient])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS
