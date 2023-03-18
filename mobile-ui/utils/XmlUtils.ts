@@ -25,6 +25,9 @@ type XmppArgs =
     | EnterMucRoomArgs
     | DirectChatArgs
     | GroupChatArgs
+    | GetPublicKeyArgs
+    | SetPubsubNodeConfigArgs
+    | PublishPublicKeyArgs
 
 class XmppStanza {
     tag: string
@@ -197,6 +200,11 @@ type GetMessagesArgs = {
 }
 type GetRoomConfigArgs = CommonXmppAttributes
 type GetRosterArgs = CommonXmppAttributes
+type GetPublicKeyArgs = CommonXmppAttributes
+interface PublishPublicKeyArgs extends CommonXmppAttributes {
+    pubkey: string
+}
+type SetPubsubNodeConfigArgs = CommonXmppAttributes
 interface SetRoomConfigArgs extends CommonXmppAttributes {
     roomName: string
 }
@@ -337,6 +345,152 @@ export class GetRosterQuery extends XmppQuery {
             xmlns: 'jabber:iq:roster',
         })
         return xml(this.tag, attributes, queryBodyXml)
+    }
+}
+// This subscribes to a given member's pubsub service that stores
+// their latest public key used for end-to-end encryption
+export class GetPublicKeyQuery extends XmppQuery {
+    name = 'getPublicKey'
+    args: GetPublicKeyArgs
+    constructor(args: GetPublicKeyArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { from, to } = this.args
+        const toJid: JID = jid(to!)
+        const nodeService = toJid.bare().toString()
+        const nodeId = `${toJid.local}:::pubkey`
+
+        const attributes = {
+            id: `${this.name}-${uuid.v4()}`,
+            from,
+            to: nodeService,
+            type: 'set',
+        }
+
+        const subscribeXml = xml('subscribe', {
+            node: nodeId,
+            jid: from,
+        })
+
+        const pubsubXml = xml(
+            'pubsub',
+            {
+                xmlns: 'http://jabber.org/protocol/pubsub',
+            },
+            subscribeXml,
+        )
+
+        return xml(this.tag, attributes, pubsubXml)
+    }
+}
+// This publishes the user's pubkey to a pubsub node service auto-created by the
+// Prosody server pep module as per XEP-163. Defaults to a presence access model
+// so we must then reconfigure it later to use an open access model
+export class PublishPublicKeyQuery extends XmppQuery {
+    name = 'publishPublicKey'
+    args: PublishPublicKeyArgs
+    constructor(args: PublishPublicKeyArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { pubkey, from } = this.args
+        const fromJid: JID = jid(from!)
+        const nodeId = `${fromJid.local}:::pubkey`
+
+        const attributes = {
+            id: `${this.name}-${uuid.v4()}`,
+            from,
+            type: 'set',
+        }
+
+        const entryXml = xml('entry', {}, pubkey)
+        const itemXml = xml('item', { id: 'latest-pubkey' }, entryXml)
+
+        const publishXml = xml(
+            'publish',
+            {
+                node: nodeId,
+            },
+            itemXml,
+        )
+
+        const pubsubXml = xml(
+            'pubsub',
+            {
+                xmlns: 'http://jabber.org/protocol/pubsub',
+            },
+            publishXml,
+        )
+
+        return xml(this.tag, attributes, pubsubXml)
+    }
+}
+// This configures the pubsub node that stores this user's pubkey to allow
+// access to anyone who requests / subscribes to it
+export class SetPubsubNodeConfigQuery extends XmppQuery {
+    name = 'setPubsubNodeConfig'
+    args: SetPubsubNodeConfigArgs
+    constructor(args: SetPubsubNodeConfigArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { from } = this.args
+        const fromJid: JID = jid(from!)
+        const nodeService = fromJid.bare().toString()
+        const nodeId = `${fromJid.local}:::pubkey`
+
+        const attributes = {
+            id: `${this.name}-${uuid.v4()}`,
+            from,
+            to: nodeService,
+            type: 'set',
+        }
+
+        const formTypeFieldXml = xml(
+            'field',
+            { var: 'FORM_TYPE', type: 'hidden' },
+            xml('value', {}, 'http://jabber.org/protocol/pubsub#node_config'),
+        )
+
+        const accessModelFieldXml = xml(
+            'field',
+            {
+                var: 'pubsub#access_model',
+            },
+            xml('value', {}, 'open'),
+        )
+
+        const fieldsXml = xml(
+            'x',
+            {
+                xmlns: 'jabber:x:data',
+                type: 'submit',
+            },
+            formTypeFieldXml,
+            accessModelFieldXml,
+        )
+
+        const configureXml = xml(
+            'configure',
+            {
+                node: nodeId,
+            },
+            fieldsXml,
+        )
+
+        const pubsubXml = xml(
+            'pubsub',
+            {
+                xmlns: 'http://jabber.org/protocol/pubsub#owner',
+            },
+            configureXml,
+        )
+
+        return xml(this.tag, attributes, pubsubXml)
     }
 }
 export class SetRoomConfigQuery extends XmppQuery {
