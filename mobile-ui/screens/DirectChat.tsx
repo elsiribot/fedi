@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import { orderBy } from 'lodash'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
@@ -24,7 +24,13 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { member } = route.params
     const { state, dispatch } = useChatContext()
-    const { sendDirectMessage } = useXmpp()
+    const { getPublicKeyFor, sendDirectMessage } = useXmpp()
+
+    useEffect(() => {
+        if (member) {
+            getPublicKeyFor(member)
+        }
+    }, [getPublicKeyFor, member])
 
     const messagesWithMember = state.messages.filter(m => {
         if (
