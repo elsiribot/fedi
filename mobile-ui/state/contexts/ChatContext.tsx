@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
+import parse from '@xmpp/xml/lib/parse'
 import XMPPError from '@xmpp/error'
 import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
@@ -29,7 +30,7 @@ import {
 } from '../../constants'
 import i18n from '../../localization/i18n'
 import { Group, Member, Message } from '../../types'
-import { Keypair } from '../../types/chat'
+import { Key, Keypair } from '../../types/chat'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { publishPublicKey } from '../operations/chat'
 import { useFederationsContext } from './FederationsContext'
@@ -763,6 +764,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     ])
 
     const configureXmppMessageListeners = useCallback(() => {
+        // Handlers for incoming messages
         const handleIncomingGroupMessage = (stanza: Element) => {
             const bodyText = stanza.getChildText('body')
             if (!bodyText) return
@@ -790,14 +792,42 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             dispatch(addToMembersSeen(new Member({ jid: userJid })))
         }
         const handleIncomingDirectMessage = (stanza: Element) => {
-            const bodyText = stanza.getChildText('body')
-            if (!bodyText) return
+            let newMessage, directMessageJson, parsedMessage
+            const encrypted = stanza.getChild('encrypted')
+            if (encrypted) {
+                console.log('encrypted', encrypted.toString())
+                // First decrypt the payload
+                const header = encrypted.getChild('header')
+                const keys = header?.getChild('keys')
+                const senderPublicKey = keys?.getChildText('key')
 
-            const directMessageJson = stanza.getChildText('dm')
-            const parsedMessage = JSON.parse(directMessageJson as string)
+                const encryptedPayloadContents =
+                    encrypted.getChildText('payload')
+
+                console.log(
+                    'encryptedPayloadContents',
+                    encryptedPayloadContents,
+                )
+                const recipientPrivateKey = state.encryptionKeys
+                    ?.privateKey as Key
+                const decryptedPayload = encryptionUtils.decryptMessage(
+                    encryptedPayloadContents!,
+                    new Key({ hex: senderPublicKey }),
+                    recipientPrivateKey,
+                )
+
+                console.log('decryptedPayload', decryptedPayload)
+                const decryptedEnvelope = parse(decryptedPayload)
+                const content = decryptedEnvelope.getChild('content')
+                directMessageJson = content.getChildText('dm')
+            } else {
+                directMessageJson = stanza.getChildText('dm')
+            }
+
+            parsedMessage = JSON.parse(directMessageJson as string)
             if (!parsedMessage) return
 
-            const newMessage = new Message({
+            newMessage = new Message({
                 ...parsedMessage,
             })
 
@@ -871,7 +901,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
 
         // Listen for incoming messages
-        state.xmppClient?.on('stanza', async stanza => {
+        const onStanzaReceived = async (stanza: Element) => {
             try {
                 if (stanza.is('message')) {
                     switch (stanza.getAttr('type')) {
@@ -906,8 +936,15 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             } catch (error) {
                 console.error('Error parsing XMPP stanza', error)
             }
-        })
-    }, [state.xmppClient])
+        }
+        console.info('setting onStanzaReceived lisetener')
+        state.xmppClient?.on('stanza', onStanzaReceived)
+
+        return () => {
+            console.info('removeListener onStanzaReceived lisetener')
+            state.xmppClient?.removeListener('stanza', onStanzaReceived)
+        }
+    }, [state.encryptionKeys?.privateKey, state.xmppClient])
 
     const configureXmppQueryListeners = useCallback(() => {
         // Monitor for incoming iq responses
