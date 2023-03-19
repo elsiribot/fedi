@@ -5,25 +5,19 @@ import {
     encodeBase64,
     decodeBase64,
 } from 'tweetnacl-util'
+import { createHash } from 'crypto'
 import { Buffer } from 'buffer'
+
 import { Key, Keypair } from '../types/chat'
 
 class EncryptionUtils {
     static newNonce = () => randomBytes(box.nonceLength)
-    static hexToUint8Array = (hex: string): Uint8Array => {
-        const length = hex.length / 2
-        const result = new Uint8Array(length)
-
-        for (let i = 0; i < length; i++) {
-            result[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
-        }
-
-        return result
-    }
     generateDeterministicKeyPair = (seed: string): Keypair => {
-        // use the keypair seed and to derive a keypair
-        const seedBytes = new Uint8Array(EncryptionUtils.hexToUint8Array(seed))
-        const keyPair = box.keyPair.fromSecretKey(seedBytes)
+        // Hash the keypair seed and use it to derive a keypair
+        const hash = createHash('sha256')
+        hash.update(seed)
+        const hashedSeed = new Uint8Array(hash.digest())
+        const keyPair = box.keyPair.fromSecretKey(hashedSeed)
 
         // Extract the public and private keys
         const publicKeyHex = Buffer.from(keyPair.publicKey).toString('hex')
