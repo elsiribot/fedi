@@ -8,7 +8,7 @@ import {
 import { createHash } from 'crypto'
 import { Buffer } from 'buffer'
 
-import { Key, Keypair } from '../types/chat'
+import { Key, Keypair } from '../types'
 
 class EncryptionUtils {
     static newNonce = () => randomBytes(box.nonceLength)
@@ -24,14 +24,12 @@ class EncryptionUtils {
         const privateKeyHex = Buffer.from(keyPair.secretKey).toString('hex')
 
         return {
-            publicKey: {
+            publicKey: new Key({
                 hex: publicKeyHex,
-                bytes: keyPair.publicKey,
-            },
-            privateKey: {
+            }),
+            privateKey: new Key({
                 hex: privateKeyHex,
-                bytes: keyPair.secretKey,
-            },
+            }),
         }
     }
     encryptMessage = (

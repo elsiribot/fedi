@@ -1,8 +1,9 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { ImageSourcePropType } from 'react-native'
-import { SiteImages } from '../assets/images'
+import { Buffer } from 'buffer'
 
+import { SiteImages } from '../assets/images'
 import { Invoice } from '../bridge'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
@@ -240,4 +241,20 @@ export type ArchiveQueryPagination = {
 export type MessageArchiveQuery = {
     filters?: ArchiveQueryFilters | null
     pagination?: ArchiveQueryPagination | null
+}
+
+export class Key extends Base {
+    hex: string
+    constructor(data: any) {
+        super(data)
+    }
+    // Makes sure every key has both hex and bytes properties
+    get bytes(): Uint8Array {
+        return Buffer.from(this.hex, 'hex')
+    }
+}
+
+export type Keypair = {
+    publicKey: Key
+    privateKey: Key
 }

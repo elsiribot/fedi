@@ -14,8 +14,7 @@ import {
     useChatContext,
 } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks/chat'
-import { Message } from '../types'
-import { Keypair } from '../types/chat'
+import { Keypair, Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>

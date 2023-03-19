@@ -5,10 +5,10 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Keypair,
     Member,
     Message,
 } from '../../types'
-import { Keypair } from '../../types/chat'
 import { useChatContext } from '../contexts/ChatContext'
 import {
     addMemberToRoster,

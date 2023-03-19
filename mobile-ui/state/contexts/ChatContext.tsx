@@ -29,11 +29,11 @@ import {
     XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
-import { Group, Member, Message } from '../../types'
-import { Key, Keypair } from '../../types/chat'
+import { Group, Key, Keypair, Member, Message } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { publishPublicKey } from '../operations/chat'
 import { useFederationsContext } from './FederationsContext'
+import { GetMessagesQuery } from '../../utils/XmlUtils'
 
 export const DEFAULT_GROUPS: Group[] = [
     // FEDI_GENERAL_CHANNEL_GROUP,
@@ -924,13 +924,15 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         default:
                             break
                     }
-                        // Handle messages received while offline, typically
-                        // triggered by the fetchMessagesFromArchive hook
-                            if (
-                        stanza.getChild('result')?.getAttr('queryid') ===
-                        'get-messages'
-                            ) {
-                                handleIncomingMessageArchives(stanza)
+                    // Handle messages received while offline, typically
+                    // triggered by the fetchMessagesFromArchive hook
+                    if (
+                        stanza
+                            .getChild('result')
+                            ?.getAttr('queryid')
+                            .contains(GetMessagesQuery.id)
+                    ) {
+                        handleIncomingMessageArchives(stanza)
                     }
                 }
             } catch (error) {

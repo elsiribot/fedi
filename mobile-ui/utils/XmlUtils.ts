@@ -9,9 +9,10 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Key,
+    Keypair,
     Message,
 } from '../types'
-import { Key, Keypair } from '../types/chat'
 import encryptionUtils from './EncryptionUtils'
 
 interface CommonXmppAttributes {
@@ -48,13 +49,27 @@ class XmppQuery extends XmppStanza {
     tag = 'iq'
 }
 
-// XMPP Message stanzas
-// XML with a top-level <message> tag
+/*
+    XMPP Message stanzas
+    XML with a top-level <message> tag
+*/
 interface DirectChatArgs extends CommonXmppAttributes {
     message: Message
 }
+interface EncryptedDirectChatArgs extends CommonXmppAttributes {
+    message: Message
+    senderKeys: Keypair
+    recipientPublicKey: Key
+}
+interface GroupChatArgs extends CommonXmppAttributes {
+    message: Message
+    toGroup: Group
+}
+interface UpdatePaymentArgs extends CommonXmppAttributes {
+    message: Message
+}
 export class DirectChatMessage extends XmppMessage {
-    name = 'sendDirectChat'
+    static id = 'sendDirectChat'
     args: DirectChatArgs
     constructor(args: DirectChatArgs) {
         super()
@@ -85,14 +100,8 @@ export class DirectChatMessage extends XmppMessage {
         return xml(this.tag, attributes, bodyXml, dmXml)
     }
 }
-
-interface EncryptedDirectChatArgs extends CommonXmppAttributes {
-    message: Message
-    senderKeys: Keypair
-    recipientPublicKey: Key
-}
 export class EncryptedDirectChatMessage extends XmppMessage {
-    name = 'sendEncryptedDirectChat'
+    static id = 'sendEncryptedDirectChat'
     args: EncryptedDirectChatArgs
     constructor(args: EncryptedDirectChatArgs) {
         super()
@@ -170,12 +179,8 @@ export class EncryptedDirectChatMessage extends XmppMessage {
         return xml(this.tag, attributes, encryptedXml)
     }
 }
-interface GroupChatArgs extends CommonXmppAttributes {
-    message: Message
-    toGroup: Group
-}
 export class GroupChatMessage extends XmppMessage {
-    name = 'sendGroupChat'
+    static id = 'sendGroupChat'
     args: GroupChatArgs
     constructor(args: GroupChatArgs) {
         super()
@@ -207,11 +212,8 @@ export class GroupChatMessage extends XmppMessage {
         return xml(this.tag, attributes, bodyXml, gmXml)
     }
 }
-interface UpdatePaymentArgs extends CommonXmppAttributes {
-    message: Message
-}
 export class UpdatePaymentMessage extends XmppMessage {
-    name = 'sendUpdatePayment'
+    static id = 'sendUpdatePayment'
     args: UpdatePaymentArgs
     constructor(args: UpdatePaymentArgs) {
         super()
@@ -245,13 +247,15 @@ export class UpdatePaymentMessage extends XmppMessage {
     }
 }
 
-// XMPP Presence stanzas
-// XML with a top-level <presence> tag
+/*
+    XMPP Presence stanzas
+    XML with a top-level <presence> tag
+*/
 export interface EnterMucRoomArgs extends CommonXmppAttributes {
     groupId: string
 }
 export class EnterMucRoomPresence extends XmppPresence {
-    name = 'enterMucRoom'
+    static id = 'enterMucRoom'
     args: EnterMucRoomArgs
     constructor(args: EnterMucRoomArgs) {
         super()
@@ -264,7 +268,7 @@ export class EnterMucRoomPresence extends XmppPresence {
         const attributes = {
             from,
             to: `${groupId}@${XMPP_MUC_DOMAIN}/${memberNickname}`,
-            id: 'enter-muc-room',
+            id: `${EnterMucRoomPresence.id}-${uuid.v4()}`,
         }
 
         return xml(
@@ -277,8 +281,10 @@ export class EnterMucRoomPresence extends XmppPresence {
     }
 }
 
-// XMPP Query stanzas
-// XML with a top-level <iq> tag
+/*
+    XMPP Query stanzas
+    XML with a top-level <iq> tag
+*/
 interface AddToRosterArgs extends CommonXmppAttributes {
     newRosterItem: string
 }
@@ -297,7 +303,7 @@ interface SetRoomConfigArgs extends CommonXmppAttributes {
     roomName: string
 }
 export class AddToRosterQuery extends XmppQuery {
-    name = 'addToRoster'
+    static id = 'addToRoster'
     args: AddToRosterArgs
     constructor(args: AddToRosterArgs) {
         super()
@@ -307,7 +313,7 @@ export class AddToRosterQuery extends XmppQuery {
         const { from, newRosterItem } = this.args
 
         const attributes = {
-            id: `add-to-roster-${uuid.v4()}`,
+            id: `${AddToRosterQuery.id}-${uuid.v4()}`,
             from,
             type: 'set',
         }
@@ -326,7 +332,7 @@ export class AddToRosterQuery extends XmppQuery {
     }
 }
 export class GetMessagesQuery extends XmppQuery {
-    name = 'getMessages'
+    static id = 'getMessages'
     args: GetMessagesArgs
     constructor(args: GetMessagesArgs) {
         super()
@@ -336,7 +342,7 @@ export class GetMessagesQuery extends XmppQuery {
         const { filters, pagination } = this.args
 
         const attributes = {
-            id: `get-messages-${uuid.v4()}`,
+            id: `${GetMessagesQuery.id}-${uuid.v4()}`,
             type: 'set',
         }
 
@@ -380,7 +386,7 @@ export class GetMessagesQuery extends XmppQuery {
                 'query',
                 {
                     xmlns: 'urn:xmpp:mam:2',
-                    queryid: 'get-messages',
+                    queryid: GetMessagesQuery.id,
                 },
                 filterQuery,
                 paginationQuery,
@@ -389,7 +395,7 @@ export class GetMessagesQuery extends XmppQuery {
     }
 }
 export class GetRoomConfigQuery extends XmppQuery {
-    name = 'getRoomConfig'
+    static id = 'getRoomConfig'
     args: GetRoomConfigArgs
     constructor(args: GetRoomConfigArgs) {
         super()
@@ -399,7 +405,7 @@ export class GetRoomConfigQuery extends XmppQuery {
         const { from, to } = this.args
 
         const attributes = {
-            id: `get-room-config-${uuid.v4()}`,
+            id: `${GetRoomConfigQuery.id}-${uuid.v4()}`,
             from,
             to,
             type: 'get',
@@ -407,14 +413,13 @@ export class GetRoomConfigQuery extends XmppQuery {
 
         const queryBodyXml = xml('query', {
             xmlns: 'http://jabber.org/protocol/disco#info',
-            queryid: 'get-room-config-query',
         })
 
         return xml(this.tag, attributes, queryBodyXml)
     }
 }
 export class GetRosterQuery extends XmppQuery {
-    name = 'getRoster'
+    static id = 'getRoster'
     args: GetRosterArgs
     constructor(args: GetRosterArgs) {
         super()
@@ -435,10 +440,10 @@ export class GetRosterQuery extends XmppQuery {
         return xml(this.tag, attributes, queryBodyXml)
     }
 }
-// This subscribes to a given member's pubsub service that stores
-// their latest public key used for end-to-end encryption
 export class GetPublicKeyQuery extends XmppQuery {
-    name = 'getPublicKey'
+    // This subscribes to a given member's pubsub service that stores
+    // their latest public key used for end-to-end encryption
+    static id = 'getPublicKey'
     args: GetPublicKeyArgs
     constructor(args: GetPublicKeyArgs) {
         super()
@@ -451,7 +456,7 @@ export class GetPublicKeyQuery extends XmppQuery {
         const nodeId = `${toJid.local}:::pubkey`
 
         const attributes = {
-            id: `${this.name}-${uuid.v4()}`,
+            id: `${GetPublicKeyQuery.id}-${uuid.v4()}`,
             from,
             to: nodeService,
             type: 'set',
@@ -473,11 +478,11 @@ export class GetPublicKeyQuery extends XmppQuery {
         return xml(this.tag, attributes, pubsubXml)
     }
 }
-// This publishes the user's pubkey to a pubsub node service auto-created by the
-// Prosody server pep module as per XEP-163. Defaults to a presence access model
-// so we must then reconfigure it later to use an open access model
 export class PublishPublicKeyQuery extends XmppQuery {
-    name = 'publishPublicKey'
+    // This publishes the user's pubkey to a pubsub node service auto-created by the
+    // Prosody server pep module as per XEP-163. Defaults to a presence access model
+    // so we must then reconfigure it later to use an open access model
+    static id = 'publishPublicKey'
     args: PublishPublicKeyArgs
     constructor(args: PublishPublicKeyArgs) {
         super()
@@ -489,7 +494,7 @@ export class PublishPublicKeyQuery extends XmppQuery {
         const nodeId = `${fromJid.local}:::pubkey`
 
         const attributes = {
-            id: `${this.name}-${uuid.v4()}`,
+            id: `${PublishPublicKeyQuery.id}-${uuid.v4()}`,
             from,
             type: 'set',
         }
@@ -516,10 +521,10 @@ export class PublishPublicKeyQuery extends XmppQuery {
         return xml(this.tag, attributes, pubsubXml)
     }
 }
-// This configures the pubsub node that stores this user's pubkey to allow
-// access to anyone who requests / subscribes to it
 export class SetPubsubNodeConfigQuery extends XmppQuery {
-    name = 'setPubsubNodeConfig'
+    static id = 'setPubsubNodeConfig'
+    // This configures the pubsub node that stores this user's pubkey to allow
+    // access to anyone who requests / subscribes to it
     args: SetPubsubNodeConfigArgs
     constructor(args: SetPubsubNodeConfigArgs) {
         super()
@@ -532,7 +537,7 @@ export class SetPubsubNodeConfigQuery extends XmppQuery {
         const nodeId = `${fromJid.local}:::pubkey`
 
         const attributes = {
-            id: `${this.name}-${uuid.v4()}`,
+            id: `${SetPubsubNodeConfigQuery.id}-${uuid.v4()}`,
             from,
             to: nodeService,
             type: 'set',
@@ -582,7 +587,7 @@ export class SetPubsubNodeConfigQuery extends XmppQuery {
     }
 }
 export class SetRoomConfigQuery extends XmppQuery {
-    name = 'setRoomConfig'
+    static id = 'setRoomConfig'
     args: SetRoomConfigArgs
     constructor(args: SetRoomConfigArgs) {
         super()
@@ -592,7 +597,7 @@ export class SetRoomConfigQuery extends XmppQuery {
         const { roomName, from, to } = this.args
 
         const attributes = {
-            id: `set-room-config-${uuid.v4()}`,
+            id: `${SetRoomConfigQuery.id}-${uuid.v4()}`,
             from,
             to,
             type: 'set',
@@ -619,7 +624,6 @@ export class SetRoomConfigQuery extends XmppQuery {
             'query',
             {
                 xmlns: 'http://jabber.org/protocol/muc#owner',
-                queryid: 'set-room-config-query',
             },
             xml(
                 'x',
@@ -645,12 +649,12 @@ export class SetRoomConfigQuery extends XmppQuery {
     }
 }
 export class UniqueRoomNameQuery extends XmppQuery {
-    name = 'uniqueRoomName'
+    static id = 'uniqueRoomName'
     build = (): Element => {
         const attributes = {
             type: 'get',
             to: XMPP_MUC_DOMAIN,
-            id: `get-unique-room-name-${uuid.v4()}`,
+            id: `${UniqueRoomNameQuery.id}-${uuid.v4()}`,
         }
 
         return xml(
@@ -673,7 +677,6 @@ class XmlUtils {
     buildMessage(message: XmppMessage): Element {
         return message.build()
     }
-    encryptMessage
 }
 
 const xmlUtils = new XmlUtils()

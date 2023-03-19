@@ -15,10 +15,11 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Key,
+    Keypair,
     Member,
     Message,
 } from '../../types'
-import { Key, Keypair } from '../../types/chat'
 import xmlUtils, {
     AddToRosterQuery,
     DirectChatMessage,
@@ -286,7 +287,7 @@ export const enterMucRoom = (
                 // Receive a registration response from the server
                 if (
                     stanza.is('presence') &&
-                    stanza.getAttr('id') === 'enter-muc-room'
+                    stanza.getAttr('id').contains(EnterMucRoomPresence.id)
                 ) {
                     const result = stanza.getChild('x')
                     const statusResults = result?.getChildren('status')
