@@ -8,6 +8,7 @@ import {
     Member,
     Message,
 } from '../../types'
+import { Keypair } from '../../types/chat'
 import { useChatContext } from '../contexts/ChatContext'
 import {
     addMemberToRoster,
@@ -86,8 +87,17 @@ export const useXmpp = () => {
             [xmppClient],
         ),
         sendDirectMessage: useCallback(
-            (to: Member, message: Message): Promise<void> => {
-                return sendDirectMessage(to, message, xmppClient)
+            (
+                to: Member,
+                message: Message,
+                withEncryptionKeys?: Keypair,
+            ): Promise<void> => {
+                return sendDirectMessage(
+                    to,
+                    message,
+                    xmppClient,
+                    withEncryptionKeys,
+                )
             },
             [xmppClient],
         ),

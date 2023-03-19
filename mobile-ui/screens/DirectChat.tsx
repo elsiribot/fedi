@@ -15,6 +15,7 @@ import {
 } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks/chat'
 import { Message } from '../types'
+import { Keypair } from '../types/chat'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
@@ -49,8 +50,6 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
             <MessagesList messages={sortedMessages} />
             <MessageInput
                 onMessageSubmitted={messageText => {
-                    console.info('send message')
-                    console.info(messageText)
                     const newMessage = new Message({
                         id: uuid.v4(),
                         content: messageText,
@@ -58,9 +57,9 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
                         sentBy: state.authenticatedMember,
                         sentTo: member,
                     })
-                    sendDirectMessage(member, newMessage)
-                    // TODO: add message locally and validate later
-                    // when server confirms sent message (smoother UX)
+
+                    const withEncryptionKeys = state.encryptionKeys as Keypair
+                    sendDirectMessage(member, newMessage, withEncryptionKeys)
                     dispatch(addToMessages(newMessage))
                     dispatch(addToMembersSeen(member))
                 }}

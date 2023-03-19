@@ -18,10 +18,11 @@ import {
     Member,
     Message,
 } from '../../types'
-import { Key } from '../../types/chat'
+import { Key, Keypair } from '../../types/chat'
 import xmlUtils, {
     AddToRosterQuery,
     DirectChatMessage,
+    EncryptedDirectChatMessage,
     EnterMucRoomPresence,
     GetMessagesQuery,
     GetPublicKeyQuery,
@@ -364,6 +365,7 @@ export const sendDirectMessage = (
     to: Member,
     message: Message,
     xmppClient: Client | null,
+    withEncryptionKeys?: Keypair,
 ): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
@@ -373,14 +375,16 @@ export const sendDirectMessage = (
             const fromJid = xmppClient!.jid?.toString()
             const toJid = to.jid.toString()
 
-            const directChatMessageXml = xmlUtils.buildMessage(
-                new DirectChatMessage({
+            const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
+                new EncryptedDirectChatMessage({
                     from: fromJid,
                     to: toJid,
                     message,
+                    senderKeys: withEncryptionKeys as Keypair,
+                    recipientPublicKey: new Key({ hex: to.publicKeyHex! }),
                 }),
             )
-            xmppClient!.send(directChatMessageXml)
+            xmppClient!.send(encrypedDirectChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
             reject(i18n.t('errors.unknown-error'))

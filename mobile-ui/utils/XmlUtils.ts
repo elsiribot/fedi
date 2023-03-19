@@ -2,6 +2,7 @@ import { jid, xml } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
 import uuid from 'react-native-uuid'
+import { randomBytes } from 'tweetnacl'
 
 import { XMPP_DEFAULT_PAGE_LIMIT, XMPP_MUC_DOMAIN } from '../constants'
 import {
@@ -10,6 +11,8 @@ import {
     Group,
     Message,
 } from '../types'
+import { Key, Keypair } from '../types/chat'
+import encryptionUtils from './EncryptionUtils'
 
 interface CommonXmppAttributes {
     from?: string
@@ -80,6 +83,91 @@ export class DirectChatMessage extends XmppMessage {
         )
 
         return xml(this.tag, attributes, bodyXml, dmXml)
+    }
+}
+
+interface EncryptedDirectChatArgs extends CommonXmppAttributes {
+    message: Message
+    senderKeys: Keypair
+    recipientPublicKey: Key
+}
+export class EncryptedDirectChatMessage extends XmppMessage {
+    name = 'sendEncryptedDirectChat'
+    args: EncryptedDirectChatArgs
+    constructor(args: EncryptedDirectChatArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { from, to, message, senderKeys, recipientPublicKey } = this.args
+
+        const attributes = {
+            id: message.id,
+            type: 'chat',
+            from,
+            to,
+        }
+
+        const bodyXml = xml(
+            'body',
+            { xmlns: 'jabber:client' },
+            message.content as string,
+        )
+
+        const dmXml = xml(
+            'dm',
+            { xmlns: 'fedi:direct-message' },
+            JSON.stringify(message),
+        )
+
+        const contentXml = xml('content', {}, bodyXml, dmXml)
+
+        const randomPadding = randomBytes(
+            Math.random() * (10 - 5) + 5,
+        ).toString()
+        const rpadXml = xml('rpad', {}, randomPadding)
+        console.log('rpadXml', rpadXml)
+
+        const fromXml = xml('from', { jid: from })
+
+        const envelopeXml = xml(
+            'envelope',
+            { xmlns: 'urn:xmpp:sce:1' },
+            contentXml,
+            rpadXml,
+            fromXml,
+        )
+        console.log('envelopeXml', envelopeXml)
+        console.log('recipientPublicKey', recipientPublicKey)
+        console.log('senderKeys.privateKey', senderKeys.privateKey)
+
+        // Encrypt the payload with asymmetric keypair
+        const encryptedEnvelope = encryptionUtils.encryptMessage(
+            envelopeXml.toString(),
+            recipientPublicKey,
+            senderKeys.privateKey,
+        )
+        console.log('encryptedEnvelope', encryptedEnvelope)
+        const payloadXml = xml('payload', {}, encryptedEnvelope)
+
+        // Add the sender's pubkey to the message (unencrypted)
+        // for convenience
+        const keysXml = xml(
+            'keys',
+            { jid: from },
+            xml('key', {}, senderKeys.publicKey.hex),
+        )
+        const headerXml = xml('header', { sid: 'empty' }, keysXml)
+
+        // Wrap header and payload into <encrypted> OMEMO element
+        const encryptedXml = xml(
+            'encrypted',
+            { xmlns: 'urn:xmpp:omemo:2' },
+            headerXml,
+            payloadXml,
+        )
+
+        return xml(this.tag, attributes, encryptedXml)
     }
 }
 interface GroupChatArgs extends CommonXmppAttributes {
@@ -585,6 +673,7 @@ class XmlUtils {
     buildMessage(message: XmppMessage): Element {
         return message.build()
     }
+    encryptMessage
 }
 
 const xmlUtils = new XmlUtils()
