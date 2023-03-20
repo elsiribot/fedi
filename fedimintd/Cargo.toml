@@ -15,6 +15,8 @@ anyhow = "1.0.66"
 fedimintd = { workspace = true}
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
 fedi-social-server = { path = "../fedi-social-server" }
+stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool.git", rev = "132eea4590a8a86ac4c445ae9e88249b011d7b61" }
+
 
 [build-dependencies]
 fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "c06bc2f4eb77596696c127aba0bc502bf73b2e70" }

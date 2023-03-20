@@ -1435,6 +1435,7 @@ dependencies = [
  "fedi-social-server",
  "fedimint-build",
  "fedimintd",
+ "stabilitypool-server",
  "tokio",
 ]
 
@@ -3480,6 +3481,49 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5d6e0250b93c8427a177b849d144a96d5acc57006149479403d7861ab721e34"
 
 [[package]]
+name = "stabilitypool-common"
+version = "0.1.0"
+source = "git+https://x-access-token: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@github.com/fedibtc/stabilitypool.git?rev=132eea4590a8a86ac4c445ae9e88249b011d7b61#132eea4590a8a86ac4c445ae9e88249b011d7b61"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bitcoin",
+ "erased-serde",
+ "fedimint-core",
+ "futures",
+ "reqwest",
+ "secp256k1-zkp",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "time",
+ "tracing",
+]
+
+[[package]]
+name = "stabilitypool-server"
+version = "0.1.0"
+source = "git+https://x-access-token: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@github.com/fedibtc/stabilitypool.git?rev=132eea4590a8a86ac4c445ae9e88249b011d7b61#132eea4590a8a86ac4c445ae9e88249b011d7b61"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bitcoin",
+ "erased-serde",
+ "fedimint-core",
+ "futures",
+ "reqwest",
+ "secp256k1-zkp",
+ "serde",
+ "serde_json",
+ "stabilitypool-common",
+ "strum",
+ "strum_macros",
+ "time",
+ "tracing",
+]
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3691,8 +3735,10 @@ version = "0.3.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd0cbfecb4d19b5ea75bb31ad904eb5b9fa13f21079c3b92017ebdf4999a5890"
 dependencies = [
+ "itoa",
  "serde",
  "time-core",
+ "time-macros",
 ]
 
 [[package]]
@@ -3700,6 +3746,15 @@ name = "time-core"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e153e1f1acaef8acc537e68b44906d2db6436e2b35ac2c6b42640fff91f00fd"
+
+[[package]]
+name = "time-macros"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd80a657e71da814b8e5d60d3374fc6d35045062245d80224748ae522dd76f36"
+dependencies = [
+ "time-core",
+]
 
 [[package]]
 name = "tiny-keccak"
