@@ -1,5 +1,14 @@
 import encryptionUtils from '../../utils/EncryptionUtils'
 
+jest.mock('../../constants', () => ({
+    DEFAULT_GROUP_NAME: 'New group',
+}))
+jest.mock('../../localization/i18n', () => ({
+    i18n: {
+        t: jest.fn(),
+    },
+}))
+
 describe('EncryptionUtils', () => {
     describe('generateDeterministicKeyPair', () => {
         it('should always produce the same keypair given the same seed', async () => {
