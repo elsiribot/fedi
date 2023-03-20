@@ -11,7 +11,7 @@ path = "src/lib.rs"
 
 
 [dependencies]
-async-trait = "*"
+async-trait = "0.1.64"
 anyhow = "1.0.66"
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
 fedi-social-client = { path = "../fedi-social-client" }
@@ -24,8 +24,8 @@ fedimint-ln-client = { workspace = true }
 threshold_crypto = { workspace = true }
 fedimint-aead = { workspace = true }
 mint-client = { workspace = true }
-secp256k1 = "*"
-serde_json = "*"
-serde = "*"
-ring = "*"
+secp256k1 = "0.24.2"
+serde_json = "1.0.91"
+serde = "1.0.149"
+ring = "0.16.20"
 
