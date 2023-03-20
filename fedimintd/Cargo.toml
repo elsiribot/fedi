@@ -17,4 +17,4 @@ tokio = { version = "1.25.0", features = ["full", "tracing"] }
 fedi-social-server = { path = "../fedi-social-server" }
 
 [build-dependencies]
-fedimint-build = {  git = "https://github.com/fedimint/fedimint" }
+fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "c06bc2f4eb77596696c127aba0bc502bf73b2e70" }

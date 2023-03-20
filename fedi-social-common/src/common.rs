@@ -106,7 +106,7 @@ pub struct DoubleEncryptedData(SerdeEncodable<threshold_crypto::Ciphertext>);
 impl DoubleEncryptedData {
     pub fn encrypt<T>(
         plain: T,
-        personal_key: aead::LessSafeKey,
+        personal_key: fedimint_aead::LessSafeKey,
         federation_pk: threshold_crypto::PublicKey,
     ) -> Self
     where
@@ -115,7 +115,7 @@ impl DoubleEncryptedData {
         let plaintext = plain.consensus_encode_to_vec().expect("can't fail");
 
         let encrypted_to_self =
-            aead::encrypt(plaintext, &personal_key).expect("encryption here can't fail");
+            fedimint_aead::encrypt(plaintext, &personal_key).expect("encryption here can't fail");
 
         let ciphertext = federation_pk.encrypt(encrypted_to_self);
 
@@ -125,7 +125,7 @@ impl DoubleEncryptedData {
     pub fn decrypt<'a, T>(
         &self,
         federation_pk_set: &threshold_crypto::PublicKeySet,
-        personal_sk: &aead::LessSafeKey,
+        personal_sk: &fedimint_aead::LessSafeKey,
         shares: impl IntoIterator<Item = (PeerId, &'a threshold_crypto::DecryptionShare)>,
     ) -> anyhow::Result<T>
     where
@@ -138,7 +138,7 @@ impl DoubleEncryptedData {
             &self.0 .0,
         )?;
 
-        let mut plaintext = aead::decrypt(&mut encrypted_to_self, personal_sk)?;
+        let mut plaintext = fedimint_aead::decrypt(&mut encrypted_to_self, personal_sk)?;
         let decoded = T::consensus_decode(&mut plaintext, &Default::default())?;
 
         Ok(decoded)

@@ -9,11 +9,10 @@ use fedi_social_client::common::{
     RecoveryRequest, SignedBackupRequest, SignedRecoveryRequest, VerificationDocument,
 };
 use fedi_social_client::config::FediSocialClientConfig;
-use fedimint_core::api::{
-    erased_multi_param, erased_single_param, FederationApiExt, FederationResult, IFederationApi,
-};
+use fedimint_core::api::{FederationApiExt, FederationResult, IFederationApi};
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable, SerdeEncodable};
+use fedimint_core::module::ApiRequestErased;
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use secp256k1::Secp256k1;
@@ -120,8 +119,10 @@ impl SocialBackup {
         Ok(())
     }
 
-    fn get_backup_encryption_key_static(secret: &DerivableSecret) -> aead::LessSafeKey {
-        aead::LessSafeKey::new(Self::get_backup_secret_static(secret).to_chacha20_poly1305_key())
+    fn get_backup_encryption_key_static(secret: &DerivableSecret) -> fedimint_aead::LessSafeKey {
+        fedimint_aead::LessSafeKey::new(
+            Self::get_backup_secret_static(secret).to_chacha20_poly1305_key(),
+        )
     }
 
     fn get_backup_encryption_key_static_raw(secret: &DerivableSecret) -> [u8; 32] {
@@ -138,7 +139,7 @@ impl SocialBackup {
         module_secret.child_key(SOCIAL_RECOVERY_BACKUP_SNAPSHOT_TYPE_CHILD_ID)
     }
 
-    fn get_backup_encryption_key(&self) -> aead::LessSafeKey {
+    fn get_backup_encryption_key(&self) -> fedimint_aead::LessSafeKey {
         Self::get_backup_encryption_key_static(&self.module_secret)
     }
 
@@ -325,9 +326,12 @@ impl SocialRecovery {
     }
 
     pub fn combine_recovered_user_phrase(&self) -> anyhow::Result<UserSeedPhrase> {
-        let decryption_key = aead::LessSafeKey::new(
-            aead::UnboundKey::new(&ring::aead::CHACHA20_POLY1305, &self.state.encryption_key)
-                .expect("Decryption key stored in recovery file must be valid"),
+        let decryption_key = fedimint_aead::LessSafeKey::new(
+            fedimint_aead::UnboundKey::new(
+                &ring::aead::CHACHA20_POLY1305,
+                &self.state.encryption_key,
+            )
+            .expect("Decryption key stored in recovery file must be valid"),
         );
 
         self.state.double_encrypted_seed.decrypt(
@@ -386,7 +390,7 @@ impl SocialVerification {
             .request_raw(
                 self.peer_id,
                 &format!("/module/{}/approve_recovery", self.module_id),
-                &erased_multi_param(&(id, admin_password)),
+                &[ApiRequestErased::new(&(id, admin_password)).to_json()],
             )
             .await?;
 
@@ -427,7 +431,7 @@ where
     ) -> FederationResult<()> {
         self.request_current_consensus(
             format!("/module/{module_id}/backup"),
-            erased_single_param(request),
+            ApiRequestErased::new(request),
         )
         .await
     }
@@ -439,7 +443,7 @@ where
     ) -> FederationResult<()> {
         self.request_current_consensus(
             format!("/module/{module_id}/recover"),
-            erased_single_param(request),
+            ApiRequestErased::new(request),
         )
         .await
     }
