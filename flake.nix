@@ -8,7 +8,7 @@
       flake = false;
     };
     fedimint = {
-      url = "github:fedimint/fedimint?rev=746dab041b0982612336f80e9c8d0773c3ba755e";
+      url = "github:fedimint/fedimint?rev=c06bc2f4eb77596696c127aba0bc502bf73b2e70";
     };
   };
 
@@ -51,6 +51,7 @@
         packages =
           {
             inherit fedimintd-fedi;
+            gateway-pkgs = fedimint.packages.${system}.gateway-pkgs;
           };
         devShells = fmLib.devShells;
       });
