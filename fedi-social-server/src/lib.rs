@@ -316,43 +316,43 @@ impl ServerModule for FediSocial {
             // user's call to make a backup (usually when creating the account)
             api_endpoint! {
                 "/backup",
-                async |module: &FediSocial, dbtx, request: SignedBackupRequest| -> () {
+                async |module: &FediSocial, context, request: SignedBackupRequest| -> () {
                         module
-                            .handle_backup(dbtx, request).await?;
+                            .handle_backup(context.dbtx(), request).await?;
                         Ok(())
                 }
             },
             // user's call to initiate the recovery process
             api_endpoint! {
                 "/recover",
-                async |module: &FediSocial, dbtx, request: SignedRecoveryRequest| -> () {
+                async |module: &FediSocial, context, request: SignedRecoveryRequest| -> () {
                         module
-                            .handle_recover(dbtx, request).await?;
+                            .handle_recover(context.dbtx(), request).await?;
                         Ok(())
                 }
             },
             // guardian's call to download verification document
             api_endpoint! {
                 "/get_verification",
-                async |module: &FediSocial, dbtx, request: RecoveryId| -> Option<VerificationDocument> {
+                async |module: &FediSocial, context, request: RecoveryId| -> Option<VerificationDocument> {
                         module
-                            .handle_get_verification(dbtx, request).await
+                            .handle_get_verification(context.dbtx(), request).await
                 }
             },
             // guardian's call to approve the recovery and produce decryption share
             api_endpoint! {
                 "/approve_recovery",
-                async |module: &FediSocial, dbtx, req: (RecoveryId, String)| -> () {
+                async |module: &FediSocial, context, req: (RecoveryId, String)| -> () {
                         module
-                            .handle_approve_recovery(dbtx, req.0, req.1).await?;
+                            .handle_approve_recovery(context.dbtx(), req.0, req.1).await?;
                         Ok(())
                 }
             },
             api_endpoint! {
                 "/decryption_share",
-                async |module: &FediSocial, dbtx, request: RecoveryId| -> Option<EncryptedRecoveryShare> {
+                async |module: &FediSocial, context, request: RecoveryId| -> Option<EncryptedRecoveryShare> {
                         module
-                            .handle_get_decryption_share(dbtx, request).await
+                            .handle_get_decryption_share(context.dbtx(), request).await
                 }
             },
         ]
