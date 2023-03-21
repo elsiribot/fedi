@@ -49,20 +49,21 @@
         "flake-compat": "flake-compat_2",
         "flake-utils": "flake-utils_2",
         "nixpkgs": "nixpkgs",
+        "nixpkgs-kitman": "nixpkgs-kitman",
         "nixpkgs-unstable": "nixpkgs-unstable"
       },
       "locked": {
-        "lastModified": 1677175711,
-        "narHash": "sha256-fv0P+ETyEkvEnhnnINjAwblX4yPKmKLJJDoeT49/IgA=",
+        "lastModified": 1679023575,
+        "narHash": "sha256-viO/UlE1Ag1ZYtPylpl6yZi9Ez1QwSErpYRFoCMO9mA=",
         "owner": "fedimint",
         "repo": "fedimint",
-        "rev": "746dab041b0982612336f80e9c8d0773c3ba755e",
+        "rev": "c06bc2f4eb77596696c127aba0bc502bf73b2e70",
         "type": "github"
       },
       "original": {
         "owner": "fedimint",
         "repo": "fedimint",
-        "rev": "746dab041b0982612336f80e9c8d0773c3ba755e",
+        "rev": "c06bc2f4eb77596696c127aba0bc502bf73b2e70",
         "type": "github"
       }
     },
@@ -193,6 +194,22 @@
       "original": {
         "owner": "NixOS",
         "ref": "nixos-22.11",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-kitman": {
+      "locked": {
+        "lastModified": 1677533122,
+        "narHash": "sha256-nYSQfuPruk5oAF0J7Pp3/Si3tS/H1lg4Rwi7QIbgDJ8=",
+        "owner": "jkitman",
+        "repo": "nixpkgs",
+        "rev": "61ccef8bc0a010a21ccdeb10a92220a47d8149ac",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jkitman",
+        "ref": "add-esplora-pkg",
         "repo": "nixpkgs",
         "type": "github"
       }
