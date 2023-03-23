@@ -5,6 +5,7 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Key,
     Keypair,
     Member,
     Message,
@@ -19,6 +20,7 @@ import {
     fetchRoster,
     getPublicKeyFor,
     getUniqueGroupId,
+    publishPublicKey,
     sendDirectMessage,
     sendGroupMessage,
     sendUpdatePaymentMessage,
@@ -83,6 +85,12 @@ export const useXmpp = () => {
         enterMucRoom: useCallback(
             (group: Group): Promise<Group> => {
                 return enterMucRoom(group, xmppClient)
+            },
+            [xmppClient],
+        ),
+        publishPublicKey: useCallback(
+            (pubkey: Key): Promise<boolean> => {
+                return publishPublicKey(pubkey, xmppClient)
             },
             [xmppClient],
         ),

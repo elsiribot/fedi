@@ -875,7 +875,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const result = stanza.getChild('result')
             const forwarded = result?.getChild('forwarded')
             const message = forwarded?.getChild('message')
-            if (!message) return
+            if (!message || message.getAttr('type') === 'error') return
 
             const directMessageJson = message.getChildText('dm')
             const parsedMessage = JSON.parse(directMessageJson as string)
@@ -930,7 +930,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                         stanza
                             .getChild('result')
                             ?.getAttr('queryid')
-                            .contains(GetMessagesQuery.id)
+                            .includes(GetMessagesQuery.id)
                     ) {
                         handleIncomingMessageArchives(stanza)
                     }

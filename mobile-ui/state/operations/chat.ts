@@ -129,7 +129,7 @@ export const fetchMessagesFromArchive = (
             // This result gives us the total message count and
             // handles pagination for queries to the message archive
             const result = await iqCaller.request(getMessagesQueryXml)
-            console.log('fetchMessagesFromArchive', result)
+            console.debug('fetchMessagesFromArchive', result.toString())
             const results = result.getChild('fin')?.getChild('set')
             if (!results) return resolve(null)
 
@@ -235,7 +235,7 @@ export const getPublicKeyFor = (
                 }),
             )
             const result = await iqCaller.request(getPubkeyQueryXml)
-            console.info('getPublicKeyFor', result)
+            console.debug('getPublicKeyFor', result.toString())
             resolve(true)
         } catch (error: any) {
             console.error('getPublicKeyFor', error)
@@ -287,7 +287,7 @@ export const enterMucRoom = (
                 // Receive a registration response from the server
                 if (
                     stanza.is('presence') &&
-                    stanza.getAttr('id').contains(EnterMucRoomPresence.id)
+                    stanza.getAttr('id').includes(EnterMucRoomPresence.id)
                 ) {
                     const result = stanza.getChild('x')
                     const statusResults = result?.getChildren('status')
