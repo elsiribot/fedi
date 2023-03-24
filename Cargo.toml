@@ -21,20 +21,21 @@ keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 
 [workspace.dependencies]
 threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
+stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool.git", rev = "14ab0a7eb73354434a2bd428ba3be7a57c37f65d" }
 
 # NOTE: You probably want to update the `fedimintd` input git hash in `flake.nix` as well
-fedimintd = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-build = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-core = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-server = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-client = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-derive-secret = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-mint-client = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-wallet-client = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-ln-client = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-mint-client = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-fedimint-aead = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
-tbs = { git = "https://github.com/dpc/fedimint", branch = "config-gen-params" }
+fedimintd = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-build = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-core = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-server = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-client = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-derive-secret = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-mint-client = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-wallet-client = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-ln-client = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+mint-client = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+fedimint-aead = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
+tbs = { git = "https://github.com/dpc/fedimint", rev = "46487a37b463a7f45f10ce7f6218583e8ef5d371" }
 
 # commented-out local deps for easy debugging
 # fedimintd = { path = "../fedimint/fedimintd" }

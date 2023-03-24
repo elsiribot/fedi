@@ -318,7 +318,7 @@ impl ServerModule for FediSocial {
                 "/backup",
                 async |module: &FediSocial, context, request: SignedBackupRequest| -> () {
                         module
-                            .handle_backup(context.dbtx(), request).await?;
+                            .handle_backup(&mut context.dbtx(), request).await?;
                         Ok(())
                 }
             },
@@ -327,7 +327,7 @@ impl ServerModule for FediSocial {
                 "/recover",
                 async |module: &FediSocial, context, request: SignedRecoveryRequest| -> () {
                         module
-                            .handle_recover(context.dbtx(), request).await?;
+                            .handle_recover(&mut context.dbtx(), request).await?;
                         Ok(())
                 }
             },
@@ -336,7 +336,7 @@ impl ServerModule for FediSocial {
                 "/get_verification",
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<VerificationDocument> {
                         module
-                            .handle_get_verification(context.dbtx(), request).await
+                            .handle_get_verification(&mut context.dbtx(), request).await
                 }
             },
             // guardian's call to approve the recovery and produce decryption share
@@ -344,7 +344,7 @@ impl ServerModule for FediSocial {
                 "/approve_recovery",
                 async |module: &FediSocial, context, req: (RecoveryId, String)| -> () {
                         module
-                            .handle_approve_recovery(context.dbtx(), req.0, req.1).await?;
+                            .handle_approve_recovery(&mut context.dbtx(), req.0, req.1).await?;
                         Ok(())
                 }
             },
@@ -352,7 +352,7 @@ impl ServerModule for FediSocial {
                 "/decryption_share",
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<EncryptedRecoveryShare> {
                         module
-                            .handle_get_decryption_share(context.dbtx(), request).await
+                            .handle_get_decryption_share(&mut context.dbtx(), request).await
                 }
             },
         ]
