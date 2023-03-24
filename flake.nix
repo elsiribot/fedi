@@ -8,7 +8,7 @@
       flake = false;
     };
     fedimint = {
-      url = "github:fedimint/fedimint?branch=config-gen-params";
+      url = "github:fedimint/fedimint?rev=46487a37b463a7f45f10ce7f6218583e8ef5d371";
     };
   };
 
