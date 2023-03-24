@@ -5,6 +5,7 @@ use fedi_social_common::{FediSocialCommonGen, FediSocialModuleTypes};
 use fedimint_client::module::gen::ClientModuleGen;
 use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
+use fedimint_client::DynGlobalClientContext;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
@@ -34,10 +35,23 @@ pub struct FediSocialClientModule {}
 impl ClientModule for FediSocialClientModule {
     type Common = FediSocialModuleTypes;
     type ModuleStateMachineContext = ();
-    type GlobalStateMachineContext = ();
     type States = FediSocialClientStates;
 
     fn context(&self) -> Self::ModuleStateMachineContext {
+        unimplemented!()
+    }
+
+    fn input_amount(
+        &self,
+        _input: &<Self::Common as fedimint_core::module::ModuleCommon>::Input,
+    ) -> fedimint_core::module::TransactionItemAmount {
+        unimplemented!()
+    }
+
+    fn output_amount(
+        &self,
+        _output: &<Self::Common as fedimint_core::module::ModuleCommon>::Output,
+    ) -> fedimint_core::module::TransactionItemAmount {
         unimplemented!()
     }
 }
@@ -46,20 +60,21 @@ impl ClientModule for FediSocialClientModule {
 pub enum FediSocialClientStates {}
 
 impl IntoDynInstance for FediSocialClientStates {
-    type DynType = DynState<()>;
+    type DynType = DynState<DynGlobalClientContext>;
 
     fn into_dyn(self, instance_id: ModuleInstanceId) -> Self::DynType {
         DynState::from_typed(instance_id, self)
     }
 }
 
-impl State<()> for FediSocialClientStates {
+impl State for FediSocialClientStates {
     type ModuleContext = ();
+    type GlobalContext = DynGlobalClientContext;
 
     fn transitions(
         &self,
         _context: &Self::ModuleContext,
-        _global_context: &(),
+        _global_context: &Self::GlobalContext,
     ) -> Vec<StateTransition<Self>> {
         unimplemented!()
     }
