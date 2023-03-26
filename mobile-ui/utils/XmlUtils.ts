@@ -159,6 +159,20 @@ export class EncryptedDirectChatMessage extends XmppMessage {
         console.log('encryptedEnvelope', encryptedEnvelope)
         const payloadXml = xml('payload', {}, encryptedEnvelope)
 
+        // Encrypt the same payload with sender keys so the sender can
+        // decrypt message archives after recovering from seed
+        const senderEncryptedEnvelope = encryptionUtils.encryptMessage(
+            envelopeXml.toString(),
+            senderKeys.publicKey,
+            senderKeys.privateKey,
+        )
+        console.log('senderEncryptedEnvelope', senderEncryptedEnvelope)
+        const backupPayloadXml = xml(
+            'backup-payload',
+            {},
+            senderEncryptedEnvelope,
+        )
+
         // Add the sender's pubkey to the message (unencrypted)
         // for convenience
         const keysXml = xml(
@@ -174,6 +188,7 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             { xmlns: 'urn:xmpp:omemo:2' },
             headerXml,
             payloadXml,
+            backupPayloadXml,
         )
 
         return xml(this.tag, attributes, encryptedXml)
