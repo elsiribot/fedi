@@ -37,7 +37,7 @@ import {
     validateRecoveryFile,
 } from '../../bridge'
 import { MSats, Sats } from '../../types'
-import amountUtils from '../../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import lnurlUtils from '../../utils/LNURLUtils'
 import { useCurrencyContext } from '../contexts/CurrencyContext'
 import { useFederationsContext } from '../contexts/FederationsContext'

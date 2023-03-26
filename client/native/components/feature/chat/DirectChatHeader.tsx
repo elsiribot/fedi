@@ -6,7 +6,7 @@ import { Pressable, StyleSheet } from 'react-native'
 import Header from '../../ui/Header'
 
 import { RootStackParamList } from '../../../types/navigation'
-import stringUtils from '../../../utils/StringUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
 import SvgImage from '../../ui/SvgImage'
 

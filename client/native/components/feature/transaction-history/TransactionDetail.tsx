@@ -18,9 +18,9 @@ import {
     TransactionDirection,
 } from '../../../bridge'
 import { useBridge } from '../../../state/hooks'
-import amountUtils from '../../../utils/AmountUtils'
-import dateUtils from '../../../utils/DateUtils'
-import stringUtils from '../../../utils/StringUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import dateUtils from '@fedi/common/utils/DateUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionDetailProps = {

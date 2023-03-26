@@ -17,7 +17,7 @@ import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge, useBtcUsdPrice } from '../state/hooks'
 import { MSats, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
 

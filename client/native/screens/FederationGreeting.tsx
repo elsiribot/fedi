@@ -7,7 +7,7 @@ import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
-import stringUtils from '../utils/StringUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

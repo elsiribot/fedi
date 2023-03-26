@@ -7,7 +7,7 @@ import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Chat, ChatType, Group, Member, Message, MSats } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
-import amountUtils from '../../../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width

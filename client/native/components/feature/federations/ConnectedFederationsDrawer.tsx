@@ -17,7 +17,7 @@ import {
 } from '../../../state/contexts/FederationsContext'
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import amountUtils from '../../../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {

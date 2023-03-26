@@ -13,8 +13,8 @@ import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { MSats } from '../types'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
-import stringUtils from '../utils/StringUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

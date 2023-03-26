@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native'
 
 import Success from '../components/ui/Success'
 import { RootStackParamList } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendSuccess'>
 

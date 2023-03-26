@@ -3,6 +3,6 @@
 npx react-native clean
 
 # clean rust code
-cd ../bridge || exit 1
+pushd ../../bridge || exit 1
 cargo clean
-cd ../mobile-ui || exit 1
+popd || exit 1

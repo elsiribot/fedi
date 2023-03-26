@@ -5,8 +5,8 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
-import DateUtils from '../../../utils/DateUtils'
-import stringUtils from '../../../utils/StringUtils'
+import dateUtils from '@fedi/common/utils/DateUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 

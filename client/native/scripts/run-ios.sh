@@ -7,9 +7,9 @@ set -e
 npm run build-bridge-ios
 
 # make sure we've installed pods
-cd ios
+pushd ios
 pod install
-cd ..
+popd
 
 # launch ios
 npx react-native run-ios

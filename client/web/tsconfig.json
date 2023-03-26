@@ -19,6 +19,11 @@
     "incremental": true,
     "allowJs": true
   },
+  "references": [
+    {
+      "path": "../common"
+    }
+  ],
   "include": [
     "next-env.d.ts",
     "src"

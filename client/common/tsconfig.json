@@ -1,9 +1,16 @@
 {
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "module": "CommonJS",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "incremental": true
   },
   "include": [
     "./**/*.tsx",
     "./**/*.ts",
-  ]
+  ],
+  "exclude": ["node_modules"]
 }

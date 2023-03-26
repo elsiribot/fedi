@@ -9,7 +9,7 @@ import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../assets/images'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 

@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import { Transaction, TransactionDirection } from '../../../bridge'
-import amountUtils from '../../../utils/AmountUtils'
-import dateUtils from '../../../utils/DateUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import dateUtils from '@fedi/common/utils/DateUtils'
 
 type TransactionTileProps = {
     txn: Transaction

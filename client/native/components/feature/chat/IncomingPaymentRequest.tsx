@@ -12,14 +12,14 @@ import { useFederationsContext } from '../../../state/contexts/FederationsContex
 import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
 import {
-    Keypair,
     Member,
     Message,
     MSats,
     Payment,
     PaymentStatus,
+    Keypair,
 } from '../../../types'
-import amountUtils from '../../../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPaymentActionsProps = {

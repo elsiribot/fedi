@@ -6,7 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { MSats } from '../../../types'
-import amountUtils from '../../../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = {
     balance: MSats | null

@@ -1,4 +1,4 @@
-import stringUtils from '../../utils/StringUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 describe('StringUtils', () => {
     describe('truncateMiddleOfString', () => {

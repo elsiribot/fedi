@@ -2,8 +2,7 @@
 {
   "extends": "@tsconfig/react-native/tsconfig.json",     /* Recommended React Native TSConfig base */
   "compilerOptions": {
-    "strictPropertyInitialization": false,                                 
-    "skipLibCheck": true
+    "strictPropertyInitialization": false
   },
   "references": [
     {
@@ -12,7 +11,7 @@
   ],
   "include": [
     "./**/*.tsx",
-    "./**/*.ts",
+    "./**/*.ts", "../common/tests/utils/LNURLUtils.test.ts", "../common/tests/utils/InvoiceUtils.test.ts", "../common/tests/utils/DateUtils.test.ts", "../common/tests/utils/AmountUtils.test.ts", "../common/tests/utils/StringUtils.test.ts",
   ],
   "exclude": [
     "node_modules",

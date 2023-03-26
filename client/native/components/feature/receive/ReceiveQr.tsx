@@ -8,7 +8,7 @@ import QRCode from 'react-native-qrcode-svg'
 import { Images } from '../../../assets/images'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { BitcoinOrLightning, BtcLnUri } from '../../../types'
-import stringUtils from '../../../utils/StringUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type ReceiveQrProps = {
     uri: BtcLnUri

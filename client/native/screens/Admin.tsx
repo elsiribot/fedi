@@ -36,8 +36,8 @@ import type {
     RootStackParamList,
     TabsNavigatorParamList,
 } from '../types/navigation'
-import AmountUtils from '../utils/AmountUtils'
-import stringUtils from '../utils/StringUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type Props = BottomTabScreenProps<
     TabsNavigatorParamList & RootStackParamList,

@@ -22,7 +22,7 @@ import {
     SatsString,
 } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Message, MSats } from '../../../types'
-import amountUtils from '../../../utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import IncomingPaymentRequest from './IncomingPaymentRequest'
 import OutgoingPaymentRequest from './OutgoingPaymentRequest'
 

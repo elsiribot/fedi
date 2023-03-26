@@ -21,7 +21,7 @@ import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import theme from './styles/theme'
-import amountUtils from './utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 const App = () => {
     const { t } = useTranslation()
