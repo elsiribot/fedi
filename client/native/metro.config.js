@@ -5,6 +5,7 @@
  * @format
  */
 const { getDefaultConfig } = require('metro-config')
+const path = require('path')
 
 module.exports = (async () => {
     const {
@@ -25,6 +26,14 @@ module.exports = (async () => {
         resolver: {
             assetExts: assetExts.filter(ext => ext !== 'svg'),
             sourceExts: [...sourceExts, 'svg'],
+            nodeModulesPaths: [
+                path.resolve(__dirname, './node_modules'),
+                path.resolve(__dirname, '../node_modules'),
+            ],
+            extraNodeModules: {
+                '@fedi/common': path.resolve(__dirname, '../common'),
+            },
         },
+        watchFolders: [path.resolve(__dirname, '../')],
     }
 })()

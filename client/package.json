@@ -7,13 +7,10 @@
             "common",
             "native",
             "web"
-        ],
-        "nohoist": [
-            "**/react-native",
-            "**/react-native/**",
-            "**/detox",
-            "**/detox/**"
         ]
+    },
+    "scripts": {
+        "dev": "yarn workspace foreach dev"
     },
     "devDependencies": {
         "syncpack": "^9.8.4"

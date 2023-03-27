@@ -8,7 +8,7 @@ import {
     SatsString,
     Usd,
     UsdString,
-} from '../../native/types'
+} from '../types'
 
 class AmountUtils {
     static BTC_MAX_DECIMAL_PLACES = 8

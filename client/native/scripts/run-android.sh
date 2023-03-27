@@ -7,4 +7,4 @@ set -e
 npm run build-bridge-android
 
 # launch android production flavor in debug mode
-npx react-native run-android --variant=ProductionDebug --verbose
+npx react-native run-android --active-arch-only --variant=ProductionDebug --verbose
