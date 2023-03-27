@@ -740,6 +740,45 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         [],
     )
 
+    const resumeXmppStream = useCallback(() => {
+        console.info('resuming xmpp stream after coming back into foreground')
+        try {
+            const xmppClient = state.xmppClient
+            dispatch(changeWebsocketIsHealthy(false))
+
+            // Sometimes we send a presence message and do not
+            // get a response which may mean the stream cannot
+            // be resumed so we need to stop and rebuild the client
+            let reconnectTimer = setTimeout(() => {
+                console.info(
+                    'no response from XMPP server after 3s, rebuilding XMPP client',
+                )
+                state.xmppClient?.reconnect.stop()
+                state.xmppClient?.stop()
+                // this will re-trigger the XMPP instantiation effect above
+                dispatch(resetXmppClient())
+            }, 3000)
+            // This expects a response to the presence message which means
+            // the stream has been resumed successfully so we can clear
+            // the reconnectTimer and cleanup the listener
+            const onStanzaReceived = async (_: Element) => {
+                dispatch(changeWebsocketIsHealthy(true))
+                xmppClient?.removeListener('stanza', onStanzaReceived)
+                console.info(
+                    'XMPP server responded, do not rebuild XMPP client',
+                )
+                clearTimeout(reconnectTimer)
+            }
+            state.xmppClient?.on('stanza', onStanzaReceived)
+            console.info(
+                'sending presence to XMPP server to test for stable stream',
+            )
+            state.xmppClient?.send(xml('presence'))
+        } catch (error) {
+            console.error('Failed to resume XMPP stream')
+        }
+    }, [state.xmppClient])
+
     // This effect instantiates the XMPP client with a websocket connection
     // and requires a selectedFederation with username + password
     useEffect(() => {
@@ -799,7 +838,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             let newMessage, directMessageJson, parsedMessage, action
             const encrypted = stanza.getChild('encrypted')
             if (encrypted) {
-                console.log('encrypted', encrypted.toString())
+                console.debug('encrypted', encrypted.toString())
                 // First decrypt the payload
                 const header = encrypted.getChild('header')
                 const keys = header?.getChild('keys')
@@ -816,13 +855,17 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     encryptedPayloadContents =
                         encrypted.getChildText('backup-payload')
                 }
+                console.debug(
+                    'encryptedPayloadContents',
+                    encryptedPayloadContents,
+                )
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
                     new Key({ hex: senderPublicKey }),
                     privateKey,
                 )
 
-                console.log('decryptedPayload', decryptedPayload)
+                console.debug('decryptedPayload', decryptedPayload)
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
@@ -835,6 +878,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             }
 
             parsedMessage = JSON.parse(directMessageJson as string)
+            console.debug('parsedMessage', parsedMessage)
             if (!parsedMessage) return
 
             newMessage = new Message({
@@ -889,7 +933,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             let newMessage, directMessageJson, parsedMessage, action
             const encrypted = message.getChild('encrypted')
             if (encrypted) {
-                console.log('encrypted', encrypted.toString())
+                console.debug('encrypted', encrypted.toString())
                 // First decrypt the payload
                 const header = encrypted.getChild('header')
                 const keys = header?.getChild('keys')
@@ -906,6 +950,10 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     encryptedPayloadContents =
                         encrypted.getChildText('backup-payload')
                 }
+                console.debug(
+                    'encryptedPayloadContents',
+                    encryptedPayloadContents,
+                )
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
                     new Key({ hex: senderPublicKey }),
@@ -986,13 +1034,16 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             }
         }
         console.info('setting onStanzaReceived lisetener')
-        state.xmppClient?.on('stanza', onStanzaReceived)
+
+        if (state.xmppClient && state.encryptionKeys) {
+            state.xmppClient?.on('stanza', onStanzaReceived)
+        }
 
         return () => {
             console.info('removeListener onStanzaReceived lisetener')
             state.xmppClient?.removeListener('stanza', onStanzaReceived)
         }
-    }, [state.encryptionKeys?.privateKey, state.xmppClient])
+    }, [state.encryptionKeys, state.xmppClient])
 
     const configureXmppQueryListeners = useCallback(() => {
         // Monitor for incoming iq responses
@@ -1030,47 +1081,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         if (state.xmppClient === null) return
 
-        const resumeXmppStream = () => {
-            console.info(
-                'resuming xmpp stream after coming back into foreground',
-            )
-            try {
-                const xmppClient = state.xmppClient
-                dispatch(changeWebsocketIsHealthy(false))
-
-                // Sometimes we send a presence message and do not
-                // get a response which may mean the stream cannot
-                // be resumed so we need to stop and rebuild the client
-                let reconnectTimer = setTimeout(() => {
-                    console.info(
-                        'no response from XMPP server after 3s, rebuilding XMPP client',
-                    )
-                    state.xmppClient?.reconnect.stop()
-                    state.xmppClient?.stop()
-                    // this will re-trigger the XMPP instantiation effect above
-                    dispatch(resetXmppClient())
-                }, 3000)
-                // This expects a response to the presence message which means
-                // the stream has been resumed successfully so we can clear
-                // the reconnectTimer and cleanup the listener
-                const onStanzaReceived = async (_: Element) => {
-                    dispatch(changeWebsocketIsHealthy(true))
-                    xmppClient?.removeListener('stanza', onStanzaReceived)
-                    console.info(
-                        'XMPP server responded, do not rebuild XMPP client',
-                    )
-                    clearTimeout(reconnectTimer)
-                }
-                state.xmppClient?.on('stanza', onStanzaReceived)
-                console.info(
-                    'sending presence to XMPP server to test for stable stream',
-                )
-                state.xmppClient?.send(xml('presence'))
-            } catch (error) {
-                console.error('Failed to resume XMPP stream')
-            }
-        }
-
         // Subscribe to changes in AppState to detect when app goes from
         // background to foreground
         const subscription = RNAppState.addEventListener(
@@ -1086,7 +1096,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             },
         )
         return () => subscription.remove()
-    }, [state.xmppClient])
+    }, [state.xmppClient, resumeXmppStream])
 
     // This effect adds event listeners to the xmppClient so it can react
     // to various kinds of XMPP stanzas sent by the server
@@ -1113,6 +1123,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
     }, [selectedFederation?.keypairSeed])
 
+    // This effect publishes the user's pubkey to the server so other users
+    // can encrypt messages before sending
     useEffect(() => {
         if (
             state.xmppClient &&
@@ -1120,7 +1132,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             state.encryptionKeys
         ) {
             const { publicKey } = state.encryptionKeys as Keypair
-            // console.info('publicKey', publicKey.hex)
             publishPublicKey(publicKey, state.xmppClient)
         }
     }, [state.encryptionKeys, state.authenticatedMember, state.xmppClient])
