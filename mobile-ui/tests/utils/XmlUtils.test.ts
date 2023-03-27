@@ -1,5 +1,5 @@
 import { XMPP_MUC_DOMAIN } from '../../constants'
-import { Group, Message } from '../../types'
+import { Group, Message, Payment, PaymentStatus } from '../../types'
 import xmlUtils, {
     EnterMucRoomPresence,
     GroupChatMessage,
@@ -127,17 +127,22 @@ describe('XmlUtils', () => {
                     to: 'tojid@domain',
                     message: new Message({
                         id: 'update-payment-message-uuid',
-                        content: 'pending',
+                        content: 'fedi:payment-request:',
+                        payment: new Payment({
+                            amount: 1000,
+                            status: PaymentStatus.rejected,
+                            updatedAt: Date.now() / 1000,
+                        }),
                     }),
                 }),
             )
             const fromAttr = result.getAttr('from')
             const toAttr = result.getAttr('to')
-            const body = result.getChild('body')?.text()
+            const body = result.getChild('body')?.getText()
 
             expect(fromAttr).toEqual('fromjid@domain')
             expect(toAttr).toEqual('tojid@domain')
-            expect(body).toEqual('pending')
+            expect(body).toEqual('fedi:payment-request:')
         })
 
         it('response contains the correct message ID', () => {
@@ -147,7 +152,12 @@ describe('XmlUtils', () => {
                     to: 'tojid@domain',
                     message: new Message({
                         id: 'update-payment-message-uuid',
-                        content: 'pending',
+                        content: 'fedi:payment-request:',
+                        payment: new Payment({
+                            amount: 1000,
+                            status: PaymentStatus.rejected,
+                            updatedAt: Date.now() / 1000,
+                        }),
                     }),
                 }),
             )
