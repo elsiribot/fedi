@@ -27,7 +27,6 @@ type XmppArgs =
     | SetRoomConfigArgs
     | GetRosterArgs
     | EnterMucRoomArgs
-    | DirectChatArgs
     | GroupChatArgs
     | GetPublicKeyArgs
     | SetPubsubNodeConfigArgs
@@ -53,9 +52,6 @@ class XmppQuery extends XmppStanza {
     XMPP Message stanzas
     XML with a top-level <message> tag
 */
-interface DirectChatArgs extends CommonXmppAttributes {
-    message: Message
-}
 interface EncryptedDirectChatArgs extends CommonXmppAttributes {
     message: Message
     senderKeys: Keypair
@@ -65,38 +61,6 @@ interface EncryptedDirectChatArgs extends CommonXmppAttributes {
 interface GroupChatArgs extends CommonXmppAttributes {
     message: Message
     toGroup: Group
-}
-export class DirectChatMessage extends XmppMessage {
-    static id = 'sendDirectChat'
-    args: DirectChatArgs
-    constructor(args: DirectChatArgs) {
-        super()
-        this.args = args
-    }
-    build = (): Element => {
-        const { from, to, message } = this.args
-
-        const attributes = {
-            id: message.id,
-            type: 'chat',
-            from,
-            to,
-        }
-
-        const bodyXml = xml(
-            'body',
-            { xmlns: 'jabber:client' },
-            message.content as string,
-        )
-
-        const dmXml = xml(
-            'dm',
-            { xmlns: 'fedi:direct-message' },
-            JSON.stringify(message),
-        )
-
-        return xml(this.tag, attributes, bodyXml, dmXml)
-    }
 }
 export class EncryptedDirectChatMessage extends XmppMessage {
     static id = 'sendEncryptedDirectChat'
@@ -158,7 +122,7 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             rpadXml,
             fromXml,
         )
-        console.log('envelopeXml', envelopeXml)
+        console.log('envelopeXml', envelopeXml.toString())
         console.log('recipientPublicKey', recipientPublicKey)
         console.log('senderKeys.privateKey', senderKeys.privateKey)
 
@@ -429,7 +393,7 @@ export class GetRosterQuery extends XmppQuery {
         const { from } = this.args
 
         const attributes = {
-            id: `get-roster-${uuid.v4()}`,
+            id: `${GetRosterQuery.id}-${uuid.v4()}`,
             from,
             type: 'get',
         }
