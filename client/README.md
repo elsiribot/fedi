@@ -45,3 +45,9 @@ yarn run syncpack fix-mismatches
 ```
 
 which will upgrade all projects to use the highest version of the dependency.
+
+### Hoisting
+
+Packages are by default hoisted up into `client/node_modules`. If you need a
+module to be located in its project directory (e.g. `react-native` in `native`)
+then you can add it to `workspaces.nohoist` in `client/package.json`.

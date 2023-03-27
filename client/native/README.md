@@ -9,7 +9,7 @@ Follow the guide here for your OS of choice: https://reactnative.dev/docs/enviro
 First install your Node modules with
 
 ```
-npm install
+yarn install
 ```
 
 You will also need to [install Rust](https://www.rust-lang.org/tools/install) because all the actual interaction with the Federation happens via [this rust code](https://github.com/fedibtc/fedi-react-native/tree/master/bridge).
@@ -18,10 +18,10 @@ You will also need to [install Rust](https://www.rust-lang.org/tools/install) be
 
 The Metro server is the JavaScript bundler that ships with React Native.
 
-Make sure you are inside the root of the React Native project folder (this should be the `/mobile-ui` directory, at the same level as `/android` and `/ios` folders) then run:
+Make sure you are inside the root of the React Native project folder (this should be the `/client/native` directory, at the same level as `/android` and `/ios` folders) then run:
 
 ```
-npx react-native start
+yarn run start
 ```
 
 3. Build the bridge
@@ -30,10 +30,10 @@ The [Rust bridge](https://github.com/fedibtc/fedi-react-native/tree/master/bridg
 
 ```
 # builds ios
-npm run build-bridge-ios
+yarn run build-bridge-ios
 
 # builds android
-npm run build-bridge-android
+yarn run build-bridge-android
 ```
 
 If you have any trouble, check the [bridge/README](https://github.com/fedibtc/fedi-react-native/blob/master/bridge/README.md) and if your problem isn't covered there, open an issue.
@@ -45,13 +45,13 @@ If there are no changes to the bridge since your last build, this process should
 Making sure your Metro Bundler is running from step 2, open a separate terminal to run the android app:
 
 ```
-npm run android
+yarn run android
 ```
 
 Open an additional terminal to run the iOS app:
 
 ```
-npm run ios
+yarn run ios
 ```
 
 You should see the app running in the iOS Simulator or Android Studio emulator shortly.
@@ -59,20 +59,20 @@ You should see the app running in the iOS Simulator or Android Studio emulator s
 If you are running an AArch64 Mac (M1/M2) and see an error when running `npm run ios` instead try:
 
 ```
-npm run ios-arm64
+yarn run ios-arm64
 ```
 
-If you still have trouble, open the `/mobile-ui/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
+If you still have trouble, open the `/client/native/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
 
 ## Directory Structure
 
-- `/screens`
-  - contains React components that are directly accessible by the navigator
-  - need to be properly typed and added to the `Router`
-- `/components` folder
-  - contains React components categorized by `/feature`
-  - consider creating a new folder if building something that does not fall into one of the existing `/feature` categories
-  - `/components/ui` is for more generalized components expected to be reused in many (3+) different components or screens
+-   `/screens`
+    -   contains React components that are directly accessible by the navigator
+    -   need to be properly typed and added to the `Router`
+-   `/components` folder
+    -   contains React components categorized by `/feature`
+    -   consider creating a new folder if building something that does not fall into one of the existing `/feature` categories
+    -   `/components/ui` is for more generalized components expected to be reused in many (3+) different components or screens
 
 ## Style Guide
 
