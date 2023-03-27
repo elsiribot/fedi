@@ -191,7 +191,14 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             backupPayloadXml,
         )
 
-        return xml(this.tag, attributes, encryptedXml)
+        // Add
+        const placeholderBodyXml = xml(
+            'body',
+            { xmlns: 'jabber:client' },
+            'encrypted',
+        )
+
+        return xml(this.tag, attributes, placeholderBodyXml, encryptedXml)
     }
 }
 export class GroupChatMessage extends XmppMessage {
