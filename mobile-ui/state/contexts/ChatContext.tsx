@@ -796,7 +796,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             dispatch(addToMembersSeen(new Member({ jid: userJid })))
         }
         const handleIncomingDirectMessage = (stanza: Element) => {
-            let newMessage, directMessageJson, parsedMessage
+            let newMessage, directMessageJson, parsedMessage, action
             const encrypted = stanza.getChild('encrypted')
             if (encrypted) {
                 console.log('encrypted', encrypted.toString())
@@ -826,8 +826,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
+                action = content.getChild('action')
             } else {
+                // TODO: remove this... only left it in case it helps with
+                // backwards compatibility
                 directMessageJson = stanza.getChildText('dm')
+                action = stanza.getChild('action')
             }
 
             parsedMessage = JSON.parse(directMessageJson as string)
@@ -837,7 +841,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 ...parsedMessage,
             })
 
-            const action = stanza.getChild('action')
             if (action?.getNS() === 'fedi:update-payment') {
                 // find message and replace with updated version
                 // with canceled or rejected payment
@@ -883,7 +886,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const message = forwarded?.getChild('message')
             if (!message || message.getAttr('type') === 'error') return
 
-            let newMessage, directMessageJson, parsedMessage
+            let newMessage, directMessageJson, parsedMessage, action
             const encrypted = message.getChild('encrypted')
             if (encrypted) {
                 console.log('encrypted', encrypted.toString())
@@ -913,8 +916,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
+                action = content.getChild('action')
             } else {
+                // TODO: remove this... only left it in case it helps with
+                // backwards compatibility
                 directMessageJson = message.getChildText('dm')
+                action = message.getChild('action')
             }
 
             parsedMessage = JSON.parse(directMessageJson as string)
@@ -924,7 +931,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 ...parsedMessage,
             })
 
-            const action = message.getChild('action')
             if (action?.getNS() === 'fedi:update-payment') {
                 // find message and replace with updated version
                 // with canceled or rejected payment

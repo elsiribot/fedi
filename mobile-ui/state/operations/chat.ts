@@ -367,6 +367,7 @@ export const sendDirectMessage = (
     message: Message,
     xmppClient: Client | null,
     withEncryptionKeys?: Keypair,
+    updatePayment?: boolean,
 ): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
@@ -383,6 +384,7 @@ export const sendDirectMessage = (
                     message,
                     senderKeys: withEncryptionKeys as Keypair,
                     recipientPublicKey: new Key({ hex: to.publicKeyHex! }),
+                    updatePayment,
                 }),
             )
             xmppClient!.send(encrypedDirectChatMessageXml)
@@ -415,34 +417,6 @@ export const sendGroupMessage = (
             xmppClient!.send(groupChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
-            reject(i18n.t('errors.unknown-error'))
-        }
-    })
-}
-
-export const sendUpdatePaymentMessage = (
-    to: Member,
-    message: Message,
-    xmppClient: Client | null,
-): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
-        if (!xmppClient || !xmppClient?.jid)
-            return reject(i18n.t('errors.unknown-error'))
-
-        try {
-            const fromJid = xmppClient!.jid?.toString()
-            const toJid = to.jid.toString()
-
-            const updatePaymentMessageXml = xmlUtils.buildMessage(
-                new UpdatePaymentMessage({
-                    from: fromJid,
-                    to: toJid,
-                    message,
-                }),
-            )
-            xmppClient!.send(updatePaymentMessageXml)
-        } catch (error) {
-            console.error('sendUpdatePaymentMessage', error)
             reject(i18n.t('errors.unknown-error'))
         }
     })

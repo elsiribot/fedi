@@ -60,13 +60,11 @@ interface EncryptedDirectChatArgs extends CommonXmppAttributes {
     message: Message
     senderKeys: Keypair
     recipientPublicKey: Key
+    updatePayment?: boolean
 }
 interface GroupChatArgs extends CommonXmppAttributes {
     message: Message
     toGroup: Group
-}
-interface UpdatePaymentArgs extends CommonXmppAttributes {
-    message: Message
 }
 export class DirectChatMessage extends XmppMessage {
     static id = 'sendDirectChat'
@@ -108,7 +106,14 @@ export class EncryptedDirectChatMessage extends XmppMessage {
         this.args = args
     }
     build = (): Element => {
-        const { from, to, message, senderKeys, recipientPublicKey } = this.args
+        const {
+            from,
+            to,
+            message,
+            senderKeys,
+            recipientPublicKey,
+            updatePayment,
+        } = this.args
 
         const attributes = {
             id: message.id,
@@ -130,6 +135,13 @@ export class EncryptedDirectChatMessage extends XmppMessage {
         )
 
         const contentXml = xml('content', {}, bodyXml, dmXml)
+
+        // This sends an updated message with payment to signal to the recipient
+        // to take special action and update the existing payment
+        if (updatePayment) {
+            const actionXml = xml('action', { xmlns: 'fedi:update-payment' })
+            contentXml.append(actionXml)
+        }
 
         const randomPadding = randomBytes(
             Math.random() * (10 - 5) + 5,
@@ -232,40 +244,6 @@ export class GroupChatMessage extends XmppMessage {
         )
 
         return xml(this.tag, attributes, bodyXml, gmXml)
-    }
-}
-export class UpdatePaymentMessage extends XmppMessage {
-    static id = 'sendUpdatePayment'
-    args: UpdatePaymentArgs
-    constructor(args: UpdatePaymentArgs) {
-        super()
-        this.args = args
-    }
-    build = (): Element => {
-        const { from, to, message } = this.args
-
-        const attributes = {
-            id: message.id,
-            type: 'chat',
-            from,
-            to,
-        }
-
-        const bodyXml = xml(
-            'body',
-            { xmlns: 'jabber:client' },
-            message.content as string,
-        )
-
-        const dmXml = xml(
-            'dm',
-            { xmlns: 'fedi:direct-message' },
-            JSON.stringify(message),
-        )
-
-        const actionXml = xml('action', { xmlns: 'fedi:update-payment' })
-
-        return xml(this.tag, attributes, bodyXml, dmXml, actionXml)
     }
 }
 

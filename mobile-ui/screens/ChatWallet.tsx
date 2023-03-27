@@ -13,7 +13,14 @@ import {
 } from '../state/contexts/ChatContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useXmpp } from '../state/hooks/chat'
-import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
+import {
+    Keypair,
+    Message,
+    Payment,
+    PaymentStatus,
+    Sats,
+    SatsString,
+} from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import amountUtils from '../utils/AmountUtils'
 
@@ -46,7 +53,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     updatedAt: Date.now() / 1000,
                 }),
             })
-            sendDirectMessage(recipient, ecashRequest)
+            const withEncryptionKeys = state.encryptionKeys as Keypair
+            sendDirectMessage(recipient, ecashRequest, withEncryptionKeys)
             dispatch(addToMessages(ecashRequest))
             dispatch(addToMembersSeen(recipient))
             setIsLoading(false)

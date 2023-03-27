@@ -23,7 +23,6 @@ import {
     publishPublicKey,
     sendDirectMessage,
     sendGroupMessage,
-    sendUpdatePaymentMessage,
 } from '../operations/chat'
 
 // This is a React hook providing the full set of functions that use the
@@ -99,12 +98,14 @@ export const useXmpp = () => {
                 to: Member,
                 message: Message,
                 withEncryptionKeys?: Keypair,
+                updatePayment?: boolean,
             ): Promise<void> => {
                 return sendDirectMessage(
                     to,
                     message,
                     xmppClient,
                     withEncryptionKeys,
+                    updatePayment,
                 )
             },
             [xmppClient],
@@ -112,12 +113,6 @@ export const useXmpp = () => {
         sendGroupMessage: useCallback(
             (to: Group, message: Message): Promise<void> => {
                 return sendGroupMessage(to, message, xmppClient)
-            },
-            [xmppClient],
-        ),
-        sendUpdatePaymentMessage: useCallback(
-            (to: Member, message: Message): Promise<void> => {
-                return sendUpdatePaymentMessage(to, message, xmppClient)
             },
             [xmppClient],
         ),
