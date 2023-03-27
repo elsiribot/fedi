@@ -29,7 +29,7 @@ import {
 // xmppClient to perform chat operations
 export const useXmpp = () => {
     const { state, dispatch } = useChatContext()
-    const { xmppClient } = state
+    const { membersSeen, xmppClient } = state
 
     return {
         addMemberToRoster: useCallback(
@@ -100,15 +100,29 @@ export const useXmpp = () => {
                 withEncryptionKeys?: Keypair,
                 updatePayment?: boolean,
             ): Promise<void> => {
-                return sendDirectMessage(
-                    to,
-                    message,
-                    xmppClient,
-                    withEncryptionKeys,
-                    updatePayment,
-                )
+                // Make sure we always pass the member with a pubkey
+                let toMember: Member | undefined = to
+                if (!toMember.publicKeyHex) {
+                    toMember = membersSeen.find(
+                        m =>
+                            m.username === toMember?.username && m.publicKeyHex,
+                    )
+                }
+                if (toMember) {
+                    return sendDirectMessage(
+                        toMember as Member,
+                        message,
+                        xmppClient,
+                        withEncryptionKeys,
+                        updatePayment,
+                    )
+                } else {
+                    throw new Error(
+                        'No public key found, failed to send message',
+                    )
+                }
             },
-            [xmppClient],
+            [membersSeen, xmppClient],
         ),
         sendGroupMessage: useCallback(
             (to: Group, message: Message): Promise<void> => {
