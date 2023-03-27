@@ -380,6 +380,10 @@ export function reducer(state: AppState, action: Action): AppState {
                 authenticatedMember: action.payload,
             }
         case ActionType.SET_ENCRYPTION_KEYS:
+            // Avoid unnecessary re-renders
+            if (isEqual(action.payload, state.encryptionKeys)) {
+                return state
+            }
             return {
                 ...state,
                 encryptionKeys: action.payload,
