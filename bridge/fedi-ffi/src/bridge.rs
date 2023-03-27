@@ -62,6 +62,7 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
+pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
@@ -400,8 +401,11 @@ impl Federation {
     pub async fn xmpp_credentials(&self) -> XmppCredentials {
         let xmpp_secret = self.client.root_secret.child_key(XMPP_CHILD_ID);
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
+        let keypair_seed_bytes: [u8; 32] = xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
+
         XmppCredentials {
             password: hex::encode(&password_bytes),
+            keypair_seed: hex::encode(&keypair_seed_bytes)
         }
     }
 

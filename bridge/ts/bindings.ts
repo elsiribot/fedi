@@ -224,4 +224,5 @@ export interface Transaction {
 
 export interface XmppCredentials {
   password: string;
+    keypairSeed: string;
 }

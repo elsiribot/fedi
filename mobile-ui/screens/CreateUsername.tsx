@@ -88,7 +88,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         const handleXmppRegistration = async () => {
             try {
                 const credentials = await getXmppCredentials()
-                const { password } = credentials
+                const { password, keypairSeed } = credentials
                 const normalizedUsername = username.toLowerCase()
                 const credentialsAreValid = await checkXmppUser(
                     normalizedUsername,
@@ -100,6 +100,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                         updateFederationCredentials(
                             normalizedUsername,
                             password,
+                            keypairSeed,
                         ),
                     )
                     backupXmppUsername(normalizedUsername)
@@ -109,6 +110,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                         updateFederationCredentials(
                             normalizedUsername,
                             password,
+                            keypairSeed,
                         ),
                     )
                     backupXmppUsername(normalizedUsername)

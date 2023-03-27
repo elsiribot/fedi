@@ -97,16 +97,17 @@ export function updateFederation(event: FederationEvent): Action {
 export function updateFederationCredentials(
     username: string,
     password: string,
+    keypairSeed: string,
 ): Action {
     return {
         type: ActionType.UPDATE_FEDERATION_CREDENTIALS,
-        payload: { username, password },
+        payload: { username, password, keypairSeed },
     }
 }
 export function resetFederationCredentials(): Action {
     return {
         type: ActionType.UPDATE_FEDERATION_CREDENTIALS,
-        payload: { password: null, username: null },
+        payload: { keypairSeed: null, password: null, username: null },
     }
 }
 export function resetFederationsState(): Action {
@@ -146,6 +147,7 @@ export function reducer(state: AppState, action: Action): AppState {
                         ...f,
                         username: action.payload.username,
                         password: action.payload.password,
+                        keypairSeed: action.payload.keypairSeed,
                     })
                 } else {
                     return f

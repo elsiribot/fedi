@@ -77,6 +77,7 @@ export type OfflineTransactionDetails = {
 
 export type XmppCredentials = {
     password: string
+    keypairSeed: string
 }
 export class Transaction extends Base {
     id: string
@@ -197,6 +198,7 @@ export class Federation extends Base {
     // used for XMPP login for chat features
     username?: string | null
     password?: string | null
+    keypairSeed?: string | null
     socialRecoveryActive: boolean
 
     get approvalsRequired(): number {

@@ -15,17 +15,23 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Key,
+    Keypair,
     Member,
     Message,
 } from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
     DirectChatMessage,
+    EncryptedDirectChatMessage,
     EnterMucRoomPresence,
     GetMessagesQuery,
+    GetPublicKeyQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
     GroupChatMessage,
+    PublishPublicKeyQuery,
+    SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
     UpdatePaymentMessage,
@@ -123,7 +129,7 @@ export const fetchMessagesFromArchive = (
             // This result gives us the total message count and
             // handles pagination for queries to the message archive
             const result = await iqCaller.request(getMessagesQueryXml)
-            console.log('fetchMessagesFromArchive', result)
+            console.debug('fetchMessagesFromArchive', result.toString())
             const results = result.getChild('fin')?.getChild('set')
             if (!results) return resolve(null)
 
@@ -213,6 +219,31 @@ export const fetchMucRoomConfig = (
     })
 }
 
+export const getPublicKeyFor = (
+    member: Member,
+    xmppClient: Client | null,
+): Promise<boolean> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const getPubkeyQueryXml = xmlUtils.buildQuery(
+                new GetPublicKeyQuery({
+                    from: xmppClient!.jid!.toString(),
+                    to: member.jid.toString(),
+                }),
+            )
+            const result = await iqCaller.request(getPubkeyQueryXml)
+            console.debug('getPublicKeyFor', result.toString())
+            resolve(true)
+        } catch (error: any) {
+            console.error('getPublicKeyFor', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
 export const getUniqueGroupId = (
     xmppClient: Client | null,
 ): Promise<string> => {
@@ -256,7 +287,7 @@ export const enterMucRoom = (
                 // Receive a registration response from the server
                 if (
                     stanza.is('presence') &&
-                    stanza.getAttr('id') === 'enter-muc-room'
+                    stanza.getAttr('id').includes(EnterMucRoomPresence.id)
                 ) {
                     const result = stanza.getChild('x')
                     const statusResults = result?.getChildren('status')
@@ -299,10 +330,44 @@ export const enterMucRoom = (
     })
 }
 
+export const publishPublicKey = (
+    pubkey: Key,
+    xmppClient: Client | null,
+): Promise<boolean> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+        console.info('pubkey', pubkey.hex)
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const publishPubkeyQueryXml = xmlUtils.buildQuery(
+                new PublishPublicKeyQuery({
+                    pubkey: pubkey.hex,
+                    from: xmppClient!.jid!.toString(),
+                }),
+            )
+            const result = await iqCaller.request(publishPubkeyQueryXml)
+            console.info('publishPublicKey', result)
+            const setPubsubNodeConfigQueryXml = xmlUtils.buildQuery(
+                new SetPubsubNodeConfigQuery({
+                    from: xmppClient!.jid!.toString(),
+                }),
+            )
+            await iqCaller.request(setPubsubNodeConfigQueryXml)
+            resolve(true)
+        } catch (error: any) {
+            console.error('publishPublicKey', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
 export const sendDirectMessage = (
     to: Member,
     message: Message,
     xmppClient: Client | null,
+    withEncryptionKeys?: Keypair,
+    updatePayment?: boolean,
 ): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
@@ -312,14 +377,17 @@ export const sendDirectMessage = (
             const fromJid = xmppClient!.jid?.toString()
             const toJid = to.jid.toString()
 
-            const directChatMessageXml = xmlUtils.buildMessage(
-                new DirectChatMessage({
+            const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
+                new EncryptedDirectChatMessage({
                     from: fromJid,
                     to: toJid,
                     message,
+                    senderKeys: withEncryptionKeys as Keypair,
+                    recipientPublicKey: new Key({ hex: to.publicKeyHex! }),
+                    updatePayment,
                 }),
             )
-            xmppClient!.send(directChatMessageXml)
+            xmppClient!.send(encrypedDirectChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
             reject(i18n.t('errors.unknown-error'))
@@ -349,34 +417,6 @@ export const sendGroupMessage = (
             xmppClient!.send(groupChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
-            reject(i18n.t('errors.unknown-error'))
-        }
-    })
-}
-
-export const sendUpdatePaymentMessage = (
-    to: Member,
-    message: Message,
-    xmppClient: Client | null,
-): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
-        if (!xmppClient || !xmppClient?.jid)
-            return reject(i18n.t('errors.unknown-error'))
-
-        try {
-            const fromJid = xmppClient!.jid?.toString()
-            const toJid = to.jid.toString()
-
-            const updatePaymentMessageXml = xmlUtils.buildMessage(
-                new UpdatePaymentMessage({
-                    from: fromJid,
-                    to: toJid,
-                    message,
-                }),
-            )
-            xmppClient!.send(updatePaymentMessageXml)
-        } catch (error) {
-            console.error('sendUpdatePaymentMessage', error)
             reject(i18n.t('errors.unknown-error'))
         }
     })

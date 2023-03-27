@@ -5,6 +5,8 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Key,
+    Keypair,
     Member,
     Message,
 } from '../../types'
@@ -16,17 +18,18 @@ import {
     fetchMessagesFromArchive,
     fetchMucRoomConfig,
     fetchRoster,
+    getPublicKeyFor,
     getUniqueGroupId,
+    publishPublicKey,
     sendDirectMessage,
     sendGroupMessage,
-    sendUpdatePaymentMessage,
 } from '../operations/chat'
 
 // This is a React hook providing the full set of functions that use the
 // xmppClient to perform chat operations
 export const useXmpp = () => {
     const { state, dispatch } = useChatContext()
-    const { xmppClient } = state
+    const { membersSeen, xmppClient } = state
 
     return {
         addMemberToRoster: useCallback(
@@ -69,6 +72,12 @@ export const useXmpp = () => {
         fetchRoster: useCallback((): Promise<boolean> => {
             return fetchRoster(dispatch, xmppClient)
         }, [dispatch, xmppClient]),
+        getPublicKeyFor: useCallback(
+            (member: Member): Promise<boolean> => {
+                return getPublicKeyFor(member, xmppClient)
+            },
+            [xmppClient],
+        ),
         getUniqueGroupId: useCallback((): Promise<string> => {
             return getUniqueGroupId(xmppClient)
         }, [xmppClient]),
@@ -78,21 +87,46 @@ export const useXmpp = () => {
             },
             [xmppClient],
         ),
-        sendDirectMessage: useCallback(
-            (to: Member, message: Message): Promise<void> => {
-                return sendDirectMessage(to, message, xmppClient)
+        publishPublicKey: useCallback(
+            (pubkey: Key): Promise<boolean> => {
+                return publishPublicKey(pubkey, xmppClient)
             },
             [xmppClient],
+        ),
+        sendDirectMessage: useCallback(
+            (
+                to: Member,
+                message: Message,
+                withEncryptionKeys?: Keypair,
+                updatePayment?: boolean,
+            ): Promise<void> => {
+                // Make sure we always pass the member with a pubkey
+                let toMember: Member | undefined = to
+                if (!toMember.publicKeyHex) {
+                    toMember = membersSeen.find(
+                        m =>
+                            m.username === toMember?.username && m.publicKeyHex,
+                    )
+                }
+                if (toMember) {
+                    return sendDirectMessage(
+                        toMember as Member,
+                        message,
+                        xmppClient,
+                        withEncryptionKeys,
+                        updatePayment,
+                    )
+                } else {
+                    throw new Error(
+                        'No public key found, failed to send message',
+                    )
+                }
+            },
+            [membersSeen, xmppClient],
         ),
         sendGroupMessage: useCallback(
             (to: Group, message: Message): Promise<void> => {
                 return sendGroupMessage(to, message, xmppClient)
-            },
-            [xmppClient],
-        ),
-        sendUpdatePaymentMessage: useCallback(
-            (to: Member, message: Message): Promise<void> => {
-                return sendUpdatePaymentMessage(to, message, xmppClient)
             },
             [xmppClient],
         ),

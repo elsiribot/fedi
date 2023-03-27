@@ -55,9 +55,13 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     useEffect(() => {
         const restoreUsername = async () => {
             const credentials = await getXmppCredentials()
-            const { password } = credentials
+            const { password, keypairSeed } = credentials
             federationsDispatch(
-                updateFederationCredentials(usernameToRestore, password),
+                updateFederationCredentials(
+                    usernameToRestore,
+                    password,
+                    keypairSeed,
+                ),
             )
             backupXmppUsername(usernameToRestore)
         }

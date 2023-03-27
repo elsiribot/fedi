@@ -1,16 +1,20 @@
-import xmlUtils, { SetRoomConfigQuery } from '../../utils/XmlUtils'
+import { XMPP_MUC_DOMAIN } from '../../constants'
+import { Group, Message, Payment, PaymentStatus } from '../../types'
+import xmlUtils, {
+    EnterMucRoomPresence,
+    GroupChatMessage,
+    SetRoomConfigQuery,
+    UpdatePaymentMessage,
+} from '../../utils/XmlUtils'
 
-// Mock types to prevent further imports from pulling in dependencies
-// that cause these tests to fail
 jest.mock('../../constants', () => ({
     XMPP_DEFAULT_PAGE_LIMIT: 10,
     XMPP_MUC_DOMAIN: 'domain',
 }))
-jest.mock('../../types', () => ({
-    ArchiveQueryFilters: {},
-    ArchiveQueryPagination: {},
-    Group: {},
-    Message: {},
+jest.mock('../../localization/i18n', () => ({
+    i18n: {
+        t: jest.fn(),
+    },
 }))
 
 describe('XmlUtils', () => {
@@ -39,7 +43,79 @@ describe('XmlUtils', () => {
             )
             const queryId = result.getAttr('id')
 
-            expect(queryId).toContain('set-room-config')
+            expect(queryId).toContain(SetRoomConfigQuery.id)
+        })
+    })
+    describe('buildPresence: EnterMucRoom', () => {
+        it('response contains all of the provided values', () => {
+            const groupId = 'testgroup'
+            const from = 'user@domain'
+            const mucDomain = XMPP_MUC_DOMAIN
+
+            const result = xmlUtils.buildPresence(
+                new EnterMucRoomPresence({
+                    groupId,
+                    from,
+                }),
+            )
+
+            const toValue = result.getAttr('to')
+            const fromValue = result.getAttr('from')
+            const xmlnsValue = result.getChild('x')?.getAttr('xmlns')
+
+            expect(toValue).toEqual(`${groupId}@${mucDomain}/user`)
+            expect(fromValue).toEqual(from)
+            expect(xmlnsValue).toEqual('http://jabber.org/protocol/muc')
+        })
+
+        it('response contains the correct presence ID', () => {
+            const result = xmlUtils.buildPresence(
+                new EnterMucRoomPresence({
+                    groupId: 'testgroup',
+                    from: 'user@domain',
+                }),
+            )
+            const presenceId = result.getAttr('id')
+
+            expect(presenceId).toContain(EnterMucRoomPresence.id)
+        })
+    })
+
+    describe('buildMessage: GroupChatMessage', () => {
+        it('response contains all of the provided values', () => {
+            const result = xmlUtils.buildMessage(
+                new GroupChatMessage({
+                    from: 'fromjid@domain',
+                    toGroup: new Group({ id: 'groupid' }),
+                    message: new Message({
+                        id: 'group-chat-message-uuid',
+                        content: 'This is a test message',
+                    }),
+                }),
+            )
+            const fromAttr = result.getAttr('from')
+            const toAttr = result.getAttr('to')
+            const body = result.getChild('body')?.getText()
+
+            expect(fromAttr).toEqual('fromjid@domain')
+            expect(toAttr).toEqual('groupid@domain')
+            expect(body).toEqual('This is a test message')
+        })
+
+        it('response contains the message ID', () => {
+            const result = xmlUtils.buildMessage(
+                new GroupChatMessage({
+                    from: 'fromjid@domain',
+                    toGroup: new Group({ id: 'groupid' }),
+                    message: new Message({
+                        id: 'group-chat-message-uuid',
+                        content: 'This is a test message',
+                    }),
+                }),
+            )
+            const messageId = result.getAttr('id')
+
+            expect(messageId).toContain('group-chat-message-uuid')
         })
     })
 })

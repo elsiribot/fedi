@@ -7,7 +7,7 @@ import ChatsList from '../components/feature/chat/ChatsList'
 
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks/chat'
-import { ArchiveQueryPagination } from '../types'
+import { ArchiveQueryPagination, Keypair } from '../types'
 import {
     NavigationHook,
     RootStackParamList,
@@ -22,8 +22,10 @@ export type Props = BottomTabScreenProps<
 const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { fetchMessagesFromArchive, fetchRoster } = useXmpp()
-    const { websocketIsHealthy, lastFetchedMessageId } = useChatContext().state
+    const { fetchMessagesFromArchive, fetchRoster, publishPublicKey } =
+        useXmpp()
+    const { websocketIsHealthy, lastFetchedMessageId, encryptionKeys } =
+        useChatContext().state
 
     useEffect(() => {
         if (websocketIsHealthy) {
@@ -46,6 +48,15 @@ const ChatScreen: React.FC<Props> = () => {
             fetchRoster()
         }
     }, [websocketIsHealthy, fetchRoster])
+
+    useEffect(() => {
+        if (websocketIsHealthy && encryptionKeys) {
+            // Here we make sure this public key is published for other users
+            // to subscribe to and encrypt messages sent to this user
+            const { publicKey } = encryptionKeys as Keypair
+            publishPublicKey(publicKey)
+        }
+    }, [encryptionKeys, publishPublicKey, websocketIsHealthy])
 
     return (
         <View style={styles(theme).container}>

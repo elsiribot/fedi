@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
+import parse from '@xmpp/xml/lib/parse'
 import XMPPError from '@xmpp/error'
 import { JID } from '@xmpp/jid'
+import { Element } from 'ltx'
 import { isEqual } from 'lodash'
 import React, {
     createContext,
@@ -23,11 +25,15 @@ import {
     FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_CONNECTION_OPTIONS,
     XMPP_DOMAIN,
+    XMPP_MESSAGE_TYPES,
     XMPP_RESOURCE,
 } from '../../constants'
 import i18n from '../../localization/i18n'
-import { Group, Member, Message } from '../../types'
+import { Group, Key, Keypair, Member, Message } from '../../types'
+import encryptionUtils from '../../utils/EncryptionUtils'
+import { publishPublicKey } from '../operations/chat'
 import { useFederationsContext } from './FederationsContext'
+import { GetMessagesQuery } from '../../utils/XmlUtils'
 
 export const DEFAULT_GROUPS: Group[] = [
     // FEDI_GENERAL_CHANNEL_GROUP,
@@ -44,6 +50,7 @@ interface ChatContextState {
     membersSeen: Member[]
     lastFetchedMessageId: string | null
     websocketIsHealthy: boolean
+    encryptionKeys: Keypair | null
 }
 const initialState: ChatContextState = {
     xmppClient: null,
@@ -54,6 +61,7 @@ const initialState: ChatContextState = {
     membersSeen: [],
     lastFetchedMessageId: null,
     websocketIsHealthy: false,
+    encryptionKeys: null,
 }
 type AppState = typeof initialState
 
@@ -70,6 +78,7 @@ enum ActionType {
     RESET_CHAT_STATE = 'RESET_CHAT_STATE',
     RESET_XMPP_CLIENT = 'RESET_XMPP_CLIENT',
     SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
+    SET_ENCRYPTION_KEYS = 'SET_ENCRYPTION_KEYS',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_GROUP = 'UPDATE_GROUP',
     UPDATE_GROUP_MESSAGE_PREVIEW = 'UPDATE_GROUP_MESSAGE_PREVIEW',
@@ -144,6 +153,12 @@ export function setAuthenticatedMember(member: Member): Action {
         payload: member,
     }
 }
+export function setEncryptionKeys(keys: Keypair): Action {
+    return {
+        type: ActionType.SET_ENCRYPTION_KEYS,
+        payload: keys,
+    }
+}
 export function setXmppClient(xmpp: Client): Action {
     return {
         type: ActionType.SET_XMPP_CLIENT,
@@ -166,6 +181,12 @@ export function updateGroup(group: Group): Action {
     return {
         type: ActionType.UPDATE_GROUP,
         payload: group,
+    }
+}
+export function updateMember(member: Member): Action {
+    return {
+        type: ActionType.UPDATE_MEMBER,
+        payload: member,
     }
 }
 export function resetXmppClient(): Action {
@@ -308,7 +329,13 @@ export function reducer(state: AppState, action: Action): AppState {
         case ActionType.RECEIVE_MEMBERS_SEEN: {
             const incomingMembers = action.payload
             const newMembersSeen = incomingMembers
-                .map((im: Member) => new Member({ jid: im.jid }))
+                .map(
+                    (im: Member) =>
+                        new Member({
+                            ...im,
+                            jid: im.jid,
+                        }),
+                )
                 .filter((im: Member) => {
                     const memberExists = state.membersSeen.find(
                         (m: Member) => m.username === im.username,
@@ -351,6 +378,15 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 authenticatedMember: action.payload,
+            }
+        case ActionType.SET_ENCRYPTION_KEYS:
+            // Avoid unnecessary re-renders
+            if (isEqual(action.payload, state.encryptionKeys)) {
+                return state
+            }
+            return {
+                ...state,
+                encryptionKeys: action.payload,
             }
         case ActionType.SET_XMPP_CLIENT:
             return {
@@ -465,6 +501,42 @@ export function reducer(state: AppState, action: Action): AppState {
                     ...state,
                     groups: state.groups.map((g: Group, i) =>
                         i === groupIndex ? updatedGroup : g,
+                    ),
+                }
+            }
+        }
+        case ActionType.UPDATE_MEMBER: {
+            const memberToUpdate = action.payload
+            const memberIndex = state.membersSeen.findIndex(
+                (m: Member) => m.username === memberToUpdate.username,
+            )
+
+            // don't update ourselves
+            if (state.xmppClient?.jid?.getLocal() === memberToUpdate.username) {
+                return state
+            }
+
+            if (memberIndex === -1) {
+                // New members get added
+                return {
+                    ...state,
+                    membersSeen: [...state.membersSeen, memberToUpdate],
+                }
+            } else if (
+                isEqual(memberToUpdate, state.membersSeen[memberIndex])
+            ) {
+                // Avoid re-render, this member has not changed
+                return state
+            } else {
+                // member needs an update...
+                const updatedMember = new Member({
+                    ...state.membersSeen[memberIndex],
+                    ...memberToUpdate,
+                })
+                return {
+                    ...state,
+                    membersSeen: state.membersSeen.map((m: Member, i) =>
+                        i === memberIndex ? updatedMember : m,
                     ),
                 }
             }
@@ -616,7 +688,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 const xmpp = client(xmppConnectionOptions)
 
                 // debug(xmpp, true)
-                // debug(xmpp, true, `OS=${Platform.OS}`)
+                debug(xmpp, true, `OS=${Platform.OS}`)
                 /*
                     This ^ helps debug when testing with both ios + android
                     emulators simultaneously to know which stanzas are coming
@@ -668,6 +740,45 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         [],
     )
 
+    const resumeXmppStream = useCallback(() => {
+        console.info('resuming xmpp stream after coming back into foreground')
+        try {
+            const xmppClient = state.xmppClient
+            dispatch(changeWebsocketIsHealthy(false))
+
+            // Sometimes we send a presence message and do not
+            // get a response which may mean the stream cannot
+            // be resumed so we need to stop and rebuild the client
+            let reconnectTimer = setTimeout(() => {
+                console.info(
+                    'no response from XMPP server after 3s, rebuilding XMPP client',
+                )
+                state.xmppClient?.reconnect.stop()
+                state.xmppClient?.stop()
+                // this will re-trigger the XMPP instantiation effect above
+                dispatch(resetXmppClient())
+            }, 3000)
+            // This expects a response to the presence message which means
+            // the stream has been resumed successfully so we can clear
+            // the reconnectTimer and cleanup the listener
+            const onStanzaReceived = async (_: Element) => {
+                dispatch(changeWebsocketIsHealthy(true))
+                xmppClient?.removeListener('stanza', onStanzaReceived)
+                console.info(
+                    'XMPP server responded, do not rebuild XMPP client',
+                )
+                clearTimeout(reconnectTimer)
+            }
+            state.xmppClient?.on('stanza', onStanzaReceived)
+            console.info(
+                'sending presence to XMPP server to test for stable stream',
+            )
+            state.xmppClient?.send(xml('presence'))
+        } catch (error) {
+            console.error('Failed to resume XMPP stream')
+        }
+    }, [state.xmppClient])
+
     // This effect instantiates the XMPP client with a websocket connection
     // and requires a selectedFederation with username + password
     useEffect(() => {
@@ -696,112 +807,243 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     ])
 
     const configureXmppMessageListeners = useCallback(() => {
-        // Monitor for incoming messages
-        state.xmppClient?.on('stanza', async stanza => {
+        // Handlers for incoming messages
+        const handleIncomingGroupMessage = (stanza: Element) => {
+            const bodyText = stanza.getChildText('body')
+            if (!bodyText) return
+
+            const groupMessageJson = stanza.getChildText('gm')
+            const parsedMessage = JSON.parse(groupMessageJson as string)
+            if (!parsedMessage) return
+
+            const newMessage = new Message({
+                ...parsedMessage,
+            })
+
+            dispatch(addToMessages(newMessage))
+            dispatch(updateGroupMessagePreview(newMessage))
+
+            // This came from a user through the MUC domain, reformat JID
+            // to main domain with the /chat resource
+            const from = stanza.getAttr('from')
+            const fromJid = jid(from)
+            let userJid: JID = jid(
+                fromJid.getResource(),
+                XMPP_DOMAIN,
+                XMPP_RESOURCE,
+            )
+            dispatch(addToMembersSeen(new Member({ jid: userJid })))
+        }
+        const handleIncomingDirectMessage = (stanza: Element) => {
+            let newMessage, directMessageJson, parsedMessage, action
+            const encrypted = stanza.getChild('encrypted')
+            if (encrypted) {
+                console.debug('encrypted', encrypted.toString())
+                // First decrypt the payload
+                const header = encrypted.getChild('header')
+                const keys = header?.getChild('keys')
+                const senderPublicKey = keys?.getChildText('key')
+
+                let encryptedPayloadContents = encrypted.getChildText('payload')
+
+                const { privateKey, publicKey } =
+                    state.encryptionKeys as Keypair
+
+                // If we sent this message, decrypt the backup-payload
+                // instead since we encrypted it to our own pubkey
+                if (senderPublicKey === publicKey.hex) {
+                    encryptedPayloadContents =
+                        encrypted.getChildText('backup-payload')
+                }
+                console.debug(
+                    'encryptedPayloadContents',
+                    encryptedPayloadContents,
+                )
+                const decryptedPayload = encryptionUtils.decryptMessage(
+                    encryptedPayloadContents!,
+                    new Key({ hex: senderPublicKey }),
+                    privateKey,
+                )
+
+                console.debug('decryptedPayload', decryptedPayload)
+                const decryptedEnvelope = parse(decryptedPayload)
+                const content = decryptedEnvelope.getChild('content')
+                directMessageJson = content.getChildText('dm')
+                action = content.getChild('action')
+            } else {
+                // TODO: remove this... only left it in case it helps with
+                // backwards compatibility
+                directMessageJson = stanza.getChildText('dm')
+                action = stanza.getChild('action')
+            }
+
+            parsedMessage = JSON.parse(directMessageJson as string)
+            console.debug('parsedMessage', parsedMessage)
+            if (!parsedMessage) return
+
+            newMessage = new Message({
+                ...parsedMessage,
+            })
+
+            if (action?.getNS() === 'fedi:update-payment') {
+                // find message and replace with updated version
+                // with canceled or rejected payment
+                dispatch(updateMessage(newMessage))
+            } else {
+                dispatch(addToMessages(newMessage))
+                dispatch(updateGroupMessagePreview(newMessage))
+
+                const from = stanza.getAttr('from')
+                const fromJid = jid(from)
+                const userJid: JID = fromJid
+                dispatch(addToMembersSeen(new Member({ jid: userJid })))
+            }
+        }
+        const handleSubscriptionEvent = (stanza: Element) => {
+            const event = stanza.getChild('event')
+
+            const items = event?.getChild('items')
+            const nodeId = items?.getAttr('node') as string
+
+            const publishedItem = items?.getChild('item')
+            const publisher = publishedItem?.getAttr('publisher')
+            const publisherJid: JID = jid(publisher)
+            const publishingMember = new Member({ jid: publisherJid })
+            // if the node ID does not match the publisher JID... this pubkey
+            // was not published by Fedi source code...
+            // do not overwrite the locally stored pubkey for this member
+            // TODO: implement signature validation for authentication?
+            if (!nodeId.includes(publishingMember.username)) {
+                console.error('node ID does not match the publisher JID')
+                return
+            }
+            const pubkey = publishedItem?.getChildText('entry')
+            console.info('pubkey', pubkey)
+            publishingMember.publicKeyHex = pubkey as string
+            console.info('publishingMember', publishingMember)
+
+            dispatch(updateMember(publishingMember))
+        }
+        const handleIncomingMessageArchives = (stanza: Element) => {
+            const result = stanza.getChild('result')
+            const forwarded = result?.getChild('forwarded')
+            const message = forwarded?.getChild('message')
+            if (!message || message.getAttr('type') === 'error') return
+
+            let newMessage, directMessageJson, parsedMessage, action
+            const encrypted = message.getChild('encrypted')
+            if (encrypted) {
+                console.debug('encrypted', encrypted.toString())
+                // First decrypt the payload
+                const header = encrypted.getChild('header')
+                const keys = header?.getChild('keys')
+                const senderPublicKey = keys?.getChildText('key')
+
+                let encryptedPayloadContents = encrypted.getChildText('payload')
+
+                const { privateKey, publicKey } =
+                    state.encryptionKeys as Keypair
+
+                // If we sent this message, decrypt the backup-payload
+                // instead since we encrypted it to our own pubkey
+                if (senderPublicKey === publicKey.hex) {
+                    encryptedPayloadContents =
+                        encrypted.getChildText('backup-payload')
+                }
+                console.debug(
+                    'encryptedPayloadContents',
+                    encryptedPayloadContents,
+                )
+                const decryptedPayload = encryptionUtils.decryptMessage(
+                    encryptedPayloadContents!,
+                    new Key({ hex: senderPublicKey }),
+                    privateKey,
+                )
+
+                console.log('decryptedPayload', decryptedPayload)
+                const decryptedEnvelope = parse(decryptedPayload)
+                const content = decryptedEnvelope.getChild('content')
+                directMessageJson = content.getChildText('dm')
+                action = content.getChild('action')
+            } else {
+                // TODO: remove this... only left it in case it helps with
+                // backwards compatibility
+                directMessageJson = message.getChildText('dm')
+                action = message.getChild('action')
+            }
+
+            parsedMessage = JSON.parse(directMessageJson as string)
+            if (!parsedMessage) return
+
+            newMessage = new Message({
+                ...parsedMessage,
+            })
+
+            if (action?.getNS() === 'fedi:update-payment') {
+                // find message and replace with updated version
+                // with canceled or rejected payment
+                dispatch(updateMessage(newMessage))
+            } else {
+                dispatch(addToMessages(newMessage))
+                dispatch(updateGroupMessagePreview(newMessage))
+
+                const from = message.getAttr('from')
+                const fromJid = jid(from)
+                const userJid: JID = fromJid
+                dispatch(addToMembersSeen(new Member({ jid: userJid })))
+            }
+        }
+
+        // Listen for incoming messages
+        const onStanzaReceived = async (stanza: Element) => {
             try {
                 if (stanza.is('message')) {
-                    if (stanza.getAttr('type') === 'groupchat') {
+                    switch (stanza.getAttr('type')) {
                         // Handle incoming messages from GroupChat
-                        const bodyText = stanza.getChildText('body')
-                        if (!bodyText) return
-
-                        const groupMessageJson = stanza.getChildText('gm')
-                        const parsedMessage = JSON.parse(
-                            groupMessageJson as string,
-                        )
-                        if (!parsedMessage) return
-
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                        })
-
-                        dispatch(addToMessages(newMessage))
-                        dispatch(updateGroupMessagePreview(newMessage))
-
-                        // This came from a user through the MUC domain, reformat JID
-                        // to main domain with the /chat resource
-                        const from = stanza.getAttr('from')
-                        const fromJid = jid(from)
-                        let userJid: JID = jid(
-                            fromJid.getResource(),
-                            XMPP_DOMAIN,
-                            XMPP_RESOURCE,
-                        )
-                        dispatch(addToMembersSeen(new Member({ jid: userJid })))
-                    } else if (stanza.getAttr('type') === 'chat') {
+                        case XMPP_MESSAGE_TYPES.GROUPCHAT: {
+                            handleIncomingGroupMessage(stanza)
+                            break
+                        }
                         // Handle incoming messages from DirectChat while online
-                        const bodyText = stanza.getChildText('body')
-                        if (!bodyText) return
-
-                        const directMessageJson = stanza.getChildText('dm')
-                        const parsedMessage = JSON.parse(
-                            directMessageJson as string,
-                        )
-                        if (!parsedMessage) return
-
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                        })
-
-                        const action = stanza.getChild('action')
-                        if (action?.getNS() === 'fedi:update-payment') {
-                            // find message and replace with updated version
-                            // with canceled or rejected payment
-                            dispatch(updateMessage(newMessage))
-                        } else {
-                            dispatch(addToMessages(newMessage))
-                            dispatch(updateGroupMessagePreview(newMessage))
-
-                            const from = stanza.getAttr('from')
-                            const fromJid = jid(from)
-                            const userJid: JID = fromJid
-                            dispatch(
-                                addToMembersSeen(new Member({ jid: userJid })),
-                            )
+                        case XMPP_MESSAGE_TYPES.CHAT: {
+                            handleIncomingDirectMessage(stanza)
+                            break
                         }
-                    } else if (
-                        stanza.getChild('result')?.getAttr('queryid') ===
-                        'get-messages'
+                        // Handle incoming messages after subscribing to user
+                        // public key for e2e encryption
+                        case XMPP_MESSAGE_TYPES.HEADLINE: {
+                            handleSubscriptionEvent(stanza)
+                            break
+                        }
+                        default:
+                            break
+                    }
+                    // Handle messages received while offline, typically
+                    // triggered by the fetchMessagesFromArchive hook
+                    if (
+                        stanza
+                            .getChild('result')
+                            ?.getAttr('queryid')
+                            .includes(GetMessagesQuery.id)
                     ) {
-                        // Handle messages received while offline, typically
-                        // triggered by the fetchMessagesFromArchive hook
-                        const result = stanza.getChild('result')
-                        const forwarded = result?.getChild('forwarded')
-                        const message = forwarded?.getChild('message')
-                        if (!message) return
-
-                        const directMessageJson = message.getChildText('dm')
-                        const parsedMessage = JSON.parse(
-                            directMessageJson as string,
-                        )
-                        if (!parsedMessage) return
-                        const newMessage = new Message({
-                            ...parsedMessage,
-                        })
-
-                        const action = message.getChild('action')
-                        if (action?.getNS() === 'fedi:update-payment') {
-                            // find message and replace with updated version
-                            // with canceled or rejected payment
-                            dispatch(updateMessage(newMessage))
-                        } else {
-                            dispatch(addToMessages(newMessage))
-                            dispatch(updateGroupMessagePreview(newMessage))
-
-                            const from = message.getAttr('from')
-                            const fromJid = jid(from)
-                            const userJid: JID = fromJid
-                            dispatch(
-                                addToMembersSeen(new Member({ jid: userJid })),
-                            )
-                        }
+                        handleIncomingMessageArchives(stanza)
                     }
                 }
             } catch (error) {
                 console.error('Error parsing XMPP stanza', error)
             }
-        })
-    }, [state.xmppClient])
+        }
+        console.info('setting onStanzaReceived lisetener')
+
+        if (state.xmppClient && state.encryptionKeys) {
+            state.xmppClient?.on('stanza', onStanzaReceived)
+        }
+
+        return () => {
+            console.info('removeListener onStanzaReceived lisetener')
+            state.xmppClient?.removeListener('stanza', onStanzaReceived)
+        }
+    }, [state.encryptionKeys, state.xmppClient])
 
     const configureXmppQueryListeners = useCallback(() => {
         // Monitor for incoming iq responses
@@ -839,47 +1081,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         if (state.xmppClient === null) return
 
-        const resumeXmppStream = () => {
-            console.info(
-                'resuming xmpp stream after coming back into foreground',
-            )
-            try {
-                const xmppClient = state.xmppClient
-                dispatch(changeWebsocketIsHealthy(false))
-
-                // Sometimes we send a presence message and do not
-                // get a response which may mean the stream cannot
-                // be resumed so we need to stop and rebuild the client
-                let reconnectTimer = setTimeout(() => {
-                    console.info(
-                        'no response from XMPP server after 3s, rebuilding XMPP client',
-                    )
-                    state.xmppClient?.reconnect.stop()
-                    state.xmppClient?.stop()
-                    // this will re-trigger the XMPP instantiation effect above
-                    dispatch(resetXmppClient())
-                }, 3000)
-                // This expects a response to the presence message which means
-                // the stream has been resumed successfully so we can clear
-                // the reconnectTimer and cleanup the listener
-                const onStanzaReceived = async (_: Element) => {
-                    dispatch(changeWebsocketIsHealthy(true))
-                    xmppClient?.removeListener('stanza', onStanzaReceived)
-                    console.info(
-                        'XMPP server responded, do not rebuild XMPP client',
-                    )
-                    clearTimeout(reconnectTimer)
-                }
-                state.xmppClient?.on('stanza', onStanzaReceived)
-                console.info(
-                    'sending presence to XMPP server to test for stable stream',
-                )
-                state.xmppClient?.send(xml('presence'))
-            } catch (error) {
-                console.error('Failed to resume XMPP stream')
-            }
-        }
-
         // Subscribe to changes in AppState to detect when app goes from
         // background to foreground
         const subscription = RNAppState.addEventListener(
@@ -895,7 +1096,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             },
         )
         return () => subscription.remove()
-    }, [state.xmppClient])
+    }, [state.xmppClient, resumeXmppStream])
 
     // This effect adds event listeners to the xmppClient so it can react
     // to various kinds of XMPP stanzas sent by the server
@@ -910,6 +1111,30 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         configureXmppQueryListeners,
         state.xmppClient,
     ])
+
+    // This effect derives a keypair when the keypair seed is returned
+    // from the bridge and handled in FederationsContext
+    useEffect(() => {
+        if (selectedFederation?.keypairSeed) {
+            const derivedKeypair = encryptionUtils.generateDeterministicKeyPair(
+                selectedFederation.keypairSeed,
+            )
+            dispatch(setEncryptionKeys(derivedKeypair))
+        }
+    }, [selectedFederation?.keypairSeed])
+
+    // This effect publishes the user's pubkey to the server so other users
+    // can encrypt messages before sending
+    useEffect(() => {
+        if (
+            state.xmppClient &&
+            state.authenticatedMember &&
+            state.encryptionKeys
+        ) {
+            const { publicKey } = state.encryptionKeys as Keypair
+            publishPublicKey(publicKey, state.xmppClient)
+        }
+    }, [state.encryptionKeys, state.authenticatedMember, state.xmppClient])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS

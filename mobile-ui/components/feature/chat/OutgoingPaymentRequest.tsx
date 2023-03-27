@@ -10,7 +10,13 @@ import {
 } from '../../../state/contexts/ChatContext'
 import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import { Member, Message, Payment, PaymentStatus } from '../../../types'
+import {
+    Keypair,
+    Member,
+    Message,
+    Payment,
+    PaymentStatus,
+} from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPaymentActionsProps = {
@@ -25,8 +31,8 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
-    const { sendUpdatePaymentMessage } = useXmpp()
-    const { dispatch } = useChatContext()
+    const { sendDirectMessage } = useXmpp()
+    const { state, dispatch } = useChatContext()
     const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
     // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
     const [validatingToken, setValidatingToken] = useState<boolean>(false)
@@ -47,7 +53,14 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     token: null,
                 },
             })
-            sendUpdatePaymentMessage(sentTo as Member, acceptedPaymentMessage)
+            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const updatePayment = true
+            sendDirectMessage(
+                sentTo as Member,
+                acceptedPaymentMessage,
+                withEncryptionKeys,
+                updatePayment,
+            )
             dispatch(updateMessage(acceptedPaymentMessage))
         }
     }, [
@@ -55,8 +68,9 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         dispatch,
         message,
         payment,
-        sendUpdatePaymentMessage,
+        sendDirectMessage,
         sentTo,
+        state.encryptionKeys,
     ])
 
     useEffect(() => {
@@ -188,8 +202,8 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
     text,
 }: OutgoingPaymentRequestProps) => {
     const { theme } = useTheme()
-    const { sendUpdatePaymentMessage } = useXmpp()
-    const { dispatch } = useChatContext()
+    const { sendDirectMessage } = useXmpp()
+    const { state, dispatch } = useChatContext()
 
     const cancelPayment = () => {
         try {
@@ -201,9 +215,13 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
                     status: PaymentStatus.canceled,
                 },
             })
-            sendUpdatePaymentMessage(
+            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const updatePayment = true
+            sendDirectMessage(
                 message.sentTo as Member,
                 canceledPaymentMessage,
+                withEncryptionKeys,
+                updatePayment,
             )
             dispatch(updateMessage(canceledPaymentMessage))
         } catch (error) {
