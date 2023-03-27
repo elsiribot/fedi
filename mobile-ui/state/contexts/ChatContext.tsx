@@ -801,19 +801,21 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 const keys = header?.getChild('keys')
                 const senderPublicKey = keys?.getChildText('key')
 
-                const encryptedPayloadContents =
-                    encrypted.getChildText('payload')
+                let encryptedPayloadContents = encrypted.getChildText('payload')
 
-                console.log(
-                    'encryptedPayloadContents',
-                    encryptedPayloadContents,
-                )
-                const recipientPrivateKey = state.encryptionKeys
-                    ?.privateKey as Key
+                const { privateKey, publicKey } =
+                    state.encryptionKeys as Keypair
+
+                // If we sent this message, decrypt the backup-payload
+                // instead since we encrypted it to our own pubkey
+                if (senderPublicKey === publicKey.hex) {
+                    encryptedPayloadContents =
+                        encrypted.getChildText('backup-payload')
+                }
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
                     new Key({ hex: senderPublicKey }),
-                    recipientPrivateKey,
+                    privateKey,
                 )
 
                 console.log('decryptedPayload', decryptedPayload)
@@ -877,10 +879,44 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const message = forwarded?.getChild('message')
             if (!message || message.getAttr('type') === 'error') return
 
-            const directMessageJson = message.getChildText('dm')
-            const parsedMessage = JSON.parse(directMessageJson as string)
+            let newMessage, directMessageJson, parsedMessage
+            const encrypted = message.getChild('encrypted')
+            if (encrypted) {
+                console.log('encrypted', encrypted.toString())
+                // First decrypt the payload
+                const header = encrypted.getChild('header')
+                const keys = header?.getChild('keys')
+                const senderPublicKey = keys?.getChildText('key')
+
+                let encryptedPayloadContents = encrypted.getChildText('payload')
+
+                const { privateKey, publicKey } =
+                    state.encryptionKeys as Keypair
+
+                // If we sent this message, decrypt the backup-payload
+                // instead since we encrypted it to our own pubkey
+                if (senderPublicKey === publicKey.hex) {
+                    encryptedPayloadContents =
+                        encrypted.getChildText('backup-payload')
+                }
+                const decryptedPayload = encryptionUtils.decryptMessage(
+                    encryptedPayloadContents!,
+                    new Key({ hex: senderPublicKey }),
+                    privateKey,
+                )
+
+                console.log('decryptedPayload', decryptedPayload)
+                const decryptedEnvelope = parse(decryptedPayload)
+                const content = decryptedEnvelope.getChild('content')
+                directMessageJson = content.getChildText('dm')
+            } else {
+                directMessageJson = message.getChildText('dm')
+            }
+
+            parsedMessage = JSON.parse(directMessageJson as string)
             if (!parsedMessage) return
-            const newMessage = new Message({
+
+            newMessage = new Message({
                 ...parsedMessage,
             })
 
