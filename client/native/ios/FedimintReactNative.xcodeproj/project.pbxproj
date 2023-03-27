@@ -69,7 +69,7 @@
 		3DD2FB1C26C641AEBCA7E84B /* AlbertSans-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-Bold.ttf"; path = "../assets/fonts/AlbertSans-Bold.ttf"; sourceTree = "<group>"; };
 		42187D2041144CAD89D9DD1E /* AlbertSans-ExtraLightItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-ExtraLightItalic.ttf"; path = "../assets/fonts/AlbertSans-ExtraLightItalic.ttf"; sourceTree = "<group>"; };
 		51575EDA2946F9DA00720177 /* hermes.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = hermes.xcframework; path = "Pods/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework"; sourceTree = "<group>"; };
-		51E5161D29C11D6200753F51 /* fedi-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "fedi-swift"; path = "../../bridge/fedi-swift"; sourceTree = "<group>"; };
+		51E5161D29C11D6200753F51 /* fedi-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "fedi-swift"; path = "../../../bridge/fedi-swift"; sourceTree = "<group>"; };
 		55AC34EB407849329AE54B10 /* AlbertSans-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-MediumItalic.ttf"; path = "../assets/fonts/AlbertSans-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-FedimintReactNative.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative.release.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative/Pods-FedimintReactNative.release.xcconfig"; sourceTree = "<group>"; };
 		57F5074F39D74067B3835E4C /* AlbertSans-BlackItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-BlackItalic.ttf"; path = "../assets/fonts/AlbertSans-BlackItalic.ttf"; sourceTree = "<group>"; };
@@ -468,7 +468,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = ": '\necho \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../bridge\n./ios.sh\npopd\n'\n";
+			shellScript = ": '\necho \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../../bridge\n./ios.sh\npopd\n'\n";
 		};
 		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
