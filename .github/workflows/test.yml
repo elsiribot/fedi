@@ -5,6 +5,13 @@ on:
         branches:
             - 'master'
             - 'release/**'
+        paths:
+            - 'ui/**'
+
+defaults:
+  run:
+    working-directory: ui
+
 jobs:
     run:
         name: Check code & run tests
@@ -13,16 +20,13 @@ jobs:
             - name: Checkout repo
               uses: actions/checkout@v2
             - name: Setup Node
-              uses: actions/setup-node@v1
+              uses: actions/setup-node@v3
               with:
                   node-version: '16.18.X'
+                  cache: 'yarn'
             - name: Install dependencies
-              run: npm ci --cache .npm
+              run: yarn install
             - name: Check for Prettier, ESLint, + Typescript errors
-              run: npm run check-code
-            - name: Run functional tests with Jest
-              run: npm run test:functional
-            - name: Run end-to-end tests with Detox with Regtest federation
-              run: npm run test:e2e:regtest
-            - name: Run end-to-end tests with Detox with Mainnet federation
-              run: npm run test:e2e:mainnet
+              run: yarn run lint
+            - name: Run tests with Jest
+              run: yarn run test
