@@ -111,7 +111,6 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             Math.random() * (10 - 5) + 5,
         ).toString()
         const rpadXml = xml('rpad', {}, randomPadding)
-        console.log('rpadXml', rpadXml)
 
         const fromXml = xml('from', { jid: from })
 
@@ -122,9 +121,6 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             rpadXml,
             fromXml,
         )
-        console.log('envelopeXml', envelopeXml.toString())
-        console.log('recipientPublicKey', recipientPublicKey)
-        console.log('senderKeys.privateKey', senderKeys.privateKey)
 
         // Encrypt the payload with asymmetric keypair
         const encryptedEnvelope = encryptionUtils.encryptMessage(
@@ -132,7 +128,6 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             recipientPublicKey,
             senderKeys.privateKey,
         )
-        console.log('encryptedEnvelope', encryptedEnvelope)
         const payloadXml = xml('payload', {}, encryptedEnvelope)
 
         // Encrypt the same payload with sender keys so the sender can
@@ -142,7 +137,6 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             senderKeys.publicKey,
             senderKeys.privateKey,
         )
-        console.log('senderEncryptedEnvelope', senderEncryptedEnvelope)
         const backupPayloadXml = xml(
             'backup-payload',
             {},
@@ -167,7 +161,7 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             backupPayloadXml,
         )
 
-        // Add
+        // Add placeholder body so server recognizes it for mam archives
         const placeholderBodyXml = xml(
             'body',
             { xmlns: 'jabber:client' },
