@@ -1,4 +1,5 @@
 import notifee from '@notifee/react-native'
+import * as Sentry from '@sentry/react-native'
 import { ThemeProvider } from '@rneui/themed'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +23,21 @@ import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import theme from './styles/theme'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+
+// Initialize Sentry SDK
+// Construct a new instrumentation instance. This is needed to communicate between the integration and React
+const routingInstrumentation = new Sentry.ReactNavigationInstrumentation()
+Sentry.init({
+    dsn: 'https://f59b28d775f34a0cb2016dc898d61657@o4504872692940800.ingest.sentry.io/4504872696348672',
+    tracesSampleRate: 1.0,
+    integrations: [
+        new Sentry.ReactNativeTracing({
+            // Pass instrumentation to be used as `routingInstrumentation`
+            routingInstrumentation,
+            // ...
+        }),
+    ],
+})
 
 const App = () => {
     const { t } = useTranslation()
@@ -99,7 +115,11 @@ const App = () => {
                         ChatProvider,
                         BackupRecoveryProvider,
                     ]}>
-                    {bridgeIsReady && <Router />}
+                    {bridgeIsReady && (
+                        <Router
+                            routingInstrumentation={routingInstrumentation}
+                        />
+                    )}
                     <CustomToast />
                 </ProviderComposer>
             </ThemeProvider>
@@ -107,4 +127,4 @@ const App = () => {
     )
 }
 
-export default App
+export default Sentry.wrap(App)
