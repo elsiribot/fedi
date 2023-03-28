@@ -1,8 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import { orderBy } from 'lodash'
-import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
@@ -20,7 +19,6 @@ import type { RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 
 const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const { member } = route.params
     const { state, dispatch } = useChatContext()
@@ -92,7 +90,7 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (_: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,

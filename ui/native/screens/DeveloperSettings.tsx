@@ -47,8 +47,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
-    const [guardianIndex, setGuardianIndex] = useState<number>(0)
-    const [guardianPassword, setGuardianPassword] = useState<string>('')
+    const [guardianIndex] = useState<number>(0)
 
     useEffect(() => {
         const getGatewaysList = async () => {
