@@ -11,13 +11,14 @@
         "ios-arm64": "arch -x86_64 sh scripts/run-ios.sh",
         "start": "react-native start",
         "dev": "react-native start",
-        "test": "yarn run test:functional && yarn run test:e2e:regtest && yarn run test:e2e:mainnet",
+        "test": "yarn run test:functional",
         "test:functional": "jest --config='tests/configs/jest-functional.config.js'",
         "test:e2e:regtest": "sh scripts/run-e2e-tests.sh -n regtest",
         "test:e2e:mainnet": "sh scripts/run-e2e-tests.sh -n mainnet",
         "clean": "sh scripts/clean.sh",
-        "check-code": "sh scripts/check-code.sh",
-        "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+        "lint": "yarn lint:tsc && yarn lint:eslint",
+        "lint:tsc": "tsc --noEmit",
+        "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx"
     },
     "dependencies": {
         "@notifee/react-native": "^7.3.0",
