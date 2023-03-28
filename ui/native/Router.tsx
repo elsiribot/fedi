@@ -1,7 +1,11 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { NavigationContainer } from '@react-navigation/native'
+import {
+    NavigationContainer,
+    useNavigationContainerRef,
+} from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
+import * as Sentry from '@sentry/react-native'
 import React from 'react'
 
 import Admin from './screens/Admin'
@@ -691,11 +695,23 @@ const linking: NavigationLinkingConfig = {
     },
 }
 
-const Router = () => {
+type RouterProps = {
+    routingInstrumentation: Sentry.ReactNavigationInstrumentation
+}
+
+const Router = ({ routingInstrumentation }: RouterProps) => {
     const { theme } = useTheme()
+    const navigation = useNavigationContainerRef()
 
     return (
-        <NavigationContainer theme={theme} linking={linking}>
+        <NavigationContainer
+            ref={navigation}
+            theme={theme}
+            linking={linking}
+            // Register the navigation container with the instrumentation
+            onReady={() => {
+                routingInstrumentation.registerNavigationContainer(navigation)
+            }}>
             <Drawer.Navigator
                 id="ConnectedFederationsDrawer"
                 drawerContent={ConnectedFederationsDrawer}>
