@@ -75,7 +75,7 @@ const ChatScreen: React.FC<Props> = () => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (_: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,

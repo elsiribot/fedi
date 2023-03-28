@@ -107,7 +107,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
 
     const confirmLeaveFederation = () => {
         // Only allow leaving if they have less than 100 sats
-        if (AmountUtils.msatToSat(selectedFederation!.balance) > 100) {
+        if (amountUtils.msatToSat(selectedFederation!.balance) > 100) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
                 t('feature.federations.leave-federation-withdraw-first'),

@@ -22,7 +22,6 @@ import {
 } from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
-    DirectChatMessage,
     EncryptedDirectChatMessage,
     EnterMucRoomPresence,
     GetMessagesQuery,
@@ -34,7 +33,6 @@ import xmlUtils, {
     SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
-    UpdatePaymentMessage,
 } from '../../utils/XmlUtils'
 import {
     Action as ChatAction,

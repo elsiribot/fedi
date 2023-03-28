@@ -8,7 +8,6 @@ import SelectRecoveryFileButton from '../components/feature/recovery/SelectRecov
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
 
 import type { RootStackParamList } from '../types/navigation'
 
@@ -20,7 +19,6 @@ export type Props = NativeStackScreenProps<
 const LocateSocialRecovery: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { selectedFederation } = useFederationsContext().state
 
     return (
         <View style={styles(theme).container}>

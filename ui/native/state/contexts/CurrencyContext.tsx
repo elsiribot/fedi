@@ -1,5 +1,3 @@
-const ws = require('ws')
-
 import React, {
     createContext,
     useContext,
