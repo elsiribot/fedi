@@ -1,0 +1,294 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+    Keyboard,
+    KeyboardEvent,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    View,
+} from 'react-native'
+
+import { SeedWords } from '../bridge'
+import { BIP39_WORD_LIST } from '../constants'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import {
+    updateFederationCredentials,
+    useFederationsContext,
+} from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
+import { resetAfterPersonalRecovery } from '../state/navigation'
+import type { RootStackParamList } from '../types/navigation'
+import stringUtils from '@fedi/common/utils/StringUtils'
+
+const isValidSeedWord = (word: string) => {
+    return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
+}
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'PersonalRecovery'
+>
+
+type SeedWordInputProps = {
+    number: number
+    word: string
+    onInputUpdated: (value: string) => void
+}
+
+const SeedWordInput = ({
+    number,
+    word,
+    onInputUpdated,
+}: SeedWordInputProps) => {
+    const { theme } = useTheme()
+    const inputRef = useRef<TextInput | null>(null)
+    const [isFocused, setIsFocused] = useState(false)
+    const valid = isValidSeedWord(word)
+
+    return (
+        <Pressable
+            style={styles(theme).wordContainer}
+            onPress={() => {
+                if (!inputRef.current) return
+                const current: TextInput = inputRef.current
+                current.focus()
+            }}>
+            <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
+            <Input
+                ref={(ref: any) => {
+                    inputRef.current = ref
+                }}
+                value={word}
+                onChangeText={onInputUpdated}
+                autoCorrect={false}
+                containerStyle={styles(theme).wordInputOuterContainer}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                inputContainerStyle={[
+                    styles(theme).wordInputInnerContainer,
+                    isFocused ? styles(theme).focusedInputInnerContainer : {},
+                ]}
+                inputStyle={[
+                    styles(theme).wordInput,
+                    isFocused ? styles(theme).focusedInput : {},
+                    !(isFocused || valid) ? styles(theme).invalidWord : {},
+                ]}
+                autoCapitalize={'none'}
+                returnKeyType={'next'}
+            />
+        </Pressable>
+    )
+}
+
+const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { getXmppCredentials, recoverFromMnemonic } = useBridge()
+    const { toast } = useEnvironmentContext().state
+    const { selectedFederation } = useFederationsContext().state
+    const { dispatch } = useFederationsContext()
+    const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
+    const [seedWords, setSeedWords] = useState<SeedWords>(
+        new Array(12).fill(''),
+    )
+    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+
+    useEffect(() => {
+        const keyboardShownListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e: KeyboardEvent) => {
+                console.info(e.endCoordinates)
+                setKeyboardHeight(e.endCoordinates.height)
+            },
+        )
+        const keyboardHiddenListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => {
+                setKeyboardHeight(0)
+            },
+        )
+
+        return () => {
+            keyboardShownListener.remove()
+            keyboardHiddenListener.remove()
+        }
+    }, [])
+
+    useEffect(() => {
+        const recoverFromSeed = async () => {
+            try {
+                let username = await recoverFromMnemonic(seedWords)
+                console.info('recovered username', username)
+                if (username != null) {
+                    const credentials = await getXmppCredentials()
+                    const { password, keypairSeed } = credentials
+                    dispatch(
+                        updateFederationCredentials(
+                            username,
+                            password,
+                            keypairSeed,
+                        ),
+                    )
+                }
+                setRecoveryInProgress(false)
+                navigation.dispatch(resetAfterPersonalRecovery())
+            } catch (error) {
+                toast?.show('Recovery failed, please try again', 3000)
+            }
+        }
+
+        if (recoveryInProgress) {
+            recoverFromSeed()
+        }
+    }, [
+        dispatch,
+        getXmppCredentials,
+        navigation,
+        recoverFromMnemonic,
+        recoveryInProgress,
+        seedWords,
+        toast,
+    ])
+
+    const handleInputUpdate = (inputValue: string, index: number) => {
+        const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)
+
+        setSeedWords([
+            ...seedWords.slice(0, index),
+            validatedInput,
+            ...seedWords.slice(index + 1),
+        ])
+    }
+
+    const renderFirstSixSeedWords = () => {
+        return seedWords
+            .slice(0, 6)
+            .map((s, i) => (
+                <SeedWordInput
+                    key={`sw-f6-${i}`}
+                    number={i + 1}
+                    word={s}
+                    onInputUpdated={value => handleInputUpdate(value, i)}
+                />
+            ))
+    }
+
+    const renderLastSixSeedWords = () => {
+        return seedWords
+            .slice(-6)
+            .map((s, i) => (
+                <SeedWordInput
+                    key={`sw-l6-${i}`}
+                    number={i + 7}
+                    word={s}
+                    onInputUpdated={value => handleInputUpdate(value, i + 6)}
+                />
+            ))
+    }
+
+    return (
+        <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[
+                styles(theme).container,
+                keyboardHeight > 0 && Platform.OS === 'ios'
+                    ? { paddingBottom: keyboardHeight + theme.spacing.xl }
+                    : {},
+            ]}>
+            <Text style={styles(theme).instructionsText}>
+                {t('feature.recovery.personal-recovery-instructions', {
+                    federation: selectedFederation?.name,
+                })}
+            </Text>
+            <Card containerStyle={styles(theme).roundedCardContainer}>
+                <View style={styles(theme).twoColumnContainer}>
+                    <View style={styles(theme).seedWordsContainer}>
+                        {renderFirstSixSeedWords()}
+                    </View>
+                    <View style={styles(theme).seedWordsContainer}>
+                        {renderLastSixSeedWords()}
+                    </View>
+                </View>
+            </Card>
+            <Button
+                title={t('feature.recovery.recover-wallet')}
+                containerStyle={styles(theme).continueButton}
+                // TODO: separate loading screen as per designs
+                onPress={() => setRecoveryInProgress(true)}
+                loading={recoveryInProgress}
+                disabled={
+                    recoveryInProgress ||
+                    seedWords.some(s => !isValidSeedWord(s))
+                }
+            />
+        </ScrollView>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            alignItems: 'flex-start',
+            padding: theme.spacing.xl,
+        },
+        continueButton: {
+            width: '100%',
+            marginTop: theme.spacing.xl,
+        },
+        instructionsText: {
+            textAlign: 'left',
+        },
+        roundedCardContainer: {
+            borderRadius: theme.borders.defaultRadius,
+            width: '100%',
+            marginHorizontal: 0,
+            padding: theme.spacing.xl,
+        },
+        seedWordsContainer: {
+            flex: 1,
+            alignItems: 'flex-start',
+        },
+        twoColumnContainer: {
+            flexDirection: 'row',
+        },
+        wordContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginVertical: theme.spacing.xxs,
+        },
+        wordNumber: {
+            color: theme.colors.black,
+            paddingLeft: 0,
+            width: '20%',
+            textAlign: 'center',
+        },
+        wordInputOuterContainer: {
+            width: '75%',
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        wordInputInnerContainer: {
+            borderBottomColor: 'transparent',
+        },
+        wordInput: {
+            fontSize: 16,
+        },
+        focusedInputInnerContainer: {
+            borderBottomColor: theme.colors.primary,
+            marginBottom: theme.spacing.md,
+        },
+        focusedInput: {
+            marginBottom: 0,
+        },
+        invalidWord: {
+            color: 'red',
+        },
+    })
+
+export default PersonalRecovery

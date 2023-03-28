@@ -15,5 +15,5 @@ This repo contains all source code for the Fedi tech stack:
 - /fedimint-client-fedi
 - /fedimintd
 - /misc
-- /mobile-ui
-  - contains React Native code for the mobile app
+- /ui
+  - contains React PWA & React Native code for apps

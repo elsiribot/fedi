@@ -1,0 +1,123 @@
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Alert, StyleSheet, View } from 'react-native'
+
+import UsdAmount from '../components/feature/wallet/UsdAmount'
+import SvgImage from '../components/ui/SvgImage'
+import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useBridge } from '../state/hooks'
+import { Sats, SatsString } from '../types'
+import type { RootStackParamList } from '../types/navigation'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'SendOfflineAmount'
+>
+
+const SendOfflineAmount: React.FC<Props> = () => {
+    const { theme } = useTheme()
+    const navigation = useNavigation()
+    const { selectedFederation } = useFederationsContext().state
+    const { t } = useTranslation()
+    const [isLoading, setIsLoading] = useState(false)
+    const [amount, setAmount] = useState<SatsString>('' as SatsString)
+    const { generateEcash } = useBridge()
+
+    const onGenerateEcash = async () => {
+        try {
+            setIsLoading(true)
+            const millis = amountUtils.satToMsat(Number(amount) as Sats)
+            const ecash = await generateEcash(millis)
+            setIsLoading(false)
+            navigation.navigate('SendOfflineQr', { ecash, amount: millis })
+        } catch (error) {
+            console.log(error)
+            setIsLoading(false)
+        }
+    }
+
+    const onNext = () => {
+        Alert.alert(
+            t('phrases.please-confirm'),
+            t('feature.send.offline-send-warning'),
+            [
+                {
+                    text: t('phrases.go-back'),
+                },
+                {
+                    text: t('words.continue'),
+                    onPress: onGenerateEcash,
+                },
+            ],
+        )
+    }
+
+    const onChangeText = (updatedValue: SatsString) => {
+        setAmount(updatedValue)
+    }
+
+    return (
+        <View style={styles(theme).container}>
+            <Text caption>
+                {`${t('words.balance')}: `}
+                {`${amountUtils.formatNumber(
+                    amountUtils.msatToSat(selectedFederation?.balance!),
+                )} `}
+                {`${t('words.sats').toUpperCase()}`}
+            </Text>
+            <Input
+                onChangeText={onChangeText as (_: string) => any}
+                value={amount}
+                placeholder={`${t('words.amount')} (${t('words.sats')})`}
+                keyboardType="numeric"
+                returnKeyType="done"
+                containerStyle={styles(theme).textInput}
+                textAlign="center"
+            />
+            <UsdAmount amountSats={Number(amount) as Sats} />
+            <View style={styles(theme).offlineContainer}>
+                <SvgImage
+                    name="Offline"
+                    containerStyle={{
+                        marginRight: theme.spacing.md,
+                    }}
+                />
+                <Text caption>{t('phrases.you-are-offline')}</Text>
+            </View>
+            <Button
+                fullWidth
+                title={t('words.next')}
+                onPress={onNext}
+                loading={isLoading}
+            />
+        </View>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: theme.spacing.xl,
+        },
+        offlineContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        offlineIcon: {
+            height: theme.sizes.sm,
+            width: theme.sizes.sm,
+            marginRight: theme.spacing.md,
+        },
+        textInput: {
+            width: '80%',
+        },
+    })
+
+export default SendOfflineAmount
