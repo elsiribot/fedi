@@ -18,7 +18,7 @@ You will also need to [install Rust](https://www.rust-lang.org/tools/install) be
 
 The Metro server is the JavaScript bundler that ships with React Native.
 
-Make sure you are inside the root of the React Native project folder (this should be the `/client/native` directory, at the same level as `/android` and `/ios` folders) then run:
+Make sure you are inside the root of the React Native project folder (this should be the `/ui/native` directory, at the same level as `/android` and `/ios` folders) then run:
 
 ```
 yarn run start
@@ -62,7 +62,7 @@ If you are running an AArch64 Mac (M1/M2) and see an error when running `npm run
 yarn run ios-arm64
 ```
 
-If you still have trouble, open the `/client/native/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
+If you still have trouble, open the `/ui/native/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
 
 ## Directory Structure
 

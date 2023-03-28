@@ -48,5 +48,5 @@ which will upgrade all projects to use the highest version of the dependency.
 
 ### Hoisting
 
-Packages are hoisted up into `client/node_modules`, even if only a
+All packages are hoisted up into `ui/node_modules`, even if only a
 single module uses them.
