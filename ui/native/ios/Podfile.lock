@@ -496,12 +496,18 @@ PODS:
   - RNScreens (3.18.2):
     - React-Core
     - React-RCTImage
+  - RNSentry (5.2.0):
+    - React-Core
+    - Sentry/HybridSDK (= 8.3.2)
   - RNShare (8.0.0):
     - React-Core
   - RNSVG (13.6.0):
     - React-Core
   - RNVectorIcons (9.2.0):
     - React-Core
+  - Sentry/HybridSDK (8.3.2):
+    - SentryPrivate (= 8.3.2)
+  - SentryPrivate (8.3.2)
   - SocketRocket (0.6.0)
   - vision-camera-code-scanner (0.2.0):
     - GoogleMLKit/BarcodeScanning
@@ -589,6 +595,7 @@ DEPENDENCIES:
   - "RNNotifee (from `../../node_modules/@notifee/react-native`)"
   - RNReanimated (from `../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../node_modules/react-native-screens`)
+  - "RNSentry (from `../../node_modules/@sentry/react-native`)"
   - RNShare (from `../../node_modules/react-native-share`)
   - RNSVG (from `../../node_modules/react-native-svg`)
   - RNVectorIcons (from `../../node_modules/react-native-vector-icons`)
@@ -624,6 +631,8 @@ SPEC REPOS:
     - OpenSSL-Universal
     - PromisesObjC
     - Protobuf
+    - Sentry
+    - SentryPrivate
     - SocketRocket
     - YogaKit
 
@@ -726,6 +735,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
+  RNSentry:
+    :path: "../../node_modules/@sentry/react-native"
   RNShare:
     :path: "../../node_modules/react-native-share"
   RNSVG:
@@ -815,9 +826,12 @@ SPEC CHECKSUMS:
   RNNotifee: bdc064c29f4d558046f51f0c3ae02bab4fd3cd85
   RNReanimated: 6ff7bb73e995493fd0242b2583a3d5597b274d13
   RNScreens: 34cc502acf1b916c582c60003dc3089fa01dc66d
+  RNSentry: 6f67e29b26d5cb687c5c8f6e2dc3351b8b80b605
   RNShare: 36aa3e6958373a0ad1c95a1c960adef589da3794
   RNSVG: 3a79c0c4992213e4f06c08e62730c5e7b9e4dc17
   RNVectorIcons: fcc2f6cb32f5735b586e66d14103a74ce6ad61f8
+  Sentry: e16896bd4be235a2713bdb4f47db199102902ac8
+  SentryPrivate: af44a161d76b7ce8c6b26e388f52a253b93fa35c
   SocketRocket: fccef3f9c5cedea1353a9ef6ada904fde10d6608
   vision-camera-code-scanner: dda884a7f3ec8243a2a6d6489b91860648371bca
   VisionCamera: 4cfd685b1e671fea4aa0400905ab397f0e972210
