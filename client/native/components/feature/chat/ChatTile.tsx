@@ -61,7 +61,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     </Text>
                     {chat.lastReceivedTimestamp && (
                         <Text small>
-                            {DateUtils.formatChatTileTimestamp(
+                            {dateUtils.formatChatTileTimestamp(
                                 chat.lastReceivedTimestamp!,
                             )}
                         </Text>
