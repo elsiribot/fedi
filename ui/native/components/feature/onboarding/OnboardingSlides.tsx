@@ -1,6 +1,6 @@
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { EventMapBase, NavigationState } from '@react-navigation/native'
-import React, { ReactNode } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import HoloGuidance from '../../ui/HoloGuidance'
@@ -9,16 +9,20 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 type OnboardingSlideProps = {
     title: string
     message: string
-    iconImage: ReactNode
+    iconImageName: string
 }
 
 const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
     title,
     message,
-    iconImage,
+    iconImageName,
 }: OnboardingSlideProps) => {
     return (
-        <HoloGuidance iconImage={iconImage} title={title} message={message} />
+        <HoloGuidance
+            iconImage={<SvgImage name={iconImageName} size={SvgImageSize.lg} />}
+            title={title}
+            message={message}
+        />
     )
 }
 
@@ -43,25 +47,25 @@ const OnboardingSlides: React.FC<Props> = ({ onSlideChanged }: Props) => {
             key: 'welcome-to-fedi',
             title: t('feature.onboarding.welcome-to-fedi'),
             message: t('feature.onboarding.guidance-1'),
-            iconImage: <SvgImage name="FediLogoIcon" size={SvgImageSize.lg} />,
+            iconImageName: 'FediLogoIcon',
         },
         {
             key: 'commmunity-first',
             title: t('feature.onboarding.community-first'),
             message: t('feature.onboarding.guidance-2'),
-            iconImage: <SvgImage name="SocialPeople" size={SvgImageSize.lg} />,
+            iconImageName: 'SocialPeople',
         },
         {
             key: 'simple-and-private',
             title: t('feature.onboarding.simple-and-private'),
             message: t('feature.onboarding.guidance-3'),
-            iconImage: <SvgImage name="Fedimint" size={SvgImageSize.lg} />,
+            iconImageName: 'Fedimint',
         },
         {
             key: 'earn-and-save',
             title: t('feature.onboarding.earn-and-save'),
             message: t('feature.onboarding.guidance-4'),
-            iconImage: <SvgImage name="Cash" size={SvgImageSize.lg} />,
+            iconImageName: 'Cash',
         },
     ]
 

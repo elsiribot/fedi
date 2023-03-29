@@ -708,8 +708,9 @@ const Router = ({ routingInstrumentation }: RouterProps) => {
             ref={navigation}
             theme={theme}
             linking={linking}
-            // Register the navigation container with the instrumentation
             onReady={() => {
+                // Register the navigation container with Sentry instrumentation
+                // for performance monitoring
                 routingInstrumentation.registerNavigationContainer(navigation)
             }}>
             <Drawer.Navigator
