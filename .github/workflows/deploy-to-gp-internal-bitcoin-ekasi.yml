@@ -2,6 +2,10 @@ name: Deploy (Bitcoin Ekasi) to Google Play - Internal Testing
 on:
     workflow_dispatch:
 
+defaults:
+    run:
+        working-directory: ui/native
+        
 jobs:
     release-android:
         name: Build Android AAB (Bitcoin Ekasi) & Upload to Google Play Dev Console
