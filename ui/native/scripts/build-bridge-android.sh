@@ -4,6 +4,6 @@
 set -e
 
 # re-build bridge bindings for android
-pushd ../../bridge
+cd ../../bridge
 ./android.sh
-popd
+cd ../ui/native
