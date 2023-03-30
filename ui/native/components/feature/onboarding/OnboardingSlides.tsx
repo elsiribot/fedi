@@ -4,12 +4,12 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import HoloGuidance from '../../ui/HoloGuidance'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type OnboardingSlideProps = {
     title: string
     message: string
-    iconImageName: string
+    iconImageName: SvgImageName
 }
 
 const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
