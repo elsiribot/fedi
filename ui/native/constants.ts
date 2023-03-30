@@ -54,11 +54,13 @@ export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
 // The number of messages to return
 export const XMPP_DEFAULT_PAGE_LIMIT = '20'
 // The URL where the Prosody chat server is hosted
-export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
+export const XMPP_DOMAIN = 'xmpp-01.dev.fedibtc.com'
+// export const XMPP_DOMAIN = 'xmpp.dev.fedibtc.com'
 // This is the XMPP Multi-User-Chat (MUC) domain defined
 // in prosody.config.lua on the XMPP server
 // https://prosody.im/doc/modules/mod_muc
-export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
+export const XMPP_MUC_DOMAIN = 'xmpp-01-groups.dev.fedibtc.com'
+// export const XMPP_MUC_DOMAIN = 'xmpp-rooms.dev.fedibtc.com'
 // The resource on the server designated for all chat operations...
 // use cases for changing this are not clear so it is fixed for now
 // https://xmpp.org/rfcs/rfc6120.html#bind
