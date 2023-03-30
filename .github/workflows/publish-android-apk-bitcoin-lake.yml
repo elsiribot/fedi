@@ -2,6 +2,10 @@ name: Publish APK (Bitcoin Lake) to GitHub
 on:
     workflow_dispatch:
 
+defaults:
+    run:
+        working-directory: ui/native
+        
 jobs:
     release-android:
         name: Build Android APK (Bitcoin Lake) and publish in GitHub draft release
