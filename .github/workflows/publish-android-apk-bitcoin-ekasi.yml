@@ -90,8 +90,8 @@ jobs:
                   git add ./android/app/build.gradle
                   git commit -m "Bump android version code for Bitcoin Ekasi"
                   git push
-                  NEW_VERSION="$(npm pkg get version | sed 's/"//g')"
-                  echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_OUTPUT
+                  NEW_VERSION="$(npm pkg get version | sed 's/"//g' | sed -n '1p')"
+                  echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g' | sed -n '1p')" >> $GITHUB_OUTPUT
                   echo "APK_PATH=./android/app/build/outputs/apk/bitcoinekasi/release/app-bitcoinekasi-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
 
             - name: Build APK
