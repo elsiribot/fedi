@@ -5,6 +5,11 @@ on:
         branches:
             - 'release/**.**'
             - '!release/**.**.**'
+            
+defaults:
+    run:
+        working-directory: ui/native
+        
 jobs:
     release-android:
         name: Build Android APK and publish in GitHub draft release
@@ -73,10 +78,10 @@ jobs:
 
             - name: Build bridge
               run: |
-                  npm run build-bridge-android
+                  yarn build-bridge-android
 
             - name: Install Node dependencies
-              run: npm ci --cache .npm
+              run: yarn install
 
             - name: Setup Ruby
               uses: ruby/setup-ruby@v1
