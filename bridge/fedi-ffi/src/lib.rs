@@ -25,7 +25,6 @@ use bitcoin::{secp256k1::Message, Address};
 use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
 use futures::Future;
-use lazy_static::lazy_static;
 use storage::Storage;
 use types::RecoveryId;
 use types::{Amount, PeerId, PublicKey};
@@ -42,8 +41,7 @@ use mnemonic::Mnemonic;
 use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
-use tokio::sync::Mutex;
-use tracing::{debug, error, info, info_span, instrument, Instrument};
+use tracing::{debug, error, info, instrument};
 use tx::{IncomingBitcoinTransactionStatus, Transaction};
 use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
 

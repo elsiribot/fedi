@@ -13,7 +13,7 @@ use crate::{
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
     },
-    storage::{FediClientConfigKey, IStorage, JoinedFederationsKey, JoinedFederationsPrefix, Storage},
+    storage::{FediClientConfigKey, JoinedFederationsKey, JoinedFederationsPrefix, Storage},
     tx::{
         self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,

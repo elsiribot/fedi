@@ -1,6 +1,6 @@
 use crate::event::IEventSink as EventSink;
 use crate::logging;
-use crate::storage::{IStorage, Storage};
+use crate::storage::IStorage;
 use crate::FedimintError;
 use crate::{fedimint_initialize_async, fedimint_rpc_async};
 
