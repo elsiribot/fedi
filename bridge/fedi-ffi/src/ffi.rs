@@ -2,7 +2,7 @@ use crate::event::IEventSink as EventSink;
 use crate::logging;
 use crate::storage::{IStorage, Storage};
 use crate::FedimintError;
-use crate::{event::EventSink, fedimint_initialize_async, fedimint_rpc_async};
+use crate::{fedimint_initialize_async, fedimint_rpc_async};
 
 use anyhow::Context;
 use async_trait::async_trait;
