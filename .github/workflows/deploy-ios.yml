@@ -1,6 +1,10 @@
 name: Deploy to TestFlight
 on:
     workflow_dispatch:
+    
+defaults:
+    run:
+        working-directory: ui/native
 
 jobs:
     release-ios:
