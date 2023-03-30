@@ -31,10 +31,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     {t('words.bitcoin')}
                 </Text>
                 <Pressable onPress={() => navigation.navigate('Transactions')}>
-                    <SvgImage
-                        name="List"
-                        svgProps={{ stroke: theme.colors.secondary }}
-                    />
+                    <SvgImage name="List" color={theme.colors.secondary} />
                 </Pressable>
             </View>
             <Balance balance={selectedFederation!.balance} />

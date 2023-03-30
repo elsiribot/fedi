@@ -1,12 +1,13 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -44,11 +45,10 @@ const FederationInvite: React.FC<Props> = ({ route }: Props) => {
                 <TouchableOpacity
                     style={styles(theme).copyButtonContainer}
                     onPress={copyToClipboard}>
-                    <Icon
-                        name="content-copy"
-                        type="material"
+                    <SvgImage
+                        name="Copy"
                         color={theme.colors.primary}
-                        size={theme.sizes.xxs}
+                        size={SvgImageSize.xs}
                     />
                     <Text style={styles(theme).copyText} numberOfLines={1}>
                         {t('words.copy')}
@@ -58,11 +58,10 @@ const FederationInvite: React.FC<Props> = ({ route }: Props) => {
             <Text style={styles(theme).inviteLinkNotice} numberOfLines={1}>
                 {t('feature.federations.invite-link-notice')}
             </Text>
-            <Icon
-                name="line-scan"
-                type="material-community"
+            <SvgImage
+                name="Scan"
                 color={theme.colors.secondary}
-                size={theme.sizes.md}
+                size={SvgImageSize.md}
             />
         </View>
     )

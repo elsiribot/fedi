@@ -1,5 +1,5 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import { Divider, Icon, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Divider, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -59,13 +59,12 @@ const TransactionDetail = ({
                     submitUpdatedNote()
                     handleCloseModal()
                 }}>
-                <Icon name="close" size={theme.sizes.md} />
+                <SvgImage name="Close" size={SvgImageSize.md} />
             </TouchableOpacity>
-            <Icon
-                name="bitcoin"
-                type="material-community"
+            <SvgImage
+                name="Bitcoin"
+                size={SvgImageSize.lg}
                 color={theme.colors.orange}
-                size={theme.sizes.lg}
             />
             <Text>
                 {`${

@@ -48,19 +48,13 @@ const GroupHeader: React.FC<{}> = () => {
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <SvgImage
-                            name="Video"
-                            svgProps={{ stroke: theme.colors.primary }}
-                        />
+                        <SvgImage name="Video" color={theme.colors.primary} />
                     </Pressable>
                     <Pressable
                         disabled
                         onPress={() => {}}
                         style={styles(theme).headerIconContainer}>
-                        <SvgImage
-                            name="Phone"
-                            svgProps={{ stroke: theme.colors.primary }}
-                        />
+                        <SvgImage name="Phone" color={theme.colors.primary} />
                     </Pressable>
                 </>
             }

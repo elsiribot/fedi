@@ -1,11 +1,12 @@
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { MutableRefObject } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import WebView from 'react-native-webview'
 
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type SitesBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
@@ -26,11 +27,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
                         onPress={() => webViewRef.current.goBack()}
                         hitSlop={10}
                         style={styles(theme).padded}>
-                        <Icon
-                            size={30}
-                            name={'angle-left'}
-                            type="font-awesome"
-                        />
+                        <SvgImage size={SvgImageSize.md} name="ChevronLeft" />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
@@ -39,11 +36,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
                             styles(theme).rightArrow,
                             styles(theme).padded,
                         ]}>
-                        <Icon
-                            size={30}
-                            name={'angle-right'}
-                            type="font-awesome"
-                        />
+                        <SvgImage size={SvgImageSize.md} name="ChevronRight" />
                     </Pressable>
                 </View>
             }
@@ -52,7 +45,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
                     style={styles(theme).padded}
                     hitSlop={10}
                     onPress={() => navigation.goBack()}>
-                    <Icon size={30} name={'close'} />
+                    <SvgImage size={SvgImageSize.md} name="Close" />
                 </Pressable>
             }
         />

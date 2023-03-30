@@ -4,7 +4,7 @@ import {
     DrawerItem,
 } from '@react-navigation/drawer'
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
@@ -37,9 +37,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
             <SvgImage
                 name="FedearationxIcon"
                 size={SvgImageSize.lg}
-                svgProps={{
-                    stroke: 'transparent',
-                }}
+                svgProps={{ stroke: 'transparent' }}
             />
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
@@ -102,7 +100,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 onPress={() => {
                     navigation.navigate('ScanFederationCode')
                 }}>
-                <Icon name="add" type="material" />
+                <SvgImage name="Plus" />
                 <Text style={styles(theme).addFederationText}>
                     {t('feature.federations.add-federation')}
                 </Text>

@@ -1,11 +1,12 @@
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Text, useTheme } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import SvgImage from '../../ui/SvgImage'
 
 const FederationInviteHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
@@ -33,7 +34,7 @@ const FederationInviteHeader: React.FC<{}> = () => {
                     style={{
                         padding: theme.spacing.sm,
                     }}>
-                    <Icon name={'close'} color={theme.colors.secondary} />
+                    <SvgImage name="Close" color={theme.colors.secondary} />
                 </Pressable>
             }
         />

@@ -1,5 +1,6 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import { GestureResponderEvent, Pressable, StyleSheet } from 'react-native'
+import SvgImage from '../../ui/SvgImage'
 
 type SettingsItemProps = {
     disabled?: boolean
@@ -21,11 +22,10 @@ const SettingsItem = ({
             onPress={disabled ? () => {} : onPress}>
             {image}
             <Text style={styles(theme).label}>{label}</Text>
-            <Icon
-                name={'angle-right'}
-                type={'font-awesome'}
-                color={theme.colors.primaryLight}
+            <SvgImage
+                name="ChevronRight"
                 containerStyle={styles(theme).icon}
+                color={theme.colors.primaryLight}
             />
         </Pressable>
     )

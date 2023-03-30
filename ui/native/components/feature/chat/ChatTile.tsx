@@ -1,4 +1,4 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -8,7 +8,7 @@ import { Chat, ChatType } from '../../../types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type ChatTileProps = {
     chat: Chat
@@ -46,7 +46,11 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     </View>
                 ) : (
                     <SvgImage
-                        name={chat.icon ? chat.icon : 'SocialPeople'}
+                        name={
+                            chat.icon
+                                ? (chat.icon as SvgImageName)
+                                : 'SocialPeople'
+                        }
                         size={SvgImageSize.md}
                     />
                 )}
@@ -85,10 +89,9 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     )}
 
                     {chat.pinned && (
-                        <Icon
-                            name="pin"
-                            type="material-community"
-                            size={theme.sizes.xs}
+                        <SvgImage
+                            name="Pin"
+                            size={SvgImageSize.xs}
                             containerStyle={styles(theme).pinIcon}
                         />
                     )}

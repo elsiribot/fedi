@@ -1,5 +1,5 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
-import { Icon, Text, useTheme } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
@@ -30,9 +30,8 @@ const GroupInviteHeader: React.FC<{}> = () => {
                     style={{
                         padding: theme.spacing.sm,
                     }}>
-                    <Icon
-                        name={'angle-left'}
-                        type="font-awesome"
+                    <SvgImage
+                        name="ChevronLeft"
                         color={theme.colors.secondary}
                     />
                 </Pressable>

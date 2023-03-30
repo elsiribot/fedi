@@ -4,6 +4,7 @@ import { StyleSheet, View, ViewStyle } from 'react-native'
 import { SvgProps } from 'react-native-svg'
 import * as Svgs from '../../assets/images/svgs'
 
+export type SvgImageName = keyof typeof Svgs
 export enum SvgImageSize {
     xs = 'xs',
     sm = 'sm',
@@ -11,22 +12,29 @@ export enum SvgImageSize {
     lg = 'lg',
     xl = 'xl',
 }
+
 type SvgImageProps = {
-    name: string
+    name: SvgImageName
     size?: SvgImageSize
     containerStyle?: ViewStyle
     svgProps?: SvgProps
+    color?: string
 }
 
-const SvgImage = ({ name, size, containerStyle, svgProps }: SvgImageProps) => {
+const SvgImage = ({
+    name,
+    size,
+    containerStyle,
+    svgProps,
+    color,
+}: SvgImageProps) => {
     const { theme } = useTheme()
-    const svgName = `${name}Svg`
-    const Svg = Object(Svgs)[svgName]
+    const Svg = Object(Svgs)[name]
 
     const svgSize = size || SvgImageSize.sm
 
     const defaultSvgProps = {
-        stroke: theme.colors.primary,
+        color: color || theme.colors.primary,
         height: theme.sizes[svgSize],
         width: theme.sizes[svgSize],
     }

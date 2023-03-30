@@ -1,11 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
 import LineBreak from '../components/ui/LineBreak'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -93,11 +94,10 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                             videoRef.current?.seek(0)
                             setIsPaused(false)
                         }}>
-                        <Icon
-                            name="play"
-                            type="font-awesome"
+                        <SvgImage
+                            name="Play"
                             color={theme.colors.white}
-                            size={theme.sizes.lg}
+                            size={SvgImageSize.lg}
                         />
                     </Pressable>
                 )}

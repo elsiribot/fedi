@@ -1,10 +1,11 @@
 import { useNavigation } from '@react-navigation/native'
-import { Header as HeaderRNE, Icon, useTheme } from '@rneui/themed'
+import { Header as HeaderRNE, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, ViewStyle } from 'react-native'
 
 import { reset } from '../../state/navigation'
 import { NavigationHook } from '../../types/navigation'
+import SvgImage from './SvgImage'
 
 interface HeaderBase {
     headerLeft?: React.ReactNode
@@ -57,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({
                 style={{
                     padding: theme.spacing.sm,
                 }}>
-                <Icon name={'angle-left'} type="font-awesome" />
+                <SvgImage name="ChevronLeft" />
             </Pressable>
         )
     }
@@ -73,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({
                 style={{
                     padding: theme.spacing.xs,
                 }}>
-                <Icon name={'close'} />
+                <SvgImage name="Close" />
             </Pressable>
         )
     }

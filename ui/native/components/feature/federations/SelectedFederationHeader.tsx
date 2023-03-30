@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
@@ -11,7 +11,7 @@ import {
     NavigationHook,
 } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import SvgImage from '../../ui/SvgImage'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -48,11 +48,7 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                     <Text medium small style={styles(theme).federationName}>
                         {selectedFederation?.name}
                     </Text>
-                    <Icon
-                        name={'angle-right'}
-                        type="font-awesome"
-                        size={theme.sizes.xs}
-                    />
+                    <SvgImage name="ChevronRight" size={SvgImageSize.xs} />
                 </Pressable>
             }
             containerStyle={styles(theme).headerContainer}
