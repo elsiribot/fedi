@@ -24,7 +24,7 @@ threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
 stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool.git", rev = "bd379d49c1cd7a7686606fae780ae6e18bdeeb46" }
 # stabilitypool-server = { path = "../stabilitypool/stabilitypool-server" }
 
-# NOTE: You probably want to update the `fedimintd` input git hash in `flake.nix` as well
+# NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
 fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
 fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
 fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
