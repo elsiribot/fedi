@@ -40,17 +40,18 @@
 
         craneLib = crane.lib.${system}.overrideToolchain fenixToolchain;
 
-        fedimintd-fedi = craneLib.buildPackage (commonArgsBase // {
-          pname = "fedimintd-fedi";
+        fedi-fedimint-pkgs = craneLib.buildPackage (commonArgsBase // {
+          version = "0.0.1";
+          pname = "fedi-fedimint-pkgs";
           src = ./.;
-          cargoExtraArgs = "--package fedimintd-fedi";
+          cargoExtraArgs = "--package fedi-fedimintd --package fedi-fedimint-cli";
           doCheck = false;
         });
       in
       {
         packages =
           {
-            inherit fedimintd-fedi;
+            inherit fedi-fedimint-pkgs;
             gateway-pkgs = fedimint.packages.${system}.gateway-pkgs;
           };
         devShells = fmLib.devShells;

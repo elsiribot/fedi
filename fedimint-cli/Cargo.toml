@@ -1,22 +1,19 @@
 [package]
-name = "fedi-fedimintd"
+name = "fedi-fedimint-cli"
 version = "0.1.0"
 authors = ["The Fedi Developers"]
 edition = "2021"
 description = "fedimintd with custom fedi modules"
 
 [[bin]]
-name = "fedimintd"
+name = "fedimint-cli"
 path = "src/main.rs"
 
 
 [dependencies]
 anyhow = "1.0.66"
-fedimintd = { workspace = true}
+fedimint-cli = { workspace = true}
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
-fedi-social-server = { path = "../fedi-social-server" }
-fedimint-core = { workspace = true }
-stabilitypool-server = { workspace = true }
 
 
 [build-dependencies]

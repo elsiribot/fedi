@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "fedimintd",
+    "fedimint-cli",
     "fedimint-client-fedi",
     "fedi-social-common",
     "fedi-social-server",
@@ -26,6 +27,7 @@ stabilitypool-server = { git = "https://x-access-token:github_pat_11ABBCQBI0oBh2
 
 # NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
 fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
+fedimint-cli = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
 fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
 fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
 fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "b283f4e2c5d4ccacd1293276e4880a5918013981" }
