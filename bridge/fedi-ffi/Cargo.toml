@@ -10,16 +10,17 @@ name = "fediffi"
 
 [dependencies]
 # pinned to commit on fedibtc/fedimint-fedi branch
-# mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-# fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-# fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
-# fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+
+mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", branch = "rel-a01-bridge-wasm" }
+fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", branch = "rel-a01-bridge-wasm" }
+fedi-social = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", branch = "rel-a01-bridge-wasm" }
+fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", branch = "rel-a01-bridge-wasm" }
 
 # Local dependencies that can be handy to uncomment during development
-mint-client = { path = "../../../fedimint/client/client-lib" }
-fedimint-core = { path = "../../../fedimint/fedimint-core" }
-fedi-social = { path = "../../../fedimint/modules/fedi-social" }
-fedimint-derive-secret = { path = "../../../fedimint/crypto/derive-secret" }
+# mint-client = { path = "../../../fedimint/client/client-lib" }
+# fedimint-core = { path = "../../../fedimint/fedimint-core" }
+# fedi-social = { path = "../../../fedimint/modules/fedi-social" }
+# fedimint-derive-secret = { path = "../../../fedimint/crypto/derive-secret" }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"
@@ -41,9 +42,9 @@ async-trait = "0.1.64"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 electrum-client = "0.12.0"
-# fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", rev = "39c0f39119586aa3551719da9efe5f6a60bde82e" }
+fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git", branch = "rel-a01-bridge-wasm" }
 # Local dependencies that can be handy to uncomment during development
-fedimint-rocksdb = { path = "../../../fedimint/fedimint-rocksdb" }
+# fedimint-rocksdb = { path = "../../../fedimint/fedimint-rocksdb" }
 tokio = {version = "1.0", features = ["full"]}
 tracing-subscriber = { version = "0.3.1", features = [ "env-filter", "json" ] }
 reqwest = { version = "0.11.12", features = [ "json", "rustls-tls" ], default-features = false }
