@@ -1,3 +1,4 @@
+use crate::bridge::Bridge;
 use crate::event::IEventSink as EventSink;
 use crate::logging;
 use crate::storage::IStorage;
@@ -10,7 +11,8 @@ use fedimint_core::db::Database;
 use lazy_static::lazy_static;
 use mint_client::module_decode_stubs;
 use std::sync::Arc;
-use tracing::error;
+use tokio::sync::Mutex;
+use tracing::{error, info};
 
 use std::path::{Path, PathBuf};
 
@@ -19,6 +21,7 @@ lazy_static! {
         .enable_all()
         .build()
         .expect("failed to build runtime");
+    static ref BRIDGE: Arc<Mutex<Option<Arc<Bridge>>>> = Arc::new(Mutex::new(None));
 }
 
 uniffi_macros::include_scaffolding!("fedi");
@@ -77,15 +80,24 @@ pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<
         let data_dir: PathBuf = data_dir.into();
         logging::init_logging(&data_dir, event_sink.clone(), &log_level).unwrap();
         let storage = Arc::new(PathBasedStorage { data_dir });
-        fedimint_initialize_async(storage, event_sink)
-            .await
-            .unwrap_or_else(|e| {
+        let bridge = match fedimint_initialize_async(storage, event_sink).await {
+            Ok(bridge) => bridge,
+            Err(e) => {
                 error!("Failed to initialize the bridge: {:?}", e);
-            });
+                return;
+            }
+        };
+        *BRIDGE.lock().await = Some(bridge);
+        info!("bridge initialized");
     })
 }
 pub fn fedimint_rpc(method: String, payload: String) -> String {
-    RUNTIME.block_on(async move { fedimint_rpc_async(method, payload).await })
+    RUNTIME.block_on(async move {
+        let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
+            return r#"{"error": "bridge not initialzied"}"#.to_owned();
+        };
+        fedimint_rpc_async(bridge, method, payload).await
+    })
 }
 
 pub fn fedimint_get_supported_events() -> Vec<String> {
