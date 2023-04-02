@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
+use fedimint_core::api::WsClientConnectInfo;
 use fedimint_core::{
     config::ApiEndpoint,
     encoding::{Decodable, Encodable},
 };
-use fedimint_core::api::WsClientConnectInfo;
-use mint_client::{UserClientConfig};
+use mint_client::UserClientConfig;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -28,7 +28,9 @@ pub fn hacky_lightning_invoice_fee(
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct Amount(#[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount);
+pub struct Amount(
+    #[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount,
+);
 
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
 #[serde(transparent)]

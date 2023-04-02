@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -38,21 +40,11 @@ pub struct LogEvent {
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub enum Event {
-    Federation {
-        event: FedimintFederation,
-    },
-    Transaction {
-        event: TransactionEvent,
-    },
-    SocialRecovery {
-        event: SocialRecoveryEvent,
-    },
-    RecoveryFileCreation {
-        event: RecoveryFileCreationEvent,
-    },
-    Log {
-        event: LogEvent,
-    },
+    Federation { event: FedimintFederation },
+    Transaction { event: TransactionEvent },
+    SocialRecovery { event: SocialRecoveryEvent },
+    RecoveryFileCreation { event: RecoveryFileCreationEvent },
+    Log { event: LogEvent },
 }
 
 impl Event {
@@ -87,40 +79,38 @@ impl Event {
 }
 
 /// Sends events to iOS / Android layer
-pub trait EventSink: Send + Sync + 'static {
+pub trait IEventSink: Send + Sync + 'static {
     /// Send event. Body is JSON-serialized
     fn event(&self, event_type: String, body: String);
 }
 
-/// Wrapper around EventSink which JSON serializes messages. This is more ergonomic in Swift / Kotlin
-/// than code-generated enums, and RCTEventEmitter has the same arguments.
-pub struct EventSinkWrapper {
-    pub event_sink: Box<dyn EventSink>,
-}
+pub type EventSink = Arc<dyn IEventSink>;
 
-impl EventSinkWrapper {
-    pub fn event(&self, event: &Event) {
+pub trait TypedEventExt: IEventSink {
+    fn typed_event(&self, event: &Event) {
         match event {
             Event::Federation { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("federation".into(), body);
+                IEventSink::event(self, "federation".into(), body);
             }
             Event::Transaction { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("transaction".into(), body);
+                IEventSink::event(self, "transaction".into(), body);
             }
             Event::SocialRecovery { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("socialRecovery".into(), body);
+                IEventSink::event(self, "socialRecovery".into(), body);
             }
             Event::RecoveryFileCreation { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("recoveryFileCreation".into(), body);
+                IEventSink::event(self, "recoveryFileCreation".into(), body);
             }
             Event::Log { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                self.event_sink.event("log".into(), body);
+                IEventSink::event(self, "log".into(), body);
             }
         };
     }
 }
+
+impl<T: IEventSink + ?Sized> TypedEventExt for T {}
