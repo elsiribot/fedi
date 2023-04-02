@@ -1,11 +1,14 @@
 use async_trait::async_trait;
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
-use std::path::Path;
+use fedimint_core::task::{MaybeSend, MaybeSync};
+use fedimint_core::{apply, async_trait_maybe_send};
+use mint_client::module_decode_stubs;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-#[async_trait]
-pub trait IStorage: 'static + Send + Sync {
+#[apply(async_trait_maybe_send!)]
+pub trait IStorage: 'static + MaybeSend + MaybeSync {
     /// Database to store all federation joined
     async fn global_db(&self) -> anyhow::Result<Database>;
     async fn federation_db(&self, name: &str) -> anyhow::Result<Database>;

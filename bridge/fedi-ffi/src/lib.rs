@@ -21,6 +21,10 @@ use std::{
     sync::{atomic::AtomicU64, Arc},
 };
 
+pub use fedimint_core;
+pub use mint_client;
+pub use tokio;
+
 use bitcoin::{secp256k1::Message, Address};
 use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
@@ -179,7 +183,11 @@ async fn generateInvoice(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn payInvoice(bridge: Arc<Bridge>, federation_id: String, invoice: String) -> anyhow::Result<()> {
+async fn payInvoice(
+    bridge: Arc<Bridge>,
+    federation_id: String,
+    invoice: String,
+) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
     federation.pay_invoice(&invoice).await
@@ -364,7 +372,11 @@ async fn listGateways(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn switchGateway(bridge: Arc<Bridge>, federation_id: String, node_pubkey: PublicKey) -> anyhow::Result<()> {
+async fn switchGateway(
+    bridge: Arc<Bridge>,
+    federation_id: String,
+    node_pubkey: PublicKey,
+) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
     federation
         .client
@@ -449,7 +461,10 @@ async fn validateRecoveryFile(
 
 // FIXME: maybe this would better be called "begin_social_recovery"
 #[macro_rules_derive(rpc_method!)]
-async fn recoveryQr(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<SocialRecoveryQr> {
+async fn recoveryQr(
+    bridge: Arc<Bridge>,
+    federation_id: String,
+) -> anyhow::Result<SocialRecoveryQr> {
     // Return QR code contents
     let federation = get_federation(&bridge, &federation_id).await?;
 

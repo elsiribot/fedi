@@ -1,10 +1,6 @@
-use std::{
-    collections::HashMap,
-    default::Default,
-    str::FromStr,
-    sync::Arc,
-    time::{Duration, SystemTime},
-};
+use std::{collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration};
+
+use fedimint_core::time::SystemTime;
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -30,7 +26,6 @@ use bitcoin::{
     secp256k1::{Message, Secp256k1},
     Address, Network, Script, Txid,
 };
-use electrum_client::{Client, ElectrumApi};
 use fedi_social::{
     common::{RecoveryId, VerificationDocument},
     FediSocialGen,
@@ -680,8 +675,15 @@ impl Federation {
             .await
     }
 
-    /// Execute peg-in for given script
+    #[cfg(target_family = "wasm")]
     pub async fn pegin_script(&self, script: &Script) -> Result<()> {
+        todo!()
+    }
+
+    /// Execute peg-in for given script
+    #[cfg(not(target_family = "wasm"))]
+    pub async fn pegin_script(&self, script: &Script) -> Result<()> {
+        use electrum_client::{Client, ElectrumApi};
         let electrum = Client::new(&self.electrum_url()?)?;
         let history = electrum.script_get_history(&script)?;
         for item in history {
@@ -1269,7 +1271,11 @@ impl Federation {
                 .iter()
                 .map(|payment| async {
                     // FIXME: don't create rng in here ...
-                    let invoice_expired = payment.invoice.is_expired();
+                    let invoice_expired = payment.invoice.would_expire(
+                        fedimint_core::time::now()
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .expect("now should be creater than unix epoch"),
+                    );
                     let rng = rand::rngs::OsRng;
                     let payment_hash = payment.invoice.payment_hash();
                     tracing::debug!("fetching incoming contract {:?}", &payment_hash);
@@ -1334,11 +1340,16 @@ impl Federation {
             }
 
             // Run once per minute
-            if last_poll.elapsed().expect("clock went backwards").as_secs() < 60 {
+            if fedimint_core::time::now()
+                .duration_since(last_poll.clone())
+                .expect("clock went backwards")
+                .as_secs()
+                < 60
+            {
                 fedimint_core::task::sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            last_poll = SystemTime::now();
+            last_poll = fedimint_core::time::now();
 
             let consensus_block_height = fed.fetch_consensus_block_height().await.unwrap_or(0);
             let contracts = fed

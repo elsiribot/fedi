@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use fedimint_core::time::SystemTime;
 
 use bitcoin::{Address, Txid};
 use fedimint_core::{
