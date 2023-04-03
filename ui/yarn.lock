@@ -872,7 +872,7 @@
 
 "@fedi/native@file:/home/runner/actions-runner/_work/fedi/fedi/ui/native":
   "resolved" "file:native"
-  "version" "1.9.0"
+  "version" "1.9.1"
   dependencies:
     "@notifee/react-native" "^7.3.0"
     "@react-native-async-storage/async-storage" "^1.17.11"
