@@ -12,6 +12,7 @@ use fedi_social_client::config::FediSocialClientConfig;
 use fedimint_core::api::{FederationApiExt, FederationResult, IFederationApi};
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable, SerdeEncodable};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
@@ -51,6 +52,19 @@ pub struct RecoveryFile {
 
 impl RecoveryFile {
     pub const MAGIC_PREFIX: &[u8; 8] = b"\xFE\xD1RECOVE";
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        Encodable::consensus_encode(self, &mut bytes).expect("encodes correctly");
+        bytes
+    }
+
+    pub fn from_bytes(raw: &[u8]) -> anyhow::Result<Self> {
+        Ok(Decodable::consensus_decode(
+            &mut &raw[..],
+            &ModuleDecoderRegistry::default(),
+        )?)
+    }
 }
 
 pub struct SocialBackup {
