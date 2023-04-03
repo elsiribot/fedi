@@ -1,0 +1,49 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.radio {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: #fff;
+    border: 2px solid #0b1013;
+    border-radius: 100%;
+    cursor: pointer;
+
+    &:disabled,
+    &[data-disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 100%;
+
+    &[data-state='checked'] {
+        background: #0b1013;
+    }
+}
+
+.label {
+}
