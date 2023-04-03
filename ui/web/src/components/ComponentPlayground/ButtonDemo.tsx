@@ -1,0 +1,54 @@
+import React from 'react'
+import { styled } from '../../styles'
+import { Button } from '../../components/Button'
+
+export const ButtonDemo: React.FC = () => {
+    const sizes = ['md', 'sm'] as const
+    const variants = ['primary', 'secondary', 'tertiary', 'outline'] as const
+
+    return (
+        <Container>
+            {sizes.map(size => (
+                <ButtonGroup key={size}>
+                    {variants.map(variant => (
+                        <ButtonRow key={variant}>
+                            <Button size={size} variant={variant}>
+                                Button {size} {variant}
+                            </Button>
+                            <Button
+                                size={size}
+                                variant={variant}
+                                href="/playground">
+                                Internal PWA link
+                            </Button>
+                            <Button
+                                size={size}
+                                variant={variant}
+                                href="https://fedi.xyz">
+                                External link
+                            </Button>
+                        </ButtonRow>
+                    ))}
+                </ButtonGroup>
+            ))}
+        </Container>
+    )
+}
+
+const Container = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 40,
+})
+
+const ButtonGroup = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 20,
+})
+
+const ButtonRow = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 20,
+})

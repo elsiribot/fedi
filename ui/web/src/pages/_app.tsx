@@ -1,9 +1,9 @@
-import '../styles/reset.scss';
-import '../styles/fonts.scss';
-import type { AppProps } from "next/app";
+import '../styles/reset.css'
+import '../styles/fonts.css'
+import type { AppProps } from 'next/app'
 
 const MyApp: React.FC<AppProps> = ({ Component, pageProps, router }) => {
-  return <Component {...pageProps} />
+    return <Component {...pageProps} />
 }
 
 export default MyApp
