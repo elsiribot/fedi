@@ -158,7 +158,7 @@ android {
         applicationId "com.fedimintreactnative"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 120
+        versionCode 121
         versionName "1.9.0"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
         testBuildType System.getProperty('testBuildType', 'debug')
