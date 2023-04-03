@@ -18,6 +18,7 @@ use fedimint_core::{
 
 use secp256k1::{All, Secp256k1};
 use serde::{Deserialize, Serialize};
+use stabilitypool::PoolClientGen;
 
 mod social;
 pub use crate::social::*;
@@ -136,5 +137,6 @@ pub fn module_gens() -> ClientModuleGenRegistry {
         DynClientModuleGen::from(MintClientGen),
         DynClientModuleGen::from(LightningClientGen),
         DynClientModuleGen::from(FediSocialClientGen),
+        DynClientModuleGen::from(PoolClientGen),
     ])
 }

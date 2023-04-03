@@ -7,7 +7,6 @@ edition = "2021"
 crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
-
 [dependencies]
 # pinned to commit on fedibtc/fedimint-fedi branch
 
@@ -24,7 +23,9 @@ name = "fediffi"
 
 mint-client = { workspace = true }
 fedimint-core = { workspace = true }
-fedi-social = { workspace = true }
+fedimint-client = { workspace = true }
+fedi-social-client = { path = "../../fedi-social-client" }
+fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }

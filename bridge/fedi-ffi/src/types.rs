@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
+use fedimint_client_fedi::UserClientConfig;
 use fedimint_core::api::WsClientConnectInfo;
 use fedimint_core::{
     config::ApiEndpoint,
     encoding::{Decodable, Encodable},
 };
-use mint_client::UserClientConfig;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -41,7 +41,7 @@ pub struct PeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RecoveryId(
-    #[ts(type = "Opaque<string, 'RecoveryId'>")] pub fedi_social::common::RecoveryId,
+    #[ts(type = "Opaque<string, 'RecoveryId'>")] pub fedi_social_client::common::RecoveryId,
 );
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
@@ -94,9 +94,12 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
 
     FedimintFederation {
-        name: client_config.federation_name.clone(),
+        name: client_config
+            .federation_name()
+            .expect("federation name should exist")
+            .clone(),
         connect_info: WsClientConnectInfo::from(&client_config).to_string(),
-        nodes: client_config.nodes.clone(),
+        nodes: client_config.api_endpoints.values().cloned().collect(),
         balance: Amount(balance),
         social_recovery_active,
     }

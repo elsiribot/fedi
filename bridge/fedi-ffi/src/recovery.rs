@@ -1,9 +1,9 @@
-use fedi_social::common::RecoveryId;
+use fedi_social_client::RecoveryId;
+use fedimint_client_fedi::SocialRecoveryState;
 use fedimint_core::{
     db::DatabaseRecord,
     encoding::{Decodable, Encodable},
 };
-use mint_client::social::SocialRecoveryState;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 

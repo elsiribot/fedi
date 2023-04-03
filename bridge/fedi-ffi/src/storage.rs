@@ -1,10 +1,8 @@
-use async_trait::async_trait;
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
-use mint_client::module_decode_stubs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 #[apply(async_trait_maybe_send!)]
@@ -28,7 +26,7 @@ enum BridgeDbPrefix {
 #[derive(Debug, Decodable, Encodable)]
 pub struct JoinedFederationsKey;
 
-#[derive(Debug, Decodable, Encodable)]
+#[derive(Clone, Debug, Decodable, Encodable)]
 pub struct JoinedFederationsPrefix;
 
 impl fedimint_core::db::DatabaseRecord for JoinedFederationsKey {

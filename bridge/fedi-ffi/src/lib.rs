@@ -15,12 +15,12 @@ pub mod tx;
 pub mod types;
 
 use std::{
-    cell::RefCell,
     path::PathBuf,
     str::FromStr,
     sync::{atomic::AtomicU64, Arc},
 };
 
+use fedimint_client_fedi::RecoveryFile;
 pub use fedimint_core;
 pub use mint_client;
 pub use tokio;
@@ -37,10 +37,7 @@ use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
-use mint_client::{
-    social::RecoveryFile,
-    utils::{parse_ecash, serialize_ecash},
-};
+use mint_client::utils::{parse_ecash, serialize_ecash};
 use mnemonic::Mnemonic;
 use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -278,7 +275,7 @@ async fn validateEcash(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn decodeInvoice(bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<types::Invoice> {
+async fn decodeInvoice(_bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<types::Invoice> {
     // TODO: validate the invoice (same network, haven't already paid, etc)
     let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
     let bridge_invoice = types::Invoice::try_from(&invoice)?;
@@ -679,7 +676,7 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 mod tests {
     use std::path;
 
-    use fedi_social::common::VerificationDocument;
+    use fedi_social_client::common::VerificationDocument;
     use tracing::debug;
 
     use super::*;
