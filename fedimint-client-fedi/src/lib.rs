@@ -24,7 +24,7 @@ pub use crate::social::*;
 
 // TODO: Actually implement. Use some bip39 crate instead?
 #[derive(Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq, Clone)]
-pub struct UserSeedPhrase(String);
+pub struct UserSeedPhrase(pub String);
 
 impl fmt::Debug for UserSeedPhrase {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
