@@ -944,6 +944,7 @@ name = "fedi-fedimint-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap 4.2.0",
  "fedi-social-client",
  "fedimint-build",
  "fedimint-cli",

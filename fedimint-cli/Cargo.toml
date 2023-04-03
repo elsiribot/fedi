@@ -16,7 +16,7 @@ fedimint-cli = { workspace = true}
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
 stabilitypool-client = { workspace = true }
 fedi-social-client = { path = "../fedi-social-client" }
-
+clap = { version = "4.1.6", features = ["derive", "std", "help", "usage", "error-context", "suggestions" ], default-features = false }
 
 [build-dependencies]
 fedimint-build = { workspace = true }
