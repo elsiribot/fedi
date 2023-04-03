@@ -1,4 +1,10 @@
-use std::{collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    default::Default,
+    str::FromStr,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
 use fedimint_client::module::gen::ClientModuleGenRegistryExt;
@@ -6,7 +12,7 @@ use fedimint_client_fedi::{
     module_gens, modules::ln::contracts::IdentifiableContract, Client, FediClient, RecoveryFile,
     SocialRecovery, UserClientConfig, UserSeedPhrase,
 };
-use fedimint_core::{config::META_FEDERATION_NAME_KEY, time::SystemTime};
+use fedimint_core::config::META_FEDERATION_NAME_KEY;
 
 use crate::{
     event::{Event, TypedEventExt},
