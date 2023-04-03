@@ -372,8 +372,7 @@ impl Federation {
         Self::from_config(fedi_config, db, event_sink, task_group).await
     }
 
-    // FIXME: rename to user_client
-    pub fn client(&self) -> &Client<UserClientConfig> {
+    pub fn user_client(&self) -> &Client<UserClientConfig> {
         self.client.as_ref()
     }
     //
@@ -381,7 +380,7 @@ impl Federation {
     //
     pub fn name(&self) -> String {
         // FIXME: unwrap, clone
-        self.client()
+        self.user_client()
             .config()
             .0
             .meta
@@ -393,11 +392,11 @@ impl Federation {
     // FIXME: move this to actually using config.federation_id
     pub fn id(&self) -> String {
         // FIXME: to_string
-        self.client().config().0.federation_id.to_string()
+        self.user_client().config().0.federation_id.to_string()
     }
 
     pub fn network(&self) -> bitcoin::Network {
-        self.client().wallet_client().config.network
+        self.user_client().wallet_client().config.network
     }
 
     pub fn normalized_federation_name(&self) -> String {
@@ -419,7 +418,7 @@ impl Federation {
     /// Sign LNURL message using a key derived from client secret
     /// TODO: use different key per "site"
     pub fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
-        let secret = self.client().root_secret.child_key(LNURL_CHILD_ID);
+        let secret = self.user_client().root_secret.child_key(LNURL_CHILD_ID);
         let secp = Secp256k1::new();
         let keypair = secret.to_secp_key(&Secp256k1::new());
         let pubkey = keypair.public_key();
@@ -433,7 +432,7 @@ impl Federation {
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
     /// after recovering wallet.
     pub async fn xmpp_credentials(&self) -> XmppCredentials {
-        let xmpp_secret = self.client().root_secret.child_key(XMPP_CHILD_ID);
+        let xmpp_secret = self.user_client().root_secret.child_key(XMPP_CHILD_ID);
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
         let keypair_seed_bytes: [u8; 32] =
             xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
@@ -512,7 +511,7 @@ impl Federation {
             .fund_outgoing_ln_contract(invoice.clone(), &mut rng)
             .await?;
 
-        self.client()
+        self.user_client()
             .await_outgoing_contract_acceptance(outpoint)
             .await?;
 
@@ -579,7 +578,7 @@ impl Federation {
     /// Generate ecash. It's immediately removed from client DB. Transaction saved to DB.
     pub async fn generate_ecash(&self, amount: Amount) -> Result<TieredMulti<SpendableNote>> {
         let rng = rand::rngs::OsRng;
-        let ecash: TieredMulti<SpendableNote> = self.client().spend_ecash(amount, rng).await?;
+        let ecash: TieredMulti<SpendableNote> = self.user_client().spend_ecash(amount, rng).await?;
         self.save_transaction(
             &Transaction::offline(tx::TransactionDirection::Send, amount),
             false,
@@ -591,7 +590,11 @@ impl Federation {
     /// Validate that string is valid ecash and signed by federation.
     /// TODO: check that it's unspent in the federation.
     pub async fn validate_ecash(&self, ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
-        let valid = self.client().validate_note_signatures(&ecash).await.is_ok();
+        let valid = self
+            .user_client()
+            .validate_note_signatures(&ecash)
+            .await
+            .is_ok();
         let amount = ecash.total_amount();
         (valid, amount)
     }
@@ -599,9 +602,9 @@ impl Federation {
     /// Receive ecash into wallet. Save transaction to DB.
     pub async fn receive_ecash(&self, ecash: TieredMulti<SpendableNote>) -> Result<Amount> {
         let rng = rand::rngs::OsRng;
-        let outpoint = self.client().reissue(ecash.clone(), rng).await?;
+        let outpoint = self.user_client().reissue(ecash.clone(), rng).await?;
         // FIXME: run this in the background?
-        if let Err(e) = self.client().await_outpoint_outcome(outpoint).await {
+        if let Err(e) = self.user_client().await_outpoint_outcome(outpoint).await {
             error!("Failed to claim contract {}", e);
         }
         self.save_transaction(
@@ -619,7 +622,7 @@ impl Federation {
     /// Generate on-chain receive address
     pub async fn generate_address(&self) -> Address {
         let rng = rand::rngs::OsRng;
-        self.client().get_new_pegin_address(rng).await
+        self.user_client().get_new_pegin_address(rng).await
     }
 
     /// Hack to lookup url where we can fetch txoutproofs
@@ -717,7 +720,7 @@ impl Federation {
                 let txout_proof: TxOutProof = from_hex(&raw_txout_proof)?;
                 let rng = rand::rngs::OsRng;
                 let address =
-                    Address::from_script(script, self.client().wallet_client().config.network)
+                    Address::from_script(script, self.user_client().wallet_client().config.network)
                         .context("address::from_script")?;
                 let fee = None;
                 // FIXME: there should be a simpler API to get the amount of a peg-in
@@ -816,7 +819,7 @@ impl Federation {
 
     /// Create database transaction
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.client().db().begin_transaction().await
+        self.user_client().db().begin_transaction().await
     }
 
     /// Save transaction to DB
@@ -935,10 +938,13 @@ impl Federation {
     /// Send whenever the balance or social recovery state changes
     pub async fn send_federation_event(&self) {
         // FIXME: should handle this result
-        self.client().fetch_all_notes().await.unwrap_or_else(|e| {
-            error!("Failed to fetch notes: {:?}", e);
-            vec![]
-        });
+        self.user_client()
+            .fetch_all_notes()
+            .await
+            .unwrap_or_else(|e| {
+                error!("Failed to fetch notes: {:?}", e);
+                vec![]
+            });
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
         self.event_sink.typed_event(&event);
@@ -956,7 +962,7 @@ impl Federation {
 
     /// Get 12 seed words associated with client secret
     pub async fn get_mnemonic(&self) -> Mnemonic {
-        let client_secret = self.client().get_client_secret().await;
+        let client_secret = self.user_client().get_client_secret().await;
         // FIXME: use all the entropy
         Mnemonic::from_entropy(&client_secret.entropy())
     }
@@ -984,7 +990,7 @@ impl Federation {
     /// Upload ecash backup to the federation
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
         let username = self.get_username().await;
-        self.client()
+        self.user_client()
             .mint_client()
             .back_up_ecash_to_federation(username)
             .await?;
@@ -1287,7 +1293,9 @@ impl Federation {
                         }
                         Ok(outpoint) => {
                             // FIXME: could this lead to funds loss if it errors out? can contracts be claimed a second time? or will next "fetch" find these coins?
-                            if let Err(e) = self.client().await_outpoint_outcome(*outpoint).await {
+                            if let Err(e) =
+                                self.user_client().await_outpoint_outcome(*outpoint).await
+                            {
                                 error!("Failed to claim contract {}", e);
                                 return;
                             }
