@@ -7,6 +7,10 @@
             "common",
             "native",
             "web"
+        ],
+        "nohoist": [
+            "**/@sentry/react-native",
+            "**/@sentry/react-native/**"
         ]
     },
     "scripts": {
