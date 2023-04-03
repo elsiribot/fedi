@@ -1,34 +1,14 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
 import { createTheme, lightColors } from '@rneui/themed'
 import { Dimensions } from 'react-native'
+import { theme as fediTheme } from '@fedi/common/constants/theme'
 
-const HEX_COLORS = {
-    green: '#00A829',
-    orange: '#DF7B00',
-    darkGrey: '#6D7071',
-    grey: '#858789',
-    lightGrey: '#D3D4DB',
-    extraLightGrey: '#E9E9EA',
-    keyboardGrey: '#E8EAED',
-    red: '#E00A00',
-    white: '#FFFFFF',
-    black: '#000000',
-    night: '#0B1013',
-    blue: '#0277F2',
-}
+const dimensions = Dimensions.get('window')
 
 const colors = {
     ...lightColors,
-    link: HEX_COLORS.blue,
-    primary: HEX_COLORS.night,
-    primaryLight: HEX_COLORS.darkGrey,
-    primaryVeryLight: HEX_COLORS.lightGrey,
-    success: HEX_COLORS.green,
-    secondary: HEX_COLORS.white,
-    ...HEX_COLORS,
+    ...fediTheme.colors,
 }
-
-const dimensions = Dimensions.get('window')
 
 const theme = createTheme({
     ...NavigationDefaultTheme,
@@ -68,7 +48,7 @@ const theme = createTheme({
         Text: props => ({
             style: {
                 color: colors.primary,
-                fontSize: 16,
+                fontSize: fediTheme.fontSizes.body,
                 fontWeight: '400',
                 fontFamily: 'AlbertSans-Regular',
                 // Use fontFamily for bolding effects because the fontWeight
@@ -78,9 +58,11 @@ const theme = createTheme({
                 ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
                 // These props match the design spec and fontSize should rarely
                 // be anything different than these specific values
-                ...(props.caption ? { fontSize: 14 } : {}),
-                ...(props.small ? { fontSize: 12 } : {}),
-                ...(props.tiny ? { fontSize: 10 } : {}),
+                ...(props.caption
+                    ? { fontSize: fediTheme.fontSizes.caption }
+                    : {}),
+                ...(props.small ? { fontSize: fediTheme.fontSizes.small } : {}),
+                ...(props.tiny ? { fontSize: fediTheme.fontSizes.tiny } : {}),
             },
             h1Style: {
                 fontSize: 32,
@@ -133,17 +115,9 @@ const theme = createTheme({
         shortcutTileWidth: '33%',
     },
     sizes: {
-        xxs: 12,
-        xs: 16,
-        sm: 24,
-        md: 32,
-        lg: 48,
-        xl: 96,
+        ...fediTheme.sizes,
         adminProfileCircle: 90,
         walletCardHeight: 200,
-        smallAvatar: 32,
-        mediumAvatar: 48,
-        largeAvatar: 88,
         defaultHoloGradient: 32,
         holoGuidanceCircle: 180,
         progressBarHeight: 6,
@@ -162,13 +136,7 @@ const theme = createTheme({
         tabBarHeight: 72,
     },
     spacing: {
-        xxs: 2,
-        xs: 4,
-        sm: 8,
-        md: 12,
-        lg: 16,
-        xl: 24,
-        xxl: 48,
+        ...fediTheme.spacing,
     },
     borders: {
         defaultRadius: 16,

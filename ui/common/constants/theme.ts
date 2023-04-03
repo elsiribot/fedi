@@ -51,6 +51,21 @@ export const theme = {
         secondary: HEX_COLORS.white,
         ...HEX_COLORS,
     },
+    fontSizes: {
+        display: 80,
+        h1: 32,
+        h2: 24,
+        body: 16,
+        caption: 14,
+        small: 12,
+        tiny: 10,
+    },
+    fontWeights: {
+        normal: '400',
+        medium: '500',
+        bold: '600',
+        bolder: '700',
+    },
     spacing: {
         xxs: 2,
         xs: 4,
@@ -67,22 +82,9 @@ export const theme = {
         md: 32,
         lg: 48,
         xl: 96,
-        adminProfileCircle: 90,
-        walletCardHeight: 200,
         smallAvatar: 32,
         mediumAvatar: 48,
         largeAvatar: 88,
-        defaultHoloGradient: 32,
-        holoGuidanceCircle: 180,
-        progressBarHeight: 6,
-        progressCircleThickness: 3,
-        minMessageInputHeight: 48,
-        maxMessageInputHeight: 120,
-        recordButtonOuter: 68,
-        recordButtonInner: 56,
-        splashLogoHeight: 32,
-        splashLogoWidth: 120,
-        tabBarHeight: 72,
     },
     holoGradient: {
         '900': makeHoloGradientRgbas(1.0),
@@ -92,7 +94,6 @@ export const theme = {
     },
 }
 
-/** Returns an array of holo gradient [r,g,b,a] values, given an alpha multiplier */
 function makeHoloGradientRgbas(alphaMultiplier: number) {
     return [
         [224, 32, 32, 0.3],

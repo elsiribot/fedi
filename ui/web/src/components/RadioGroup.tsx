@@ -27,16 +27,21 @@ export function RadioGroup<T extends string>({
     return (
         <Root onValueChange={onChange} {...props}>
             {options.map(({ value, label, disabled }) => (
-                <Item key={value}>
+                <Item key={value} disabled={props.disabled || disabled}>
                     <Radio
                         value={value}
                         checked={props.value === value}
                         disabled={props.disabled || disabled}>
                         <RadioIndicator />
                     </Radio>
-                    <Text variant="caption" weight="medium" {...labelTextProps}>
-                        {label}
-                    </Text>
+                    <Label disabled={props.disabled || disabled}>
+                        <Text
+                            variant="caption"
+                            weight="medium"
+                            {...labelTextProps}>
+                            {label}
+                        </Text>
+                    </Label>
                 </Item>
             ))}
         </Root>
@@ -54,6 +59,14 @@ const Item = styled(RadixLabel.Label, {
     alignItems: 'center',
     gap: 10,
     cursor: 'pointer',
+
+    variants: {
+        disabled: {
+            true: {
+                cursor: 'not-allowed',
+            },
+        },
+    },
 })
 
 const Radio = styled(RadixRadio.Item, {
@@ -61,9 +74,9 @@ const Radio = styled(RadixRadio.Item, {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 0,
     width: 22,
     height: 22,
-    padding: 0,
     background: theme.colors.white,
     border: `2px solid ${theme.colors.night}`,
     borderRadius: '100%',
@@ -86,5 +99,15 @@ const RadioIndicator = styled(RadixRadio.Indicator, {
 
     '&[data-state="checked"]': {
         background: theme.colors.night,
+    },
+})
+
+const Label = styled('div', {
+    variants: {
+        disabled: {
+            true: {
+                opacity: 0.5,
+            },
+        },
     },
 })

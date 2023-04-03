@@ -20,14 +20,16 @@ export const Checkbox: React.FC<CheckboxProps> = ({
     ...props
 }) => {
     return (
-        <Root>
+        <Root disabled={props.disabled}>
             <CheckboxRoot {...props} onCheckedChange={onChange}>
                 <CheckboxIndicator />
             </CheckboxRoot>
             {label && (
-                <Text variant="caption" weight="medium" {...labelTextProps}>
-                    {label}
-                </Text>
+                <Label disabled={props.disabled}>
+                    <Text variant="caption" weight="medium" {...labelTextProps}>
+                        {label}
+                    </Text>
+                </Label>
             )}
         </Root>
     )
@@ -37,6 +39,14 @@ const Root = styled(RadixLabel.Label, {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
+
+    variants: {
+        disabled: {
+            true: {
+                cursor: 'not-allowed',
+            },
+        },
+    },
 })
 
 const CheckboxRoot = styled(RadixCheckbox.Root, {
@@ -71,5 +81,15 @@ const CheckboxIndicator = styled(RadixCheckbox.Indicator, {
 
     '&[data-state="checked"]:after': {
         content: '✓',
+    },
+})
+
+const Label = styled('div', {
+    variants: {
+        disabled: {
+            true: {
+                opacity: 0.5,
+            },
+        },
     },
 })

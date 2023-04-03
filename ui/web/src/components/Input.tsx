@@ -67,7 +67,8 @@ const Container = styled(RadixLabel.Label, {
 })
 
 const Label = styled('div', {
-    padding: '0 0 4px 8px',
+    paddingBottom: 4,
+    paddingLeft: 8,
 })
 
 const InputWrap = styled('div', {

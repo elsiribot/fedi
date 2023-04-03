@@ -21,6 +21,7 @@ export const {
             albert: `'Albert Sans', sans-serif`,
             mono: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
         },
+        fontSizes: fediTheme.fontSizes,
     },
     media: {},
     utils: {
