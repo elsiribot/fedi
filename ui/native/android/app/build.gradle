@@ -148,7 +148,15 @@ def reactNativeArchitectures() {
     return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
+/**
+ * Sentry SDK configuration
+ */
+project.ext.sentryCli = [
+    logLevel: 'debug',
+    collectModulesScript: '../../../node_modules/@sentry/react-native/dist/js/tools/collectModules.js',
+]
 apply from: "../../../node_modules/@sentry/react-native/sentry.gradle"
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
