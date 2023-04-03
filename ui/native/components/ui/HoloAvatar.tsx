@@ -1,7 +1,7 @@
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import HoloGradient, { HoloLevels } from './HoloGradient'
+import HoloGradient from './HoloGradient'
 
 /*
     This is a custom Avatar capable of holo background with
@@ -45,7 +45,7 @@ const HoloAvatar: React.FC<HoloAvatarProps> = ({
 
     return (
         <View style={mergedContainerStyle}>
-            <HoloGradient rounded size={customSize} level={HoloLevels._600} />
+            <HoloGradient rounded size={customSize} level="600" />
             <Text
                 bold
                 tiny={size === AvatarSize.sm}
