@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
-import styles from './style.module.scss'
-import { Checkbox, CheckboxProps } from '../Checkbox'
+import { styled } from '../styles'
+import { Checkbox, CheckboxProps } from './Checkbox'
 
 interface CheckboxOption<T extends string>
     extends Omit<CheckboxProps, 'onChange' | 'checked'> {
@@ -32,7 +32,7 @@ export function CheckboxGroup<T extends string>({
     )
 
     return (
-        <div className={styles.container} {...props}>
+        <Container>
             {options.map(({ value, disabled, ...checkboxProps }) => (
                 <Checkbox
                     key={value}
@@ -42,6 +42,12 @@ export function CheckboxGroup<T extends string>({
                     {...checkboxProps}
                 />
             ))}
-        </div>
+        </Container>
     )
 }
+
+const Container = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+})
