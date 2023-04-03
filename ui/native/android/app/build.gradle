@@ -148,7 +148,15 @@ def reactNativeArchitectures() {
     return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
+/**
+ * Sentry SDK configuration
+ */
+project.ext.sentryCli = [
+    logLevel: 'debug',
+    collectModulesScript: '../../../node_modules/@sentry/react-native/dist/js/tools/collectModules.js',
+]
 apply from: "../../../node_modules/@sentry/react-native/sentry.gradle"
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -158,8 +166,8 @@ android {
         applicationId "com.fedimintreactnative"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 121
-        versionName "1.9.0"
+        versionCode 123
+        versionName "1.9.1"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
         testBuildType System.getProperty('testBuildType', 'debug')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -181,6 +189,17 @@ android {
                 }
             }
         }
+    }
+
+    packagingOptions {
+        pickFirst 'lib/x86/libreact_nativemodule_core.so'
+        pickFirst 'lib/x86_64/libreact_nativemodule_core.so'
+        pickFirst 'lib/armeabi-v7a/libreact_nativemodule_core.so'
+        pickFirst 'lib/arm64-v8a/libreact_nativemodule_core.so'
+        pickFirst 'lib/x86/libturbomodulejsijni.so'
+        pickFirst 'lib/x86_64/libturbomodulejsijni.so'
+        pickFirst 'lib/armeabi-v7a/libturbomodulejsijni.so'
+        pickFirst 'lib/arm64-v8a/libturbomodulejsijni.so'
     }
 
     if (isNewArchitectureEnabled()) {
