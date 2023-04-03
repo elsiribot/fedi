@@ -94,8 +94,8 @@ jobs:
                   git add ./android/app/build.gradle
                   git commit -m "Bump android version code for Bitcoin Lake"
                   git push
-                  NEW_VERSION="$(npm pkg get version | sed 's/"//g' | sed -n '1p')"
-                  echo "NEW_VERSION=$(npm pkg get version | sed 's/"//g' | sed -n '1p')" >> $GITHUB_OUTPUT
+                  NEW_VERSION="$(npm pkg get version --ws false | sed 's/"//g')"
+                  echo "NEW_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
                   echo "APK_PATH=./android/app/build/outputs/apk/bitcoinlake/release/app-bitcoinlake-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
 
             - name: Build APK
