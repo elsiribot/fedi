@@ -7,6 +7,10 @@ on:
                 required: false
                 type: string
 
+defaults:
+    run:
+        working-directory: ui/native
+        
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
@@ -74,10 +78,10 @@ jobs:
 
             - name: Build bridge
               run: |
-                  npm run build-bridge-android
+                  yarn build-bridge-android
 
             - name: Install Node dependencies
-              run: npm ci --cache .npm
+              run: yarn install
 
             - name: Setup Ruby
               uses: ruby/setup-ruby@v1

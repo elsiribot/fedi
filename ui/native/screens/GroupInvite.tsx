@@ -1,12 +1,13 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { Images } from '../assets/images'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { addToGroups, useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useXmpp } from '../state/hooks/chat'
@@ -56,11 +57,10 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                 <TouchableOpacity
                     style={styles(theme).copyButtonContainer}
                     onPress={copyToClipboard}>
-                    <Icon
-                        name="content-copy"
-                        type="material"
+                    <SvgImage
+                        name="Copy"
                         color={theme.colors.primary}
-                        size={theme.sizes.xxs}
+                        size={SvgImageSize.xs}
                     />
                     <Text style={styles(theme).copyText} numberOfLines={1}>
                         {t('words.copy')}

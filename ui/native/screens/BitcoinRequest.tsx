@@ -14,7 +14,6 @@ import {
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -26,7 +25,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateAddress } = useBridge()
-    const { toast } = useEnvironmentContext().state
     const { uri } = route.params
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
@@ -152,19 +150,19 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                 when onchain deposits on mainnet are fixed
             */}
             <Pressable
-                // style={styles(theme).switchContainer}
-                // onPress={() =>
-                //     requestType === BitcoinOrLightning.lightning
-                //         ? setRequestType(BitcoinOrLightning.bitcoin)
-                //         : setRequestType(BitcoinOrLightning.lightning)
-                // }>
-                style={[styles(theme).switchContainer, { opacity: 0 }]}
+                style={styles(theme).switchContainer}
+                onPress={() =>
+                    requestType === BitcoinOrLightning.lightning
+                        ? setRequestType(BitcoinOrLightning.bitcoin)
+                        : setRequestType(BitcoinOrLightning.lightning)
+                }>
+                {/* style={[styles(theme).switchContainer, { opacity: 0 }]}
                 onPress={() =>
                     toast?.show(
                         'Onchain deposits are currently disabled. Please check back soon',
                         5000,
                     )
-                }>
+                }> */}
                 <Text caption>
                     {requestType === BitcoinOrLightning.lightning
                         ? t('words.lightning')

@@ -56,7 +56,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                         <SvgImage
                             name="Done"
                             size={SvgImageSize.xs}
-                            svgProps={{ stroke: theme.colors.secondary }}
+                            color={theme.colors.secondary}
                         />
                         <Text medium caption style={styles(theme).statusText}>
                             {t('words.paid')}

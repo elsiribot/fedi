@@ -57,11 +57,9 @@ const ChatHeader: React.FC<{}> = () => {
                     style={styles(theme).iconContainer}>
                     <SvgImage
                         name="Recovery"
+                        color={theme.colors.primaryLight}
                         containerStyle={{
                             opacity: websocketIsHealthy ? 0 : 0.2,
-                        }}
-                        svgProps={{
-                            stroke: theme.colors.primaryLight,
                         }}
                     />
                 </Pressable>

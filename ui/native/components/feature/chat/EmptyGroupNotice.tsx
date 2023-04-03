@@ -22,13 +22,11 @@ const EmptyGroupNotice: React.FC<{}> = () => {
             <SvgImage
                 name="Search"
                 size={SvgImageSize.lg}
+                color={theme.colors.primaryLight}
                 containerStyle={{
                     marginTop: theme.spacing.xl,
                     paddingTop: theme.spacing.xl,
                     paddingBottom: theme.spacing.md,
-                }}
-                svgProps={{
-                    stroke: theme.colors.primaryLight,
                 }}
             />
             <Text medium style={styles(theme).text}>

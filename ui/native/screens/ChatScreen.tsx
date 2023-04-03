@@ -4,6 +4,7 @@ import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import ChatsList from '../components/feature/chat/ChatsList'
+import SvgImage from '../components/ui/SvgImage'
 
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks/chat'
@@ -63,7 +64,7 @@ const ChatScreen: React.FC<Props> = () => {
             <ChatsList />
 
             <FAB
-                icon={{ name: 'add', color: theme.colors.secondary }}
+                icon={<SvgImage name="Plus" color={theme.colors.secondary} />}
                 color={theme.colors.primary}
                 size="large"
                 placement="right"

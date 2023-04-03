@@ -4,12 +4,12 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import HoloGuidance from '../../ui/HoloGuidance'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type OnboardingSlideProps = {
     title: string
     message: string
-    iconImageName: string
+    iconImageName: SvgImageName
 }
 
 const OnboardingSlide: React.FC<OnboardingSlideProps> = ({
@@ -47,25 +47,25 @@ const OnboardingSlides: React.FC<Props> = ({ onSlideChanged }: Props) => {
             key: 'welcome-to-fedi',
             title: t('feature.onboarding.welcome-to-fedi'),
             message: t('feature.onboarding.guidance-1'),
-            iconImageName: 'FediLogoIcon',
+            iconImageName: 'FediLogoIcon' as SvgImageName,
         },
         {
             key: 'commmunity-first',
             title: t('feature.onboarding.community-first'),
             message: t('feature.onboarding.guidance-2'),
-            iconImageName: 'SocialPeople',
+            iconImageName: 'SocialPeople' as SvgImageName,
         },
         {
             key: 'simple-and-private',
             title: t('feature.onboarding.simple-and-private'),
             message: t('feature.onboarding.guidance-3'),
-            iconImageName: 'Fedimint',
+            iconImageName: 'Fedimint' as SvgImageName,
         },
         {
             key: 'earn-and-save',
             title: t('feature.onboarding.earn-and-save'),
             message: t('feature.onboarding.guidance-4'),
-            iconImageName: 'Cash',
+            iconImageName: 'Cash' as SvgImageName,
         },
     ]
 

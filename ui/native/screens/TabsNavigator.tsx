@@ -70,11 +70,11 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                         styles(theme, insets)
                                             .tabBarIconContainer
                                     }
-                                    svgProps={{
-                                        stroke: focused
+                                    color={
+                                        focused
                                             ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
+                                            : theme.colors.primaryLight
+                                    }
                                 />
                             )
                         case 'Chat':
@@ -85,11 +85,11 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                         styles(theme, insets)
                                             .tabBarIconContainer
                                     }
-                                    svgProps={{
-                                        stroke: focused
+                                    color={
+                                        focused
                                             ? theme.colors.primary
-                                            : theme.colors.primaryLight,
-                                    }}
+                                            : theme.colors.primaryLight
+                                    }
                                 />
                             )
                         default:

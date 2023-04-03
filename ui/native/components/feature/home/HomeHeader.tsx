@@ -32,11 +32,9 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                     style={styles(theme).iconContainer}>
                     <SvgImage
                         name="Offline"
+                        color={theme.colors.primaryLight}
                         containerStyle={{
                             opacity: offline ? 1 : 0.2,
-                        }}
-                        svgProps={{
-                            stroke: theme.colors.primaryLight,
                         }}
                     />
                 </Pressable>

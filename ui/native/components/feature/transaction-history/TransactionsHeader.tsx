@@ -1,10 +1,11 @@
 import { useNavigation } from '@react-navigation/native'
-import { Icon, Text, useTheme } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
 import Header from '../../ui/Header'
+import SvgImage from '../../ui/SvgImage'
 
 const TransactionsHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -21,7 +22,7 @@ const TransactionsHeader: React.FC<{}> = () => {
                     style={{
                         padding: theme.spacing.sm,
                     }}>
-                    <Icon name={'close'} />
+                    <SvgImage name="Close" />
                 </Pressable>
             }
         />

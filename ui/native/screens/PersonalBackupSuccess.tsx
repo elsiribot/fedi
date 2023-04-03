@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../assets/images'
+import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -21,7 +22,7 @@ const PersonalBackupSuccess: React.FC<Props> = ({ navigation }: Props) => {
             source={Images.HoloBackground}
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
-                <Icon name="check" style={styles(theme).icon} />
+                <SvgImage name="Check" containerStyle={styles(theme).icon} />
                 <Text h2 h2Style={styles(theme).successMessage}>
                     {t('feature.backup.backed-up-recovery-words')}
                 </Text>

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Button, CheckBox, Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -9,6 +9,7 @@ import {
     resetVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const ReviewVideo = () => {
     const { t } = useTranslation()
@@ -68,11 +69,10 @@ const ReviewVideo = () => {
                             videoRef.current?.seek(0)
                             setIsPaused(false)
                         }}>
-                        <Icon
-                            name="play"
-                            type="font-awesome"
+                        <SvgImage
+                            name="Play"
+                            size={SvgImageSize.lg}
                             color={theme.colors.white}
-                            size={theme.sizes.lg}
                         />
                     </Pressable>
                 )}

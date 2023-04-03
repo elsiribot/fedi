@@ -3,7 +3,7 @@ import React from 'react'
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 
 import { Shortcut } from '../../../types'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type ShortcutTileProps = {
     shortcut: Shortcut
@@ -26,12 +26,9 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
             return (
                 <SvgImage
                     containerStyle={styles(theme).iconSvg}
-                    name={shortcut.icon.svg}
+                    name={shortcut.icon.svg as SvgImageName}
                     size={SvgImageSize.md}
-                    svgProps={{
-                        // stroke: theme.colors.secondary,
-                        fill: theme.colors.secondary,
-                    }}
+                    color={theme.colors.secondary}
                 />
             )
         }

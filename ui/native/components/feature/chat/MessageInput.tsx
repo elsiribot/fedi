@@ -90,11 +90,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             marginBottom: theme.spacing.sm,
                         }}
                         size={SvgImageSize.md}
-                        svgProps={{
-                            stroke: websocketIsHealthy
+                        color={
+                            websocketIsHealthy
                                 ? theme.colors.primary
-                                : theme.colors.primaryVeryLight,
-                        }}
+                                : theme.colors.primaryVeryLight
+                        }
                     />
                 </Pressable>
             )}
@@ -147,11 +147,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 <SvgImage
                     name="SendArrowUpCircle"
                     size={SvgImageSize.md}
-                    svgProps={{
-                        stroke: websocketIsHealthy
+                    color={
+                        websocketIsHealthy
                             ? theme.colors.blue
-                            : theme.colors.primaryVeryLight,
-                    }}
+                            : theme.colors.primaryVeryLight
+                    }
                 />
             </Pressable>
         </View>

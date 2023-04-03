@@ -1,4 +1,4 @@
-import { Icon, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
@@ -6,6 +6,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Transaction, TransactionDirection } from '../../../bridge'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionTileProps = {
     txn: Transaction
@@ -26,11 +27,10 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 // },
             ]}>
             <View style={styles(theme).leftContainer}>
-                <Icon
-                    name="bitcoin"
-                    type="material-community"
+                <SvgImage
+                    name="Bitcoin"
                     color={theme.colors.orange}
-                    size={theme.sizes.md}
+                    size={SvgImageSize.md}
                 />
             </View>
             <View style={styles(theme).centerContainer}>
