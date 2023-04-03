@@ -17,7 +17,7 @@ tokio = { version = "1.25.0", features = ["full", "tracing"] }
 fedi-social-client = { path = "../fedi-social-client" }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
-stabilitypool-client = { workspace = true }
+# stabilitypool-client = { workspace = true }
 fedimint-derive-secret = { workspace = true }
 fedimint-wallet-client = { workspace = true }
 fedimint-mint-client = { workspace = true }

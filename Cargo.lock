@@ -944,7 +944,7 @@ name = "fedi-fedimint-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.2.0",
+ "clap 4.2.1",
  "fedi-social-client",
  "fedimint-build",
  "fedimint-cli",
@@ -1217,7 +1217,6 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
- "stabilitypool-client",
  "threshold_crypto",
  "tokio",
 ]
