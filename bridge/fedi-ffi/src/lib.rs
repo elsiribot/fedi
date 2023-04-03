@@ -57,7 +57,7 @@ pub enum FedimintError {
     OtherError(#[from] anyhow::Error),
 }
 
-async fn fedimint_initialize_async(
+pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
 ) -> anyhow::Result<Arc<Bridge>> {
