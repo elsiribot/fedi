@@ -15,13 +15,13 @@ export const {
         colors: {
             ...fediTheme.colors,
         },
-        sizes: fediTheme.sizes,
-        space: fediTheme.spacing,
         fonts: {
             albert: `'Albert Sans', sans-serif`,
             mono: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
         },
-        fontSizes: fediTheme.fontSizes,
+        sizes: intMapToPx(fediTheme.sizes),
+        space: intMapToPx(fediTheme.spacing),
+        fontSizes: intMapToPx(fediTheme.fontSizes),
     },
     media: {},
     utils: {
@@ -32,3 +32,12 @@ export const {
         }),
     },
 })
+
+function intMapToPx<T extends string>(
+    map: Record<T, number>,
+): Record<T, string> {
+    return Object.entries(map).reduce((prev, [key, value]) => {
+        prev[key as T] = `${value}px`
+        return prev
+    }, {} as Record<T, string>)
+}
