@@ -8,7 +8,6 @@ interface CustomProps {
     label?: React.ReactNode
     placeholder?: string
     disabled?: boolean
-    endAdornment?: React.ReactNode
 }
 
 type Props = CustomProps &
@@ -19,7 +18,6 @@ type Props = CustomProps &
 
 export const Input: React.FC<Props> = ({
     label,
-    endAdornment,
     onFocus,
     onBlur,
     ...inputProps
@@ -55,7 +53,6 @@ export const Input: React.FC<Props> = ({
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                 />
-                {endAdornment && <div>{endAdornment}</div>}
             </InputWrap>
         </Container>
     )

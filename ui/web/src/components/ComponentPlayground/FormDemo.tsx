@@ -88,20 +88,6 @@ export const FormDemo: React.FC = () => {
                         placeholder="Placeholder text"
                     />
                     <Input
-                        label="Input w/ adornment"
-                        value={inputTwoValue}
-                        onChange={ev =>
-                            setInputTwoValue(ev.currentTarget.value)
-                        }
-                        placeholder="Placeholder text"
-                    />
-                    <Input
-                        label="Disabled input"
-                        value=""
-                        placeholder="Placeholder text"
-                        disabled
-                    />
-                    <Input
                         label="Disabled input"
                         value=""
                         placeholder="Placeholder text"
