@@ -3,6 +3,8 @@ import * as RadixCheckbox from '@radix-ui/react-checkbox'
 import * as RadixLabel from '@radix-ui/react-label'
 import { styled, theme } from '../styles'
 import { Text, TextProps } from './Text'
+import CheckIcon from '@fedi/common/assets/svgs/check.svg'
+import { Icon } from './Icon'
 
 export interface CheckboxProps {
     checked: boolean
@@ -22,7 +24,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
     return (
         <Root disabled={props.disabled}>
             <CheckboxRoot {...props} onCheckedChange={onChange}>
-                <CheckboxIndicator />
+                <CheckboxIndicator>
+                    <Icon size="xs" icon={CheckIcon} />
+                </CheckboxIndicator>
             </CheckboxRoot>
             {label && (
                 <Label disabled={props.disabled}>
@@ -39,6 +43,7 @@ const Root = styled(RadixLabel.Label, {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
+    cursor: 'pointer',
 
     variants: {
         disabled: {
@@ -73,14 +78,18 @@ const CheckboxRoot = styled(RadixCheckbox.Root, {
 })
 
 const CheckboxIndicator = styled(RadixCheckbox.Indicator, {
+    display: 'block',
+    width: '100%',
+    height: '100%',
     position: 'absolute',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
     color: theme.colors.white,
+    opacity: 0,
 
-    '&[data-state="checked"]:after': {
-        content: '✓',
+    '&[data-state="checked"]': {
+        opacity: 1,
     },
 })
 
