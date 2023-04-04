@@ -8,26 +8,26 @@ export type FederationEvent = Federation
 
 export type RecoveredUsername = string | null
 
-export type TransactionEvent = {
+export interface TransactionEvent {
     federationId: string
     transaction: Transaction
 }
 
-export type ValidateEcashResponse = {
+export interface ValidateEcashResponse {
     amount: MSats
     valid: boolean
 }
 
-export type ReceiveEcashResponse = {
+export interface ReceiveEcashResponse {
     amount: MSats
 }
 
-export type LnurlSignedMessage = {
+export interface LnurlSignedMessage {
     signature: string
     pubkey: string
 }
 
-export type Invoice = {
+export interface Invoice {
     paymentHash: string
     amount: MSats
     description: string
@@ -35,7 +35,7 @@ export type Invoice = {
     fee: null | MSats
 }
 
-export type LightningGateway = {
+export interface LightningGateway {
     mintPubKey: string
     nodePubKey: string
     api: string
@@ -52,23 +52,23 @@ export enum IncomingBitcoinTransactionStatus {
     complete = 'complete',
 }
 
-export type LightningTransactionDetails = {
+export interface LightningTransactionDetails {
     invoice: string
     fee: MSats | null
 }
 
-export type BitcoinTransactionDetails = {
+export interface BitcoinTransactionDetails {
     address: string
     txid: string
     fee: MSats | null
     incomingStatus: IncomingBitcoinTransactionStatus | null
 }
 
-export type OfflineTransactionDetails = {
+export interface OfflineTransactionDetails {
     claimed: boolean
 }
 
-export type XmppCredentials = {
+export interface XmppCredentials {
     password: string
     keypairSeed: string
 }
@@ -89,7 +89,7 @@ export enum AddressOrInvoice {
     invoice = 'invoice',
 }
 
-export type SocialRecoveryQrCode = {
+export interface SocialRecoveryQrCode {
     recoveryId: string
 }
 
@@ -98,7 +98,7 @@ export interface Node {
     url: string
 }
 
-export interface Guardian {
+export interface Guardian extends Node {
     peerId: number
     password: string
 }
@@ -133,8 +133,3 @@ export type SocialRecoveryEvent = {
     approvals: GuardianApproval[]
     remaining: number
 }
-
-export type RecoveryFileCreationEvent =
-    | { type: 'progress'; percentComplete: number }
-    | { type: 'failed'; errorCode: string }
-    | { type: 'complete' }

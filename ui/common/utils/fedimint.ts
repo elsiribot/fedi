@@ -140,7 +140,6 @@ export class FedimintRpc {
         return this.rpc<SeedWords>('getMnemonic', { federationId })
     }
 
-    // progress reported via `SeedRecoveryEvent` events
     async recoverFromMnemonic(mnemonic: string[], federationId: string) {
         return this.rpc<RecoveredUsername>('recoverFromMnemonic', {
             mnemonic,
