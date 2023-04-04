@@ -22,6 +22,11 @@ export const {
             primary20: alphaHex(fediTheme.colors.primary, 20),
             primary80: alphaHex(fediTheme.colors.primary, 80),
             primary90: alphaHex(fediTheme.colors.primary, 90),
+
+            white10: alphaHex(fediTheme.colors.white, 10),
+            white20: alphaHex(fediTheme.colors.white, 20),
+            white30: alphaHex(fediTheme.colors.white, 30),
+            white40: alphaHex(fediTheme.colors.white, 40),
         },
         fonts: {
             body: `'Albert Sans', sans-serif`,

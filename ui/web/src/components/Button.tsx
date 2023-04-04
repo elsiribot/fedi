@@ -80,7 +80,7 @@ const ButtonBase = styled('button', {
     border: 'none',
     textDecoration: 'none',
     cursor: 'pointer',
-    transition: 'background-color 100ms ease',
+    transition: 'background-color 100ms ease, filter 100ms ease',
 
     '&:disabled': {
         opacity: 0.5,
@@ -90,13 +90,13 @@ const ButtonBase = styled('button', {
     variants: {
         variant: {
             primary: {
-                background: theme.colors.primary,
+                background: `linear-gradient(${theme.colors.white20}, transparent), linear-gradient(${theme.colors.primary}, ${theme.colors.primary})`,
                 color: theme.colors.white,
                 '&:hover': {
-                    background: theme.colors.primary90,
+                    filter: 'brightness(1.25)',
                 },
                 '&:active': {
-                    background: theme.colors.primary80,
+                    filter: 'brightness(1.5)',
                 },
             },
             secondary: {
@@ -104,10 +104,10 @@ const ButtonBase = styled('button', {
                 boxShadow: `0 0 0 0.25px ${theme.colors.lightGrey} inset`,
                 color: theme.colors.primary,
                 '&:hover': {
-                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary15})`,
+                    filter: 'brightness(0.95)',
                 },
                 '&:active': {
-                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary20})`,
+                    filter: 'brightness(0.9)',
                 },
             },
             tertiary: {
