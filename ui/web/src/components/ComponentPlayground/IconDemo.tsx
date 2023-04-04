@@ -27,7 +27,6 @@ import inviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import leaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import leaveRoomIcon from '@fedi/common/assets/svgs/leave-room.svg'
 import listIcon from '@fedi/common/assets/svgs/list.svg'
-import newRoomIcon from '@fedi/common/assets/svgs/new-room.svg'
 import noteIcon from '@fedi/common/assets/svgs/note.svg'
 import offlineIcon from '@fedi/common/assets/svgs/offline.svg'
 import phoneIcon from '@fedi/common/assets/svgs/phone.svg'
@@ -77,7 +76,6 @@ const icons = [
     { name: 'leaveFederation', icon: leaveFederationIcon },
     { name: 'leaveRoom', icon: leaveRoomIcon },
     { name: 'list', icon: listIcon },
-    { name: 'newRoom', icon: newRoomIcon },
     { name: 'note', icon: noteIcon },
     { name: 'offline', icon: offlineIcon },
     { name: 'phone', icon: phoneIcon },
@@ -103,6 +101,7 @@ const sizeOptions = ['xs', 'sm', 'md', 'lg', 'xl'] as const
 
 export const IconDemo: React.FC = () => {
     const [size, setSize] = useState<(typeof sizeOptions)[number]>('md')
+    const [color, setColor] = useState<string>()
 
     return (
         <div>
@@ -118,9 +117,13 @@ export const IconDemo: React.FC = () => {
                         <div>{sizeOpt}</div>
                     </SizeRadio>
                 ))}
+                <input
+                    type="color"
+                    onChange={ev => setColor(ev.currentTarget.value)}
+                />
             </SizeOptions>
             {icons.map(({ name, icon }) => (
-                <IconContainer key={name}>
+                <IconContainer key={name} style={{ color }}>
                     <Icon icon={icon} size={size} />
                     <IconLabel>{name}</IconLabel>
                 </IconContainer>
