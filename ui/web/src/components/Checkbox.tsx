@@ -63,12 +63,12 @@ const CheckboxRoot = styled(RadixCheckbox.Root, {
     height: 22,
     padding: 0,
     background: theme.colors.white,
-    border: `2px solid ${theme.colors.night}`,
+    border: `2px solid ${theme.colors.primary}`,
     borderRadius: 4,
     cursor: 'pointer',
 
     '&[data-state="checked"]': {
-        background: theme.colors.night,
+        background: theme.colors.primary,
     },
 
     '&[data-disabled], &:disabled': {

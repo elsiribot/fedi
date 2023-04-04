@@ -81,5 +81,5 @@ const Image = styled(RadixAvatar.Image, {
 const Fallback = styled(RadixAvatar.Fallback, {
     pointerEvents: 'none',
     userSelect: 'none',
-    color: theme.colors.night,
+    color: theme.colors.primary,
 })

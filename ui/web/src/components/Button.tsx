@@ -90,45 +90,45 @@ const ButtonBase = styled('button', {
     variants: {
         variant: {
             primary: {
-                background: theme.colors.night,
+                background: theme.colors.primary,
                 color: theme.colors.white,
                 '&:hover': {
-                    background: theme.colors.night90,
+                    background: theme.colors.primary90,
                 },
                 '&:active': {
-                    background: theme.colors.night80,
+                    background: theme.colors.primary80,
                 },
             },
             secondary: {
-                background: `linear-gradient(${theme.colors.white}, ${theme.colors.night10})`,
+                background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary10})`,
                 boxShadow: `0 0 0 0.25px ${theme.colors.lightGrey} inset`,
-                color: theme.colors.night,
+                color: theme.colors.primary,
                 '&:hover': {
-                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.night15})`,
+                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary15})`,
                 },
                 '&:active': {
-                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.night20})`,
+                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary20})`,
                 },
             },
             tertiary: {
                 background: 'none',
-                color: theme.colors.night,
+                color: theme.colors.primary,
                 '&:hover': {
-                    background: theme.colors.night05,
+                    background: theme.colors.primary05,
                 },
                 '&:active': {
-                    background: theme.colors.night10,
+                    background: theme.colors.primary10,
                 },
             },
             outline: {
                 background: 'none',
-                color: theme.colors.night,
-                border: `2px solid ${theme.colors.night}`,
+                color: theme.colors.primary,
+                border: `2px solid ${theme.colors.primary}`,
                 '&:hover': {
-                    background: theme.colors.night05,
+                    background: theme.colors.primary05,
                 },
                 '&:active': {
-                    background: theme.colors.night10,
+                    background: theme.colors.primary10,
                 },
             },
         },

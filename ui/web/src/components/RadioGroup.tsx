@@ -78,7 +78,7 @@ const Radio = styled(RadixRadio.Item, {
     width: 22,
     height: 22,
     background: theme.colors.white,
-    border: `2px solid ${theme.colors.night}`,
+    border: `2px solid ${theme.colors.primary}`,
     borderRadius: '100%',
     cursor: 'pointer',
 
@@ -98,7 +98,7 @@ const RadioIndicator = styled(RadixRadio.Indicator, {
     borderRadius: '100%',
 
     '&[data-state="checked"]': {
-        background: theme.colors.night,
+        background: theme.colors.primary,
     },
 })
 

@@ -16,12 +16,12 @@ export const {
             ...fediTheme.colors,
 
             // Alpha'd versions of colors. Unfortunately no dynamic way to do this.
-            night05: alphaHex(fediTheme.colors.night, 5),
-            night10: alphaHex(fediTheme.colors.night, 10),
-            night15: alphaHex(fediTheme.colors.night, 15),
-            night20: alphaHex(fediTheme.colors.night, 20),
-            night80: alphaHex(fediTheme.colors.night, 80),
-            night90: alphaHex(fediTheme.colors.night, 90),
+            primary05: alphaHex(fediTheme.colors.primary, 5),
+            primary10: alphaHex(fediTheme.colors.primary, 10),
+            primary15: alphaHex(fediTheme.colors.primary, 15),
+            primary20: alphaHex(fediTheme.colors.primary, 20),
+            primary80: alphaHex(fediTheme.colors.primary, 80),
+            primary90: alphaHex(fediTheme.colors.primary, 90),
         },
         fonts: {
             body: `'Albert Sans', sans-serif`,
