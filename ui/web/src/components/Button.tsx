@@ -82,59 +82,65 @@ const ButtonBase = styled('button', {
     cursor: 'pointer',
     transition: 'background-color 100ms ease',
 
+    '&:disabled': {
+        opacity: 0.5,
+        pointerEvents: 'none',
+    },
+
     variants: {
         variant: {
             primary: {
                 background: theme.colors.night,
                 color: theme.colors.white,
                 '&:hover': {
-                    opacity: 0.9,
+                    background: theme.colors.night90,
                 },
                 '&:active': {
-                    opacity: 0.8,
+                    background: theme.colors.night80,
                 },
             },
             secondary: {
-                background: 'linear-gradient(#ffffff, #0b101324)',
-                color: '#0b1013',
+                background: `linear-gradient(${theme.colors.white}, ${theme.colors.night10})`,
+                boxShadow: `0 0 0 0.25px ${theme.colors.lightGrey} inset`,
+                color: theme.colors.night,
                 '&:hover': {
-                    background: 'linear-gradient(#ffffff, #0b101336)',
+                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.night15})`,
                 },
                 '&:active': {
-                    background: 'linear-gradient(#ffffff, #0b101350)',
+                    background: `linear-gradient(${theme.colors.white}, ${theme.colors.night20})`,
                 },
             },
             tertiary: {
                 background: 'none',
-                color: '#0b1013',
+                color: theme.colors.night,
                 '&:hover': {
-                    background: 'rgba(#0b1013, 0.05)',
+                    background: theme.colors.night05,
                 },
                 '&:active': {
-                    background: 'rgba(#0b1013, 0.1)',
+                    background: theme.colors.night10,
                 },
             },
             outline: {
                 background: 'none',
-                color: '#0b1013',
-                border: '2px solid #0b1013',
+                color: theme.colors.night,
+                border: `2px solid ${theme.colors.night}`,
                 '&:hover': {
-                    background: 'rgba(#0b1013, 0.05)',
+                    background: theme.colors.night05,
                 },
                 '&:active': {
-                    background: 'rgba(#0b1013, 0.1)',
+                    background: theme.colors.night10,
                 },
             },
         },
         size: {
             md: {
                 height: 48,
-                padding: '0 20px',
+                padding: '0 40px',
                 fontSize: 14,
             },
             sm: {
                 height: 24,
-                padding: '0 8px',
+                padding: '0 20px',
                 fontSize: 12,
             },
         },
