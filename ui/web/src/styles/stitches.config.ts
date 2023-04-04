@@ -24,7 +24,7 @@ export const {
             night90: alphaHex(fediTheme.colors.night, 90),
         },
         fonts: {
-            albert: `'Albert Sans', sans-serif`,
+            body: `'Albert Sans', sans-serif`,
             mono: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
         },
         sizes: intMapToPx(fediTheme.sizes),
