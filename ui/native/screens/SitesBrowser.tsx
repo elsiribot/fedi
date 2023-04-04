@@ -7,7 +7,7 @@ import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
-import { decodeInvoice } from '../bridge'
+import { fedimint } from '../bridge'
 import SitesBrowserHeader from '../components/feature/sites/SitesBrowserHeader'
 import CustomOverlay, {
     CustomOverlayContents,
@@ -145,7 +145,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         sendPayment: async (paymentRequest: string) => {
             var invoice
             try {
-                invoice = await decodeInvoice(paymentRequest)
+                invoice = await fedimint.decodeInvoice(paymentRequest)
             } catch (error) {
                 toast?.show(t('phrases.failed-to-decode-invoice'), 3000)
                 throw Error(t('phrases.failed-to-decode-invoice'))

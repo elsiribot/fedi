@@ -3,8 +3,8 @@ import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import type { Transaction } from '@fedi/common/types'
 
-import { Transaction } from '../bridge'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -37,10 +37,11 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 await receiveEcash(ecash)
                 setReceiving(false)
                 navigation.navigate('ReceiveSuccess', {
-                    tx: new Transaction({
+                    // TODO: Fill out other fields? Missing some required Transaction fields.
+                    tx: {
                         offline: { claimed: true },
                         amount,
-                    }),
+                    } as Transaction,
                 })
             } catch (e: any) {
                 toast?.show(e.message, 3000)

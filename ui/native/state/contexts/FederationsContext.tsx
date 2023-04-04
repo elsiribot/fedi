@@ -7,13 +7,8 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
-
-import {
-    BridgeEventEmitter,
-    Federation,
-    FederationEvent,
-    Guardian,
-} from '../../bridge'
+import { Federation, Guardian } from '@fedi/common/types'
+import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     SELECTED_FEDERATION_ID_DB_KEY,
@@ -134,21 +129,19 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 selectedFederationId: action.payload.selectedFederationId,
-                federations: action.payload.federations.map(
-                    (f: Federation) => new Federation(f),
-                ),
+                federations: action.payload.federations,
             }
         case ActionType.UPDATE_FEDERATION_CREDENTIALS: {
             const federations = state.federations.map((f: Federation) => {
                 // If the federation id matches, update the password of that
                 // single connectedFederation
                 if (f.name === state.selectedFederationId) {
-                    return new Federation({
+                    return {
                         ...f,
                         username: action.payload.username,
                         password: action.payload.password,
                         keypairSeed: action.payload.keypairSeed,
-                    })
+                    }
                 } else {
                     return f
                 }
@@ -163,10 +156,10 @@ export function reducer(state: AppState, action: Action): AppState {
                 // If the federation id matches, update the username of that
                 // single connectedFederation
                 if (f.name === state.selectedFederationId) {
-                    return new Federation({
+                    return {
                         ...f,
                         username: action.payload,
-                    })
+                    }
                 } else {
                     return f
                 }
@@ -181,7 +174,7 @@ export function reducer(state: AppState, action: Action): AppState {
                 // If the federation id matches, update the entry
                 (f: Federation) =>
                     f.name === action.payload.name
-                        ? new Federation({ ...f, ...action.payload })
+                        ? { ...f, ...action.payload }
                         : f,
             )
             if (isEqual(federations, state.federations)) {

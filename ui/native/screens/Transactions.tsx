@@ -3,8 +3,8 @@ import { Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import type { Transaction } from '@fedi/common/types'
 
-import { Transaction } from '../bridge'
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -22,7 +22,7 @@ const Transactions: React.FC<Props> = () => {
     const getTransactionsList = useCallback(async () => {
         const fetchedTransactions = await listTransactions()
         console.info('fetchedTransactions', fetchedTransactions.length)
-        setTransactionsList(fetchedTransactions.map(tx => new Transaction(tx)))
+        setTransactionsList(fetchedTransactions)
     }, [listTransactions])
 
     useEffect(() => {

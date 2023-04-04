@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import { Images } from '../assets/images'
-import { listFederations } from '../bridge'
+import { fedimint } from '../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -101,7 +101,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     // to update the federations
     useEffect(() => {
         const storeFederations = async () => {
-            let federations = await listFederations()
+            let federations = await fedimint.listFederations()
             federationsDispatch(
                 updateFederations(state.selectedFederationId, federations),
             )

@@ -12,8 +12,8 @@ import {
     TextInput,
     View,
 } from 'react-native'
+import type { SeedWords } from '@fedi/common/types'
 
-import { SeedWords } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
