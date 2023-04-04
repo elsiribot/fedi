@@ -109,7 +109,7 @@ pub fn init_logging(
             );
 
         let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
-            let time = SystemTime::now()
+            let time = fedimint_core::time::now()
                 .duration_since(SystemTime::UNIX_EPOCH)?
                 .as_secs();
             reg.with(

@@ -7,6 +7,7 @@ members = [
     "fedi-social-server",
     "fedi-social-client",
 ]
+exclude = ["bridge/fedi-wasm"]
 resolver = "2"
 
 [workspace.metadata]

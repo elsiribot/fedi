@@ -1,10 +1,12 @@
 use wasm_bindgen::prelude::*;
+use std::cell::RefCell;
 use std::path::Path;
 use std::sync::Arc;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
 use fediffi::fedimint_core::db::Database;
 use fediffi::fedimint_core::db::mem_impl::MemDatabase;
 use fediffi::mint_client::module_decode_stubs;
+use fediffi::bridge::Bridge;
 
 mod db;
 mod db2;
@@ -50,6 +52,7 @@ impl fediffi::event::IEventSink for EventSink {
 use std::sync::Mutex as StdMutex;
 thread_local! {
     static LOG_BUFFER: Arc<StdMutex<Vec<u8>>> = Arc::new(StdMutex::new(Vec::new()));
+    static BRIDGE: RefCell<Option<Arc<Bridge>>> = RefCell::new(None);
 }
 
 #[wasm_bindgen]
@@ -98,12 +101,14 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
 
     let db = db2::MemDatabase::new("main").await.unwrap();
     let db = Database::new(db, module_decode_stubs());
-    fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink)).await.unwrap();
+    let bridge = fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink)).await.unwrap();
+    BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
 }
 
 #[wasm_bindgen]
 pub async fn fedimint_rpc(method: String, payload: String) -> String {
-    fediffi::fedimint_rpc_async(method, payload).await
+    let bridge = BRIDGE.with(|bridge| bridge.borrow().clone()).expect("bridge not set"); // TODO: improve error
+    fediffi::fedimint_rpc_async(bridge, method, payload).await
 }
 
 #[wasm_bindgen]

@@ -103,7 +103,7 @@ impl Transaction {
             notes,
             direction,
             amount: Amount(amount),
-            created_at: SystemTime::now()
+            created_at: fedimint_core::time::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("couldn't get utc timestamp") // FIXME: maybe just return 0?
                 .as_secs(),
@@ -122,7 +122,7 @@ impl Transaction {
             id: id.to_string(),
             direction,
             amount: Amount(amount),
-            created_at: SystemTime::now()
+            created_at: fedimint_core::time::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("couldn't get utc timestamp") // FIXME: maybe just return 0?
                 .as_secs(),
@@ -153,7 +153,7 @@ impl Transaction {
             id,
             direction,
             amount: Amount(amount),
-            created_at: SystemTime::now()
+            created_at: fedimint_core::time::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("couldn't get utc timestamp") // FIXME: maybe just return 0?
                 .as_secs(),
