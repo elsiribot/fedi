@@ -6,9 +6,14 @@ interface BaseProps {
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }
 
-type Props = BaseProps & Omit<React.SVGAttributes<SVGElement>, keyof BaseProps>
+export type IconProps = BaseProps &
+    Omit<React.SVGAttributes<SVGElement>, keyof BaseProps>
 
-export const Icon: React.FC<Props> = ({ icon: SvgIcon, size, ...props }) => {
+export const Icon: React.FC<IconProps> = ({
+    icon: SvgIcon,
+    size,
+    ...props
+}) => {
     return <SvgIcon className={svgCss({ size })} {...props} />
 }
 

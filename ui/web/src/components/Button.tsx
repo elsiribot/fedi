@@ -1,10 +1,12 @@
 import React from 'react'
 import { styled, theme } from '../styles'
 import Link, { LinkProps } from 'next/link'
+import { Icon, IconProps } from './Icon'
 
 interface BaseProps {
     variant?: 'primary' | 'secondary' | 'tertiary' | 'outline'
     size?: 'md' | 'sm'
+    icon?: IconProps['icon']
 }
 type ButtonProps = BaseProps &
     Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof BaseProps>
@@ -21,8 +23,17 @@ type Props = ButtonProps | ButtonLinkProps | ButtonExternalLinkProps
 export const Button: React.FC<Props> = ({
     variant = 'primary',
     size = 'md',
+    icon,
+    children,
     ...props
 }) => {
+    const content = (
+        <ButtonContent>
+            {icon && <Icon icon={icon} size="xs" />}
+            <div>{children}</div>
+        </ButtonContent>
+    )
+
     if ('href' in props) {
         if (typeof props.href === 'string' && props.href.startsWith('http')) {
             return (
@@ -32,8 +43,9 @@ export const Button: React.FC<Props> = ({
                     rel="noopener noreferrer"
                     {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
                     variant={variant}
-                    size={size}
-                />
+                    size={size}>
+                    {content}
+                </ButtonBase>
             )
         } else {
             return (
@@ -42,8 +54,9 @@ export const Button: React.FC<Props> = ({
                     {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
                     href={props.href || ''}
                     variant={variant}
-                    size={size}
-                />
+                    size={size}>
+                    {content}
+                </ButtonBase>
             )
         }
     } else {
@@ -51,8 +64,9 @@ export const Button: React.FC<Props> = ({
             <ButtonBase
                 {...(props as React.HTMLAttributes<HTMLButtonElement>)}
                 variant={variant}
-                size={size}
-            />
+                size={size}>
+                {content}
+            </ButtonBase>
         )
     }
 }
@@ -129,4 +143,10 @@ const ButtonBase = styled('button', {
         variant: 'primary',
         size: 'md',
     },
+})
+
+const ButtonContent = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
 })

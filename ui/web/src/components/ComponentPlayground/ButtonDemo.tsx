@@ -1,6 +1,7 @@
 import React from 'react'
 import { styled } from '../../styles'
 import { Button } from '../../components/Button'
+import cogIcon from '@fedi/common/assets/svgs/cog.svg'
 
 export const ButtonDemo: React.FC = () => {
     const sizes = ['md', 'sm'] as const
@@ -13,6 +14,12 @@ export const ButtonDemo: React.FC = () => {
                     {variants.map(variant => (
                         <ButtonRow key={variant}>
                             <Button size={size} variant={variant}>
+                                Button {size} {variant}
+                            </Button>
+                            <Button
+                                size={size}
+                                variant={variant}
+                                icon={cogIcon}>
                                 Button {size} {variant}
                             </Button>
                             <Button
