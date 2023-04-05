@@ -7,6 +7,7 @@ interface BaseProps {
     variant?: 'primary' | 'secondary' | 'tertiary' | 'outline'
     size?: 'md' | 'sm'
     icon?: IconProps['icon']
+    width?: 'auto' | 'full'
 }
 type ButtonProps = BaseProps &
     Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof BaseProps>
@@ -23,6 +24,7 @@ type Props = ButtonProps | ButtonLinkProps | ButtonExternalLinkProps
 export const Button: React.FC<Props> = ({
     variant = 'primary',
     size = 'md',
+    width = 'auto',
     icon,
     children,
     ...props
@@ -43,7 +45,8 @@ export const Button: React.FC<Props> = ({
                     rel="noopener noreferrer"
                     {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
                     variant={variant}
-                    size={size}>
+                    size={size}
+                    width={width}>
                     {content}
                 </ButtonBase>
             )
@@ -54,7 +57,8 @@ export const Button: React.FC<Props> = ({
                     {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
                     href={props.href || ''}
                     variant={variant}
-                    size={size}>
+                    size={size}
+                    width={width}>
                     {content}
                 </ButtonBase>
             )
@@ -64,7 +68,8 @@ export const Button: React.FC<Props> = ({
             <ButtonBase
                 {...(props as React.HTMLAttributes<HTMLButtonElement>)}
                 variant={variant}
-                size={size}>
+                size={size}
+                width={width}>
                 {content}
             </ButtonBase>
         )
@@ -100,7 +105,7 @@ const ButtonBase = styled('button', {
                 },
             },
             secondary: {
-                background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary10})`,
+                background: `linear-gradient(${theme.colors.white}, ${theme.colors.primary10}), linear-gradient(${theme.colors.white}, ${theme.colors.white})`,
                 boxShadow: `0 0 0 0.25px ${theme.colors.lightGrey} inset`,
                 color: theme.colors.primary,
                 '&:hover': {
@@ -142,6 +147,14 @@ const ButtonBase = styled('button', {
                 height: 24,
                 padding: '0 20px',
                 fontSize: 12,
+            },
+        },
+        width: {
+            auto: {
+                width: 'auto',
+            },
+            full: {
+                width: '100%',
             },
         },
     },
