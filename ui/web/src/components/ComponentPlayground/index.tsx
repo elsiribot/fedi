@@ -6,6 +6,7 @@ import { ButtonDemo } from './ButtonDemo'
 import { FormDemo } from './FormDemo'
 import { AvatarDemo } from './AvatarDemo'
 import { IconDemo } from './IconDemo'
+import { ContentBlock } from '../ContentBlock'
 
 export const ComponentPlayground: React.FC = () => {
     const demos = [
@@ -32,34 +33,36 @@ export const ComponentPlayground: React.FC = () => {
     ]
 
     return (
-        <Container>
-            <Inner>
-                <Text variant="display">Component Playground</Text>
-                {demos.map(demo => (
-                    <div key={demo.title}>
+        <>
+            {demos.map(demo => (
+                <ContentBlock key={demo.title} maxWidth={1120}>
+                    <Title>
                         <Text variant="h1">{demo.title}</Text>
-                        <DemoContent>{demo.content}</DemoContent>
-                    </div>
-                ))}
-            </Inner>
-        </Container>
+                    </Title>
+                    <DemoContent>{demo.content}</DemoContent>
+                </ContentBlock>
+            ))}
+        </>
     )
 }
 
-const Container = styled('div', {
-    padding: 20,
-    holoGradient: '100',
-})
+const Title = styled('div', {
+    position: 'relative',
+    width: '100%',
+    paddingBottom: 8,
+    marginBottom: 24,
 
-const Inner = styled('div', {
-    maxWidth: 980,
-    margin: '0 auto',
+    '&:after': {
+        content: '',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        height: 4,
+        holoGradient: '900',
+    },
 })
 
 const DemoContent = styled('div', {
-    border: `1px solid ${theme.colors.lightGrey}`,
-    background: theme.colors.white,
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 40,
+    marginTop: 20,
 })
