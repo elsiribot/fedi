@@ -109,6 +109,7 @@ const NavItem = styled('li', {
         display: 'flex',
         alignItems: 'center',
         gap: 8,
+        width: '100%',
         padding: '24px 8px',
         textDecoration: 'none',
         color: 'inherit',
