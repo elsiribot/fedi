@@ -9,7 +9,8 @@
         "test": "jest --config='tests/configs/jest-functional.config.js'",
         "lint": "yarn run lint:tsc && yarn run lint:eslint",
         "lint:tsc": "tsc --noEmit",
-        "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx"
+        "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
+        "format": "prettier --write ."
     },
     "dependencies": {
         "@xmpp/client": "^0.13.1",
@@ -20,6 +21,7 @@
         "react": "^18.2.0"
     },
     "devDependencies": {
+        "@trivago/prettier-plugin-sort-imports": "^4.1.1",
         "@types/jest": "^29.5.0",
         "@typescript-eslint/eslint-plugin": "^5.56.0",
         "@typescript-eslint/parser": "^5.56.0",
