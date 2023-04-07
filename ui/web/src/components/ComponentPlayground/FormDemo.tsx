@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { styled } from '../../styles'
+
 import { Checkbox } from '../../components/Checkbox'
 import { CheckboxGroup } from '../../components/CheckboxGroup'
 import { Input } from '../../components/Input'
 import { RadioGroup } from '../../components/RadioGroup'
 import { Text } from '../../components/Text'
+import { styled } from '../../styles'
 
 export const FormDemo: React.FC = () => {
     const [oneChecked, setOneChecked] = useState(false)

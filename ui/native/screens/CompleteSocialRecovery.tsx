@@ -10,6 +10,7 @@ import {
     View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
+
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
 import { Images } from '../assets/images'

@@ -12,7 +12,9 @@ import {
     TextInput,
     View,
 } from 'react-native'
+
 import type { SeedWords } from '@fedi/common/types'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { BIP39_WORD_LIST } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -23,7 +25,6 @@ import {
 import { useBridge } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 const isValidSeedWord = (word: string) => {
     return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0

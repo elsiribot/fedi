@@ -1,12 +1,13 @@
 import React from 'react'
-import { styled, theme } from '../../styles'
+
 import { Text } from '../../components/Text'
-import { TextDemo } from './TextDemo'
+import { styled, theme } from '../../styles'
+import { ContentBlock } from '../ContentBlock'
+import { AvatarDemo } from './AvatarDemo'
 import { ButtonDemo } from './ButtonDemo'
 import { FormDemo } from './FormDemo'
-import { AvatarDemo } from './AvatarDemo'
 import { IconDemo } from './IconDemo'
-import { ContentBlock } from '../ContentBlock'
+import { TextDemo } from './TextDemo'
 
 export const ComponentPlayground: React.FC = () => {
     const demos = [

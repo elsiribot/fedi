@@ -5,8 +5,10 @@ import {
     RouteProp,
 } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { BtcLnUri, Group, Member, MSats, Site } from '.'
+
 import { Transaction } from '@fedi/common/types'
+
+import { BtcLnUri, Group, Member, MSats, Site } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList

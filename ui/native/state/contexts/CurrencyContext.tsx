@@ -5,6 +5,7 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+
 import { BITFINEX_BTCUSD_WEBSOCKET_URL } from '../../constants'
 
 // Define the structure of this Context and its initial state

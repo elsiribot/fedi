@@ -6,10 +6,11 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Dimensions, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import { Images } from '../assets/images'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
 

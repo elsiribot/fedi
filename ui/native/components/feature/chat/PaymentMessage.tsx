@@ -1,9 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Message, MSats } from '../../../types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import IncomingPaymentRequest from './IncomingPaymentRequest'
 import OutgoingPaymentRequest from './OutgoingPaymentRequest'
 

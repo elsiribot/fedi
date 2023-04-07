@@ -1,6 +1,7 @@
-import React from 'react'
-import * as RadixRadio from '@radix-ui/react-radio-group'
 import * as RadixLabel from '@radix-ui/react-label'
+import * as RadixRadio from '@radix-ui/react-radio-group'
+import React from 'react'
+
 import { styled, theme } from '../styles'
 import { Text, TextProps } from './Text'
 

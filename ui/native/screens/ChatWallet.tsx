@@ -4,8 +4,10 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
-import UsdAmount from '../components/feature/wallet/UsdAmount'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import {
     addToMembersSeen,
     addToMessages,
@@ -22,7 +24,6 @@ import {
     SatsString,
 } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 

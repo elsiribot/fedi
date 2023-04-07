@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import {
     updateMessage,
     useChatContext,
@@ -19,7 +21,6 @@ import {
     PaymentStatus,
     Keypair,
 } from '../../../types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPaymentActionsProps = {

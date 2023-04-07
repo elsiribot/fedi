@@ -1,10 +1,12 @@
-import React from 'react'
 import * as RadixCheckbox from '@radix-ui/react-checkbox'
 import * as RadixLabel from '@radix-ui/react-label'
-import { styled, theme } from '../styles'
-import { Text, TextProps } from './Text'
+import React from 'react'
+
 import CheckIcon from '@fedi/common/assets/svgs/check.svg'
+
+import { styled, theme } from '../styles'
 import { Icon } from './Icon'
+import { Text, TextProps } from './Text'
 
 export interface CheckboxProps {
     checked: boolean

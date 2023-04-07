@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react'
 import * as RadixLabel from '@radix-ui/react-label'
+import React, { useCallback, useState } from 'react'
+
 import { styled, theme } from '../styles'
 import { Text } from './Text'
 

@@ -1,4 +1,5 @@
 import { CommonActions } from '@react-navigation/native'
+
 import { Group } from '../types'
 import { RootStackParamList } from '../types/navigation'
 

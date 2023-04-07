@@ -2,6 +2,7 @@ import { Overlay, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
 import type { Transaction } from '@fedi/common/types'
 
 import TransactionDetail from './TransactionDetail'

@@ -1,6 +1,7 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import * as RNLocalize from 'react-native-localize'
+
 import { resources } from '@fedi/common/localization'
 
 const supportedLngs = Object.keys(resources)

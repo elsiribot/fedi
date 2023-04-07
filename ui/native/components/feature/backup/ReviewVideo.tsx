@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Video from 'react-native-video'
+
 import {
     resetVideo,
     useBackupRecoveryContext,

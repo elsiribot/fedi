@@ -1,7 +1,9 @@
 import React from 'react'
-import { styled } from '../../styles'
-import { Button } from '../../components/Button'
+
 import cogIcon from '@fedi/common/assets/svgs/cog.svg'
+
+import { Button } from '../../components/Button'
+import { styled } from '../../styles'
 
 export const ButtonDemo: React.FC = () => {
     const sizes = ['md', 'sm'] as const

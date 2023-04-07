@@ -1,12 +1,11 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import Header from '../../ui/Header'
-
-import { t } from 'i18next'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
+import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>

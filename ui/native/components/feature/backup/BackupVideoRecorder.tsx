@@ -1,8 +1,8 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import { useBackupRecoveryContext } from '../../../state/contexts/BackupRecoveryContext'
 
+import { useBackupRecoveryContext } from '../../../state/contexts/BackupRecoveryContext'
 import RecordVideo from './RecordVideo'
 import ReviewVideo from './ReviewVideo'
 

@@ -3,10 +3,11 @@ import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { Chat, ChatType } from '../../../types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
+
+import { DEFAULT_GROUP_NAME } from '../../../constants'
+import { Chat, ChatType } from '../../../types'
 import HoloAvatar from '../../ui/HoloAvatar'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 

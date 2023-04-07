@@ -1,4 +1,5 @@
 import { createStitches } from '@stitches/react'
+
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
 export const {

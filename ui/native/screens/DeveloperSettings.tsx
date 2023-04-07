@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
+
 import type { Guardian, LightningGateway } from '@fedi/common/types'
 
 import {

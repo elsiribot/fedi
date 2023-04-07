@@ -1,6 +1,5 @@
 // This file contains logic for preparing XML, sending XMPP stanzas
 // to the chat server, and handling responses (if any)
-
 import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'

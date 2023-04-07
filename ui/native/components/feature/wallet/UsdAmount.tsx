@@ -1,6 +1,7 @@
 import { Text, TextProps, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet } from 'react-native'
+
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { Sats } from '../../../types'
 

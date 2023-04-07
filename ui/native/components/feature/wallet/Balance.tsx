@@ -4,9 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { MSats } from '../../../types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = {
     balance: MSats | null

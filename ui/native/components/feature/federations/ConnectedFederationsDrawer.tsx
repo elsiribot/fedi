@@ -8,7 +8,9 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
+
 import { Federation } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { Images } from '../../../assets/images'
 import {
@@ -17,7 +19,6 @@ import {
 } from '../../../state/contexts/FederationsContext'
 import { useBtcUsdPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {

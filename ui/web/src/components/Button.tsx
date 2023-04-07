@@ -1,6 +1,7 @@
-import React from 'react'
-import { styled, theme } from '../styles'
 import Link, { LinkProps } from 'next/link'
+import React from 'react'
+
+import { styled, theme } from '../styles'
 import { Icon, IconProps } from './Icon'
 
 interface BaseProps {

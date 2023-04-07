@@ -3,10 +3,9 @@ import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import Header from '../../ui/Header'
-
 import { Props as GroupAdminProps } from '../../../screens/GroupAdmin'
 import { NavigationHook } from '../../../types/navigation'
+import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
 type GroupAdminRouteProp = GroupAdminProps['route']

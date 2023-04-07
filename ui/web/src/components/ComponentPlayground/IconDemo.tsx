@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Icon } from '../Icon'
+
 import alarmIcon from '@fedi/common/assets/svgs/alarm.svg'
 import bitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
 import cashIcon from '@fedi/common/assets/svgs/cash.svg'
@@ -46,7 +46,9 @@ import switchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import videoIcon from '@fedi/common/assets/svgs/video.svg'
 import walletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import wordListIcon from '@fedi/common/assets/svgs/word-list.svg'
+
 import { styled } from '../../styles'
+import { Icon } from '../Icon'
 
 const icons = [
     { name: 'alarm', icon: alarmIcon },

@@ -7,7 +7,9 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+
 import { Federation, Guardian } from '@fedi/common/types'
+
 import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,

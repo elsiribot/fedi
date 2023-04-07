@@ -3,12 +3,13 @@ import {
     NativeEventEmitter,
     NativeModules,
 } from 'react-native'
-import { FedimintRpc } from '@fedi/common/utils/fedimint'
+
 import {
     Federation,
     Transaction,
     SocialRecoveryEvent,
 } from '@fedi/common/types'
+import { FedimintRpc } from '@fedi/common/utils/fedimint'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 

@@ -5,13 +5,14 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

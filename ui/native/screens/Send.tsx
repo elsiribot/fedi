@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
+
 import { AddressOrInvoice } from '@fedi/common/types'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
