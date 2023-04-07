@@ -1,2 +1,8 @@
+# next.js
 .next/
 out/
+
+# next-pwa
+**/public/workbox*
+**/public/worker*
+**/public/sw*

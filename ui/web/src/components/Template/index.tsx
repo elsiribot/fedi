@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { styled } from '../../styles'
+import { styled, theme } from '../../styles'
 import { FederationSelector } from './FederationSelector'
 import { Navigation } from './Navigation'
 
@@ -28,6 +28,10 @@ const Container = styled('div', {
         height: '-webkit-fill-available',
         maxHeight: '100vh',
         flexDirection: 'column-reverse',
+    },
+
+    '@standalone': {
+        borderTop: `1px solid ${theme.colors.keyboardGrey}`,
     },
 })
 

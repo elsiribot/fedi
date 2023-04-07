@@ -19,4 +19,9 @@ const nextConfig = {
     },
 }
 
-module.exports = nextConfig
+const withPwa = require('next-pwa')({
+    dest: 'public',
+    customWorkerDir: 'src/worker',
+})
+
+module.exports = withPwa(nextConfig)
