@@ -3,8 +3,8 @@ import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import type { SeedWords } from '@fedi/common/types'
 
-import { SeedWords } from '../bridge'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 

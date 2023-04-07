@@ -4,11 +4,10 @@ import { ImageSourcePropType } from 'react-native'
 import { Buffer } from 'buffer'
 
 import { SiteImages } from '../assets/images'
-import { Invoice } from '../bridge'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
 import { RootStackParamList } from './navigation'
-import { MSats } from '@fedi/common/types'
+import { MSats, Invoice } from '@fedi/common/types'
 
 export * from '@fedi/common/types'
 

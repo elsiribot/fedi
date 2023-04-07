@@ -23,6 +23,7 @@ import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import theme from './styles/theme'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { TransactionDirection } from '@fedi/common/types'
 
 // Initialize Sentry SDK
 // Construct a new instrumentation instance. This is needed to communicate between the integration and React
@@ -77,7 +78,7 @@ const App = () => {
             })
 
             // Display notifications only for incoming transactions
-            if (event.transaction.isReceive) {
+            if (event.transaction.direction === TransactionDirection.receive) {
                 await notifee.displayNotification({
                     title: t('phrases.transaction-received'),
                     body: `${amountUtils.formatNumber(

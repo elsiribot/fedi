@@ -3,14 +3,9 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import type { Invoice } from '@fedi/common/types'
 
-import {
-    BridgeEventEmitter,
-    decodeInvoice,
-    Invoice,
-    Transaction,
-    TransactionEvent,
-} from '../bridge'
+import { BridgeEventEmitter, fedimint, TransactionEvent } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import SvgImage from '../components/ui/SvgImage'
@@ -83,7 +78,9 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             setRequestType(BitcoinOrLightning.lightning)
             const getDecodedInvoice = async () => {
                 try {
-                    const decoded = await decodeInvoice(decodedUri.body)
+                    const decoded = await fedimint.decodeInvoice(
+                        decodedUri.body,
+                    )
                     console.log('decoded invoice', decoded)
                     setInvoice(decoded)
                     setRequestAmount(decoded.amount)
@@ -124,7 +121,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                 event.transaction.bitcoin?.address === onchainAddress
             )
                 navigation.navigate('ReceiveSuccess', {
-                    tx: new Transaction(event.transaction),
+                    tx: event.transaction,
                 })
         },
         [invoice, navigation, onchainAddress],

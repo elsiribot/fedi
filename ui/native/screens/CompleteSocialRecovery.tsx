@@ -10,13 +10,10 @@ import {
     View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { Images } from '../assets/images'
+import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
-import {
-    BridgeEventEmitter,
-    GuardianApproval,
-    SocialRecoveryEvent,
-} from '../bridge'
+import { Images } from '../assets/images'
+import { BridgeEventEmitter } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {

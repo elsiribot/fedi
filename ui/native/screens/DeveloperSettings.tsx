@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
+import type { Guardian, LightningGateway } from '@fedi/common/types'
 
-import { Guardian, LightningGateway } from '../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -48,6 +48,8 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianIndex] = useState<number>(0)
+
+    const { authenticatedGuardian, selectedFederation } = state
 
     useEffect(() => {
         const getGatewaysList = async () => {
@@ -213,16 +215,14 @@ const DeveloperSettings: React.FC<Props> = () => {
                             caption
                             style={{
                                 color:
-                                    state.authenticatedGuardian == null
+                                    authenticatedGuardian == null
                                         ? theme.colors.primary
                                         : theme.colors.red,
                             }}>
-                            {state.authenticatedGuardian == null
-                                ? 'None'
-                                : 'Reset'}
+                            {authenticatedGuardian == null ? 'None' : 'Reset'}
                         </Text>
                     }
-                    checked={state.authenticatedGuardian == null}
+                    checked={authenticatedGuardian == null}
                     checkedIcon="circle"
                     uncheckedIcon="circle"
                     checkedColor={theme.colors.lightGrey}
@@ -232,12 +232,12 @@ const DeveloperSettings: React.FC<Props> = () => {
                         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
                 />
-                {state.selectedFederation?.nodes.map((n, i) => {
-                    const guardian = new Guardian({
+                {selectedFederation?.nodes.map((n, i) => {
+                    const guardian: Guardian = {
                         ...n,
                         peerId: i,
                         password: `${i + 1}${i + 1}${i + 1}${i + 1}`,
-                    })
+                    }
                     return (
                         <CheckBox
                             title={<Text caption>{guardian.name}</Text>}
@@ -253,21 +253,19 @@ const DeveloperSettings: React.FC<Props> = () => {
                         />
                     )
                 })}
-                {state.authenticatedGuardian && (
+                {authenticatedGuardian && (
                     <View style={styles(theme).passwordContainer}>
                         <Text small>{'Confirm guardian password'}</Text>
                         <Input
                             onChangeText={input => {
                                 federationsDispatch(
-                                    changeAuthenticatedGuardian(
-                                        new Guardian({
-                                            ...state.authenticatedGuardian,
-                                            password: input,
-                                        }),
-                                    ),
+                                    changeAuthenticatedGuardian({
+                                        ...authenticatedGuardian,
+                                        password: input,
+                                    }),
                                 )
                             }}
-                            value={state.authenticatedGuardian?.password}
+                            value={authenticatedGuardian.password}
                             returnKeyType="done"
                             // containerStyle={styles(theme).textInputOuter}
                             // inputContainerStyle={styles(theme).textInputInner}

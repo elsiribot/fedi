@@ -2,8 +2,8 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
+import type { Federation } from '@fedi/common/types'
 
-import { Federation } from '../../../bridge'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import {
     DrawerNavigationHook,

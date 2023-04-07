@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
-import { listFederations } from '../bridge'
+import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import SvgImage from '../components/ui/SvgImage'
@@ -92,7 +92,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         resetGuardiansState()
 
         // update context and navigate
-        const federations = await listFederations()
+        const federations = await fedimint.listFederations()
         if (federations.length > 0) {
             federationsDispatch(
                 updateFederations(federations[0].name, federations),

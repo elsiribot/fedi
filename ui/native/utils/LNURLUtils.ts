@@ -1,5 +1,5 @@
+import { FedimintRpc } from '@fedi/common/utils/fedimint'
 import { bech32 } from 'bech32'
-import { lnurlSignMessage } from '../bridge'
 
 class LNURLUtils {
     static DECODE_LENGTH_LIMIT: number = 4096
@@ -23,10 +23,17 @@ class LNURLUtils {
         }
         throw new Error('k1 not found')
     }
-    async getToken(lnurl: string, federationId: string): Promise<string> {
+    async getToken(
+        fedimint: FedimintRpc,
+        lnurl: string,
+        federationId: string,
+    ): Promise<string> {
         const url = this.urlFromLnurl(lnurl)
         const k1 = this.getK1(lnurl)
-        const { signature, pubkey } = await lnurlSignMessage(k1, federationId)
+        const { signature, pubkey } = await fedimint.lnurlSignMessage(
+            k1,
+            federationId,
+        )
         const updatedUrl = `${url}&sig=${signature}&key=${pubkey}`
         return fetch(updatedUrl).then(r => r.text())
     }

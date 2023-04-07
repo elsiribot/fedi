@@ -4,8 +4,9 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import type { Invoice } from '@fedi/common/types'
 
-import { decodeInvoice, Invoice } from '../bridge'
+import { fedimint } from '../bridge'
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -48,7 +49,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     useEffect(() => {
         const getDecodedInvoice = async () => {
             try {
-                const decoded = await decodeInvoice(lightningUri.body)
+                const decoded = await fedimint.decodeInvoice(lightningUri.body)
                 console.log('decoded invoice', decoded)
                 setDecodedInvoice(decoded)
             } catch (error) {

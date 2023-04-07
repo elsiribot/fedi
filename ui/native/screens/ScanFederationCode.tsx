@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
-import { joinFederation, listFederations } from '../bridge'
+import { fedimint } from '../bridge'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
@@ -34,8 +34,10 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const handleJoinFederation = async () => {
             try {
-                const federation = await joinFederation(federationToJoin)
-                const federations = await listFederations()
+                const federation = await fedimint.joinFederation(
+                    federationToJoin,
+                )
+                const federations = await fedimint.listFederations()
                 if (federations.length > 0) {
                     dispatch(updateFederations(federation.name, federations))
                     setJoiningComplete(true)

@@ -8,9 +8,9 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
+import { Federation } from '@fedi/common/types'
 
 import { Images } from '../../../assets/images'
-import { Federation } from '../../../bridge'
 import {
     updateSelectedFederationId,
     useFederationsContext,

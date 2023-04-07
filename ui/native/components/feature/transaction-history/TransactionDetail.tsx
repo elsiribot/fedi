@@ -11,12 +11,12 @@ import {
     View,
 } from 'react-native'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-
 import {
     IncomingBitcoinTransactionStatus,
     Transaction,
     TransactionDirection,
-} from '../../../bridge'
+} from '@fedi/common/types'
+
 import { useBridge } from '../../../state/hooks'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -50,6 +50,8 @@ const TransactionDetail = ({
         await updateTransactionNotes(txn.id, notes)
         refreshTransactions()
     }
+
+    const txnFee = txn.bitcoin?.fee || txn.lightning?.fee || null
 
     return (
         <Pressable style={styles(theme).container} onPress={Keyboard.dismiss}>
@@ -108,10 +110,10 @@ const TransactionDetail = ({
                     )}`}</Text>
                 </View>
                 <Divider />
-                {txn.fee !== null && (
+                {txnFee !== null && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
-                        <Text>{`${amountUtils.msatToSat(txn.fee)} ${t(
+                        <Text>{`${amountUtils.msatToSat(txnFee)} ${t(
                             'words.sats',
                         )}`}</Text>
                     </View>
