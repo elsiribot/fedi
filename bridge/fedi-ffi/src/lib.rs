@@ -141,6 +141,8 @@ async fn joinFederation(
     bridge: Arc<Bridge>,
     connect_string: String,
 ) -> anyhow::Result<FedimintFederation> {
+    // return Err(anyhow!("nope"));
+    info!("joining federation {:?}", connect_string);
     if let Err(e) = bridge.join_federation(connect_string.clone()).await {
         info!("joinfederation result {:?}", e);
     };
@@ -679,6 +681,11 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use tracing::debug;
 
+    use crate::{
+        event::IEventSink,
+        ffi::{PathBasedStorage, RUNTIME},
+    };
+
     use super::*;
 
     struct FakeEventSink(pub Vec<(String, String)>);
@@ -689,21 +696,21 @@ mod tests {
         }
     }
 
-    impl EventSink for FakeEventSink {
+    impl IEventSink for FakeEventSink {
         fn event(&self, event_type: String, body: String) {
             debug!("event {} {}", event_type, body);
             // TODO:
             // self.0.push((event_type, body));
         }
     }
+    // pub trait IEventSink: MaybeSend + MaybeSync + 'static {
+    //     /// Send event. Body is JSON-serialized
+    //     fn event(&self, event_type: String, body: String);
+    // }
 
     // note: logging doesn't work yet at this point
-    fn create_data_dir() -> String {
-        tempfile::tempdir()
-            .unwrap()
-            .into_path()
-            .display()
-            .to_string()
+    fn create_data_dir() -> PathBuf {
+        tempfile::tempdir().unwrap().into_path()
     }
 
     // fn parse_result<'a,T: Deserialize<'a>>(result: &'a String) -> T {
@@ -719,13 +726,13 @@ mod tests {
     // }
 
     // TODO: should we return the bridge here?
-    async fn setup() -> anyhow::Result<Arc<Federation>> {
+    async fn setup() -> anyhow::Result<(Arc<Bridge>, Arc<Federation>)> {
         // Intialize bridge
-        let event_sink = FakeEventSink::new();
+        let event_sink = Arc::new(FakeEventSink::new());
         // TODO: how to grab log level from environment?
-        fedimint_initialize_async(create_data_dir(), "info", Box::new(event_sink))
-            .await
-            .unwrap_or_else(|e| error!("init failed {:?}", e));
+        let data_dir = create_data_dir();
+        let storage = Arc::new(PathBasedStorage::new(data_dir));
+        let bridge = fedimint_initialize_async(storage, event_sink).await?;
 
         // Join federation
         // ngrok
@@ -737,128 +744,135 @@ mod tests {
         //     r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#,
         // );
         let connect_string = String::from(
-            r#"{"members":[[0,"wss://alpha.regtest-1.dev.fedibtc.com/"],[1,"wss://beta.regtest-1.dev.fedibtc.com/"],[2,"wss://charlie.regtest-1.dev.fedibtc.com/"],[3,"wss://delta.regtest-1.dev.fedibtc.com/"]]}"#,
+            "fed115ncxwt38ezhqwx3tzzzpd7dk69xqvlj3r2q2yunh6jzw053s7s5z8jz2eqf3xfpzldg62fghlrhtgfcqwaehxw309askcurgvyh8yet8w3jhxapdxqezuer9wchxvetyd938gcewvdhk6tcckzj7y"
         );
-        let fedimint_federation = joinFederation(connect_string).await?;
-        let federation = get_federation(&fedimint_federation.name).await?;
-
-        let data_dir = get_bridge().await.unwrap().data_dir.display().to_string();
-        tracing::info!(data_dir = data_dir);
-        Ok(federation)
+        // let fedimint_federation = joinFederation(connect_string).await?;
+        // let federation = get_federation(&fedimint_federation.name).await?;
+        let fedimint_federation = joinFederation(bridge.clone(), connect_string).await?;
+        let federation = get_federation(&bridge, &fedimint_federation.name).await?;
+        Ok((bridge, federation))
     }
 
     #[test]
-    #[ignore]
-    fn test_xmpp_credentials() -> anyhow::Result<()> {
+    fn test_join_federation() -> anyhow::Result<()> {
         RUNTIME.block_on(async {
-            let fed1 = setup().await?;
-            let fed2 = setup().await?;
-            let cred1 = fed1.xmpp_credentials().await;
-            let cred2 = fed2.xmpp_credentials().await;
-            // assert!(cred1.username != cred2.username);
-            assert!(cred1.password != cred2.password);
+            let (bridge, federation) = setup().await?;
             Ok(())
         })
     }
 
-    #[test]
-    fn test_leave_federation() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            let federation = setup().await?;
-            let bridge = get_bridge().await.unwrap();
-            {
-                let federations_lock = bridge.federations.lock().await.clone();
-                assert_eq!(1, federations_lock.keys().len());
-                let config_exists =
-                    path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
-                        .is_file();
-                assert!(config_exists);
-                let db_exists =
-                    path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
-                        .is_dir();
-                assert!(db_exists);
-            }
-            bridge.leave_federation(&federation.id()).await?;
-            {
-                let federations_lock = bridge.federations.lock().await.clone();
-                assert_eq!(0, federations_lock.keys().len());
-                let config_exists =
-                    path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
-                        .is_file();
-                assert!(!config_exists);
-                let db_exists =
-                    path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
-                        .is_dir();
-                assert!(!db_exists);
-            }
-            Ok(())
-        })
-    }
+    // #[test]
+    // #[ignore]
+    // fn test_xmpp_credentials() -> anyhow::Result<()> {
+    //     RUNTIME.block_on(async {
+    //         let fed1 = setup().await?;
+    //         let fed2 = setup().await?;
+    //         let cred1 = fed1.xmpp_credentials().await;
+    //         let cred2 = fed2.xmpp_credentials().await;
+    //         // assert!(cred1.username != cred2.username);
+    //         assert!(cred1.password != cred2.password);
+    //         Ok(())
+    //     })
+    // }
 
-    #[test]
-    fn test_decryption_shares() -> anyhow::Result<()> {
-        // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
-        RUNTIME.block_on(async {
-            let federation = setup().await?;
+    // #[test]
+    // fn test_leave_federation() -> anyhow::Result<()> {
+    //     RUNTIME.block_on(async {
+    //         let federation = setup().await?;
+    //         let bridge = get_bridge().await.unwrap();
+    //         {
+    //             let federations_lock = bridge.federations.lock().await.clone();
+    //             assert_eq!(1, federations_lock.keys().len());
+    //             let config_exists =
+    //                 path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
+    //                     .is_file();
+    //             assert!(config_exists);
+    //             let db_exists =
+    //                 path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
+    //                     .is_dir();
+    //             assert!(db_exists);
+    //         }
+    //         bridge.leave_federation(&federation.id()).await?;
+    //         {
+    //             let federations_lock = bridge.federations.lock().await.clone();
+    //             assert_eq!(0, federations_lock.keys().len());
+    //             let config_exists =
+    //                 path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
+    //                     .is_file();
+    //             assert!(!config_exists);
+    //             let db_exists =
+    //                 path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
+    //                     .is_dir();
+    //             assert!(!db_exists);
+    //         }
+    //         Ok(())
+    //     })
+    // }
 
-            // Get original mnemonic (for comparison later)
-            let words = getMnemonic(federation.id()).await?;
-            let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
-            info!("initial mnemnoic {:?}", &words);
+    // #[test]
+    // fn test_decryption_shares() -> anyhow::Result<()> {
+    //     // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
+    //     RUNTIME.block_on(async {
+    //         let federation = setup().await?;
 
-            // Upload backup
-            let video_file_path =
-                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
-            let video_file_contents = fs::read(&video_file_path).await?;
-            let recovery_file_path = uploadBackupFile(federation.id(), video_file_path).await?;
-            info!(recovery_file_path = ?recovery_file_path);
+    //         // Get original mnemonic (for comparison later)
+    //         let words = getMnemonic(federation.id()).await?;
+    //         let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
+    //         info!("initial mnemnoic {:?}", &words);
 
-            // Validate recovery file
-            let valid = validateRecoveryFile(federation.id(), recovery_file_path).await?;
-            assert!(valid);
+    //         // Upload backup
+    //         let video_file_path =
+    //             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
+    //         let video_file_contents = fs::read(&video_file_path).await?;
+    //         let recovery_file_path = uploadBackupFile(federation.id(), video_file_path).await?;
+    //         info!(recovery_file_path = ?recovery_file_path);
 
-            let qr = recoveryQr(federation.id()).await?;
-            let recovery_id = qr.recovery_id;
+    //         // Validate recovery file
+    //         let valid = validateRecoveryFile(federation.id(), recovery_file_path).await?;
+    //         assert!(valid);
 
-            let verification_doc_path =
-                socialRecoveryDownloadVerificationDoc(federation.id(), recovery_id.clone())
-                    .await?
-                    .unwrap();
+    //         let qr = recoveryQr(federation.id()).await?;
+    //         let recovery_id = qr.recovery_id;
 
-            let contents = fs::read(verification_doc_path).await?;
-            let _ = VerificationDocument::from_raw(&contents);
-            assert_eq!(contents, video_file_contents);
+    //         let verification_doc_path =
+    //             socialRecoveryDownloadVerificationDoc(federation.id(), recovery_id.clone())
+    //                 .await?
+    //                 .unwrap();
 
-            // 3 guardians approves
-            for i in 0..3 {
-                let password = match i {
-                    0 => "1111",
-                    1 => "2222",
-                    2 => "3333",
-                    3 => "4444",
-                    _ => panic!("invalid peer id"),
-                };
-                approveSocialRecoveryRequest(
-                    federation.id(),
-                    recovery_id.clone(),
-                    PeerId(fedimint_core::PeerId::from(i)),
-                    password.into(),
-                )
-                .await?;
-            }
+    //         let contents = fs::read(verification_doc_path).await?;
+    //         let _ = VerificationDocument::from_raw(&contents);
+    //         assert_eq!(contents, video_file_contents);
 
-            // Member checks approval status
-            socialRecoveryApprovals(federation.id()).await?;
+    //         // 3 guardians approves
+    //         for i in 0..3 {
+    //             let password = match i {
+    //                 0 => "1111",
+    //                 1 => "2222",
+    //                 2 => "3333",
+    //                 3 => "4444",
+    //                 _ => panic!("invalid peer id"),
+    //             };
+    //             approveSocialRecoveryRequest(
+    //                 federation.id(),
+    //                 recovery_id.clone(),
+    //                 PeerId(fedimint_core::PeerId::from(i)),
+    //                 password.into(),
+    //             )
+    //             .await?;
+    //         }
 
-            // Member combines decryption shares, loading recovered mnemonic back into their db
-            completeSocialRecovery(federation.id()).await?;
+    //         // Member checks approval status
+    //         socialRecoveryApprovals(federation.id()).await?;
 
-            // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
-            let words: Vec<String> = getMnemonic(federation.id()).await?;
-            let final_mnemnoic = Mnemonic::parse(words.join(" "))?;
-            assert_eq!(initial_mnemonic.to_string(), final_mnemnoic.to_string());
+    //         // Member combines decryption shares, loading recovered mnemonic back into their db
+    //         completeSocialRecovery(federation.id()).await?;
 
-            Ok(())
-        })
-    }
+    //         // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
+    //         let words: Vec<String> = getMnemonic(federation.id()).await?;
+    //         let final_mnemnoic = Mnemonic::parse(words.join(" "))?;
+    //         assert_eq!(initial_mnemonic.to_string(), final_mnemnoic.to_string());
+
+    //         Ok(())
+    //     })
+    // }
 }

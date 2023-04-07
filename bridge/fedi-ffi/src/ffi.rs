@@ -17,7 +17,7 @@ use tracing::{error, info};
 use std::path::{Path, PathBuf};
 
 lazy_static! {
-    static ref RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+    pub static ref RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("failed to build runtime");
@@ -29,6 +29,12 @@ uniffi_macros::include_scaffolding!("fedi");
 #[derive(Clone)]
 pub struct PathBasedStorage {
     data_dir: PathBuf,
+}
+
+impl PathBasedStorage {
+    pub fn new(data_dir: PathBuf) -> Self {
+        Self { data_dir }
+    }
 }
 
 #[async_trait]
