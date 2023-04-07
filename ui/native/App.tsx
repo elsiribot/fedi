@@ -30,6 +30,7 @@ import { TransactionDirection } from '@fedi/common/types'
 const routingInstrumentation = new Sentry.ReactNavigationInstrumentation()
 // TODO: Remove Sentry or configure opt-in for production deployment
 Sentry.init({
+    environment: __DEV__ ? 'development' : 'production',
     dsn: 'https://f59b28d775f34a0cb2016dc898d61657@o4504872692940800.ingest.sentry.io/4504872696348672',
     tracesSampleRate: 1.0,
     integrations: [
