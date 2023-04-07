@@ -1,0 +1,62 @@
+import { createStitches } from '@stitches/react'
+import { theme as fediTheme } from '@fedi/common/constants/theme'
+
+export const {
+    styled,
+    css,
+    globalCss,
+    keyframes,
+    getCssText,
+    theme,
+    createTheme,
+    config,
+} = createStitches({
+    theme: {
+        colors: {
+            ...fediTheme.colors,
+
+            // Alpha'd versions of colors. Unfortunately no dynamic way to do this.
+            primary05: alphaHex(fediTheme.colors.primary, 5),
+            primary10: alphaHex(fediTheme.colors.primary, 10),
+            primary15: alphaHex(fediTheme.colors.primary, 15),
+            primary20: alphaHex(fediTheme.colors.primary, 20),
+            primary80: alphaHex(fediTheme.colors.primary, 80),
+            primary90: alphaHex(fediTheme.colors.primary, 90),
+
+            white10: alphaHex(fediTheme.colors.white, 10),
+            white20: alphaHex(fediTheme.colors.white, 20),
+            white30: alphaHex(fediTheme.colors.white, 30),
+            white40: alphaHex(fediTheme.colors.white, 40),
+        },
+        fonts: {
+            body: `'Albert Sans', sans-serif`,
+            mono: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
+        },
+        sizes: intMapToPx(fediTheme.sizes),
+        space: intMapToPx(fediTheme.spacing),
+        fontSizes: intMapToPx(fediTheme.fontSizes),
+    },
+    media: {},
+    utils: {
+        holoGradient: (value: keyof (typeof fediTheme)['holoGradient']) => ({
+            backgroundImage: `radial-gradient(89.9% 222.34% at 7.36% 24.19%, ${fediTheme.holoGradient[
+                value
+            ].join(', ')})`,
+        }),
+    },
+})
+
+function intMapToPx<T extends string>(
+    map: Record<T, number>,
+): Record<T, string> {
+    return Object.entries(map).reduce((prev, [key, value]) => {
+        prev[key as T] = `${value}px`
+        return prev
+    }, {} as Record<T, string>)
+}
+
+function alphaHex(hex: string, alpha: number) {
+    return `${hex}${Math.floor(255 * (alpha / 100))
+        .toString(16)
+        .padStart(2, '0')}`
+}
