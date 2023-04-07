@@ -53,6 +53,7 @@ android/decoded-service-account-credentials.json
 
 # Bundle artifact
 *.jsbundle
+*.jsbundle.map
 
 # Ruby / CocoaPods
 /ios/Pods/
