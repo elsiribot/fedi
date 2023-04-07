@@ -1,5 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 import { styled, theme } from '../styles'
 import { Icon } from './Icon'
 import { Text } from './Text'
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export const WalletBlock: React.FC<Props> = ({ currency }) => {
+    const { t } = useTranslation()
+
     const currencyInfo = CURRENCIES[currency]
     return (
         <Container
@@ -28,7 +31,7 @@ export const WalletBlock: React.FC<Props> = ({ currency }) => {
                     <Icon size="md" icon={currencyInfo.icon} />
                 </IconWrapper>
                 <Name>
-                    <Text weight="bold">{currencyInfo.name}</Text>
+                    <Text weight="bold">{t(currencyInfo.name)}</Text>
                 </Name>
                 <Link href="/transactions/bitcoin">
                     <Icon icon={ListIcon} />
@@ -104,9 +107,9 @@ const Buttons = styled('div', {
 
 const CURRENCIES = {
     bitcoin: {
-        name: 'Bitcoin',
+        name: 'words.bitcoin',
         icon: BitcoinIcon,
         color: theme.colors.orange,
         textColor: theme.colors.white,
     },
-}
+} as const

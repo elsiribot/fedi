@@ -1,5 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { useTranslation } from 'react-i18next'
 import { styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -7,28 +9,28 @@ import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import HomeIcon from '@fedi/common/assets/svgs/home.svg'
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import CogIcon from '@fedi/common/assets/svgs/cog.svg'
-import { useRouter } from 'next/router'
 
 const NAVIGATION = [
     {
-        name: 'Home',
+        name: 'words.home',
         path: '/',
         icon: HomeIcon,
     },
     {
-        name: 'Chat',
+        name: 'words.chat',
         path: '/chat',
         icon: ChatIcon,
     },
     {
-        name: 'Admin',
+        name: 'words.admin',
         path: '/admin',
         icon: CogIcon,
     },
-]
+] as const
 
 export const Navigation: React.FC = () => {
     const router = useRouter()
+    const { t } = useTranslation()
 
     return (
         <Container>
@@ -45,7 +47,7 @@ export const Navigation: React.FC = () => {
                         <Link href={nav.path}>
                             <Icon icon={nav.icon} />
                             <Text variant="body" weight="medium">
-                                {nav.name}
+                                {t(nav.name)}
                             </Text>
                         </Link>
                     </NavItem>

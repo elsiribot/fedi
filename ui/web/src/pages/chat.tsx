@@ -1,13 +1,16 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { ContentBlock } from '../components/ContentBlock'
 import { Text } from '../components/Text'
 import { styled, theme } from '../styles'
 
 function ChatPage() {
+    const { t } = useTranslation()
+
     return (
         <ContentBlock>
             <Title>
-                <Text variant="h1">Chat</Text>
+                <Text variant="h1">{t('words.chat')}</Text>
             </Title>
             <Placeholder>
                 <Text variant="h2" weight="normal">

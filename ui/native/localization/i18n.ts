@@ -1,20 +1,10 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import * as RNLocalize from 'react-native-localize'
+import { resources } from '@fedi/common/localization'
 
-import commonEN from './en/common.json'
-import commonES from './es/common.json'
-
-export const resources = {
-    en: {
-        translation: commonEN,
-    },
-    es: {
-        translation: commonES,
-    },
-}
-
-const bestLanguage = RNLocalize.findBestAvailableLanguage(['en', 'es'])
+const supportedLngs = Object.keys(resources)
+const bestLanguage = RNLocalize.findBestAvailableLanguage(supportedLngs)
 
 i18n.use(initReactI18next) // passes i18n down to react-i18next
     .init({
@@ -22,7 +12,7 @@ i18n.use(initReactI18next) // passes i18n down to react-i18next
         resources,
         lng: bestLanguage?.languageTag,
         fallbackLng: 'en',
-        supportedLngs: ['en', 'es'],
+        supportedLngs,
         returnNull: false,
 
         interpolation: {

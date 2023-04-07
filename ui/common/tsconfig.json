@@ -8,11 +8,13 @@
     "isolatedModules": true,
     "incremental": true,
     "composite": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "resolveJsonModule": true
   },
   "include": [
     "./**/*.tsx",
     "./**/*.ts",
+    "./**/*.json"
   ],
   "exclude": ["node_modules"]
 }
