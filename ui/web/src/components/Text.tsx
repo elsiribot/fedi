@@ -1,18 +1,21 @@
 import React from 'react'
-import { styled } from '../styles'
+import { styled, theme } from '../styles'
 
 export interface TextProps {
     variant?: 'display' | 'h1' | 'h2' | 'body' | 'caption' | 'small' | 'tiny'
-    weight?: 'normal' | 'medium' | 'bold'
+    weight?: 'normal' | 'medium' | 'bold' | 'bolder'
     children: React.ReactNode
     className?: string
 }
 
 export const Text: React.FC<TextProps> = ({
     variant = 'body',
-    weight = 'normal',
+    weight,
     children,
 }) => {
+    if (!weight) {
+        weight = ['h1', 'h2', 'display'].includes(variant) ? 'bolder' : 'normal'
+    }
     return (
         <TextElement variant={variant} weight={weight}>
             {children}
@@ -29,9 +32,10 @@ const TextElement = styled('div', {
 
     variants: {
         weight: {
-            normal: { fontWeight: 400 },
-            medium: { fontWeight: 500 },
-            bold: { fontWeight: 600 },
+            normal: { fontWeight: theme.fontWeights.normal },
+            medium: { fontWeight: theme.fontWeights.medium },
+            bold: { fontWeight: theme.fontWeights.bold },
+            bolder: { fontWeight: theme.fontWeights.bolder },
         },
         variant: {
             display: {
@@ -41,12 +45,10 @@ const TextElement = styled('div', {
             },
             h1: {
                 fontSize: 32,
-                fontWeight: 700,
                 lineHeight: 1.5,
             },
             h2: {
                 fontSize: 24,
-                fontWeight: 700,
                 lineHeight: 1.5,
             },
             body: { fontSize: 16 },

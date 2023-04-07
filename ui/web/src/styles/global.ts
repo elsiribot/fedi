@@ -50,7 +50,26 @@ export const globalStyles = globalCss({
     'p, h1, h2, h3, h4, h5, h6': {
         overflowWrap: 'break-word',
     },
+    button: {
+        border: 'none',
+        margin: 0,
+        padding: 0,
+        width: 'auto',
+        background: 'none',
+        color: 'inherit',
+        font: 'inherit',
+        lineHeight: 'normal',
+        '-webkit-font-smoothing': 'inherit',
+        '-moz-osx-font-smoothing': 'inherit',
+        '-webkit-appearance': 'none',
+        cursor: 'pointer',
+    },
+    a: {
+        textDecoration: 'none',
+        color: 'inherit',
+    },
     '#__next': {
+        height: '100%',
         isolation: 'isolate',
     },
 })

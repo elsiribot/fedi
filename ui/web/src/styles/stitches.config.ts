@@ -35,8 +35,15 @@ export const {
         sizes: intMapToPx(fediTheme.sizes),
         space: intMapToPx(fediTheme.spacing),
         fontSizes: intMapToPx(fediTheme.fontSizes),
+        fontWeights: fediTheme.fontWeights,
     },
-    media: {},
+    media: {
+        xs: '(max-width: 380px)',
+        sm: '(max-width: 600px)',
+        md: '(max-width: 980px)',
+        lg: '(max-width: 1280px)',
+        xl: '(max-width: 1440px)',
+    },
     utils: {
         holoGradient: (value: keyof (typeof fediTheme)['holoGradient']) => ({
             backgroundImage: `radial-gradient(89.9% 222.34% at 7.36% 24.19%, ${fediTheme.holoGradient[
