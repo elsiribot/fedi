@@ -12,7 +12,7 @@ use fedimint_client_fedi::{
     module_gens, modules::ln::contracts::IdentifiableContract, Client, FediClient, RecoveryFile,
     SocialRecovery, UserClientConfig, UserSeedPhrase,
 };
-use fedimint_core::config::META_FEDERATION_NAME_KEY;
+use fedimint_core::config::{FederationId, META_FEDERATION_NAME_KEY};
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -51,14 +51,12 @@ use mint_client::{
     module_decode_stubs,
     modules::{ln::contracts::ContractId, wallet::txoproof::TxOutProof},
     utils::network_to_currency,
-    // UserClient, UserClientConfig, UserSeedPhrase,
 };
 
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
-type FederationId = String;
 pub type FediUserClient = FediClient<UserClientConfig>;
 
 const GAP_LIMIT: usize = 100;
@@ -84,10 +82,10 @@ async fn load_federations(
         .await
         .collect::<Vec<_>>()
         .await;
-    let iter = joined.iter().map(|(_, federation_name)| async {
+    let iter = joined.iter().map(|(_, federation_id)| async {
         let subgroup = task_group.make_subgroup().await;
         Federation::load(
-            storage.federation_db(federation_name).await?,
+            storage.federation_db(federation_id).await?,
             event_sink.clone(),
             subgroup,
         )
@@ -113,7 +111,7 @@ impl Bridge {
         // start pollers
         for mut federation in federations_vec.into_iter() {
             federation.start_pollers().await;
-            federations_map.insert(federation.name(), Arc::new(federation));
+            federations_map.insert(federation.id(), Arc::new(federation));
         }
 
         let bridge = Self {
@@ -143,12 +141,7 @@ impl Bridge {
             .download_client_config(&connect_cfg.id, module_gens().to_common())
             .await?;
         let federations = self.federations.lock().await;
-        let federation = federations
-            .get(
-                cfg.federation_name()
-                    .expect("federation name should be set"), // FIXME: unwrap
-            )
-            .map(|fed| fed.clone());
+        let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
         Ok(federation)
     }
 
@@ -169,31 +162,31 @@ impl Bridge {
             self.task_group.make_subgroup().await,
         )
         .await?;
-        let federation_name = federation.name();
+        let federation_id = federation.id();
         {
             let global_db = self.storage.global_db().await?;
             let mut dbtx = global_db.begin_transaction().await;
-            dbtx.insert_entry(&JoinedFederationsKey, &federation_name)
+            dbtx.insert_entry(&JoinedFederationsKey, &federation_id)
                 .await;
             dbtx.commit_tx().await;
             info!("saved joined")
         }
         let mut federations = self.federations.lock().await;
-        if !federations.contains_key(&federation_name) {
+        if !federations.contains_key(&federation_id) {
             federation.start_pollers().await;
-            federations.insert(federation_name, Arc::new(federation.clone()));
+            federations.insert(federation_id, Arc::new(federation.clone()));
         };
         Ok(Arc::new(federation))
     }
 
-    pub async fn get_federation(&self, federation_id: &str) -> Option<Arc<Federation>> {
+    pub async fn get_federation(&self, federation_id: &FederationId) -> Option<Arc<Federation>> {
         let lock = self.federations.lock().await;
         lock.get(federation_id).map(|federation| federation.clone())
     }
 
     pub async fn recover_from_mnemonic(
         &self,
-        federation_id: &str,
+        federation_id: &FederationId,
         mnemonic: &Mnemonic,
     ) -> Result<Option<String>> {
         self.stop_pollers().await?;
@@ -232,7 +225,7 @@ impl Bridge {
             // start pollers
             fed.start_pollers().await;
 
-            feds.insert(federation_id.to_string(), Arc::new(fed.clone()));
+            feds.insert(federation_id.clone(), Arc::new(fed.clone()));
             fed
         };
 
@@ -245,7 +238,7 @@ impl Bridge {
 
     /// Deletes federation client database and config
     /// Returns error if use has a balance
-    pub async fn leave_federation(&self, federation_id: &str) -> anyhow::Result<()> {
+    pub async fn leave_federation(&self, federation_id: &FederationId) -> anyhow::Result<()> {
         info!("called leave");
         // Error if we don't recognize federation
         let federation = self
@@ -352,12 +345,7 @@ impl Federation {
             client_config,
         };
 
-        let federation_id: String = fedi_config
-            .client_config
-            .0
-            .federation_name()
-            .expect("federation name should be set")
-            .clone();
+        let federation_id: FederationId = fedi_config.client_config.0.federation_id.clone();
 
         let db = storage.federation_db(&federation_id).await?;
         // Save config to db
@@ -390,9 +378,8 @@ impl Federation {
     }
 
     // FIXME: move this to actually using config.federation_id
-    pub fn id(&self) -> String {
-        // FIXME: to_string
-        self.user_client().config().0.federation_id.to_string()
+    pub fn id(&self) -> FederationId {
+        self.user_client().config().0.federation_id
     }
 
     pub fn network(&self) -> bitcoin::Network {
@@ -856,6 +843,7 @@ impl Federation {
     }
 
     /// Update "notes" on existing transaction record in the DB
+    /// FIXME: improve this "id" arg
     pub async fn update_transaction_notes(&self, id: String, notes: String) -> Result<()> {
         match self.get_transaction(id).await {
             Some(mut tx) => {

@@ -90,7 +90,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         style={styles(theme).drawerItem}
                         focused={f.name === selectedFederation?.name}
                         onPress={() => {
-                            dispatch(updateSelectedFederationId(f.name))
+                            dispatch(updateSelectedFederationId(f.id))
                         }}
                     />
                 ))}

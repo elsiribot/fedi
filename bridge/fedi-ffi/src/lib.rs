@@ -30,8 +30,8 @@ use error::ErrorCode;
 use event::{EventSink, SocialRecoveryEvent};
 use futures::Future;
 use storage::Storage;
-use types::RecoveryId;
 use types::{Amount, PeerId, PublicKey};
+use types::{FederationId, RecoveryId};
 
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
@@ -71,9 +71,13 @@ fn rpc_error(error: &anyhow::Error) -> String {
     return json!({ "error": error.to_string(), "code": code }).to_string();
 }
 
-async fn get_federation(bridge: &Bridge, federation_id: &str) -> anyhow::Result<Arc<Federation>> {
+// FIXME: this should be a method on Bridge???
+async fn get_federation(
+    bridge: &Bridge,
+    federation_id: &FederationId,
+) -> anyhow::Result<Arc<Federation>> {
     bridge
-        .get_federation(federation_id)
+        .get_federation(&federation_id.0)
         .await
         .context(ErrorCode::InitializationFailed)
 }
@@ -114,7 +118,7 @@ macro_rules! rpc_method {
 #[macro_rules_derive(rpc_method!)]
 async fn listTransactions(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<Vec<Transaction>> {
     let federation = get_federation(&bridge, &federation_id).await?;
     // FIXME: consider mapping from millisat to sat
@@ -125,7 +129,7 @@ async fn listTransactions(
 #[macro_rules_derive(rpc_method!)]
 async fn updateTransactionNotes(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     transaction_id: String,
     notes: String,
 ) -> anyhow::Result<()> {
@@ -169,7 +173,7 @@ async fn listFederations(bridge: Arc<Bridge>) -> anyhow::Result<Vec<FedimintFede
 #[macro_rules_derive(rpc_method!)]
 async fn generateInvoice(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     amount: Amount,
     description: String,
 ) -> anyhow::Result<String> {
@@ -184,7 +188,7 @@ async fn generateInvoice(
 #[macro_rules_derive(rpc_method!)]
 async fn payInvoice(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     invoice: String,
 ) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -203,7 +207,7 @@ pub enum AddressOrInvoice {
 #[macro_rules_derive(rpc_method!)]
 async fn addressOrInvoice(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     input: String,
 ) -> anyhow::Result<AddressOrInvoice> {
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -221,7 +225,10 @@ async fn addressOrInvoice(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn generateAddress(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<String> {
+async fn generateAddress(
+    bridge: Arc<Bridge>,
+    federation_id: FederationId,
+) -> anyhow::Result<String> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let address = federation.generate_address().await;
     Ok(address.to_string())
@@ -230,7 +237,7 @@ async fn generateAddress(bridge: Arc<Bridge>, federation_id: String) -> anyhow::
 #[macro_rules_derive(rpc_method!)]
 async fn generateEcash(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     amount: Amount,
 ) -> anyhow::Result<String> {
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -242,7 +249,7 @@ async fn generateEcash(
 #[macro_rules_derive(rpc_method!)]
 async fn receiveEcash(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     // TODO : TieredMulti<SpendableNote>
     ecash: String,
 ) -> anyhow::Result<Amount> {
@@ -263,7 +270,7 @@ pub struct ValidateEcashResponse {
 #[macro_rules_derive(rpc_method!)]
 async fn validateEcash(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     // TODO: TieredMulti<SpendableNote>
     ecash: String,
 ) -> anyhow::Result<ValidateEcashResponse> {
@@ -287,7 +294,7 @@ async fn decodeInvoice(_bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<
 #[macro_rules_derive(rpc_method!)]
 async fn payAddress(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     address: String,
     // TODO: parse this as bitcoin::Amount
     sats: u64,
@@ -339,7 +346,7 @@ async fn lnurlSignMessage(
     bridge: Arc<Bridge>,
     // hex-encoded message
     message: String,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<LnurlSignedMessage> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let message = Message::from_slice(&hex::decode(message)?)?;
@@ -350,7 +357,7 @@ async fn lnurlSignMessage(
 #[macro_rules_derive(rpc_method!)]
 async fn listGateways(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<Vec<BridgeLightningGateway>> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let gateways = federation.client.fetch_registered_gateways().await?;
@@ -373,7 +380,7 @@ async fn listGateways(
 #[macro_rules_derive(rpc_method!)]
 async fn switchGateway(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     node_pubkey: PublicKey,
 ) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -385,7 +392,10 @@ async fn switchGateway(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getMnemonic(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<Vec<String>> {
+async fn getMnemonic(
+    bridge: Arc<Bridge>,
+    federation_id: FederationId,
+) -> anyhow::Result<Vec<String>> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let mnemonic = federation.get_mnemonic().await;
     Ok(mnemonic.serialize())
@@ -394,21 +404,21 @@ async fn getMnemonic(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Resu
 #[macro_rules_derive(rpc_method!)]
 async fn recoverFromMnemonic(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     mnemonic: Vec<String>,
 ) -> anyhow::Result<Option<String>> {
     let mnemonic_string = mnemonic.join(" ");
     // FIXME: should this happen inside bridge module?
     let mnemonic = Mnemonic::parse(mnemonic_string).context(ErrorCode::InvalidMnemonic)?;
     let username = bridge
-        .recover_from_mnemonic(&federation_id, &mnemonic)
+        .recover_from_mnemonic(&federation_id.0, &mnemonic)
         .await?;
     Ok(username)
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn leaveFederation(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<()> {
-    bridge.leave_federation(&federation_id).await?;
+async fn leaveFederation(bridge: Arc<Bridge>, federation_id: FederationId) -> anyhow::Result<()> {
+    bridge.leave_federation(&federation_id.0).await?;
     Ok(())
 }
 
@@ -419,7 +429,7 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 #[macro_rules_derive(rpc_method!)]
 async fn uploadBackupFile(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     video_file_path: PathBuf,
 ) -> anyhow::Result<PathBuf> {
     let storage = bridge.storage.clone();
@@ -444,7 +454,7 @@ async fn locateRecoveryFile(_bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
 #[macro_rules_derive(rpc_method!)]
 async fn validateRecoveryFile(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     path: PathBuf,
 ) -> anyhow::Result<bool> {
     let storage = bridge.storage.clone();
@@ -462,7 +472,7 @@ async fn validateRecoveryFile(
 #[macro_rules_derive(rpc_method!)]
 async fn recoveryQr(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryQr> {
     // Return QR code contents
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -480,7 +490,7 @@ async fn recoveryQr(
 #[macro_rules_derive(rpc_method!)]
 async fn socialRecoveryApprovals(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryEvent> {
     // Return QR code contents
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -496,7 +506,7 @@ async fn socialRecoveryApprovals(
 #[macro_rules_derive(rpc_method!)]
 async fn socialRecoveryDownloadVerificationDoc(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     recovery_id: RecoveryId,
 ) -> anyhow::Result<Option<PathBuf>> {
     let storage = bridge.storage.clone();
@@ -521,7 +531,7 @@ async fn socialRecoveryDownloadVerificationDoc(
 #[macro_rules_derive(rpc_method!)]
 async fn approveSocialRecoveryRequest(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     recovery_id: RecoveryId,
     peer_id: PeerId,
     password: String,
@@ -536,13 +546,13 @@ async fn approveSocialRecoveryRequest(
 #[macro_rules_derive(rpc_method!)]
 async fn completeSocialRecovery(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<Option<String>> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let mnemonic = federation.social_recovery_combine_shares().await?;
     tracing::info!("final {:?}", mnemonic.to_string());
     let username = bridge
-        .recover_from_mnemonic(&federation_id, &mnemonic)
+        .recover_from_mnemonic(&federation_id.0, &mnemonic)
         .await?;
     federation.delete_social_recovery_state_and_id().await;
     federation.send_federation_event().await;
@@ -552,7 +562,7 @@ async fn completeSocialRecovery(
 #[macro_rules_derive(rpc_method!)]
 async fn xmppCredentials(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
 ) -> anyhow::Result<XmppCredentials> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let credentials = federation.xmpp_credentials().await;
@@ -562,7 +572,7 @@ async fn xmppCredentials(
 #[macro_rules_derive(rpc_method!)]
 async fn backupXmppUsername(
     bridge: Arc<Bridge>,
-    federation_id: String,
+    federation_id: FederationId,
     username: String,
 ) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
@@ -727,36 +737,24 @@ mod tests {
 
     // TODO: should we return the bridge here?
     async fn setup() -> anyhow::Result<(Arc<Bridge>, Arc<Federation>)> {
-        // Intialize bridge
         let event_sink = Arc::new(FakeEventSink::new());
-        // TODO: how to grab log level from environment?
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir));
         let bridge = fedimint_initialize_async(storage, event_sink).await?;
-
-        // Join federation
-        // ngrok
-        // let connect_string = String::from(
-        //     r#"{"members":[[2,"wss://141bc9ab1e05.ngrok.io/"],[0,"wss://4c0922043ed1.ngrok.io/"],[1,"wss://6fc418b1717c.ngrok.io/"],[3,"wss://d8589c2dac84.ngrok.io/"]]}"#,
-        // );
-        // local
-        // let connect_string = String::from(
-        //     r#"{"members":[[0,"ws://localhost:18174/"],[1,"ws://localhost:18184/"],[2,"ws://localhost:18194/"],[3,"ws://localhost:18204/"]]}"#,
-        // );
         let connect_string = String::from(
             "fed115ncxwt38ezhqwx3tzzzpd7dk69xqvlj3r2q2yunh6jzw053s7s5z8jz2eqf3xfpzldg62fghlrhtgfcqwaehxw309askcurgvyh8yet8w3jhxapdxqezuer9wchxvetyd938gcewvdhk6tcckzj7y"
         );
-        // let fedimint_federation = joinFederation(connect_string).await?;
-        // let federation = get_federation(&fedimint_federation.name).await?;
         let fedimint_federation = joinFederation(bridge.clone(), connect_string).await?;
-        let federation = get_federation(&bridge, &fedimint_federation.name).await?;
+        let federation = get_federation(&bridge, &fedimint_federation.id).await?;
         Ok((bridge, federation))
     }
 
     #[test]
-    fn test_join_federation() -> anyhow::Result<()> {
+    fn test_join_and_leave_and_joinfederation() -> anyhow::Result<()> {
         RUNTIME.block_on(async {
             let (bridge, federation) = setup().await?;
+            leaveFederation(bridge, federation.id().into()).await?;
+            setup().await?;
             Ok(())
         })
     }

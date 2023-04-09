@@ -104,6 +104,7 @@ export interface Guardian extends Node {
 }
 
 export interface Federation {
+    id: string
     name: string
     connectInfo: string
     nodes: Node[]

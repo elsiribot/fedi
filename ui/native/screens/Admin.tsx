@@ -96,7 +96,8 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         const federations = await fedimint.listFederations()
         if (federations.length > 0) {
             federationsDispatch(
-                updateFederations(federations[0].name, federations),
+                // FIXME: this is error-prone
+                updateFederations(federations[0].id, federations),
             )
             // FIXME: this doesn't do enough ...
             navigation.navigate('TabsNavigator')

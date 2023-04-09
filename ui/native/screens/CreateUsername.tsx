@@ -41,6 +41,8 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const [buttonYPosition, setButtonYPosition] = useState<number>(0)
     const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
 
+    console.log('selected federation', state.selectedFederation)
+
     // when the keyboard is opened and content layouts change, this effect
     // determines whether the Create username button is overlapping with
     // the input wrapper.
@@ -87,13 +89,16 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const handleXmppRegistration = async () => {
             try {
+                console.log('checking credeitnals')
                 const credentials = await getXmppCredentials()
+                console.log('credentials', credentials)
                 const { password, keypairSeed } = credentials
                 const normalizedUsername = username.toLowerCase()
                 const credentialsAreValid = await checkXmppUser(
                     normalizedUsername,
                     password,
                 )
+                console.log('valid', credentialsAreValid)
                 if (credentialsAreValid) {
                     // TODO: store the password or always fetch from bridge?
                     dispatch(
@@ -105,7 +110,10 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     )
                     backupXmppUsername(normalizedUsername)
                 } else {
+                    console.log('registering user')
                     await registerXmppUser(normalizedUsername, password)
+                    console.log('registered user')
+
                     dispatch(
                         updateFederationCredentials(
                             normalizedUsername,
@@ -117,8 +125,8 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 }
             } catch (error) {
                 setXmppAuthInProgress(false)
-                console.info('error', error)
-                toast?.show(error as string, 3000)
+                console.info('error', error.toString())
+                toast?.show(error.toString(), 3000)
             }
         }
         if (xmppAuthInProgress === true) {

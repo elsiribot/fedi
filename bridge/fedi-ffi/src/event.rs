@@ -4,13 +4,17 @@ use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 use ts_rs::TS;
 
-use crate::{recovery::SocialRecoveryApproval, tx::Transaction, types::FedimintFederation};
+use crate::{
+    recovery::SocialRecoveryApproval,
+    tx::Transaction,
+    types::{self, FedimintFederation},
+};
 
 #[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct TransactionEvent {
-    pub federation_id: String,
+    pub federation_id: types::FederationId,
     pub transaction: Transaction,
 }
 
@@ -18,7 +22,7 @@ pub struct TransactionEvent {
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct SocialRecoveryEvent {
-    pub federation_id: String,
+    pub federation_id: types::FederationId,
     pub approvals: Vec<SocialRecoveryApproval>,
     pub remaining: usize,
 }
@@ -27,7 +31,7 @@ pub struct SocialRecoveryEvent {
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RecoveryFileCreationEvent {
-    pub federation_id: String,
+    pub federation_id: types::FederationId,
     // TODO: add payload
 }
 
@@ -54,10 +58,13 @@ impl Event {
             event: fedimint_federation,
         }
     }
-    pub fn transaction(federation_id: String, transaction: Transaction) -> Self {
+    pub fn transaction(
+        federation_id: fedimint_core::config::FederationId,
+        transaction: Transaction,
+    ) -> Self {
         Self::Transaction {
             event: TransactionEvent {
-                federation_id,
+                federation_id: federation_id.into(),
                 transaction,
             },
         }
@@ -67,7 +74,7 @@ impl Event {
     //         event: SocialRecoveryEvent { federation_id },
     //     }
     // }
-    pub fn recovery_file_creation(federation_id: String) -> Self {
+    pub fn recovery_file_creation(federation_id: types::FederationId) -> Self {
         Self::RecoveryFileCreation {
             event: RecoveryFileCreationEvent { federation_id },
         }

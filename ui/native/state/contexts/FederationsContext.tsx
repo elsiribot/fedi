@@ -1,3 +1,9 @@
+import { BridgeEventEmitter, FederationEvent } from '../../bridge'
+import {
+    AUTHENTICATED_GUARDIAN_DB_KEY,
+    SELECTED_FEDERATION_ID_DB_KEY,
+} from '../../constants'
+import { Federation, Guardian } from '@fedi/common/types'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { isEqual } from 'lodash'
 import React, {
@@ -7,14 +13,6 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
-
-import { Federation, Guardian } from '@fedi/common/types'
-
-import { BridgeEventEmitter, FederationEvent } from '../../bridge'
-import {
-    AUTHENTICATED_GUARDIAN_DB_KEY,
-    SELECTED_FEDERATION_ID_DB_KEY,
-} from '../../constants'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
@@ -70,6 +68,7 @@ export function changeAuthenticatedGuardian(guardian: Guardian | null): Action {
 export function updateSelectedFederationId(
     federationId: null | string,
 ): Action {
+    console.log('updateSelectedFederationId', federationId)
     return {
         type: ActionType.UPDATE_SELECTED_FEDERATION_ID,
         payload: federationId,
@@ -79,12 +78,14 @@ export function updateFederations(
     selectedFederationId: null | string,
     federations: Federation[],
 ): Action {
+    console.log('updatedFederations', selectedFederationId)
     return {
         type: ActionType.UPDATE_FEDERATIONS,
         payload: { selectedFederationId, federations },
     }
 }
 export function updateFederation(event: FederationEvent): Action {
+    console.log('updateFederation', event)
     return {
         type: ActionType.UPDATE_FEDERATION,
         payload: event,
@@ -137,7 +138,7 @@ export function reducer(state: AppState, action: Action): AppState {
             const federations = state.federations.map((f: Federation) => {
                 // If the federation id matches, update the password of that
                 // single connectedFederation
-                if (f.name === state.selectedFederationId) {
+                if (f.id === state.selectedFederationId) {
                     return {
                         ...f,
                         username: action.payload.username,
@@ -175,7 +176,7 @@ export function reducer(state: AppState, action: Action): AppState {
             const federations = state.federations.map(
                 // If the federation id matches, update the entry
                 (f: Federation) =>
-                    f.name === action.payload.name
+                    f.id === action.payload.id
                         ? { ...f, ...action.payload }
                         : f,
             )
@@ -204,8 +205,7 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
                 ...state,
                 // compute selected federation based on federationId
                 selectedFederation: state.federations.find(
-                    // FIXME: switch to using federation.id
-                    f => f.name === state.selectedFederationId,
+                    f => f.id === state.selectedFederationId,
                 ),
             },
             dispatch,
@@ -231,15 +231,14 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         // Try not to accidentally overwrite real value with null
         if (state.selectedFederationId != null) {
             const selectedFederation = state.federations.find(
-                // FIXME: switch to using federation.id
-                f => f.name === state.selectedFederationId,
+                f => f.id === state.selectedFederationId,
             )
 
             AsyncStorage.setItem(
                 SELECTED_FEDERATION_ID_DB_KEY,
                 JSON.stringify({
                     selectedFederation: {
-                        name: state.selectedFederationId,
+                        id: state.selectedFederationId,
                         username: selectedFederation?.username,
                     },
                 }),
