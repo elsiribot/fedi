@@ -40,6 +40,7 @@ stabilitypool-client = { git = "https://x-access-token:github_pat_11ABBCQBI0xWGd
 
 
 # NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
+# NOTE: To use local fedimint depenencies, comment out the "paths" section in .cargo/config.toml
 fedimintd = { git = "https://github.com/fedimint/fedimint" }
 fedimint-cli = { git = "https://github.com/fedimint/fedimint" }
 fedimint-build = { git = "https://github.com/fedimint/fedimint" }
@@ -77,7 +78,6 @@ bls12_381 = { opt-level = 3 }
 subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
 threshold_crypto = { opt-level = 3 }
-
 
 [patch.'https://github.com/fedimint/fedimint']
 fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "d0941518bcf9357363435043822b101c3d42abb5" }
