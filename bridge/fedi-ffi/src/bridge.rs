@@ -7,12 +7,15 @@ use std::{
 };
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
-use fedimint_client::module::gen::ClientModuleGenRegistryExt;
+use fedimint_client::module::gen::{ClientModuleGenRegistry, ClientModuleGenRegistryExt};
 use fedimint_client_fedi::{
     module_gens, modules::ln::contracts::IdentifiableContract, Client, FediClient, RecoveryFile,
     SocialRecovery, UserClientConfig, UserSeedPhrase,
 };
-use fedimint_core::config::{FederationId, META_FEDERATION_NAME_KEY};
+use fedimint_core::{
+    config::{FederationId, META_FEDERATION_NAME_KEY},
+    module::registry::ModuleDecoderRegistry,
+};
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -68,6 +71,23 @@ pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
 fn required_threashold_of(n: usize) -> usize {
     n - ((n - 1) / 3)
+}
+
+fn load_decoders(
+    cfg: &UserClientConfig,
+    module_gens: &ClientModuleGenRegistry,
+) -> ModuleDecoderRegistry {
+    ModuleDecoderRegistry::new(
+        cfg.clone()
+            .0
+            .modules
+            .into_iter()
+            .filter_map(|(id, module_cfg)| {
+                module_gens
+                    .get(module_cfg.kind())
+                    .map(|module_gen| (id, module_gen.as_ref().decoder()))
+            }),
+    )
 }
 
 async fn load_federations(
@@ -212,14 +232,9 @@ impl Bridge {
             let config = fed.client.config();
             let db = fed.client.db();
             let secp = Secp256k1::new();
-            let new_client = FediUserClient::new(
-                config,
-                module_gens(),
-                module_decode_stubs(),
-                db.clone(),
-                secp,
-            )
-            .await;
+            let gens = module_gens();
+            let decoders = load_decoders(&config, &gens);
+            let new_client = FediUserClient::new(config, gens, decoders, db.clone(), secp).await;
             fed.client = Arc::new(new_client);
 
             // start pollers
@@ -293,14 +308,10 @@ impl Federation {
         event_sink: EventSink,
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
-        let user_client = FediUserClient::new(
-            config.client_config,
-            module_gens(),
-            module_decode_stubs(),
-            db,
-            Default::default(),
-        )
-        .await;
+        let gens = module_gens();
+        let decoders = load_decoders(&config.client_config, &gens);
+        let user_client =
+            FediUserClient::new(config.client_config, gens, decoders, db, Default::default()).await;
         Ok(Self {
             client: Arc::new(user_client),
             event_sink,

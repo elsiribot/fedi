@@ -145,7 +145,6 @@ async fn joinFederation(
     bridge: Arc<Bridge>,
     connect_string: String,
 ) -> anyhow::Result<FedimintFederation> {
-    // return Err(anyhow!("nope"));
     info!("joining federation {:?}", connect_string);
     if let Err(e) = bridge.join_federation(connect_string.clone()).await {
         info!("joinfederation result {:?}", e);
@@ -689,6 +688,7 @@ mod tests {
     use std::path;
 
     use fedi_social_client::common::VerificationDocument;
+    use fedimint_logging::TracingSetup;
     use tracing::debug;
 
     use crate::{
@@ -737,6 +737,8 @@ mod tests {
 
     // TODO: should we return the bridge here?
     async fn setup() -> anyhow::Result<(Arc<Bridge>, Arc<Federation>)> {
+        TracingSetup::default().init()?;
+
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir));
@@ -759,8 +761,37 @@ mod tests {
         })
     }
 
+    #[test]
+    fn test_personal_recovery() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            let (bridge, federation) = setup().await?;
+
+            // Get original mnemonic (for comparison later)
+            let words = getMnemonic(bridge.clone(), federation.id().into()).await?;
+            let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
+            info!("initial mnemnoic {:?}", &words);
+
+            // leaveFederation(bridge.clone(), federation.id().into()).await?;
+
+            let _username = recoverFromMnemonic(
+                bridge.clone(),
+                federation.id().into(),
+                initial_mnemonic
+                    .to_string()
+                    .split(" ")
+                    .map(|s| s.to_string())
+                    .collect(),
+            )
+            .await?;
+            let words_after = getMnemonic(bridge.clone(), federation.id().into()).await?;
+
+            assert_eq!(words, words_after);
+
+            Ok(())
+        })
+    }
+
     // #[test]
-    // #[ignore]
     // fn test_xmpp_credentials() -> anyhow::Result<()> {
     //     RUNTIME.block_on(async {
     //         let fed1 = setup().await?;
@@ -811,18 +842,19 @@ mod tests {
     // fn test_decryption_shares() -> anyhow::Result<()> {
     //     // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
     //     RUNTIME.block_on(async {
-    //         let federation = setup().await?;
+    //         let (bridge, federation) = setup().await?;
 
     //         // Get original mnemonic (for comparison later)
-    //         let words = getMnemonic(federation.id()).await?;
+    //         let words = getMnemonic(bridge, federation.id().into()).await?;
     //         let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
     //         info!("initial mnemnoic {:?}", &words);
 
     //         // Upload backup
     //         let video_file_path =
     //             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
-    //         let video_file_contents = fs::read(&video_file_path).await?;
-    //         let recovery_file_path = uploadBackupFile(federation.id(), video_file_path).await?;
+    //         let video_file_contents = std::fs::read(&video_file_path).await?;
+    //         let recovery_file_path =
+    //             uploadBackupFile(bridge, federation.id(), video_file_path).await?;
     //         info!(recovery_file_path = ?recovery_file_path);
 
     //         // Validate recovery file
