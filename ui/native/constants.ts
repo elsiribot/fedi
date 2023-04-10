@@ -70,7 +70,7 @@ export const XMPP_MUC_DOMAIN = 'muc.xmpp-02.dev.fedibtc.com'
 // https://xmpp.org/rfcs/rfc6120.html#bind
 export const XMPP_RESOURCE = 'chat'
 // We connect via websocket
-export const XMPP_SERVICE = `wss://${XMPP_DOMAIN}:5281/xmpp-websocket`
+export const XMPP_SERVICE = `wss://${XMPP_DOMAIN}/xmpp-websocket`
 
 export const XMPP_CONNECTION_OPTIONS: Options = {
     service: XMPP_SERVICE,
