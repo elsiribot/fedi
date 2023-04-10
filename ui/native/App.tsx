@@ -8,7 +8,6 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider as ReduxProvider } from 'react-redux'
 
-import { initializeStore } from '@fedi/common/redux'
 import { TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -25,7 +24,7 @@ import { ChatProvider } from './state/contexts/ChatContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
-import { store } from './state/store'
+import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
 
 // Initialize Sentry SDK
@@ -65,7 +64,7 @@ const App = () => {
     }
 
     // Initialize redux store
-    useEffect(() => initializeStore(store.dispatch), [])
+    useEffect(() => initializeNativeStore(), [])
 
     useEffect(() => {
         const emitter = new BridgeEventEmitter()
