@@ -3,9 +3,9 @@ import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

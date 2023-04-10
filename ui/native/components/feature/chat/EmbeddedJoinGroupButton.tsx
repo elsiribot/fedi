@@ -4,12 +4,11 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useXmpp } from '../../../state/hooks/chat'
 import { Group } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
-
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {

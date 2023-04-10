@@ -1,14 +1,16 @@
-import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
+
+import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
+import CogIcon from '@fedi/common/assets/svgs/cog.svg'
+import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import HomeIcon from '@fedi/common/assets/svgs/home.svg'
+
 import { styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
-import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
-import HomeIcon from '@fedi/common/assets/svgs/home.svg'
-import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
-import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 
 const NAVIGATION = [
     {

@@ -1,9 +1,11 @@
 import React, { useCallback, useState } from 'react'
+
+import ChevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
+
 import { styled } from '../../styles'
 import { Avatar } from '../Avatar'
-import { Text } from '../Text'
-import ChevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
 import { Icon } from '../Icon'
+import { Text } from '../Text'
 
 export const FederationSelector: React.FC = () => {
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)

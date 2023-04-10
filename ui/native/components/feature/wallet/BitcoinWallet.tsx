@@ -8,7 +8,6 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-
 import Balance from './Balance'
 
 type Props = {

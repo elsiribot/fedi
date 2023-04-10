@@ -12,11 +12,12 @@ import {
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
+import dateUtils from '@fedi/common/utils/DateUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
+
 import { useFederationsContext } from '../../../state/contexts/FederationsContext'
 import { Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
-import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
 import HoloAvatar from '../../ui/HoloAvatar'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'

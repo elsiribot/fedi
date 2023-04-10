@@ -1,13 +1,14 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
-import { ImageSourcePropType } from 'react-native'
 import { Buffer } from 'buffer'
+import { ImageSourcePropType } from 'react-native'
+
+import { MSats, Invoice } from '@fedi/common/types'
 
 import { SiteImages } from '../assets/images'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
 import { RootStackParamList } from './navigation'
-import { MSats, Invoice } from '@fedi/common/types'
 
 export * from '@fedi/common/types'
 

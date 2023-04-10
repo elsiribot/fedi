@@ -10,17 +10,18 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+
 import {
     IncomingBitcoinTransactionStatus,
     Transaction,
     TransactionDirection,
 } from '@fedi/common/types'
-
-import { useBridge } from '../../../state/hooks'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
+
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useBridge } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionDetailProps = {

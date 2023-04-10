@@ -1,6 +1,7 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
 import { createTheme, lightColors } from '@rneui/themed'
 import { Dimensions } from 'react-native'
+
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
 const dimensions = Dimensions.get('window')

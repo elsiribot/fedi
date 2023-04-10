@@ -1,20 +1,16 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "module": "CommonJS",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "incremental": true,
-    "composite": true,
-    "outDir": "dist",
-    "resolveJsonModule": true
-  },
-  "include": [
-    "./**/*.tsx",
-    "./**/*.ts",
-    "./**/*.json"
-  ],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "strict": true,
+        "module": "CommonJS",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "incremental": true,
+        "composite": true,
+        "outDir": "dist",
+        "resolveJsonModule": true
+    },
+    "include": ["./**/*.tsx", "./**/*.ts", "./**/*.json"],
+    "exclude": ["node_modules"]
 }

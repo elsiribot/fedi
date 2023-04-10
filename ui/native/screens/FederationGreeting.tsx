@@ -3,11 +3,12 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+
+import stringUtils from '@fedi/common/utils/StringUtils'
+
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-
 import type { RootStackParamList } from '../types/navigation'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

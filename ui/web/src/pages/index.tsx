@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+
 import { ContentBlock } from '../components/ContentBlock'
 import { SiteTiles } from '../components/SiteTiles'
 import { Text } from '../components/Text'

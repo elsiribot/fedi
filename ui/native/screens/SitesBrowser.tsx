@@ -1,12 +1,14 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useTheme } from '@rneui/themed'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useTheme } from '@rneui/themed'
-import { useTranslation } from 'react-i18next'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import { fedimint } from '../bridge'
 import SitesBrowserHeader from '../components/feature/sites/SitesBrowserHeader'
 import CustomOverlay, {
@@ -17,7 +19,6 @@ import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge, useBtcUsdPrice } from '../state/hooks'
 import { MSats, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
 

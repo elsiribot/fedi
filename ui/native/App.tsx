@@ -1,12 +1,16 @@
 import notifee from '@notifee/react-native'
-import * as Sentry from '@sentry/react-native'
 import { ThemeProvider } from '@rneui/themed'
+import * as Sentry from '@sentry/react-native'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
+import { TransactionDirection } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
+import Router from './Router'
 import {
     BridgeEventEmitter,
     initializeBridge,
@@ -14,7 +18,6 @@ import {
     TransactionEvent,
 } from './bridge'
 import CustomToast from './components/ui/CustomToast'
-import Router from './Router'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { ChatProvider } from './state/contexts/ChatContext'
 import { CurrencyProvider } from './state/contexts/CurrencyContext'
@@ -22,8 +25,6 @@ import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import theme from './styles/theme'
-import amountUtils from '@fedi/common/utils/AmountUtils'
-import { TransactionDirection } from '@fedi/common/types'
 
 // Initialize Sentry SDK
 // Construct a new instrumentation instance. This is needed to communicate between the integration and React

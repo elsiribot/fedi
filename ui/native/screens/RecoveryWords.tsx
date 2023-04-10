@@ -3,6 +3,7 @@ import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+
 import type { SeedWords } from '@fedi/common/types'
 
 import { useBridge } from '../state/hooks'

@@ -1,6 +1,8 @@
 import React from 'react'
-import { styled, theme } from '../styles'
+
 import { SITES } from '@fedi/common/constants/sites'
+
+import { styled, theme } from '../styles'
 import { Text } from './Text'
 
 export const SiteTiles: React.FC = () => {

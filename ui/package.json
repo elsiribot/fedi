@@ -14,6 +14,7 @@
     },
     "scripts": {
         "lint": "yarn workspace @fedi/common lint && yarn workspace @fedi/native lint && yarn workspace @fedi/web lint",
+        "format": "yarn workspace @fedi/common format && yarn workspace @fedi/native format && yarn workspace @fedi/web format",
         "test": "yarn workspace @fedi/common test && yarn workspace @fedi/native test && yarn workspace @fedi/web test"
     },
     "devDependencies": {

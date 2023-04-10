@@ -1,5 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { GestureResponderEvent, Pressable, StyleSheet } from 'react-native'
+
 import SvgImage from '../../ui/SvgImage'
 
 type SettingsItemProps = {

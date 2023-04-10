@@ -3,10 +3,10 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import Header from '../../ui/Header'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { RootStackParamList } from '../../../types/navigation'
-import stringUtils from '@fedi/common/utils/StringUtils'
+import Header from '../../ui/Header'
 import HoloAvatar from '../../ui/HoloAvatar'
 import SvgImage from '../../ui/SvgImage'
 

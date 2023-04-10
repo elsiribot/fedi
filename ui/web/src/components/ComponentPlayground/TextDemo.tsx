@@ -1,6 +1,7 @@
 import React from 'react'
-import { styled } from '../../styles'
+
 import { Text } from '../../components/Text'
+import { styled } from '../../styles'
 
 export const TextDemo: React.FC = () => {
     const headings = ['display', 'h1', 'h2'] as const

@@ -1,5 +1,6 @@
-import { FedimintRpc } from '@fedi/common/utils/fedimint'
 import { bech32 } from 'bech32'
+
+import { FedimintRpc } from '@fedi/common/utils/fedimint'
 
 class LNURLUtils {
     static DECODE_LENGTH_LIMIT: number = 4096

@@ -4,10 +4,10 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
-import { useBridge } from '../state/hooks'
 
 import AnimatedQrCodeScanner from '../components/feature/scan/AnimatedQrCodeScanner'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
+import { useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveOffline'>

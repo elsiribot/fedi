@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useCameraDevices } from 'react-native-vision-camera'
+
 import type { SocialRecoveryQrCode } from '@fedi/common/types'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'

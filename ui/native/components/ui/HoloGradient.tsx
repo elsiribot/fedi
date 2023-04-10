@@ -2,6 +2,7 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { View } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
+
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
 type HoloGradientProps = {

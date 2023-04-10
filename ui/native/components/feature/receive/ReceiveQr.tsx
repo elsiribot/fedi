@@ -5,10 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import stringUtils from '@fedi/common/utils/StringUtils'
+
 import { Images } from '../../../assets/images'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { BitcoinOrLightning, BtcLnUri } from '../../../types'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type ReceiveQrProps = {
     uri: BtcLnUri

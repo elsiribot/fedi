@@ -5,6 +5,9 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
+
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
@@ -36,8 +39,6 @@ import type {
     RootStackParamList,
     TabsNavigatorParamList,
 } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type Props = BottomTabScreenProps<
     TabsNavigatorParamList & RootStackParamList,

@@ -8,7 +8,6 @@ import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
 // import { useBridge } from '../contexts/FederationsContext'
-
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<

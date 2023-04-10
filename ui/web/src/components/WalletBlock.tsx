@@ -1,12 +1,14 @@
-import React from 'react'
 import Link from 'next/link'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { styled, theme } from '../styles'
-import { Icon } from './Icon'
-import { Text } from './Text'
-import { Button } from './Button'
+
 import BitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
 import ListIcon from '@fedi/common/assets/svgs/list.svg'
+
+import { styled, theme } from '../styles'
+import { Button } from './Button'
+import { Icon } from './Icon'
+import { Text } from './Text'
 
 interface Props {
     currency: keyof typeof CURRENCIES

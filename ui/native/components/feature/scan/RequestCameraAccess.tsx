@@ -1,10 +1,10 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 
-import { useEffect, useState } from 'react'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 export type RequestCameraAccessProps = {

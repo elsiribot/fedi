@@ -3,6 +3,7 @@ import { Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+
 import type { Transaction } from '@fedi/common/types'
 
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'

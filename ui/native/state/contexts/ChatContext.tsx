@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Client, client, jid, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
-import parse from '@xmpp/xml/lib/parse'
 import XMPPError from '@xmpp/error'
 import { JID } from '@xmpp/jid'
-import { Element } from 'ltx'
+import parse from '@xmpp/xml/lib/parse'
 import { isEqual } from 'lodash'
+import { Element } from 'ltx'
 import React, {
     createContext,
     MutableRefObject,
@@ -31,9 +31,9 @@ import {
 import i18n from '../../localization/i18n'
 import { Group, Key, Keypair, Member, Message } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
+import { GetMessagesQuery } from '../../utils/XmlUtils'
 import { publishPublicKey } from '../operations/chat'
 import { useFederationsContext } from './FederationsContext'
-import { GetMessagesQuery } from '../../utils/XmlUtils'
 
 export const DEFAULT_GROUPS: Group[] = [
     // FEDI_GENERAL_CHANNEL_GROUP,

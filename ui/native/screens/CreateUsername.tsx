@@ -10,6 +10,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+
 import {
     checkXmppUser,
     registerXmppUser,
@@ -21,7 +22,6 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
-
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>

@@ -1,5 +1,6 @@
-import React from 'react'
 import * as RadixAvatar from '@radix-ui/react-avatar'
+import React from 'react'
+
 import { styled, theme } from '../styles'
 
 interface Props {

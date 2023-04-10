@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 

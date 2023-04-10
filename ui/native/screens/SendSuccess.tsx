@@ -4,9 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
 import Success from '../components/ui/Success'
 import { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendSuccess'>
 

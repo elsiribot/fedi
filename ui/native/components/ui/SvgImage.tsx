@@ -2,6 +2,7 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View, ViewStyle } from 'react-native'
 import { SvgProps } from 'react-native-svg'
+
 import * as Svgs from '../../assets/images/svgs'
 
 export type SvgImageName = keyof typeof Svgs

@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+import { createHash } from 'crypto'
 import { box, randomBytes } from 'tweetnacl'
 import {
     decodeUTF8,
@@ -5,8 +7,6 @@ import {
     encodeBase64,
     decodeBase64,
 } from 'tweetnacl-util'
-import { createHash } from 'crypto'
-import { Buffer } from 'buffer'
 
 import { Key, Keypair } from '../types'
 

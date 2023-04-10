@@ -4,14 +4,15 @@ import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import UsdAmount from '../components/feature/wallet/UsdAmount'
 
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import stringUtils from '@fedi/common/utils/StringUtils'
+
+import UsdAmount from '../components/feature/wallet/UsdAmount'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { Btc, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import amountUtils from '@fedi/common/utils/AmountUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
