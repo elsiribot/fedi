@@ -124,9 +124,11 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     backupXmppUsername(normalizedUsername)
                 }
             } catch (error) {
-                setXmppAuthInProgress(false)
-                console.info('error', error.toString())
-                toast?.show(error.toString(), 3000)
+                if (error instanceof Error) {
+                    setXmppAuthInProgress(false)
+                    console.info('error', error.toString())
+                    toast?.show(error.toString(), 3000)
+                }
             }
         }
         if (xmppAuthInProgress === true) {
