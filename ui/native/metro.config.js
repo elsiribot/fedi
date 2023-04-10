@@ -5,6 +5,7 @@
  * @format
  */
 const { getDefaultConfig } = require('metro-config')
+const exclusionList = require('metro-config/src/defaults/exclusionList')
 const path = require('path')
 
 module.exports = (async () => {
@@ -33,6 +34,8 @@ module.exports = (async () => {
             extraNodeModules: {
                 '@fedi/common': path.resolve(__dirname, '../common'),
             },
+            // Ignore @fedi/common/dist/*
+            blockList: exclusionList([/.*\/common\/dist\/.*/]),
         },
         watchFolders: [path.resolve(__dirname, '../')],
     }
