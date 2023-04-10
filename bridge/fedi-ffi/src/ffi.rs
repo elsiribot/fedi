@@ -7,6 +7,7 @@ use crate::{fedimint_initialize_async, fedimint_rpc_async};
 
 use anyhow::Context;
 use async_trait::async_trait;
+use fedimint_core::config::FederationId;
 use fedimint_core::db::Database;
 use lazy_static::lazy_static;
 use mint_client::module_decode_stubs;
@@ -17,7 +18,7 @@ use tracing::{error, info};
 use std::path::{Path, PathBuf};
 
 lazy_static! {
-    static ref RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+    pub static ref RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("failed to build runtime");
@@ -31,6 +32,12 @@ pub struct PathBasedStorage {
     data_dir: PathBuf,
 }
 
+impl PathBasedStorage {
+    pub fn new(data_dir: PathBuf) -> Self {
+        Self { data_dir }
+    }
+}
+
 #[async_trait]
 impl IStorage for PathBasedStorage {
     async fn global_db(&self) -> anyhow::Result<Database> {
@@ -41,14 +48,14 @@ impl IStorage for PathBasedStorage {
         Ok(Database::new(db, module_decode_stubs()))
     }
 
-    async fn federation_db(&self, name: &str) -> anyhow::Result<Database> {
-        let db_path = self.data_dir.join(&format!("{name}.db"));
+    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Database> {
+        let db_path = self.data_dir.join(&format!("{id}.db"));
         let db = fedimint_rocksdb::RocksDb::open(db_path)?;
         Ok(Database::new(db, module_decode_stubs()))
     }
 
-    async fn delete_federation_db(&self, name: &str) -> anyhow::Result<()> {
-        let db_path = self.data_dir.join(&format!("{name}.db"));
+    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
+        let db_path = self.data_dir.join(&format!("{id}.db"));
         std::fs::remove_dir_all(db_path).context("delete federation db")?;
         Ok(())
     }

@@ -18,13 +18,14 @@ use fedimint_core::{
 
 use secp256k1::{All, Secp256k1};
 use serde::{Deserialize, Serialize};
+use stabilitypool::PoolClientGen;
 
 mod social;
 pub use crate::social::*;
 
 // TODO: Actually implement. Use some bip39 crate instead?
 #[derive(Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq, Clone)]
-pub struct UserSeedPhrase(String);
+pub struct UserSeedPhrase(pub String);
 
 impl fmt::Debug for UserSeedPhrase {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
@@ -136,5 +137,6 @@ pub fn module_gens() -> ClientModuleGenRegistry {
         DynClientModuleGen::from(MintClientGen),
         DynClientModuleGen::from(LightningClientGen),
         DynClientModuleGen::from(FediSocialClientGen),
+        DynClientModuleGen::from(PoolClientGen),
     ])
 }

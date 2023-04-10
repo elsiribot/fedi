@@ -405,16 +405,13 @@ impl FediSocial {
         }
 
         info!(id = %request.id, "Storing new user social backup");
-        dbtx.insert_entry(&request.id, request)
-            .await
-            .expect("DB error");
+        dbtx.insert_entry(&request.id, request).await;
 
         dbtx.insert_entry(
             &UsedDoubleEncryptedData(request.double_encrypted_seed.clone()),
             &request.id,
         )
-        .await
-        .expect("DB error");
+        .await;
 
         Ok(())
     }
@@ -458,9 +455,7 @@ impl FediSocial {
         // TODO: any limits w.r.t social recovery document size? Possibly enforce in the
         // type itself.
         info!(id = %request.id, "Storing user recovery");
-        dbtx.insert_entry(&request.id, request)
-            .await
-            .expect("DB error");
+        dbtx.insert_entry(&request.id, request).await;
 
         Ok(())
     }
@@ -541,8 +536,7 @@ impl FediSocial {
         );
 
         dbtx.insert_entry(&DecryptionShareId(request.0), &encrypted_decryption_share)
-            .await
-            .expect("DB error");
+            .await;
 
         Ok(recovery.verification_doc)
     }

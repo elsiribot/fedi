@@ -1,9 +1,10 @@
-use fedi_social::common::RecoveryId;
+use fedi_social_client::RecoveryId;
+use fedimint_client_fedi::SocialRecoveryState;
 use fedimint_core::{
+    config::FederationId,
     db::DatabaseRecord,
     encoding::{Decodable, Encodable},
 };
-use mint_client::social::SocialRecoveryState;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -25,10 +26,9 @@ pub struct SocialRecoveryApproval {
     pub approved: bool,
 }
 
-// FIXME: this is stringified FederationId (which doesn't impl Encodable b/c threshold_crypto::PublicKey doesn't)
 // FIXME: this doesn't actually need a federation id because rocksdb is per-federation
 #[derive(Debug, Clone, Encodable, Decodable)]
-pub struct SocialRecoveryStateKey(pub String);
+pub struct SocialRecoveryStateKey(pub FederationId);
 
 const DB_PREFIX_SOCIAL_RECOVERY_STATE: u8 = 0x53;
 
@@ -41,7 +41,7 @@ impl DatabaseRecord for SocialRecoveryStateKey {
 // TODO: this should be stored inside SocialRecoveryState
 // FIXME: this doesn't actually need a federation id because rocksdb is per-federation
 #[derive(Debug, Clone, Encodable, Decodable)]
-pub struct SocialRecoveryIdKey(pub String);
+pub struct SocialRecoveryIdKey(pub FederationId);
 
 const DB_PREFIX_SOCIAL_RECOVERY_ID_STATE: u8 = 0x54;
 

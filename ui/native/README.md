@@ -77,3 +77,11 @@ If you still have trouble, open the `/ui/native/ios/FedimintReactNative.xcworksp
 ## Style Guide
 
 TODO:...
+
+## troubleshooting
+
+Read android logs off emulator:
+
+```
+adb -s <emulator> shell "run-as com.fedimintreactnative cat /data/user/0/com.fedimintreactnative/files/fedi.log" > fedi.log
+```

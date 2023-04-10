@@ -39,7 +39,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 )
                 const federations = await fedimint.listFederations()
                 if (federations.length > 0) {
-                    dispatch(updateFederations(federation.name, federations))
+                    dispatch(updateFederations(federation.id, federations))
                     setJoiningComplete(true)
                 }
             } catch (e) {
@@ -55,6 +55,12 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     }, [dispatch, federationToJoin, t, toast])
 
     useEffect(() => {
+        console.log(
+            'effect',
+            federationToJoin,
+            state.selectedFederation,
+            joiningComplete,
+        )
         if (
             federationToJoin === '' &&
             state.selectedFederation &&

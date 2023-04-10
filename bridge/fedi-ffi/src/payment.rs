@@ -1,4 +1,4 @@
-use fedimint_core::time::SystemTime;
+use std::time::SystemTime;
 
 use bitcoin::hashes::sha256;
 use fedimint_core::{

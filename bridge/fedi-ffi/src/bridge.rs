@@ -1,6 +1,21 @@
-use std::{collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    default::Default,
+    str::FromStr,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
-use fedimint_core::time::SystemTime;
+use fedi_social_client::{common::VerificationDocument, RecoveryId};
+use fedimint_client::module::gen::{ClientModuleGenRegistry, ClientModuleGenRegistryExt};
+use fedimint_client_fedi::{
+    module_gens, modules::ln::contracts::IdentifiableContract, Client, FediClient, RecoveryFile,
+    SocialRecovery, UserClientConfig, UserSeedPhrase,
+};
+use fedimint_core::{
+    config::{FederationId, META_FEDERATION_NAME_KEY},
+    module::registry::ModuleDecoderRegistry,
+};
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -26,16 +41,8 @@ use bitcoin::{
     secp256k1::{Message, Secp256k1},
     Address, Network, Script, Txid,
 };
-use fedi_social::{
-    common::{RecoveryId, VerificationDocument},
-    FediSocialGen,
-};
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
-use fedimint_core::{
-    config::{ClientConfig, ModuleGenRegistry},
-    module::DynModuleGen,
-    Amount, PeerId, TieredMulti,
-};
+use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
 use fedimint_core::{db::Database, task::TaskHandle};
 use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_derive_secret::ChildId;
@@ -45,24 +52,15 @@ use mint_client::{
     api::WalletFederationApi,
     mint::SpendableNote,
     module_decode_stubs,
-    modules::{
-        ln::{
-            contracts::{ContractId, IdentifyableContract},
-            LightningGen,
-        },
-        mint::MintGen,
-        wallet::{txoproof::TxOutProof, WalletGen},
-    },
-    social::{RecoveryFile, SocialRecovery},
+    modules::{ln::contracts::ContractId, wallet::txoproof::TxOutProof},
     utils::network_to_currency,
-    UserClient, UserClientConfig, UserSeedPhrase,
 };
 
 use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
-type FederationId = String;
+pub type FediUserClient = FediClient<UserClientConfig>;
 
 const GAP_LIMIT: usize = 100;
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
@@ -75,13 +73,21 @@ fn required_threashold_of(n: usize) -> usize {
     n - ((n - 1) / 3)
 }
 
-fn module_gens() -> ModuleGenRegistry {
-    ModuleGenRegistry::from(vec![
-        DynModuleGen::from(WalletGen),
-        DynModuleGen::from(MintGen),
-        DynModuleGen::from(LightningGen),
-        DynModuleGen::from(FediSocialGen),
-    ])
+fn load_decoders(
+    cfg: &UserClientConfig,
+    module_gens: &ClientModuleGenRegistry,
+) -> ModuleDecoderRegistry {
+    ModuleDecoderRegistry::new(
+        cfg.clone()
+            .0
+            .modules
+            .into_iter()
+            .filter_map(|(id, module_cfg)| {
+                module_gens
+                    .get(module_cfg.kind())
+                    .map(|module_gen| (id, module_gen.as_ref().decoder()))
+            }),
+    )
 }
 
 async fn load_federations(
@@ -91,21 +97,20 @@ async fn load_federations(
 ) -> anyhow::Result<Vec<Federation>> {
     let db = storage.global_db().await?;
     let mut dbtx = db.begin_transaction().await;
-    let iter = dbtx
+    let joined = dbtx
         .find_by_prefix(&JoinedFederationsPrefix)
         .await
         .collect::<Vec<_>>()
+        .await;
+    let iter = joined.iter().map(|(_, federation_id)| async {
+        let subgroup = task_group.make_subgroup().await;
+        Federation::load(
+            storage.federation_db(federation_id).await?,
+            event_sink.clone(),
+            subgroup,
+        )
         .await
-        .into_iter()
-        .map(|kv| async {
-            let subgroup = task_group.make_subgroup().await;
-            Federation::load(
-                storage.federation_db(&kv?.1).await?,
-                event_sink.clone(),
-                subgroup,
-            )
-            .await
-        });
+    });
     futures::future::try_join_all(iter).await
 }
 
@@ -126,7 +131,7 @@ impl Bridge {
         // start pollers
         for mut federation in federations_vec.into_iter() {
             federation.start_pollers().await;
-            federations_map.insert(federation.name(), Arc::new(federation));
+            federations_map.insert(federation.id(), Arc::new(federation));
         }
 
         let bridge = Self {
@@ -150,12 +155,13 @@ impl Bridge {
         connect_string: String,
     ) -> Result<Option<Arc<Federation>>> {
         let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
+        info!("joining federation: {}", connect_cfg.id);
         let api = WsFederationApi::from_urls(&connect_cfg);
         let cfg: ClientConfig = api
-            .download_client_config(&connect_cfg.id, module_gens())
+            .download_client_config(&connect_cfg.id, module_gens().to_common())
             .await?;
         let federations = self.federations.lock().await;
-        let federation = federations.get(&cfg.federation_name).map(|fed| fed.clone());
+        let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
         Ok(federation)
     }
 
@@ -176,30 +182,31 @@ impl Bridge {
             self.task_group.make_subgroup().await,
         )
         .await?;
-        let federation_name = federation.name();
+        let federation_id = federation.id();
         {
             let global_db = self.storage.global_db().await?;
             let mut dbtx = global_db.begin_transaction().await;
-            dbtx.insert_entry(&JoinedFederationsKey, &federation_name).await?;
-            dbtx.commit_tx().await?;
+            dbtx.insert_entry(&JoinedFederationsKey, &federation_id)
+                .await;
+            dbtx.commit_tx().await;
             info!("saved joined")
         }
         let mut federations = self.federations.lock().await;
-        if !federations.contains_key(&federation_name) {
+        if !federations.contains_key(&federation_id) {
             federation.start_pollers().await;
-            federations.insert(federation_name, Arc::new(federation.clone()));
+            federations.insert(federation_id, Arc::new(federation.clone()));
         };
         Ok(Arc::new(federation))
     }
 
-    pub async fn get_federation(&self, federation_id: &str) -> Option<Arc<Federation>> {
+    pub async fn get_federation(&self, federation_id: &FederationId) -> Option<Arc<Federation>> {
         let lock = self.federations.lock().await;
         lock.get(federation_id).map(|federation| federation.clone())
     }
 
     pub async fn recover_from_mnemonic(
         &self,
-        federation_id: &str,
+        federation_id: &FederationId,
         mnemonic: &Mnemonic,
     ) -> Result<Option<String>> {
         self.stop_pollers().await?;
@@ -225,20 +232,15 @@ impl Bridge {
             let config = fed.client.config();
             let db = fed.client.db();
             let secp = Secp256k1::new();
-            let new_client = UserClient::new(
-                config,
-                module_decode_stubs(),
-                module_gens(),
-                db.clone(),
-                secp,
-            )
-            .await;
+            let gens = module_gens();
+            let decoders = load_decoders(&config, &gens);
+            let new_client = FediUserClient::new(config, gens, decoders, db.clone(), secp).await;
             fed.client = Arc::new(new_client);
 
             // start pollers
             fed.start_pollers().await;
 
-            feds.insert(federation_id.to_string(), Arc::new(fed.clone()));
+            feds.insert(federation_id.clone(), Arc::new(fed.clone()));
             fed
         };
 
@@ -251,7 +253,7 @@ impl Bridge {
 
     /// Deletes federation client database and config
     /// Returns error if use has a balance
-    pub async fn leave_federation(&self, federation_id: &str) -> anyhow::Result<()> {
+    pub async fn leave_federation(&self, federation_id: &FederationId) -> anyhow::Result<()> {
         info!("called leave");
         // Error if we don't recognize federation
         let federation = self
@@ -278,7 +280,7 @@ impl Bridge {
 /// Should this have the poller reference?
 #[derive(Clone)]
 pub struct Federation {
-    pub client: Arc<UserClient>,
+    pub client: Arc<FediUserClient>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub username: Arc<Mutex<Option<String>>>,
@@ -294,10 +296,9 @@ impl Federation {
         let config = dbtx
             .get_value(&FediClientConfigKey)
             .await
-            .expect("Db error")
             .context("config not present in db")?;
         let fedi_config: FediConfig = serde_json::from_str(&config).context("invalid config")?;
-        dbtx.commit_tx().await.expect("Db error");
+        dbtx.commit_tx().await;
         Self::from_config(fedi_config, db, event_sink, task_group).await
     }
 
@@ -307,14 +308,10 @@ impl Federation {
         event_sink: EventSink,
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
-        let user_client = UserClient::new(
-            config.client_config,
-            module_decode_stubs(),
-            module_gens(),
-            db,
-            Default::default(),
-        )
-        .await;
+        let gens = module_gens();
+        let decoders = load_decoders(&config.client_config, &gens);
+        let user_client =
+            FediUserClient::new(config.client_config, gens, decoders, db, Default::default()).await;
         Ok(Self {
             client: Arc::new(user_client),
             event_sink,
@@ -338,7 +335,7 @@ impl Federation {
         let api = WsFederationApi::from_urls(&connect_cfg);
         tracing::info!("fetching config");
         let cfg: ClientConfig = api
-            .download_client_config(&connect_cfg.id, module_gens())
+            .download_client_config(&connect_cfg.id, module_gens().to_common())
             .await?;
 
         // Hack to run against local federation
@@ -359,35 +356,45 @@ impl Federation {
             client_config,
         };
 
-        let federation_id: String = fedi_config.client_config.0.federation_name.clone();
+        let federation_id: FederationId = fedi_config.client_config.0.federation_id.clone();
 
         let db = storage.federation_db(&federation_id).await?;
         // Save config to db
         {
             let mut dbtx = db.begin_transaction().await;
             dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
-                .await?;
-            dbtx.commit_tx().await?;
+                .await;
+            dbtx.commit_tx().await;
         }
         // TODO: delete the database if failed
 
         Self::from_config(fedi_config, db, event_sink, task_group).await
     }
 
+    pub fn user_client(&self) -> &Client<UserClientConfig> {
+        self.client.as_ref()
+    }
     //
     // Helpers
     //
     pub fn name(&self) -> String {
-        self.client.config().0.federation_name.clone()
+        // FIXME: unwrap, clone
+        self.user_client()
+            .config()
+            .0
+            .meta
+            .get(META_FEDERATION_NAME_KEY)
+            .unwrap()
+            .clone()
     }
 
     // FIXME: move this to actually using config.federation_id
-    pub fn id(&self) -> String {
-        self.client.config().0.federation_name.clone()
+    pub fn id(&self) -> FederationId {
+        self.user_client().config().0.federation_id
     }
 
     pub fn network(&self) -> bitcoin::Network {
-        self.client.wallet_client().config.network
+        self.user_client().wallet_client().config.network
     }
 
     pub fn normalized_federation_name(&self) -> String {
@@ -409,7 +416,7 @@ impl Federation {
     /// Sign LNURL message using a key derived from client secret
     /// TODO: use different key per "site"
     pub fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
-        let secret = self.client.root_secret.child_key(LNURL_CHILD_ID);
+        let secret = self.user_client().root_secret.child_key(LNURL_CHILD_ID);
         let secp = Secp256k1::new();
         let keypair = secret.to_secp_key(&Secp256k1::new());
         let pubkey = keypair.public_key();
@@ -423,13 +430,14 @@ impl Federation {
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
     /// after recovering wallet.
     pub async fn xmpp_credentials(&self) -> XmppCredentials {
-        let xmpp_secret = self.client.root_secret.child_key(XMPP_CHILD_ID);
+        let xmpp_secret = self.user_client().root_secret.child_key(XMPP_CHILD_ID);
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
-        let keypair_seed_bytes: [u8; 32] = xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
+        let keypair_seed_bytes: [u8; 32] =
+            xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
 
         XmppCredentials {
             password: hex::encode(&password_bytes),
-            keypair_seed: hex::encode(&keypair_seed_bytes)
+            keypair_seed: hex::encode(&keypair_seed_bytes),
         }
     }
 
@@ -501,7 +509,7 @@ impl Federation {
             .fund_outgoing_ln_contract(invoice.clone(), &mut rng)
             .await?;
 
-        self.client
+        self.user_client()
             .await_outgoing_contract_acceptance(outpoint)
             .await?;
 
@@ -568,7 +576,7 @@ impl Federation {
     /// Generate ecash. It's immediately removed from client DB. Transaction saved to DB.
     pub async fn generate_ecash(&self, amount: Amount) -> Result<TieredMulti<SpendableNote>> {
         let rng = rand::rngs::OsRng;
-        let ecash: TieredMulti<SpendableNote> = self.client.spend_ecash(amount, rng).await?;
+        let ecash: TieredMulti<SpendableNote> = self.user_client().spend_ecash(amount, rng).await?;
         self.save_transaction(
             &Transaction::offline(tx::TransactionDirection::Send, amount),
             false,
@@ -580,7 +588,11 @@ impl Federation {
     /// Validate that string is valid ecash and signed by federation.
     /// TODO: check that it's unspent in the federation.
     pub async fn validate_ecash(&self, ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
-        let valid = self.client.validate_note_signatures(&ecash).await.is_ok();
+        let valid = self
+            .user_client()
+            .validate_note_signatures(&ecash)
+            .await
+            .is_ok();
         let amount = ecash.total_amount();
         (valid, amount)
     }
@@ -588,9 +600,9 @@ impl Federation {
     /// Receive ecash into wallet. Save transaction to DB.
     pub async fn receive_ecash(&self, ecash: TieredMulti<SpendableNote>) -> Result<Amount> {
         let rng = rand::rngs::OsRng;
-        let outpoint = self.client.reissue(ecash.clone(), rng).await?;
+        let outpoint = self.user_client().reissue(ecash.clone(), rng).await?;
         // FIXME: run this in the background?
-        if let Err(e) = self.client.await_outpoint_outcome(outpoint).await {
+        if let Err(e) = self.user_client().await_outpoint_outcome(outpoint).await {
             error!("Failed to claim contract {}", e);
         }
         self.save_transaction(
@@ -608,7 +620,7 @@ impl Federation {
     /// Generate on-chain receive address
     pub async fn generate_address(&self) -> Address {
         let rng = rand::rngs::OsRng;
-        self.client.get_new_pegin_address(rng).await
+        self.user_client().get_new_pegin_address(rng).await
     }
 
     /// Hack to lookup url where we can fetch txoutproofs
@@ -667,10 +679,7 @@ impl Federation {
             .await
             .find_by_prefix(&PegInPrefixKey)
             .await
-            .map(|res| {
-                let (key, _) = res.expect("DB error");
-                key.peg_in_script
-            })
+            .map(|(key, _)| key.peg_in_script)
             .collect()
             .await
     }
@@ -709,7 +718,7 @@ impl Federation {
                 let txout_proof: TxOutProof = from_hex(&raw_txout_proof)?;
                 let rng = rand::rngs::OsRng;
                 let address =
-                    Address::from_script(script, self.client.wallet_client().config.network)
+                    Address::from_script(script, self.user_client().wallet_client().config.network)
                         .context("address::from_script")?;
                 let fee = None;
                 // FIXME: there should be a simpler API to get the amount of a peg-in
@@ -808,7 +817,7 @@ impl Federation {
 
     /// Create database transaction
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.client.db().begin_transaction().await
+        self.user_client().db().begin_transaction().await
     }
 
     /// Save transaction to DB
@@ -816,10 +825,8 @@ impl Federation {
     pub async fn save_transaction(&self, tx: &Transaction, send_event: bool) {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx)
-            .await
-            .expect("Db error");
-        dbtx.commit_tx().await.expect("Db error");
+        dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx).await;
+        dbtx.commit_tx().await;
         // notify UI
         if send_event {
             self.send_transaction_event(&tx);
@@ -843,14 +850,11 @@ impl Federation {
 
     /// Get transaction from DB
     pub async fn get_transaction(&self, id: String) -> Option<Transaction> {
-        self.dbtx()
-            .await
-            .get_value(&TransactionKey(id))
-            .await
-            .expect("Db error")
+        self.dbtx().await.get_value(&TransactionKey(id)).await
     }
 
     /// Update "notes" on existing transaction record in the DB
+    /// FIXME: improve this "id" arg
     pub async fn update_transaction_notes(&self, id: String, notes: String) -> Result<()> {
         match self.get_transaction(id).await {
             Some(mut tx) => {
@@ -869,7 +873,7 @@ impl Federation {
             .await
             .find_by_prefix(&TransactionKeyPrefix)
             .await
-            .map(|res| res.expect("Db error").1)
+            .map(|res| res.1)
             .collect()
             .await;
         // Sort by timestamp, descending
@@ -881,9 +885,8 @@ impl Federation {
     pub async fn save_payment(&self, payment: &Payment) {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&PaymentKey(payment.invoice.payment_hash().clone()), payment)
-            .await
-            .expect("Db error");
-        dbtx.commit_tx().await.expect("Db error");
+            .await;
+        dbtx.commit_tx().await;
     }
 
     /// Get all payments from DB
@@ -892,7 +895,7 @@ impl Federation {
             .await
             .find_by_prefix(&PaymentKeyPrefix)
             .await
-            .map(|res| res.expect("Db error").1)
+            .map(|res| res.1)
             .collect()
             .await
     }
@@ -903,7 +906,6 @@ impl Federation {
             .await
             .get_value(&PaymentKey(payment_hash.clone()))
             .await
-            .expect("Db error")
     }
 
     /// Update payment status of a payment in the DB
@@ -912,9 +914,8 @@ impl Federation {
             payment.status = status;
             let mut dbtx = self.dbtx().await;
             dbtx.insert_entry(&PaymentKey(*payment_hash), &payment)
-                .await
-                .expect("Db error");
-            dbtx.commit_tx().await.expect("Db error");
+                .await;
+            dbtx.commit_tx().await;
         }
         // TODO: what to do if this payment doesn't exist?
     }
@@ -936,10 +937,13 @@ impl Federation {
     /// Send whenever the balance or social recovery state changes
     pub async fn send_federation_event(&self) {
         // FIXME: should handle this result
-        self.client.fetch_all_notes().await.unwrap_or_else(|e| {
-            error!("Failed to fetch notes: {:?}", e);
-            vec![]
-        });
+        self.user_client()
+            .fetch_all_notes()
+            .await
+            .unwrap_or_else(|e| {
+                error!("Failed to fetch notes: {:?}", e);
+                vec![]
+            });
         let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(fedimint_federation).await;
         self.event_sink.typed_event(&event);
@@ -957,7 +961,7 @@ impl Federation {
 
     /// Get 12 seed words associated with client secret
     pub async fn get_mnemonic(&self) -> Mnemonic {
-        let client_secret = self.client.get_client_secret().await;
+        let client_secret = self.user_client().get_client_secret().await;
         // FIXME: use all the entropy
         Mnemonic::from_entropy(&client_secret.entropy())
     }
@@ -985,7 +989,7 @@ impl Federation {
     /// Upload ecash backup to the federation
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
         let username = self.get_username().await;
-        self.client
+        self.user_client()
             .mint_client()
             .back_up_ecash_to_federation(username)
             .await?;
@@ -1017,7 +1021,6 @@ impl Federation {
         let state = dbtx
             .get_value(&SocialRecoveryStateKey(self.id()))
             .await
-            .expect("Db error")
             .ok_or(anyhow!("no active recovery session"))?;
         Ok(self.client.social_recovery_continue(state))
     }
@@ -1030,8 +1033,7 @@ impl Federation {
     ) {
         // FIXME: should I pass dbtx from outside?
         dbtx.insert_entry(&SocialRecoveryStateKey(self.id()), recovery_client.state())
-            .await
-            .expect("Db error");
+            .await;
     }
 
     /// Save social recovery ID to the DB. This is used to generate the recovery QR.
@@ -1041,8 +1043,7 @@ impl Federation {
         dbtx: &mut DatabaseTransaction<'_>,
     ) {
         dbtx.insert_entry(&SocialRecoveryIdKey(self.id()), &recovery_id)
-            .await
-            .expect("Db error");
+            .await;
     }
 
     /// Get social recovery Id from the DB. This is used to generate the recovery QR.
@@ -1051,7 +1052,6 @@ impl Federation {
             .await
             .get_value(&SocialRecoveryIdKey(self.id()))
             .await
-            .expect("Db error")
             .map(types::RecoveryId)
     }
 
@@ -1080,7 +1080,7 @@ impl Federation {
             let recovery_id = verification_request.recovery_id();
             self.save_social_recovery_id(&recovery_id, &mut dbtx).await;
         }
-        dbtx.commit_tx().await.expect("Db error");
+        dbtx.commit_tx().await;
         self.send_federation_event().await;
         Ok(())
     }
@@ -1088,14 +1088,10 @@ impl Federation {
     /// Delete all social recovery state from DB
     pub async fn delete_social_recovery_state_and_id(&self) {
         let mut dbtx = self.dbtx().await;
-        dbtx.remove_entry(&SocialRecoveryStateKey(self.id()))
-            .await
-            .expect("Db error");
-        dbtx.remove_entry(&SocialRecoveryIdKey(self.id()))
-            .await
-            .expect("Db error");
+        dbtx.remove_entry(&SocialRecoveryStateKey(self.id())).await;
+        dbtx.remove_entry(&SocialRecoveryIdKey(self.id())).await;
         // TODO: delete the verification file?
-        dbtx.commit_tx().await.expect("Db error");
+        dbtx.commit_tx().await;
     }
 
     /// Produce social recovery QR
@@ -1116,10 +1112,9 @@ impl Federation {
             .client
             .config()
             .0
-            .nodes
-            .iter()
-            .enumerate()
-            .map(|(i, node)| (node.name.clone(), PeerId::from(i as u16))) // FIXME: don't use "as"
+            .api_endpoints
+            .into_iter()
+            .map(|(peer_id, endpoint)| (endpoint.name.clone(), peer_id)) // FIXME: don't use "as"
             .collect();
         let mut approvals = vec![];
         for (guardian_name, peer_id) in guardian_peer_ids {
@@ -1144,7 +1139,7 @@ impl Federation {
         // Save progress to DB
         let mut dbtx = self.dbtx().await;
         self.social_recovery_save(&recovery_client, &mut dbtx).await;
-        dbtx.commit_tx().await.expect("Db error");
+        dbtx.commit_tx().await;
 
         Ok((approvals, remaining))
     }
@@ -1297,7 +1292,9 @@ impl Federation {
                         }
                         Ok(outpoint) => {
                             // FIXME: could this lead to funds loss if it errors out? can contracts be claimed a second time? or will next "fetch" find these coins?
-                            if let Err(e) = self.client.await_outpoint_outcome(*outpoint).await {
+                            if let Err(e) =
+                                self.user_client().await_outpoint_outcome(*outpoint).await
+                            {
                                 error!("Failed to claim contract {}", e);
                                 return;
                             }

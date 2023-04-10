@@ -147,10 +147,11 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     if (savedJson) {
                         // this logic must be reached to trigger any useEffects
                         const { selectedFederation } = savedJson
-                        if (selectedFederation?.name) {
+                        console.log('saved federation', selectedFederation)
+                        if (selectedFederation?.id) {
                             federationsDispatch(
                                 updateSelectedFederationId(
-                                    selectedFederation?.name,
+                                    selectedFederation?.id,
                                 ),
                             )
                             if (selectedFederation.username) {

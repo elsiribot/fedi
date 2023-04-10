@@ -1,18 +1,17 @@
-use async_trait::async_trait;
+use fedimint_core::config::FederationId;
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
-use mint_client::module_decode_stubs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
     /// Database to store all federation joined
     async fn global_db(&self) -> anyhow::Result<Database>;
-    async fn federation_db(&self, name: &str) -> anyhow::Result<Database>;
-    async fn delete_federation_db(&self, name: &str) -> anyhow::Result<()>;
+    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Database>;
+    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
 }
@@ -28,19 +27,19 @@ enum BridgeDbPrefix {
 #[derive(Debug, Decodable, Encodable)]
 pub struct JoinedFederationsKey;
 
-#[derive(Debug, Decodable, Encodable)]
+#[derive(Clone, Debug, Decodable, Encodable)]
 pub struct JoinedFederationsPrefix;
 
 impl fedimint_core::db::DatabaseRecord for JoinedFederationsKey {
     const DB_PREFIX: u8 = BridgeDbPrefix::JoinedFederations as u8;
     type Key = Self;
-    type Value = String;
+    type Value = FederationId;
 }
 
 impl fedimint_core::db::DatabaseRecord for JoinedFederationsPrefix {
     const DB_PREFIX: u8 = BridgeDbPrefix::JoinedFederations as u8;
     type Key = JoinedFederationsKey;
-    type Value = String;
+    type Value = FederationId;
 }
 
 #[derive(Debug, Decodable, Encodable)]

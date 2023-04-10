@@ -3,6 +3,8 @@
 # exit on failure
 set -e 
 
+TARGET=$PWD/../target
+
 rustup install nightly-x86_64-apple-darwin
 rustup install nightly-aarch64-apple-darwin
 rustup component add rust-src --toolchain nightly-x86_64-apple-darwin
@@ -22,8 +24,8 @@ cargo build --package fedi-ffi --profile release-smaller --target x86_64-apple-i
 cargo build --package fedi-ffi --profile release-smaller --target aarch64-apple-ios $CARGO_FLAGS
 cargo +nightly build --package fedi-ffi --release -Z build-std --target aarch64-apple-ios-sim $CARGO_FLAGS
 
-mkdir -p target/lipo-ios-sim/release-smaller
-lipo target/aarch64-apple-ios-sim/release/libfediffi.a target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output target/lipo-ios-sim/release-smaller/libfediffi.a
+mkdir -p $TARGET/lipo-ios-sim/release-smaller
+lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output $TARGET/lipo-ios-sim/release-smaller/libfediffi.a
 # mkdir -p target/lipo-macos/release-smaller
 # lipo target/aarch64-apple-darwin/release-smaller/libfediffi.a target/x86_64-apple-darwin/release-smaller/libfediffi.a -create -output target/lipo-macos/release-smaller/libfediffi.a
 
@@ -32,8 +34,8 @@ mv Sources/Fedi/fedi.swift Sources/Fedi/Fedi.swift
 cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64/fediFFI.framework/Headers
 cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/Headers
 cp Sources/Fedi/fediFFI.h fediFFI.xcframework/macos-arm64_x86_64/fediFFI.framework/Headers
-cp ../target/aarch64-apple-ios/release-smaller/libfediffi.a fediFFI.xcframework/ios-arm64/fediFFI.framework/fediFFI
-cp ../target/lipo-ios-sim/release-smaller/libfediffi.a fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
+cp $TARGET/aarch64-apple-ios/release-smaller/libfediffi.a fediFFI.xcframework/ios-arm64/fediFFI.framework/fediFFI
+cp $TARGET/lipo-ios-sim/release-smaller/libfediffi.a fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
 # cp ../target/lipo-macos/release-smaller/libfediffi.a fediFFI.xcframework/macos-arm64_x86_64/fediFFI.framework/fediFFI
 rm Sources/Fedi/fediFFI.h
 rm Sources/Fedi/fediFFI.modulemap

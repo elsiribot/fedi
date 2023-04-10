@@ -554,6 +554,7 @@ export const registerXmppUser = async (
     username: string,
     password: string,
 ): Promise<boolean> => {
+    console.log('register xmpp user', username, password)
     return new Promise((resolve, reject) => {
         // Connect to XMPP server without credentials to establish
         // a session for registration
