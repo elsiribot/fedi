@@ -1,3 +1,12 @@
+import Clipboard from '@react-native-clipboard/clipboard'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Theme, useTheme } from '@rneui/themed'
+import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useCameraDevices } from 'react-native-vision-camera'
+
 import { fedimint } from '../bridge'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
@@ -7,14 +16,6 @@ import {
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
 import type { RootStackParamList } from '../types/navigation'
-import Clipboard from '@react-native-clipboard/clipboard'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useCameraDevices } from 'react-native-vision-camera'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

@@ -1,14 +1,15 @@
 import {
+    EmitterSubscription,
+    NativeEventEmitter,
+    NativeModules,
+} from 'react-native'
+
+import {
     Federation,
     Transaction,
     SocialRecoveryEvent,
 } from '@fedi/common/types'
 import { FedimintRpc } from '@fedi/common/utils/fedimint'
-import {
-    EmitterSubscription,
-    NativeEventEmitter,
-    NativeModules,
-} from 'react-native'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 

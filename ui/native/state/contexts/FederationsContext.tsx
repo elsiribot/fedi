@@ -1,9 +1,3 @@
-import { BridgeEventEmitter, FederationEvent } from '../../bridge'
-import {
-    AUTHENTICATED_GUARDIAN_DB_KEY,
-    SELECTED_FEDERATION_ID_DB_KEY,
-} from '../../constants'
-import { Federation, Guardian } from '@fedi/common/types'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { isEqual } from 'lodash'
 import React, {
@@ -13,6 +7,14 @@ import React, {
     useMemo,
     useReducer,
 } from 'react'
+
+import { Federation, Guardian } from '@fedi/common/types'
+
+import { BridgeEventEmitter, FederationEvent } from '../../bridge'
+import {
+    AUTHENTICATED_GUARDIAN_DB_KEY,
+    SELECTED_FEDERATION_ID_DB_KEY,
+} from '../../constants'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
