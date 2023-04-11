@@ -65,8 +65,8 @@ export const federationSlice = createSlice({
         ) {
             state.authenticatedGuardian = action.payload
         },
-        resetFederationsState(state) {
-            state = { ...initialState }
+        resetFederationsState() {
+            return { ...initialState }
         },
     },
 })

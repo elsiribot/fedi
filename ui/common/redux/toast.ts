@@ -17,10 +17,10 @@ export const toastSlice = createSlice({
     name: 'toast',
     initialState,
     reducers: {
-        setToast: (state, action: PayloadAction<Toast>) => {
+        setToast(state, action: PayloadAction<Toast>) {
             state.toast = action.payload
         },
-        closeToast: (state, action: PayloadAction<string | undefined>) => {
+        closeToast(state, action: PayloadAction<string | undefined>) {
             if (!action.payload || state.toast?.key === action.payload) {
                 state.toast = null
             }

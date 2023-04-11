@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+
 import { CommonState } from '.'
 
 /*** Initial State ***/
@@ -16,15 +17,14 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
-        updateBtcUsdPrice: (state, action: PayloadAction<number>) => {
+        updateBtcUsdPrice(state, action: PayloadAction<number>) {
             state.btcUsdPrice = action.payload
         },
-        incrementSocketErrors: state => {
+        incrementSocketErrors(state) {
             state.socketErrors = state.socketErrors + 1
         },
-        resetCurrencyState: state => {
-            state.btcUsdPrice = 0
-            state.socketErrors = 0
+        resetCurrencyState() {
+            return { ...initialState }
         },
     },
 })

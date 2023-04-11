@@ -16,7 +16,7 @@ export const environmentSlice = createSlice({
     name: 'environment',
     initialState,
     reducers: {
-        setDeveloperMode: (state, action: PayloadAction<boolean>) => {
+        setDeveloperMode(state, action: PayloadAction<boolean>) {
             state.developerMode = action.payload
         },
     },
