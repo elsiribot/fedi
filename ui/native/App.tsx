@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { Provider as ReduxProvider } from 'react-redux'
 
 import { TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -21,10 +20,10 @@ import {
 import CustomToast from './components/ui/CustomToast'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { ChatProvider } from './state/contexts/ChatContext'
+import { CurrencyProvider } from './state/contexts/CurrencyContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
-import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
 
 // Initialize Sentry SDK
@@ -62,9 +61,6 @@ const App = () => {
     async function requestPushNotificationPermissions() {
         await notifee.requestPermission()
     }
-
-    // Initialize redux store
-    useEffect(() => initializeNativeStore(), [])
 
     useEffect(() => {
         const emitter = new BridgeEventEmitter()
@@ -114,22 +110,21 @@ const App = () => {
     return (
         <SafeAreaProvider>
             <ThemeProvider theme={theme}>
-                <ReduxProvider store={store}>
-                    <ProviderComposer
-                        providers={[
-                            EnvironmentProvider,
-                            FederationsProvider,
-                            ChatProvider,
-                            BackupRecoveryProvider,
-                        ]}>
-                        {bridgeIsReady && (
-                            <Router
-                                routingInstrumentation={routingInstrumentation}
-                            />
-                        )}
-                        <CustomToast />
-                    </ProviderComposer>
-                </ReduxProvider>
+                <ProviderComposer
+                    providers={[
+                        EnvironmentProvider,
+                        CurrencyProvider,
+                        FederationsProvider,
+                        ChatProvider,
+                        BackupRecoveryProvider,
+                    ]}>
+                    {bridgeIsReady && (
+                        <Router
+                            routingInstrumentation={routingInstrumentation}
+                        />
+                    )}
+                    <CustomToast />
+                </ProviderComposer>
             </ThemeProvider>
         </SafeAreaProvider>
     )

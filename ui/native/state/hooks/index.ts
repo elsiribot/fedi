@@ -5,7 +5,6 @@ import {
     useEffect,
     useRef,
 } from 'react'
-import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
 
 import { LightningGateway } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -13,18 +12,8 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
+import { useCurrencyContext } from '../contexts/CurrencyContext'
 import { useFederationsContext } from '../contexts/FederationsContext'
-import type { AppState, AppDispatch } from '../store'
-
-/**
- * Provides a `dispatch` function that allows you to dispatch redux actions.
- */
-export const useAppDispatch: () => AppDispatch = useDispatch
-
-/**
- * Provides application state from redux, given a selector.
- */
-export const useAppSelector: TypedUseSelectorHook<AppState> = useSelector
 
 export const useDebouncedEffect = (
     effect: EffectCallback,
@@ -48,7 +37,8 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
 }
 
 export const useBtcUsdPrice = () => {
-    const btcUsdPrice = useAppSelector(s => s.currency.btcUsdPrice)
+    const { state } = useCurrencyContext()
+    const { btcUsdPrice } = state
     return {
         convertSatsToUsd: useCallback(
             (sats: Sats) => {
