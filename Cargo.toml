@@ -7,9 +7,9 @@ members = [
     "fedi-social-server",
     "fedi-social-client",
     "bridge/fedi-ffi",
-    "bridge/ffi-bindgen"
+    "bridge/ffi-bindgen",
+    "bridge/fedi-wasm"
 ]
-exclude = ["bridge/fedi-wasm"]
 resolver = "2"
 
 [profile.release-smaller]
@@ -117,4 +117,4 @@ fedimint-logging = { git = "https://x-access-token:github_pat_11ABBCQBI0xWGdvtpc
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
 uniffi_bindgen = { git = "https://github.com/fedibtc/uniffi-rs", rev = "a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31" }
-
+ring = { git = "https://github.com/Maan2003/ring", branch = "wasm-fix2" }
