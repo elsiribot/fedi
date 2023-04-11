@@ -44,6 +44,7 @@ export const {
         md: '(max-width: 980px)',
         lg: '(max-width: 1280px)',
         xl: '(max-width: 1440px)',
+        standalone: '(display-mode: standalone)',
     },
     utils: {
         holoGradient: (value: keyof (typeof fediTheme)['holoGradient']) => ({
