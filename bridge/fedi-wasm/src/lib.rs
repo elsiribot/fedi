@@ -5,10 +5,10 @@ use std::sync::Arc;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
 use fediffi::fedimint_core::db::Database;
 use fediffi::fedimint_core::db::mem_impl::MemDatabase;
+use fediffi::fedimint_core::config::FederationId;
 use fediffi::mint_client::module_decode_stubs;
 use fediffi::bridge::Bridge;
 
-mod db;
 mod db2;
 
 #[wasm_bindgen]
@@ -28,11 +28,11 @@ impl fediffi::storage::IStorage for WasmStorage {
     async fn global_db(&self) -> anyhow::Result<Database> {
         Ok(self.0.clone())
     }
-    async fn federation_db(&self, name: &str) -> anyhow::Result<Database> {
+    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Database> {
         Ok(self.0.clone())
     }
 
-    async fn delete_federation_db(&self, name: &str) -> anyhow::Result<()> {
+    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
         todo!()
     }
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
