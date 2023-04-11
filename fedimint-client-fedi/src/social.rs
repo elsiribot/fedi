@@ -14,6 +14,7 @@ use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable, SerdeEncodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
+use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use secp256k1::Secp256k1;
@@ -435,7 +436,7 @@ pub trait FediSocialFederationApi {
 #[cfg_attr(not(target_family = "wasm"), async_trait)]
 impl<T: ?Sized> FediSocialFederationApi for T
 where
-    T: IFederationApi + Send + Sync + 'static,
+    T: IFederationApi + MaybeSend + MaybeSync + 'static,
 {
     /// Upload social recovery backup for mint to safekeep
     async fn social_backup(
