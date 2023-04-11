@@ -3,12 +3,16 @@ import type { ThunkDispatch } from 'redux-thunk'
 
 import { currencySlice, watchPrices } from './currency'
 import { federationSlice } from './federation'
+import { toastSlice } from './toast'
 
 export * from './currency'
+export * from './federation'
+export * from './toast'
 
 export const commonReducers = {
     currency: currencySlice.reducer,
     federation: federationSlice.reducer,
+    toast: toastSlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers
