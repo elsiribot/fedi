@@ -35,8 +35,8 @@ keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
 
 
-stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "058416ea58e879f68de82d7e8d45affde8bc89b2" }
-stabilitypool-client = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "058416ea58e879f68de82d7e8d45affde8bc89b2" }
+stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "e8d07c283ac8af081ecb6fcfd8fc193c503da5ff" }
+stabilitypool-client = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "e8d07c283ac8af081ecb6fcfd8fc193c503da5ff" }
 # stabilitypool-server = { path = "../stabilitypool/stabilitypool-server" }
 # stabilitypool-client = { path = "../stabilitypool/stabilitypool-client"}
 
