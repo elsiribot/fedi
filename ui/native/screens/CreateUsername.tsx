@@ -89,16 +89,16 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const handleXmppRegistration = async () => {
             try {
-                console.log('checking credeitnals')
+                console.debug('checking credeitnals')
                 const credentials = await getXmppCredentials()
-                console.log('credentials', credentials)
+                console.debug('credentials', credentials)
                 const { password, keypairSeed } = credentials
                 const normalizedUsername = username.toLowerCase()
                 const credentialsAreValid = await checkXmppUser(
                     normalizedUsername,
                     password,
                 )
-                console.log('valid', credentialsAreValid)
+                console.debug('valid', credentialsAreValid)
                 if (credentialsAreValid) {
                     // TODO: store the password or always fetch from bridge?
                     dispatch(
@@ -110,9 +110,9 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     )
                     backupXmppUsername(normalizedUsername)
                 } else {
-                    console.log('registering user')
+                    console.debug('registering user')
                     await registerXmppUser(normalizedUsername, password)
-                    console.log('registered user')
+                    console.debug('registered user')
 
                     dispatch(
                         updateFederationCredentials(
@@ -125,9 +125,11 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 }
             } catch (error) {
                 if (error instanceof Error) {
+                    console.error(error.toString())
+                } else if (typeof error === 'string') {
                     setXmppAuthInProgress(false)
-                    console.info('error', error.toString())
-                    toast?.show(error.toString(), 3000)
+                    console.info(error)
+                    toast?.show(error, 3000)
                 }
             }
         }
