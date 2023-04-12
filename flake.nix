@@ -59,7 +59,11 @@
             inherit fedi-fedimint-pkgs;
             gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
           };
-        devShells = fmLib.devShells;
+        devShells = fmLib.devShells // {
+          cross = fmLib.devShells.cross.overrideAttrs (prev: {
+            nativeBuildInputs = prev.nativeBuildInputs ++ [ pkgs.wasm-pack pkgs.wasm-bindgen-cli pkgs.binaryen ];
+          });
+        };
       });
 
 }
