@@ -12,7 +12,7 @@ fi
 
 # Revert `git stash` on exit
 function revert_git_stash {
-  >&2 echo "Unstashing uncommited changes..."
+  >&2 echo "Unstashing uncommitted changes..."
   git stash pop -q
 }
 
@@ -24,7 +24,7 @@ set -e
 
 # Stash pending changes and revert them when script ends
 if [ -z "${NO_STASH:-}" ] && [ $is_unclean -ne 0 ]; then
-  >&2 echo "Stashing uncommited changes..."
+  >&2 echo "Stashing uncommitted changes..."
   git stash -q --keep-index
   trap revert_git_stash EXIT
 fi
@@ -37,6 +37,8 @@ git_ls_nonbinary_files="$(echo "$git_ls_files" | xargs file --mime | grep -v "; 
 
 
 function check_nix() {
+  set -eo pipefail
+
   # shellcheck disable=SC2046
   nixpkgs-fmt --check $(echo "$git_ls_files" | grep -E '.*\.nix$') 2> >(grep -v "0 / 7 would have been reformatted")
 }
@@ -44,6 +46,8 @@ export -f check_nix
 
 
 function check_cargo_fmt() {
+  set -eo pipefail
+
   # Note: avoid `cargo fmt --all` so we don't need extra stuff in `ci` shell
   # so that CI is faster
   # shellcheck disable=SC2046
@@ -53,6 +57,8 @@ export -f check_cargo_fmt
 
 
 function check_dbg() {
+  set -eo pipefail
+
   errors=""
   for path in $(echo "$git_ls_files" | grep  '.*\.rs'); do
     if grep 'dbg!(' "$path"  > /dev/null; then
@@ -70,6 +76,8 @@ export -f check_dbg
 
 
 function check_shellcheck() {
+  set -eo pipefail
+
   for path in $(echo "$git_ls_files" | grep -E '.*\.sh$')  ; do
     shellcheck --severity=warning "$path"
   done
@@ -78,8 +86,11 @@ export -f check_shellcheck
 
 
 function check_eof() {
+  set -eo pipefail
+
   errors=""
   for path in $(echo "$git_ls_nonbinary_files" | grep -v -E '.*\.(ods|svg|plist)' | grep -v 'ui/.yarn'); do
+
     # extra branches for clarity
     if [ ! -s "$path" ]; then
        # echo "$path is empty"
@@ -100,5 +111,33 @@ function check_eof() {
 }
 export -f check_eof
 
+function trailing_space_check(){
+  set -eo pipefail
 
-parallel ::: check_nix check_cargo_fmt check_dbg check_shellcheck check_eof 
+  for path in $(echo "$git_ls_nonbinary_files" | grep -v -E '.*\.(ods|svg|plist)' | grep -v 'ui/.yarn'); do
+
+    if git diff --check --cached; then
+      echo "Trailing whitespace detected. Please remove them before committing."
+      return 1
+    fi
+  done
+
+}
+export -f trailing_space_check
+
+function check_cargo_lock() {
+  set -eo pipefail
+
+  # https://users.rust-lang.org/t/check-if-the-cargo-lock-is-up-to-date-without-building-anything/91048/5
+  cargo update --workspace --locked
+}
+export -f check_cargo_lock
+
+
+parallel ::: \
+  check_nix \
+  check_cargo_fmt \
+  check_dbg \
+  check_shellcheck \
+  check_eof \
+  check_cargo_lock
