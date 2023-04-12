@@ -497,6 +497,26 @@ rec {
     ];
   };
 
+  fedi-fedimint-pkgs = pkgsBuild {
+    name = "fedimint-pkgs";
+
+    pkgs = {
+      fedi-fedimintd = { };
+      fedi-fedimint-cli = { };
+    };
+
+    defaultBin = "fedimintd";
+    dirs = [
+      "bridge"
+      "fedimint-cli"
+      "fedimint-client-fedi"
+      "fedimintd"
+      "fedi-social-common"
+      "fedi-social-client"
+      "fedi-social-server"
+    ];
+  };
+
   fedi-wasm = { target ? null }: pkgsCrossBuild {
     name = "fedi-wasm";
     inherit target;

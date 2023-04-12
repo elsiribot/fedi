@@ -80,6 +80,8 @@
 
         # outputs that build a particular Rust package
         rustPackageOutputs = {
+          fedi-fedimint-pkgs = craneBuildNative.fedi-fedimint-pkgs;
+
           fedi-wasm = (craneBuildCross "wasm32-unknown-unknown").fedi-wasm {
             target = toolchain.crossTargets."wasm32-unknown-unknown";
           };
@@ -87,19 +89,10 @@
 
         # rust packages outputs with git hash replaced
         rustPackageOutputsFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackageOutputs;
-
-        fedi-fedimint-pkgs = craneLib.buildPackage (commonArgsBase // {
-          version = "0.0.1";
-          pname = "fedi-fedimint-pkgs";
-          src = ./.;
-          cargoExtraArgs = "--package fedi-fedimintd --package fedi-fedimint-cli";
-          doCheck = false;
-        });
       in
       {
         packages =
           {
-            inherit fedi-fedimint-pkgs;
             gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
           } // rustPackageOutputsFinal;
 
