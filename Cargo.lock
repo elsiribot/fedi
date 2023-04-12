@@ -1050,7 +1050,6 @@ dependencies = [
  "mint-client",
  "rand",
  "reqwest",
- "ring",
  "serde",
  "serde_json",
  "tempfile",
@@ -3561,7 +3560,8 @@ dependencies = [
 [[package]]
 name = "ring"
 version = "0.16.20"
-source = "git+https://x-access-token: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@github.com/fedibtc/ring?rev=70ea084643a957998a30821c514d5506ab177493#70ea084643a957998a30821c514d5506ab177493"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3053cf52e236a3ed746dfc745aa9cacf1b791d846bdaf412f60a8d7d6e17c8fc"
 dependencies = [
  "cc",
  "libc",
