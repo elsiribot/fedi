@@ -1,5 +1,6 @@
 import commonEN from './en/common.json'
 import commonES from './es/common.json'
+import commonFR from './fr/common.json'
 
 export const resources = {
     en: {
@@ -7,5 +8,8 @@ export const resources = {
     },
     es: {
         translation: commonES,
+    },
+    fr: {
+        translation: commonFR,
     },
 }
