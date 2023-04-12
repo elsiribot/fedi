@@ -7,20 +7,25 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
-    fedimint = {
+    # we pick upstream packages from here, so we want this to be compatible with our forks
+    fedimint-pkgs = {
       url = "github:fedimint/fedimint?rev=b283f4e2c5d4ccacd1293276e4880a5918013981";
+    };
+    # we only pick build system stuff here, so we can be more relaxed about updating it
+    fedimint-build = {
+      url = "github:fedimint/fedimint?rev=e013b0e064cbe4a49e57d2e8c06bade8647016f9";
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
         };
-        fmLib = fedimint.lib.${system};
-        crane = fedimint.inputs.crane;
-        fenix = fedimint.inputs.fenix;
+        fmLib = fedimint-build.lib.${system};
+        crane = fedimint-build.inputs.crane;
+        fenix = fedimint-build.inputs.fenix;
         commonArgsBase = fmLib.commonArgsBase;
 
 
@@ -52,7 +57,7 @@
         packages =
           {
             inherit fedi-fedimint-pkgs;
-            gateway-pkgs = fedimint.packages.${system}.gateway-pkgs;
+            gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
           };
         devShells = fmLib.devShells;
       });
