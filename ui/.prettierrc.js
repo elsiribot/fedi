@@ -7,6 +7,6 @@ module.exports = {
     semi: false,
     tabWidth: 4,
     trailingComma: 'all',
-    importOrder: ['^@fedi/(.*)$', '^[./]'],
+    importOrder: ['<THIRD_PARTY_MODULES>', '^@fedi/(.*)$', '^[./]'],
     importOrderSeparation: true,
 }
