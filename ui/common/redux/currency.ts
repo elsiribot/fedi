@@ -6,6 +6,7 @@ import { CommonState } from '.'
 
 const initialState = {
     btcUsdPrice: 0,
+    btcEurPrice: 0,
     socketErrors: 0,
 }
 
@@ -17,6 +18,9 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
+        updateBtcEurPrice(state, action: PayloadAction<number>) {
+            state.btcEurPrice = action.payload
+        },
         updateBtcUsdPrice(state, action: PayloadAction<number>) {
             state.btcUsdPrice = action.payload
         },
@@ -31,7 +35,8 @@ export const currencySlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { updateBtcUsdPrice, resetCurrencyState } = currencySlice.actions
+export const { updateBtcEurPrice, updateBtcUsdPrice, resetCurrencyState } =
+    currencySlice.actions
 
 /*** Async thunk actions ***/
 
@@ -43,10 +48,10 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
     'currency/watchPrices',
     async (_, { dispatch, getState }) => {
         // See docs at https://docs.bitfinex.com/docs/ws-general
-        const socket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
+        const usdSocket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
 
-        socket.onopen = () => {
-            socket.send(
+        usdSocket.onopen = () => {
+            usdSocket.send(
                 JSON.stringify({
                     event: 'subscribe',
                     channel: 'ticker',
@@ -55,7 +60,8 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
             )
         }
 
-        socket.onmessage = (message: any) => {
+        usdSocket.onmessage = (message: any) => {
+            console.log('message', message)
             const parsedData = JSON.parse(message.data)
             if (parsedData.length === 2 && parsedData[1].length === 10) {
                 const priceData = parsedData[1]
@@ -65,12 +71,33 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
         }
 
         // Re-try connection on closing, with a backoff.
-        socket.onclose = () => {
+        usdSocket.onclose = () => {
             const { socketErrors } = getState().currency
             setTimeout(() => {
                 dispatch(currencySlice.actions.incrementSocketErrors())
                 dispatch(watchPrices())
             }, 1000 * socketErrors)
+        }
+
+        const eurSocket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
+
+        eurSocket.onopen = () => {
+            eurSocket.send(
+                JSON.stringify({
+                    event: 'subscribe',
+                    channel: 'ticker',
+                    symbol: 'tBTCEUR',
+                }),
+            )
+        }
+
+        eurSocket.onmessage = (message: any) => {
+            const parsedData = JSON.parse(message.data)
+            if (parsedData.length === 2 && parsedData[1].length === 10) {
+                const priceData = parsedData[1]
+                const updatedPrice = priceData[6]
+                dispatch(updateBtcEurPrice(updatedPrice))
+            }
         }
     },
 )
