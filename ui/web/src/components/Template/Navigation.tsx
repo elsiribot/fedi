@@ -8,7 +8,7 @@ import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import HomeIcon from '@fedi/common/assets/svgs/home.svg'
 
-import { styled, theme } from '../../styles'
+import { keyframes, styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
 
@@ -59,15 +59,28 @@ export const Navigation: React.FC = () => {
     )
 }
 
+export const containerSlideIn = keyframes({
+    '0%': {
+        transform: 'translateX(-100%)',
+        opacity: 0,
+    },
+    '100%': {
+        transform: 'translateX(0)',
+        opacity: 1,
+    },
+})
+
 const Container = styled('nav', {
     width: 270,
     flexShrink: 0,
     padding: 32,
     background: theme.colors.white,
+    animation: `${containerSlideIn} 200ms ease`,
 
     '@md': {
         width: '100%',
         padding: 0,
+        animation: 'none',
     },
 })
 
