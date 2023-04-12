@@ -10,6 +10,16 @@ members = [
     "bridge/ffi-bindgen",
     "bridge/fedi-wasm"
 ]
+default-members = [
+    "fedimintd",
+    "fedimint-cli",
+    "fedimint-client-fedi",
+    "fedi-social-common",
+    "fedi-social-server",
+    "fedi-social-client",
+    "bridge/fedi-ffi",
+    "bridge/ffi-bindgen",
+]
 resolver = "2"
 
 [profile.release-smaller]
