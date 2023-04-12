@@ -15,7 +15,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
     build:
-        name: 'Build'
+        name: 'Build Rust'
         runs-on: buildjet-4vcpu-ubuntu-2004
         timeout-minutes: 10
         steps:
@@ -30,3 +30,6 @@ jobs:
 
             - name: Build fedi-fedimint-pkgs
               run: nix build -L .#fedi-fedimint-pkgs
+
+            - name: Build fedi-wasm
+              run: nix build -L .#fedi-wasm
