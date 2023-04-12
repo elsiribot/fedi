@@ -130,6 +130,15 @@ const DeveloperSettings: React.FC<Props> = () => {
                     checked={selectedLanguage === 'es'}
                     onPress={() => setSelectedLanguage('es')}
                 />
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>
+                            {'French'}
+                        </Text>
+                    }
+                    checked={selectedLanguage === 'fr'}
+                    onPress={() => setSelectedLanguage('fr')}
+                />
             </View>
             <Button
                 size="sm"
