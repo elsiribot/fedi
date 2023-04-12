@@ -6,11 +6,14 @@ use fediffi::fedimint_core;
 use fedimint_core::{apply, async_trait_maybe_send};
 use futures::stream;
 
-use tracing::info;
 use fediffi::tokio::sync::Mutex;
-use fedimint_core::db::{IDatabase, ISingleUseDatabaseTransaction, SingleUseDatabaseTransaction, IDatabaseTransaction, PrefixStream};
+use fedimint_core::db::{
+    IDatabase, IDatabaseTransaction, ISingleUseDatabaseTransaction, PrefixStream,
+    SingleUseDatabaseTransaction,
+};
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
+use tracing::info;
 use wasm_bindgen::JsCast;
 
 fn rexie_to_anyhow(e: rexie::Error) -> anyhow::Error {
@@ -58,10 +61,10 @@ pub struct MemTransaction<'a> {
 impl MemDatabase {
     pub async fn new(name: &str) -> Result<Self> {
         let idb = rexie::Rexie::builder(name)
-                .add_object_store(rexie::ObjectStore::new("default"))
-                .build()
-                .await
-                .map_err(rexie_to_anyhow)?;
+            .add_object_store(rexie::ObjectStore::new("default"))
+            .build()
+            .await
+            .map_err(rexie_to_anyhow)?;
         let mut data = OrdMap::new();
 
         let idb_tx = idb
@@ -81,7 +84,7 @@ impl MemDatabase {
         }
         Ok(Self {
             data: Mutex::new(data),
-            idb
+            idb,
         })
     }
 }
