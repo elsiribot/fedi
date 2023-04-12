@@ -103,6 +103,12 @@ export interface Guardian extends Node {
     password: string
 }
 
+export interface FederationCredentials {
+    username: string
+    password: string
+    keypairSeed: string
+}
+
 export interface Federation {
     id: string
     name: string

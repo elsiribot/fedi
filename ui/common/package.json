@@ -13,6 +13,7 @@
         "format": "prettier --write ."
     },
     "dependencies": {
+        "@reduxjs/toolkit": "^1.9.3",
         "@xmpp/client": "^0.13.1",
         "accounting": "^0.4.1",
         "bech32": "^2.0.0",
