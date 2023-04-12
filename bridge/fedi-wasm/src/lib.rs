@@ -1,13 +1,13 @@
-use wasm_bindgen::prelude::*;
+use fediffi::bridge::Bridge;
+use fediffi::fedimint_core::config::FederationId;
+use fediffi::fedimint_core::db::mem_impl::MemDatabase;
+use fediffi::fedimint_core::db::Database;
+use fediffi::fedimint_core::{apply, async_trait_maybe_send};
+use fediffi::mint_client::module_decode_stubs;
 use std::cell::RefCell;
 use std::path::Path;
 use std::sync::Arc;
-use fediffi::fedimint_core::{apply, async_trait_maybe_send};
-use fediffi::fedimint_core::db::Database;
-use fediffi::fedimint_core::db::mem_impl::MemDatabase;
-use fediffi::fedimint_core::config::FederationId;
-use fediffi::mint_client::module_decode_stubs;
-use fediffi::bridge::Bridge;
+use wasm_bindgen::prelude::*;
 
 mod db2;
 
@@ -71,9 +71,11 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
     let buffer = LOG_BUFFER.with(Arc::clone);
     tracing_subscriber::fmt()
         .json()
-        .with_env_filter(tracing_subscriber::EnvFilter::new("info,fediffi=debug,mint_client=trace,fedimint_core::api=trace"))
+        .with_env_filter(tracing_subscriber::EnvFilter::new(
+            "info,fediffi=debug,mint_client=trace,fedimint_core::api=trace",
+        ))
         .with_writer({
-            use std::io::{Write, self};
+            use std::io::{self, Write};
             use tracing_subscriber::fmt::MakeWriter;
 
             struct MemWriter<'a, T>(std::sync::MutexGuard<'a, T>);
@@ -101,13 +103,18 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
 
     let db = db2::MemDatabase::new("main").await.unwrap();
     let db = Database::new(db, module_decode_stubs());
-    let bridge = fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink)).await.unwrap();
+    let bridge =
+        fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink))
+            .await
+            .unwrap();
     BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
 }
 
 #[wasm_bindgen]
 pub async fn fedimint_rpc(method: String, payload: String) -> String {
-    let bridge = BRIDGE.with(|bridge| bridge.borrow().clone()).expect("bridge not set"); // TODO: improve error
+    let bridge = BRIDGE
+        .with(|bridge| bridge.borrow().clone())
+        .expect("bridge not set"); // TODO: improve error
     fediffi::fedimint_rpc_async(bridge, method, payload).await
 }
 
@@ -117,7 +124,12 @@ pub fn get_logs() -> wasm_bindgen::JsValue {
     let buffer = LOG_BUFFER.with(Arc::clone);
     let buffer = buffer.lock().unwrap();
     // application/octet-stream to convince the browser to download the file
-    (*gloo_file::File::new_with_options("fedi-wasm.log", &**buffer, Some("application/octet-stream"), None))
-        .clone()
-        .into()
+    (*gloo_file::File::new_with_options(
+        "fedi-wasm.log",
+        &**buffer,
+        Some("application/octet-stream"),
+        None,
+    ))
+    .clone()
+    .into()
 }
