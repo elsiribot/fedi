@@ -58,6 +58,11 @@ export const FediBridgeGateway: React.FC<Props> = ({ children }) => {
     )
 }
 
+const loaderFadeIn = keyframes({
+    '0%, 50%': { opacity: 0 },
+    '100%': { opacity: 1 },
+})
+
 const Loader = styled('div', {
     display: 'flex',
     justifyContent: 'center',
@@ -68,6 +73,7 @@ const Loader = styled('div', {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
+    animation: `${loaderFadeIn} 400ms ease`,
 
     '& svg': {
         height: '100%',
