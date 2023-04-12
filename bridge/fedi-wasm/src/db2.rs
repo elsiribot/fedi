@@ -8,7 +8,7 @@ use futures::stream;
 
 use tracing::info;
 use fediffi::tokio::sync::Mutex;
-use fedimint_core::db::{IDatabase, IDatabaseTransaction, PrefixStream};
+use fedimint_core::db::{IDatabase, ISingleUseDatabaseTransaction, SingleUseDatabaseTransaction, IDatabaseTransaction, PrefixStream};
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
 use wasm_bindgen::JsCast;
@@ -88,7 +88,7 @@ impl MemDatabase {
 
 #[apply(async_trait_maybe_send!)]
 impl IDatabase for MemDatabase {
-    async fn begin_transaction<'a>(&'a self) -> Box<dyn IDatabaseTransaction<'a>> {
+    async fn begin_transaction<'a>(&'a self) -> Box<dyn ISingleUseDatabaseTransaction<'a>> {
         let db_clone = self.data.lock().await.clone();
         let mut memtx = MemTransaction {
             operations: Vec::new(),
@@ -100,7 +100,7 @@ impl IDatabase for MemDatabase {
         };
 
         memtx.set_tx_savepoint().await;
-        Box::new(memtx)
+        Box::new(SingleUseDatabaseTransaction::new(memtx))
     }
 }
 
@@ -148,7 +148,7 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
         Box::pin(stream::iter(data))
     }
 
-    async fn commit_tx(self: Box<Self>) -> Result<()> {
+    async fn commit_tx(self) -> Result<()> {
         let mut data = self.db.data.lock().await;
         let mut data_new = data.clone();
         let idb_tx = self
