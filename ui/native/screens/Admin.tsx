@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
+import { getShowInviteCode } from '@fedi/common/types/fedimint'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
@@ -180,18 +181,21 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.federations.federation-details')}
                     onPress={() => {}}
                 />
-                <SettingsItem
-                    image={<SvgImage name="InviteMembers" />}
-                    label={t('feature.federations.invite-members')}
-                    onPress={() => {
-                        navigation.navigate('FederationInvite', {
-                            // FIXME: we should know that we have a selectedFederation here ...
-                            inviteLink: selectedFederation
-                                ? selectedFederation.connectInfo
-                                : '',
-                        })
-                    }}
-                />
+                {selectedFederation &&
+                    getShowInviteCode(selectedFederation) && (
+                        <SettingsItem
+                            image={<SvgImage name="InviteMembers" />}
+                            label={t('feature.federations.invite-members')}
+                            onPress={() => {
+                                navigation.navigate('FederationInvite', {
+                                    // FIXME: we should know that we have a selectedFederation here ...
+                                    inviteLink: selectedFederation
+                                        ? selectedFederation.connectInfo
+                                        : '',
+                                })
+                            }}
+                        />
+                    )}
                 {federationsState.authenticatedGuardian !== null && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}

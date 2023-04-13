@@ -118,6 +118,7 @@ export interface Federation {
     socialRecoveryActive: boolean
     // TODO: Implement and get this from bridge
     // defaultCurrency?: SupportedCurrency
+    // stealthMode?: boolean
 }
 // TODO: Remove this when Federation.defaultCurrency is available
 export const getDefaultCurrency = (
@@ -127,6 +128,9 @@ export const getDefaultCurrency = (
         ? SupportedCurrency.CFA
         : SupportedCurrency.USD
 }
+// TODO: Remove this when Federation.stealthMode is available
+export const getShowInviteCode = (federation: Federation): boolean => {
+    return federation?.name?.includes('togo') ? false : true
 }
 
 export type SeedWords = string[]

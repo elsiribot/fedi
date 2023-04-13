@@ -9,7 +9,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
-import { Federation } from '@fedi/common/types'
+import { Federation, getShowInviteCode } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { Images } from '../../../assets/images'
@@ -51,15 +51,17 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 </Text>
             </View>
 
-            <Pressable
-                style={styles(theme).iconImage}
-                onPress={() => {
-                    navigation.navigate('FederationInvite', {
-                        inviteLink: federation.connectInfo,
-                    })
-                }}>
-                <SvgImage name="InviteMembers" />
-            </Pressable>
+            {getShowInviteCode(federation) && (
+                <Pressable
+                    style={styles(theme).iconImage}
+                    onPress={() => {
+                        navigation.navigate('FederationInvite', {
+                            inviteLink: federation.connectInfo,
+                        })
+                    }}>
+                    <SvgImage name="InviteMembers" />
+                </Pressable>
+            )}
         </View>
     )
 }
