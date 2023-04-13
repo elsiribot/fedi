@@ -1,78 +1,5 @@
-{ pkgs, lib, advisory-db, clightning-dev, pkgs-kitman, moreutils-ts }:
-craneLib:
-let
-  # filter source code at path `src` to include only the list of `modules`
-  filterModules = modules: raw-src:
-    let
-      src = builtins.path { path = raw-src; name = "fedimint"; };
-      basePath = toString src + "/";
-      relPathAllCargoTomlFiles = builtins.filter
-        (pathStr: lib.strings.hasSuffix "/Cargo.toml" pathStr)
-        (builtins.map (path: lib.removePrefix basePath (toString path)) (lib.filesystem.listFilesRecursive src));
-    in
-    lib.cleanSourceWith {
-      filter = (path: type:
-        let
-          relPath = lib.removePrefix basePath (toString path);
-          includePath =
-            # traverse only into directories that somewhere in there contain `Cargo.toml` file, or were explicitly whitelisted
-            (type == "directory" && lib.any (cargoTomlPath: lib.strings.hasPrefix relPath cargoTomlPath) relPathAllCargoTomlFiles) ||
-            lib.any
-              (re: builtins.match re relPath != null)
-              ([ "Cargo.lock" "Cargo.toml" ".cargo" ".cargo/.*" ".*/Cargo.toml" ".*/proto/.*" ] ++ builtins.concatLists (map (name: [ name "${name}/.*" ]) modules));
-        in
-        # uncomment to debug:
-          # builtins.trace "${relPath}: ${lib.boolToString includePath}"
-        includePath
-
-      );
-      inherit src;
-    };
-
-  # Filter only files needed to build project dependencies
-  #
-  # To get good build times it's vitally important to not have to
-  # rebuild derivation needlessly. The way Nix caches things
-  # is very simple: if any input file changed, derivation needs to
-  # be rebuild.
-  #
-  # For this reason this filter function strips the `src` from
-  # any files that are not relevant to the build.
-  #
-  # Lile `filterWorkspaceFiles` but doesn't even need *.rs files
-  # (because they are not used for building dependencies)
-  filterWorkspaceDepsBuildFiles = src: filterSrcWithRegexes [ "Cargo.lock" "Cargo.toml" ".cargo" ".cargo/.*" ".*/Cargo.toml" ".*/proto/.*" ] src;
-
-  # Filter only files relevant to building the workspace
-  filterWorkspaceFiles = src: filterSrcWithRegexes [ "Cargo.lock" "Cargo.toml" ".cargo" ".cargo/.*" ".*/Cargo.toml" ".*\.rs" ".*\.html" ".*/proto/.*" "db/migrations/.*" ] src;
-
-  # Like `filterWorkspaceFiles` but with `./scripts/` and `./misc/test/` included
-  filterWorkspaceTestFiles = src: filterSrcWithRegexes [ "Cargo.lock" "Cargo.toml" ".cargo" ".cargo/.*" ".*/Cargo.toml" ".*\.rs" ".*\.html" ".*/proto/.*" "scripts/.*" "misc/test/.*" ] src;
-
-  filterSrcWithRegexes = regexes: raw-src:
-    let
-      src = builtins.path { path = raw-src; name = "fedimint"; };
-      basePath = toString src + "/";
-    in
-    lib.cleanSourceWith {
-      filter = (path: type:
-        let
-          relPath = lib.removePrefix basePath (toString path);
-          includePath =
-            (type == "directory") ||
-            lib.any
-              (re: builtins.match re relPath != null)
-              regexes;
-        in
-        # uncomment to debug:
-          # builtins.trace "${relPath}: ${lib.boolToString includePath}"
-        includePath
-      );
-      inherit src;
-    };
-in
+{ pkgs, lib, advisory-db, src, craneLib, target ? null, profile }:
 rec {
-
   cargo-llvm-cov = craneLib.buildPackage rec {
     pname = "cargo-llvm-cov";
     version = "0.4.14";
@@ -85,12 +12,15 @@ rec {
     doCheck = false;
   };
 
+  # command line arguments that will be imported even
+  # in the shell
   commonEnvs = {
     LIBCLANG_PATH = "${pkgs.libclang.lib}/lib/";
     ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
     PROTOC = "${pkgs.protobuf}/bin/protoc";
     PROTOC_INCLUDE = "${pkgs.protobuf}/include";
   };
+
   commonArgsBase = {
     pname = "fedimint-workspace";
 
@@ -104,7 +34,6 @@ rec {
       rocksdb
       protobuf
 
-      moreutils-ts
       parallel
     ] ++ lib.optionals (!stdenv.isDarwin) [
       util-linux
@@ -120,19 +49,15 @@ rec {
 
     nativeBuildInputs = with pkgs; [
       pkg-config
-      moreutils-ts
 
       # tests
       (hiPrio pkgs.bashInteractive)
       bc
       bitcoind
-      clightning-dev
-      electrs
       jq
       lnd
       netcat
       perl
-      pkgs-kitman.esplora
       procps
       which
     ];
@@ -143,22 +68,25 @@ rec {
 
     CI = "true";
     HOME = "/tmp";
+    CARGO_BUILD_TARGET = if target != null then target.name else null;
+    CARGO_PROFILE = profile;
   } // commonEnvs;
 
   commonArgs = commonArgsBase // {
-    src = filterWorkspaceFiles ./.;
+    inherit src;
   };
 
   commonArgsDepsOnly = commonArgsBase // {
     cargoVendorDir = craneLib.vendorCargoDeps {
-      src = filterWorkspaceFiles ./.;
+      inherit src;
     };
     # copy over the linker/ar wrapper scripts which by default would get
     # stripped by crane
     dummySrc = craneLib.mkDummySrc {
-      src = filterWorkspaceDepsBuildFiles ./.;
+      inherit src;
+
       extraDummyScript = ''
-        cp -ar ${./.cargo} --no-target-directory $out/.cargo
+        cp -ar "${src}/.cargo" --no-target-directory $out/.cargo
       '';
     };
   };
@@ -166,7 +94,7 @@ rec {
   commonCliTestArgs = commonArgs // {
     pname = "fedimint-test";
     version = "0.0.1";
-    src = filterWorkspaceTestFiles ./.;
+    inherit src;
     # there's no point saving the `./target/` dir
     doInstallCargoArtifacts = false;
     # the build command will be the test
@@ -338,200 +266,44 @@ rec {
   #
   # This unifies their cargo features and avoids building common dependencies multiple
   # times, but will produce a derivation with all listed packages.
-  pkgsBuild = { name, pkgs, dirs, defaultBin ? null }:
+  pkgsBuild = { name, pkgs, defaultBin ? null }:
     let
+      pname =
+        if target == null then
+          "${name}"
+        else
+          "${name}-${target.name}"
+      ;
       # "--package x --package y" args passed to cargo
       pkgsArgs = lib.strings.concatStringsSep " " (lib.mapAttrsToList (name: value: "--package ${name}") pkgs);
       deps = craneLib.buildDepsOnly (commonArgsDepsOnly // {
-        pname = name;
+        inherit pname;
         version = "0.0.1";
+        # workaround: on wasm, we can't compile all deps, so narrow dependency build
+        # to ones used by the client package only
         buildPhaseCargoCommand = "cargo build --profile $CARGO_PROFILE ${pkgsArgs}";
         doCheck = false;
+
+        preBuild = ''
+          patchShebangs .cargo/
+        '' + (if target != null then target.extraEnvs else "");
       });
 
     in
-
     craneLib.buildPackage (commonArgs // {
-      meta = { mainProgram = defaultBin; };
-      pname = "${name}";
+      inherit pname;
       version = "0.0.1";
       cargoArtifacts = deps;
 
-      src = filterModules dirs ./.;
-      cargoExtraArgs = pkgsArgs;
+      meta = { mainProgram = defaultBin; };
+      inherit src;
+
+      cargoExtraArgs = "${pkgsArgs}";
 
       # if needed we will check the whole workspace at once with `workspaceBuild`
       doCheck = false;
+      preBuild = ''
+        patchShebangs .cargo/
+      '' + (if target != null then target.extraEnvs else "");
     });
-
-
-  # Cross-compile a group of packages together.
-  #
-  # This unifies their cargo features and avoids building common dependencies multiple
-  # times, but will produce a derivation with all listed packages.
-  pkgsCrossBuild = { name, pkgs, dirs, target }:
-    if target == null then
-      pkgsBuild { inherit name pkgs dirs; }
-    else
-      let
-        # "--package x --package y" args passed to cargo
-        pkgsArgs = lib.strings.concatStringsSep " " (lib.mapAttrsToList (name: value: "--package ${name}") pkgs);
-        deps = craneLib.buildDepsOnly (commonArgsDepsOnly // {
-          pname = "${name}-${target.name}";
-          version = "0.0.1";
-          # workaround: on wasm, we can't compile all deps, so narrow dependency build
-          # to ones used by the client package only
-          buildPhaseCargoCommand = "cargo build --profile $CARGO_PROFILE --target ${target.name} ${pkgsArgs}";
-          doCheck = false;
-
-          preBuild = ''
-            patchShebangs .cargo/
-          '' + target.extraEnvs;
-        });
-
-      in
-      craneLib.buildPackage (commonArgs // {
-        pname = "${name}-${target.name}";
-        version = "0.0.1";
-        cargoArtifacts = deps;
-
-        src = filterModules dirs ./.;
-        cargoExtraArgs = "--target ${target.name} ${pkgsArgs}";
-
-        # if needed we will check the whole workspace at once with `workspaceBuild`
-        doCheck = false;
-        preBuild = ''
-          patchShebangs .cargo/
-        '' + target.extraEnvs;
-      });
-
-  fedimint-pkgs = pkgsBuild {
-    name = "fedimint-pkgs";
-
-    pkgs = {
-      fedimintd = { };
-      fedimint-cli = { };
-      fedimint-tests = { };
-    };
-
-    defaultBin = "fedimintd";
-    dirs = [
-      "crypto/aead"
-      "crypto/derive-secret"
-      "crypto/hkdf"
-      "crypto/tbs"
-      "fedimintd"
-      "fedimint-bin-tests"
-      "fedimint-bitcoind"
-      "fedimint-build"
-      "fedimint-cli"
-      "fedimint-client"
-      "fedimint-client-legacy"
-      "fedimint-core"
-      "fedimint-derive"
-      "fedimint-dbtool"
-      "fedimint-rocksdb"
-      "fedimint-server"
-      "fedimint-logging"
-      "gateway/ln-gateway"
-      "modules"
-    ];
-  };
-
-  gateway-pkgs = pkgsBuild {
-    name = "gateway-pkgs";
-
-    pkgs = {
-      ln-gateway = { };
-      gateway-cli = { };
-    };
-
-    dirs = [
-      "crypto/aead"
-      "crypto/derive-secret"
-      "crypto/tbs"
-      "crypto/hkdf"
-      "modules/fedimint-ln"
-      "fedimint-bin-tests"
-      "fedimint-bitcoind"
-      "fedimint-client"
-      "fedimint-client-legacy"
-      "fedimint-core"
-      "fedimint-derive"
-      "fedimint-dbtool"
-      "fedimint-rocksdb"
-      "fedimint-build"
-      "fedimint-logging"
-      "gateway/ln-gateway"
-      "gateway/cli"
-      "modules"
-    ];
-  };
-
-  client-pkgs = { target ? null }: pkgsCrossBuild {
-    name = "client-pkgs";
-    inherit target;
-
-    pkgs = {
-      fedimint-client-legacy = { };
-    } // lib.optionalAttrs (target == null || target.name != "wasm32-unknown-unknown") {
-      # broken on wasm32
-      fedimint-sqlite = { };
-    };
-    dirs = [
-      "crypto/aead"
-      "crypto/derive-secret"
-      "crypto/tbs"
-      "crypto/hkdf"
-      "fedimint-bin-tests"
-      "fedimint-bitcoind"
-      "fedimint-client"
-      "fedimint-client-legacy"
-      "fedimint-core"
-      "fedimint-derive"
-      "fedimint-dbtool"
-      "fedimint-rocksdb"
-      "fedimint-sqlite"
-      "fedimint-logging"
-      "modules"
-    ];
-  };
-
-  fedi-fedimint-pkgs = pkgsBuild {
-    name = "fedimint-pkgs";
-
-    pkgs = {
-      fedi-fedimintd = { };
-      fedi-fedimint-cli = { };
-    };
-
-    defaultBin = "fedimintd";
-    dirs = [
-      "bridge"
-      "fedimint-cli"
-      "fedimint-client-fedi"
-      "fedimintd"
-      "fedi-social-common"
-      "fedi-social-client"
-      "fedi-social-server"
-    ];
-  };
-
-  fedi-wasm = { target ? null }: pkgsCrossBuild {
-    name = "fedi-wasm";
-    inherit target;
-
-    pkgs = {
-      fedi-wasm = { };
-    };
-
-    dirs = [
-      "bridge"
-      "fedi-wasm-ui"
-      "fedi-social-common"
-      "fedi-social-client"
-      "fedimint-client-fedi"
-    ];
-  };
 }
-
