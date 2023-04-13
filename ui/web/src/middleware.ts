@@ -3,14 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 const requiresAuth =
     process.env.NODE_ENV === 'development' &&
     process.env.BASIC_AUTH_USERNAME &&
-    process.env.BASIC_AUTH_PASSWORD &&
-    false
-
-export const config = {
-    matcher: requiresAuth ? [] : ['/', '/*'],
-}
+    process.env.BASIC_AUTH_PASSWORD
 
 export function middleware(req: NextRequest) {
+    if (!requiresAuth) return NextResponse.next()
+
     const basicAuth = req.headers.get('authorization')
     const url = req.nextUrl
 
