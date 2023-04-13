@@ -55,6 +55,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     {t('feature.onboarding.by-clicking-you-agree')}
                     <Text
                         style={styles(theme).agreementLink}
+                        testID="EulaLinkText"
                         onPress={() => {
                             navigation.navigate('Eula')
                         }}>
