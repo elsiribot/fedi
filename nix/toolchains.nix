@@ -1,4 +1,4 @@
-{ pkgs, lib, system, stdenv, crane, fenix, android-nixpkgs }:
+{ pkgs, lib, system, stdenv, fenix, android-nixpkgs }:
 let
   isArch64Darwin = stdenv.isAarch64 || stdenv.isDarwin;
 
@@ -10,8 +10,7 @@ let
     ''
       export AR_wasm32_unknown_unknown="${pkgs.llvmPackages_14.llvm}/bin/llvm-ar"
     '' else
-    ''
-          '');
+    '''');
 
   # NDK we use for android cross compilation
   androidSdk =
@@ -64,8 +63,6 @@ let
   fake-libgcc-aarch64 = fake-libgcc-gen "aarch64";
   fake-libgcc-arm = fake-libgcc-gen "arm";
   fake-libgcc-i386 = fake-libgcc-gen "i386";
-
-
 
   # All the environment variables we need for all android cross compilation targets
   androidCrossEnvVars = ''
@@ -158,20 +155,6 @@ let
       stable.rustc
       targets.${target.name}.stable.rust-std
     ])
-    crossTargets
-  ;
-
-  craneLibNative = crane.lib.${system}.overrideToolchain fenixToolchain;
-
-  # nightly toolchain for cargo docs with unstable features
-  craneLibNativeDocExport = crane.lib.${system}.overrideToolchain (fenixChannelNightly.withComponents [
-    "cargo"
-    "rustc"
-  ]);
-
-  craneLibCross = builtins.mapAttrs
-    (name: target: crane.lib.${system}.overrideToolchain fenixToolchainCross.${name})
-    crossTargets
-  ;
+    crossTargets;
 in
-{ inherit crossTargets androidCrossEnvVars wasm32CrossEnvVars fenixToolchain fenixChannel fenixToolchainRustfmt fenixToolchainCargoFmt fenixToolchainCrossAll fenixToolchainCrossWasm fenixToolchainCross craneLibNative craneLibNativeDocExport craneLibCross; }
+{ inherit crossTargets androidCrossEnvVars wasm32CrossEnvVars fenixToolchain fenixChannel fenixToolchainRustfmt fenixToolchainCargoFmt fenixToolchainCrossAll fenixToolchainCrossWasm fenixToolchainCross; }

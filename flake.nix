@@ -26,75 +26,92 @@
         fmLib = fedimint-build.lib.${system};
         crane = fedimint-build.inputs.crane;
         fenix = fedimint-build.inputs.fenix;
-        pkgs-kitman = import fedimint-build.inputs.nixpkgs-kitman {
-          inherit system;
-        };
         android-nixpkgs = fedimint-build.inputs.android-nixpkgs;
         advisory-db = fedimint-build.inputs.advisory-db;
 
-        clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
-          configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation";
-        });
+        filterSubdirs = import ./nix/filterSubdirs.nix { inherit lib; };
 
-        # `moreutils/bin/parallel` and `parallel/bin/parallel` conflict, so just use
-        # the binary we need from `moreutils`
-
-        moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
-
-        commonArgsBase = fmLib.commonArgsBase;
+        # filter (roughly) only files&directories that Rust build needs to make
+        # caching easier for Nix/crane
+        rustSrc =
+          filterSubdirs {
+            root = ./.;
+            dirs = [
+              "Cargo.toml"
+              "Cargo.lock"
+              ".cargo"
+              "bridge"
+              "fedimintd"
+              "fedimint-cli"
+              "fedimint-client-fedi"
+              "fedi-social-client"
+              "fedi-social-common"
+              "fedi-social-server"
+            ];
+          };
 
         lib = pkgs.lib;
         stdenv = pkgs.stdenv;
 
-        fenixChannel = fenix.packages.${system}.stable;
+        toolchains = import ./nix/toolchains.nix {
+          inherit pkgs lib system stdenv fenix android-nixpkgs;
+        };
 
-        fenixToolchain = (fenixChannel.withComponents [
-          "rustc"
-          "cargo"
-          "clippy"
-          "rust-analysis"
-          "rust-src"
-          "llvm-tools-preview"
-        ]);
+        craneLibNative = crane.lib.${system}.overrideToolchain toolchains.fenixToolchain;
 
+        craneLibCross = builtins.mapAttrs
+          (name: target: crane.lib.${system}.overrideToolchain toolchains.fenixToolchainCross.${name})
+          toolchains.crossTargets
+        ;
 
-        toolchain = import ./flake.toolchain.nix
-          {
+        craneLibBuildNative = import ./nix/crane.nix {
+          inherit pkgs lib advisory-db;
+          src = rustSrc;
+          craneLib = craneLibNative;
+          profile = "release";
+        };
 
-            inherit pkgs lib system stdenv fenix crane android-nixpkgs;
-          };
-
-
-        craneBuild = import ./flake.crane.nix
-          {
-            inherit pkgs pkgs-kitman clightning-dev advisory-db lib moreutils-ts;
-          };
-
-        craneBuildNative = craneBuild toolchain.craneLibNative;
-        craneBuildNativeDocExport = craneBuild toolchain.craneLibNativeDocExport;
-        craneBuildCross = target: craneBuild toolchain.craneLibCross.${target};
-
-        craneLib = crane.lib.${system}.overrideToolchain fenixToolchain;
+        craneLibBuildCross =
+          builtins.mapAttrs
+            (name: target:
+              import ./nix/crane.nix
+                {
+                  inherit pkgs lib advisory-db target;
+                  src = rustSrc;
+                  craneLib = craneLibCross.${name};
+                  profile = "release";
+                }
+            )
+            toolchains.crossTargets;
 
         # outputs that build a particular Rust package
-        rustPackageOutputs = {
-          fedi-fedimint-pkgs = craneBuildNative.fedi-fedimint-pkgs;
+        rustPackages = {
+          fedi-fedimint-pkgs = craneLibBuildNative.pkgsBuild {
+            name = "fedi-fedimint-pkgs";
 
-          fedi-wasm = (craneBuildCross "wasm32-unknown-unknown").fedi-wasm {
-            target = toolchain.crossTargets."wasm32-unknown-unknown";
+            pkgs = {
+              fedi-fedimintd = { };
+              fedi-fedimint-cli = { };
+            };
+          };
+
+          fedi-wasm = craneLibBuildCross."wasm32-unknown-unknown".pkgsBuild {
+            name = "fedi-wasm";
+
+            pkgs = {
+              fedi-wasm = { };
+            };
           };
         };
 
         # rust packages outputs with git hash replaced
-        rustPackageOutputsFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackageOutputs;
+        rustPackagesFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackages;
       in
       {
-        packages =
-          {
-            gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
-          } // rustPackageOutputsFinal;
+        packages = {
+          # straight from Fedimint, without any modifications
+          gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
+        } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
