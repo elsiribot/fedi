@@ -3,7 +3,10 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
+import { joinFederation } from '@fedi/common/redux'
 
+import { useAppDispatch } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -11,17 +14,25 @@ import { QRScanner, ScanResult } from '../QRScanner'
 import { Text } from '../Text'
 
 export const JoinFederation: React.FC = () => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { push } = useRouter()
     const [wantsScan, setWantsScan] = useState(false)
+    const [isJoining, setIsJoining] = useState(false)
 
     const handleCode = useCallback(
-        (code: string) => {
-            // TODO: Validate code, join federation, set it as active federation
-            console.log({ code })
-            push('/onboarding/welcome')
+        async (code: string) => {
+            setIsJoining(true)
+            try {
+                await dispatch(joinFederation({ fedimint, code })).unwrap()
+                push('/onboarding/welcome')
+            } catch (err) {
+                // TODO: Present error to user
+                console.error(err)
+            }
+            setIsJoining(false)
         },
-        [push],
+        [push, dispatch],
     )
 
     const handlePaste = useCallback(() => {
@@ -33,9 +44,10 @@ export const JoinFederation: React.FC = () => {
 
     const handleScan = useCallback(
         (result: ScanResult) => {
+            if (isJoining) return
             handleCode(result.data)
         },
-        [handleCode],
+        [handleCode, isJoining],
     )
 
     return (
@@ -51,7 +63,7 @@ export const JoinFederation: React.FC = () => {
                 ) : (
                     <>
                         <AccessIcon>
-                            <Icon icon={ScanIcon} />
+                            <Icon size="md" icon={ScanIcon} />
                         </AccessIcon>
                         <Text variant="h2" weight="medium">
                             {t('phrases.allow-camera-access')}
@@ -66,7 +78,8 @@ export const JoinFederation: React.FC = () => {
                 <Button
                     width="full"
                     variant={wantsScan ? 'primary' : 'tertiary'}
-                    onClick={handlePaste}>
+                    onClick={handlePaste}
+                    loading={isJoining}>
                     {t(
                         wantsScan
                             ? 'feature.federations.paste-federation-code-instead'
@@ -74,7 +87,10 @@ export const JoinFederation: React.FC = () => {
                     )}
                 </Button>
                 {!wantsScan && (
-                    <Button width="full" onClick={() => setWantsScan(true)}>
+                    <Button
+                        width="full"
+                        onClick={() => setWantsScan(true)}
+                        loading={isJoining}>
                         {t('phrases.allow-camera-access')}
                     </Button>
                 )}
@@ -103,6 +119,10 @@ const CameraAccess = styled('div', {
     gap: 8,
 })
 
+const Loading = styled('div', {
+    opacity: 0.2,
+})
+
 const AccessIcon = styled('div', {
     display: 'flex',
     justifyContent: 'center',
@@ -111,7 +131,7 @@ const AccessIcon = styled('div', {
     height: 88,
     marginBottom: 16,
     borderRadius: '100%',
-    holoGradient: '900',
+    holoGradient: '400',
 })
 
 const Actions = styled('div', {

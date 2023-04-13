@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { theme } from '@fedi/common/constants/theme'
 
+import { useUpdatingRef } from '../hooks'
 import { styled } from '../styles'
 import { Text } from './Text'
 
@@ -17,17 +18,21 @@ export const QRScanner: React.FC<Props> = ({ onScan }) => {
     const qrScannerRef = useRef<QrScanner | null>(null)
     const [mediaError, setMediaError] = useState<string>()
 
+    const onScanRef = useUpdatingRef(onScan)
+
     const handleScannerSetup = useCallback(async () => {
         if (!videoEl) return
         try {
             const QrScanner = (await import('qr-scanner')).default
-            const qrScanner = new QrScanner(videoEl, onScan, {
-                returnDetailedScanResult: true,
-                maxScansPerSecond: 5,
-                onDecodeError: err => {
-                    console.log({ err })
+            const qrScanner = new QrScanner(
+                videoEl,
+                result => onScanRef.current(result),
+                {
+                    returnDetailedScanResult: true,
+                    maxScansPerSecond: 5,
+                    onDecodeError: () => null, // no-op
                 },
-            })
+            )
             qrScanner
                 .start()
                 .catch(err => setMediaError(err.message || err.toString()))
@@ -35,14 +40,13 @@ export const QRScanner: React.FC<Props> = ({ onScan }) => {
         } catch (err: any) {
             setMediaError(err.message || err.toString())
         }
-    }, [videoEl, onScan])
+    }, [videoEl, onScanRef])
 
     useEffect(() => {
         handleScannerSetup()
         return () => {
             const qrScanner = qrScannerRef.current
             if (qrScanner) {
-                console.log('stahp')
                 qrScanner.stop()
                 qrScannerRef.current = null
             }

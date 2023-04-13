@@ -7,6 +7,7 @@ import type {
     FederationEvent,
     Guardian,
 } from '../types'
+import type { FedimintRpc } from '../utils/fedimint'
 
 /*** Initial State ***/
 
@@ -82,6 +83,24 @@ export const {
     changeAuthenticatedGuardian,
     resetFederationsState,
 } = federationSlice.actions
+
+/*** Async thunk actions */
+
+export const joinFederation = createAsyncThunk<
+    Federation,
+    { fedimint: FedimintRpc; code: string },
+    { state: CommonState }
+>('federation/joinFederation', async ({ fedimint, code }, { dispatch }) => {
+    const federation = await fedimint.joinFederation(code)
+    const federations = await fedimint.listFederations()
+    if (federations.length > 0) {
+        dispatch(setFederations(federations))
+        dispatch(setActiveFederationId(federation.id))
+    } else {
+        throw new Error('Bridge reported no federations')
+    }
+    return federation
+})
 
 /*** Selectors ***/
 
