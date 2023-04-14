@@ -1,5 +1,8 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
+    logger: {
+        level: 'debug'
+    },
     testRunner: {
         args: {
             $0: 'jest',
@@ -40,7 +43,7 @@ module.exports = {
         simulator: {
             type: 'ios.simulator',
             device: {
-                type: 'iPhone 14 Pro',
+                type: 'iPhone 14',
             },
         },
         attached: {
@@ -52,7 +55,7 @@ module.exports = {
         emulator: {
             type: 'android.emulator',
             device: {
-                avdName: 'Pixel_5_API_31',
+                avdName: 'Pixel_4_API_33',
             },
         },
     },
