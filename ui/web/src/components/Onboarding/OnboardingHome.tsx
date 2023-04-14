@@ -28,7 +28,7 @@ export const OnboardingHome: React.FC = () => {
                 <Text variant="h2" weight="medium">
                     {t('feature.onboarding.welcome-to-fedi')}
                 </Text>
-                <Text>{t('feature.onboarding.chat-earn-save')}</Text>
+                <Text>{t('feature.onboarding.chat-earn-save-spend')}</Text>
             </Info>
             <Action>
                 <Button width="full" href="/onboarding/join">

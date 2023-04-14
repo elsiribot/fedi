@@ -86,6 +86,16 @@ export const {
 
 /*** Async thunk actions */
 
+export const refreshFederations = createAsyncThunk<
+    Federation[],
+    FedimintRpc,
+    { state: CommonState }
+>('federation/refreshFederations', async (fedimint, { dispatch }) => {
+    const federations = await fedimint.listFederations()
+    dispatch(setFederations(federations))
+    return federations
+})
+
 export const joinFederation = createAsyncThunk<
     Federation,
     { fedimint: FedimintRpc; code: string },
@@ -104,7 +114,9 @@ export const joinFederation = createAsyncThunk<
 
 /*** Selectors ***/
 
-export const selectActiveFederation = (s: CommonState) =>
-    s.federation.federations.find(
-        f => f.name === s.federation.activeFederationId,
-    )
+export const selectActiveFederation = (s: CommonState) => {
+    const { federations, activeFederationId } = s.federation
+    return activeFederationId
+        ? federations.find(f => f.name === activeFederationId)
+        : federations[0]
+}

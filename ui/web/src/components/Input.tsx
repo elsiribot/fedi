@@ -9,6 +9,7 @@ interface CustomProps {
     label?: React.ReactNode
     placeholder?: string
     disabled?: boolean
+    width?: 'auto' | 'full'
 }
 
 type Props = CustomProps &
@@ -21,6 +22,7 @@ export const Input: React.FC<Props> = ({
     label,
     onFocus,
     onBlur,
+    width = 'full',
     ...inputProps
 }) => {
     const [hasFocus, setHasFocus] = useState(false)
@@ -42,7 +44,7 @@ export const Input: React.FC<Props> = ({
     )
 
     return (
-        <Container>
+        <Container width={width}>
             {label && (
                 <Label>
                     <Text variant="small">{label}</Text>
@@ -62,6 +64,18 @@ export const Input: React.FC<Props> = ({
 const Container = styled(RadixLabel.Label, {
     display: 'inline-flex',
     flexDirection: 'column',
+    textAlign: 'left',
+
+    variants: {
+        width: {
+            auto: {
+                width: 'auto',
+            },
+            full: {
+                width: '100%',
+            },
+        },
+    },
 })
 
 const Label = styled('div', {

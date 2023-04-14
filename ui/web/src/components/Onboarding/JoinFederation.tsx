@@ -119,10 +119,6 @@ const CameraAccess = styled('div', {
     gap: 8,
 })
 
-const Loading = styled('div', {
-    opacity: 0.2,
-})
-
 const AccessIcon = styled('div', {
     display: 'flex',
     justifyContent: 'center',

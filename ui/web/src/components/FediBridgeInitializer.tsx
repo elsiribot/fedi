@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import { refreshFederations } from '@fedi/common/redux'
 
-import { initializeBridge } from '../lib/bridge'
+import { useAppDispatch } from '../hooks'
+import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
 import { Text } from './Text'
 
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
+    const dispatch = useAppDispatch()
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
@@ -21,6 +24,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         }, 1000)
 
         initializeBridge()
+            .then(() => dispatch(refreshFederations(fedimint)).unwrap())
             .then(() => setIsInitialized(true))
             .catch(err => setError(err?.message || err?.toString()))
             .finally(() => {
@@ -29,7 +33,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
 
         return () => clearTimeout(loadingTimeout)
-    }, [])
+    }, [dispatch])
 
     if (isInitialized) {
         return <>{children}</>

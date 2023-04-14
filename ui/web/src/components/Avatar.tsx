@@ -19,7 +19,11 @@ export const Avatar: React.FC<Props> = ({
     return (
         <Root size={size} shape={shape}>
             {src && <Image src={src} alt="" />}
-            {name && <Fallback delayMs={500}>{makeInitials(name)}</Fallback>}
+            {name && (
+                <Fallback delayMs={src ? 500 : 0}>
+                    {makeInitials(name)}
+                </Fallback>
+            )}
         </Root>
     )
 }
