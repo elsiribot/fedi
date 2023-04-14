@@ -9,16 +9,20 @@ do
 done
 
 FEDERATION_CODE=""
-if [ "$network" == "regtest" ]; then
-    FEDERATION_CODE=$REGTEST
-elif [ "$network" == "mainnet" ]; then
-    # FEDERATION_CODE=$MAINNET
-    echo "No mainnet tests yet!"
-    exit 1
-else
-    echo "Invalid network specified. Please use -n regtest or -n mainnet."
-    exit 1
-fi
+case "$network" in
+    "regtest")
+        FEDERATION_CODE=$REGTEST
+        ;;
+    "mainnet")
+        # FEDERATION_CODE=$MAINNET
+        echo "No mainnet tests yet!"
+        exit 0
+        ;;
+    *)
+        echo "Invalid network specified. Please use -n regtest or -n mainnet."
+        exit 1
+        ;;
+esac
 
 echo "Running Detox grey-box tests on network: $network"
 echo "Testing with federation: $FEDERATION_CODE"
