@@ -4,6 +4,6 @@ module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
     testMatch: ['<rootDir>/**/*.test.ts'],
-    testPathIgnorePatterns: ['<rootDir>/e2e/*'],
+    testPathIgnorePatterns: ['<rootDir>/detox/*'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 }

@@ -3,7 +3,7 @@ module.exports = {
     preset: 'react-native',
     rootDir: '..',
     testMatch: ['<rootDir>/**/*.test.ts'],
-    testPathIgnorePatterns: ['<rootDir>/e2e/*'],
+    testPathIgnorePatterns: ['<rootDir>/detox/*'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     transform: {
         '^.+\\.(js|jsx|ts|tsx)$': [
