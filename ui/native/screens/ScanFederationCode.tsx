@@ -117,6 +117,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
         <CameraPermissionsRequired
             alternativeActionButton={
                 <Button
+                    testID="PasteWithoutCamPermissionButton"
                     title={t(
                         'feature.federations.paste-federation-code-instead',
                     )}
@@ -133,6 +134,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 </View>
                 <View style={styles(theme, insets).buttonContainer}>
                     <Button
+                        testID="PasteFederationCodeButton"
                         disabled={federationToJoin !== ''}
                         loading={federationToJoin !== ''}
                         title={t('feature.federations.paste-federation-code')}

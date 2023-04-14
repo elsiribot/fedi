@@ -53,6 +53,7 @@ const Header: React.FC<HeaderProps> = ({
     if (backButton) {
         leftComponent = (
             <Pressable
+                testID="HeaderBackButton"
                 onPress={() => navigation.goBack()}
                 hitSlop={5}
                 style={{
@@ -69,6 +70,7 @@ const Header: React.FC<HeaderProps> = ({
     if (closeButton) {
         rightComponent = (
             <Pressable
+                testID="HeaderCloseButton"
                 onPress={() => navigation.dispatch(reset('TabsNavigator'))}
                 hitSlop={5}
                 style={{
