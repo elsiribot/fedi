@@ -36,6 +36,7 @@ export const globalStyles = globalCss({
         fontFamily: theme.fonts.body,
         color: theme.colors.primary,
         holoGradient: '100',
+        backgroundAttachment: 'fixed',
     },
     body: {
         lineHeight: 1.5,

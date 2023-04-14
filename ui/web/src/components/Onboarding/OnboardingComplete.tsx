@@ -1,6 +1,9 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { selectActiveFederation } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
 import { Avatar } from '../Avatar'
 import { Button } from '../Button'
@@ -13,13 +16,13 @@ import {
 
 export const OnboardingComplete: React.FC = () => {
     const { t } = useTranslation()
-    const username = 'Fediman'
+    const username = useAppSelector(selectActiveFederation)?.username
 
     return (
         <OnboardingContainer>
             <OnboardingContent>
                 <AvatarWrapper>
-                    <Avatar name={username} size="lg" />
+                    <Avatar name={username || '?'} size="lg" />
                 </AvatarWrapper>
                 <Text variant="h2" weight="medium">
                     {t('feature.onboarding.nice-to-meet-you', {

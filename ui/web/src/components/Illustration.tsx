@@ -14,6 +14,7 @@ export const Illustration: React.FC<ImageProps> = props => {
 
 const Container = styled('div', {
     position: 'relative',
+    height: 'auto',
 
     '&:after': {
         content: '',

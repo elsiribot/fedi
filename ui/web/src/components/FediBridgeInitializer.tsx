@@ -1,11 +1,13 @@
+import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
-import { refreshFederations } from '@fedi/common/redux'
+import { refreshFederations, selectActiveFederation } from '@fedi/common/redux'
 
-import { useAppDispatch } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
+import { Redirect } from './Redirect'
 import { Text } from './Text'
 
 interface Props {
@@ -14,6 +16,8 @@ interface Props {
 
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
+    const { isReady, pathname } = useRouter()
+    const activeFederation = useAppSelector(selectActiveFederation)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
@@ -36,11 +40,10 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     }, [dispatch])
 
     if (isInitialized) {
+        if (!activeFederation && !pathname.startsWith('/onboarding')) {
+            return <Redirect path="/onboarding" />
+        }
         return <>{children}</>
-    }
-
-    if (error) {
-        return <p>{error}</p>
     }
 
     let message

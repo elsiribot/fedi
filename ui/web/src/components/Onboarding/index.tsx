@@ -2,11 +2,11 @@ import React from 'react'
 
 import { styled } from '../../styles'
 import { CreateUsername } from './CreateUsername'
+import { FederationWelcome } from './FederationWelcome'
 import { JoinFederation } from './JoinFederation'
 import { OnboardingComplete } from './OnboardingComplete'
 import { OnboardingHome } from './OnboardingHome'
 import { WalletRecovery } from './WalletRecovery'
-import { Welcome } from './Welcome'
 
 interface Props {
     step?: string
@@ -17,7 +17,7 @@ export const Onboarding: React.FC<Props> = ({ step }) => {
     if (step === 'join') {
         content = <JoinFederation />
     } else if (step === 'welcome') {
-        content = <Welcome />
+        content = <FederationWelcome />
     } else if (step === 'recovery') {
         content = <WalletRecovery />
     } else if (step === 'username') {

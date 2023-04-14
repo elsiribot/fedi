@@ -9,28 +9,35 @@ import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { Illustration } from '../Illustration'
 import { Text } from '../Text'
+import {
+    OnboardingActions,
+    OnboardingContainer,
+    OnboardingContent,
+} from './components'
 
 export const OnboardingHome: React.FC = () => {
     const { t } = useTranslation()
 
     return (
-        <Container>
-            <IllustrationWrapper>
-                <Illustration
-                    src={WorldIllustration}
-                    alt=""
-                    width={320}
-                    height={320}
-                />
-            </IllustrationWrapper>
-            <Info>
-                <Icon size="lg" icon={FediLogoIcon} />
-                <Text variant="h2" weight="medium">
-                    {t('feature.onboarding.welcome-to-fedi')}
-                </Text>
-                <Text>{t('feature.onboarding.chat-earn-save-spend')}</Text>
-            </Info>
-            <Action>
+        <OnboardingContainer>
+            <OnboardingContent>
+                <IllustrationWrapper>
+                    <Illustration
+                        src={WorldIllustration}
+                        alt=""
+                        width={320}
+                        height={320}
+                    />
+                </IllustrationWrapper>
+                <Info>
+                    <Icon size="lg" icon={FediLogoIcon} />
+                    <Text variant="h2" weight="medium">
+                        {t('feature.onboarding.welcome-to-fedi')}
+                    </Text>
+                    <Text>{t('feature.onboarding.chat-earn-save-spend')}</Text>
+                </Info>
+            </OnboardingContent>
+            <OnboardingActions>
                 <Button width="full" href="/onboarding/join">
                     {t('feature.federations.join-federation')}
                 </Button>
@@ -43,24 +50,17 @@ export const OnboardingHome: React.FC = () => {
                         </a>
                     </Text>
                 </Terms>
-            </Action>
-        </Container>
+            </OnboardingActions>
+        </OnboardingContainer>
     )
 }
-
-const Container = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    gap: 48,
-    alignItems: 'center',
-})
 
 const IllustrationWrapper = styled('div', {
     position: 'relative',
     width: '100%',
     maxWidth: 320,
     height: 'auto',
+    marginBottom: 24,
 })
 
 const Info = styled('div', {

@@ -30,7 +30,7 @@ export const federationSlice = createSlice({
         },
         updateFederation(state, action: PayloadAction<FederationEvent>) {
             state.federations = state.federations.map(federation =>
-                action.payload.name === federation.name
+                action.payload.id === federation.id
                     ? { ...federation, ...action.payload }
                     : federation,
             )
@@ -40,14 +40,14 @@ export const federationSlice = createSlice({
             action: PayloadAction<FederationCredentials>,
         ) {
             state.federations = state.federations.map(federation =>
-                federation.name === state.activeFederationId
+                federation.id === state.activeFederationId
                     ? { ...federation, ...action.payload }
                     : federation,
             )
         },
         resetFederationCredentials(state) {
             state.federations = state.federations.map(federation =>
-                federation.name === state.activeFederationId
+                federation.id === state.activeFederationId
                     ? {
                           ...federation,
                           username: null,
@@ -120,3 +120,5 @@ export const selectActiveFederation = (s: CommonState) => {
         ? federations.find(f => f.name === activeFederationId)
         : federations[0]
 }
+
+export const selectFederations = (s: CommonState) => s.federation.federations

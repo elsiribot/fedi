@@ -12,6 +12,11 @@ import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { QRScanner, ScanResult } from '../QRScanner'
 import { Text } from '../Text'
+import {
+    OnboardingActions,
+    OnboardingContainer,
+    OnboardingContent,
+} from './components'
 
 export const JoinFederation: React.FC = () => {
     const dispatch = useAppDispatch()
@@ -51,8 +56,8 @@ export const JoinFederation: React.FC = () => {
     )
 
     return (
-        <Container>
-            <CameraAccess>
+        <OnboardingContainer>
+            <OnboardingContent>
                 {wantsScan ? (
                     <>
                         <Text variant="h2" weight="medium">
@@ -73,8 +78,8 @@ export const JoinFederation: React.FC = () => {
                         </Text>
                     </>
                 )}
-            </CameraAccess>
-            <Actions>
+            </OnboardingContent>
+            <OnboardingActions>
                 <Button
                     width="full"
                     variant={wantsScan ? 'primary' : 'tertiary'}
@@ -94,30 +99,10 @@ export const JoinFederation: React.FC = () => {
                         {t('phrases.allow-camera-access')}
                     </Button>
                 )}
-            </Actions>
-        </Container>
+            </OnboardingActions>
+        </OnboardingContainer>
     )
 }
-
-const Container = styled('div', {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
-    width: '100%',
-    maxWidth: 320,
-})
-
-const CameraAccess = styled('div', {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-})
 
 const AccessIcon = styled('div', {
     display: 'flex',
@@ -128,12 +113,4 @@ const AccessIcon = styled('div', {
     marginBottom: 16,
     borderRadius: '100%',
     holoGradient: '400',
-})
-
-const Actions = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: 320,
-    gap: 16,
 })

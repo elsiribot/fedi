@@ -9,8 +9,13 @@ import { Avatar } from '../Avatar'
 import { Button } from '../Button'
 import { Redirect } from '../Redirect'
 import { Text } from '../Text'
+import {
+    OnboardingActions,
+    OnboardingContainer,
+    OnboardingContent,
+} from './components'
 
-export const Welcome: React.FC = () => {
+export const FederationWelcome: React.FC = () => {
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
 
@@ -19,8 +24,8 @@ export const Welcome: React.FC = () => {
     }
 
     return (
-        <Container>
-            <Top>
+        <OnboardingContainer>
+            <OnboardingContent>
                 <FederationInfoOuter>
                     <FederationInfoInner>
                         <AvatarWrapper>
@@ -39,40 +44,25 @@ export const Welcome: React.FC = () => {
                         </Text>
                     </FederationInfoInner>
                 </FederationInfoOuter>
-            </Top>
-            <Actions>
-                <Button variant="tertiary" href="/onboarding/recovery">
+            </OnboardingContent>
+            <OnboardingActions>
+                <Button
+                    width="full"
+                    variant="tertiary"
+                    href="/onboarding/recovery">
                     I am a returning member
                 </Button>
-                <Button href="/onboarding/username">
+                <Button width="full" href="/onboarding/username">
                     Join as a new member
                 </Button>
-            </Actions>
-        </Container>
+            </OnboardingActions>
+        </OnboardingContainer>
     )
 }
-
-const Container = styled('div', {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%',
-})
-
-const Top = styled('div', {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-})
 
 const outerRadius = 20
 const outerPadding = 2
 const FederationInfoOuter = styled('div', {
-    maxWidth: 340,
     padding: outerPadding,
     borderRadius: outerRadius,
     holoGradient: '900',
@@ -91,12 +81,4 @@ const FederationInfoInner = styled('div', {
 
 const AvatarWrapper = styled('div', {
     marginBottom: 16,
-})
-
-const Actions = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: 320,
-    gap: 16,
 })

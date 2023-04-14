@@ -2,6 +2,9 @@ import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { updateFederationCredentials } from '@fedi/common/redux'
+
+import { useAppDispatch } from '../../hooks'
 import { styled } from '../../styles'
 import { Button } from '../Button'
 import { Input } from '../Input'
@@ -13,13 +16,21 @@ import {
 } from './components'
 
 export const CreateUsername: React.FC = () => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { push } = useRouter()
     const [username, setUsername] = useState('')
 
     const handleSubmit = (ev: React.FormEvent) => {
-        // TODO: Actually register username
         ev.preventDefault()
+        // TODO: Actually register username, currently just spoofs credentials
+        dispatch(
+            updateFederationCredentials({
+                username,
+                password: '',
+                keypairSeed: '',
+            }),
+        )
         push('/onboarding/complete')
     }
 

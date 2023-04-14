@@ -5,6 +5,7 @@ export const OnboardingContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
+    gap: 48,
     alignItems: 'center',
     height: '100%',
     width: '100%',
