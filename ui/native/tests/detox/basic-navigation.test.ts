@@ -22,16 +22,16 @@ describe('Basic Navigation', () => {
         // click join federation button
         const joinFederationButton = element(by.id('JoinFederationButton'))
         await expect(joinFederationButton).toBeVisible()
-        await joinFederationButton.longPress()
+        await joinFederationButton.tap()
         const pasteFederationCodeButton = element(
             by.id('PasteFederationCodeButton'),
         )
         await expect(pasteFederationCodeButton).toBeVisible()
         const headerBackButton = element(by.id('HeaderBackButton'))
-        await headerBackButton.longPress()
+        await headerBackButton.tap()
         await expect(joinFederationButton).toBeVisible()
         if (device.getPlatform() === 'android') {
-            await joinFederationButton.longPress()
+            await joinFederationButton.tap()
             await expect(pasteFederationCodeButton).toBeVisible()
             await device.pressBack()
             await expect(joinFederationButton).toBeVisible()
