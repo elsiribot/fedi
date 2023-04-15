@@ -687,6 +687,7 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 #[cfg(test)]
 mod tests {
     use std::path;
+    use std::sync::Once;
 
     use fedi_social_client::common::VerificationDocument;
     use fedimint_logging::TracingSetup;
@@ -700,6 +701,7 @@ mod tests {
     use super::*;
 
     struct FakeEventSink(pub Vec<(String, String)>);
+    static INIT_TRACING: Once = Once::new();
 
     impl FakeEventSink {
         fn new() -> Self {
@@ -714,39 +716,24 @@ mod tests {
             // self.0.push((event_type, body));
         }
     }
-    // pub trait IEventSink: MaybeSend + MaybeSync + 'static {
-    //     /// Send event. Body is JSON-serialized
-    //     fn event(&self, event_type: String, body: String);
-    // }
 
     // note: logging doesn't work yet at this point
     fn create_data_dir() -> PathBuf {
         tempfile::tempdir().unwrap().into_path()
     }
 
-    // fn parse_result<'a,T: Deserialize<'a>>(result: &'a String) -> T {
-    //     let v: Value = serde_json::from_str(&result).unwrap();
-    //     let t = v["result"].into();
-    //     t
-    // }
-
-    // FIXME: make this generic
-    // fn get_result(result: String) -> Value {
-    //     let v: Value = serde_json::from_str(&result).unwrap();
-    //     v["result"].clone()
-    // }
-
-    // TODO: should we return the bridge here?
     async fn setup() -> anyhow::Result<(Arc<Bridge>, Arc<Federation>)> {
-        TracingSetup::default().init()?;
+        INIT_TRACING.call_once(|| {
+            TracingSetup::default()
+                .init()
+                .expect("Failed to initialize tracing");
+        });
 
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir));
         let bridge = fedimint_initialize_async(storage, event_sink).await?;
-        let connect_string = String::from(
-            "fed115ncxwt38ezhqwx3tzzzpd7dk69xqvlj3r2q2yunh6jzw053s7s5z8jz2eqf3xfpzldg62fghlrhtgfcqwaehxw309askcurgvyh8yet8w3jhxapdxqezuer9wchxvetyd938gcewvdhk6tcckzj7y"
-        );
+        let connect_string = std::env::var("FM_CONNECT_STRING").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), connect_string).await?;
         let federation = get_federation(&bridge, &fedimint_federation.id).await?;
         Ok((bridge, federation))
@@ -792,52 +779,49 @@ mod tests {
         })
     }
 
-    // #[test]
-    // fn test_xmpp_credentials() -> anyhow::Result<()> {
-    //     RUNTIME.block_on(async {
-    //         let fed1 = setup().await?;
-    //         let fed2 = setup().await?;
-    //         let cred1 = fed1.xmpp_credentials().await;
-    //         let cred2 = fed2.xmpp_credentials().await;
-    //         // assert!(cred1.username != cred2.username);
-    //         assert!(cred1.password != cred2.password);
-    //         Ok(())
-    //     })
-    // }
+    #[test]
+    fn test_xmpp_credentials() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            let (_, fed1) = setup().await?;
+            let (_, fed2) = setup().await?;
+            let cred1 = fed1.xmpp_credentials().await;
+            let cred2 = fed2.xmpp_credentials().await;
+            // assert!(cred1.username != cred2.username);
+            assert!(cred1.password != cred2.password);
+            Ok(())
+        })
+    }
 
-    // #[test]
-    // fn test_leave_federation() -> anyhow::Result<()> {
-    //     RUNTIME.block_on(async {
-    //         let federation = setup().await?;
-    //         let bridge = get_bridge().await.unwrap();
-    //         {
-    //             let federations_lock = bridge.federations.lock().await.clone();
-    //             assert_eq!(1, federations_lock.keys().len());
-    //             let config_exists =
-    //                 path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
-    //                     .is_file();
-    //             assert!(config_exists);
-    //             let db_exists =
-    //                 path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
-    //                     .is_dir();
-    //             assert!(db_exists);
-    //         }
-    //         bridge.leave_federation(&federation.id()).await?;
-    //         {
-    //             let federations_lock = bridge.federations.lock().await.clone();
-    //             assert_eq!(0, federations_lock.keys().len());
-    //             let config_exists =
-    //                 path::Path::new(&bridge.data_dir.join(format!("{}.json", federation.id())))
-    //                     .is_file();
-    //             assert!(!config_exists);
-    //             let db_exists =
-    //                 path::Path::new(&bridge.data_dir.join(format!("{}.db", federation.id())))
-    //                     .is_dir();
-    //             assert!(!db_exists);
-    //         }
-    //         Ok(())
-    //     })
-    // }
+    #[test]
+    fn test_leave_federation() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            let (bridge, federation) = setup().await?;
+            let db_filename = format!("{}.db", federation.id().to_string());
+            let db_path = path::Path::new(&db_filename).join("LOCK").clone();
+            {
+                let federations_lock = bridge.federations.lock().await.clone();
+                assert_eq!(1, federations_lock.keys().len());
+                assert!(&bridge.storage.read_file(db_path.as_path()).await.is_ok());
+            }
+            bridge.leave_federation(&federation.id()).await?;
+            {
+                let federations_lock = bridge.federations.lock().await.clone();
+                assert_eq!(0, federations_lock.keys().len());
+                assert!(&bridge.storage.read_file(db_path.as_path()).await.is_err());
+            }
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn test_modules() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            let (_, federation) = setup().await?;
+            let num_modules = federation.client.config().0.modules.keys().len();
+            assert_eq!(num_modules, 5);
+            Ok(())
+        })
+    }
 
     // #[test]
     // fn test_decryption_shares() -> anyhow::Result<()> {

@@ -68,3 +68,6 @@ typos-fix-all:
 format:
   cargo fmt --all
   nixpkgs-fmt $(echo **.nix)
+
+test-bridge:
+  ./scripts/test-bridge.sh
