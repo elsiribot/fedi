@@ -55,8 +55,8 @@ export function initializeBridge() {
                     )
                     return
                 }
-                cb(e.data.result)
                 callbacks.delete(e.data.token)
+                cb(e.data.result)
             }
         }
     })
