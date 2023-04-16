@@ -10,7 +10,7 @@ interface Props {
     children: React.ReactNode
 }
 
-export const FediBridgeGateway: React.FC<Props> = ({ children }) => {
+export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()

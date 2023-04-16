@@ -1,7 +1,7 @@
 import type { AppProps } from 'next/app'
 import { useEffect } from 'react'
 
-import { FediBridgeGateway } from '../components/FediBridgeGateway'
+import { FediBridgeInitializer } from '../components/FediBridgeInitializer'
 import { PWAMetaTags } from '../components/PWAMetaTags'
 import { Template } from '../components/Template'
 import { detectLanguage } from '../localization/i18n'
@@ -17,11 +17,11 @@ const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
     return (
         <>
             <PWAMetaTags />
-            <FediBridgeGateway>
+            <FediBridgeInitializer>
                 <Template>
                     <Component {...pageProps} />
                 </Template>
-            </FediBridgeGateway>
+            </FediBridgeInitializer>
         </>
     )
 }
