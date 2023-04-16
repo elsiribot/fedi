@@ -43,8 +43,10 @@ export const CreateUsername: React.FC = () => {
                 <Text>{t('feature.onboarding.username-instructions')}</Text>
                 <InputWrapper>
                     <Input
-                        label="Username"
-                        placeholder="Enter username..."
+                        label={t('words.username')}
+                        placeholder={`${t(
+                            'feature.onboarding.enter-username',
+                        )}...`}
                         value={username}
                         onChange={ev => setUsername(ev.currentTarget.value)}
                         autoFocus
@@ -53,7 +55,7 @@ export const CreateUsername: React.FC = () => {
             </OnboardingContent>
             <OnboardingActions>
                 <Button width="full" type="submit">
-                    Create username
+                    {t('feature.onboarding.create-username')}
                 </Button>
             </OnboardingActions>
         </OnboardingContainer>
