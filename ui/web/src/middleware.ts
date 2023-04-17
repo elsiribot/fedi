@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const requiresAuth =
-    process.env.NODE_ENV === 'development' &&
-    process.env.BASIC_AUTH_USERNAME &&
-    process.env.BASIC_AUTH_PASSWORD
+    process.env.BASIC_AUTH_USERNAME && process.env.BASIC_AUTH_PASSWORD
 
 export function middleware(req: NextRequest) {
     if (!requiresAuth) return NextResponse.next()
