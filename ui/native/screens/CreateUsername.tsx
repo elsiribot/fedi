@@ -11,11 +11,9 @@ import {
     View,
 } from 'react-native'
 
-import {
-    checkXmppUser,
-    registerXmppUser,
-    useChatContext,
-} from '../state/contexts/ChatContext'
+import { checkXmppUser, registerXmppUser } from '@fedi/common/utils/xmpp'
+
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationCredentials,
