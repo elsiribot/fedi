@@ -35,28 +35,6 @@ export const federationSlice = createSlice({
                     : federation,
             )
         },
-        updateFederationCredentials(
-            state,
-            action: PayloadAction<FederationCredentials>,
-        ) {
-            state.federations = state.federations.map(federation =>
-                federation.id === state.activeFederationId
-                    ? { ...federation, ...action.payload }
-                    : federation,
-            )
-        },
-        resetFederationCredentials(state) {
-            state.federations = state.federations.map(federation =>
-                federation.id === state.activeFederationId
-                    ? {
-                          ...federation,
-                          username: null,
-                          password: null,
-                          keypairSeed: null,
-                      }
-                    : federation,
-            )
-        },
         setActiveFederationId(state, action: PayloadAction<string | null>) {
             state.activeFederationId = action.payload
         },
@@ -77,8 +55,6 @@ export const federationSlice = createSlice({
 export const {
     setFederations,
     updateFederation,
-    updateFederationCredentials,
-    resetFederationCredentials,
     setActiveFederationId,
     changeAuthenticatedGuardian,
     resetFederationsState,

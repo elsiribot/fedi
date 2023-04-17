@@ -68,11 +68,6 @@ export interface OfflineTransactionDetails {
     claimed: boolean
 }
 
-export interface XmppCredentials {
-    password: string
-    keypairSeed: string
-}
-
 export interface Transaction {
     id: string
     createdAt: number

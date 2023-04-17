@@ -76,3 +76,8 @@ export interface ChatGroup extends Chat {
     settings?: ChatGroupSettings
     invitationCode?: string
 }
+
+export interface XmppCredentials {
+    password: string
+    keypairSeed: string
+}
