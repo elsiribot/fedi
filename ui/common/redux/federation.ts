@@ -26,7 +26,11 @@ export const federationSlice = createSlice({
     initialState,
     reducers: {
         setFederations(state, action: PayloadAction<Federation[]>) {
-            state.federations = action.payload
+            state.federations = action.payload.map(f => ({
+                ...f,
+                // TODO: REMOVE ME! This is only here because old fedimints didn't have 'id' set
+                id: f.id || f.name,
+            }))
         },
         updateFederation(state, action: PayloadAction<FederationEvent>) {
             state.federations = state.federations.map(federation =>
