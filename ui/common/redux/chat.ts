@@ -1,4 +1,9 @@
-import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit'
+import {
+    createSlice,
+    PayloadAction,
+    createSelector,
+    createAsyncThunk,
+} from '@reduxjs/toolkit'
 
 import { CommonState, selectActiveFederation } from '.'
 import {
@@ -10,6 +15,8 @@ import {
     ChatType,
     XmppCredentials,
 } from '../types'
+import { FedimintRpc } from '../utils/fedimint'
+import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
 
 type FederationPayloadAction<T = {}> = PayloadAction<
     { federationId: string } & T
@@ -176,6 +183,25 @@ export const chatSlice = createSlice({
             return { ...initialState }
         },
     },
+    extraReducers: builder => {
+        builder.addCase(refreshChatCredentials.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                credentials: action.payload,
+            }
+        })
+
+        builder.addCase(authenticateChat.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                authenticatedMember: action.payload,
+            }
+        })
+    },
 })
 
 /*** Basic actions ***/
@@ -193,6 +219,51 @@ export const {
     setChatEncryptionKeys,
     resetChatState,
 } = chatSlice.actions
+
+/*** Async thunk actions ***/
+
+export const refreshChatCredentials = createAsyncThunk<
+    XmppCredentials,
+    { fedimint: FedimintRpc; federationId: string }
+>('chat/refreshChatCredentials', async ({ fedimint, federationId }) => {
+    const credentials = await fedimint.getXmppCredentials(federationId)
+    return credentials
+})
+
+export const authenticateChat = createAsyncThunk<
+    ChatMember,
+    { fedimint: FedimintRpc; federationId: string; username: string },
+    { state: CommonState }
+>(
+    'chat/authenticateChat',
+    async ({ fedimint, federationId, username }, { dispatch, getState }) => {
+        // Fetch xmpp credentials if we don't have them
+        let credentials = getState().chat[federationId]?.credentials
+        if (!credentials) {
+            credentials = await dispatch(
+                refreshChatCredentials({ fedimint, federationId }),
+            ).unwrap()
+        }
+
+        // Validate credentials, register if it's a new name
+        const normalizedUsername = username.toLowerCase()
+        const credentialsAreValid = await checkXmppUser(
+            normalizedUsername,
+            credentials.password,
+        )
+        if (!credentialsAreValid) {
+            await registerXmppUser(normalizedUsername, credentials.password)
+        }
+
+        // Backup the username to the fedimint bridge
+        await fedimint.backupXmppUsername(normalizedUsername, federationId)
+
+        return {
+            id: normalizedUsername,
+            username: normalizedUsername,
+        }
+    },
+)
 
 /*** Selectors ***/
 

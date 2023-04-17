@@ -54,6 +54,9 @@ export const registerXmppUser = async (
                     resolve(true)
                 } else if (stanza.getAttr('type') === 'error') {
                     const error = stanza.getChild('error')
+                    // TODO: Figure out how to bubble up i18n strings better.
+                    // We should probably create an ErrorWithTranslation class or
+                    // something that sets has an i18n property.
                     let errorMessage = 'errors.unknown-error'
                     if (error?.getChild('conflict')) {
                         errorMessage = 'errors.username-already-exists'
