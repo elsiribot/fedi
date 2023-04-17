@@ -8,17 +8,18 @@ import React, {
     useReducer,
 } from 'react'
 
-import { Federation, Guardian } from '@fedi/common/types'
+import { Guardian } from '@fedi/common/types'
 
 import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     SELECTED_FEDERATION_ID_DB_KEY,
 } from '../../constants'
+import { FederationWithChatCredentials } from '../../types'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
-    federations: Federation[]
+    federations: FederationWithChatCredentials[]
     selectedFederationId: string | null
     authenticatedGuardian: Guardian | null
 }
@@ -26,7 +27,7 @@ interface FederationsContextState {
 // We compute the selectedFederation here based on selectedFederationId
 interface ComputedFederationsContextState extends FederationsContextState {
     // this can be undefined because Array.find returns undefined if it can't find anything
-    selectedFederation: Federation | undefined
+    selectedFederation: FederationWithChatCredentials | undefined
 }
 const initialState: FederationsContextState = {
     federations: [],
@@ -78,7 +79,7 @@ export function updateSelectedFederationId(
 }
 export function updateFederations(
     selectedFederationId: null | string,
-    federations: Federation[],
+    federations: FederationWithChatCredentials[],
 ): Action {
     console.log('updatedFederations', selectedFederationId)
     return {
@@ -137,7 +138,7 @@ export function reducer(state: AppState, action: Action): AppState {
                 federations: action.payload.federations,
             }
         case ActionType.UPDATE_FEDERATION_CREDENTIALS: {
-            const federations = state.federations.map((f: Federation) => {
+            const federations = state.federations.map(f => {
                 // If the federation id matches, update the password of that
                 // single connectedFederation
                 if (f.id === state.selectedFederationId) {
@@ -157,7 +158,7 @@ export function reducer(state: AppState, action: Action): AppState {
             }
         }
         case ActionType.UPDATE_FEDERATION_USERNAME: {
-            const federations = state.federations.map((f: Federation) => {
+            const federations = state.federations.map(f => {
                 // If the federation id matches, update the username of that
                 // single connectedFederation
                 if (f.name === state.selectedFederationId) {
@@ -177,7 +178,7 @@ export function reducer(state: AppState, action: Action): AppState {
         case ActionType.UPDATE_FEDERATION:
             const federations = state.federations.map(
                 // If the federation id matches, update the entry
-                (f: Federation) =>
+                f =>
                     f.id === action.payload.id
                         ? { ...f, ...action.payload }
                         : f,
