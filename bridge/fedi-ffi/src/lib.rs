@@ -441,14 +441,14 @@ async fn uploadBackupFile(
     storage
         .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
         .await?;
-    Ok(storage.real_path(RECOVERY_FILENAME.as_ref()))
+    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
 
 // This method is a bit of a stopgap ...
 #[macro_rules_derive(rpc_method!)]
 async fn locateRecoveryFile(bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
     let storage = bridge.storage.clone();
-    Ok(storage.real_path(RECOVERY_FILENAME.as_ref()))
+    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -522,7 +522,7 @@ async fn socialRecoveryDownloadVerificationDoc(
             .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
             .await?;
         tracing::info!("saved verificaiton doc");
-        Ok(Some(storage.real_path(VERIFICATION_FILENAME.as_ref())))
+        Ok(Some(storage.platform_path(VERIFICATION_FILENAME.as_ref())))
     } else {
         Ok(None)
     }

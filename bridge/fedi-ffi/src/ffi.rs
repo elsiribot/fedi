@@ -79,7 +79,7 @@ impl IStorage for PathBasedStorage {
         Ok(tokio::task::spawn_blocking(move || std::fs::write(path, data)).await??)
     }
 
-    fn real_path(&self, path: &Path) -> PathBuf {
+    fn platform_path(&self, path: &Path) -> PathBuf {
         if path.is_absolute() {
             path.to_owned()
         } else {

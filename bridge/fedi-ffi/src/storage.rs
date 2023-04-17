@@ -14,7 +14,8 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
-    fn real_path(&self, path: &Path) -> PathBuf;
+    /// convert a relative path to a path understood by the platform.
+    fn platform_path(&self, path: &Path) -> PathBuf;
 }
 
 pub type Storage = Arc<dyn IStorage>;

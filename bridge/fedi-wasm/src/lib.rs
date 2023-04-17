@@ -41,7 +41,7 @@ impl fediffi::storage::IStorage for WasmStorage {
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
         todo!()
     }
-    fn real_path(&self, path: &Path) -> PathBuf {
+    fn platform_path(&self, path: &Path) -> PathBuf {
         todo!()
     }
 }
