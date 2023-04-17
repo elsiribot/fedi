@@ -1,6 +1,8 @@
 import * as RadixAvatar from '@radix-ui/react-avatar'
 import React from 'react'
 
+import StringUtils from '@fedi/common/utils/StringUtils'
+
 import { styled, theme } from '../styles'
 
 interface Props {
@@ -19,18 +21,14 @@ export const Avatar: React.FC<Props> = ({
     return (
         <Root size={size} shape={shape}>
             {src && <Image src={src} alt="" />}
-            {name && <Fallback delayMs={500}>{makeInitials(name)}</Fallback>}
+            {name && (
+                <Fallback delayMs={src ? 500 : 0}>
+                    {StringUtils.getInitialsFromName(name)}
+                </Fallback>
+            )}
         </Root>
     )
 }
-
-const makeInitials = (name: string) =>
-    name
-        .split(' ')
-        .map(word => word[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
 
 const Root = styled(RadixAvatar.Root, {
     position: 'relative',

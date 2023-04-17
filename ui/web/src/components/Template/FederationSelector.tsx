@@ -1,25 +1,34 @@
 import React, { useCallback, useState } from 'react'
 
 import ChevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
+import { selectActiveFederation } from '@fedi/common/redux'
 
+import { useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
 import { Avatar } from '../Avatar'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
 
 export const FederationSelector: React.FC = () => {
+    const activeFederation = useAppSelector(selectActiveFederation)
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)
 
     const toggleSelectorOpen = useCallback(() => {
         setIsSelectorOpen(isOpen => !isOpen)
     }, [])
 
+    if (!activeFederation) return null
+
     return (
         <Container>
             <ActiveFederation onClick={toggleSelectorOpen}>
-                <Avatar size="sm" shape="hexagon" name="Fediration" />
+                <Avatar
+                    size="sm"
+                    shape="hexagon"
+                    name={activeFederation.name}
+                />
                 <Text variant="caption" weight="bold">
-                    Fediration
+                    {activeFederation.name}
                 </Text>
                 <IconWrapper isOpen={isSelectorOpen}>
                     <Icon size="xs" icon={ChevronRight} />
