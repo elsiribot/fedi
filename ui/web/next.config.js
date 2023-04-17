@@ -2,6 +2,7 @@
 const nextConfig = {
     transpilePackages: ['@fedi/common'],
     webpack(config) {
+        config.experiments = { asyncWebAssembly: true, layers: true }
         config.module.rules.push({
             test: /\.svg$/i,
             issuer: /\.[jt]sx?$/,

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { styled, theme } from '../../styles'
+import { keyframes, styled, theme } from '../../styles'
 import { FederationSelector } from './FederationSelector'
 import { Navigation } from './Navigation'
 
@@ -43,7 +43,6 @@ const Content = styled('main', {
     gap: 48,
     padding: 48,
     overflow: 'auto',
-    holoGradient: '100',
 
     '@md': {
         padding: 36,
@@ -51,6 +50,6 @@ const Content = styled('main', {
     },
 
     '@sm': {
-        background: 'none',
+        background: theme.colors.white,
     },
 })
