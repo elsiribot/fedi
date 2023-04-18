@@ -76,6 +76,14 @@ rec {
     inherit src;
   };
 
+  commonArgsCargoLock = cargoLock: commonArgsBase // {
+    cargoVendorDir = craneLib.vendorCargoDeps {
+      inherit src cargoLock;
+    };
+
+    inherit src cargoLock;
+  };
+
   commonArgsDepsOnly = commonArgsBase // {
     cargoVendorDir = craneLib.vendorCargoDeps {
       inherit src;
@@ -91,6 +99,23 @@ rec {
     };
   };
 
+  commonArgsDepsOnlyCargoLock = cargoLock: commonArgsBase // {
+    cargoVendorDir = craneLib.vendorCargoDeps {
+      inherit src;
+      cargoLock = cargoLock;
+    };
+    # copy over the linker/ar wrapper scripts which by default would get
+    # stripped by crane
+    dummySrc = craneLib.mkDummySrc {
+      inherit src;
+
+      cargoLock = cargoLock;
+
+      extraDummyScript = ''
+        cp -ar "${src}/.cargo" --no-target-directory $out/.cargo
+      '';
+    };
+  };
   commonCliTestArgs = commonArgs // {
     pname = "fedimint-test";
     version = "0.0.1";
@@ -266,7 +291,7 @@ rec {
   #
   # This unifies their cargo features and avoids building common dependencies multiple
   # times, but will produce a derivation with all listed packages.
-  pkgsBuild = { name, pkgs, defaultBin ? null }:
+  pkgsBuild = { name, pkgs, defaultBin ? null, cargoLock ? null }:
     let
       pname =
         if target == null then
@@ -276,21 +301,22 @@ rec {
       ;
       # "--package x --package y" args passed to cargo
       pkgsArgs = lib.strings.concatStringsSep " " (lib.mapAttrsToList (name: value: "--package ${name}") pkgs);
-      deps = craneLib.buildDepsOnly (commonArgsDepsOnly // {
+      deps = (craneLib.buildDepsOnly ((if cargoLock != null then (commonArgsDepsOnlyCargoLock cargoLock) else commonArgsDepsOnly) // {
         inherit pname;
         version = "0.0.1";
         # workaround: on wasm, we can't compile all deps, so narrow dependency build
         # to ones used by the client package only
         buildPhaseCargoCommand = "cargo build --profile $CARGO_PROFILE ${pkgsArgs}";
         doCheck = false;
+        inherit cargoLock;
 
         preBuild = ''
           patchShebangs .cargo/
         '' + (if target != null then target.extraEnvs else "");
-      });
+      }));
 
     in
-    craneLib.buildPackage (commonArgs // {
+    craneLib.buildPackage ((if cargoLock != null then (commonArgsCargoLock cargoLock) else commonArgs) // {
       inherit pname;
       version = "0.0.1";
       cargoArtifacts = deps;

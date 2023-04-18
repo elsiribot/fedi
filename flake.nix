@@ -39,6 +39,7 @@
             dirs = [
               "Cargo.toml"
               "Cargo.lock"
+              "Cargo.wasm32.lock"
               ".cargo"
               "bridge"
               "fedimintd"
@@ -98,9 +99,12 @@
           fedi-wasm = craneLibBuildCross."wasm32-unknown-unknown".pkgsBuild {
             name = "fedi-wasm";
 
+            cargoLock = ./Cargo.wasm32.lock;
+
             pkgs = {
               fedi-wasm = { };
             };
+
           };
         };
 
@@ -115,7 +119,18 @@
 
         devShells = fmLib.devShells // {
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
-            nativeBuildInputs = prev.nativeBuildInputs ++ [ pkgs.wasm-pack pkgs.wasm-bindgen-cli pkgs.binaryen pkgs.gnused ];
+            nativeBuildInputs =
+              [
+                (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
+              ] ++
+              prev.nativeBuildInputs ++ [
+                pkgs.wasm-pack
+                pkgs.wasm-bindgen-cli
+                pkgs.binaryen
+                pkgs.gnused
+
+
+              ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
             shellHook = prev.shellHook + toolchains.wasm32CrossEnvVars;
