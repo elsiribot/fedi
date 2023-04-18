@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # exit on failure
-set -e 
+set -e
 
 # make sure we've installed targets
 rustup target add x86_64-linux-android

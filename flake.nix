@@ -116,8 +116,9 @@
         devShells = fmLib.devShells // {
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
             nativeBuildInputs = prev.nativeBuildInputs ++ [ pkgs.wasm-pack pkgs.wasm-bindgen-cli pkgs.binaryen ];
+            ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
+            ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
           });
         };
       });
-
 }
