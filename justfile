@@ -28,18 +28,6 @@ check-ulimit:
 test: build check-ulimit
   cargo test
 
-# run tests against real services (like bitcoind)
-test-real: check-ulimit
-  ./scripts/rust-tests.sh
-
-# run all tests in parallel like CI would
-test-ci-all: 
-  ./scripts/test-ci-all.sh
-
-# show number of tests per package
-test-count:
-  ./scripts/test-cov.sh
-
 # run lints (quick)
 lint:
   env NO_STASH=true misc/git-hooks/pre-commit
