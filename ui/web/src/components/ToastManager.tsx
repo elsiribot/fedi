@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { selectToast } from '@fedi/common/redux'
 
-import { useAppSelector, useToast } from '../hooks'
-import { keyframes, styled, theme } from '../styles'
+import { useAppSelector, useMediaQuery, useToast } from '../hooks'
+import { config, keyframes, styled, theme } from '../styles'
 import { Text } from './Text'
 
 export const ToastManager: React.FC = () => {
@@ -14,6 +14,7 @@ export const ToastManager: React.FC = () => {
     const [isToastOpen, setIsToastOpen] = useState(!!toast)
     const [isPaused, setIsPaused] = useState(false)
     const { closeToast } = useToast()
+    const isMobile = useMediaQuery(config.media.sm)
 
     const handleCloseToast = useCallback(
         (open: boolean) => {
@@ -33,7 +34,7 @@ export const ToastManager: React.FC = () => {
     }, [toast, isPaused])
 
     return (
-        <Container swipeDirection="right">
+        <RadixToast.Provider swipeDirection={isMobile ? 'up' : 'right'}>
             <Toast
                 key={cachedToast?.key}
                 ref={toastElRef}
@@ -51,19 +52,28 @@ export const ToastManager: React.FC = () => {
                 )}
             </Toast>
             <Viewport />
-        </Container>
+        </RadixToast.Provider>
     )
 }
 
-const Container = styled(RadixToast.Provider, {
-    position: 'fixed',
-    bottom: 0,
-    right: 0,
-})
-
-const toastSlideIn = keyframes({
+const toastSlideLeft = keyframes({
     '0%': { transform: 'translateX(100%) translateX(20px)' },
     '100%': { transform: 'translateX(0)' },
+})
+
+const toastSwipeRight = keyframes({
+    '0%': { transform: 'translateX(var(--radix-toast-swipe-end-x))' },
+    '100%': { transform: 'translateX(100%) translateX(20px)' },
+})
+
+const toastSlideDown = keyframes({
+    '0%': { transform: 'translateY(-100%) translateY(-32px)' },
+    '100%': { transform: 'translateY(0)' },
+})
+
+const toastSwipeUp = keyframes({
+    '0%': { transform: 'translateY(var(--radix-toast-swipe-end-y))' },
+    '100%': { transform: 'translateY(-100%) translateY(-32px)' },
 })
 
 const toastFadeOut = keyframes({
@@ -71,24 +81,15 @@ const toastFadeOut = keyframes({
     '100%': { opacity: 0 },
 })
 
-const toastSwipeOut = keyframes({
-    '0%': { transform: 'translateX(var(--radix-toast-swipe-end-x))' },
-    '100%': { transform: 'translateX(100%) translateX(20px)' },
-})
-
 const Toast = styled(RadixToast.Root, {
-    position: 'fixed',
-    bottom: 32,
-    right: 20,
     width: '100%',
-    maxWidth: 320,
     borderRadius: 20,
     background: theme.colors.white,
     textAlign: 'left',
     boxShadow: `0 4px 24px 0 ${theme.colors.primary10}`,
 
     '&[data-state="open"]': {
-        animation: `${toastSlideIn} 150ms ease-out`,
+        animation: `${toastSlideLeft} 150ms ease-out`,
     },
     '&[data-state="closed"]': {
         animation: `${toastFadeOut} 150ms ease-in`,
@@ -96,12 +97,27 @@ const Toast = styled(RadixToast.Root, {
     '&[data-swipe="move"]': {
         transform: 'translateX(var(--radix-toast-swipe-move-x))',
     },
-    '&[data-swape="cance"]': {
+    '&[data-swipe="cancel"]': {
         transform: 'translateX(0)',
         transition: 'transform 150ms ease-out',
     },
     '&[data-swipe="end"]': {
-        animation: `${toastSwipeOut} 100ms ease-out`,
+        animation: `${toastSwipeRight} 100ms ease-out`,
+    },
+
+    '@md': {
+        '&[data-state="open"]': {
+            animationName: toastSlideDown,
+        },
+        '&[data-swipe="move"]': {
+            transform: 'translateY(var(--radix-toast-swipe-move-y))',
+        },
+        '&[data-swape="cancel"]': {
+            transform: 'translateY(0)',
+        },
+        '&[data-swipe="end"]': {
+            animationName: toastSwipeUp,
+        },
     },
 })
 
@@ -115,9 +131,22 @@ const ToastInner = styled('div', {
 
 const Viewport = styled(RadixToast.Viewport, {
     position: 'fixed',
-    bottom: 0,
-    right: 0,
+    bottom: 32,
+    right: 20,
+    width: '100%',
+    maxWidth: 320,
+    padding: 0,
     zIndex: 2147483647, // max
     listStyle: 'none',
     outline: 'none',
+
+    '@md': {
+        display: 'flex',
+        justifyContent: 'center',
+        bottom: 'auto',
+        right: 'auto',
+        top: 20,
+        left: '50%',
+        transform: 'translateX(-50%)',
+    },
 })
