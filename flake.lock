@@ -169,17 +169,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_2"
       },
       "locked": {
-        "lastModified": 1681676452,
-        "narHash": "sha256-2oWoDhf4+snYd6+b42PxhWtMRXAjkziNBMb0ydXgX+A=",
-        "rev": "0cd132c856df03953ab46e9644289a76cccfa9d9",
-        "revCount": 3489,
+        "lastModified": 1681761294,
+        "narHash": "sha256-mOtsgsC/Qk0tUYj7MQ3RGDSzqUOYAtjmEpZA93KhjWs=",
+        "rev": "d1763f0e09e994c59d70b5332cb1c4802c3c53bf",
+        "revCount": 3494,
         "type": "git",
-        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
+        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rel=rel-a03"
       },
       "original": {
-        "rev": "0cd132c856df03953ab46e9644289a76cccfa9d9",
+        "rev": "d1763f0e09e994c59d70b5332cb1c4802c3c53bf",
         "type": "git",
-        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
+        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rel=rel-a03"
       }
     },
     "fenix": {
