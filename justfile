@@ -50,7 +50,7 @@ final-check: lint
   just test
 
 check-wasm:
-  nix develop .#crossWasm -c cargo check --target wasm32-unknown-unknown --package fedimint-client-legacy
+  nix develop .#cross -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
 [no-exit-message]
 typos:
