@@ -116,6 +116,17 @@ export interface Federation {
     nodes: Node[]
     balance: MSats
     socialRecoveryActive: boolean
+    // TODO: Implement and get this from bridge
+    // defaultCurrency?: SupportedCurrency
+}
+// TODO: Remove this when Federation.defaultCurrency is available
+export const getDefaultCurrency = (
+    federation: Federation,
+): SupportedCurrency => {
+    return federation?.name?.includes('togo')
+        ? SupportedCurrency.CFA
+        : SupportedCurrency.USD
+}
 }
 
 export type SeedWords = string[]
