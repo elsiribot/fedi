@@ -1,6 +1,4 @@
 {
     "typescript.tsdk": "./ui/node_modules/typescript/lib",
-    "editor.tabSize": 4,
-    "jest.jestCommandLine": "npm run test:functional --",
-    "jest.rootPath": "./mobile-ui"
+    "editor.tabSize": 4
 }
