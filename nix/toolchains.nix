@@ -16,11 +16,13 @@ let
   androidSdk =
     android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
       cmdline-tools-latest
-      build-tools-32-0-0
+      build-tools-30-0-3
       platform-tools
       platforms-android-31
       emulator
       ndk-bundle
+      patcher-v4
+      tools
     ]);
 
   # The following hack makes fedimint compile on android:
@@ -157,4 +159,4 @@ let
     ])
     crossTargets;
 in
-{ inherit crossTargets androidCrossEnvVars wasm32CrossEnvVars fenixToolchain fenixChannel fenixToolchainRustfmt fenixToolchainCargoFmt fenixToolchainCrossAll fenixToolchainCrossWasm fenixToolchainCross; }
+{ inherit crossTargets androidCrossEnvVars wasm32CrossEnvVars fenixToolchain fenixChannel fenixToolchainRustfmt fenixToolchainCargoFmt fenixToolchainCrossAll fenixToolchainCrossWasm fenixToolchainCross androidSdk; }
