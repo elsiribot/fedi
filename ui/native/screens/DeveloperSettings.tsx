@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, CheckBox, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
@@ -9,6 +9,8 @@ import Share from 'react-native-share'
 
 import type { Guardian, LightningGateway } from '@fedi/common/types'
 
+import CheckBox from '../components/ui/CheckBox'
+import SvgImage from '../components/ui/SvgImage'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -233,8 +235,8 @@ const DeveloperSettings: React.FC<Props> = () => {
                         </Text>
                     }
                     checked={authenticatedGuardian == null}
-                    checkedIcon="circle"
-                    uncheckedIcon="circle"
+                    checkedIcon={<SvgImage name="CheckboxUnchecked" />}
+                    uncheckedIcon={<SvgImage name="CheckboxUnchecked" />}
                     checkedColor={theme.colors.lightGrey}
                     uncheckedColor={theme.colors.red}
                     onPress={() => {

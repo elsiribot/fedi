@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { styled, theme } from '../styles'
+import { keyframes, styled, theme } from '../styles'
 
 interface Props {
     maxWidth?: number
@@ -28,5 +28,6 @@ const Container = styled('div', {
         borderRadius: 0,
         boxShadow: 'none',
         maxWidth: 'none',
+        animation: 'none',
     },
 })

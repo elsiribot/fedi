@@ -1,6 +1,7 @@
+import { useRouter } from 'next/router'
 import React from 'react'
 
-import { styled, theme } from '../../styles'
+import { keyframes, styled, theme } from '../../styles'
 import { FederationSelector } from './FederationSelector'
 import { Navigation } from './Navigation'
 
@@ -9,11 +10,14 @@ interface Props {
 }
 
 export const Template: React.FC<Props> = ({ children }) => {
+    const router = useRouter()
+    const hideNavigation = router.pathname.startsWith('/onboarding')
+
     return (
         <Container>
-            <Navigation />
-            <Content>
-                <FederationSelector />
+            {!hideNavigation && <Navigation />}
+            <Content centered={hideNavigation}>
+                {!hideNavigation && <FederationSelector />}
                 {children}
             </Content>
         </Container>
@@ -43,7 +47,6 @@ const Content = styled('main', {
     gap: 48,
     padding: 48,
     overflow: 'auto',
-    holoGradient: '100',
 
     '@md': {
         padding: 36,
@@ -51,6 +54,14 @@ const Content = styled('main', {
     },
 
     '@sm': {
-        background: 'none',
+        background: theme.colors.white,
+    },
+
+    variants: {
+        centered: {
+            true: {
+                justifyContent: 'center',
+            },
+        },
     },
 })

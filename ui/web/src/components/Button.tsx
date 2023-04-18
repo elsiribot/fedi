@@ -9,6 +9,7 @@ interface BaseProps {
     size?: 'md' | 'sm'
     icon?: IconProps['icon']
     width?: 'auto' | 'full'
+    loading?: boolean
 }
 type ButtonProps = BaseProps &
     Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof BaseProps>
@@ -28,6 +29,7 @@ export const Button: React.FC<Props> = ({
     width = 'auto',
     icon,
     children,
+    loading,
     ...props
 }) => {
     const content = (
@@ -47,7 +49,8 @@ export const Button: React.FC<Props> = ({
                     {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
                     variant={variant}
                     size={size}
-                    width={width}>
+                    width={width}
+                    disabled={loading}>
                     {content}
                 </ButtonBase>
             )
@@ -59,7 +62,8 @@ export const Button: React.FC<Props> = ({
                     href={props.href || ''}
                     variant={variant}
                     size={size}
-                    width={width}>
+                    width={width}
+                    disabled={loading}>
                     {content}
                 </ButtonBase>
             )
@@ -70,7 +74,8 @@ export const Button: React.FC<Props> = ({
                 {...(props as React.HTMLAttributes<HTMLButtonElement>)}
                 variant={variant}
                 size={size}
-                width={width}>
+                width={width}
+                disabled={loading}>
                 {content}
             </ButtonBase>
         )
@@ -89,7 +94,6 @@ const ButtonBase = styled('button', {
     transition: 'background-color 100ms ease, filter 100ms ease',
 
     '&:disabled': {
-        opacity: 0.5,
         pointerEvents: 'none',
     },
 
@@ -156,6 +160,12 @@ const ButtonBase = styled('button', {
             },
             full: {
                 width: '100%',
+            },
+        },
+        disabled: {
+            true: {
+                pointerEvents: 'none',
+                opacity: 0.5,
             },
         },
     },

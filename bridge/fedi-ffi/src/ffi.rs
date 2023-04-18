@@ -78,6 +78,14 @@ impl IStorage for PathBasedStorage {
         // tokio::fs::write is bad, creates a second copy of data
         Ok(tokio::task::spawn_blocking(move || std::fs::write(path, data)).await??)
     }
+
+    fn platform_path(&self, path: &Path) -> PathBuf {
+        if path.is_absolute() {
+            path.to_owned()
+        } else {
+            self.data_dir.join(path)
+        }
+    }
 }
 
 // TODO: send error message

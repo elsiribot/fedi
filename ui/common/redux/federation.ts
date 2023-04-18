@@ -7,6 +7,7 @@ import type {
     FederationEvent,
     Guardian,
 } from '../types'
+import type { FedimintRpc } from '../utils/fedimint'
 
 /*** Initial State ***/
 
@@ -29,7 +30,7 @@ export const federationSlice = createSlice({
         },
         updateFederation(state, action: PayloadAction<FederationEvent>) {
             state.federations = state.federations.map(federation =>
-                action.payload.name === federation.name
+                action.payload.id === federation.id
                     ? { ...federation, ...action.payload }
                     : federation,
             )
@@ -39,14 +40,14 @@ export const federationSlice = createSlice({
             action: PayloadAction<FederationCredentials>,
         ) {
             state.federations = state.federations.map(federation =>
-                federation.name === state.activeFederationId
+                federation.id === state.activeFederationId
                     ? { ...federation, ...action.payload }
                     : federation,
             )
         },
         resetFederationCredentials(state) {
             state.federations = state.federations.map(federation =>
-                federation.name === state.activeFederationId
+                federation.id === state.activeFederationId
                     ? {
                           ...federation,
                           username: null,
@@ -83,9 +84,41 @@ export const {
     resetFederationsState,
 } = federationSlice.actions
 
+/*** Async thunk actions */
+
+export const refreshFederations = createAsyncThunk<
+    Federation[],
+    FedimintRpc,
+    { state: CommonState }
+>('federation/refreshFederations', async (fedimint, { dispatch }) => {
+    const federations = await fedimint.listFederations()
+    dispatch(setFederations(federations))
+    return federations
+})
+
+export const joinFederation = createAsyncThunk<
+    Federation,
+    { fedimint: FedimintRpc; code: string },
+    { state: CommonState }
+>('federation/joinFederation', async ({ fedimint, code }, { dispatch }) => {
+    const federation = await fedimint.joinFederation(code)
+    const federations = await fedimint.listFederations()
+    if (federations.length > 0) {
+        dispatch(setFederations(federations))
+        dispatch(setActiveFederationId(federation.id))
+    } else {
+        throw new Error('Bridge reported no federations')
+    }
+    return federation
+})
+
 /*** Selectors ***/
 
-export const selectActiveFederation = (s: CommonState) =>
-    s.federation.federations.find(
-        f => f.name === s.federation.activeFederationId,
-    )
+export const selectActiveFederation = (s: CommonState) => {
+    const { federations, activeFederationId } = s.federation
+    return activeFederationId
+        ? federations.find(f => f.name === activeFederationId)
+        : federations[0]
+}
+
+export const selectFederations = (s: CommonState) => s.federation.federations
