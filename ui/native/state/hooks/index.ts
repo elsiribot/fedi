@@ -51,21 +51,23 @@ export const useBtcFiatPrice = () => {
     const selectedFiatCurrency = useAppSelector(
         s => s.currency.selectedFiatCurrency,
     )
+    const btcUsdPrice = useAppSelector(s => s.currency.btcUsdPrice)
+    const btcEurPrice = useAppSelector(s => s.currency.btcUsdPrice)
     // const { selectedFederation } = useFederationsContext().state
     let exchangeRate: number
     // switch (getDefaultCurrency(selectedFederation!)) {
     switch (selectedFiatCurrency) {
         case SupportedCurrency.USD:
-            exchangeRate = useAppSelector(s => s.currency.btcUsdPrice)
+            exchangeRate = btcUsdPrice
             break
         case SupportedCurrency.EUR:
-            exchangeRate = useAppSelector(s => s.currency.btcEurPrice)
+            exchangeRate = btcEurPrice
             break
         case SupportedCurrency.CFA:
-            exchangeRate = useAppSelector(s => s.currency.btcEurPrice) * 650
+            exchangeRate = btcEurPrice * 650
             break
         default:
-            exchangeRate = useAppSelector(s => s.currency.btcUsdPrice)
+            exchangeRate = btcUsdPrice
     }
 
     return {
@@ -102,7 +104,7 @@ export const useBtcFiatPrice = () => {
                 }
                 return `${currencySymbol}${amount}`
             },
-            [exchangeRate],
+            [exchangeRate, selectedFiatCurrency],
         ),
     }
 }

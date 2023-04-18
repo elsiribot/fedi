@@ -47,7 +47,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
                 reduxDispatch(changeSelectedFiatCurrency(currency))
             }
         }
-    }, [selectedFederation])
+    }, [reduxDispatch, selectedFederation, selectedFiatCurrency])
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
