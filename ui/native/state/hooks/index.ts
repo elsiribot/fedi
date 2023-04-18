@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
 
-import { LightningGateway } from '@fedi/common/types'
+import { LightningGateway, SupportedCurrency } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
@@ -47,20 +47,62 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
     return ref.current
 }
 
-export const useBtcUsdPrice = () => {
-    const btcUsdPrice = useAppSelector(s => s.currency.btcUsdPrice)
+export const useBtcFiatPrice = () => {
+    const selectedFiatCurrency = useAppSelector(
+        s => s.currency.selectedFiatCurrency,
+    )
+    // const { selectedFederation } = useFederationsContext().state
+    let exchangeRate: number
+    // switch (getDefaultCurrency(selectedFederation!)) {
+    switch (selectedFiatCurrency) {
+        case SupportedCurrency.USD:
+            exchangeRate = useAppSelector(s => s.currency.btcUsdPrice)
+            break
+        case SupportedCurrency.EUR:
+            exchangeRate = useAppSelector(s => s.currency.btcEurPrice)
+            break
+        case SupportedCurrency.CFA:
+            exchangeRate = useAppSelector(s => s.currency.btcEurPrice) * 650
+            break
+        default:
+            exchangeRate = useAppSelector(s => s.currency.btcUsdPrice)
+    }
+
     return {
-        convertSatsToUsd: useCallback(
+        convertSatsToFiat: useCallback(
             (sats: Sats) => {
-                return amountUtils.satToUsd(sats, btcUsdPrice)
+                return amountUtils.satToFiat(sats, exchangeRate)
             },
-            [btcUsdPrice],
+            [exchangeRate],
         ),
-        convertSatsToUsdString: useCallback(
+        convertSatsToFiatString: useCallback(
             (sats: Sats) => {
-                return amountUtils.satToUsdString(sats, btcUsdPrice)
+                return amountUtils.satToFiatString(sats, exchangeRate)
             },
-            [btcUsdPrice],
+            [exchangeRate],
+        ),
+        convertSatsToFormattedFiat: useCallback(
+            (sats: Sats) => {
+                const amount = amountUtils.satToFiatString(sats, exchangeRate)
+
+                let currencySymbol
+                // switch (getDefaultCurrency(selectedFederation!)) {
+                switch (selectedFiatCurrency) {
+                    case SupportedCurrency.USD:
+                        currencySymbol = `$`
+                        break
+                    case SupportedCurrency.EUR:
+                        currencySymbol = `€`
+                        break
+                    case SupportedCurrency.CFA:
+                        currencySymbol = `CFA `
+                        break
+                    default:
+                        currencySymbol = `$`
+                }
+                return `${currencySymbol}${amount}`
+            },
+            [exchangeRate],
         ),
     }
 }

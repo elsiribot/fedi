@@ -9,7 +9,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { BridgeEventEmitter, fedimint, TransactionEvent } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
@@ -180,7 +180,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                         <Text h2>{`${amountUtils.formatNumber(
                             amountUtils.msatToSat(requestAmount),
                         )} ${t('words.sats').toUpperCase()}`}</Text>
-                        <UsdAmount
+                        <FiatAmount
                             amountSats={amountUtils.msatToSat(requestAmount)}
                         />
                     </>

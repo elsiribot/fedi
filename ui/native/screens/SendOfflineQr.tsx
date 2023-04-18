@@ -9,7 +9,7 @@ import QRCode from 'react-native-qrcode-svg'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { Images } from '../assets/images'
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
@@ -40,7 +40,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
 
-            <UsdAmount amountSats={amountSats} />
+            <FiatAmount amountSats={amountSats} />
             <View style={styles(theme).qrContainer}>
                 <QRCode
                     value={frames[index]}

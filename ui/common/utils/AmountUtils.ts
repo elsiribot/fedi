@@ -16,33 +16,33 @@ class AmountUtils {
     static MIN_BTC_VALUE = 0.00000001
     static SATS_PER_BTC = 100000000
     static MSATS_PER_SAT = 1000
-    static USD_MAX_DECIMAL_PLACES = 2
+    static FIAT_MAX_DECIMAL_PLACES = 2
 
     // For BTC unit conversions returned as number
-    msatToUsd = (msats: MSats, rate: number): Usd => {
+    msatToFiat = (msats: MSats, rate: number): Usd => {
         const btc = this.msatToBtc(msats)
-        return this.btcToUsd(btc, rate)
+        return this.btcToFiat(btc, rate)
     }
-    satToUsd = (sats: Sats, rate: number): Usd => {
+    satToFiat = (sats: Sats, rate: number): Usd => {
         const btc = this.satToBtc(sats)
-        return this.btcToUsd(btc, rate)
+        return this.btcToFiat(btc, rate)
     }
-    btcToUsd = (btc: Btc, rate: number): Usd => {
+    btcToFiat = (btc: Btc, rate: number): Usd => {
         return Number(
-            (btc * rate).toFixed(AmountUtils.USD_MAX_DECIMAL_PLACES),
+            (btc * rate).toFixed(AmountUtils.FIAT_MAX_DECIMAL_PLACES),
         ) as Usd
     }
-    msatToUsdString = (msats: MSats, rate: number): UsdString => {
+    msatToFiatString = (msats: MSats, rate: number): UsdString => {
         const btc = this.msatToBtc(msats)
-        return this.btcToUsdString(btc, rate)
+        return this.btcToFiatString(btc, rate)
     }
-    satToUsdString = (sats: Sats, rate: number): UsdString => {
+    satToFiatString = (sats: Sats, rate: number): UsdString => {
         const btc = this.satToBtc(sats)
-        return this.btcToUsdString(btc, rate)
+        return this.btcToFiatString(btc, rate)
     }
-    btcToUsdString = (btc: Btc, rate: number): UsdString => {
-        return this.btcToUsd(btc, rate).toFixed(
-            AmountUtils.USD_MAX_DECIMAL_PLACES,
+    btcToFiatString = (btc: Btc, rate: number): UsdString => {
+        return this.btcToFiat(btc, rate).toFixed(
+            AmountUtils.FIAT_MAX_DECIMAL_PLACES,
         ) as UsdString
     }
 

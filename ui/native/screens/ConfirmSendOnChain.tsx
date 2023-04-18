@@ -8,7 +8,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
 import { Btc, Sats, SatsString } from '../types'
@@ -79,7 +79,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     returnKeyType="done"
                     containerStyle={styles(theme).textInput}
                 />
-                <UsdAmount amountSats={Number(amount) as Sats} />
+                <FiatAmount amountSats={Number(amount) as Sats} />
                 <Text>
                     {`${stringUtils.truncateMiddleOfString(
                         bitcoinUri.body,

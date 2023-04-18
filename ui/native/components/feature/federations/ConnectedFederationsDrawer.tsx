@@ -17,7 +17,7 @@ import {
     updateSelectedFederationId,
     useFederationsContext,
 } from '../../../state/contexts/FederationsContext'
-import { useBtcUsdPrice } from '../../../state/hooks'
+import { useBtcFiatPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -29,7 +29,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()
-    const { convertSatsToUsdString } = useBtcUsdPrice()
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
 
     const amountInSats = amountUtils.msatToSat(federation.balance)
 
@@ -47,7 +47,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 <Text style={styles(theme).subText}>
                     {`${amountUtils.formatNumber(amountInSats)} ${t(
                         'words.sats',
-                    )} ($${convertSatsToUsdString(amountInSats)})`}
+                    )} (${convertSatsToFormattedFiat(amountInSats)})`}
                 </Text>
             </View>
 

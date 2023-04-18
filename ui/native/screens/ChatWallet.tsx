@@ -7,7 +7,7 @@ import uuid from 'react-native-uuid'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import {
     addToMembersSeen,
     addToMessages,
@@ -88,7 +88,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 returnKeyType="done"
                 containerStyle={styles(theme).textInput}
             />
-            <UsdAmount amountSats={Number(amount) as Sats} />
+            <FiatAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
                     title={t('words.request')}

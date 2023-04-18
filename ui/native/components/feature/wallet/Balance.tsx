@@ -6,7 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useBtcUsdPrice } from '../../../state/hooks'
+import { useBtcFiatPrice } from '../../../state/hooks'
 import { MSats } from '../../../types'
 
 export type Props = {
@@ -16,14 +16,14 @@ export type Props = {
 const Balance: React.FC<Props> = ({ balance }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { convertSatsToUsdString } = useBtcUsdPrice()
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
 
     if (balance !== null) {
         const amountInSats = amountUtils.msatToSat(balance)
         return (
             <View>
                 <Text h2 medium style={styles(theme).balanceText}>
-                    {`$${convertSatsToUsdString(amountInSats)}`}
+                    {`${convertSatsToFormattedFiat(amountInSats)}`}
                 </Text>
                 <Text caption medium style={styles(theme).balanceText}>
                     {`${amountUtils.formatNumber(amountInSats)} ${t(
