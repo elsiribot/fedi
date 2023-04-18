@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState } from '.'
+import { SupportedCurrency } from '../types'
 
 /*** Initial State ***/
 
@@ -8,6 +9,7 @@ const initialState = {
     btcUsdPrice: 0,
     btcEurPrice: 0,
     socketErrors: 0,
+    selectedFiatCurrency: SupportedCurrency.USD,
 }
 
 export type CurrencyState = typeof initialState
@@ -27,6 +29,12 @@ export const currencySlice = createSlice({
         incrementSocketErrors(state) {
             state.socketErrors = state.socketErrors + 1
         },
+        changeSelectedFiatCurrency(
+            state,
+            action: PayloadAction<SupportedCurrency>,
+        ) {
+            state.selectedFiatCurrency = action.payload
+        },
         resetCurrencyState() {
             return { ...initialState }
         },
@@ -35,8 +43,12 @@ export const currencySlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { updateBtcEurPrice, updateBtcUsdPrice, resetCurrencyState } =
-    currencySlice.actions
+export const {
+    updateBtcEurPrice,
+    updateBtcUsdPrice,
+    changeSelectedFiatCurrency,
+    resetCurrencyState,
+} = currencySlice.actions
 
 /*** Async thunk actions ***/
 

@@ -104,6 +104,11 @@ export interface FederationCredentials {
     keypairSeed: string
 }
 
+export enum SupportedCurrency {
+    USD = 'USD',
+    EUR = 'EUR',
+    CFA = 'CFA',
+}
 export interface Federation {
     id: string
     name: string
