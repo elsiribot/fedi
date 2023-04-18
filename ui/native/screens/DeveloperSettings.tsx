@@ -7,7 +7,12 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 
-import type { Guardian, LightningGateway } from '@fedi/common/types'
+import { changeSelectedFiatCurrency } from '@fedi/common/redux/currency'
+import {
+    Guardian,
+    LightningGateway,
+    SupportedCurrency,
+} from '@fedi/common/types'
 
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
@@ -30,7 +35,7 @@ import {
     resetFederationCredentials,
     useFederationsContext,
 } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { RootStackParamList } from '../types/navigation'
 
@@ -51,6 +56,10 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianIndex] = useState<number>(0)
+    const reduxDispatch = useAppDispatch()
+    const selectedFiatCurrency = useAppSelector(
+        s => s.currency.selectedFiatCurrency,
+    )
 
     const { authenticatedGuardian, selectedFederation } = state
 
@@ -140,6 +149,42 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedLanguage === 'fr'}
                     onPress={() => setSelectedLanguage('fr')}
+                />
+            </View>
+            <Text>Change your currency</Text>
+            <View>
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>{'USD'}</Text>
+                    }
+                    checked={selectedFiatCurrency === SupportedCurrency.USD}
+                    onPress={() =>
+                        reduxDispatch(
+                            changeSelectedFiatCurrency(SupportedCurrency.USD),
+                        )
+                    }
+                />
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>{'EUR'}</Text>
+                    }
+                    checked={selectedFiatCurrency === SupportedCurrency.EUR}
+                    onPress={() =>
+                        reduxDispatch(
+                            changeSelectedFiatCurrency(SupportedCurrency.EUR),
+                        )
+                    }
+                />
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>{'CFA'}</Text>
+                    }
+                    checked={selectedFiatCurrency === SupportedCurrency.CFA}
+                    onPress={() =>
+                        reduxDispatch(
+                            changeSelectedFiatCurrency(SupportedCurrency.CFA),
+                        )
+                    }
                 />
             </View>
             <Button
