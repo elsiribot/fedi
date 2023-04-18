@@ -3,7 +3,7 @@ use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[apply(async_trait_maybe_send!)]
@@ -14,6 +14,8 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
+    /// convert a relative path to a path understood by the platform.
+    fn platform_path(&self, path: &Path) -> PathBuf;
 }
 
 pub type Storage = Arc<dyn IStorage>;

@@ -31,12 +31,11 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     const createBackup = async () => {
         try {
             const recoveryFilePath = await locateRecoveryFile()
-            const result = await Share.open({
+            await Share.open({
                 title: 'Your Fedi Backup File',
                 // FIXME: this needs file:// prefix ... should do this with a util?
                 url: `file://${recoveryFilePath}`,
             })
-            console.log(result)
             setBackupsCompleted(
                 Math.min(BACKUPS_REQUIRED, backupsCompleted + 1),
             )

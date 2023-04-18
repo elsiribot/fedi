@@ -5,7 +5,7 @@ use fediffi::fedimint_core::db::Database;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
 use fediffi::mint_client::module_decode_stubs;
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
@@ -39,6 +39,9 @@ impl fediffi::storage::IStorage for WasmStorage {
         todo!()
     }
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
+        todo!()
+    }
+    fn platform_path(&self, path: &Path) -> PathBuf {
         todo!()
     }
 }

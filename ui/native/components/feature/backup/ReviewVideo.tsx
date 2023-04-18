@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -10,6 +10,7 @@ import {
     resetVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
+import CheckBox from '../../ui/CheckBox'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const ReviewVideo = () => {

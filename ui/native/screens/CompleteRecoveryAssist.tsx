@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
+import CheckBox from '../components/ui/CheckBox'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -129,8 +130,8 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                                 )}
                             </Text>
                         }
-                        checkedIcon="dot-circle-o"
-                        uncheckedIcon="circle-o"
+                        checkedIcon={<SvgImage name="RadioSelected" />}
+                        uncheckedIcon={<SvgImage name="RadioUnselected" />}
                         checked={approvalSelected}
                         onPress={() => {
                             setApprovalSelected(true)
@@ -148,8 +149,8 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                                 )}
                             </Text>
                         }
-                        checkedIcon="dot-circle-o"
-                        uncheckedIcon="circle-o"
+                        checkedIcon={<SvgImage name="RadioSelected" />}
+                        uncheckedIcon={<SvgImage name="RadioUnselected" />}
                         checked={denialSelected}
                         onPress={() => {
                             setApprovalSelected(false)

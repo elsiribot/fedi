@@ -292,14 +292,15 @@ impl SocialRecovery {
             .request_raw(
                 peer_id,
                 &format!("/module/{}/decryption_share", self.module_id),
-                &[serde_json::to_value(
-                    self.state
+                &[ApiRequestErased::new(
+                    &(self
+                        .state
                         .signing_sk
                         .0
                         .x_only_public_key(secp256k1::SECP256K1)
-                        .0,
+                        .0),
                 )
-                .expect("serialization here can't fail")],
+                .to_json()],
             )
             .await?;
 
@@ -385,7 +386,7 @@ impl SocialVerification {
             .request_raw(
                 self.peer_id,
                 &format!("/module/{}/get_verification", self.module_id),
-                &[serde_json::to_value(id).expect("serialization here can't fail")],
+                &[ApiRequestErased::new(&(id)).to_json()],
             )
             .await?;
 
