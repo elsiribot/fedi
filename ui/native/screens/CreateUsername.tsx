@@ -126,8 +126,9 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     console.error(error.toString())
                 } else if (typeof error === 'string') {
                     setXmppAuthInProgress(false)
-                    console.info(error)
-                    toast?.show(error, 3000)
+                    const errorMessage = t(error)
+                    console.info(errorMessage)
+                    toast?.show(errorMessage, 3000)
                 }
             }
         }
@@ -139,6 +140,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         dispatch,
         getXmppCredentials,
         toast,
+        t,
         username,
         xmppAuthInProgress,
     ])
