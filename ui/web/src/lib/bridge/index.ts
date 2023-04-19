@@ -1,4 +1,4 @@
-import { FedimintRpc } from '@fedi/common/utils/fedimint'
+import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
 let worker: Worker
 let callbackId = 0
@@ -30,7 +30,7 @@ async function fedimintRpc<Type = void>(
     }
 }
 
-export const fedimint = new FedimintRpc(fedimintRpc)
+export const fedimint = new FedimintBridge(fedimintRpc)
 
 export function initializeBridge() {
     return new Promise<void>((resolve, reject) => {

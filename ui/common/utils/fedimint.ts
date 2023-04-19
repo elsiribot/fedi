@@ -16,7 +16,7 @@ import type {
     SocialRecoveryQrCode,
 } from '../types'
 
-export class FedimintRpc {
+export class FedimintBridge {
     constructor(
         private readonly rpc: <T = void>(
             method: string,

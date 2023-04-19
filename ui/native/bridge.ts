@@ -9,7 +9,7 @@ import {
     Transaction,
     SocialRecoveryEvent,
 } from '@fedi/common/types'
-import { FedimintRpc } from '@fedi/common/utils/fedimint'
+import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 
@@ -109,7 +109,7 @@ async function fedimintRpc<Type = void>(
     }
 }
 
-export const fedimint = new FedimintRpc(fedimintRpc)
+export const fedimint = new FedimintBridge(fedimintRpc)
 
 export async function initializeBridge(dataDir: string) {
     const logLevel = 'info'

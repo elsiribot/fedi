@@ -7,7 +7,7 @@ import type {
     FederationEvent,
     Guardian,
 } from '../types'
-import type { FedimintRpc } from '../utils/fedimint'
+import type { FedimintBridge } from '../utils/fedimint'
 
 /*** Initial State ***/
 
@@ -68,7 +68,7 @@ export const {
 
 export const refreshFederations = createAsyncThunk<
     Federation[],
-    FedimintRpc,
+    FedimintBridge,
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch }) => {
     const federations = await fedimint.listFederations()
@@ -78,7 +78,7 @@ export const refreshFederations = createAsyncThunk<
 
 export const joinFederation = createAsyncThunk<
     Federation,
-    { fedimint: FedimintRpc; code: string },
+    { fedimint: FedimintBridge; code: string },
     { state: CommonState }
 >('federation/joinFederation', async ({ fedimint, code }, { dispatch }) => {
     const federation = await fedimint.joinFederation(code)
