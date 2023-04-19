@@ -10,7 +10,7 @@ rustup install stable-aarch64-apple-darwin
 rustup component add rust-src --toolchain stable-x86_64-apple-darwin
 rustup component add rust-src --toolchain stable-aarch64-apple-darwin
 rustup target add aarch64-apple-ios x86_64-apple-ios
-rustup target add aarch64-apple-ios-sim
+rustup target add aarch64-apple-ios-sim --toolchain stable
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
 cd fedi-ffi
