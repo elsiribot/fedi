@@ -5,7 +5,7 @@ let
   # Env vars we need for wasm32 cross compilation
   wasm32CrossEnvVars = ''
     export CC_wasm32_unknown_unknown="${pkgs.llvmPackages_14.clang-unwrapped}/bin/clang-14"
-    export CFLAGS_wasm32_unknown_unknown="-I ${pkgs.llvmPackages_14.libclang.lib}/lib/clang/14.0.6/include/"
+    export CFLAGS_wasm32_unknown_unknown="-I ${pkgs.llvmPackages_14.libclang.lib}/lib/clang/14.0.6/include/ -Wno-macro-redefined"
   '' + (if isArch64Darwin then
     ''
       export AR_wasm32_unknown_unknown="${pkgs.llvmPackages_14.llvm}/bin/llvm-ar"
@@ -138,22 +138,51 @@ let
     "rustfmt"
   ]);
 
+  cargoWasm32Hack = pkgs.writeShellScriptBin
+    "cargo"
+    ''
+      if grep -q "wasm32-unknown-unknown" <<< "$@" || [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-unknown" ] ; then
+        >&2 echo "Patching your wasm32 build"
+
+        # Use `Cargo.wasm32.lock` in place of the normal `Cargo.lock`
+        cp Cargo.lock Cargo.native.lock
+        cp Cargo.wasm32.lock Cargo.lock
+
+        # Restore files back to their place on exit
+        function restore() {
+          cp Cargo.lock Cargo.wasm32.lock 
+          cp Cargo.native.lock Cargo.lock
+        }
+        trap restore EXIT
+
+        ${fenix.packages.${system}.stable.cargo}/bin/cargo \
+          --config 'patch.crates-io.ring.git="https://github.com/fedibtc/ring"' \
+          --config 'patch.crates-io.ring.rev="ef36b9371e0ec5d465db024bb15930c5dc499dbd"' \
+          "$@"
+      else
+        exec ${fenix.packages.${system}.stable.cargo}/bin/cargo "$@"
+      fi
+    '';
+
   fenixToolchainCrossAll = with fenix.packages.${system}; combine ([
-    stable.cargo
+    # HACK: We need to conditionally (only for wasm32) patch `ring`
+    # and cargo can't do it natively, so we wrap `cargo` binary into
+    # our own wrapper.
+    cargoWasm32Hack
     stable.rustc
   ] ++ (lib.attrsets.mapAttrsToList
     (attr: target: targets.${target.name}.stable.rust-std)
     crossTargets));
 
   fenixToolchainCrossWasm = with fenix.packages.${system}; combine ([
-    stable.cargo
+    cargoWasm32Hack
     stable.rustc
     targets.wasm32-unknown-unknown.stable.rust-std
   ]);
 
   fenixToolchainCross = builtins.mapAttrs
     (attr: target: with fenix.packages.${system}; combine [
-      stable.cargo
+      cargoWasm32Hack
       stable.rustc
       targets.${target.name}.stable.rust-std
     ])
