@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
@@ -16,7 +16,7 @@ import {
 
 export const OnboardingComplete: React.FC = () => {
     const { t } = useTranslation()
-    const username = useAppSelector(selectActiveFederation)?.username
+    const username = useAppSelector(selectAuthenticatedMember)?.username
 
     return (
         <OnboardingContainer>

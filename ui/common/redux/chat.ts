@@ -1,11 +1,11 @@
 import {
-    createAsyncThunk,
     createSlice,
     PayloadAction,
     createSelector,
+    createAsyncThunk,
 } from '@reduxjs/toolkit'
 
-import { CommonState } from '.'
+import { CommonState, selectActiveFederation } from '.'
 import {
     Chat,
     ChatMessage,
@@ -13,72 +13,194 @@ import {
     ChatGroup,
     KeypairHex,
     ChatType,
+    XmppCredentials,
 } from '../types'
+import { FedimintRpc } from '../utils/fedimint'
+import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
+
+type FederationPayloadAction<T = {}> = PayloadAction<
+    { federationId: string } & T
+>
 
 /*** Initial State ***/
 
-const initialState = {
+const initialFederationChatState = {
     authenticatedMember: null as ChatMember | null,
-    username: null as string | null,
+    credentials: null as XmppCredentials | null,
     messages: [] as ChatMessage[],
     groups: [] as ChatGroup[],
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
-    websocketIsHealthy: false,
+    websocketIsHealthy: false as boolean,
     encryptionKeys: null as KeypairHex | null,
 }
+type FederationChatState = typeof initialFederationChatState
+
+// All chat state is keyed by federation id to keep federation chats separate, so it starts as an empty object.
+const initialState = {} as Record<string, FederationChatState | undefined>
 
 export type ChatState = typeof initialState
 
 /*** Slice definition ***/
 
+const getFederationChatState = (state: ChatState, federationId: string) =>
+    state[federationId] || {
+        ...initialFederationChatState,
+    }
+
 export const chatSlice = createSlice({
     name: 'chat',
     initialState,
     reducers: {
-        setChatMembersSeen(state, action: PayloadAction<ChatMember[]>) {
-            state.membersSeen = [...action.payload]
+        setChatMembersSeen(
+            state,
+            action: FederationPayloadAction<{ membersSeen: ChatMember[] }>,
+        ) {
+            const { federationId, membersSeen } = action.payload
+            state[federationId] = {
+                ...getFederationChatState(state, federationId),
+                membersSeen: [...membersSeen],
+            }
         },
-        addChatMemberSeen(state, action: PayloadAction<ChatMember>) {
+        addChatMemberSeen(
+            state,
+            action: FederationPayloadAction<{ member: ChatMember }>,
+        ) {
+            const { federationId, member } = action.payload
+            const federation = getFederationChatState(state, federationId)
             // Don't add self to list
-            if (action.payload.id === state.authenticatedMember?.id) return
-            state.membersSeen = [...state.membersSeen, action.payload]
+            if (member.id === federation.authenticatedMember?.id) return
+            state[federationId] = {
+                ...federation,
+                membersSeen: [...federation.membersSeen, member],
+            }
         },
-        setChatMessages(state, action: PayloadAction<ChatMessage[]>) {
-            state.messages = [...action.payload]
+        setChatMessages(
+            state,
+            action: FederationPayloadAction<{ messages: ChatMessage[] }>,
+        ) {
+            const { federationId, messages } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                messages,
+            }
         },
-        addChatMessage(state, action: PayloadAction<ChatMessage>) {
-            // TODO: Upsert repeat messages
-            state.messages = [...state.messages, action.payload]
+        addChatMessage(
+            state,
+            action: FederationPayloadAction<{ message: ChatMessage }>,
+        ) {
+            const { federationId, message } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                // TODO: Upsert repeat messages
+                messages: [...federation.messages, message],
+            }
         },
-        updateChatMessage(state, action: PayloadAction<ChatMessage>) {
-            state.messages = state.messages.map(m => {
-                if (m.id !== action.payload.id) return m
+        updateChatMessage(
+            state,
+            action: FederationPayloadAction<{ message: ChatMessage }>,
+        ) {
+            const { federationId, message } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            const messages = federation.messages.map(m => {
+                if (m.id !== message.id) return m
                 return {
                     ...m,
-                    ...action.payload,
+                    ...message,
                 }
             })
+            state[federationId] = {
+                ...federation,
+                messages,
+            }
         },
-        setChatGroups(state, action: PayloadAction<ChatGroup[]>) {
-            state.groups = [...action.payload]
+        setChatGroups(
+            state,
+            action: FederationPayloadAction<{ groups: ChatGroup[] }>,
+        ) {
+            const { federationId, groups } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                groups,
+            }
         },
-        addChatGroup(state, action: PayloadAction<ChatGroup>) {
-            // TODO: Upsert repeat groups
-            state.groups = [...state.groups, action.payload]
+        addChatGroup(
+            state,
+            action: FederationPayloadAction<{ group: ChatGroup }>,
+        ) {
+            const { federationId, group } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                // TODO: Upsert repeat messages
+                groups: [...federation.groups, group],
+            }
         },
-        setLastFetchedMessageId(state, action: PayloadAction<string>) {
-            state.lastFetchedMessageId = action.payload
+        setLastFetchedMessageId(
+            state,
+            action: FederationPayloadAction<{ lastFetchedMessageId: string }>,
+        ) {
+            const { federationId, lastFetchedMessageId } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastFetchedMessageId,
+            }
         },
-        setAuthenticatedMember(state, action: PayloadAction<ChatMember>) {
-            state.authenticatedMember = action.payload
+        setAuthenticatedMember(
+            state,
+            action: FederationPayloadAction<{
+                authenticatedMember: ChatMember
+            }>,
+        ) {
+            const { federationId, authenticatedMember } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                authenticatedMember,
+            }
         },
-        setChatEncryptionKeys(state, action: PayloadAction<KeypairHex>) {
-            state.encryptionKeys = action.payload
+        setChatEncryptionKeys(
+            state,
+            action: FederationPayloadAction<{ encryptionKeys: KeypairHex }>,
+        ) {
+            const { federationId, encryptionKeys } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                encryptionKeys,
+            }
+        },
+        resetFederationChatState(state, action: FederationPayloadAction) {
+            state[action.payload.federationId] = {
+                ...initialFederationChatState,
+            }
         },
         resetChatState() {
             return { ...initialState }
         },
+    },
+    extraReducers: builder => {
+        builder.addCase(refreshChatCredentials.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                credentials: action.payload,
+            }
+        })
+
+        builder.addCase(authenticateChat.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                authenticatedMember: action.payload,
+            }
+        })
     },
 })
 
@@ -98,16 +220,67 @@ export const {
     resetChatState,
 } = chatSlice.actions
 
+/*** Async thunk actions ***/
+
+export const refreshChatCredentials = createAsyncThunk<
+    XmppCredentials,
+    { fedimint: FedimintRpc; federationId: string }
+>('chat/refreshChatCredentials', async ({ fedimint, federationId }) => {
+    const credentials = await fedimint.getXmppCredentials(federationId)
+    return credentials
+})
+
+export const authenticateChat = createAsyncThunk<
+    ChatMember,
+    { fedimint: FedimintRpc; federationId: string; username: string },
+    { state: CommonState }
+>(
+    'chat/authenticateChat',
+    async ({ fedimint, federationId, username }, { dispatch, getState }) => {
+        // Fetch xmpp credentials if we don't have them
+        let credentials = getState().chat[federationId]?.credentials
+        if (!credentials) {
+            credentials = await dispatch(
+                refreshChatCredentials({ fedimint, federationId }),
+            ).unwrap()
+        }
+
+        // Validate credentials, register if it's a new name
+        const normalizedUsername = username.toLowerCase()
+        const credentialsAreValid = await checkXmppUser(
+            normalizedUsername,
+            credentials.password,
+        )
+        if (!credentialsAreValid) {
+            await registerXmppUser(normalizedUsername, credentials.password)
+        }
+
+        // Backup the username to the fedimint bridge
+        await fedimint.backupXmppUsername(normalizedUsername, federationId)
+
+        return {
+            id: normalizedUsername,
+            username: normalizedUsername,
+        }
+    },
+)
+
 /*** Selectors ***/
 
+const selectFederationChatState = (s: CommonState) =>
+    getFederationChatState(s.chat, selectActiveFederation(s)?.id || '')
+
 export const selectAuthenticatedMember = (s: CommonState) =>
-    s.chat.authenticatedMember
+    selectFederationChatState(s).authenticatedMember
 
-export const selectAllChatMessages = (s: CommonState) => s.chat.messages
+export const selectAllChatMessages = (s: CommonState) =>
+    selectFederationChatState(s).messages
 
-export const selectAllChatMembers = (s: CommonState) => s.chat.membersSeen
+export const selectAllChatMembers = (s: CommonState) =>
+    selectFederationChatState(s).membersSeen
 
-export const selectAllChatGroups = (s: CommonState) => s.chat.groups
+export const selectAllChatGroups = (s: CommonState) =>
+    selectFederationChatState(s).groups
 
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
@@ -173,7 +346,7 @@ export const selectAllDirectChats = createSelector(
     (me, messages, memberMap) => {
         const chatMap: Record<string, Chat> = {}
         messages.forEach(m => {
-            const { sentTo, sentBy, sentAt } = m
+            const { sentTo, sentBy } = m
 
             // Filter out group messages
             if (!sentTo) return

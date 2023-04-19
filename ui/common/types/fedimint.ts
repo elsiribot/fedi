@@ -68,11 +68,6 @@ export interface OfflineTransactionDetails {
     claimed: boolean
 }
 
-export interface XmppCredentials {
-    password: string
-    keypairSeed: string
-}
-
 export interface Transaction {
     id: string
     createdAt: number
@@ -115,12 +110,6 @@ export interface Federation {
     connectInfo: string
     nodes: Node[]
     balance: MSats
-    // Leaving this on the federation object for now
-    // until/unless we find a better place...
-    // used for XMPP login for chat features
-    username?: string | null
-    password?: string | null
-    keypairSeed?: string | null
     socialRecoveryActive: boolean
 }
 
