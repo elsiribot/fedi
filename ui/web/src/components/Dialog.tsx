@@ -27,7 +27,9 @@ export const Dialog: React.FC<Props> = ({
         <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
             <RadixDialog.Portal>
                 <Overlay>
-                    <Content size={size}>
+                    <Content
+                        size={size}
+                        onOpenAutoFocus={ev => ev.preventDefault()}>
                         {title && (
                             <Title>
                                 <Text variant="body" weight="bold">

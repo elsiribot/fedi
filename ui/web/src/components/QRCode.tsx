@@ -23,12 +23,16 @@ export const QRCode: React.FC<Props> = ({ data }) => {
 }
 
 const Container = styled('div', {
+    width: '100%',
+    aspectRatio: '1 / 1',
     holoGradient: '900',
     padding: 4,
     borderRadius: 20,
 })
 
 const Inner = styled('div', {
+    width: '100%',
+    aspectRatio: '1 / 1',
     background: theme.colors.white,
     padding: 20,
     borderRadius: 16,

@@ -11,12 +11,15 @@ import { Text } from './Text'
 interface Props {
     amount: Sats
     max?: number
+    error?: string
+    readOnly?: boolean
     onChangeAmount(amount: Sats): void
 }
 
 export const AmountInput: React.FC<Props> = ({
     amount,
-    max,
+    error,
+    readOnly,
     onChangeAmount,
 }) => {
     const { t } = useTranslation()
@@ -79,25 +82,25 @@ export const AmountInput: React.FC<Props> = ({
 
     const activeWrapProps = {
         active: true,
+        readOnly,
         onClick: useCallback((ev: React.MouseEvent) => {
             ev.currentTarget.querySelector('input')?.focus()
         }, []),
     }
     const inactiveWrapProps = {
         active: false,
-        role: 'button',
-        tabIndex: 0,
-        onClick: useCallback((ev: React.MouseEvent) => {
-            setIsFiat(is => !is)
-            ev.currentTarget.querySelector('input')?.focus()
-        }, []),
+        readOnly,
+        role: readOnly ? undefined : 'button',
+        tabIndex: readOnly ? undefined : 0,
+        onClick: useCallback(
+            (ev: React.MouseEvent) => {
+                if (readOnly) return
+                setIsFiat(is => !is)
+                ev.currentTarget.querySelector('input')?.focus()
+            },
+            [readOnly],
+        ),
     }
-
-    // TODO: translate
-    const error =
-        max && amount > max
-            ? `Maximum amount is ${AmountUtils.formatNumber(max)} sats`
-            : null
 
     // When we're editing fiat, force the input to use our local state, not calculated.
     // Otherwise you encounter rounding issues while typing.
@@ -105,9 +108,14 @@ export const AmountInput: React.FC<Props> = ({
         ? fiatAmount
         : AmountUtils.satToUsdString(amount, btcToUsd)
     const satsValue = Intl.NumberFormat('en-US').format(amount)
+    console.log({ fiatValue })
 
     return (
-        <Container>
+        <Container
+            css={{
+                '--container-height': `88px`,
+                '--error-height': error ? '28px' : '0px',
+            }}>
             {error && (
                 <Error>
                     <Text variant="caption" weight="medium">
@@ -118,7 +126,7 @@ export const AmountInput: React.FC<Props> = ({
             <FieldWrap {...(isFiat ? inactiveWrapProps : activeWrapProps)}>
                 <SnugInput>
                     <input
-                        readOnly={isFiat}
+                        readOnly={isFiat || readOnly}
                         value={satsValue}
                         onChange={handleChangeSats}
                         pattern="[0-9]+"
@@ -131,22 +139,30 @@ export const AmountInput: React.FC<Props> = ({
                 <span>$</span>
                 <SnugInput>
                     <input
-                        readOnly={!isFiat}
+                        readOnly={!isFiat || readOnly}
                         value={fiatValue}
                         onChange={handleChangeFiat}
                     />
-                    <div>{fiatAmount}</div>
+                    <div>{fiatValue}</div>
                 </SnugInput>
             </FieldWrap>
         </Container>
     )
 }
 
-const containerHeight = 112
+// const testAnimation = keyframes({
+//     '0%': {
+
+//     },
+//     '100%': {
+//         transfor:
+//     },
+// })
 
 const Container = styled('div', {
     position: 'relative',
-    height: containerHeight,
+    height: 'calc(var(--container-height) + var(--error-height))',
+    transition: 'height 200ms ease',
 })
 
 const errorFadeDown = keyframes({
@@ -191,11 +207,17 @@ const FieldWrap = styled('div', {
     variants: {
         active: {
             true: {
-                transform: 'translateX(-50%) translateY(22px)',
+                transform: 'translateX(-50%) translateY(var(--error-height))',
             },
             false: {
                 opacity: 0.5,
-                transform: `translateX(-50%) translateY(${containerHeight}px) translateY(-100%) scale(0.6)`,
+                transform: `
+                    translateX(-50%)
+                    translateY(var(--error-height))
+                    translateY(var(--container-height))
+                    translateY(-100%)
+                    scale(0.6)
+                `,
                 cursor: 'pointer',
 
                 '> *': {
@@ -203,9 +225,9 @@ const FieldWrap = styled('div', {
                 },
             },
         },
-        error: {
+        readOnly: {
             true: {
-                color: theme.colors.red,
+                cursor: 'default',
             },
         },
     },

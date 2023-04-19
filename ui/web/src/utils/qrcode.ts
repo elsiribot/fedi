@@ -11,6 +11,7 @@ export function renderStyledQrSvg(qrData: QRCode) {
     const data = qrData.modules.data
     const size = qrData.modules.size
     const moduleSize = 97
+    console.log({ size })
 
     const qrSvg = `
         <svg
@@ -23,7 +24,11 @@ export function renderStyledQrSvg(qrData: QRCode) {
             xmlns:xlink="http://www.w3.org/1999/xlink"
         >
             <defs>
-                <circle cx="45" cy="45" id="dot" r="45" fill="currentColor" />
+                ${
+                    size > 60
+                        ? '<rect id="dot" width="100" height="100" fill="currentColor" />'
+                        : '<circle id="dot" cx="45" cy="45" r="45" fill="currentColor" />'
+                }
                 <g id="point">
                     <rect x="0" y="0" width="695" height="700" rx="200" fill="currentColor" stroke-width="8"/>
                     <rect x="115" y="115" width="465" height="465" rx="40" fill="white"/>
