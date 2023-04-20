@@ -1,20 +1,19 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
+import { joinFederation } from '@fedi/common/redux'
+
 import { fedimint } from '../bridge'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    updateFederations,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
+import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -26,68 +25,34 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { state, dispatch } = useFederationsContext()
     const { toast } = useEnvironmentContext().state
-    const [federationToJoin, setFederationToJoin] = useState<string>('')
-    const [joiningComplete, setJoiningComplete] = useState<boolean>(false)
-
-    useEffect(() => {
-        const handleJoinFederation = async () => {
-            try {
-                const federation = await fedimint.joinFederation(
-                    federationToJoin,
-                )
-                const federations = await fedimint.listFederations()
-                if (federations.length > 0) {
-                    dispatch(updateFederations(federation.id, federations))
-                    setJoiningComplete(true)
-                }
-            } catch (e) {
-                console.error(e)
-                toast?.show(t('errors.failed-to-join-federation'), 5000)
-            }
-            setFederationToJoin('')
-        }
-
-        if (federationToJoin) {
-            handleJoinFederation()
-        }
-    }, [dispatch, federationToJoin, t, toast])
-
-    useEffect(() => {
-        console.log(
-            'effect',
-            federationToJoin,
-            state.selectedFederation,
-            joiningComplete,
-        )
-        if (
-            federationToJoin === '' &&
-            state.selectedFederation &&
-            // This is critical in case you are scanning to join multiple
-            // federations so selectedFederation may still be non-null
-            joiningComplete
-        ) {
-            navigation.replace('FederationWelcome')
-        }
-    }, [
-        navigation,
-        state.selectedFederation,
-        federationToJoin,
-        joiningComplete,
-    ])
+    const dispatch = useAppDispatch()
+    const [isJoining, setIsJoining] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
         async (input: string) => {
+            // TODO: Remove this and leave all code validation to
+            // the bridge?
             if (input.startsWith('fed1')) {
                 console.info('fedi qr code detected', input)
-                // Set the federation string to trigger the useEffect above
-                setFederationToJoin(input)
+                setIsJoining(true)
+                try {
+                    await dispatch(
+                        joinFederation({ fedimint, code: input }),
+                    ).unwrap()
+                    navigation.replace('FederationWelcome')
+                } catch (err) {
+                    console.error(err)
+                    // TODO: Expect an error code from bridge that maps to
+                    // a localized error message
+                    toast?.show(t('errors.failed-to-join-federation'), 5000)
+                }
+                setIsJoining(false)
             } else {
                 toast?.show(t('errors.invalid-federation-code'), 5000)
             }
         },
-        [t, toast],
+        [dispatch, navigation, t, toast],
     )
 
     const checkClipboard = useCallback(async () => {
@@ -101,7 +66,7 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
     const renderQrCodeScanner = () => {
         if (device == null) {
             return <ActivityIndicator />
-        } else if (federationToJoin !== '') {
+        } else if (isJoining) {
             return null
         } else {
             return (
@@ -122,8 +87,8 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                         'feature.federations.paste-federation-code-instead',
                     )}
                     onPress={checkClipboard}
-                    disabled={federationToJoin !== ''}
-                    loading={federationToJoin !== ''}
+                    disabled={isJoining}
+                    loading={isJoining}
                     type="clear"
                 />
             }
@@ -134,9 +99,8 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                 </View>
                 <View style={styles(theme, insets).buttonContainer}>
                     <Button
-                        testID="PasteFederationCodeButton"
-                        disabled={federationToJoin !== ''}
-                        loading={federationToJoin !== ''}
+                        disabled={isJoining}
+                        loading={isJoining}
                         title={t('feature.federations.paste-federation-code')}
                         onPress={checkClipboard}
                         fullWidth
