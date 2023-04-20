@@ -17,6 +17,7 @@ import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
+    FEDERATION_USERNAME_ID_DB_KEY,
 } from '../../constants'
 import { useAppDispatch, useAppSelector } from '../hooks'
 
@@ -100,10 +101,22 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
                 JSON.stringify({
                     activeFederation: {
                         id: activeFederation.id,
-                        username: authenticatedMember?.username,
                     },
                 }),
             )
+            if (authenticatedMember?.username) {
+                console.log(
+                    'FEDERATION_USERNAME_ID_DB_KEY',
+                    'activeFederation.id',
+                    authenticatedMember?.username!,
+                )
+                AsyncStorage.mergeItem(
+                    `${FEDERATION_USERNAME_ID_DB_KEY}`,
+                    JSON.stringify({
+                        [activeFederation.id]: authenticatedMember?.username!,
+                    }),
+                )
+            }
         }
     }, [activeFederation, authenticatedMember?.username])
 
