@@ -9,8 +9,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
-import { Federation, getShowInviteCode } from '@fedi/common/types'
+import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import FederationUtils from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
 import {
@@ -33,6 +34,8 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     const amountInSats = amountUtils.msatToSat(federation.balance)
 
+    const showInviteCode = new FederationUtils(federation).getShowInviteCode()
+
     return (
         <View style={styles(theme).drawerItemLabel}>
             <SvgImage
@@ -51,7 +54,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 </Text>
             </View>
 
-            {getShowInviteCode(federation) && (
+            {showInviteCode && (
                 <Pressable
                     style={styles(theme).iconImage}
                     onPress={() => {

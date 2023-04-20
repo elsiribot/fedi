@@ -5,13 +5,14 @@ import React, { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 
 import { changeSelectedFiatCurrency } from '@fedi/common/redux'
+import FederationUtils from '@fedi/common/utils/FederationUtils'
 
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
 import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { SupportedCurrency, getDefaultCurrency } from '../types'
+import { SupportedCurrency } from '../types'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -39,7 +40,9 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     // Changes currency based on the federation name
     useEffect(() => {
         if (selectedFederation) {
-            const currency = getDefaultCurrency(selectedFederation)
+            const currency = new FederationUtils(
+                selectedFederation,
+            ).getDefaultCurrency()
             if (
                 currency !== SupportedCurrency.USD &&
                 currency !== selectedFiatCurrency

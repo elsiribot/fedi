@@ -120,18 +120,6 @@ export interface Federation {
     // defaultCurrency?: SupportedCurrency
     // stealthMode?: boolean
 }
-// TODO: Remove this when Federation.defaultCurrency is available
-export const getDefaultCurrency = (
-    federation: Federation,
-): SupportedCurrency => {
-    return federation?.name?.includes('togo')
-        ? SupportedCurrency.CFA
-        : SupportedCurrency.USD
-}
-// TODO: Remove this when Federation.stealthMode is available
-export const getShowInviteCode = (federation: Federation): boolean => {
-    return federation?.name?.includes('togo') ? false : true
-}
 
 export type SeedWords = string[]
 
