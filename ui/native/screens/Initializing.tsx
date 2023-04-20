@@ -126,12 +126,16 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                         const { activeFederation } = savedJson
                         console.log('saved federation', activeFederation)
                         if (activeFederation?.id) {
+                            if (activeFederation.username) {
+                                console.debug(
+                                    'setUsernameToRestore',
+                                    activeFederation.username,
+                                )
+                                setUsernameToRestore(activeFederation.username)
+                            }
                             dispatch(
                                 setActiveFederationId(activeFederation?.id),
                             )
-                            if (activeFederation.username) {
-                                setUsernameToRestore(activeFederation.username)
-                            }
                             // load selected federation id from async storage
                             const savedGuardian = await AsyncStorage.getItem(
                                 AUTHENTICATED_GUARDIAN_DB_KEY,
