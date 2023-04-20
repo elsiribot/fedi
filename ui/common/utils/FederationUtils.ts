@@ -9,12 +9,14 @@ export default class FederationUtils {
 
     // TODO: Remove this when Federation.defaultCurrency is available
     getDefaultCurrency(): SupportedCurrency {
-        return this.federation.name.includes('togo')
+        return this.federation.name.toLowerCase().includes('togo')
             ? SupportedCurrency.CFA
             : SupportedCurrency.USD
     }
     // TODO: Remove this when Federation.stealthMode is available
     getShowInviteCode(): boolean {
-        return this.federation.name.includes('togo') ? false : true
+        return this.federation.name.toLowerCase().includes('togo')
+            ? false
+            : true
     }
 }
