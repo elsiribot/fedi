@@ -12,7 +12,7 @@ type FiatPriceMap = {
 
 const initialState = {
     prices: {} as FiatPriceMap,
-    selectedFiatCurrency: SupportedCurrency.USD,
+    selectedFiatCurrency: null as SupportedCurrency | null,
     socketErrors: 0,
 }
 
@@ -67,46 +67,20 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
     'currency/watchPrices',
     async (_, { dispatch, getState }) => {
         // See docs at https://docs.bitfinex.com/docs/ws-general
-        const usdSocket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
+        const socket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
+        const priceChannels: { [channelId: number]: string } = {}
 
-        usdSocket.onopen = () => {
-            usdSocket.send(
+        socket.onopen = () => {
+            // Subscribe to USD price
+            socket.send(
                 JSON.stringify({
                     event: 'subscribe',
                     channel: 'ticker',
                     symbol: 'tBTCUSD',
                 }),
             )
-        }
-
-        usdSocket.onmessage = (message: any) => {
-            console.log('message', message)
-            const parsedData = JSON.parse(message.data)
-            if (parsedData.length === 2 && parsedData[1].length === 10) {
-                const priceData = parsedData[1]
-                const updatedPrice = priceData[6]
-                dispatch(
-                    updateBtcFiatPrice({
-                        currency: SupportedCurrency.USD,
-                        price: updatedPrice,
-                    }),
-                )
-            }
-        }
-
-        // Re-try connection on closing, with a backoff.
-        usdSocket.onclose = () => {
-            const { socketErrors } = getState().currency
-            setTimeout(() => {
-                dispatch(currencySlice.actions.incrementSocketErrors())
-                dispatch(watchPrices())
-            }, 1000 * socketErrors)
-        }
-
-        const eurSocket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
-
-        eurSocket.onopen = () => {
-            eurSocket.send(
+            // Subscribe to EUR price
+            socket.send(
                 JSON.stringify({
                     event: 'subscribe',
                     channel: 'ticker',
@@ -115,18 +89,58 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
             )
         }
 
-        eurSocket.onmessage = (message: any) => {
+        socket.onmessage = (message: any) => {
+            console.debug('message', message)
             const parsedData = JSON.parse(message.data)
-            if (parsedData.length === 2 && parsedData[1].length === 10) {
+            // This event is received once provides the channel ID + currency pair
+            if (parsedData.event === 'subscribed') {
+                const channelId: number = parsedData.chanId as number
+                // Keep a map of channel IDs + currencies
+                priceChannels[channelId] = parsedData.pair
+            }
+            // This event is recieved periodically and are sent as one of
+            // these two types:
+            // [number, string] - [11111, "hb"]
+            // [number, number[]] - [11111, [1,2,3,4,5,6,7,8,9,10]]
+            if (
+                parsedData[0] &&
+                priceChannels[parsedData[0]] &&
+                Array.isArray(parsedData[1])
+            ) {
+                // Find the price data if it is the latter type
+                const channelId = parsedData[0]
                 const priceData = parsedData[1]
                 const updatedPrice = priceData[6]
-                dispatch(
-                    updateBtcFiatPrice({
-                        currency: SupportedCurrency.EUR,
-                        price: updatedPrice,
-                    }),
-                )
+                // Check the map to figure out which currency price to update
+                switch (priceChannels[channelId]) {
+                    case 'BTCUSD':
+                        dispatch(
+                            updateBtcFiatPrice({
+                                currency: SupportedCurrency.USD,
+                                price: updatedPrice,
+                            }),
+                        )
+                        break
+                    case 'BTCEUR':
+                        dispatch(
+                            updateBtcFiatPrice({
+                                currency: SupportedCurrency.EUR,
+                                price: updatedPrice,
+                            }),
+                        )
+                        break
+                    default:
+                }
             }
+        }
+
+        // Re-try connection on closing, with a backoff.
+        socket.onclose = () => {
+            const { socketErrors } = getState().currency
+            setTimeout(() => {
+                dispatch(currencySlice.actions.incrementSocketErrors())
+                dispatch(watchPrices())
+            }, 1000 * socketErrors)
         }
     },
 )
