@@ -90,7 +90,6 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
         }
 
         socket.onmessage = (message: any) => {
-            console.debug('message', message)
             const parsedData = JSON.parse(message.data)
             // This event is received once provides the channel ID + currency pair
             if (parsedData.event === 'subscribed') {
