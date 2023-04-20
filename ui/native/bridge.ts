@@ -34,7 +34,9 @@ export async function initializeBridge(dataDir: string) {
         'recoveryFileCreation',
     ]
     eventTypes.forEach(eventType =>
-        emitter.addListener(eventType, data => fedimint.emit(eventType, data)),
+        emitter.addListener(eventType, (serializedEvent: string) => {
+            fedimint.emit(eventType, JSON.parse(serializedEvent))
+        }),
     )
 
     const logLevel = 'info'
