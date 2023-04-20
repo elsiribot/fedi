@@ -9,16 +9,21 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
+import {
+    selectActiveFederation,
+    selectFederations,
+    setActiveFederationId,
+} from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import FederationUtils from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
 import {
-    updateSelectedFederationId,
-    useFederationsContext,
-} from '../../../state/contexts/FederationsContext'
-import { useBtcFiatPrice } from '../../../state/hooks'
+    useAppDispatch,
+    useAppSelector,
+    useBtcFiatPrice,
+} from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -75,8 +80,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const { state, dispatch } = useFederationsContext()
-    const { selectedFederation, federations } = state
+    const dispatch = useAppDispatch()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const federations = useAppSelector(selectFederations)
 
     return (
         <ImageBackground
@@ -93,9 +99,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             <FederationDrawerItemLabel federation={f} />
                         )}
                         style={styles(theme).drawerItem}
-                        focused={f.name === selectedFederation?.name}
+                        focused={f.id === activeFederation?.id}
                         onPress={() => {
-                            dispatch(updateSelectedFederationId(f.id))
+                            dispatch(setActiveFederationId(f.id))
                         }}
                     />
                 ))}
