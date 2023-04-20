@@ -3,13 +3,16 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { CommonState } from '.'
 import { SupportedCurrency } from '../types'
 
+type FiatPriceMap = {
+    [currency in SupportedCurrency]: number
+}
+
 /*** Initial State ***/
 
 const initialState = {
-    btcUsdPrice: 0,
-    btcEurPrice: 0,
-    socketErrors: 0,
+    prices: {} as FiatPriceMap,
     selectedFiatCurrency: SupportedCurrency.USD,
+    socketErrors: 0,
 }
 
 export type CurrencyState = typeof initialState
@@ -20,11 +23,15 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
-        updateBtcEurPrice(state, action: PayloadAction<number>) {
-            state.btcEurPrice = action.payload
-        },
-        updateBtcUsdPrice(state, action: PayloadAction<number>) {
-            state.btcUsdPrice = action.payload
+        updateBtcFiatPrice(
+            state,
+            action: PayloadAction<{
+                price: number
+                currency: SupportedCurrency
+            }>,
+        ) {
+            const { price, currency } = action.payload
+            state.prices[currency] = price
         },
         incrementSocketErrors(state) {
             state.socketErrors = state.socketErrors + 1
@@ -44,8 +51,7 @@ export const currencySlice = createSlice({
 /*** Basic actions ***/
 
 export const {
-    updateBtcEurPrice,
-    updateBtcUsdPrice,
+    updateBtcFiatPrice,
     changeSelectedFiatCurrency,
     resetCurrencyState,
 } = currencySlice.actions
@@ -78,7 +84,12 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
             if (parsedData.length === 2 && parsedData[1].length === 10) {
                 const priceData = parsedData[1]
                 const updatedPrice = priceData[6]
-                dispatch(updateBtcUsdPrice(updatedPrice))
+                dispatch(
+                    updateBtcFiatPrice({
+                        currency: SupportedCurrency.USD,
+                        price: updatedPrice,
+                    }),
+                )
             }
         }
 
@@ -108,8 +119,27 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
             if (parsedData.length === 2 && parsedData[1].length === 10) {
                 const priceData = parsedData[1]
                 const updatedPrice = priceData[6]
-                dispatch(updateBtcEurPrice(updatedPrice))
+                dispatch(
+                    updateBtcFiatPrice({
+                        currency: SupportedCurrency.EUR,
+                        price: updatedPrice,
+                    }),
+                )
             }
         }
     },
 )
+
+/*** Selectors ***/
+
+export const selectBtcExchangeRate = (s: CommonState) => {
+    const { selectedFiatCurrency } = s.currency
+
+    let exchangeRate = s.currency.prices[selectedFiatCurrency]
+    // Special case for the CFA franc which is a fixed 650x the EUR price
+    if (selectedFiatCurrency === SupportedCurrency.CFA) {
+        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
+    }
+
+    return exchangeRate
+}
