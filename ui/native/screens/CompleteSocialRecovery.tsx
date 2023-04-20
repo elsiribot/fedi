@@ -11,17 +11,14 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
 import { Images } from '../assets/images'
-import { BridgeEventEmitter } from '../bridge'
+import { BridgeEventEmitter, fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    updateFederationCredentials,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import {
     resetAfterFailedSocialRecovery,
     resetAfterSocialRecovery,
@@ -39,13 +36,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const {
-        completeSocialRecovery,
-        getXmppCredentials,
-        socialRecoveryApprovals,
-    } = useBridge()
-    const { selectedFederation } = useFederationsContext().state
-    const dispatch = useFederationsContext().dispatch
+    const { completeSocialRecovery, socialRecoveryApprovals } = useBridge()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const dispatch = useAppDispatch()
     const [recovering, setRecovering] = useState(false)
 
     const [approvals, setApprovals] = useState<SocialRecoveryEvent | undefined>(
@@ -72,12 +65,14 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     const socialRecoveryHandler = useCallback(
         (event: SocialRecoveryEvent) => {
-            // Ignore all events not from the selectedFederation
-            if (selectedFederation!.name !== event.federationId) {
+            // Ignore all events not from the activeFederation
+            // TODO: Double-check that the bridge emits this event with
+            // the federation ID and not the federation name
+            if (activeFederation!.id !== event.federationId) {
                 return
             }
         },
-        [selectedFederation],
+        [activeFederation],
     )
 
     // ask bridge every second
@@ -115,14 +110,12 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 let username = await completeSocialRecovery()
                 console.log('recovered username', username)
                 if (username != null) {
-                    const credentials = await getXmppCredentials()
-                    const { password, keypairSeed } = credentials
-                    dispatch(
-                        updateFederationCredentials(
+                    await dispatch(
+                        authenticateChat({
+                            fedimint,
+                            federationId: activeFederation!.id,
                             username,
-                            password,
-                            keypairSeed,
-                        ),
+                        }),
                     )
                 }
                 setRecovering(false)
@@ -136,9 +129,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             completeRecovery()
         }
     }, [
+        activeFederation,
         completeSocialRecovery,
         dispatch,
-        getXmppCredentials,
         navigation,
         recovering,
         toast,

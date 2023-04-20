@@ -13,16 +13,14 @@ import {
     View,
 } from 'react-native'
 
+import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
+import { fedimint } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    updateFederationCredentials,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -91,8 +89,8 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { getXmppCredentials, recoverFromMnemonic } = useBridge()
     const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = useFederationsContext().state
-    const { dispatch } = useFederationsContext()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const dispatch = useAppDispatch()
     const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
@@ -126,14 +124,12 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 let username = await recoverFromMnemonic(seedWords)
                 console.info('recovered username', username)
                 if (username != null) {
-                    const credentials = await getXmppCredentials()
-                    const { password, keypairSeed } = credentials
-                    dispatch(
-                        updateFederationCredentials(
+                    await dispatch(
+                        authenticateChat({
+                            fedimint,
+                            federationId: activeFederation!.id,
                             username,
-                            password,
-                            keypairSeed,
-                        ),
+                        }),
                     )
                 }
                 setRecoveryInProgress(false)
@@ -203,7 +199,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             ]}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.personal-recovery-instructions', {
-                    federation: selectedFederation?.name,
+                    federation: activeFederation?.name,
                 })}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>

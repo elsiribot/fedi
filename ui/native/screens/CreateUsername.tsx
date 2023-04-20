@@ -11,15 +11,16 @@ import {
     View,
 } from 'react-native'
 
-import { checkXmppUser, registerXmppUser } from '@fedi/common/utils/xmpp'
+import {
+    authenticateChat,
+    selectActiveFederation,
+    selectChatCredentials,
+} from '@fedi/common/redux'
 
+import { fedimint } from '../bridge'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    updateFederationCredentials,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
@@ -27,10 +28,11 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { state, dispatch } = useFederationsContext()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const activeChatCredentials = useAppSelector(selectChatCredentials)
+    const dispatch = useAppDispatch()
     const { authenticatedMember } = useChatContext().state
     const { toast } = useEnvironmentContext().state
-    const { backupXmppUsername, getXmppCredentials } = useBridge()
     const [username, setUsername] = useState<string>('')
     const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
     const [buttonIsOverlapping, setButtonIsOverlapping] =
@@ -38,8 +40,6 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [buttonYPosition, setButtonYPosition] = useState<number>(0)
     const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
-
-    console.log('selected federation', state.selectedFederation)
 
     // when the keyboard is opened and content layouts change, this effect
     // determines whether the Create username button is overlapping with
@@ -88,39 +88,13 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         const handleXmppRegistration = async () => {
             try {
                 console.debug('checking credeitnals')
-                const credentials = await getXmppCredentials()
-                console.debug('credentials', credentials)
-                const { password, keypairSeed } = credentials
-                const normalizedUsername = username.toLowerCase()
-                const credentialsAreValid = await checkXmppUser(
-                    normalizedUsername,
-                    password,
-                )
-                console.debug('valid', credentialsAreValid)
-                if (credentialsAreValid) {
-                    // TODO: store the password or always fetch from bridge?
-                    dispatch(
-                        updateFederationCredentials(
-                            normalizedUsername,
-                            password,
-                            keypairSeed,
-                        ),
-                    )
-                    backupXmppUsername(normalizedUsername)
-                } else {
-                    console.debug('registering user')
-                    await registerXmppUser(normalizedUsername, password)
-                    console.debug('registered user')
-
-                    dispatch(
-                        updateFederationCredentials(
-                            normalizedUsername,
-                            password,
-                            keypairSeed,
-                        ),
-                    )
-                    backupXmppUsername(normalizedUsername)
-                }
+                await dispatch(
+                    authenticateChat({
+                        fedimint,
+                        federationId: activeFederation!.id,
+                        username,
+                    }),
+                ).unwrap()
             } catch (error) {
                 if (error instanceof Error) {
                     console.error(error.toString())
@@ -135,27 +109,21 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         if (xmppAuthInProgress === true) {
             handleXmppRegistration()
         }
-    }, [
-        backupXmppUsername,
-        dispatch,
-        getXmppCredentials,
-        toast,
-        t,
-        username,
-        xmppAuthInProgress,
-    ])
+    }, [dispatch, toast, t, username, xmppAuthInProgress, activeFederation])
 
     // if we have a successfully authed xmppClient and username set
     // continue to the FederationGreeting screen
     useEffect(() => {
-        if (authenticatedMember && state.selectedFederation?.username) {
+        // TODO: if authenticatedMember is set then chat.credentials
+        // is almost certainly also set... so consider reducing this logic
+        if (authenticatedMember && activeChatCredentials) {
             setXmppAuthInProgress(false)
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'FederationGreeting' }],
             })
         }
-    }, [authenticatedMember, navigation, state.selectedFederation?.username])
+    }, [authenticatedMember, navigation, activeChatCredentials])
 
     const handleUsernameChange = (input: string) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
@@ -202,6 +170,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     inputContainerStyle={styles(theme).textInputInner}
                     autoCapitalize={'none'}
                     autoCorrect={false}
+                    disabled={xmppAuthInProgress}
                 />
                 <Text caption style={styles(theme).inputGuidance}>
                     {t('feature.onboarding.username-guidance')}

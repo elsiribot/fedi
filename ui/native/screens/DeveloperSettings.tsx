@@ -7,6 +7,11 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 
+import {
+    changeAuthenticatedGuardian,
+    resetFederationChatState,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import { changeSelectedFiatCurrency } from '@fedi/common/redux/currency'
 import {
     Guardian,
@@ -30,11 +35,6 @@ import {
     useChatContext,
 } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    changeAuthenticatedGuardian,
-    resetFederationCredentials,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { RootStackParamList } from '../types/navigation'
@@ -48,7 +48,6 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
-    const { state, dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const { sendTestXml } = useXmpp()
@@ -56,12 +55,16 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianIndex] = useState<number>(0)
-    const reduxDispatch = useAppDispatch()
     const selectedFiatCurrency = useAppSelector(
         s => s.currency.selectedFiatCurrency,
     )
 
-    const { authenticatedGuardian, selectedFederation } = state
+    // This is a partial refactor of state management from context to redux
+    const reduxDispatch = useAppDispatch()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedGuardian = useAppSelector(
+        s => s.federation.authenticatedGuardian,
+    )
 
     useEffect(() => {
         const getGatewaysList = async () => {
@@ -246,7 +249,11 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title="Reset username"
                 onPress={() => {
-                    federationsDispatch(resetFederationCredentials())
+                    reduxDispatch(
+                        resetFederationChatState({
+                            federationId: activeFederation?.id!,
+                        }),
+                    )
                 }}
             />
             <Button
@@ -285,11 +292,11 @@ const DeveloperSettings: React.FC<Props> = () => {
                     checkedColor={theme.colors.lightGrey}
                     uncheckedColor={theme.colors.red}
                     onPress={() => {
-                        federationsDispatch(changeAuthenticatedGuardian(null))
+                        reduxDispatch(changeAuthenticatedGuardian(null))
                         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
                 />
-                {selectedFederation?.nodes.map((n, i) => {
+                {activeFederation?.nodes.map((n, i) => {
                     const guardian: Guardian = {
                         ...n,
                         peerId: i,
@@ -299,11 +306,10 @@ const DeveloperSettings: React.FC<Props> = () => {
                         <CheckBox
                             title={<Text caption>{guardian.name}</Text>}
                             checked={
-                                state.authenticatedGuardian?.name ===
-                                guardian.name
+                                authenticatedGuardian?.name === guardian.name
                             }
                             onPress={() => {
-                                federationsDispatch(
+                                reduxDispatch(
                                     changeAuthenticatedGuardian(guardian),
                                 )
                             }}
@@ -315,7 +321,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                         <Text small>{'Confirm guardian password'}</Text>
                         <Input
                             onChangeText={input => {
-                                federationsDispatch(
+                                reduxDispatch(
                                     changeAuthenticatedGuardian({
                                         ...authenticatedGuardian,
                                         password: input,

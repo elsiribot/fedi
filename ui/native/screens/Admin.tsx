@@ -5,6 +5,14 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
+import {
+    changeAuthenticatedGuardian,
+    resetFederationsState,
+    selectActiveFederation,
+    selectAuthenticatedMember,
+    setActiveFederationId,
+    setFederations,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import FederationUtils from '@fedi/common/utils/FederationUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
@@ -30,12 +38,7 @@ import {
     changeDeveloperMode,
     useEnvironmentContext,
 } from '../state/contexts/EnvironmentContext'
-import {
-    changeAuthenticatedGuardian,
-    updateFederations,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -52,12 +55,16 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { leaveFederation } = useBridge()
     const { state: environmentState, dispatch: environmentDispatch } =
         useEnvironmentContext()
-    const { state: federationsState, dispatch: federationsDispatch } =
-        useFederationsContext()
     const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = federationsState
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
+
+    const dispatch = useAppDispatch()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const authenticatedGuardian = useAppSelector(
+        s => s.federation.authenticatedGuardian,
+    )
 
     const resetChatState = () => {
         chatDispatch(receiveMembersSeen([]))
@@ -77,7 +84,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         )
     }
     const resetGuardiansState = () => {
-        federationsDispatch(changeAuthenticatedGuardian(null))
+        dispatch(changeAuthenticatedGuardian(null))
         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
     }
 
@@ -96,21 +103,19 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         // update context and navigate
         const federations = await fedimint.listFederations()
         if (federations.length > 0) {
-            federationsDispatch(
-                // FIXME: this is error-prone
-                updateFederations(federations[0].id, federations),
-            )
+            dispatch(setActiveFederationId(federations[0].id))
+            dispatch(setFederations(federations))
             // FIXME: this doesn't do enough ...
             navigation.navigate('TabsNavigator')
         } else {
+            dispatch(resetFederationsState())
             navigation.navigate('Splash')
-            federationsDispatch(updateFederations(null, federations))
         }
     }
 
     const confirmLeaveFederation = () => {
         // Only allow leaving if they have less than 100 sats
-        if (amountUtils.msatToSat(selectedFederation!.balance) > 100) {
+        if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
                 t('feature.federations.leave-federation-withdraw-first'),
@@ -140,7 +145,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const onChooseRecovery = () => {
         // Only allow recovery for wallets with less than 100 sats
         // FIXME: a bit of a race condition here if a user starts a recovery with 0 sats, then receives and tries this again
-        if (selectedFederation!.balance > 100000) {
+        if (activeFederation!.balance > 100000) {
             Alert.alert(
                 t('feature.recovery.recover-wallet'),
                 t('feature.recovery.recover-wallet-with-balance'),
@@ -156,8 +161,8 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const showInviteCode =
-        selectedFederation &&
-        new FederationUtils(selectedFederation).getShowInviteCode()
+        activeFederation &&
+        new FederationUtils(activeFederation).getShowInviteCode()
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -166,12 +171,12 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     <HoloAvatar
                         size={AvatarSize.lg}
                         title={stringUtils.getInitialsFromName(
-                            selectedFederation?.username || '',
+                            authenticatedMember?.username || '',
                         )}
                     />
                 </View>
                 <Text h2 medium>
-                    {selectedFederation?.username}
+                    {authenticatedMember?.username}
                 </Text>
             </View>
             {/* TODO: Add offline status indicator here */}
@@ -191,12 +196,12 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                         label={t('feature.federations.invite-members')}
                         onPress={() => {
                             navigation.navigate('FederationInvite', {
-                                inviteLink: selectedFederation.connectInfo,
+                                inviteLink: activeFederation.connectInfo,
                             })
                         }}
                     />
                 )}
-                {federationsState.authenticatedGuardian !== null && (
+                {authenticatedGuardian !== null && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
                         label={t('feature.recovery.recovery-assist')}

@@ -8,14 +8,19 @@ import React, {
     useReducer,
 } from 'react'
 
+import {
+    selectActiveFederation,
+    selectAuthenticatedMember,
+} from '@fedi/common/redux'
 import { Guardian } from '@fedi/common/types'
 
 import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
+    ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    SELECTED_FEDERATION_ID_DB_KEY,
 } from '../../constants'
 import { FederationWithChatCredentials } from '../../types'
+import { useAppDispatch, useAppSelector } from '../hooks'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
@@ -200,6 +205,16 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         initialState,
     )
 
+    const reduxDispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const authenticatedGuardian = useAppSelector(
+        s => s.federation.authenticatedGuardian,
+    )
+
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
     const providerValue = useMemo(
@@ -220,51 +235,43 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         const emitter = new BridgeEventEmitter()
         const onFederationUpdate = (event: FederationEvent) => {
             // Prevents a state update on the off-chance we get an event
-            // before the selectedFederation state is initialized
-            if (state.selectedFederationId == null) return
-            dispatch(updateFederation(event))
+            // before the activeFederationId state is initialized
+            if (activeFederationId == null) return
+            reduxDispatch(updateFederation(event))
         }
         const federationListener =
             emitter.onFederationUpdate(onFederationUpdate)
         return () => federationListener.remove()
-    }, [state])
+    }, [activeFederationId, reduxDispatch])
 
-    // Persist currently selected federation
+    // Persist currently active federation
     useEffect(() => {
-        // Try not to accidentally overwrite real value with null
-        if (state.selectedFederationId != null) {
-            const selectedFederation = state.federations.find(
-                f => f.id === state.selectedFederationId,
-            )
-
+        if (activeFederation) {
             AsyncStorage.setItem(
-                SELECTED_FEDERATION_ID_DB_KEY,
+                ACTIVE_FEDERATION_ID_DB_KEY,
                 JSON.stringify({
-                    selectedFederation: {
-                        id: state.selectedFederationId,
-                        username: selectedFederation?.username,
+                    activeFederation: {
+                        id: activeFederation.id,
+                        username: authenticatedMember?.username,
                     },
                 }),
             )
         }
-    }, [state])
+    }, [activeFederation, authenticatedMember?.username])
 
     // Persist authenticatedGuardian state
     useEffect(() => {
-        console.info(
-            'useEffect authenticatedGuardian',
-            state.authenticatedGuardian,
-        )
-        if (state.authenticatedGuardian != null) {
-            console.info('saving guardian', state.authenticatedGuardian.name)
+        console.info('useEffect authenticatedGuardian', authenticatedGuardian)
+        if (authenticatedGuardian != null) {
+            console.info('saving guardian', authenticatedGuardian.name)
             AsyncStorage.setItem(
                 AUTHENTICATED_GUARDIAN_DB_KEY,
                 JSON.stringify({
-                    authenticatedGuardian: state.authenticatedGuardian,
+                    authenticatedGuardian: authenticatedGuardian,
                 }),
             )
         }
-    }, [state.authenticatedGuardian])
+    }, [authenticatedGuardian])
 
     return (
         <FederationsContext.Provider value={{ ...providerValue }} {...props} />

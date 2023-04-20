@@ -12,10 +12,14 @@ import {
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
+import {
+    selectActiveFederation,
+    selectAuthenticatedMember,
+} from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import { useFederationsContext } from '../../../state/contexts/FederationsContext'
+import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import HoloAvatar from '../../ui/HoloAvatar'
@@ -33,11 +37,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
 }: MessageItemProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { selectedFederation } = useFederationsContext().state
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const { sentBy, sentAt, payment } = message
 
-    const sentByMe = sentBy?.username === selectedFederation?.username
+    const sentByMe = sentBy?.username === authenticatedMember?.username
 
     let bubbleStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).bubbleContainer,

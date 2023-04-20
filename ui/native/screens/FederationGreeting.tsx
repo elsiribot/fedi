@@ -4,10 +4,11 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,7 +19,7 @@ export type Props = NativeStackScreenProps<
 const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { selectedFederation } = useFederationsContext().state
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     return (
         <View style={styles(theme).container}>
@@ -27,13 +28,13 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
                     <HoloAvatar
                         size={AvatarSize.lg}
                         title={stringUtils.getInitialsFromName(
-                            selectedFederation?.username || '',
+                            authenticatedMember?.username || '',
                         )}
                     />
                 </View>
                 <Text h2 medium style={styles(theme).welcomeTitle}>
                     {`${t('feature.onboarding.nice-to-meet-you', {
-                        username: selectedFederation?.username,
+                        username: authenticatedMember?.username,
                     })}!`}
                 </Text>
                 <Text style={styles(theme).welcomeText}>
