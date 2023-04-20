@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { CommonState } from '.'
+import { CommonState, selectActiveFederation } from '.'
 import { SupportedCurrency } from '../types'
+import FederationUtils from '../utils/FederationUtils'
 
 type FiatPriceMap = {
     [currency in SupportedCurrency]: number
@@ -132,8 +133,22 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
 
 /*** Selectors ***/
 
+export const selectCurrency = (s: CommonState) => {
+    if (s.currency.selectedFiatCurrency) return s.currency.selectedFiatCurrency
+
+    const activeFederation = selectActiveFederation(s)
+    if (activeFederation) {
+        const federationDefaultCurrency = new FederationUtils(
+            activeFederation!,
+        ).getDefaultCurrency()
+        if (federationDefaultCurrency) return federationDefaultCurrency
+    }
+
+    return SupportedCurrency.USD
+}
+
 export const selectBtcExchangeRate = (s: CommonState) => {
-    const { selectedFiatCurrency } = s.currency
+    const selectedFiatCurrency = selectCurrency(s)
 
     let exchangeRate = s.currency.prices[selectedFiatCurrency]
     // Special case for the CFA franc which is a fixed 650x the EUR price

@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
 
-import { selectBtcExchangeRate } from '@fedi/common/redux'
+import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { LightningGateway, SupportedCurrency } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -49,9 +49,7 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
 }
 
 export const useBtcFiatPrice = () => {
-    const selectedFiatCurrency = useAppSelector(
-        s => s.currency.selectedFiatCurrency,
-    )
+    const selectedFiatCurrency = useAppSelector(selectCurrency)
     const exchangeRate: number = useAppSelector(selectBtcExchangeRate)
 
     return {
@@ -72,7 +70,6 @@ export const useBtcFiatPrice = () => {
                 const amount = amountUtils.satToFiatString(sats, exchangeRate)
 
                 let currencySymbol
-                // switch (getDefaultCurrency(selectedFederation!)) {
                 switch (selectedFiatCurrency) {
                     case SupportedCurrency.USD:
                         currencySymbol = `$`
