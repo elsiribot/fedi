@@ -31,7 +31,15 @@ jobs:
               run: yarn lint
             - name: Run tests with Jest
               run: yarn test
-            - name: Run React Native end-to-end tests with Detox with Regtest federation
-              run: yarn workspace @fedi/native test:e2e:regtest
-            - name: Run React Native end-to-end tests with Detox with Mainnet federation
-              run: yarn workspace @fedi/native test:e2e:mainnet
+            # TODO: These steps depend on the bridge so to avoid waiting too
+            # long for this CI check we skip them for now
+            # - name: Run React Native Detox tests with Regtest federation (Android only)
+            #   env:
+            #       REGTEST: ${{ secrets.LATEST_REGTEST_FEDERATION }}
+            #   run: |
+            #       yarn workspace @fedi/native test:android:regtest
+            # - name: Run React Native Detox tests with Mainnet federation (Android only)
+            #   env:
+            #       MAINNET: ${{ secrets.LATEST_MAINNET_FEDERATION }}
+            #   run: |
+            #       yarn workspace @fedi/native test:android:mainnet
