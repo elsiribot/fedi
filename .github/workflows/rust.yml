@@ -50,3 +50,6 @@ jobs:
 
             - name: Build fedi-wasm
               run: nix build -L .#fedi-wasm
+
+            - name: Build gateway-pkgs
+              run: nix build -L .#gateway-pkgs
