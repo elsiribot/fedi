@@ -14,6 +14,7 @@ import type {
     LightningGateway,
     SocialRecoveryEvent,
     SocialRecoveryQrCode,
+    FedimintBridgeEventMap,
 } from '../types'
 
 export class FedimintBridge {
@@ -23,6 +24,8 @@ export class FedimintBridge {
             payload: object,
         ) => Promise<T>,
     ) {}
+
+    /*** RPC METHODS ***/
 
     async listTransactions(federationId: string) {
         return this.rpc<Transaction[]>('listTransactions', { federationId })
@@ -228,5 +231,35 @@ export class FedimintBridge {
         return this.rpc<RecoveredUsername>('completeSocialRecovery', {
             federationId,
         })
+    }
+
+    /*** BRIDGE EVENTS ***/
+
+    private listeners = new Map<string, Array<(data: any) => void>>()
+
+    emit(eventType: string, data: any) {
+        const listeners = this.listeners.get(eventType) || []
+        listeners.forEach(listener => listener(data))
+    }
+
+    /**
+     * Subscribe to bridge events. Returns an unsubscribe function.
+     */
+    addListener<K extends keyof FedimintBridgeEventMap>(
+        eventType: K,
+        listener: (data: FedimintBridgeEventMap[K]) => void,
+    ): () => void
+    addListener(eventType: string, listener: (data: any) => void): () => void {
+        const listeners = this.listeners.get(eventType) || []
+        this.listeners.set(eventType, [...listeners, listener])
+
+        // Return a quick unsubscribe function
+        return () => {
+            const subscribedListeners = this.listeners.get(eventType) || []
+            this.listeners.set(
+                eventType,
+                subscribedListeners.filter(l => l !== listener),
+            )
+        }
     }
 }
