@@ -12,12 +12,7 @@ import { TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import Router from './Router'
-import {
-    BridgeEventEmitter,
-    initializeBridge,
-    LogEvent,
-    TransactionEvent,
-} from './bridge'
+import { fedimint, initializeBridge } from './bridge'
 import CustomToast from './components/ui/CustomToast'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { ChatProvider } from './state/contexts/ChatContext'
@@ -67,47 +62,48 @@ const App = () => {
     useEffect(() => initializeNativeStore(), [])
 
     useEffect(() => {
-        const emitter = new BridgeEventEmitter()
-
         // Initialize logger
-        const logHandler = (event: LogEvent) => {
-            console.log('OS:', Platform.OS, `": log" -> "${event.log}"`)
-        }
-        const logListener = emitter.onLog(logHandler)
+        const unsubscribeLog = fedimint.addListener('log', event =>
+            console.log('OS:', Platform.OS, `": log" -> "${event.log}"`),
+        )
 
         // Initialize push notification sender
-        async function onDisplayNotification(event: TransactionEvent) {
-            // Create a channel (required for Android)
-            const channelId = await notifee.createChannel({
-                id: 'transactions',
-                name: 'Transactions Channel',
-            })
-
-            // Display notifications only for incoming transactions
-            if (event.transaction.direction === TransactionDirection.receive) {
-                await notifee.displayNotification({
-                    title: t('phrases.transaction-received'),
-                    body: `${amountUtils.formatNumber(
-                        amountUtils.msatToSat(event.transaction.amount),
-                    )} ${t('words.sats')}`,
-                    android: {
-                        channelId,
-                        // pressAction is needed if you want the notification to open the app when pressed
-                        pressAction: {
-                            id: 'transactions',
-                        },
-                    },
+        const unsubscribeTransaction = fedimint.addListener(
+            'transaction',
+            async event => {
+                // Create a channel (required for Android)
+                const channelId = await notifee.createChannel({
+                    id: 'transactions',
+                    name: 'Transactions Channel',
                 })
-            }
-        }
-        const transactionListener = emitter.onTransaction(onDisplayNotification)
+
+                // Display notifications only for incoming transactions
+                if (
+                    event.transaction.direction === TransactionDirection.receive
+                ) {
+                    await notifee.displayNotification({
+                        title: t('phrases.transaction-received'),
+                        body: `${amountUtils.formatNumber(
+                            amountUtils.msatToSat(event.transaction.amount),
+                        )} ${t('words.sats')}`,
+                        android: {
+                            channelId,
+                            // pressAction is needed if you want the notification to open the app when pressed
+                            pressAction: {
+                                id: 'transactions',
+                            },
+                        },
+                    })
+                }
+            },
+        )
 
         onInitializeBridge()
         requestPushNotificationPermissions()
 
         return () => {
-            logListener.remove()
-            transactionListener.remove()
+            unsubscribeLog()
+            unsubscribeTransaction()
         }
     }, [t])
 

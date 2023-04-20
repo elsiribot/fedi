@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { BridgeEventEmitter, RecoveryFileCreationEvent } from '../bridge'
+import { fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import LineBreak from '../components/ui/LineBreak'
@@ -31,9 +31,9 @@ const SocialBackupProcessing: React.FC<Props> = ({
 
     // Registers an event handler listening for recovery file creation events
     useEffect(() => {
-        const emitter = new BridgeEventEmitter()
-        const listener = emitter.onRecoveryFileCreation(
-            (event: RecoveryFileCreationEvent) => {
+        const unsubscribe = fedimint.addListener(
+            'recoveryFileCreation',
+            event => {
                 console.info(event)
                 if (event.type === 'progress') {
                     setPercentComplete(event.percentComplete)
@@ -47,7 +47,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
             },
         )
 
-        return () => listener.remove()
+        return unsubscribe
     }, [navigation, toast])
 
     useEffect(() => {

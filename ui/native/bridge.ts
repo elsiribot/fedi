@@ -1,97 +1,9 @@
-import {
-    EmitterSubscription,
-    NativeEventEmitter,
-    NativeModules,
-} from 'react-native'
+import { NativeEventEmitter, NativeModules } from 'react-native'
 
-import {
-    Federation,
-    Transaction,
-    SocialRecoveryEvent,
-} from '@fedi/common/types'
+import { FedimintBridgeEventMap } from '@fedi/common/types'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
-
-export type LogEvent = {
-    log: string
-}
-
-export type FederationEvent = Federation
-
-export type TransactionEvent = {
-    federationId: string
-    transaction: Transaction
-}
-
-export type RecoveryFileCreationEvent =
-    | { type: 'progress'; percentComplete: number }
-    | { type: 'failed'; errorCode: string }
-    | { type: 'complete' }
-
-export class BridgeEventEmitter {
-    private emitter: NativeEventEmitter
-
-    constructor() {
-        this.emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
-    }
-
-    removeAllListeners = (eventType: string): void => {
-        this.emitter.removeAllListeners(eventType)
-    }
-    // json-deserializes events
-    addListener = (
-        eventType: string,
-        // TODO: maybe we should say this is one of the event types ?
-        listener: (event: any) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.emitter.addListener(
-            eventType,
-            (serializedEvent: string) => listener(JSON.parse(serializedEvent)),
-            context,
-        )
-    }
-
-    onLog = (
-        listener: (event: LogEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.addListener('log', listener, context)
-    }
-
-    onFederationUpdate = (
-        listener: (event: FederationEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.addListener('federation', listener, context)
-    }
-
-    onTransaction = (
-        listener: (event: TransactionEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        // Instantiate `Transaction` instance so helper methods exist
-        const typedListener = (event: TransactionEvent) => {
-            return listener({ ...event })
-        }
-        return this.addListener('transaction', typedListener, context)
-    }
-
-    onSocialRecovery = (
-        listener: (event: SocialRecoveryEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.addListener('socialRecovery', listener, context)
-    }
-
-    onRecoveryFileCreation = (
-        listener: (event: RecoveryFileCreationEvent) => void,
-        context?: Object,
-    ): EmitterSubscription => {
-        return this.addListener('recoveryFileCreation', listener, context)
-    }
-}
 
 async function fedimintRpc<Type = void>(
     method: string,
@@ -112,6 +24,19 @@ async function fedimintRpc<Type = void>(
 export const fedimint = new FedimintBridge(fedimintRpc)
 
 export async function initializeBridge(dataDir: string) {
+    // Pass through all native bridge events to the FedimintBridge class instance
+    const emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
+    const eventTypes: (keyof FedimintBridgeEventMap)[] = [
+        'log',
+        'federation',
+        'transaction',
+        'socialRecovery',
+        'recoveryFileCreation',
+    ]
+    eventTypes.forEach(eventType =>
+        emitter.addListener(eventType, data => fedimint.emit(eventType, data)),
+    )
+
     const logLevel = 'info'
     return FedimintFfi.initialize(dataDir, logLevel)
 }

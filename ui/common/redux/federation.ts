@@ -1,12 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState } from '.'
-import type {
-    Federation,
-    FederationCredentials,
-    FederationEvent,
-    Guardian,
-} from '../types'
+import type { Federation, FederationEvent, Guardian } from '../types'
 import type { FedimintBridge } from '../utils/fedimint'
 
 /*** Initial State ***/
