@@ -14,7 +14,6 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
 import lnurlUtils from '../../utils/LNURLUtils'
-import { useFederationsContext } from '../contexts/FederationsContext'
 import type { AppState, AppDispatch } from '../store'
 
 /**
@@ -91,15 +90,16 @@ export const useBtcFiatPrice = () => {
 }
 
 export const useBridge = () => {
-    const { state } = useFederationsContext()
-    const { selectedFederationId } = state
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
 
     return {
         addressOrInvoice: useCallback(
             (input: string) => {
-                return fedimint.addressOrInvoice(input, selectedFederationId!)
+                return fedimint.addressOrInvoice(input, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {
@@ -107,175 +107,168 @@ export const useBridge = () => {
                     recoveryId,
                     peerId,
                     password,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         authenticateGuardian: useCallback(
             (secret: string) => {
                 return fedimint.authenticateGuardian(
                     secret,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         recoveryQr: useCallback(() => {
-            return fedimint.recoveryQr(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.recoveryQr(activeFederationId!)
+        }, [activeFederationId]),
         leaveFederation: useCallback(() => {
-            return fedimint.leaveFederation(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.leaveFederation(activeFederationId!)
+        }, [activeFederationId]),
         generateAddress: useCallback(() => {
-            return fedimint.generateAddress(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.generateAddress(activeFederationId!)
+        }, [activeFederationId]),
         socialRecoveryApprovals: useCallback(() => {
-            return fedimint.socialRecoveryApprovals(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.socialRecoveryApprovals(activeFederationId!)
+        }, [activeFederationId]),
         generateEcash: useCallback(
             (amount: MSats) => {
-                return fedimint.generateEcash(amount, selectedFederationId!)
+                return fedimint.generateEcash(amount, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         generateInvoice: useCallback(
             (amount: MSats, description: string) => {
                 return fedimint.generateInvoice(
                     amount,
                     description,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         getMnemonic: useCallback(() => {
-            return fedimint.getMnemonic(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.getMnemonic(activeFederationId!)
+        }, [activeFederationId]),
         listTransactions: useCallback(() => {
-            return fedimint.listTransactions(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.listTransactions(activeFederationId!)
+        }, [activeFederationId]),
         lnurlSignMessage: useCallback(
             (url: string) => {
-                return fedimint.lnurlSignMessage(url, selectedFederationId!)
+                return fedimint.lnurlSignMessage(url, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         lnurlGetToken: useCallback(
             (lnurl: string) => {
-                return lnurlUtils.getToken(
-                    fedimint,
-                    lnurl,
-                    selectedFederationId!,
-                )
+                return lnurlUtils.getToken(fedimint, lnurl, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return fedimint.updateTransactionNotes(
                     transactionId,
                     notes,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         listGateways: useCallback(() => {
-            return fedimint.listGateways(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.listGateways(activeFederationId!)
+        }, [activeFederationId]),
         switchGateway: useCallback(
             (gateway: LightningGateway) => {
-                return fedimint.switchGateway(gateway, selectedFederationId!)
+                return fedimint.switchGateway(gateway, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         locateRecoveryFile: useCallback(() => {
-            return fedimint.locateRecoveryFile(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.locateRecoveryFile(activeFederationId!)
+        }, [activeFederationId]),
         completeSocialRecovery: useCallback(() => {
-            return fedimint.completeSocialRecovery(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.completeSocialRecovery(activeFederationId!)
+        }, [activeFederationId]),
         payInvoice: useCallback(
             (invoice: string) => {
-                return fedimint.payInvoice(invoice, selectedFederationId!)
+                return fedimint.payInvoice(invoice, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         payAddress: useCallback(
             (address: string, sats: Sats) => {
-                return fedimint.payAddress(address, sats, selectedFederationId!)
+                return fedimint.payAddress(address, sats, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         receiveEcash: useCallback(
             (ecash: string) => {
-                return fedimint.receiveEcash(ecash, selectedFederationId!)
+                return fedimint.receiveEcash(ecash, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         recoverFromMnemonic: useCallback(
             (mnemonic: string[]) => {
                 return fedimint.recoverFromMnemonic(
                     mnemonic,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         denySocialRecoveryRequest: useCallback(
             (userPublicKey: string) => {
                 return fedimint.denySocialRecoveryRequest(
                     userPublicKey,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         socialRecoveryDownloadVerificationDoc: useCallback(
             (recoveryId: string) => {
                 return fedimint.socialRecoveryDownloadVerificationDoc(
                     recoveryId,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         validateRecoveryFile: useCallback(
             (file: string) => {
-                return fedimint.validateRecoveryFile(
-                    file,
-                    selectedFederationId!,
-                )
+                return fedimint.validateRecoveryFile(file, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         validateEcash: useCallback(
             (ecash: string) => {
-                return fedimint.validateEcash(ecash, selectedFederationId!)
+                return fedimint.validateEcash(ecash, activeFederationId!)
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
                 return fedimint.uploadBackupFile(
                     videoFilePath,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
         getXmppCredentials: useCallback(() => {
-            return fedimint.getXmppCredentials(selectedFederationId!)
-        }, [selectedFederationId]),
+            return fedimint.getXmppCredentials(activeFederationId!)
+        }, [activeFederationId]),
         backupXmppUsername: useCallback(
             (username: string) => {
                 return fedimint.backupXmppUsername(
                     username,
-                    selectedFederationId!,
+                    activeFederationId!,
                 )
             },
-            [selectedFederationId],
+            [activeFederationId],
         ),
     }
 }

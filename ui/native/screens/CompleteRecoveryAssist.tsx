@@ -9,8 +9,7 @@ import CheckBox from '../components/ui/CheckBox'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -25,7 +24,6 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { approveSocialRecoveryRequest } = useBridge()
-    const { authenticatedGuardian } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
     const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
@@ -33,6 +31,10 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const [denialSelected, setDenialSelected] = useState(false)
     const [approvalInProgress, setApprovalInProgress] = useState(false)
     const videoRef = useRef<Video | null>(null)
+
+    const authenticatedGuardian = useAppSelector(
+        s => s.federation.authenticatedGuardian,
+    )
 
     const handleGuardianDenial = async () => {
         // FIXME: seeing a success screen when you deny someone is a little unexpected
