@@ -4,8 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
+
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -16,7 +18,7 @@ export type Props = NativeStackScreenProps<
 const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
 
     return (
         <View style={styles(theme).container}>
@@ -34,7 +36,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                         {t('feature.onboarding.welcome-to-federation')}
                     </Text>
                     <Text h2 medium style={styles(theme).welcomeTitle}>
-                        {selectedFederation?.name}
+                        {activeFederation?.name}
                     </Text>
                     <Text caption style={styles(theme).welcomeText}>
                         {/*

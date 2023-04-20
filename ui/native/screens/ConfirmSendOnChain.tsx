@@ -5,12 +5,12 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { Btc, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -23,7 +23,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
     const { payAddress } = useBridge()
     const { bitcoinUri } = route.params
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -66,7 +66,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
             <Text caption>
                 {`${t('words.balance')}: `}
                 {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(selectedFederation?.balance!),
+                    amountUtils.msatToSat(activeFederation?.balance!),
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>

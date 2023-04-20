@@ -5,7 +5,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useFederationsContext } from '../../../state/contexts/FederationsContext'
+import { selectActiveFederation } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import Balance from './Balance'
@@ -18,7 +20,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
 
     return (
         <Card
@@ -37,7 +39,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     <SvgImage name="List" color={theme.colors.secondary} />
                 </Pressable>
             </View>
-            <Balance balance={selectedFederation!.balance} />
+            <Balance balance={activeFederation!.balance} />
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
                     title={
@@ -66,7 +68,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     }
                     containerStyle={styles(theme).buttonContainer}
                     buttonStyle={styles(theme).button}
-                    disabled={!(selectedFederation!.balance > 0)}
+                    disabled={!(activeFederation!.balance > 0)}
                 />
             </View>
         </Card>

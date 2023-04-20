@@ -8,6 +8,8 @@ import { Text, useTheme } from '@rneui/themed'
 import * as Sentry from '@sentry/react-native'
 import React from 'react'
 
+import { selectActiveFederation } from '@fedi/common/redux'
+
 import AdminHeader from './components/feature/admin/AdminHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
@@ -99,7 +101,7 @@ import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import { useFederationsContext } from './state/contexts/FederationsContext'
+import { useAppSelector } from './state/hooks'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -112,9 +114,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator<MainNavigatorDrawerParamList>()
 
 const MainNavigator = () => {
-    const {
-        state: { selectedFederation },
-    } = useFederationsContext()
+    const activeFederation = useAppSelector(selectActiveFederation)
 
     return (
         <Stack.Navigator
@@ -125,7 +125,7 @@ const MainNavigator = () => {
             id={MAIN_NAVIGATOR_ID}>
             <>
                 {/* This group of screens may render regardless of the value of
-                 selectedFederation */}
+                 activeFederation */}
                 <Stack.Group
                     screenOptions={{
                         animation: 'fade',
@@ -162,13 +162,13 @@ const MainNavigator = () => {
                     />
                 </Stack.Group>
                 {/*
-                    This group of screens relies on a non-null selectedFederation
-                    in the FederationsContext because they contain API calls to
+                    This group of screens relies on a non-null activeFederation
+                    in the federation reducer because they contain API calls to
                     the FFI NativeModule. Since it is possible to store multiple
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                {selectedFederation !== null && (
+                {activeFederation !== null && (
                     <Stack.Group>
                         <Stack.Group
                             screenOptions={{

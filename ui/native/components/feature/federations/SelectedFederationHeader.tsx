@@ -3,9 +3,9 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import type { Federation } from '@fedi/common/types'
+import { selectActiveFederation } from '@fedi/common/redux'
 
-import { useFederationsContext } from '../../../state/contexts/FederationsContext'
+import { useAppSelector } from '../../../state/hooks'
 import {
     DrawerNavigationHook,
     DRAWER_NAVIGATION_ID,
@@ -16,9 +16,8 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
-    const { state } = useFederationsContext()
     const navigation = useNavigation<NavigationHook>()
-    const selectedFederation: Federation | undefined = state.selectedFederation
+    const activeFederation = useAppSelector(selectActiveFederation)
     const drawerNavigator = navigation.getParent(
         DRAWER_NAVIGATION_ID,
     ) as DrawerNavigationHook
@@ -27,9 +26,10 @@ const SelectedFederationHeader: React.FC<{}> = () => {
         drawerNavigator.openDrawer()
     }
 
+    // Close the drawer when activeFederation changes
     useEffect(() => {
         drawerNavigator.closeDrawer()
-    }, [drawerNavigator, selectedFederation])
+    }, [drawerNavigator, activeFederation])
 
     return (
         <Header
@@ -47,7 +47,7 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                         }}
                     />
                     <Text medium small style={styles(theme).federationName}>
-                        {selectedFederation?.name}
+                        {activeFederation?.name}
                     </Text>
                     <SvgImage name="ChevronRight" size={SvgImageSize.xs} />
                 </Pressable>
