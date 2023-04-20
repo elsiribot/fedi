@@ -9,7 +9,7 @@
     };
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?rel=rel-a03&rev=d1763f0e09e994c59d70b5332cb1c4802c3c53bf";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=rel-a03&rev=d1763f0e09e994c59d70b5332cb1c4802c3c53bf";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
@@ -39,6 +39,7 @@
             dirs = [
               "Cargo.toml"
               "Cargo.lock"
+              "Cargo.wasm32.lock"
               ".cargo"
               "bridge"
               "fedimintd"
@@ -98,9 +99,12 @@
           fedi-wasm = craneLibBuildCross."wasm32-unknown-unknown".pkgsBuild {
             name = "fedi-wasm";
 
+            cargoLock = ./Cargo.wasm32.lock;
+
             pkgs = {
               fedi-wasm = { };
             };
+
           };
         };
 
@@ -115,9 +119,21 @@
 
         devShells = fmLib.devShells // {
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
-            nativeBuildInputs = prev.nativeBuildInputs ++ [ pkgs.wasm-pack pkgs.wasm-bindgen-cli pkgs.binaryen ];
+            nativeBuildInputs =
+              [
+                (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
+              ] ++
+              prev.nativeBuildInputs ++ [
+                pkgs.wasm-pack
+                pkgs.wasm-bindgen-cli
+                pkgs.binaryen
+                pkgs.gnused
+
+
+              ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
+            shellHook = prev.shellHook + toolchains.wasm32CrossEnvVars;
           });
         };
       });

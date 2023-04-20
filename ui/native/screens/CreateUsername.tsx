@@ -11,11 +11,9 @@ import {
     View,
 } from 'react-native'
 
-import {
-    checkXmppUser,
-    registerXmppUser,
-    useChatContext,
-} from '../state/contexts/ChatContext'
+import { checkXmppUser, registerXmppUser } from '@fedi/common/utils/xmpp'
+
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     updateFederationCredentials,
@@ -128,8 +126,9 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     console.error(error.toString())
                 } else if (typeof error === 'string') {
                     setXmppAuthInProgress(false)
-                    console.info(error)
-                    toast?.show(error, 3000)
+                    const errorMessage = t(error)
+                    console.info(errorMessage)
+                    toast?.show(errorMessage, 3000)
                 }
             }
         }
@@ -141,6 +140,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         dispatch,
         getXmppCredentials,
         toast,
+        t,
         username,
         xmppAuthInProgress,
     ])

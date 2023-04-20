@@ -36,14 +36,14 @@
     try {
       const feds = await rpc.listFederations({});
       if (feds.length != 0) {
-        fedName = feds[0].name;
+        fedName = feds[0].id;
         balance = feds[0].balance;
         joined = true;
         mnemonic = (await rpc.getMnemonic({federationId: fedName})).join(" ");
       } else {
         console.log(FEDERATION_CONNECT_STRING);
         const fed = await rpc.joinFederation({connectString: FEDERATION_CONNECT_STRING});
-        fedName = fed.name;
+        fedName = fed.id;
         joined = true;
       }
       mnemonic = (await rpc.getMnemonic({federationId: fedName})).join(" ");

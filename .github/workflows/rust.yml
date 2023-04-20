@@ -12,6 +12,25 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+    lint:
+      name: "Lint"
+      runs-on: buildjet-2vcpu-ubuntu-2004
+      timeout-minutes: 5
+      steps:
+        - uses: actions/checkout@v3
+        - uses: cachix/install-nix-action@v20
+          with:
+            nix_path: nixpkgs=channel:nixos-22.05
+        - uses: cachix/cachix-action@v12
+          with:
+            name: fedibtc
+            authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          continue-on-error: true
+
+        # run the same check that git `pre-commit` hook would, just in case
+        - name: Commit check
+          run: nix develop --ignore-environment .#lint --command ./misc/git-hooks/pre-commit
+
     build:
         name: 'Build Rust'
         runs-on: buildjet-4vcpu-ubuntu-2004
@@ -31,3 +50,6 @@ jobs:
 
             - name: Build fedi-wasm
               run: nix build -L .#fedi-wasm
+
+            - name: Build gateway-pkgs
+              run: nix build -L .#gateway-pkgs

@@ -2,12 +2,14 @@ import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { updateFederationCredentials } from '@fedi/common/redux'
+import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 
-import { useAppDispatch } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
 import { Input } from '../Input'
+import { Redirect } from '../Redirect'
 import { Text } from '../Text'
 import {
     OnboardingActions,
@@ -20,18 +22,24 @@ export const CreateUsername: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const [username, setUsername] = useState('')
+    const federationId = useAppSelector(selectActiveFederation)?.id
 
-    const handleSubmit = (ev: React.FormEvent) => {
+    if (!federationId) {
+        // TODO: Show a toast when this happens?
+        return <Redirect path="/onboarding" />
+    }
+
+    const handleSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault()
-        // TODO: Actually register username, currently just spoofs credentials
-        dispatch(
-            updateFederationCredentials({
-                username,
-                password: '',
-                keypairSeed: '',
-            }),
-        )
-        push('/onboarding/complete')
+        try {
+            await dispatch(
+                authenticateChat({ fedimint, federationId, username }),
+            ).unwrap()
+            push('/onboarding/complete')
+        } catch (err) {
+            // TODO: Show error to user?
+            console.error(err)
+        }
     }
 
     return (
