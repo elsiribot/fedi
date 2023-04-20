@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { isEqual } from 'lodash'
 import React, {
     createContext,
     useContext,
@@ -11,47 +10,28 @@ import React, {
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
+    updateFederation,
 } from '@fedi/common/redux'
-import { Guardian } from '@fedi/common/types'
 
 import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
 } from '../../constants'
-import { FederationWithChatCredentials } from '../../types'
 import { useAppDispatch, useAppSelector } from '../hooks'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
-    federations: FederationWithChatCredentials[]
     selectedFederationId: string | null
-    authenticatedGuardian: Guardian | null
 }
 
-// We compute the selectedFederation here based on selectedFederationId
-interface ComputedFederationsContextState extends FederationsContextState {
-    // this can be undefined because Array.find returns undefined if it can't find anything
-    selectedFederation: FederationWithChatCredentials | undefined
-}
 const initialState: FederationsContextState = {
-    federations: [],
     selectedFederationId: null,
-    authenticatedGuardian: null,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
-    CHANGE_AUTHENTICATED_GUARDIAN = 'CHANGE_AUTHENTICATED_GUARDIAN',
-    UPDATE_SELECTED_FEDERATION_ID = 'UPDATE_SELECTED_FEDERATION_ID',
-    // FIXME: we could just send null with ^^ instead ... or infer it when updated
-    // with federation list of []
-    UNSET_SELECTED_FEDERATION = 'UNSET_SELECTED_FEDERATION',
-    UPDATE_FEDERATIONS = 'UPDATE_FEDERATIONS',
-    UPDATE_FEDERATION = 'UPDATE_FEDERATION',
-    UPDATE_FEDERATION_CREDENTIALS = 'UPDATE_FEDERATION_CREDENTIALS',
-    UPDATE_FEDERATION_USERNAME = 'UPDATE_FEDERATION_USERNAME',
     RESET_FEDERATIONS_STATE = 'RESET_FEDERATIONS_STATE',
 }
 interface Action {
@@ -61,137 +41,14 @@ interface Action {
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {
-    state: ComputedFederationsContextState
+    state: FederationsContextState
     dispatch: React.Dispatch<Action>
 }
 export const FederationsContext = createContext({} as BaseContext)
 
-// Export action creators as convenience functions to trigger state changes
-export function changeAuthenticatedGuardian(guardian: Guardian | null): Action {
-    return {
-        type: ActionType.CHANGE_AUTHENTICATED_GUARDIAN,
-        payload: guardian,
-    }
-}
-export function updateSelectedFederationId(
-    federationId: null | string,
-): Action {
-    console.log('updateSelectedFederationId', federationId)
-    return {
-        type: ActionType.UPDATE_SELECTED_FEDERATION_ID,
-        payload: federationId,
-    }
-}
-export function updateFederations(
-    selectedFederationId: null | string,
-    federations: FederationWithChatCredentials[],
-): Action {
-    console.log('updatedFederations', selectedFederationId)
-    return {
-        type: ActionType.UPDATE_FEDERATIONS,
-        payload: { selectedFederationId, federations },
-    }
-}
-export function updateFederation(event: FederationEvent): Action {
-    console.log('updateFederation', event)
-    return {
-        type: ActionType.UPDATE_FEDERATION,
-        payload: event,
-    }
-}
-
-export function updateFederationCredentials(
-    username: string,
-    password: string,
-    keypairSeed: string,
-): Action {
-    return {
-        type: ActionType.UPDATE_FEDERATION_CREDENTIALS,
-        payload: { username, password, keypairSeed },
-    }
-}
-export function resetFederationCredentials(): Action {
-    return {
-        type: ActionType.UPDATE_FEDERATION_CREDENTIALS,
-        payload: { keypairSeed: null, password: null, username: null },
-    }
-}
-export function resetFederationsState(): Action {
-    return {
-        type: ActionType.RESET_FEDERATIONS_STATE,
-    }
-}
-
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case ActionType.CHANGE_AUTHENTICATED_GUARDIAN:
-            return {
-                ...state,
-                authenticatedGuardian: action.payload,
-            }
-        case ActionType.UPDATE_SELECTED_FEDERATION_ID:
-            // TODO: sanity check that such a federation exists
-            return {
-                ...state,
-                selectedFederationId: action.payload,
-            }
-        case ActionType.UPDATE_FEDERATIONS:
-            return {
-                ...state,
-                selectedFederationId: action.payload.selectedFederationId,
-                federations: action.payload.federations,
-            }
-        case ActionType.UPDATE_FEDERATION_CREDENTIALS: {
-            const federations = state.federations.map(f => {
-                // If the federation id matches, update the password of that
-                // single connectedFederation
-                if (f.id === state.selectedFederationId) {
-                    return {
-                        ...f,
-                        username: action.payload.username,
-                        password: action.payload.password,
-                        keypairSeed: action.payload.keypairSeed,
-                    }
-                } else {
-                    return f
-                }
-            })
-            return {
-                ...state,
-                federations,
-            }
-        }
-        case ActionType.UPDATE_FEDERATION_USERNAME: {
-            const federations = state.federations.map(f => {
-                // If the federation id matches, update the username of that
-                // single connectedFederation
-                if (f.name === state.selectedFederationId) {
-                    return {
-                        ...f,
-                        username: action.payload,
-                    }
-                } else {
-                    return f
-                }
-            })
-            return {
-                ...state,
-                federations,
-            }
-        }
-        case ActionType.UPDATE_FEDERATION:
-            const federations = state.federations.map(
-                // If the federation id matches, update the entry
-                f =>
-                    f.id === action.payload.id
-                        ? { ...f, ...action.payload }
-                        : f,
-            )
-            if (isEqual(federations, state.federations)) {
-                return state
-            }
-            return { ...state, federations }
         case ActionType.RESET_FEDERATIONS_STATE:
             return { ...initialState }
         default:
@@ -218,16 +75,7 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
     const providerValue = useMemo(
-        () => ({
-            state: {
-                ...state,
-                // compute selected federation based on federationId
-                selectedFederation: state.federations.find(
-                    f => f.id === state.selectedFederationId,
-                ),
-            },
-            dispatch,
-        }),
+        () => ({ state, dispatch }),
         [state, dispatch],
     )
 

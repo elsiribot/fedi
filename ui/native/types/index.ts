@@ -247,13 +247,3 @@ export type Keypair = {
     publicKey: Key
     privateKey: Key
 }
-
-/**
- * Federation object with xmpp username, password, and keypairSeed attached.
- * @deprecated in favor of using Redux state + base Federation interface.
- */
-export interface FederationWithChatCredentials extends Federation {
-    username?: string | null
-    password?: string | null
-    keypairSeed?: string | null
-}
