@@ -14,11 +14,11 @@ import {
 import {
     authenticateChat,
     selectActiveFederation,
+    selectAuthenticatedMember,
     selectChatCredentials,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
-import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -28,10 +28,10 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const activeChatCredentials = useAppSelector(selectChatCredentials)
     const dispatch = useAppDispatch()
-    const { authenticatedMember } = useChatContext().state
     const { toast } = useEnvironmentContext().state
     const [username, setUsername] = useState<string>('')
     const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
