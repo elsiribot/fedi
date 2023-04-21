@@ -1,10 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
 import { SiteTiles } from '../components/SiteTiles'
 import { Text } from '../components/Text'
-import { WalletBlock } from '../components/WalletBlock'
 import { styled } from '../styles'
 
 function HomePage() {
@@ -16,7 +16,7 @@ function HomePage() {
                 <Text variant="h1">{t('words.home')}</Text>
             </Title>
             <ContentInner>
-                <WalletBlock currency="bitcoin" />
+                <BitcoinWallet />
                 <SiteTiles />
             </ContentInner>
         </ContentBlock>

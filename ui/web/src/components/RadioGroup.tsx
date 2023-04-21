@@ -12,7 +12,7 @@ interface RadioOption<T extends string> {
 }
 
 interface Props<T extends string> {
-    options: RadioOption<T>[]
+    options: readonly RadioOption<T>[]
     value: T | undefined
     disabled?: boolean
     labelTextProps?: TextProps
