@@ -21,11 +21,7 @@ export const federationSlice = createSlice({
     initialState,
     reducers: {
         setFederations(state, action: PayloadAction<Federation[]>) {
-            state.federations = action.payload.map(f => ({
-                ...f,
-                // TODO: REMOVE ME! This is only here because old fedimints didn't have 'id' set
-                id: f.id || f.name,
-            }))
+            state.federations = action.payload
         },
         updateFederation(state, action: PayloadAction<FederationEvent>) {
             state.federations = state.federations.map(federation =>
@@ -92,10 +88,7 @@ export const joinFederation = createAsyncThunk<
 export const selectActiveFederation = (s: CommonState) => {
     const { federations, activeFederationId } = s.federation
     return activeFederationId
-        ? federations.find(
-              // In case an old client has `activeFederationId` saved with the federation name
-              f => f.id === activeFederationId || f.name === activeFederationId,
-          )
+        ? federations.find(f => f.id === activeFederationId)
         : federations[0]
 }
 
