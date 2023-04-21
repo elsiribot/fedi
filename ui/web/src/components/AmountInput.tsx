@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Btc, Sats } from '@fedi/common/types'
 import AmountUtils from '@fedi/common/utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector, useUpdatingRef } from '../hooks'
 import { keyframes, styled, theme } from '../styles'
@@ -10,7 +12,6 @@ import { Text } from './Text'
 
 interface Props {
     amount: Sats
-    max?: number
     error?: string
     readOnly?: boolean
     onChangeAmount(amount: Sats): void
@@ -23,11 +24,19 @@ export const AmountInput: React.FC<Props> = ({
     onChangeAmount,
 }) => {
     const { t } = useTranslation()
-    const btcToUsd = useAppSelector(s => s.currency.btcUsdPrice)
-    const btcToUsdRef = useUpdatingRef(btcToUsd)
+    const btcToFiatRate = useAppSelector(selectBtcExchangeRate)
+    const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
+    const currency = useAppSelector(selectCurrency)
     const [isFiat, setIsFiat] = useState(false)
-    const [fiatAmount, setFiatAmount] = useState<string>(
-        AmountUtils.satToUsdString(amount, btcToUsd),
+    const [satsValue, setSatsValue] = useState<string>(
+        AmountUtils.formatSats(amount),
+    )
+    const [fiatValue, setFiatValue] = useState<string>(
+        AmountUtils.formatFiat(
+            AmountUtils.satToFiat(amount, btcToFiatRate),
+            currency,
+            { noSymbol: true },
+        ),
     )
 
     const clampSats = useCallback((value: number) => {
@@ -37,48 +46,49 @@ export const AmountInput: React.FC<Props> = ({
 
     const handleChangeSats = useCallback(
         (ev: React.ChangeEvent<HTMLInputElement>) => {
-            const sats = parseInt(
-                ev.currentTarget.value.replaceAll(',', ''),
-                10,
+            const sats = clampSats(
+                parseInt(ev.currentTarget.value.replaceAll(',', ''), 10),
             )
+            const fiat = AmountUtils.satToBtc(sats) * btcToFiatRateRef.current
             onChangeAmount(clampSats(sats))
+            setSatsValue(Intl.NumberFormat().format(sats))
+            setFiatValue(
+                AmountUtils.formatFiat(fiat, currency, { noSymbol: true }),
+            )
         },
-        [clampSats, onChangeAmount],
+        [clampSats, onChangeAmount, currency, btcToFiatRateRef],
     )
 
     const handleChangeFiat = useCallback(
         (ev: React.ChangeEvent<HTMLInputElement>) => {
             const { value } = ev.currentTarget
-            let fiat = parseFloat(value.replaceAll(',', ''))
-
-            // If they've added an additional sigdig to the right, offset all numbers by one
-            if (value.split('.')[1]?.length > 2) {
-                fiat = parseFloat(value) * 10
+            let fiat = AmountUtils.parseFiatString(value)
+            if (Number.isNaN(fiat) || fiat < 0) {
+                fiat = 0
             }
 
-            const sats = AmountUtils.btcToSat(
-                (fiat / btcToUsdRef.current) as Btc,
+            // If they've added or removed a sigdig, offset all numbers by a tens place
+            const decimals = amountUtils.getCurrencyDecimals(currency)
+            const decimalSeparator = amountUtils.getDecimalSeparator()
+            const valueDecimals = value.split(decimalSeparator)[1]?.length || 0
+            if (valueDecimals > decimals) {
+                fiat = fiat * 10
+            } else if (valueDecimals < decimals) {
+                fiat = fiat / 10
+            }
+
+            const sats = clampSats(
+                AmountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
 
-            onChangeAmount(clampSats(sats))
-            setFiatAmount(
-                Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    currencyDisplay: 'code',
-                })
-                    .format(fiat)
-                    .replace('USD', '')
-                    .trim(),
+            onChangeAmount(sats)
+            setFiatValue(
+                AmountUtils.formatFiat(fiat, currency, { noSymbol: true }),
             )
+            setSatsValue(AmountUtils.formatSats(sats))
         },
-        [clampSats, btcToUsdRef, onChangeAmount],
+        [clampSats, btcToFiatRateRef, onChangeAmount, currency],
     )
-
-    // Update fiat amount when amount changes
-    useEffect(() => {
-        setFiatAmount(AmountUtils.satToUsdString(amount, btcToUsdRef.current))
-    }, [amount, btcToUsdRef])
 
     const activeWrapProps = {
         active: true,
@@ -102,14 +112,6 @@ export const AmountInput: React.FC<Props> = ({
         ),
     }
 
-    // When we're editing fiat, force the input to use our local state, not calculated.
-    // Otherwise you encounter rounding issues while typing.
-    const fiatValue = isFiat
-        ? fiatAmount
-        : AmountUtils.satToUsdString(amount, btcToUsd)
-    const satsValue = Intl.NumberFormat('en-US').format(amount)
-    console.log({ fiatValue })
-
     return (
         <Container
             css={{
@@ -129,14 +131,13 @@ export const AmountInput: React.FC<Props> = ({
                         readOnly={isFiat || readOnly}
                         value={satsValue}
                         onChange={handleChangeSats}
-                        pattern="[0-9]+"
                     />
                     <div>{satsValue}</div>
                 </SnugInput>
                 <span>{t('words.sats')}</span>
             </FieldWrap>
             <FieldWrap {...(isFiat ? activeWrapProps : inactiveWrapProps)}>
-                <span>$</span>
+                <span>{AmountUtils.getCurrencySymbol(currency)}</span>
                 <SnugInput>
                     <input
                         readOnly={!isFiat || readOnly}
@@ -149,15 +150,6 @@ export const AmountInput: React.FC<Props> = ({
         </Container>
     )
 }
-
-// const testAnimation = keyframes({
-//     '0%': {
-
-//     },
-//     '100%': {
-//         transfor:
-//     },
-// })
 
 const Container = styled('div', {
     position: 'relative',

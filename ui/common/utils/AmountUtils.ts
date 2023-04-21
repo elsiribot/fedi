@@ -111,6 +111,9 @@ class AmountUtils {
     formatNumber = (amount: number): string => {
         return accounting.formatNumber(amount, { precision: 0 })
     }
+    formatSats = (sats: Sats): string => {
+        return Intl.NumberFormat().format(sats)
+    }
     /**
      * Given a fiat currency amount and the ISO code of the currency,
      * return a string formatted in the user's default locale of the
@@ -172,6 +175,22 @@ class AmountUtils {
         return fmtOptions.maximumFractionDigits
     }
     /**
+     * Returns the thousands separator character for the user's default locale.
+     */
+    getThousandsSeparator = (options: { locale?: string | string[] } = {}) => {
+        return Intl.NumberFormat(options.locale)
+            .format(11111)
+            .replace(/\p{Number}/gu, '')
+    }
+    /**
+     * Returns the decimal separator character for the user's default locale.
+     */
+    getDecimalSeparator = (options: { locale?: string | string[] } = {}) => {
+        return Intl.NumberFormat(options.locale)
+            .format(1.1)
+            .replace(/\p{Number}/gu, '')
+    }
+    /**
      * Given a string amount that is formatted in the user's default locale,
      * parse a floating point number from it. Handles removing symbols too.
      */
@@ -179,12 +198,8 @@ class AmountUtils {
         fiat: string,
         options: { locale?: string | string[] } = {},
     ): number => {
-        var thousandSeparator = Intl.NumberFormat(options.locale)
-            .format(11111)
-            .replace(/\p{Number}/gu, '')
-        var decimalSeparator = Intl.NumberFormat(options.locale)
-            .format(1.1)
-            .replace(/\p{Number}/gu, '')
+        var thousandSeparator = this.getThousandsSeparator(options)
+        var decimalSeparator = this.getDecimalSeparator(options)
         return parseFloat(
             fiat
                 .replace(new RegExp('\\' + thousandSeparator, 'g'), '')

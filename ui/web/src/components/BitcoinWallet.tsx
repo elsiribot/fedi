@@ -4,7 +4,11 @@ import { useTranslation } from 'react-i18next'
 
 import BitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
 import ListIcon from '@fedi/common/assets/svgs/list.svg'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectBtcExchangeRate,
+    selectCurrency,
+} from '@fedi/common/redux'
 import AmountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
@@ -18,12 +22,13 @@ import { Text } from './Text'
 export const BitcoinWallet: React.FC = () => {
     const { t } = useTranslation()
     const balance = useAppSelector(selectActiveFederation)?.balance
-    const btcUsdPrice = useAppSelector(s => s.currency.btcUsdPrice)
+    const btcToFiatRate = useAppSelector(selectBtcExchangeRate)
+    const currency = useAppSelector(selectCurrency)
     const [isRequestingOpen, setIsRequestingOpen] = useState(false)
     const [isSendingOpen, setIsSendingOpen] = useState(false)
 
     const isBalanceLoading = typeof balance !== 'number'
-    const isPriceLoading = isBalanceLoading || !btcUsdPrice
+    const isPriceLoading = isBalanceLoading || !btcToFiatRate
 
     return (
         <Container>
@@ -41,7 +46,10 @@ export const BitcoinWallet: React.FC = () => {
             <Balance>
                 {!isPriceLoading && (
                     <Text variant="h2" weight="normal">
-                        ${AmountUtils.msatToUsdString(balance, btcUsdPrice)}
+                        {AmountUtils.formatFiat(
+                            AmountUtils.msatToFiat(balance, btcToFiatRate),
+                            currency,
+                        )}
                     </Text>
                 )}
                 {!isBalanceLoading && (
