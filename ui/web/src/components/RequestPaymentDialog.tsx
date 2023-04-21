@@ -27,7 +27,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     onOpenChange,
 }) => {
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.name
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const [amount, setAmount] = useState(0 as Sats)
     const [note, setNote] = useState('')
     const [isRequesting, setIsRequesting] = useState(false)
@@ -110,12 +110,13 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         activeFederationId,
     ])
 
-    const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
+    const handleCopy = useCallback(() => {
+        const data = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
+        if (!data) return
+        navigator.clipboard.writeText(data)
+    }, [isLightning, lightningInvoice, bitcoinUrl])
 
-    const handleCopyQrData = useCallback(() => {
-        if (!qrData) return
-        navigator.clipboard.writeText(qrData)
-    }, [qrData])
+    const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
 
     const error =
         amount > 200_000 ? `Maximum amount is 200,000 sats` : generateError
@@ -157,7 +158,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 {typeof qrData === 'string' ? (
                     <>
                         <QRCode data={qrData} />
-                        <Button width="full" onClick={handleCopyQrData}>
+                        <Button width="full" onClick={handleCopy}>
                             {t('words.copy')}
                         </Button>
                     </>
@@ -166,7 +167,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         width="full"
                         onClick={() => setIsRequesting(true)}
                         loading={isGeneratingQr}>
-                        Request {AmountUtils.formatNumber(amount)}{' '}
+                        {t('words.request')} {AmountUtils.formatNumber(amount)}{' '}
                         {t('words.sats')}
                     </Button>
                 )}

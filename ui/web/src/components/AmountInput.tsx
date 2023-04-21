@@ -14,7 +14,7 @@ interface Props {
     amount: Sats
     error?: string
     readOnly?: boolean
-    onChangeAmount(amount: Sats): void
+    onChangeAmount?: (amount: Sats) => void
 }
 
 export const AmountInput: React.FC<Props> = ({
@@ -219,7 +219,7 @@ const FieldWrap = styled('div', {
         },
         readOnly: {
             true: {
-                cursor: 'default',
+                cursor: 'default !important',
             },
         },
     },

@@ -87,6 +87,7 @@ const Content = styled(RadixDialog.Content, {
     borderRadius: 20,
     width: '90vw',
     background: theme.colors.white,
+    overflow: 'hidden',
     animation: `${contentShow} 150ms ease`,
 
     variants: {
@@ -124,6 +125,7 @@ const CloseButton = styled(RadixDialog.Close, {
     opacity: 0.5,
     outline: 'none',
     cursor: 'pointer',
+    zIndex: 1000,
 
     '&:hover, &:focus': {
         opacity: 1,
