@@ -14,7 +14,7 @@ interface CustomProps {
 
 type Props = CustomProps &
     Omit<
-        React.ButtonHTMLAttributes<HTMLInputElement>,
+        React.InputHTMLAttributes<HTMLInputElement>,
         keyof CustomProps | 'className'
     >
 

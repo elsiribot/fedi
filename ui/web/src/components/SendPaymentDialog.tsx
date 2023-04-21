@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -38,6 +38,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const [isSending, setIsSending] = useState(false)
     const [hasSent, setHasSent] = useState(false)
     const [sendError, setSendError] = useState<string>()
+    const containerRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
         if (!open) {
@@ -49,6 +50,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setIsSending(false)
             setHasSent(false)
             setSendError(undefined)
+        } else {
+            requestAnimationFrame(() =>
+                containerRef.current?.querySelector('input')?.focus(),
+            )
         }
     }, [open])
 
@@ -181,7 +186,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             )} ${t('words.sats')}`}
             open={open}
             onOpenChange={onOpenChange}>
-            <Container>
+            <Container ref={containerRef}>
                 {content}
                 {dialogStatusProps && <DialogStatus {...dialogStatusProps} />}
             </Container>
