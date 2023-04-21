@@ -1,7 +1,9 @@
 import type QrScanner from 'qr-scanner'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { theme } from '@fedi/common/constants/theme'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useUpdatingRef } from '../hooks'
 import { styled } from '../styles'
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export const QRScanner: React.FC<Props> = ({ onScan }) => {
+    const { t } = useTranslation()
     const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
     const qrScannerRef = useRef<QrScanner | null>(null)
     const [mediaError, setMediaError] = useState<string>()
@@ -33,14 +36,12 @@ export const QRScanner: React.FC<Props> = ({ onScan }) => {
                     onDecodeError: () => null, // no-op
                 },
             )
-            qrScanner
-                .start()
-                .catch(err => setMediaError(err.message || err.toString()))
+            await qrScanner.start()
             qrScannerRef.current = qrScanner
-        } catch (err: any) {
-            setMediaError(err.message || err.toString())
+        } catch (err) {
+            setMediaError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
-    }, [videoEl, onScanRef])
+    }, [videoEl, onScanRef, t])
 
     useEffect(() => {
         handleScannerSetup()

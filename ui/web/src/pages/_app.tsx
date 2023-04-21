@@ -5,6 +5,7 @@ import { Provider as ReduxProvider } from 'react-redux'
 import { FediBridgeInitializer } from '../components/FediBridgeInitializer'
 import { PWAMetaTags } from '../components/PWAMetaTags'
 import { Template } from '../components/Template'
+import { ToastManager } from '../components/ToastManager'
 import { detectLanguage } from '../localization/i18n'
 import { store, initializeWebStore } from '../state/store'
 import { globalStyles } from '../styles'
@@ -27,6 +28,7 @@ const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
                     <Template>
                         <Component {...pageProps} />
                     </Template>
+                    <ToastManager />
                 </FediBridgeInitializer>
             </ReduxProvider>
         </>

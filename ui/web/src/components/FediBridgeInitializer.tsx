@@ -1,8 +1,10 @@
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import { refreshFederations, selectActiveFederation } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
@@ -16,6 +18,7 @@ interface Props {
 
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
+    const { t } = useTranslation()
     const { isReady, pathname } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const [isInitialized, setIsInitialized] = useState(false)
@@ -30,14 +33,16 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         initializeBridge()
             .then(() => dispatch(refreshFederations(fedimint)).unwrap())
             .then(() => setIsInitialized(true))
-            .catch(err => setError(err?.message || err?.toString()))
+            .catch(err =>
+                setError(formatErrorMessage(t, err, 'errors.unknown-error')),
+            )
             .finally(() => {
                 setIsShowingLoading(false)
                 clearTimeout(loadingTimeout)
             })
 
         return () => clearTimeout(loadingTimeout)
-    }, [dispatch])
+    }, [dispatch, t])
 
     if (isInitialized) {
         if (!activeFederation && !pathname.startsWith('/onboarding')) {

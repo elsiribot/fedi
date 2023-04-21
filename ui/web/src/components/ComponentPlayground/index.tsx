@@ -8,6 +8,7 @@ import { ButtonDemo } from './ButtonDemo'
 import { FormDemo } from './FormDemo'
 import { IconDemo } from './IconDemo'
 import { TextDemo } from './TextDemo'
+import { ToastDemo } from './ToastDemo'
 
 export const ComponentPlayground: React.FC = () => {
     const demos = [
@@ -30,6 +31,10 @@ export const ComponentPlayground: React.FC = () => {
         {
             title: 'Icons',
             content: <IconDemo />,
+        },
+        {
+            title: 'Toast',
+            content: <ToastDemo />,
         },
     ]
 
