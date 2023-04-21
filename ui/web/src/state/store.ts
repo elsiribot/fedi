@@ -2,6 +2,8 @@ import { configureStore } from '@reduxjs/toolkit'
 
 import { commonReducers, initializeCommonStore } from '@fedi/common/redux'
 
+import { fedimint } from '../lib/bridge'
+
 export const store = configureStore({
     reducer: {
         ...commonReducers,
@@ -13,5 +15,5 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeWebStore() {
     // Common initialization behavior
-    initializeCommonStore(store.dispatch)
+    initializeCommonStore(store.dispatch, fedimint)
 }

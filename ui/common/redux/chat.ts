@@ -15,7 +15,7 @@ import {
     ChatType,
     XmppCredentials,
 } from '../types'
-import { FedimintRpc } from '../utils/fedimint'
+import { FedimintBridge } from '../utils/fedimint'
 import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
 
 type FederationPayloadAction<T = {}> = PayloadAction<
@@ -224,7 +224,7 @@ export const {
 
 export const refreshChatCredentials = createAsyncThunk<
     XmppCredentials,
-    { fedimint: FedimintRpc; federationId: string }
+    { fedimint: FedimintBridge; federationId: string }
 >('chat/refreshChatCredentials', async ({ fedimint, federationId }) => {
     const credentials = await fedimint.getXmppCredentials(federationId)
     return credentials
@@ -232,7 +232,7 @@ export const refreshChatCredentials = createAsyncThunk<
 
 export const authenticateChat = createAsyncThunk<
     ChatMember,
-    { fedimint: FedimintRpc; federationId: string; username: string },
+    { fedimint: FedimintBridge; federationId: string; username: string },
     { state: CommonState }
 >(
     'chat/authenticateChat',

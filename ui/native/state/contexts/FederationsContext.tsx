@@ -8,9 +8,9 @@ import React, {
     useReducer,
 } from 'react'
 
-import { Guardian } from '@fedi/common/types'
+import { Guardian, FederationEvent } from '@fedi/common/types'
 
-import { BridgeEventEmitter, FederationEvent } from '../../bridge'
+import { fedimint } from '../../bridge'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     SELECTED_FEDERATION_ID_DB_KEY,
@@ -217,16 +217,13 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
     )
 
     useEffect(() => {
-        const emitter = new BridgeEventEmitter()
-        const onFederationUpdate = (event: FederationEvent) => {
+        const unsubscribe = fedimint.addListener('federation', event => {
             // Prevents a state update on the off-chance we get an event
             // before the selectedFederation state is initialized
             if (state.selectedFederationId == null) return
             dispatch(updateFederation(event))
-        }
-        const federationListener =
-            emitter.onFederationUpdate(onFederationUpdate)
-        return () => federationListener.remove()
+        })
+        return unsubscribe
     }, [state])
 
     // Persist currently selected federation
