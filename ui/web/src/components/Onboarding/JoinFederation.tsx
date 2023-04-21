@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { joinFederation } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppDispatch } from '../../hooks'
+import { useAppDispatch, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
@@ -22,6 +23,7 @@ export const JoinFederation: React.FC = () => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { push } = useRouter()
+    const { showErrorToast } = useToast()
     const [wantsScan, setWantsScan] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
 
@@ -32,20 +34,19 @@ export const JoinFederation: React.FC = () => {
                 await dispatch(joinFederation({ fedimint, code })).unwrap()
                 push('/onboarding/welcome')
             } catch (err) {
-                // TODO: Present error to user
-                console.error(err)
+                showErrorToast(err, 'errors.invalid-federation-code')
             }
             setIsJoining(false)
         },
-        [push, dispatch],
+        [push, dispatch, showErrorToast],
     )
 
     const handlePaste = useCallback(() => {
-        const code = prompt('Please enter your Federation code')
+        const code = prompt(t('feature.federations.paste-federation-code'))
         if (code) {
             handleCode(code)
         }
-    }, [handleCode])
+    }, [handleCode, t])
 
     const handleScan = useCallback(
         (result: ScanResult) => {
