@@ -34,7 +34,7 @@ export const DialogStatus: React.FC<DialogStatusProps> = ({
         const rotate = (time: number) => {
             if (!isRotating) return
             if (!startTime) startTime = time
-            setBackgroundRotation(deg => deg + (time - startTime) * 0.00015)
+            setBackgroundRotation(deg => deg + (time - startTime) * 0.0002)
             requestAnimationFrame(rotate)
         }
         requestAnimationFrame(rotate)
@@ -106,7 +106,7 @@ const StatusBackground = styled('div', {
     ...circleStyle,
     zIndex: 1,
     transform:
-        'translate(-50%, -50%) scale(var(--scale)) rotate(var(--rotation))',
+        'translate(-50%, -50%) rotate(var(--rotation)) scale(var(--scale))',
     transition: 'transform 500ms ease',
     variants: {
         status: {
@@ -118,6 +118,7 @@ const StatusBackground = styled('div', {
             },
             loading: {
                 holoGradient: '600',
+                transition: 'none',
             },
         },
     },
