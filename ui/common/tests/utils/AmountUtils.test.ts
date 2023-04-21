@@ -184,4 +184,110 @@ describe('AmountUtils', () => {
             expect(result).toEqual('0.00001000')
         })
     })
+    describe('formatFiat', () => {
+        const amount = 1234.567
+        const testCases = [
+            {
+                currency: 'USD',
+                locale: 'en-US',
+                expectedResult: '$1,234.57',
+                expectedResultNoSymbol: '1,234.57',
+            },
+            {
+                currency: 'USD',
+                locale: 'en-CA',
+                expectedResult: 'US$1,234.57',
+                expectedResultNoSymbol: '1,234.57',
+            },
+            {
+                currency: 'EUR',
+                locale: 'de-DE',
+                expectedResult: '1.234,57 €', // careful for non-standard whitespace char
+                expectedResultNoSymbol: '1.234,57',
+            },
+            {
+                currency: 'CFA',
+                locale: 'fr-TG',
+                expectedResult: '1 234,57 CFA', // careful for non-standard whitespace char
+                expectedResultNoSymbol: '1 234,57', // careful for non-standard whitespace char
+            },
+        ]
+
+        testCases.forEach(
+            ({ currency, locale, expectedResult, expectedResultNoSymbol }) => {
+                it(`should format ${amount} to ${expectedResult} for ${currency} in ${locale} locale`, () => {
+                    const result = amountUtils.formatFiat(amount, currency, {
+                        locale: locale,
+                    })
+                    expect(result).toEqual(expectedResult)
+                })
+                it(`should format ${amount} to ${expectedResultNoSymbol} for ${currency} in ${locale} locale with noSymbol`, () => {
+                    const result = amountUtils.formatFiat(amount, currency, {
+                        locale: locale,
+                        noSymbol: true,
+                    })
+                    expect(result).toEqual(expectedResultNoSymbol)
+                })
+            },
+        )
+    })
+    describe('getCurrencySymbol', () => {
+        const testCases = [
+            { locale: 'en-US', currency: 'USD', expectedResult: '$' },
+            { locale: 'en-CA', currency: 'USD', expectedResult: 'US$' },
+            { locale: 'de-DE', currency: 'EUR', expectedResult: '€' },
+            { locale: 'fr-TG', currency: 'CFA', expectedResult: 'CFA' },
+        ]
+
+        testCases.forEach(({ currency, locale, expectedResult }) => {
+            it(`should give us the symbol ${expectedResult} for ${currency} in ${locale} locale`, () => {
+                const result = amountUtils.getCurrencySymbol(currency, {
+                    locale,
+                })
+                expect(result).toEqual(expectedResult)
+            })
+        })
+    })
+    describe('getCurrencyDecimals', () => {
+        const testCases = [
+            { currency: 'USD', expectedResult: 2 },
+            { currency: 'EUR', expectedResult: 2 },
+            { currency: 'CFA', expectedResult: 2 },
+            { currency: 'JPY', expectedResult: 0 },
+        ]
+
+        testCases.forEach(({ currency, expectedResult }) => {
+            expect(amountUtils.getCurrencyDecimals(currency)).toEqual(
+                expectedResult,
+            )
+        })
+    })
+    describe('parseFiatString', () => {
+        const expectedResult = 1234.56
+        const testCases = [
+            {
+                locale: 'en-US',
+                fiat: '$1,234.56',
+            },
+            {
+                locale: 'en-CA',
+                fiat: 'US$1,234.56',
+            },
+            {
+                locale: 'de-DE',
+                fiat: '1.234,56 €', // careful for non-standard whitespace char
+            },
+            {
+                locale: 'fr-TG',
+                fiat: '1 234,56 CFA', // careful for non-standard whitespace char
+            },
+        ]
+
+        testCases.forEach(({ locale, fiat }) => {
+            it(`should parse ${expectedResult} from ${fiat} in ${locale} locale`, () => {
+                const result = amountUtils.parseFiatString(fiat, { locale })
+                expect(result).toEqual(expectedResult)
+            })
+        })
+    })
 })
