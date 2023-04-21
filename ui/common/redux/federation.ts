@@ -92,7 +92,10 @@ export const joinFederation = createAsyncThunk<
 export const selectActiveFederation = (s: CommonState) => {
     const { federations, activeFederationId } = s.federation
     return activeFederationId
-        ? federations.find(f => f.name === activeFederationId)
+        ? federations.find(
+              // In case an old client has `activeFederationId` saved with the federation name
+              f => f.id === activeFederationId || f.name === activeFederationId,
+          )
         : federations[0]
 }
 
