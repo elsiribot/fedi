@@ -104,6 +104,11 @@ export interface FederationCredentials {
     keypairSeed: string
 }
 
+export enum SupportedCurrency {
+    USD = 'USD',
+    EUR = 'EUR',
+    CFA = 'CFA',
+}
 export interface Federation {
     id: string
     name: string
@@ -111,6 +116,9 @@ export interface Federation {
     nodes: Node[]
     balance: MSats
     socialRecoveryActive: boolean
+    // TODO: Implement and get this from bridge
+    // defaultCurrency?: SupportedCurrency
+    // stealthMode?: boolean
 }
 
 export type SeedWords = string[]

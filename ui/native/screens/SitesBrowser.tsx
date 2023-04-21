@@ -16,7 +16,7 @@ import CustomOverlay, {
 } from '../components/ui/CustomOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge, useBtcUsdPrice } from '../state/hooks'
+import { useBridge, useBtcFiatPrice } from '../state/hooks'
 import { MSats, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -29,7 +29,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { t } = useTranslation()
     const { selectedFederation } = useFederationsContext().state
     const { toast } = useEnvironmentContext().state
-    const { convertSatsToUsdString } = useBtcUsdPrice()
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
@@ -102,7 +102,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     message: `${amountUtils.formatNumber(amount)} ${t(
                         'words.sats',
                     ).toUpperCase()}`,
-                    description: `$${convertSatsToUsdString(amount)}`,
+                    description: `${convertSatsToFormattedFiat(amount)}`,
                     buttons: [
                         {
                             text: t('words.reject'),
@@ -172,7 +172,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     message: `${amountUtils.formatNumber(amountSats)} ${t(
                         'words.sats',
                     ).toUpperCase()}`,
-                    description: `$${convertSatsToUsdString(amountSats)}`,
+                    description: `${convertSatsToFormattedFiat(amountSats)}`,
                     buttons: [
                         {
                             text: t('words.reject'),

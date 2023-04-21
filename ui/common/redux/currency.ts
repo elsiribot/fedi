@@ -1,11 +1,18 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { CommonState } from '.'
+import { CommonState, selectActiveFederation } from '.'
+import { SupportedCurrency } from '../types'
+import FederationUtils from '../utils/FederationUtils'
+
+type FiatPriceMap = {
+    [currency in SupportedCurrency]: number
+}
 
 /*** Initial State ***/
 
 const initialState = {
-    btcUsdPrice: 0,
+    prices: {} as FiatPriceMap,
+    selectedFiatCurrency: null as SupportedCurrency | null,
     socketErrors: 0,
 }
 
@@ -17,11 +24,24 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
-        updateBtcUsdPrice(state, action: PayloadAction<number>) {
-            state.btcUsdPrice = action.payload
+        updateBtcFiatPrice(
+            state,
+            action: PayloadAction<{
+                price: number
+                currency: SupportedCurrency
+            }>,
+        ) {
+            const { price, currency } = action.payload
+            state.prices[currency] = price
         },
         incrementSocketErrors(state) {
             state.socketErrors = state.socketErrors + 1
+        },
+        changeSelectedFiatCurrency(
+            state,
+            action: PayloadAction<SupportedCurrency>,
+        ) {
+            state.selectedFiatCurrency = action.payload
         },
         resetCurrencyState() {
             return { ...initialState }
@@ -31,7 +51,11 @@ export const currencySlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { updateBtcUsdPrice, resetCurrencyState } = currencySlice.actions
+export const {
+    updateBtcFiatPrice,
+    changeSelectedFiatCurrency,
+    resetCurrencyState,
+} = currencySlice.actions
 
 /*** Async thunk actions ***/
 
@@ -44,8 +68,10 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
     async (_, { dispatch, getState }) => {
         // See docs at https://docs.bitfinex.com/docs/ws-general
         const socket = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
+        const priceChannels: { [channelId: number]: string } = {}
 
         socket.onopen = () => {
+            // Subscribe to USD price
             socket.send(
                 JSON.stringify({
                     event: 'subscribe',
@@ -53,14 +79,57 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
                     symbol: 'tBTCUSD',
                 }),
             )
+            // Subscribe to EUR price
+            socket.send(
+                JSON.stringify({
+                    event: 'subscribe',
+                    channel: 'ticker',
+                    symbol: 'tBTCEUR',
+                }),
+            )
         }
 
         socket.onmessage = (message: any) => {
             const parsedData = JSON.parse(message.data)
-            if (parsedData.length === 2 && parsedData[1].length === 10) {
+            // This event is received once provides the channel ID + currency pair
+            if (parsedData.event === 'subscribed') {
+                const channelId: number = parsedData.chanId as number
+                // Keep a map of channel IDs + currencies
+                priceChannels[channelId] = parsedData.pair
+            }
+            // This event is recieved periodically and are sent as one of
+            // these two types:
+            // [number, string] - [11111, "hb"]
+            // [number, number[]] - [11111, [1,2,3,4,5,6,7,8,9,10]]
+            if (
+                parsedData[0] &&
+                priceChannels[parsedData[0]] &&
+                Array.isArray(parsedData[1])
+            ) {
+                // Find the price data if it is the latter type
+                const channelId = parsedData[0]
                 const priceData = parsedData[1]
                 const updatedPrice = priceData[6]
-                dispatch(updateBtcUsdPrice(updatedPrice))
+                // Check the map to figure out which currency price to update
+                switch (priceChannels[channelId]) {
+                    case 'BTCUSD':
+                        dispatch(
+                            updateBtcFiatPrice({
+                                currency: SupportedCurrency.USD,
+                                price: updatedPrice,
+                            }),
+                        )
+                        break
+                    case 'BTCEUR':
+                        dispatch(
+                            updateBtcFiatPrice({
+                                currency: SupportedCurrency.EUR,
+                                price: updatedPrice,
+                            }),
+                        )
+                        break
+                    default:
+                }
             }
         }
 
@@ -74,3 +143,31 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
         }
     },
 )
+
+/*** Selectors ***/
+
+export const selectCurrency = (s: CommonState) => {
+    if (s.currency.selectedFiatCurrency) return s.currency.selectedFiatCurrency
+
+    const activeFederation = selectActiveFederation(s)
+    if (activeFederation) {
+        const federationDefaultCurrency = new FederationUtils(
+            activeFederation!,
+        ).getDefaultCurrency()
+        if (federationDefaultCurrency) return federationDefaultCurrency
+    }
+
+    return SupportedCurrency.USD
+}
+
+export const selectBtcExchangeRate = (s: CommonState) => {
+    const selectedFiatCurrency = selectCurrency(s)
+
+    let exchangeRate = s.currency.prices[selectedFiatCurrency]
+    // Special case for the CFA franc which is a fixed 650x the EUR price
+    if (selectedFiatCurrency === SupportedCurrency.CFA) {
+        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
+    }
+
+    return exchangeRate
+}

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import FederationUtils from '@fedi/common/utils/FederationUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
@@ -154,6 +155,10 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const showInviteCode =
+        selectedFederation &&
+        new FederationUtils(selectedFederation).getShowInviteCode()
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
@@ -180,18 +185,17 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.federations.federation-details')}
                     onPress={() => {}}
                 />
-                <SettingsItem
-                    image={<SvgImage name="InviteMembers" />}
-                    label={t('feature.federations.invite-members')}
-                    onPress={() => {
-                        navigation.navigate('FederationInvite', {
-                            // FIXME: we should know that we have a selectedFederation here ...
-                            inviteLink: selectedFederation
-                                ? selectedFederation.connectInfo
-                                : '',
-                        })
-                    }}
-                />
+                {showInviteCode && (
+                    <SettingsItem
+                        image={<SvgImage name="InviteMembers" />}
+                        label={t('feature.federations.invite-members')}
+                        onPress={() => {
+                            navigation.navigate('FederationInvite', {
+                                inviteLink: selectedFederation.connectInfo,
+                            })
+                        }}
+                    />
+                )}
                 {federationsState.authenticatedGuardian !== null && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}

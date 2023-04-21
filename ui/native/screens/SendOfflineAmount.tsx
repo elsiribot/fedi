@@ -7,7 +7,7 @@ import { Alert, StyleSheet, View } from 'react-native'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
 import { useBridge } from '../state/hooks'
@@ -79,7 +79,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 containerStyle={styles(theme).textInput}
                 textAlign="center"
             />
-            <UsdAmount amountSats={Number(amount) as Sats} />
+            <FiatAmount amountSats={Number(amount) as Sats} />
             <View style={styles(theme).offlineContainer}>
                 <SvgImage
                     name="Offline"

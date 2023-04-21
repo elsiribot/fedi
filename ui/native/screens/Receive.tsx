@@ -7,7 +7,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
@@ -90,7 +90,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 returnKeyType="done"
                 containerStyle={styles(theme, insets).textInput}
             />
-            <UsdAmount amountSats={Number(amount) as Sats} />
+            <FiatAmount amountSats={Number(amount) as Sats} />
             <Button
                 fullWidth
                 title={`${t('words.request')}${

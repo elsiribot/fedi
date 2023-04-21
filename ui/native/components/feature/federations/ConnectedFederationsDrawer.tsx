@@ -11,13 +11,14 @@ import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import FederationUtils from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
 import {
     updateSelectedFederationId,
     useFederationsContext,
 } from '../../../state/contexts/FederationsContext'
-import { useBtcUsdPrice } from '../../../state/hooks'
+import { useBtcFiatPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -29,9 +30,11 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { t } = useTranslation()
-    const { convertSatsToUsdString } = useBtcUsdPrice()
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
 
     const amountInSats = amountUtils.msatToSat(federation.balance)
+
+    const showInviteCode = new FederationUtils(federation).getShowInviteCode()
 
     return (
         <View style={styles(theme).drawerItemLabel}>
@@ -47,19 +50,21 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 <Text style={styles(theme).subText}>
                     {`${amountUtils.formatNumber(amountInSats)} ${t(
                         'words.sats',
-                    )} ($${convertSatsToUsdString(amountInSats)})`}
+                    )} (${convertSatsToFormattedFiat(amountInSats)})`}
                 </Text>
             </View>
 
-            <Pressable
-                style={styles(theme).iconImage}
-                onPress={() => {
-                    navigation.navigate('FederationInvite', {
-                        inviteLink: federation.connectInfo,
-                    })
-                }}>
-                <SvgImage name="InviteMembers" />
-            </Pressable>
+            {showInviteCode && (
+                <Pressable
+                    style={styles(theme).iconImage}
+                    onPress={() => {
+                        navigation.navigate('FederationInvite', {
+                            inviteLink: federation.connectInfo,
+                        })
+                    }}>
+                    <SvgImage name="InviteMembers" />
+                </Pressable>
+            )}
         </View>
     )
 }

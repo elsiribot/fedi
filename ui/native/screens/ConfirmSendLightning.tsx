@@ -10,7 +10,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useFederationsContext } from '../state/contexts/FederationsContext'
@@ -111,7 +111,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                                 amountUtils.msatToSat(decodedInvoice.amount),
                             )} ${t('words.sats').toUpperCase()}`}
                         </Text>
-                        <UsdAmount
+                        <FiatAmount
                             amountSats={amountUtils.msatToSat(
                                 decodedInvoice.amount,
                             )}

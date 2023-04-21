@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native'
 import type { Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import UsdAmount from '../components/feature/wallet/UsdAmount'
+import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
@@ -64,7 +64,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
 
-            <UsdAmount amountSats={amountSats} />
+            <FiatAmount amountSats={amountSats} />
             <Input
                 onChangeText={e => setNote(e)}
                 value={note}
