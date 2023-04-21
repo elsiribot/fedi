@@ -1,12 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-    selectActiveFederation,
-    setActiveFederationId,
-} from '@fedi/common/redux'
-import { Invoice, Sats } from '@fedi/common/types'
-import AmountUtils from '@fedi/common/utils/AmountUtils'
+import { selectActiveFederation } from '@fedi/common/redux'
+import { Invoice } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
@@ -181,8 +177,8 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     return (
         <Dialog
             title={t('feature.send.send-bitcoin')}
-            description={`${t('words.balance')}: ${AmountUtils.formatNumber(
-                AmountUtils.msatToSat(balance),
+            description={`${t('words.balance')}: ${amountUtils.formatNumber(
+                amountUtils.msatToSat(balance),
             )} ${t('words.sats')}`}
             open={open}
             onOpenChange={onOpenChange}>

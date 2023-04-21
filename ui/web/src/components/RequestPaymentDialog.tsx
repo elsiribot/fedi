@@ -5,7 +5,7 @@ import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
-import AmountUtils from '@fedi/common/utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
@@ -71,7 +71,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         if (isLightning && !lightningInvoice) {
             promise = fedimint
                 .generateInvoice(
-                    AmountUtils.satToMsat(amount),
+                    amountUtils.satToMsat(amount),
                     note,
                     activeFederationId,
                 )
@@ -167,7 +167,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         width="full"
                         onClick={() => setIsRequesting(true)}
                         loading={isGeneratingQr}>
-                        {t('words.request')} {AmountUtils.formatNumber(amount)}{' '}
+                        {t('words.request')} {amountUtils.formatNumber(amount)}{' '}
                         {t('words.sats')}
                     </Button>
                 )}

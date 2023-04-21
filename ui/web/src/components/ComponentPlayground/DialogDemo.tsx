@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import cogIcon from '@fedi/common/assets/svgs/cog.svg'
-
 import { Button } from '../../components/Button'
 import { styled } from '../../styles'
 import { Dialog } from '../Dialog'

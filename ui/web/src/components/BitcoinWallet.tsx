@@ -9,7 +9,7 @@ import {
     selectBtcExchangeRate,
     selectCurrency,
 } from '@fedi/common/redux'
-import AmountUtils from '@fedi/common/utils/AmountUtils'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
@@ -46,16 +46,16 @@ export const BitcoinWallet: React.FC = () => {
             <Balance>
                 {!isPriceLoading && (
                     <Text variant="h2" weight="normal">
-                        {AmountUtils.formatFiat(
-                            AmountUtils.msatToFiat(balance, btcToFiatRate),
+                        {amountUtils.formatFiat(
+                            amountUtils.msatToFiat(balance, btcToFiatRate),
                             currency,
                         )}
                     </Text>
                 )}
                 {!isBalanceLoading && (
                     <Text variant="caption" weight="medium">
-                        {AmountUtils.formatNumber(
-                            AmountUtils.msatToSat(balance),
+                        {amountUtils.formatNumber(
+                            amountUtils.msatToSat(balance),
                         )}{' '}
                         {t('words.sats')}
                     </Text>
