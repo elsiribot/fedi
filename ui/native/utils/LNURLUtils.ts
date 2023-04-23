@@ -1,6 +1,6 @@
 import { bech32 } from 'bech32'
 
-import { FedimintRpc } from '@fedi/common/utils/fedimint'
+import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
 class LNURLUtils {
     static DECODE_LENGTH_LIMIT: number = 4096
@@ -25,7 +25,7 @@ class LNURLUtils {
         throw new Error('k1 not found')
     }
     async getToken(
-        fedimint: FedimintRpc,
+        fedimint: FedimintBridge,
         lnurl: string,
         federationId: string,
     ): Promise<string> {

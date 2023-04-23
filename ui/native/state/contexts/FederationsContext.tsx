@@ -10,16 +10,14 @@ import React, {
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
-    updateFederation,
 } from '@fedi/common/redux'
 
-import { BridgeEventEmitter, FederationEvent } from '../../bridge'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
     FEDERATION_USERNAME_ID_DB_KEY,
 } from '../../constants'
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppSelector } from '../hooks'
 
 // Define the structure of this Context and its initial state
 interface FederationsContextState {
@@ -63,10 +61,6 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         initialState,
     )
 
-    const reduxDispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const authenticatedGuardian = useAppSelector(
@@ -79,19 +73,6 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         () => ({ state, dispatch }),
         [state, dispatch],
     )
-
-    useEffect(() => {
-        const emitter = new BridgeEventEmitter()
-        const onFederationUpdate = (event: FederationEvent) => {
-            // Prevents a state update on the off-chance we get an event
-            // before the activeFederationId state is initialized
-            if (activeFederationId == null) return
-            reduxDispatch(updateFederation(event))
-        }
-        const federationListener =
-            emitter.onFederationUpdate(onFederationUpdate)
-        return () => federationListener.remove()
-    }, [activeFederationId, reduxDispatch])
 
     // Persist currently active federation
     useEffect(() => {

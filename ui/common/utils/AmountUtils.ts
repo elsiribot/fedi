@@ -7,6 +7,7 @@ import {
     MsatsString,
     Sats,
     SatsString,
+    SupportedCurrency,
     Usd,
     UsdString,
 } from '../types'
@@ -109,6 +110,102 @@ class AmountUtils {
     }
     formatNumber = (amount: number): string => {
         return accounting.formatNumber(amount, { precision: 0 })
+    }
+    formatSats = (sats: Sats): string => {
+        return Intl.NumberFormat().format(sats)
+    }
+    /**
+     * Given a fiat currency amount and the ISO code of the currency,
+     * return a string formatted in the user's default locale of the
+     * amount.
+     */
+    formatFiat = (
+        amount: number,
+        currency: SupportedCurrency,
+        options: { noSymbol?: boolean; locale?: string | string[] } = {},
+    ) => {
+        if (options.noSymbol) {
+            const fmtOptions = new Intl.NumberFormat(options.locale, {
+                style: 'currency',
+                currency,
+            }).resolvedOptions()
+            return amount.toLocaleString(options.locale, {
+                ...fmtOptions,
+                style: undefined,
+                currency: undefined,
+                currencySign: undefined,
+            })
+        } else {
+            return Intl.NumberFormat(options.locale, {
+                style: 'currency',
+                currency,
+                currencyDisplay: 'symbol',
+            }).format(amount)
+        }
+    }
+    /**
+     * Given a currency, return a symbol for it in the user's default locale.
+     */
+    getCurrencySymbol = (
+        currency: SupportedCurrency,
+        options: { locale?: string | string[] } = {},
+    ) => {
+        return (0)
+            .toLocaleString(options.locale, {
+                style: 'currency',
+                currency,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            })
+            .replace(/\d/g, '')
+            .trim()
+    }
+    /**
+     * Given a currency, return the number of decimals (significant digits)
+     * that is standard for that currency.
+     */
+    getCurrencyDecimals = (
+        currency: SupportedCurrency,
+        options: { locale?: string | string[] } = {},
+    ) => {
+        const fmtOptions = new Intl.NumberFormat(options.locale, {
+            style: 'currency',
+            currency,
+        }).resolvedOptions()
+        return fmtOptions.maximumFractionDigits
+    }
+    /**
+     * Returns the thousands separator character for the user's default locale.
+     */
+    getThousandsSeparator = (options: { locale?: string | string[] } = {}) => {
+        return Intl.NumberFormat(options.locale)
+            .format(11111)
+            .replace(/\p{Number}/gu, '')
+    }
+    /**
+     * Returns the decimal separator character for the user's default locale.
+     */
+    getDecimalSeparator = (options: { locale?: string | string[] } = {}) => {
+        return Intl.NumberFormat(options.locale)
+            .format(1.1)
+            .replace(/\p{Number}/gu, '')
+    }
+    /**
+     * Given a string amount that is formatted in the user's default locale,
+     * parse a floating point number from it. Handles removing symbols too.
+     */
+    parseFiatString = (
+        fiat: string,
+        options: { locale?: string | string[] } = {},
+    ): number => {
+        var thousandSeparator = this.getThousandsSeparator(options)
+        var decimalSeparator = this.getDecimalSeparator(options)
+        return parseFloat(
+            fiat
+                .replace(new RegExp('\\' + thousandSeparator, 'g'), '')
+                .replace(new RegExp('\\' + decimalSeparator), '.')
+                .replace(/[^0-9.-]+/g, ''),
+        )
     }
 }
 

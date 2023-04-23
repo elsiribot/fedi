@@ -137,3 +137,17 @@ export type SocialRecoveryEvent = {
     approvals: GuardianApproval[]
     remaining: number
 }
+
+export type RecoveryFileCreationEvent =
+    | { type: 'progress'; percentComplete: number }
+    | { type: 'failed'; errorCode: string }
+    | { type: 'complete' }
+
+// Map of event type name -> event data
+export interface FedimintBridgeEventMap {
+    log: LogEvent
+    federation: FederationEvent
+    transaction: TransactionEvent
+    socialRecovery: SocialRecoveryEvent
+    recoveryFileCreation: RecoveryFileCreationEvent
+}

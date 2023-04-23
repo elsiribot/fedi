@@ -4,10 +4,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
-import type { Invoice } from '@fedi/common/types'
+import type { Invoice, TransactionEvent } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { BridgeEventEmitter, fedimint, TransactionEvent } from '../bridge'
+import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
@@ -132,11 +132,11 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
 
     // Registers an event handler listening for the invoice to be paid
     useEffect(() => {
-        const emitter = new BridgeEventEmitter()
-        const transactionListener = emitter.onTransaction(
+        const unsubscribe = fedimint.addListener(
+            'transaction',
             transactionEventHandler,
         )
-        return () => transactionListener.remove()
+        return unsubscribe
     }, [transactionEventHandler])
 
     if (!decodedUri.body) {

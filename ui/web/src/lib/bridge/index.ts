@@ -1,4 +1,4 @@
-import { FedimintRpc } from '@fedi/common/utils/fedimint'
+import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
 let worker: Worker
 let callbackId = 0
@@ -30,7 +30,7 @@ async function fedimintRpc<Type = void>(
     }
 }
 
-export const fedimint = new FedimintRpc(fedimintRpc)
+export const fedimint = new FedimintBridge(fedimintRpc)
 
 export function initializeBridge() {
     return new Promise<void>((resolve, reject) => {
@@ -41,11 +41,11 @@ export function initializeBridge() {
                 return reject(new Error(e.data.error))
             }
             if (e.data.event) {
+                // Initialized event is just for us, not emitted.
                 if (e.data.event === 'initialized') {
                     return resolve()
                 }
-                // TODO: Other event handling?
-                console.log('bridge event', e.data.event)
+                fedimint.emit(e.data.event, JSON.parse(e.data.data))
             }
             if (e.data.token) {
                 const cb = callbacks.get(e.data.token)
@@ -60,4 +60,9 @@ export function initializeBridge() {
             }
         }
     })
+}
+
+// Expose bridge API to window for testing in development
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+    ;(window as any).fedimint = fedimint
 }

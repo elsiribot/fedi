@@ -49,6 +49,9 @@ export const globalStyles = globalCss({
     'input, button, textarea, select': {
         font: 'inherit',
     },
+    '::placeholder': {
+        color: theme.colors.grey,
+    },
     'p, h1, h2, h3, h4, h5, h6': {
         overflowWrap: 'break-word',
     },

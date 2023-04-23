@@ -4,7 +4,7 @@ import { css, theme } from '../styles'
 
 interface BaseProps {
     icon: React.FunctionComponent<React.SVGAttributes<SVGElement>>
-    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number
 }
 
 export type IconProps = BaseProps &
@@ -15,7 +15,12 @@ export const Icon: React.FC<IconProps> = ({
     size,
     ...props
 }) => {
-    return <SvgIcon className={svgCss({ size })} {...props} />
+    const className = svgCss({
+        size: typeof size !== 'number' ? size : undefined,
+    })
+    const style =
+        typeof size === 'number' ? { width: size, height: size } : undefined
+    return <SvgIcon className={className} style={style} {...props} />
 }
 
 const svgCss = css({

@@ -15,7 +15,7 @@ import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
 import { Images } from '../assets/images'
-import { BridgeEventEmitter, fedimint } from '../bridge'
+import { fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
@@ -99,9 +99,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     ])
 
     useEffect(() => {
-        const emitter = new BridgeEventEmitter()
-        const listener = emitter.onSocialRecovery(socialRecoveryHandler)
-        return () => listener.remove()
+        const unsubscribe = fedimint.addListener(
+            'socialRecovery',
+            socialRecoveryHandler,
+        )
+        return unsubscribe
     }, [navigation, socialRecoveryHandler])
 
     useEffect(() => {

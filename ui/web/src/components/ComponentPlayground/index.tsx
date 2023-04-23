@@ -5,9 +5,11 @@ import { styled, theme } from '../../styles'
 import { ContentBlock } from '../ContentBlock'
 import { AvatarDemo } from './AvatarDemo'
 import { ButtonDemo } from './ButtonDemo'
+import { DialogDemo } from './DialogDemo'
 import { FormDemo } from './FormDemo'
 import { IconDemo } from './IconDemo'
 import { TextDemo } from './TextDemo'
+import { ToastDemo } from './ToastDemo'
 
 export const ComponentPlayground: React.FC = () => {
     const demos = [
@@ -30,6 +32,14 @@ export const ComponentPlayground: React.FC = () => {
         {
             title: 'Icons',
             content: <IconDemo />,
+        },
+        {
+            title: 'Dialog',
+            content: <DialogDemo />,
+        },
+        {
+            title: 'Toast',
+            content: <ToastDemo />,
         },
     ]
 
