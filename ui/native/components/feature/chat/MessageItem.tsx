@@ -12,10 +12,7 @@ import {
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-} from '@fedi/common/redux'
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 

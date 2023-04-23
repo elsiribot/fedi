@@ -3,7 +3,7 @@ import { JID } from '@xmpp/jid'
 import { Buffer } from 'buffer'
 import { ImageSourcePropType } from 'react-native'
 
-import { MSats, Invoice, Federation } from '@fedi/common/types'
+import { MSats, Invoice } from '@fedi/common/types'
 
 import { SiteImages } from '../assets/images'
 import { DEFAULT_GROUP_NAME } from '../constants'

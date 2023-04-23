@@ -150,6 +150,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         recoveryInProgress,
         seedWords,
         toast,
+        activeFederation,
     ])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
