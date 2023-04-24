@@ -574,6 +574,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             password: string,
             connectionOptions: XmppConnectionOptions,
         ) => {
+            console.info('building persistent xmpp client')
             try {
                 const xmppConnectionOptions = {
                     service: connectionOptions.service,
@@ -742,7 +743,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             let newMessage, directMessageJson, parsedMessage, action
             const encrypted = stanza.getChild('encrypted')
             if (encrypted) {
-                console.debug('encrypted', encrypted.toString())
                 // First decrypt the payload
                 const header = encrypted.getChild('header')
                 const keys = header?.getChild('keys')
@@ -759,17 +759,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     encryptedPayloadContents =
                         encrypted.getChildText('backup-payload')
                 }
-                console.debug(
-                    'encryptedPayloadContents',
-                    encryptedPayloadContents,
-                )
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
                     new Key({ hex: senderPublicKey }),
                     privateKey,
                 )
 
-                console.debug('decryptedPayload', decryptedPayload)
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
@@ -782,7 +777,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             }
 
             parsedMessage = JSON.parse(directMessageJson as string)
-            console.debug('parsedMessage', parsedMessage)
             if (!parsedMessage) return
 
             newMessage = new Message({
@@ -837,7 +831,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             let newMessage, directMessageJson, parsedMessage, action
             const encrypted = message.getChild('encrypted')
             if (encrypted) {
-                console.debug('encrypted', encrypted.toString())
                 // First decrypt the payload
                 const header = encrypted.getChild('header')
                 const keys = header?.getChild('keys')
@@ -854,17 +847,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     encryptedPayloadContents =
                         encrypted.getChildText('backup-payload')
                 }
-                console.debug(
-                    'encryptedPayloadContents',
-                    encryptedPayloadContents,
-                )
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
                     new Key({ hex: senderPublicKey }),
                     privateKey,
                 )
 
-                console.log('decryptedPayload', decryptedPayload)
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
@@ -965,7 +953,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
                         const userJid = rosterItem?.getAttr('jid')
 
-                        console.debug('received roster item', userJid)
                         dispatch(
                             addToMembersSeen(
                                 new Member({
