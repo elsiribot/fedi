@@ -29,7 +29,14 @@ import {
     FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_MESSAGE_TYPES,
 } from '../../constants'
-import { Group, Key, Keypair, Member, Message } from '../../types'
+import {
+    Group,
+    Key,
+    Keypair,
+    Member,
+    Message,
+    XmppConnectionOptions,
+} from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { GetMessagesQuery } from '../../utils/XmlUtils'
 import { useAppSelector } from '../hooks'
@@ -576,7 +583,11 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // Takes a username + password to construct a new XMPP client
     // and store it in state for later use
     const buildXmppClient = useCallback(
-        (username: string, password: string, connectionOptions: any) => {
+        (
+            username: string,
+            password: string,
+            connectionOptions: XmppConnectionOptions,
+        ) => {
             try {
                 const xmppConnectionOptions = {
                     service: connectionOptions.service,
