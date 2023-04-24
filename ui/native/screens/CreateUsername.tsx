@@ -26,7 +26,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
-    const [username, setUsername] = useState<string>('oz_21m')
+    const [username, setUsername] = useState<string>('')
     const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
     const [buttonIsOverlapping, setButtonIsOverlapping] =
         useState<boolean>(false)
