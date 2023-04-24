@@ -168,6 +168,7 @@ export const fetchRoster = (
                         jid: jid(rm.getAttr('jid')),
                     })
                 })
+
                 console.debug('membersSeen', membersSeen)
 
                 dispatch(receiveMembersSeen(membersSeen))

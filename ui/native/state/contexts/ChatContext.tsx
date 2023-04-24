@@ -50,7 +50,6 @@ export const DEFAULT_GROUPS: Group[] = [
 // Define the structure of this Context and its initial state
 interface ChatContextState {
     xmppClient: Client | null
-    authenticatedMember: Member | null
     username: string | null
     messages: Message[]
     groups: Group[]
@@ -62,7 +61,6 @@ interface ChatContextState {
 const initialState: ChatContextState = {
     xmppClient: null,
     username: null,
-    authenticatedMember: null,
     messages: [],
     groups: DEFAULT_GROUPS,
     membersSeen: [],
@@ -84,7 +82,6 @@ enum ActionType {
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
     RESET_CHAT_STATE = 'RESET_CHAT_STATE',
     RESET_XMPP_CLIENT = 'RESET_XMPP_CLIENT',
-    SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_ENCRYPTION_KEYS = 'SET_ENCRYPTION_KEYS',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_GROUP = 'UPDATE_GROUP',
@@ -152,12 +149,6 @@ export function receiveGroups(groups: Group[]): Action {
     return {
         type: ActionType.RECEIVE_GROUPS,
         payload: groups,
-    }
-}
-export function setAuthenticatedMember(member: Member): Action {
-    return {
-        type: ActionType.SET_AUTHENTICATED_MEMBER,
-        payload: member,
     }
 }
 export function setEncryptionKeys(keys: Keypair): Action {
@@ -350,7 +341,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     if (
                         memberExists ||
                         // Never add ourselves to the roster
-                        im.username === state.authenticatedMember?.username
+                        state.xmppClient?.jid?.getLocal() === im.username
                     ) {
                         return false
                     } else {
@@ -380,11 +371,6 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 xmppClient: initialState.xmppClient,
-            }
-        case ActionType.SET_AUTHENTICATED_MEMBER:
-            return {
-                ...state,
-                authenticatedMember: action.payload,
             }
         case ActionType.SET_ENCRYPTION_KEYS:
             // Avoid unnecessary re-renders
@@ -1050,15 +1036,11 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // This effect publishes the user's pubkey to the server so other users
     // can encrypt messages before sending
     useEffect(() => {
-        if (
-            state.xmppClient &&
-            state.authenticatedMember &&
-            state.encryptionKeys
-        ) {
+        if (state.xmppClient && authenticatedMember && state.encryptionKeys) {
             const { publicKey } = state.encryptionKeys as Keypair
             publishPublicKey(publicKey, state.xmppClient)
         }
-    }, [state.encryptionKeys, state.authenticatedMember, state.xmppClient])
+    }, [state.encryptionKeys, authenticatedMember, state.xmppClient])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS
