@@ -18,6 +18,7 @@ import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
     selectAuthenticatedMember,
+    selectChatConnectionOptions,
     selectChatCredentials,
 } from '@fedi/common/redux'
 
@@ -26,10 +27,7 @@ import {
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
     FEDI_GENERAL_CHANNEL_GROUP,
-    XMPP_CONNECTION_OPTIONS,
-    XMPP_DOMAIN,
     XMPP_MESSAGE_TYPES,
-    XMPP_RESOURCE,
 } from '../../constants'
 import { Group, Key, Keypair, Member, Message } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
@@ -564,6 +562,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     )
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeChatCredentials = useAppSelector(selectChatCredentials)
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
+    )
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
@@ -575,10 +576,11 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // Takes a username + password to construct a new XMPP client
     // and store it in state for later use
     const buildXmppClient = useCallback(
-        (username: string, password: string) => {
+        (username: string, password: string, connectionOptions: any) => {
             try {
                 const xmppConnectionOptions = {
-                    ...XMPP_CONNECTION_OPTIONS,
+                    service: connectionOptions.service,
+                    resource: connectionOptions.resource,
                     username: username as string,
                     password: password as string,
                 }
@@ -586,7 +588,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
                 const xmpp = client(xmppConnectionOptions)
 
-                // debug(xmpp, true)
+                debug(xmpp, true)
                 // debug(xmpp, true, `OS=${Platform.OS}`)
                 /*
                     This ^ helps debug when testing with both ios + android
@@ -699,12 +701,14 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             buildXmppClient(
                 authenticatedMember.username,
                 activeChatCredentials.password,
+                activeChatConnectionOptions,
             )
         }
     }, [
         buildXmppClient,
         state.xmppClient,
         activeFederationId,
+        activeChatConnectionOptions,
         authenticatedMember?.username,
         activeChatCredentials?.password,
     ])
