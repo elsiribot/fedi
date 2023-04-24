@@ -15,6 +15,7 @@ import {
     ChatType,
     XmppCredentials,
 } from '../types'
+import FederationUtils from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
 
@@ -245,15 +246,21 @@ export const authenticateChat = createAsyncThunk<
                 refreshChatCredentials({ fedimint, federationId }),
             ).unwrap()
         }
+        const connectionOptions = selectChatConnectionOptions(getState())
 
         // Validate credentials, register if it's a new name
         const normalizedUsername = username.toLowerCase()
         const credentialsAreValid = await checkXmppUser(
             normalizedUsername,
             credentials.password,
+            connectionOptions,
         )
         if (!credentialsAreValid) {
-            await registerXmppUser(normalizedUsername, credentials.password)
+            await registerXmppUser(
+                normalizedUsername,
+                credentials.password,
+                connectionOptions,
+            )
         }
 
         // Backup the username to the fedimint bridge
@@ -285,6 +292,15 @@ export const selectAllChatMembers = (s: CommonState) =>
 
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
+
+export const selectChatConnectionOptions = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+    const chatOptions = new FederationUtils(
+        activeFederation!,
+    ).getChatServerOptions()
+
+    return chatOptions
+}
 
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,

@@ -1,3 +1,4 @@
+import { XMPP_RESOURCE } from '../constants/xmpp'
 import { Federation, SupportedCurrency } from '../types'
 
 export default class FederationUtils {
@@ -18,5 +19,20 @@ export default class FederationUtils {
         return this.federation.name.toLowerCase().includes('togo')
             ? false
             : true
+    }
+    // TODO: Refactor this when Federation.chatServerUrl is available
+    getChatServerOptions(): any {
+        let domain = 'xmpp-02.dev.fedibtc.com'
+        if (this.federation.name.toLowerCase().includes('togo')) {
+            domain = 'xmpp-03.dev.fedibtc.com'
+        }
+        const options = {
+            domain,
+            mucDomain: `muc.${domain}`,
+            resource: XMPP_RESOURCE,
+            service: `wss://${domain}/xmpp-websocket`,
+        }
+
+        return options
     }
 }
