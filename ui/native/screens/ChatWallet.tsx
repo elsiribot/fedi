@@ -7,7 +7,6 @@ import uuid from 'react-native-uuid'
 
 import {
     selectActiveFederation,
-    selectAuthenticatedMember,
     selectChatEncryptionKeys,
 } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
@@ -23,7 +22,14 @@ import {
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
+import {
+    Member,
+    Message,
+    Payment,
+    PaymentStatus,
+    Sats,
+    SatsString,
+} from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
@@ -31,13 +37,12 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
     const { sendDirectMessage } = useXmpp()
-    const { dispatch } = useChatContext()
+    const { state, dispatch } = useChatContext()
     const { recipient } = route.params
 
     const requestEcash = async () => {
@@ -47,7 +52,9 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             const ecashRequest = new Message({
                 id: uuid.v4(),
                 content: 'fedi:payment-request:',
-                sentBy: authenticatedMember,
+                sentBy: new Member({
+                    jid: state.xmppClient!.jid,
+                }),
                 sentTo: recipient,
                 sentAt: Date.now() / 1000,
                 payment: new Payment({
