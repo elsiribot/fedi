@@ -4,14 +4,14 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
+import { Key, Keypair } from '@fedi/common/types'
+
 import { DEFAULT_GROUP_NAME } from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
-    Key,
-    Keypair,
     Member,
     Message,
 } from '../../types'
@@ -384,7 +384,7 @@ export const sendDirectMessage = (
                     to: toJid,
                     message,
                     senderKeys: withEncryptionKeys as Keypair,
-                    recipientPublicKey: new Key({ hex: to.publicKeyHex! }),
+                    recipientPublicKey: { hex: to.publicKeyHex as string },
                     updatePayment,
                 }),
             )

@@ -4,14 +4,10 @@ import { Element } from 'ltx'
 import uuid from 'react-native-uuid'
 import { randomBytes } from 'tweetnacl'
 
+import { Key, Keypair } from '@fedi/common/types'
+
 import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants'
-import {
-    ArchiveQueryFilters,
-    ArchiveQueryPagination,
-    Key,
-    Keypair,
-    Message,
-} from '../types'
+import { ArchiveQueryFilters, ArchiveQueryPagination, Message } from '../types'
 import encryptionUtils from './EncryptionUtils'
 
 interface CommonXmppAttributes {

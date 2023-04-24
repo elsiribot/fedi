@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import type { ValidateEcashResponse } from '@fedi/common/types'
+import { Keypair } from '@fedi/common/types'
 
 import {
     updateMessage,
@@ -11,13 +12,7 @@ import {
 } from '../../../state/contexts/ChatContext'
 import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import {
-    Keypair,
-    Member,
-    Message,
-    Payment,
-    PaymentStatus,
-} from '../../../types'
+import { Member, Message, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPaymentActionsProps = {

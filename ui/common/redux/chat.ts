@@ -11,7 +11,7 @@ import {
     ChatMessage,
     ChatMember,
     ChatGroup,
-    KeypairHex,
+    Keypair,
     ChatType,
     XmppCredentials,
 } from '../types'
@@ -33,7 +33,7 @@ const initialFederationChatState = {
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
     websocketIsHealthy: false as boolean,
-    encryptionKeys: null as KeypairHex | null,
+    encryptionKeys: null as Keypair | null,
 }
 type FederationChatState = typeof initialFederationChatState
 
@@ -166,7 +166,7 @@ export const chatSlice = createSlice({
         },
         setChatEncryptionKeys(
             state,
-            action: FederationPayloadAction<{ encryptionKeys: KeypairHex }>,
+            action: FederationPayloadAction<{ encryptionKeys: Keypair }>,
         ) {
             const { federationId, encryptionKeys } = action.payload
             const federation = getFederationChatState(state, federationId)
@@ -280,6 +280,9 @@ const selectFederationChatState = (s: CommonState) =>
 
 export const selectChatCredentials = (s: CommonState) =>
     selectFederationChatState(s).credentials
+
+export const selectChatEncryptionKeys = (s: CommonState) =>
+    selectFederationChatState(s).encryptionKeys
 
 export const selectAuthenticatedMember = (s: CommonState) =>
     selectFederationChatState(s).authenticatedMember

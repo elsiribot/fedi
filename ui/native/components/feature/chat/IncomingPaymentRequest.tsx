@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import {

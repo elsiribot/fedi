@@ -46,9 +46,13 @@ export enum ChatPaymentStatus {
     paid,
 }
 
-export interface KeypairHex {
-    publicKey: string
-    privateKey: string
+export interface Key {
+    hex: string
+}
+
+export interface Keypair {
+    publicKey: Key
+    privateKey: Key
 }
 
 export interface ChatMember {

@@ -1,9 +1,9 @@
+import { Keypair } from '@fedi/common/types'
+
 import { XMPP_DEFAULT_PAGE_LIMIT } from '../../constants'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
-    Key,
-    Keypair,
     Message,
 } from '../../types'
 import xmlUtils, {
@@ -104,17 +104,17 @@ describe('buildQuery: EncryptedDirectChatMessage', () => {
     })
 
     const testKeypair: Keypair = {
-        publicKey: new Key({
+        publicKey: {
             hex: '0000000000000000000000000000000000000000000000000000000000000000',
-        }),
-        privateKey: new Key({
+        },
+        privateKey: {
             hex: '1111111111111111111111111111111111111111111111111111111111111111',
-        }),
+        },
     }
 
-    const testRecipientPublicKey = new Key({
+    const testRecipientPublicKey = {
         hex: '2222222222222222222222222222222222222222222222222222222222222222',
-    })
+    }
 
     describe.each([true, false])('updatePayment: %s', updatePayment => {
         const encryptedDirectChatMessage = new EncryptedDirectChatMessage({

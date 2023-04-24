@@ -5,7 +5,7 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
@@ -16,7 +16,7 @@ import {
 } from '../state/contexts/ChatContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Keypair, Member, Message } from '../types'
+import { Member, Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>

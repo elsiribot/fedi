@@ -9,6 +9,7 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
@@ -21,7 +22,7 @@ import {
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Keypair, Message, Payment, PaymentStatus, Sats } from '../types'
+import { Message, Payment, PaymentStatus, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>

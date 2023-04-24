@@ -1,12 +1,12 @@
 import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
+import { Key, Keypair } from '@fedi/common/types'
+
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
-    Key,
-    Keypair,
     Member,
     Message,
 } from '../../types'

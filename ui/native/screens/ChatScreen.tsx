@@ -4,6 +4,8 @@ import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { Keypair } from '@fedi/common/types'
+
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
 import { useChatContext } from '../state/contexts/ChatContext'
