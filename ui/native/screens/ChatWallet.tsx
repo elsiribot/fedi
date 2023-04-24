@@ -42,8 +42,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
     const { sendDirectMessage } = useXmpp()
-    const { state, dispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
+    const { state, dispatch } = useChatContext()
     const { recipient } = route.params
 
     const requestEcash = async () => {
