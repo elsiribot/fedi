@@ -4,11 +4,7 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import {
-    DEFAULT_GROUP_NAME,
-    XMPP_DOMAIN,
-    XMPP_MUC_DOMAIN,
-} from '../../constants'
+import { DEFAULT_GROUP_NAME } from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
@@ -51,7 +47,9 @@ export const addMemberToRoster = (
             const { iqCaller } = xmppClient! as Client
             const roomConfigQueryXml = xmlUtils.buildQuery(
                 new AddToRosterQuery({
-                    newRosterItem: `${member.username}@${XMPP_DOMAIN}`,
+                    newRosterItem: `${
+                        member.username
+                    }@${xmppClient.jid.getDomain()}`,
                     from: xmppClient!.jid!.toString(),
                 }),
             )
@@ -78,7 +76,7 @@ export const changeMucRoomName = (
                 new SetRoomConfigQuery({
                     roomName: updatedName,
                     from: xmppClient!.jid!.toString(),
-                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                    to: `${group.id}@muc.${xmppClient.jid.getDomain()}`,
                 }),
             )
             await iqCaller.request(roomConfigQueryXml)
@@ -193,7 +191,7 @@ export const fetchMucRoomConfig = (
             const roomConfigQueryXml = xmlUtils.buildQuery(
                 new GetRoomConfigQuery({
                     from: xmppClient!.jid!.toString(),
-                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                    to: `${group.id}@muc.${xmppClient.jid!.getDomain()}`,
                 }),
             )
             const result = await iqCaller.request(roomConfigQueryXml)
@@ -251,7 +249,9 @@ export const getUniqueGroupId = (
         try {
             const { iqCaller } = xmppClient! as Client
             const uniqeRoomNameXml = xmlUtils.buildQuery(
-                new UniqueRoomNameQuery(),
+                new UniqueRoomNameQuery({
+                    to: `muc.${xmppClient.jid.getDomain()}`,
+                }),
             )
             const response = await iqCaller.request(uniqeRoomNameXml)
             const roomName = response.getChildText('unique') as string
@@ -273,11 +273,12 @@ export const enterMucRoom = (
 
         try {
             const fromUser = xmppClient!.jid!.toString()
+            const toGroup = `${group.id}@muc.${xmppClient.jid!.getDomain()}`
 
             const enterMucRoomPresence = xmlUtils.buildPresence(
                 new EnterMucRoomPresence({
                     from: fromUser,
-                    groupId: group.id,
+                    toGroup,
                 }),
             )
             const onStanzaReceived = async (stanza: Element) => {
@@ -300,7 +301,9 @@ export const enterMucRoom = (
                                 new SetRoomConfigQuery({
                                     roomName: group.name || DEFAULT_GROUP_NAME,
                                     from: fromUser,
-                                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                    to: `${
+                                        group.id
+                                    }@muc.${xmppClient.jid!.getDomain()}`,
                                 }),
                             )
                             console.info('Sending config for new group')
@@ -403,11 +406,12 @@ export const sendGroupMessage = (
 
         try {
             const fromJid = xmppClient!.jid?.toString()
+            const toGroup = `${to.id}@muc.${xmppClient.jid!.getDomain()}`
 
             const groupChatMessageXml = xmlUtils.buildMessage(
                 new GroupChatMessage({
                     from: fromJid,
-                    toGroup: to,
+                    to: toGroup,
                     message,
                 }),
             )
