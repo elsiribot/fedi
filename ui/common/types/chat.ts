@@ -83,8 +83,14 @@ export interface XmppCredentials {
 }
 
 export interface XmppConnectionOptions {
+    // The domain where the Prosody chat server is hosted
     domain?: string
+    // This is the XMPP Multi-User-Chat (MUC) domain defined
+    // in prosody.config.lua on the XMPP server
+    // https://prosody.im/doc/modules/mod_muc
     mucDomain?: string
+    // Should always just be 'chat' for now...
     resource?: string
+    // Websocket URL to connect to the Prosody chat server
     service?: string
 }
