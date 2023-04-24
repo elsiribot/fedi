@@ -1,5 +1,5 @@
 import { XMPP_RESOURCE } from '../constants/xmpp'
-import { Federation, SupportedCurrency } from '../types'
+import { Federation, SupportedCurrency, XmppConnectionOptions } from '../types'
 
 export default class FederationUtils {
     private federation: Federation
@@ -21,7 +21,7 @@ export default class FederationUtils {
             : true
     }
     // TODO: Refactor this when Federation.chatServerUrl is available
-    getChatServerOptions(): any {
+    getChatServerOptions(): XmppConnectionOptions {
         let domain = 'xmpp-02.dev.fedibtc.com'
         if (this.federation.name.toLowerCase().includes('togo')) {
             domain = 'xmpp-03.dev.fedibtc.com'
