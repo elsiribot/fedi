@@ -732,8 +732,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const fromJid = jid(from)
             let userJid: JID = jid(
                 fromJid.getResource(),
-                XMPP_DOMAIN,
-                XMPP_RESOURCE,
+                fromJid.getDomain().replace('muc.', ''),
+                fromJid.getResource(),
             )
             dispatch(addToMembersSeen(new Member({ jid: userJid })))
         }
