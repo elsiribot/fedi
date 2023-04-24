@@ -21,7 +21,7 @@ export default class FederationUtils {
             : true
     }
     // TODO: Refactor this when Federation.chatServerUrl is available
-    getChatServerOptions(): XmppConnectionOptions {
+    getChatServerOptions(): XmppConnectionOptions | null {
         let domain = 'xmpp-02.dev.fedibtc.com'
         if (this.federation.name.toLowerCase().includes('togo')) {
             domain = 'xmpp-03.dev.fedibtc.com'

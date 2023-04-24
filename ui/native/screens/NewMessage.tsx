@@ -96,16 +96,18 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         <Pressable
                             style={styles(theme, insets).createGroupContainer}
                             onPress={async () => {
-                                const { domain, resource } =
-                                    activeChatConnectionOptions
-                                const newMember = new Member({
-                                    jid: jid(
-                                        `${usernameFilter}@${domain}/${resource}`,
-                                    ),
-                                })
-                                navigation.replace('DirectChat', {
-                                    member: newMember,
-                                })
+                                if (activeChatConnectionOptions) {
+                                    const { domain, resource } =
+                                        activeChatConnectionOptions
+                                    const newMember = new Member({
+                                        jid: jid(
+                                            `${usernameFilter}@${domain}/${resource}`,
+                                        ),
+                                    })
+                                    navigation.replace('DirectChat', {
+                                        member: newMember,
+                                    })
+                                }
                             }}>
                             <SvgImage name="SocialPeople" />
                             <Text

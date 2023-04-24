@@ -93,6 +93,7 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
+        "chat-unavailable": "This federation does not have a chat server.",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",

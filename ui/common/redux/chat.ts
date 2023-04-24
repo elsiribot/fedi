@@ -248,6 +248,11 @@ export const authenticateChat = createAsyncThunk<
         }
         const connectionOptions = selectChatConnectionOptions(getState())
 
+        if (connectionOptions === null) {
+            console.error('No chat connectionOptions for this federation')
+            throw new Error('errors.chat-unavailable')
+        }
+
         // Validate credentials, register if it's a new name
         const normalizedUsername = username.toLowerCase()
         const credentialsAreValid = await checkXmppUser(
