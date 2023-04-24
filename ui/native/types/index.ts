@@ -1,6 +1,5 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
-import { Buffer } from 'buffer'
 import { ImageSourcePropType } from 'react-native'
 
 import { MSats, Invoice } from '@fedi/common/types'
