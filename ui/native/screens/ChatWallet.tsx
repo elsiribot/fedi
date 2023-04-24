@@ -8,6 +8,7 @@ import uuid from 'react-native-uuid'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectChatEncryptionKeys,
 } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -32,10 +33,11 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
     const { sendDirectMessage } = useXmpp()
-    const { state, dispatch } = useChatContext()
+    const { dispatch } = useChatContext()
     const { recipient } = route.params
 
     const requestEcash = async () => {
@@ -54,7 +56,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     updatedAt: Date.now() / 1000,
                 }),
             })
-            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             sendDirectMessage(recipient, ecashRequest, withEncryptionKeys)
             dispatch(addToMessages(ecashRequest))
             dispatch(addToMembersSeen(recipient))

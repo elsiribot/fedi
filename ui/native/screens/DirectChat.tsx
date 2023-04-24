@@ -5,6 +5,7 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
+import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 
 import MessageInput from '../components/feature/chat/MessageInput'
@@ -24,7 +25,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { member } = route.params
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const { state, dispatch } = useChatContext()
     const { getPublicKeyFor, sendDirectMessage } = useXmpp()
     const { member: currentMember } = route.params
@@ -73,11 +74,13 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
                 id: uuid.v4(),
                 content: messageText,
                 sentAt: Date.now() / 1000,
-                sentBy: authenticatedMember,
+                sentBy: new Member({
+                    jid: state.xmppClient?.jid,
+                }),
                 sentTo: currentMember,
             })
 
-            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             sendDirectMessage(currentMember, newMessage, withEncryptionKeys)
             dispatch(addToMessages(newMessage))
             dispatch(addToMembersSeen(currentMember))

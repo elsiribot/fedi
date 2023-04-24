@@ -4,13 +4,15 @@ import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
 import { useChatContext } from '../state/contexts/ChatContext'
+import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { ArchiveQueryPagination, Keypair } from '../types'
+import { ArchiveQueryPagination } from '../types'
 import {
     NavigationHook,
     RootStackParamList,
@@ -27,8 +29,8 @@ const ChatScreen: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { fetchMessagesFromArchive, fetchRoster, publishPublicKey } =
         useXmpp()
-    const { websocketIsHealthy, lastFetchedMessageId, encryptionKeys } =
-        useChatContext().state
+    const { websocketIsHealthy, lastFetchedMessageId } = useChatContext().state
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
 
     useEffect(() => {
         if (websocketIsHealthy) {
@@ -53,13 +55,13 @@ const ChatScreen: React.FC<Props> = () => {
     }, [websocketIsHealthy, fetchRoster])
 
     useEffect(() => {
-        if (websocketIsHealthy && encryptionKeys) {
+        if (websocketIsHealthy && activeChatEncryptionKeys) {
             // Here we make sure this public key is published for other users
             // to subscribe to and encrypt messages sent to this user
-            const { publicKey } = encryptionKeys as Keypair
+            const { publicKey } = activeChatEncryptionKeys as Keypair
             publishPublicKey(publicKey)
         }
-    }, [encryptionKeys, publishPublicKey, websocketIsHealthy])
+    }, [activeChatEncryptionKeys, publishPublicKey, websocketIsHealthy])
 
     return (
         <View style={styles(theme).container}>

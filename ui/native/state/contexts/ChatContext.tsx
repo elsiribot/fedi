@@ -20,7 +20,10 @@ import {
     selectAuthenticatedMember,
     selectChatConnectionOptions,
     selectChatCredentials,
+    selectChatEncryptionKeys,
+    setChatEncryptionKeys,
 } from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 
 import {
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -29,17 +32,10 @@ import {
     FEDI_GENERAL_CHANNEL_GROUP,
     XMPP_MESSAGE_TYPES,
 } from '../../constants'
-import {
-    Group,
-    Key,
-    Keypair,
-    Member,
-    Message,
-    XmppConnectionOptions,
-} from '../../types'
+import { Group, Member, Message, XmppConnectionOptions } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { GetMessagesQuery } from '../../utils/XmlUtils'
-import { useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { publishPublicKey } from '../operations/chat'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -56,7 +52,6 @@ interface ChatContextState {
     membersSeen: Member[]
     lastFetchedMessageId: string | null
     websocketIsHealthy: boolean
-    encryptionKeys: Keypair | null
 }
 const initialState: ChatContextState = {
     xmppClient: null,
@@ -66,7 +61,6 @@ const initialState: ChatContextState = {
     membersSeen: [],
     lastFetchedMessageId: null,
     websocketIsHealthy: false,
-    encryptionKeys: null,
 }
 type AppState = typeof initialState
 
@@ -372,15 +366,6 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 xmppClient: initialState.xmppClient,
             }
-        case ActionType.SET_ENCRYPTION_KEYS:
-            // Avoid unnecessary re-renders
-            if (isEqual(action.payload, state.encryptionKeys)) {
-                return state
-            }
-            return {
-                ...state,
-                encryptionKeys: action.payload,
-            }
         case ActionType.SET_XMPP_CLIENT:
             return {
                 ...state,
@@ -550,11 +535,13 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
 
+    const reduxDispatch = useAppDispatch()
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeChatCredentials = useAppSelector(selectChatCredentials)
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )
@@ -751,7 +738,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 let encryptedPayloadContents = encrypted.getChildText('payload')
 
                 const { privateKey, publicKey } =
-                    state.encryptionKeys as Keypair
+                    activeChatEncryptionKeys as Keypair
 
                 // If we sent this message, decrypt the backup-payload
                 // instead since we encrypted it to our own pubkey
@@ -761,7 +748,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 }
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
-                    new Key({ hex: senderPublicKey }),
+                    { hex: senderPublicKey as string },
                     privateKey,
                 )
 
@@ -839,7 +826,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 let encryptedPayloadContents = encrypted.getChildText('payload')
 
                 const { privateKey, publicKey } =
-                    state.encryptionKeys as Keypair
+                    activeChatEncryptionKeys as Keypair
 
                 // If we sent this message, decrypt the backup-payload
                 // instead since we encrypted it to our own pubkey
@@ -849,7 +836,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 }
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
-                    new Key({ hex: senderPublicKey }),
+                    { hex: senderPublicKey as string },
                     privateKey,
                 )
 
@@ -927,7 +914,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
         console.info('setting onStanzaReceived lisetener')
 
-        if (state.xmppClient && state.encryptionKeys) {
+        if (state.xmppClient && activeChatEncryptionKeys) {
             state.xmppClient?.on('stanza', onStanzaReceived)
         }
 
@@ -935,7 +922,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             console.info('removeListener onStanzaReceived lisetener')
             state.xmppClient?.removeListener('stanza', onStanzaReceived)
         }
-    }, [state.encryptionKeys, state.xmppClient])
+    }, [activeChatEncryptionKeys, state.xmppClient])
 
     const configureXmppQueryListeners = useCallback(() => {
         // Monitor for incoming iq responses
@@ -1010,24 +997,27 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const derivedKeypair = encryptionUtils.generateDeterministicKeyPair(
                 activeChatCredentials.keypairSeed,
             )
-            dispatch(setEncryptionKeys(derivedKeypair))
-            // reduxDispatch(
-            //     setChatEncryptionKeys({
-            //         federationId: activeFederationId!,
-            //         encryptionKeys: derivedKeypair,
-            //     }),
-            // )
+            reduxDispatch(
+                setChatEncryptionKeys({
+                    federationId: activeFederationId!,
+                    encryptionKeys: derivedKeypair,
+                }),
+            )
         }
-    }, [activeChatCredentials?.keypairSeed])
+    }, [activeFederationId, activeChatCredentials?.keypairSeed, reduxDispatch])
 
     // This effect publishes the user's pubkey to the server so other users
     // can encrypt messages before sending
     useEffect(() => {
-        if (state.xmppClient && authenticatedMember && state.encryptionKeys) {
-            const { publicKey } = state.encryptionKeys as Keypair
+        if (
+            state.xmppClient &&
+            authenticatedMember &&
+            activeChatEncryptionKeys
+        ) {
+            const { publicKey } = activeChatEncryptionKeys as Keypair
             publishPublicKey(publicKey, state.xmppClient)
         }
-    }, [state.encryptionKeys, authenticatedMember, state.xmppClient])
+    }, [activeChatEncryptionKeys, authenticatedMember, state.xmppClient])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS

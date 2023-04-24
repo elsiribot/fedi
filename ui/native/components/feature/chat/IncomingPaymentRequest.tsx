@@ -3,6 +3,10 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import {
+    selectActiveFederation,
+    selectChatEncryptionKeys,
+} from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -13,14 +17,7 @@ import {
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import {
-    Member,
-    Message,
-    MSats,
-    Payment,
-    PaymentStatus,
-    Keypair,
-} from '../../../types'
+import { Member, Message, MSats, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPaymentActionsProps = {
@@ -144,7 +141,8 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
     const { sendDirectMessage } = useXmpp()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { state, dispatch } = useChatContext()
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
+    const { dispatch } = useChatContext()
     const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
     const [generatedEcashToken, setGeneratedEcashToken] = useState<string>('')
 
@@ -158,7 +156,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                     status: PaymentStatus.rejected,
                 },
             })
-            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
                 message.sentBy as Member,
@@ -236,7 +234,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
                 })
                 setGeneratedEcashToken('')
                 dispatch(updateMessage(acceptedPaymentMessage))
-                const withEncryptionKeys = state.encryptionKeys as Keypair
+                const withEncryptionKeys = activeChatEncryptionKeys as Keypair
                 const updatePayment = true
                 sendDirectMessage(
                     message.sentBy as Member,
@@ -267,7 +265,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
         generatedEcashToken,
         message,
         sendDirectMessage,
-        state.encryptionKeys,
+        activeChatEncryptionKeys,
     ])
 
     useEffect(() => {

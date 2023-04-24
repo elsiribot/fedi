@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import type { ValidateEcashResponse } from '@fedi/common/types'
 import { Keypair } from '@fedi/common/types'
 
@@ -10,7 +11,7 @@ import {
     updateMessage,
     useChatContext,
 } from '../../../state/contexts/ChatContext'
-import { useBridge } from '../../../state/hooks'
+import { useAppSelector, useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
 import { Member, Message, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -28,7 +29,8 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
     const { sendDirectMessage } = useXmpp()
-    const { state, dispatch } = useChatContext()
+    const { dispatch } = useChatContext()
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
     // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
     const [validatingToken, setValidatingToken] = useState<boolean>(false)
@@ -49,7 +51,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     token: null,
                 },
             })
-            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
                 sentTo as Member,
@@ -66,7 +68,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         payment,
         sendDirectMessage,
         sentTo,
-        state.encryptionKeys,
+        activeChatEncryptionKeys,
     ])
 
     useEffect(() => {
@@ -199,7 +201,8 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
 }: OutgoingPaymentRequestProps) => {
     const { theme } = useTheme()
     const { sendDirectMessage } = useXmpp()
-    const { state, dispatch } = useChatContext()
+    const { dispatch } = useChatContext()
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
 
     const cancelPayment = () => {
         try {
@@ -211,7 +214,7 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
                     status: PaymentStatus.canceled,
                 },
             })
-            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
                 message.sentTo as Member,
