@@ -6,7 +6,10 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { selectChatConnectionOptions } from '@fedi/common/redux'
+import {
+    selectAuthenticatedMember,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
@@ -25,7 +28,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { fetchRoster } = useXmpp()
     const { state } = useChatContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
-    const { authenticatedMember } = useChatContext().state
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )

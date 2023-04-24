@@ -5,6 +5,8 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
+
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import {
@@ -12,6 +14,7 @@ import {
     addToMessages,
     useChatContext,
 } from '../state/contexts/ChatContext'
+import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { Keypair, Member, Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -21,6 +24,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { member } = route.params
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const { state, dispatch } = useChatContext()
     const { getPublicKeyFor, sendDirectMessage } = useXmpp()
     const { member: currentMember } = route.params
@@ -69,7 +73,7 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
                 id: uuid.v4(),
                 content: messageText,
                 sentAt: Date.now() / 1000,
-                sentBy: state.authenticatedMember,
+                sentBy: authenticatedMember,
                 sentTo: currentMember,
             })
 
