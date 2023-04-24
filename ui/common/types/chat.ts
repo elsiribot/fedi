@@ -81,3 +81,10 @@ export interface XmppCredentials {
     password: string
     keypairSeed: string
 }
+
+export interface XmppConnectionOptions {
+    domain?: string
+    mucDomain?: string
+    resource?: string
+    service?: string
+}
