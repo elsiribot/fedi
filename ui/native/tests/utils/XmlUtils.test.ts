@@ -1,8 +1,7 @@
-import { XMPP_DEFAULT_PAGE_LIMIT, XMPP_MUC_DOMAIN } from '../../constants'
+import { XMPP_DEFAULT_PAGE_LIMIT } from '../../constants'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
-    Group,
     Key,
     Keypair,
     Message,
@@ -24,7 +23,6 @@ import xmlUtils, {
 
 jest.mock('../../constants', () => ({
     XMPP_DEFAULT_PAGE_LIMIT: 10,
-    XMPP_MUC_DOMAIN: 'domain',
 }))
 jest.mock('../../localization/i18n', () => ({
     i18n: {
@@ -35,15 +33,15 @@ jest.mock('../../localization/i18n', () => ({
 describe('buildPresence: EnterMucRoom', () => {
     const memberNickname = 'fromjid'
     const from = `${memberNickname}@domain`
-    const groupId = 'group-id'
+    const toGroup = 'group-id@muc.domain.com'
 
     it('response contains the correct values and attributes', () => {
         const result = xmlUtils.buildPresence(
-            new EnterMucRoomPresence({ from, groupId }),
+            new EnterMucRoomPresence({ from, toGroup }),
         )
         const stringified = result.toString()
 
-        const toValue = `${groupId}@${XMPP_MUC_DOMAIN}/${memberNickname}`
+        const toValue = `${toGroup}/${memberNickname}`
 
         expect(stringified).toContain(from)
         expect(stringified).toContain(toValue)
@@ -60,11 +58,13 @@ describe('buildPresence: EnterMucRoom', () => {
 })
 
 describe('buildMessage: GroupChatMessage', () => {
+    const toGroup = 'groupid@muc.domain.com'
+
     it('response contains all of the provided values', () => {
         const result = xmlUtils.buildMessage(
             new GroupChatMessage({
                 from: 'fromjid@domain',
-                toGroup: new Group({ id: 'groupid' }),
+                to: toGroup,
                 message: new Message({
                     id: 'group-chat-message-uuid',
                     content: 'This is a test message',
@@ -76,7 +76,7 @@ describe('buildMessage: GroupChatMessage', () => {
         const body = result.getChild('body')?.getText()
 
         expect(fromAttr).toEqual('fromjid@domain')
-        expect(toAttr).toEqual('groupid@domain')
+        expect(toAttr).toEqual(toGroup)
         expect(body).toEqual('This is a test message')
     })
 
@@ -84,7 +84,7 @@ describe('buildMessage: GroupChatMessage', () => {
         const result = xmlUtils.buildMessage(
             new GroupChatMessage({
                 from: 'fromjid@domain',
-                toGroup: new Group({ id: 'groupid' }),
+                to: toGroup,
                 message: new Message({
                     id: 'group-chat-message-uuid',
                     content: 'This is a test message',
@@ -519,7 +519,8 @@ describe('buildQuery: SetRoomConfig', () => {
 })
 
 describe('buildQuery: UniqueRoomNameQuery', () => {
-    const uniqueRoomNameQuery = new UniqueRoomNameQuery()
+    const mucDomain = 'muc.domain.com'
+    const uniqueRoomNameQuery = new UniqueRoomNameQuery({ to: mucDomain })
     const result = xmlUtils.buildQuery(uniqueRoomNameQuery)
 
     it('response contains correct id, to, and type attributes', () => {
@@ -531,7 +532,7 @@ describe('buildQuery: UniqueRoomNameQuery', () => {
         expect(idAttr.startsWith(UniqueRoomNameQuery.id)).toBeTruthy()
 
         expect(toAttr).toBeTruthy()
-        expect(toAttr).toBe(XMPP_MUC_DOMAIN)
+        expect(toAttr).toBe(mucDomain)
 
         expect(typeAttr).toBeTruthy()
         expect(typeAttr).toBe('get')
