@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { selectChatConnectionOptions } from '@fedi/common/redux'
+
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import { XMPP_DOMAIN, XMPP_RESOURCE } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
-import { useDebouncedEffect } from '../state/hooks'
+import { useAppSelector, useDebouncedEffect } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { Member } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -25,6 +26,9 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { state } = useChatContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
     const { authenticatedMember } = useChatContext().state
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
+    )
 
     // filter out members if usernameFilter has text to filter with
     const filteredMembers = usernameFilter
@@ -89,9 +93,11 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         <Pressable
                             style={styles(theme, insets).createGroupContainer}
                             onPress={async () => {
+                                const { domain, resource } =
+                                    activeChatConnectionOptions
                                 const newMember = new Member({
                                     jid: jid(
-                                        `${usernameFilter}@${XMPP_DOMAIN}/${XMPP_RESOURCE}`,
+                                        `${usernameFilter}@${domain}/${resource}`,
                                     ),
                                 })
                                 navigation.replace('DirectChat', {
