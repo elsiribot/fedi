@@ -5,8 +5,6 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
-
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import {
@@ -14,7 +12,7 @@ import {
     updateGroup,
     useChatContext,
 } from '../state/contexts/ChatContext'
-import { useAppSelector, usePrevious } from '../state/hooks'
+import { usePrevious } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { Group, Member, Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -23,7 +21,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const { state, dispatch } = useChatContext()
     const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
     const { group: currentGroup } = route.params
