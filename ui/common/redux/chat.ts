@@ -295,11 +295,10 @@ export const selectAllChatGroups = (s: CommonState) =>
 
 export const selectChatConnectionOptions = (s: CommonState) => {
     const activeFederation = selectActiveFederation(s)
-    const chatOptions = new FederationUtils(
-        activeFederation!,
-    ).getChatServerOptions()
 
-    return chatOptions
+    return activeFederation
+        ? new FederationUtils(activeFederation).getChatServerOptions()
+        : null
 }
 
 export const selectChatMemberMap = createSelector(
