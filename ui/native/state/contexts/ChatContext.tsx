@@ -671,9 +671,11 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     }, [state.xmppClient])
 
     // This effect instantiates the XMPP client with a websocket connection
-    // and requires a activeFederationId with username + password
+    // and requires activeChatConnectionOptions with username + password
     useEffect(() => {
-        if (activeFederationId === null) return
+        // If this is null, either there is no active federation
+        // or the active federation does not have a chat server configured
+        if (activeChatConnectionOptions === null) return
         // a username must be set before an XMPP connection is attempted
         // this should be set after creating a username for new members
         // or after recovering from backup for existing members
@@ -692,7 +694,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     }, [
         buildXmppClient,
         state.xmppClient,
-        activeFederationId,
         activeChatConnectionOptions,
         authenticatedMember?.username,
         activeChatCredentials?.password,
