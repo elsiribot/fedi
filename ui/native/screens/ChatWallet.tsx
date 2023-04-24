@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
@@ -13,7 +14,7 @@ import {
     addToMessages,
     useChatContext,
 } from '../state/contexts/ChatContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import {
     Keypair,
@@ -30,7 +31,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<SatsString>('' as SatsString)
     const { sendDirectMessage } = useXmpp()
@@ -75,7 +76,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             <Text caption>
                 {`${t('words.balance')}: `}
                 {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(selectedFederation?.balance!),
+                    amountUtils.msatToSat(activeFederation?.balance!),
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
@@ -101,7 +102,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress={() => {}}
                     containerStyle={styles(theme).buttonContainer}
                     disabled={
-                        !(selectedFederation!.balance > 0) ||
+                        !(activeFederation!.balance > 0) ||
                         !Number(amount) ||
                         isLoading ||
                         true

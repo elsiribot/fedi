@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
 import type { Invoice } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
@@ -13,8 +14,7 @@ import { fedimint } from '../bridge'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { MSats } from '../types'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -35,7 +35,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
     const { toast } = useEnvironmentContext().state
     const { payInvoice } = useBridge()
     const { lightningUri } = route.params
@@ -99,7 +99,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             <Text caption>
                 {`${t('words.balance')}: `}
                 {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(selectedFederation?.balance!),
+                    amountUtils.msatToSat(activeFederation?.balance!),
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>

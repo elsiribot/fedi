@@ -4,10 +4,12 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
+
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -18,10 +20,10 @@ export type Props = NativeStackScreenProps<
 const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
 
     const onChooseSocialRecovery = () => {
-        if (selectedFederation!.socialRecoveryActive) {
+        if (activeFederation!.socialRecoveryActive) {
             navigation.navigate('CompleteSocialRecovery')
         } else {
             navigation.navigate('LocateSocialRecovery')
@@ -32,7 +34,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
         <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.choose-method-instructions', {
-                    federation: selectedFederation?.name,
+                    federation: activeFederation?.name,
                 })}
             </Text>
 

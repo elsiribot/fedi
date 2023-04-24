@@ -2,17 +2,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
+
+import {
+    authenticateChat,
+    changeAuthenticatedGuardian,
+    refreshFederations,
+    setActiveFederationId,
+    setAuthenticatedMember,
+} from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
 import {
+    ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
-    SELECTED_FEDERATION_ID_DB_KEY,
+    FEDERATION_USERNAME_ID_DB_KEY,
 } from '../constants'
 import {
     receiveGroups,
@@ -20,14 +29,7 @@ import {
     receiveMessages,
     useChatContext,
 } from '../state/contexts/ChatContext'
-import {
-    changeAuthenticatedGuardian,
-    updateFederationCredentials,
-    updateFederations,
-    updateSelectedFederationId,
-    useFederationsContext,
-} from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
@@ -36,101 +38,77 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { reset } = route.params
-    const [usernameRequired, setUsernameRequired] = useState<boolean>(true)
-    const [usernameToRestore, setUsernameToRestore] = useState<string>('')
-    const { state, dispatch: federationsDispatch } = useFederationsContext()
     const { dispatch: chatDispatch } = useChatContext()
-    const { backupXmppUsername, getXmppCredentials } = useBridge()
 
-    // restoreState changes usernameToRestore if it finds a username
-    // in localstorage... makes sure we don't go to FederationWelcome
-    useEffect(() => {
-        if (usernameToRestore) {
-            setUsernameRequired(false)
-        }
-    }, [usernameToRestore])
+    const dispatch = useAppDispatch()
+    const { activeFederationId, federations } = useAppSelector(
+        s => s.federation,
+    )
 
-    // this effect restores XMPP credentials after saving the
-    // username found in localstorage
+    // after localstorage has been checked call refreshFederations
+    // to get an updated list from the bridge
     useEffect(() => {
-        const restoreUsername = async () => {
-            const credentials = await getXmppCredentials()
-            const { password, keypairSeed } = credentials
-            federationsDispatch(
-                updateFederationCredentials(
-                    usernameToRestore,
-                    password,
-                    keypairSeed,
-                ),
+        const initializeFederations = async () => {
+            const updatedFederations = await dispatch(
+                refreshFederations(fedimint),
+            ).unwrap()
+
+            const savedUsernames = await AsyncStorage.getItem(
+                `${FEDERATION_USERNAME_ID_DB_KEY}`,
             )
-            backupXmppUsername(usernameToRestore)
-        }
-        // don't try to restore unless we find both selectedFederationId
-        // and username in localstorage
-        if (state.selectedFederationId && usernameToRestore) {
-            restoreUsername()
-            setUsernameToRestore('')
-        }
-    }, [
-        backupXmppUsername,
-        federationsDispatch,
-        getXmppCredentials,
-        state.selectedFederation,
-        state.selectedFederationId,
-        usernameToRestore,
-    ])
+            if (savedUsernames) {
+                console.info('saved usernames found... restoring')
+                const usernameMap = JSON.parse(savedUsernames)
 
-    // after localstorage has been checked and listFederations has been called
-    // go to FederationWelcome if a username still needs to be set
-    useEffect(() => {
-        if (
-            state.selectedFederation &&
-            usernameToRestore === '' &&
-            usernameRequired === true
-        ) {
+                // Store any usernames found for federations other than
+                // the activeFederation so we can avoid triggering chat
+                // authentication for all federations
+                const inactiveFederations = updatedFederations.filter(
+                    f => f.id !== activeFederationId,
+                )
+                inactiveFederations.map(async f => {
+                    if (usernameMap[f.id]) {
+                        console.info('username found for federation', f.id)
+                        dispatch(
+                            setAuthenticatedMember({
+                                federationId: f.id,
+                                authenticatedMember: {
+                                    id: usernameMap[f.id],
+                                    username: usernameMap[f.id],
+                                },
+                            }),
+                        )
+                    }
+                })
+
+                // For the active federation, trigger chat authentication
+                // with the stored username
+                if (usernameMap[activeFederationId!]) {
+                    console.info(
+                        'active federation',
+                        activeFederationId,
+                        'has a stored username... authenticating',
+                    )
+                    await dispatch(
+                        authenticateChat({
+                            fedimint,
+                            federationId: activeFederationId!,
+                            username: usernameMap[activeFederationId!],
+                        }),
+                    ).unwrap()
+                    return navigation.replace('TabsNavigator')
+                }
+            }
+            // Go to the welcome screen if there are no stored usernames
+            // for the active federation
             navigation.replace('FederationWelcome')
         }
-    }, [
-        navigation,
-        state.selectedFederation,
-        usernameToRestore,
-        usernameRequired,
-    ])
-
-    // after localstorage has been checked call listFederations
-    // to update the federations
-    useEffect(() => {
-        const storeFederations = async () => {
-            let federations = await fedimint.listFederations()
-            federationsDispatch(
-                updateFederations(state.selectedFederationId, federations),
-            )
-        }
-        // selectedFederationId should be null if there are 0 federations so
+        // activeFederationId should be null if there are 0 federations so
         // this should only ever be called once
-        if (state.selectedFederationId && state.federations.length === 0) {
-            storeFederations()
+        if (activeFederationId && federations.length === 0) {
+            initializeFederations()
         }
-    }, [
-        federationsDispatch,
-        state.selectedFederationId,
-        state.federations.length,
-    ])
-
-    // if federations have been stored and a username has been restored
-    // navigate to TabsNavigator
-    useEffect(() => {
-        if (
-            state.federations.length > 0 &&
-            state.selectedFederation?.username
-        ) {
-            navigation.replace('TabsNavigator')
-        }
-    }, [
-        navigation,
-        state.federations.length,
-        state.selectedFederation?.username,
-    ])
+    }, [dispatch, activeFederationId, federations.length, navigation])
 
     // this useEffect checks async storage to restore
     // federations state on a fresh app load
@@ -140,25 +118,18 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 try {
                     // load selected federation id from async storage
                     const saved = await AsyncStorage.getItem(
-                        SELECTED_FEDERATION_ID_DB_KEY,
+                        ACTIVE_FEDERATION_ID_DB_KEY,
                     )
                     const savedJson = saved ? JSON.parse(saved) : null
 
                     if (savedJson) {
                         // this logic must be reached to trigger any useEffects
-                        const { selectedFederation } = savedJson
-                        console.log('saved federation', selectedFederation)
-                        if (selectedFederation?.id) {
-                            federationsDispatch(
-                                updateSelectedFederationId(
-                                    selectedFederation?.id,
-                                ),
+                        const { activeFederation } = savedJson
+                        console.log('saved federation', activeFederation)
+                        if (activeFederation?.id) {
+                            dispatch(
+                                setActiveFederationId(activeFederation?.id),
                             )
-                            if (selectedFederation.username) {
-                                setUsernameToRestore(
-                                    selectedFederation.username,
-                                )
-                            }
                             // load selected federation id from async storage
                             const savedGuardian = await AsyncStorage.getItem(
                                 AUTHENTICATED_GUARDIAN_DB_KEY,
@@ -174,7 +145,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                                     'restoring guardian',
                                     authenticatedGuardian?.name,
                                 )
-                                federationsDispatch(
+                                dispatch(
                                     changeAuthenticatedGuardian(
                                         authenticatedGuardian,
                                     ),
@@ -279,17 +250,10 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             restoreFederationsState()
         }
 
-        if (!state.selectedFederationId) {
+        if (!activeFederationId) {
             restoreState()
         }
-    }, [
-        chatDispatch,
-        getXmppCredentials,
-        federationsDispatch,
-        navigation,
-        reset,
-        state.selectedFederationId,
-    ])
+    }, [chatDispatch, navigation, reset, dispatch, activeFederationId])
 
     return (
         <ImageBackground

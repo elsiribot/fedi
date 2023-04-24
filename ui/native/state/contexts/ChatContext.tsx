@@ -17,6 +17,11 @@ import React, {
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
+    selectAuthenticatedMember,
+    selectChatCredentials,
+} from '@fedi/common/redux'
+
+import {
     CHAT_GROUPS_PERSISTENCE_KEY,
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
@@ -29,8 +34,8 @@ import {
 import { Group, Key, Keypair, Member, Message } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { GetMessagesQuery } from '../../utils/XmlUtils'
+import { useAppSelector } from '../hooks'
 import { publishPublicKey } from '../operations/chat'
-import { useFederationsContext } from './FederationsContext'
 
 export const DEFAULT_GROUPS: Group[] = [
     // FEDI_GENERAL_CHANNEL_GROUP,
@@ -546,9 +551,6 @@ export function reducer(state: AppState, action: Action): AppState {
 }
 
 function ChatProvider(props: React.PropsWithChildren<{}>) {
-    const { state: federationsState, dispatch: federationsDispatch } =
-        useFederationsContext()
-    const { selectedFederationId, selectedFederation } = federationsState
     const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
         reducer,
         initialState,
@@ -556,6 +558,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const appStateRef = useRef<AppStateStatus>(
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
+
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const activeChatCredentials = useAppSelector(selectChatCredentials)
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
@@ -609,15 +617,20 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     }
 
                     dispatch(changeWebsocketIsHealthy(true))
-                    if (xmpp.jid) {
-                        dispatch(
-                            setAuthenticatedMember(
-                                new Member({
-                                    jid: jid(xmpp.jid.toString()),
-                                }),
-                            ),
-                        )
-                    }
+
+                    // TODO: Determine if any assumptions change in chat
+                    // due to authenticatedMember being set after an online
+                    // XMPP message versus a successfull authenticateChat call
+                    // in chat extraReducer
+                    // if (xmpp.jid) {
+                    //     dispatch(
+                    //         setAuthenticatedMember(
+                    //             new Member({
+                    //                 jid: jid(xmpp.jid.toString()),
+                    //             }),
+                    //         ),
+                    //     )
+                    // }
                 })
 
                 xmpp.start().catch(console.error)
@@ -671,30 +684,29 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     }, [state.xmppClient])
 
     // This effect instantiates the XMPP client with a websocket connection
-    // and requires a selectedFederation with username + password
+    // and requires a activeFederationId with username + password
     useEffect(() => {
-        if (selectedFederationId === null) return
+        if (activeFederationId === null) return
         // a username must be set before an XMPP connection is attempted
         // this should be set after creating a username for new members
         // or after recovering from backup for existing members
-        if (!selectedFederation?.username) return
+        if (!authenticatedMember?.username) return
         // password is derived from seed after joining a federation
-        if (!selectedFederation?.password) return
+        if (!activeChatCredentials?.password) return
 
         // Only build an XMPP client if none exists in state
         if (state.xmppClient === null) {
             buildXmppClient(
-                selectedFederation.username,
-                selectedFederation.password,
+                authenticatedMember.username,
+                activeChatCredentials.password,
             )
         }
     }, [
         buildXmppClient,
-        federationsDispatch,
-        selectedFederationId,
-        selectedFederation?.username,
-        selectedFederation?.password,
         state.xmppClient,
+        activeFederationId,
+        authenticatedMember?.username,
+        activeChatCredentials?.password,
     ])
 
     const configureXmppMessageListeners = useCallback(() => {
@@ -1006,13 +1018,19 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // This effect derives a keypair when the keypair seed is returned
     // from the bridge and handled in FederationsContext
     useEffect(() => {
-        if (selectedFederation?.keypairSeed) {
+        if (activeChatCredentials?.keypairSeed) {
             const derivedKeypair = encryptionUtils.generateDeterministicKeyPair(
-                selectedFederation.keypairSeed,
+                activeChatCredentials.keypairSeed,
             )
             dispatch(setEncryptionKeys(derivedKeypair))
+            // reduxDispatch(
+            //     setChatEncryptionKeys({
+            //         federationId: activeFederationId!,
+            //         encryptionKeys: derivedKeypair,
+            //     }),
+            // )
         }
-    }, [selectedFederation?.keypairSeed])
+    }, [activeChatCredentials?.keypairSeed])
 
     // This effect publishes the user's pubkey to the server so other users
     // can encrypt messages before sending

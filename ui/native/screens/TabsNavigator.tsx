@@ -6,12 +6,17 @@ import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import {
+    selectActiveFederation,
+    selectAuthenticatedMember,
+} from '@fedi/common/redux'
+
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
+import { useAppSelector } from '../state/hooks'
 import {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -29,7 +34,8 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const toggleOffline = () => {
         if (!offline) {
@@ -43,14 +49,14 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     // Make sure all users have a username and push them to the
     // FederationWelcome screen if they don't have one
     useEffect(() => {
-        if (!selectedFederation?.username) {
+        if (!authenticatedMember?.username) {
             navigation.replace('FederationWelcome')
         }
-    }, [navigation, selectedFederation?.username])
+    }, [navigation, authenticatedMember?.username])
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
-    if (!selectedFederation) {
+    if (!activeFederation) {
         navigation.navigate('Splash')
         return <View />
     }

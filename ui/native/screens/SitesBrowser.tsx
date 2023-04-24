@@ -7,6 +7,7 @@ import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import { KeysendArgs, RequestInvoiceArgs } from 'webln'
 
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
@@ -15,8 +16,7 @@ import CustomOverlay, {
     CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge, useBtcFiatPrice } from '../state/hooks'
+import { useAppSelector, useBridge, useBtcFiatPrice } from '../state/hooks'
 import { MSats, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -27,7 +27,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { site } = route.params
     const { generateInvoice, payInvoice } = useBridge()
     const { t } = useTranslation()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
     const { toast } = useEnvironmentContext().state
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
@@ -153,10 +153,10 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             }
             const amountSats = amountUtils.msatToSat(invoice.amount)
 
-            if (selectedFederation!.balance < invoice.amount) {
+            if (activeFederation!.balance < invoice.amount) {
                 const message = t('errors.insufficient-balance', {
                     balance: `${amountUtils.msatToSat(
-                        selectedFederation?.balance as MSats,
+                        activeFederation?.balance as MSats,
                     )} SATS`,
                 })
                 toast?.show(message, 5000)

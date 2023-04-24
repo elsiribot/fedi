@@ -217,6 +217,7 @@ export const {
     setLastFetchedMessageId,
     setAuthenticatedMember,
     setChatEncryptionKeys,
+    resetFederationChatState,
     resetChatState,
 } = chatSlice.actions
 
@@ -269,6 +270,9 @@ export const authenticateChat = createAsyncThunk<
 
 const selectFederationChatState = (s: CommonState) =>
     getFederationChatState(s.chat, selectActiveFederation(s)?.id || '')
+
+export const selectChatCredentials = (s: CommonState) =>
+    selectFederationChatState(s).credentials
 
 export const selectAuthenticatedMember = (s: CommonState) =>
     selectFederationChatState(s).authenticatedMember

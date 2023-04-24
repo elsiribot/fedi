@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import {
@@ -10,8 +11,7 @@ import {
     useChatContext,
 } from '../../../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useFederationsContext } from '../../../state/contexts/FederationsContext'
-import { useBridge } from '../../../state/hooks'
+import { useAppSelector, useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
 import {
     Member,
@@ -143,7 +143,7 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
     const { generateEcash } = useBridge()
     const { sendDirectMessage } = useXmpp()
     const { toast } = useEnvironmentContext().state
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
     const { state, dispatch } = useChatContext()
     const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
     const [generatedEcashToken, setGeneratedEcashToken] = useState<string>('')
@@ -174,12 +174,12 @@ const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
 
     // Process for sending a payment starts here
     const acceptPaymentRequest = async () => {
-        if (selectedFederation?.balance! < message.payment?.amount!) {
+        if (activeFederation?.balance! < message.payment?.amount!) {
             toast?.show(
                 t('errors.insufficient-balance', {
                     balance: `${amountUtils.formatNumber(
                         amountUtils.msatToSat(
-                            selectedFederation?.balance as MSats,
+                            activeFederation?.balance as MSats,
                         ),
                     )} SATS`,
                 }),

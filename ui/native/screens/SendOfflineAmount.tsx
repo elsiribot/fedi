@@ -5,12 +5,12 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useFederationsContext } from '../state/contexts/FederationsContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -22,7 +22,7 @@ export type Props = NativeStackScreenProps<
 const SendOfflineAmount: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation()
-    const { selectedFederation } = useFederationsContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<SatsString>('' as SatsString)
@@ -66,7 +66,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
             <Text caption>
                 {`${t('words.balance')}: `}
                 {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(selectedFederation?.balance!),
+                    amountUtils.msatToSat(activeFederation?.balance!),
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
