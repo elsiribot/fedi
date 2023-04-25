@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
@@ -8,61 +8,106 @@ import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import RecoveryIcon from '@fedi/common/assets/svgs/recovery.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import {
+    leaveFederation,
+    selectActiveFederation,
+    selectAuthenticatedMember,
+} from '@fedi/common/redux'
 
 import { Avatar } from '../components/Avatar'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ContentBlock } from '../components/ContentBlock'
 import { Icon } from '../components/Icon'
+import { IconProps } from '../components/Icon'
 import { Text } from '../components/Text'
-import { useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 
-const MENU = [
-    {
-        name: 'words.federation',
-        items: [
-            {
-                name: 'feature.federations.federation-details',
-                icon: FederationIcon,
-                disabled: true,
-            },
-            {
-                name: 'feature.federations.invite-members',
-                icon: InviteMembersIcon,
-            },
-            {
-                name: 'feature.federations.leave-federation',
-                icon: LeaveFederationIcon,
-            },
-        ],
-    },
-    {
-        name: 'words.backup',
-        items: [
-            {
-                name: 'feature.backup.backup-wallet',
-                icon: WalletIcon,
-            },
-            {
-                name: 'feature.recovery.recover-a-wallet',
-                icon: RecoveryIcon,
-            },
-        ],
-    },
-    {
-        name: 'words.general',
-        items: [
-            {
-                name: 'phrases.app-settings-security',
-                icon: FediLogoICon,
-            },
-        ],
-    },
-] as const
+type Menu = Array<{
+    name: string // TODO: Type as valid translation key?
+    items: Array<{
+        name: string // TODO: Type as valid translation key?
+        icon: IconProps['icon']
+        disabled?: boolean
+        onClick?: () => void
+    }>
+}>
 
 function AdminPage() {
     const { t } = useTranslation()
+    const dispatch = useAppDispatch()
     const member = useAppSelector(selectAuthenticatedMember)
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const { showToast, showErrorToast } = useToast()
+    const [isLeavingFederation, setIsLeavingFederation] = useState(false)
+
+    const federationId = activeFederation?.id
+    const balance = activeFederation?.balance
+    const canLeaveFederation = typeof balance === 'number' && balance < 100_000
+
+    const handleConfirmLeaveFederation = useCallback(async () => {
+        if (!federationId) return
+        // TODO: This is temporarily disabled due to WASM not implementing this yet.
+        // Once that's ready, remove this toast and remove !window below.
+        showToast({
+            content:
+                'Leave federation does not work in the PWA right now sorry :(',
+        })
+        if (canLeaveFederation && !window) {
+            try {
+                await dispatch(leaveFederation({ fedimint, federationId }))
+            } catch (err) {
+                showErrorToast(err, 'errors.unknown-error')
+                return
+            }
+        }
+        setIsLeavingFederation(false)
+    }, [canLeaveFederation, federationId, dispatch, showToast, showErrorToast])
+
+    const menu: Menu = [
+        {
+            name: 'words.federation',
+            items: [
+                {
+                    name: 'feature.federations.federation-details',
+                    icon: FederationIcon,
+                    disabled: true,
+                },
+                {
+                    name: 'feature.federations.invite-members',
+                    icon: InviteMembersIcon,
+                },
+                {
+                    name: 'feature.federations.leave-federation',
+                    icon: LeaveFederationIcon,
+                    onClick: () => setIsLeavingFederation(true),
+                },
+            ],
+        },
+        {
+            name: 'words.backup',
+            items: [
+                {
+                    name: 'feature.backup.backup-wallet',
+                    icon: WalletIcon,
+                },
+                {
+                    name: 'feature.recovery.recover-a-wallet',
+                    icon: RecoveryIcon,
+                },
+            ],
+        },
+        {
+            name: 'words.general',
+            items: [
+                {
+                    name: 'phrases.app-settings-security',
+                    icon: FediLogoICon,
+                },
+            ],
+        },
+    ]
 
     return (
         <ContentBlock>
@@ -76,16 +121,18 @@ function AdminPage() {
                 </MemberDetails>
             )}
             <Menu>
-                {MENU.map(group => (
+                {menu.map(group => (
                     <MenuGroup key={group.name}>
                         <MenuGroupName>
-                            <Text>{t(group.name)}</Text>
+                            <Text>{t(group.name as any)}</Text>
                         </MenuGroupName>
                         <MenuGroupItems>
                             {group.items.map(item => (
-                                <MenuItem key={item.name}>
+                                <MenuItem
+                                    key={item.name}
+                                    onClick={item.onClick}>
                                     <Icon icon={item.icon} />
-                                    <Text>{t(item.name)}</Text>
+                                    <Text>{t(item.name as any)}</Text>
                                     <Icon icon={ChevronRightIcon} />
                                 </MenuItem>
                             ))}
@@ -93,6 +140,18 @@ function AdminPage() {
                     </MenuGroup>
                 ))}
             </Menu>
+
+            <ConfirmDialog
+                open={isLeavingFederation}
+                title={t('feature.federations.leave-federation')}
+                description={t(
+                    canLeaveFederation
+                        ? 'feature.federations.leave-federation-confirmation'
+                        : 'feature.federations.leave-federation-withdraw-first',
+                )}
+                onClose={() => setIsLeavingFederation(false)}
+                onConfirm={handleConfirmLeaveFederation}
+            />
         </ContentBlock>
     )
 }

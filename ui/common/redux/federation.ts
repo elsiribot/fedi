@@ -43,6 +43,17 @@ export const federationSlice = createSlice({
             return { ...initialState }
         },
     },
+    extraReducers: builder => {
+        builder.addCase(leaveFederation.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            state.federations = state.federations.filter(
+                fed => fed.id !== federationId,
+            )
+            if (state.activeFederationId === federationId) {
+                state.activeFederationId = state.federations[0]?.id
+            }
+        })
+    },
 })
 
 /*** Basic actions ***/
@@ -81,6 +92,13 @@ export const joinFederation = createAsyncThunk<
         throw new Error('Bridge reported no federations')
     }
     return federation
+})
+
+export const leaveFederation = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string }
+>('federation/leaveFederation', async ({ fedimint, federationId }) => {
+    await fedimint.leaveFederation(federationId)
 })
 
 /*** Selectors ***/
