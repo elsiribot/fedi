@@ -94,10 +94,12 @@ function AdminPage() {
                 {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
+                    disabled: true,
                 },
                 {
                     name: 'feature.recovery.recover-a-wallet',
                     icon: RecoveryIcon,
+                    disabled: true,
                 },
             ],
         },
@@ -107,6 +109,7 @@ function AdminPage() {
                 {
                     name: 'phrases.app-settings-security',
                     icon: FediLogoICon,
+                    disabled: true,
                 },
             ],
         },
@@ -133,6 +136,7 @@ function AdminPage() {
                             {group.items.map(item => (
                                 <MenuItem
                                     key={item.name}
+                                    disabled={item.disabled}
                                     onClick={item.onClick}>
                                     <Icon icon={item.icon} />
                                     <Text>{t(item.name as any)}</Text>
@@ -218,6 +222,17 @@ const MenuItem = styled('button', {
         '& > *:last-child': {
             opacity: 1,
             transform: 'translateX(2px)',
+        },
+    },
+
+    '&[disabled]': {
+        cursor: 'not-allowed',
+        color: theme.colors.grey,
+        background: 'none',
+
+        '& > *:last-child': {
+            opacity: 1,
+            transform: 'none',
         },
     },
 })
