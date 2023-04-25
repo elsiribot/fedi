@@ -1,17 +1,17 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import FiatAmount from '../components/feature/wallet/FiatAmount'
+import AmountInput from '../components/ui/AmountInput'
 import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
-import { Sats, SatsString } from '../types'
+import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
@@ -22,7 +22,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
     const { toast } = useEnvironmentContext().state
-    const [amount, setAmount] = useState<SatsString | string>('')
+    const [amount, setAmount] = useState<Sats>(0 as Sats)
     const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
@@ -30,14 +30,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const [memo] = useState<string>('')
 
     useEffect(() => {
-        const isNumeric = /^-?\d+$/.test(amount)
-
-        if (
-            amount === '' ||
-            amount === '0' ||
-            isNumeric === false ||
-            Number(amount) > MAX_INVOICE_AMOUNT_SATS
-        ) {
+        if (amount === 0 || amount > MAX_INVOICE_AMOUNT_SATS) {
             setAmountIsValid(false)
         } else {
             setAmountIsValid(true)
@@ -48,7 +41,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         const createNewInvoice = async () => {
             try {
                 const newInvoice = await generateInvoice(
-                    amountUtils.satToMsat(Number(amount) as Sats),
+                    amountUtils.satToMsat(amount),
                     memo,
                 )
                 setInvoice(newInvoice)
@@ -70,8 +63,8 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [invoice, navigation])
 
-    const onChangeText = (updatedValue: SatsString) => {
-        if (Number(updatedValue) > MAX_INVOICE_AMOUNT_SATS) {
+    const onChangeAmount = (updatedValue: Sats) => {
+        if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
             toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
         } else {
             toast?.close(0)
@@ -80,30 +73,19 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme, insets).container}>
-            <Input
-                autoFocus
-                onChangeText={onChangeText as (_: string) => any}
-                value={amount}
-                placeholder={`${t('words.amount')} (${t('words.sats')})`}
-                keyboardType="numeric"
-                returnKeyType="done"
-                containerStyle={styles(theme, insets).textInput}
-            />
-            <FiatAmount amountSats={Number(amount) as Sats} />
+        <Pressable style={styles(theme, insets).container}>
+            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
             <Button
                 fullWidth
                 title={`${t('words.request')}${
-                    amount
-                        ? ` ${amountUtils.formatNumber(Number(amount))} `
-                        : ' '
+                    amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
                 }${t('words.sats').toUpperCase()}`}
                 onPress={() => setGeneratingInvoice(true)}
                 disabled={!amountIsValid || generatingInvoice}
                 loading={generatingInvoice}
                 containerStyle={styles(theme, insets).button}
             />
-        </View>
+        </Pressable>
     )
 }
 
@@ -121,7 +103,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         textInput: {
             width: '80%',
-            marginTop: 'auto',
         },
     })
 
