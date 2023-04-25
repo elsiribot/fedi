@@ -145,13 +145,14 @@ let
         >&2 echo "Patching your wasm32 build"
 
         # Use `Cargo.wasm32.lock` in place of the normal `Cargo.lock`
-        cp Cargo.lock Cargo.native.lock
-        cp Cargo.wasm32.lock Cargo.lock
+        root="$(cargo metadata --no-deps --format-version 1 | jq -r '.workspace_root')"
+        cp "$root/Cargo.lock" "$root/Cargo.native.lock"
+        cp "$root/Cargo.wasm32.lock" "$root/Cargo.lock"
 
         # Restore files back to their place on exit
         function restore() {
-          cp Cargo.lock Cargo.wasm32.lock 
-          cp Cargo.native.lock Cargo.lock
+          cp "$root/Cargo.lock" "$root/Cargo.wasm32.lock"
+          cp "$root/Cargo.native.lock" "$root/Cargo.lock"
         }
         trap restore EXIT
 
