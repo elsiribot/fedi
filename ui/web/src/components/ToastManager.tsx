@@ -1,3 +1,4 @@
+import * as Portal from '@radix-ui/react-portal'
 import * as RadixToast from '@radix-ui/react-toast'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -34,25 +35,29 @@ export const ToastManager: React.FC = () => {
     }, [toast, isPaused])
 
     return (
-        <RadixToast.Provider swipeDirection={isMobile ? 'up' : 'right'}>
-            <Toast
-                key={cachedToast?.key}
-                ref={toastElRef}
-                open={isToastOpen}
-                onOpenChange={handleCloseToast}
-                duration={cachedToast?.duration}
-                onPause={() => setIsPaused(true)}
-                onResume={() => setIsPaused(false)}>
-                {cachedToast && (
-                    <ToastInner>
-                        <RadixToast.Description>
-                            <Text variant="caption">{cachedToast.content}</Text>
-                        </RadixToast.Description>
-                    </ToastInner>
-                )}
-            </Toast>
-            <Viewport />
-        </RadixToast.Provider>
+        <Portal.Root>
+            <RadixToast.Provider swipeDirection={isMobile ? 'up' : 'right'}>
+                <Toast
+                    key={cachedToast?.key}
+                    ref={toastElRef}
+                    open={isToastOpen}
+                    onOpenChange={handleCloseToast}
+                    duration={cachedToast?.duration}
+                    onPause={() => setIsPaused(true)}
+                    onResume={() => setIsPaused(false)}>
+                    {cachedToast && (
+                        <ToastInner>
+                            <RadixToast.Description>
+                                <Text variant="caption">
+                                    {cachedToast.content}
+                                </Text>
+                            </RadixToast.Description>
+                        </ToastInner>
+                    )}
+                </Toast>
+                <Viewport />
+            </RadixToast.Provider>
+        </Portal.Root>
     )
 }
 

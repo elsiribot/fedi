@@ -10,6 +10,7 @@ interface CustomProps {
     placeholder?: string
     disabled?: boolean
     width?: 'auto' | 'full'
+    adornment?: React.ReactNode
 }
 
 type Props = CustomProps &
@@ -23,6 +24,7 @@ export const Input: React.FC<Props> = ({
     onFocus,
     onBlur,
     width = 'full',
+    adornment,
     ...inputProps
 }) => {
     const [hasFocus, setHasFocus] = useState(false)
@@ -56,6 +58,7 @@ export const Input: React.FC<Props> = ({
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                 />
+                {adornment}
             </InputWrap>
         </Container>
     )
