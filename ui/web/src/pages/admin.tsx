@@ -1,22 +1,98 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
+import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
+import FediLogoICon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
+import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
+import RecoveryIcon from '@fedi/common/assets/svgs/recovery.svg'
+import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
+import { selectAuthenticatedMember } from '@fedi/common/redux'
+
+import { Avatar } from '../components/Avatar'
 import { ContentBlock } from '../components/ContentBlock'
+import { Icon } from '../components/Icon'
 import { Text } from '../components/Text'
+import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
+
+const MENU = [
+    {
+        name: 'words.federation',
+        items: [
+            {
+                name: 'feature.federations.federation-details',
+                icon: FederationIcon,
+                disabled: true,
+            },
+            {
+                name: 'feature.federations.invite-members',
+                icon: InviteMembersIcon,
+            },
+            {
+                name: 'feature.federations.leave-federation',
+                icon: LeaveFederationIcon,
+            },
+        ],
+    },
+    {
+        name: 'words.backup',
+        items: [
+            {
+                name: 'feature.backup.backup-wallet',
+                icon: WalletIcon,
+            },
+            {
+                name: 'feature.recovery.recover-a-wallet',
+                icon: RecoveryIcon,
+            },
+        ],
+    },
+    {
+        name: 'words.general',
+        items: [
+            {
+                name: 'phrases.app-settings-security',
+                icon: FediLogoICon,
+            },
+        ],
+    },
+] as const
 
 function AdminPage() {
     const { t } = useTranslation()
+    const member = useAppSelector(selectAuthenticatedMember)
+
     return (
         <ContentBlock>
             <Title>
                 <Text variant="h1">{t('words.admin')}</Text>
             </Title>
-            <Placeholder>
-                <Text variant="h2" weight="normal">
-                    Nothing to see here (yet!)
-                </Text>
-            </Placeholder>
+            {member && (
+                <MemberDetails>
+                    <Avatar name={member.username} />
+                    <Text variant="h2">{member.username}</Text>
+                </MemberDetails>
+            )}
+            <Menu>
+                {MENU.map(group => (
+                    <MenuGroup key={group.name}>
+                        <MenuGroupName>
+                            <Text>{t(group.name)}</Text>
+                        </MenuGroupName>
+                        <MenuGroupItems>
+                            {group.items.map(item => (
+                                <MenuItem key={item.name}>
+                                    <Icon icon={item.icon} />
+                                    <Text>{t(item.name)}</Text>
+                                    <Icon icon={ChevronRightIcon} />
+                                </MenuItem>
+                            ))}
+                        </MenuGroupItems>
+                    </MenuGroup>
+                ))}
+            </Menu>
         </ContentBlock>
     )
 }
@@ -25,14 +101,58 @@ const Title = styled('div', {
     marginBottom: 16,
 })
 
-const Placeholder = styled('div', {
+const MemberDetails = styled('div', {
     display: 'flex',
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    textAlign: 'center',
+    gap: 16,
+})
+
+const Menu = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+})
+
+const MenuGroup = styled('div', {})
+
+const MenuGroupName = styled('div', {
+    color: theme.colors.grey,
+    padding: '8px 0',
+})
+
+const MenuGroupItems = styled('div', {
+    margin: '0 -8px -8px',
+})
+
+const MenuItem = styled('button', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
     width: '100%',
-    height: 220,
-    color: theme.colors.lightGrey,
+    padding: 8,
+    borderRadius: 8,
+    textAlign: 'left',
+    transition: 'background-color 100ms ease',
+
+    '& > *:nth-child(0n+2)': {
+        flex: 1,
+    },
+
+    '& > *:last-child': {
+        opacity: 0.5,
+        transition: 'transform 100ms ease, opacity 100ms ease',
+    },
+
+    '&:hover, &:focus': {
+        background: theme.colors.primary05,
+
+        '& > *:last-child': {
+            opacity: 1,
+            transform: 'translateX(2px)',
+        },
+    },
 })
 
 export default AdminPage
