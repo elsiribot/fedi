@@ -19,6 +19,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ContentBlock } from '../components/ContentBlock'
 import { Icon } from '../components/Icon'
 import { IconProps } from '../components/Icon'
+import { InviteMemberDialog } from '../components/InviteMemberDialog'
 import { Text } from '../components/Text'
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
@@ -40,6 +41,7 @@ function AdminPage() {
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const { showToast, showErrorToast } = useToast()
+    const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
 
     const federationId = activeFederation?.id
@@ -77,6 +79,7 @@ function AdminPage() {
                 {
                     name: 'feature.federations.invite-members',
                     icon: InviteMembersIcon,
+                    onClick: () => setIsInvitingMember(true),
                 },
                 {
                     name: 'feature.federations.leave-federation',
@@ -140,6 +143,11 @@ function AdminPage() {
                     </MenuGroup>
                 ))}
             </Menu>
+
+            <InviteMemberDialog
+                open={isInvitingMember}
+                onOpenChange={setIsInvitingMember}
+            />
 
             <ConfirmDialog
                 open={isLeavingFederation}
