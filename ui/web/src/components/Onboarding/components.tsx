@@ -10,6 +10,14 @@ export const OnboardingContainer = styled('div', {
     height: '100%',
     width: '100%',
     maxWidth: 320,
+
+    variants: {
+        fullWidth: {
+            true: {
+                maxWidth: 'none',
+            },
+        },
+    },
 })
 
 export const OnboardingContent = styled('div', {
@@ -17,7 +25,6 @@ export const OnboardingContent = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 8,
 
     variants: {
         justify: {
@@ -28,9 +35,18 @@ export const OnboardingContent = styled('div', {
                 justifyContent: 'flex-start',
             },
         },
+        gap: {
+            sm: {
+                gap: 8,
+            },
+            md: {
+                gap: 16,
+            },
+        },
     },
     defaultVariants: {
         justify: 'center',
+        gap: 'sm',
     },
 })
 
