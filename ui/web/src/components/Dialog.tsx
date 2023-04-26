@@ -1,4 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog'
+import { useCallback } from 'react'
 
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 
@@ -13,6 +14,7 @@ interface Props {
     description?: React.ReactNode
     children: React.ReactNode
     size?: 'sm' | 'md' | 'lg'
+    disableClose?: boolean
 }
 
 export const Dialog: React.FC<Props> = ({
@@ -22,14 +24,25 @@ export const Dialog: React.FC<Props> = ({
     description,
     children,
     size,
+    disableClose,
 }) => {
+    const handleCloseTrigger = useCallback(
+        (ev: Event) => {
+            if (disableClose) ev.preventDefault()
+        },
+        [disableClose],
+    )
+
     return (
         <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
             <RadixDialog.Portal>
                 <Overlay>
                     <Content
                         size={size}
-                        onOpenAutoFocus={ev => ev.preventDefault()}>
+                        onOpenAutoFocus={ev => ev.preventDefault()}
+                        onEscapeKeyDown={handleCloseTrigger}
+                        onPointerDownOutside={handleCloseTrigger}
+                        onInteractOutside={handleCloseTrigger}>
                         {title && (
                             <Title>
                                 <Text variant="body" weight="bold">
@@ -45,9 +58,11 @@ export const Dialog: React.FC<Props> = ({
                             </Description>
                         )}
                         {children}
-                        <CloseButton>
-                            <Icon icon={CloseIcon} />
-                        </CloseButton>
+                        {!disableClose && (
+                            <CloseButton>
+                                <Icon icon={CloseIcon} />
+                            </CloseButton>
+                        )}
                     </Content>
                 </Overlay>
             </RadixDialog.Portal>

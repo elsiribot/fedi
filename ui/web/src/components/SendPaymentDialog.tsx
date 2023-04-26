@@ -15,6 +15,7 @@ import { DialogStatus, DialogStatusProps } from './DialogStatus'
 import { Input } from './Input'
 import { QRScanner } from './QRScanner'
 import { ScanResult } from './QRScanner'
+import { SendOffline } from './SendOffline'
 import { Text } from './Text'
 
 interface Props {
@@ -31,6 +32,8 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const [wantsDecoding, setWantsDecoding] = useState(false)
     const [decodeError, setDecodeError] = useState<string>()
     const [isScanning, setIsScanning] = useState(false)
+    const [isSendingOffline, setIsSendingOffline] = useState(false)
+    const [isCloseDisabled, setIsCloseDisabled] = useState(false)
     const [isSending, setIsSending] = useState(false)
     const [hasSent, setHasSent] = useState(false)
     const [sendError, setSendError] = useState<string>()
@@ -43,6 +46,8 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setWantsDecoding(false)
             setDecodeError(undefined)
             setIsScanning(false)
+            setIsSendingOffline(false)
+            setIsCloseDisabled(false)
             setIsSending(false)
             setHasSent(false)
             setSendError(undefined)
@@ -156,6 +161,13 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 </Button>
             </>
         )
+    } else if (isSendingOffline) {
+        content = (
+            <SendOffline
+                onEcashGenerated={() => setIsCloseDisabled(true)}
+                onPaymentSent={() => onOpenChange(false)}
+            />
+        )
     } else {
         content = (
             <>
@@ -170,6 +182,9 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 <Button onClick={() => setIsScanning(true)}>
                     {t('feature.send.scan-qr-code')}
                 </Button>
+                <Button onClick={() => setIsSendingOffline(true)}>
+                    {t('feature.send.send-to-offline-user')}
+                </Button>
             </>
         )
     }
@@ -181,6 +196,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 amountUtils.msatToSat(balance),
             )} ${t('words.sats')}`}
             open={open}
+            disableClose={isCloseDisabled}
             onOpenChange={onOpenChange}>
             <Container ref={containerRef}>
                 {content}
