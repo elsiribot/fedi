@@ -7,15 +7,24 @@ use std::{
 };
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
-use fedimint_client::module::gen::{
-    ClientModuleGenRegistry, ClientModuleGenRegistryExt, IClientModuleGen,
+use fedimint_client::Client as ClientNg;
+use fedimint_client::{
+    module::gen::{ClientModuleGenRegistry, ClientModuleGenRegistryExt, IClientModuleGen},
+    ClientBuilder,
 };
 use fedimint_client_fedi::{
-    mint::backup::Metadata, module_gens, modules::ln::contracts::IdentifiableContract, Client,
-    FediClient, RecoveryFile, SocialRecovery, UserClientConfig, UserSeedPhrase,
+    mint::backup::Metadata,
+    module_gens,
+    modules::{
+        ln::{contracts::IdentifiableContract, LightningClientGen},
+        mint::MintClientGen,
+        wallet::WalletClientGen,
+    },
+    Client, FediClient, RecoveryFile, SocialRecovery, UserClientConfig, UserSeedPhrase,
 };
 use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
+    db::mem_impl::MemDatabase,
     module::registry::ModuleDecoderRegistry,
 };
 
@@ -288,6 +297,7 @@ impl Bridge {
 #[derive(Clone)]
 pub struct Federation {
     pub client: Arc<FediUserClient>,
+    pub ng: Arc<ClientNg>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub username: Arc<Mutex<Option<String>>>,
@@ -317,10 +327,32 @@ impl Federation {
     ) -> anyhow::Result<Self> {
         let gens = module_gens();
         let decoders = load_decoders(&config.client_config, &gens);
-        let user_client =
-            FediUserClient::new(config.client_config, gens, decoders, db, Default::default()).await;
+        let user_client = FediUserClient::new(
+            config.client_config.clone(),
+            gens,
+            decoders,
+            db.clone(),
+            Default::default(),
+        )
+        .await;
+
+        let mut client_builder = ClientBuilder::default();
+        client_builder.with_module(MintClientGen);
+        client_builder.with_module(LightningClientGen);
+        client_builder.with_module(WalletClientGen);
+        client_builder.with_primary_module(1);
+        client_builder.with_config(config.client_config.0);
+
+        // FIXME: use real database
+        let db = MemDatabase::new();
+        let mut task_group_clone = task_group.clone();
+        let ng = client_builder
+            .build::<MemDatabase>(db, &mut task_group_clone)
+            .await?;
+
         Ok(Self {
             client: Arc::new(user_client),
+            ng: Arc::new(ng),
             event_sink,
             task_group,
             username: Arc::new(Mutex::new(config.username)),
