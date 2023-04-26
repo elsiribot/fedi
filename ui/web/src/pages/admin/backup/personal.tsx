@@ -1,0 +1,95 @@
+import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import EditIcon from '@fedi/common/assets/svgs/edit.svg'
+import { selectActiveFederation } from '@fedi/common/redux'
+import { SeedWords } from '@fedi/common/types'
+
+import { Button } from '../../../components/Button'
+import { Checkbox } from '../../../components/Checkbox'
+import { ContentBlock } from '../../../components/ContentBlock'
+import { Icon } from '../../../components/Icon'
+import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
+import { Text } from '../../../components/Text'
+import { useAppSelector, useToast } from '../../../hooks'
+import { fedimint } from '../../../lib/bridge'
+import { styled } from '../../../styles'
+
+function PersonalBackupPage() {
+    const { t } = useTranslation()
+    const { showToast, showErrorToast } = useToast()
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const [words, setWords] = useState<SeedWords>([])
+    const [isShowingWords, setIsShowingWords] = useState(false)
+    const [hasCheckedGuidance1, setHasCheckedGuidance1] = useState(false)
+    const [hasCheckedGuidance2, setHasCheckedGuidance2] = useState(false)
+
+    useEffect(() => {
+        if (!activeFederationId || !isShowingWords) return
+        fedimint
+            .getMnemonic(activeFederationId)
+            .then(mnemonic => setWords(mnemonic))
+            .catch(err => showErrorToast(err, 'errors.unknown-error'))
+    }, [activeFederationId, isShowingWords, showErrorToast])
+
+    const handleFinish = useCallback(() => {
+        showToast({
+            content: t('feature.backup.backed-up-recovery-words'),
+        })
+    }, [showToast, t])
+
+    return (
+        <ContentBlock>
+            <Text variant="h1">{t('feature.backup.personal-backup')}</Text>
+            <Content>
+                {isShowingWords ? (
+                    <>
+                        <Text>
+                            {t('feature.backup.recovery-words-instructions')}
+                        </Text>
+                        <RecoverySeedWords words={words} readOnly />
+                        <Button width="full" href="/" onClick={handleFinish}>
+                            {t('words.done')}
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Checkbox
+                            label={t(
+                                'feature.backup.personal-backup-guidance-check-1',
+                            )}
+                            checked={hasCheckedGuidance1}
+                            onChange={setHasCheckedGuidance1}
+                        />
+                        <Checkbox
+                            label={t(
+                                'feature.backup.personal-backup-guidance-check-2',
+                            )}
+                            checked={hasCheckedGuidance2}
+                            onChange={setHasCheckedGuidance2}
+                        />
+                        <Button
+                            width="full"
+                            disabled={
+                                !hasCheckedGuidance1 || !hasCheckedGuidance2
+                            }
+                            onClick={() => setIsShowingWords(true)}>
+                            {t('words.continue')}
+                        </Button>
+                    </>
+                )}
+            </Content>
+        </ContentBlock>
+    )
+}
+
+const Content = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 16,
+})
+
+export default PersonalBackupPage

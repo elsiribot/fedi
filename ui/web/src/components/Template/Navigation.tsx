@@ -34,6 +34,12 @@ export const Navigation: React.FC = () => {
     const router = useRouter()
     const { t } = useTranslation()
 
+    const getIsActive = (navPath: string) => {
+        if (navPath === router.pathname) return true
+        if (navPath !== '/' && router.pathname.startsWith(navPath)) return true
+        return false
+    }
+
     return (
         <Container>
             <Logo>
@@ -43,9 +49,7 @@ export const Navigation: React.FC = () => {
             </Logo>
             <Nav>
                 {NAVIGATION.map(nav => (
-                    <NavItem
-                        key={nav.path}
-                        isActive={router.pathname === nav.path}>
+                    <NavItem key={nav.path} isActive={getIsActive(nav.path)}>
                         <Link href={nav.path}>
                             <Icon icon={nav.icon} />
                             <Text variant="body" weight="medium">
