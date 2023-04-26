@@ -104,9 +104,9 @@ pub fn init_logging(
                 ReactNativeLayer(event_sink)
                     .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
             )
-            .with(
-                log_file_layer.with_filter(EnvFilter::new("info,mint_client=debug,fediffi=trace")),
-            );
+            .with(log_file_layer.with_filter(EnvFilter::new(
+                "info,fedimint_client_legacy=debug,fediffi=trace",
+            )));
 
         let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
             let time = fedimint_core::time::now()

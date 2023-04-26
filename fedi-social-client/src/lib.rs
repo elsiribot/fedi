@@ -2,11 +2,13 @@ pub use fedi_social_common::*;
 
 use fedi_social_common::config::FediSocialClientConfig;
 use fedi_social_common::{FediSocialCommonGen, FediSocialModuleTypes};
+use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::module::gen::ClientModuleGen;
 use fedimint_client::module::ClientModule;
-use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
+use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
+use fedimint_core::db::mem_impl::DatabaseInsertOperation;
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::ExtendsCommonModuleGen;
@@ -24,7 +26,13 @@ impl ClientModuleGen for FediSocialClientGen {
     type Module = FediSocialClientModule;
     type Config = FediSocialClientConfig;
 
-    async fn init(&self, _cfg: Self::Config, _db: Database) -> anyhow::Result<Self::Module> {
+    async fn init(
+        &self,
+        _cfg: Self::Config,
+        _db: Database,
+        _module_root_secret: DerivableSecret,
+        _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
+    ) -> anyhow::Result<Self::Module> {
         unimplemented!()
     }
 }

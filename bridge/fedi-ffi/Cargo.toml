@@ -8,12 +8,13 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
 [dependencies]
-mint-client = { workspace = true }
+fedimint-client-legacy = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedi-social-client = { path = "../../fedi-social-client" }
 fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }
+fedimint-logging = { workspace = true }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"

@@ -84,7 +84,7 @@ impl CommonModuleGen for FediSocialCommonGen {
     fn hash_client_module(
         config: serde_json::Value,
     ) -> anyhow::Result<bitcoin_hashes::sha256::Hash> {
-        serde_json::from_value::<FediSocialClientConfig>(config)?.consensus_hash()
+        Ok(serde_json::from_value::<FediSocialClientConfig>(config)?.consensus_hash())
     }
 }
 

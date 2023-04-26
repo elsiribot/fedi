@@ -7,10 +7,12 @@ use std::{
 };
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
-use fedimint_client::module::gen::{ClientModuleGenRegistry, ClientModuleGenRegistryExt};
+use fedimint_client::module::gen::{
+    ClientModuleGenRegistry, ClientModuleGenRegistryExt, IClientModuleGen,
+};
 use fedimint_client_fedi::{
-    module_gens, modules::ln::contracts::IdentifiableContract, Client, FediClient, RecoveryFile,
-    SocialRecovery, UserClientConfig, UserSeedPhrase,
+    mint::backup::Metadata, module_gens, modules::ln::contracts::IdentifiableContract, Client,
+    FediClient, RecoveryFile, SocialRecovery, UserClientConfig, UserSeedPhrase,
 };
 use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
@@ -41,6 +43,12 @@ use bitcoin::{
     secp256k1::{Message, Secp256k1},
     Address, Network, Script, Txid,
 };
+use fedimint_client_legacy::{
+    api::WalletFederationApi,
+    mint::SpendableNote,
+    modules::{ln::contracts::ContractId, wallet::txoproof::TxOutProof},
+    utils::network_to_currency,
+};
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
 use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
 use fedimint_core::{db::Database, task::TaskHandle};
@@ -48,15 +56,8 @@ use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_derive_secret::ChildId;
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
-use mint_client::{
-    api::WalletFederationApi,
-    mint::SpendableNote,
-    module_decode_stubs,
-    modules::{ln::contracts::ContractId, wallet::txoproof::TxOutProof},
-    utils::network_to_currency,
-};
 
-use mint_client::{utils::from_hex, wallet::db::PegInPrefixKey};
+use fedimint_client_legacy::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
@@ -83,9 +84,15 @@ fn load_decoders(
             .modules
             .into_iter()
             .filter_map(|(id, module_cfg)| {
-                module_gens
-                    .get(module_cfg.kind())
-                    .map(|module_gen| (id, module_gen.as_ref().decoder()))
+                module_gens.get(module_cfg.kind()).map(|module_gen| {
+                    (
+                        id,
+                        module_cfg.kind().clone(),
+                        IClientModuleGen::decoder(AsRef::<dyn IClientModuleGen + 'static>::as_ref(
+                            module_gen,
+                        )),
+                    )
+                })
             }),
     )
 }
@@ -156,9 +163,9 @@ impl Bridge {
     ) -> Result<Option<Arc<Federation>>> {
         let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         info!("joining federation: {}", connect_cfg.id);
-        let api = WsFederationApi::from_urls(&connect_cfg);
+        let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         let cfg: ClientConfig = api
-            .download_client_config(&connect_cfg.id, module_gens().to_common())
+            .download_client_config(&connect_cfg, module_gens().to_common())
             .await?;
         let federations = self.federations.lock().await;
         let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
@@ -332,10 +339,10 @@ impl Federation {
         tracing::info!("parsing connection string");
         let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         tracing::info!("parsed connection string");
-        let api = WsFederationApi::from_urls(&connect_cfg);
+        let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         tracing::info!("fetching config");
         let cfg: ClientConfig = api
-            .download_client_config(&connect_cfg.id, module_gens().to_common())
+            .download_client_config(&connect_cfg, module_gens().to_common())
             .await?;
 
         // Hack to run against local federation
@@ -976,22 +983,25 @@ impl Federation {
             .await??;
 
         // Update username
-        {
-            let mut lock = self.username.lock().await;
-            *lock = username.clone();
-        }
+        // {
+        //     let mut lock = self.username.lock().await;
+        //     *lock = username.clone();
+        // }
 
         // FIXME: should we still do this?
         self.send_federation_event().await;
-        Ok(username)
+        // Ok(username)
+        Ok(None)
     }
 
     /// Upload ecash backup to the federation
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
         let username = self.get_username().await;
+        let metadata = Metadata::empty();
         self.user_client()
             .mint_client()
-            .back_up_ecash_to_federation(username)
+            // .back_up_ecash_to_federation(username)
+            .back_up_ecash_to_federation(metadata)
             .await?;
         Ok(())
     }

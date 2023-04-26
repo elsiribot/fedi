@@ -19,7 +19,7 @@ fedimintd = { workspace = true }
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
 fedi-social-server = { path = "../fedi-social-server" }
 fedimint-core = { workspace = true }
-stabilitypool-server = { workspace = true }
+# stabilitypool-server = { workspace = true }
 
 [build-dependencies]
 fedimint-build = { workspace = true }

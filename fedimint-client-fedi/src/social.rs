@@ -6,12 +6,13 @@ use anyhow::format_err;
 use async_trait::async_trait;
 use fedi_social_client::common::{
     BackupId, BackupRequest, DoubleEncryptedData, EncryptedRecoveryShare, RecoveryId,
-    RecoveryRequest, SignedBackupRequest, SignedRecoveryRequest, VerificationDocument,
+    RecoveryRequest, SerdeEncodable, SignedBackupRequest, SignedRecoveryRequest,
+    VerificationDocument,
 };
 use fedi_social_client::config::FediSocialClientConfig;
 use fedimint_core::api::{FederationApiExt, FederationResult, IFederationApi};
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::encoding::{Decodable, Encodable, SerdeEncodable};
+use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{MaybeSend, MaybeSync};

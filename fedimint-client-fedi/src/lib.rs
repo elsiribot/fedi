@@ -2,11 +2,11 @@ use std::fmt;
 
 use fedi_social_client::FediSocialClientGen;
 use fedimint_client::module::gen::{ClientModuleGenRegistry, DynClientModuleGen};
+pub use fedimint_client_legacy::*;
 use fedimint_derive_secret::DerivableSecret;
 use fedimint_ln_client::LightningClientGen;
 use fedimint_mint_client::MintClientGen;
 use fedimint_wallet_client::WalletClientGen;
-pub use mint_client::*;
 
 use fedimint_core::{
     config::ClientConfig,
@@ -18,7 +18,7 @@ use fedimint_core::{
 
 use secp256k1::{All, Secp256k1};
 use serde::{Deserialize, Serialize};
-use stabilitypool::PoolClientGen;
+// use stabilitypool::PoolClientGen;
 
 mod social;
 pub use crate::social::*;
@@ -137,6 +137,6 @@ pub fn module_gens() -> ClientModuleGenRegistry {
         DynClientModuleGen::from(MintClientGen),
         DynClientModuleGen::from(LightningClientGen),
         DynClientModuleGen::from(FediSocialClientGen),
-        DynClientModuleGen::from(PoolClientGen),
+        // DynClientModuleGen::from(PoolClientGen),
     ])
 }

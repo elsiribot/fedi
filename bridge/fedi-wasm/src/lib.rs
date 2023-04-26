@@ -1,9 +1,9 @@
 use fediffi::bridge::Bridge;
+use fediffi::fedimint_client_legacy::module_decode_stubs;
 use fediffi::fedimint_core::config::FederationId;
 use fediffi::fedimint_core::db::mem_impl::MemDatabase;
 use fediffi::fedimint_core::db::Database;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
-use fediffi::mint_client::module_decode_stubs;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -75,7 +75,7 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
     tracing_subscriber::fmt()
         .json()
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            "info,fediffi=debug,mint_client=trace,fedimint_core::api=trace",
+            "info,fediffi=debug,fedimint_client_legacy=trace,fedimint_core::api=trace",
         ))
         .with_writer({
             use std::io::{self, Write};

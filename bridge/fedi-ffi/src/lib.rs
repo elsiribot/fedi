@@ -23,8 +23,8 @@ use std::{
 };
 
 use fedimint_client_fedi::RecoveryFile;
+pub use fedimint_client_legacy;
 pub use fedimint_core;
-pub use mint_client;
 pub use tokio;
 
 use bitcoin::{secp256k1::Message, Address};
@@ -37,9 +37,9 @@ use types::{FederationId, RecoveryId};
 
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
+use fedimint_client_legacy::utils::{parse_ecash, serialize_ecash};
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
-use mint_client::utils::{parse_ecash, serialize_ecash};
 use mnemonic::Mnemonic;
 use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};

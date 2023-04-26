@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::ffi::OsString;
 
 use common::common::{SignedRecoveryRequest, VerificationDocument};
@@ -12,8 +12,8 @@ use async_trait::async_trait;
 use common::config::{FediSocialConsensusConfig, SocialPrivateConfig};
 use common::db::DbKeyPrefix;
 use fedimint_core::config::{
-    ConfigGenParams, DkgResult, ModuleConfigResponse, ServerModuleConfig, TypedServerModuleConfig,
-    TypedServerModuleConsensusConfig,
+    ConfigGenModuleParams, DkgResult, ModuleConfigResponse, ServerModuleConfig,
+    TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{Database, DatabaseVersion, ModuleDatabaseTransaction};
@@ -24,7 +24,7 @@ use fedimint_core::module::interconnect::ModuleInterconect;
 use fedimint_core::module::{
     api_endpoint, ApiEndpoint, ApiError, ApiVersion, ConsensusProposal, CoreConsensusVersion,
     ExtendsCommonModuleGen, InputMeta, ModuleConsensusVersion, ModuleError, PeerHandle,
-    ServerModuleGen, TransactionItemAmount,
+    ServerModuleGen, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::TaskGroup;
@@ -76,7 +76,7 @@ impl ServerModuleGen for FediSocialGen {
     fn trusted_dealer_gen(
         &self,
         peers: &[PeerId],
-        _params: &ConfigGenParams,
+        _params: &ConfigGenModuleParams,
     ) -> BTreeMap<PeerId, ServerModuleConfig> {
         let sks = threshold_crypto::SecretKeySet::random(peers.degree(), &mut OsRng);
         let pks = sks.public_keys();
@@ -105,7 +105,7 @@ impl ServerModuleGen for FediSocialGen {
     async fn distributed_gen(
         &self,
         peers: &PeerHandle,
-        _params: &ConfigGenParams,
+        _params: &ConfigGenModuleParams,
     ) -> DkgResult<ServerModuleConfig> {
         let g1 = peers.run_dkg_g1(()).await?;
 
@@ -135,7 +135,7 @@ impl ServerModuleGen for FediSocialGen {
 
         Ok(ModuleConfigResponse {
             client: config.to_client_config(),
-            consensus_hash: config.consensus_hash()?,
+            consensus_hash: config.consensus_hash(),
         })
     }
 
@@ -214,11 +214,8 @@ impl ServerModule for FediSocial {
     type Gen = FediSocialGen;
     type VerificationCache = FediSocialVerificationCache;
 
-    fn versions(&self) -> (ModuleConsensusVersion, &[ApiVersion]) {
-        (
-            ModuleConsensusVersion(0),
-            &[ApiVersion { major: 0, minor: 0 }],
-        )
+    fn supported_api_versions(&self) -> SupportedModuleApiVersions {
+        SupportedModuleApiVersions::from_raw(0, 0, &[(0, 0)])
     }
 
     async fn await_consensus_proposal<'a>(
@@ -241,7 +238,9 @@ impl ServerModule for FediSocial {
         &'a self,
         _dbtx: &mut ModuleDatabaseTransaction<'b, ModuleInstanceId>,
         _consensus_items: Vec<(PeerId, FediSocialConsensusItem)>,
-    ) {
+        _consensu_peers: &BTreeSet<PeerId>,
+    ) -> Vec<PeerId> {
+        Default::default()
     }
 
     fn build_verification_cache<'a>(
@@ -290,10 +289,10 @@ impl ServerModule for FediSocial {
 
     async fn end_consensus_epoch<'a, 'b>(
         &'a self,
-        _consensus_peers: &HashSet<PeerId>,
+        _consensus_peers: &BTreeSet<PeerId>,
         _dbtx: &mut ModuleDatabaseTransaction<'b, ModuleInstanceId>,
     ) -> Vec<PeerId> {
-        vec![]
+        Default::default()
     }
 
     async fn output_status(
