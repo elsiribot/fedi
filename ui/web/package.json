@@ -29,6 +29,7 @@
         "next-pwa": "^5.6.0",
         "qr-scanner": "^1.4.2",
         "qrcode": "^1.5.1",
+        "qrloop": "^1.4.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-i18next": "^12.2.0",

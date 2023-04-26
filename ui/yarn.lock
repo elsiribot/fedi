@@ -10719,7 +10719,7 @@ qrcode@^1.5.0, qrcode@^1.5.1:
 
 qrloop@^1.4.1:
   version "1.4.1"
-  resolved "https://registry.npmjs.org/qrloop/-/qrloop-1.4.1.tgz"
+  resolved "https://registry.yarnpkg.com/qrloop/-/qrloop-1.4.1.tgz#bfe90e6aeb4c4735edec13d14681edc56e79e29d"
   integrity sha512-LXkwCl1Qd8imTHb+KqjMn+cHmuncyFT81AXoooWJvbG3+g9q61l9udSRPgY4cgl+5goQHuAK4teEdUF6UErYXw==
   dependencies:
     buffer "^6.0.3"
