@@ -105,6 +105,12 @@ export enum SupportedCurrency {
     EUR = 'EUR',
     CFA = 'CFA',
 }
+interface ClientConfigMetadata {
+    federation_name: string
+    chat_server_domain: string
+    default_currency: SupportedCurrency
+    invite_codes_disabled: boolean
+}
 export interface Federation {
     id: string
     name: string
@@ -112,9 +118,7 @@ export interface Federation {
     nodes: Node[]
     balance: MSats
     socialRecoveryActive: boolean
-    // TODO: Implement and get this from bridge
-    // defaultCurrency?: SupportedCurrency
-    // stealthMode?: boolean
+    meta: ClientConfigMetadata
 }
 
 export type SeedWords = string[]
