@@ -18,10 +18,6 @@ export interface ValidateEcashResponse {
     valid: boolean
 }
 
-export interface ReceiveEcashResponse {
-    amount: MSats
-}
-
 export interface LnurlSignedMessage {
     signature: string
     pubkey: string
