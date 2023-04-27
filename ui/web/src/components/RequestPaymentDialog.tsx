@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { Sats } from '@fedi/common/types'
+import { MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
@@ -15,6 +15,7 @@ import { Button } from './Button'
 import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 import { QRCode } from './QRCode'
+import { ReceiveOffline } from './ReceiveOffline'
 import { Text } from './Text'
 
 interface Props {
@@ -36,6 +37,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const [lightningInvoice, setLightningInvoice] = useState<string>()
     const [bitcoinUrl, setBitcoinUrl] = useState<string>()
     const [generateError, setGenerateError] = useState<string>()
+    const [isReceivingOffline, setIsReceivingOffline] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
 
     // Reset on close, focus input on open
@@ -48,6 +50,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             setLightningInvoice(undefined)
             setBitcoinUrl(undefined)
             setGenerateError(undefined)
+            setIsReceivingOffline(false)
         } else {
             requestAnimationFrame(() =>
                 containerRef.current?.querySelector('input')?.focus(),
@@ -117,18 +120,16 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     }, [isLightning, lightningInvoice, bitcoinUrl])
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
-
     const error =
         amount > 200_000 ? `Maximum amount is 200,000 sats` : generateError
-
     const showNote = !isRequesting || !!note
 
-    return (
-        <Dialog
-            title={t('feature.receive.request-bitcoin')}
-            open={open}
-            onOpenChange={onOpenChange}>
-            <Container ref={containerRef}>
+    let content: React.ReactNode
+    if (isReceivingOffline) {
+        content = <ReceiveOffline onReceive={() => onOpenChange(false)} />
+    } else {
+        content = (
+            <>
                 <RequestTypeToggle onClick={() => setIsLightning(!isLightning)}>
                     <Text variant="caption" weight="medium">
                         {t(isLightning ? 'words.lightning' : 'words.onchain')}
@@ -163,15 +164,29 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         </Button>
                     </>
                 ) : (
-                    <Button
-                        width="full"
-                        onClick={() => setIsRequesting(true)}
-                        loading={isGeneratingQr}>
-                        {t('words.request')} {amountUtils.formatNumber(amount)}{' '}
-                        {t('words.sats')}
-                    </Button>
+                    <Buttons>
+                        <Button
+                            width="full"
+                            onClick={() => setIsRequesting(true)}
+                            loading={isGeneratingQr}>
+                            {t('words.request')}{' '}
+                            {amountUtils.formatNumber(amount)} {t('words.sats')}
+                        </Button>
+                        <Button onClick={() => setIsReceivingOffline(true)}>
+                            {t('feature.receive.receive-bitcoin-offline')}
+                        </Button>
+                    </Buttons>
                 )}
-            </Container>
+            </>
+        )
+    }
+
+    return (
+        <Dialog
+            title={t('feature.receive.request-bitcoin')}
+            open={open}
+            onOpenChange={onOpenChange}>
+            <Container ref={containerRef}>{content}</Container>
         </Dialog>
     )
 }
@@ -216,4 +231,10 @@ const Loading = styled('div', {
     alignItems: 'center',
     aspectRatio: '1 / 1',
     opacity: 0.25,
+})
+
+const Buttons = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
 })
