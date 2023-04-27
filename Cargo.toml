@@ -8,7 +8,7 @@ members = [
     "fedi-social-client",
     "bridge/fedi-ffi",
     "bridge/ffi-bindgen",
-    "bridge/fedi-wasm"
+    "bridge/fedi-wasm",
 ]
 default-members = [
     "fedimintd",
@@ -24,11 +24,11 @@ resolver = "2"
 
 [profile.release-smaller]
 inherits = "release"
-opt-level = 'z'     # Optimize for size.
-lto = true          # Enable Link Time Optimization
-codegen-units = 1   # Reduce number of codegen units to increase optimizations.
-panic = 'abort'     # Abort on panic
-strip = true        # Strip symbols from binary*
+opt-level = 'z'      # Optimize for size.
+lto = true           # Enable Link Time Optimization
+codegen-units = 1    # Reduce number of codegen units to increase optimizations.
+panic = 'abort'      # Abort on panic
+strip = true         # Strip symbols from binary*
 
 [workspace.metadata]
 authors = ["The Fedi Developers"]
@@ -45,8 +45,8 @@ keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
 
 
-stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "e8d07c283ac8af081ecb6fcfd8fc193c503da5ff" }
-stabilitypool-client = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "e8d07c283ac8af081ecb6fcfd8fc193c503da5ff" }
+stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "dd88faab9b372296b044b82bf8bab58ac60cdb89" }
+stabilitypool-client = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "dd88faab9b372296b044b82bf8bab58ac60cdb89" }
 # stabilitypool-server = { path = "../stabilitypool/stabilitypool-server" }
 # stabilitypool-client = { path = "../stabilitypool/stabilitypool-client"}
 
@@ -93,21 +93,21 @@ ring = { opt-level = 3 }
 threshold_crypto = { opt-level = 3 }
 
 [patch.'https://github.com/fedimint/fedimint']
-fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-cli = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-build = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-server = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-wallet-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-ln-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-aead = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-tbs = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
-fedimint-logging = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "b2aa3ef8879d9bf736cbf95490bb90facc0b1c76" }
+fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-cli = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-build = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-server = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-wallet-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-ln-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-aead = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+tbs = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
+fedimint-logging = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "1d2d0c37d096e55720879e7de0b444eeeb0200db" }
 # fedimintd = { path = "../fedimint/fedimintd"}
 # fedimint-cli = { path = "../fedimint/client/cli"}
 # fedimint-build = { path = "../fedimint/fedimint-build"}

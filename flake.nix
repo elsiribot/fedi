@@ -13,7 +13,7 @@
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "github:fedimint/fedimint?rev=e013b0e064cbe4a49e57d2e8c06bade8647016f9";
+      url = "github:fedimint/fedimint?rev=9eee0873626e562ae8466a737455c8c6d8238d58";
     };
   };
 
@@ -48,6 +48,9 @@
               "fedi-social-client"
               "fedi-social-common"
               "fedi-social-server"
+              # bridge test script
+              "scripts"
+              "misc"
             ];
           };
 
@@ -66,7 +69,7 @@
         ;
 
         craneLibBuildNative = import ./nix/crane.nix {
-          inherit pkgs lib advisory-db;
+          inherit pkgs lib advisory-db fedimint-build fedimint-pkgs;
           src = rustSrc;
           craneLib = craneLibNative;
           profile = "release";
@@ -77,7 +80,7 @@
             (name: target:
               import ./nix/crane.nix
                 {
-                  inherit pkgs lib advisory-db target;
+                  inherit pkgs lib advisory-db target fedimint-build fedimint-pkgs;
                   src = rustSrc;
                   craneLib = craneLibCross.${name};
                   profile = "release";
@@ -89,7 +92,6 @@
         rustPackages = {
           fedi-fedimint-pkgs = craneLibBuildNative.pkgsBuild {
             name = "fedi-fedimint-pkgs";
-
             pkgs = {
               fedi-fedimintd = { };
               fedi-fedimint-cli = { };
@@ -98,14 +100,13 @@
 
           fedi-wasm = craneLibBuildCross."wasm32-unknown-unknown".pkgsBuild {
             name = "fedi-wasm";
-
             cargoLock = ./Cargo.wasm32.lock;
-
             pkgs = {
               fedi-wasm = { };
             };
-
           };
+
+          testBridge = craneLibBuildNative.testBridge;
         };
 
         # rust packages outputs with git hash replaced
@@ -115,9 +116,16 @@
         packages = {
           # straight from Fedimint, without any modifications
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
+          fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
         } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {
+          default = fmLib.devShells.default.overrideAttrs (prev: {
+            nativeBuildInputs = [
+              fedimint-build.packages.${system}.fedimint-bin-tests
+              fedimint-pkgs.packages.${system}.gateway-pkgs
+            ] ++ prev.nativeBuildInputs;
+          });
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
             nativeBuildInputs =
               [
@@ -128,8 +136,6 @@
                 pkgs.wasm-bindgen-cli
                 pkgs.binaryen
                 pkgs.gnused
-
-
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";

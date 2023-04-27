@@ -1,4 +1,4 @@
-{ pkgs, lib, advisory-db, src, craneLib, target ? null, profile }:
+{ pkgs, lib, advisory-db, src, craneLib, target ? null, profile, fedimint-build, fedimint-pkgs }:
 rec {
   cargo-llvm-cov = craneLib.buildPackage rec {
     pname = "cargo-llvm-cov";
@@ -60,8 +60,9 @@ rec {
       perl
       procps
       which
+      fedimint-build.packages.${system}.fedimint-bin-tests
+      fedimint-pkgs.packages.${system}.gateway-pkgs
     ];
-
 
     # https://github.com/ipetkov/crane/issues/76#issuecomment-1296025495
     installCargoArtifactsMode = "use-zstd";
@@ -117,6 +118,7 @@ rec {
       '';
     };
   };
+
   commonCliTestArgs = commonArgs // {
     pname = "fedimint-test";
     version = "0.0.1";
@@ -228,65 +230,12 @@ rec {
     doCheck = false;
   });
 
-  cliTestReconnect = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-reconnect";
+  testBridge = craneLib.mkCargoDerivation (commonCliTestArgs // {
+    pname = "${commonCliTestArgs.pname}-bridge";
     version = "0.0.1";
     cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/reconnect-test.sh";
+    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/test-bridge.sh";
   });
-
-  cliTestUpgrade = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-upgrade";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/upgrade-test.sh";
-  });
-
-  cliTestLatency = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-latency";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/latency-test.sh";
-  });
-
-  cliTestCli = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-cli";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/cli-test.sh";
-  });
-
-  cliRustTests = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-rust-tests";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/rust-tests.sh";
-  });
-
-  cliTestsAll = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-all";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    # One normal run, then if succeeded, modify the "always success test" to fail,
-    # and make sure we detect it (happened too many times that we didn't).
-    # Thanks to early termination, this should be all very quick, as we actually
-    # won't start other tests.
-    buildPhaseCargoCommand = ''
-      patchShebangs ./scripts
-      ./scripts/test-ci-all.sh || exit 1
-      sed -i -e 's/exit 0/exit 1/g' scripts/always-success-test.sh
-      echo "Verifying failure detection..."
-      ./scripts/test-ci-all.sh 1>/dev/null 2>/dev/null && exit 1
-    '';
-  });
-
-  cliTestAlwaysFail = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-always-fail";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/always-fail-test.sh";
-  });
-
 
   # Compile a group of packages together
   #
