@@ -7,9 +7,10 @@ function kill_fedimint_bin_tests() {
 }
 trap kill_fedimint_bin_tests EXIT
 
+# FIXME: only necessary if not set
 # core lightning / bitcoind need this
-HOME=$(mktemp -d)
-export HOME
+# HOME=$(mktemp -d)
+# export HOME
 
 # compile binaries in a way that nix can cache
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
