@@ -83,7 +83,7 @@ const DeveloperSettings: React.FC<Props> = () => {
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
-            await switchGateway(gateway)
+            await switchGateway(gateway.nodePubKey)
         } catch (e) {
             toast?.show('Failed to switch gateway', 3000)
         }

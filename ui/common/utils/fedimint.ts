@@ -130,11 +130,10 @@ export class FedimintBridge {
         return this.rpc<LightningGateway[]>('listGateways', { federationId })
     }
 
-    async switchGateway(gateway: LightningGateway, federationId: string) {
-        // FIXME: annoying how nodePubkey has 2 different forms of casing ...
+    async switchGateway(nodePubkey: string, federationId: string) {
         return this.rpc('switchGateway', {
             federationId,
-            nodePubkey: gateway.nodePubKey,
+            nodePubkey,
         })
     }
 

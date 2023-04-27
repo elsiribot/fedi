@@ -8,7 +8,7 @@ import {
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
 
 import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
-import { LightningGateway, SupportedCurrency } from '@fedi/common/types'
+import { SupportedCurrency } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
@@ -181,8 +181,8 @@ export const useBridge = () => {
             return fedimint.listGateways(activeFederationId!)
         }, [activeFederationId]),
         switchGateway: useCallback(
-            (gateway: LightningGateway) => {
-                return fedimint.switchGateway(gateway, activeFederationId!)
+            (nodePubKey: string) => {
+                return fedimint.switchGateway(nodePubKey, activeFederationId!)
             },
             [activeFederationId],
         ),
