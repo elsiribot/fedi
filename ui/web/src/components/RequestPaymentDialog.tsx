@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { MSats, Sats } from '@fedi/common/types'
+import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
@@ -12,6 +12,7 @@ import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
+import { CopyInput } from './CopyInput'
 import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 import { QRCode } from './QRCode'
@@ -33,7 +34,6 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const [note, setNote] = useState('')
     const [isRequesting, setIsRequesting] = useState(false)
     const [isLightning, setIsLightning] = useState(true)
-    const [isGeneratingQr, setIsGeneratingQr] = useState(false)
     const [lightningInvoice, setLightningInvoice] = useState<string>()
     const [bitcoinUrl, setBitcoinUrl] = useState<string>()
     const [generateError, setGenerateError] = useState<string>()
@@ -46,7 +46,6 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             setAmount(0 as Sats)
             setNote('')
             setIsRequesting(false)
-            setIsGeneratingQr(false)
             setLightningInvoice(undefined)
             setBitcoinUrl(undefined)
             setGenerateError(undefined)
@@ -113,16 +112,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         activeFederationId,
     ])
 
-    const handleCopy = useCallback(() => {
-        const data = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
-        if (!data) return
-        navigator.clipboard.writeText(data)
-    }, [isLightning, lightningInvoice, bitcoinUrl])
-
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
+    const copyData = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
     const error =
         amount > 200_000 ? `Maximum amount is 200,000 sats` : generateError
-    const showNote = !isRequesting || !!note
+    const showNote = !!note || !isRequesting
 
     let content: React.ReactNode
     if (isReceivingOffline) {
@@ -148,27 +142,31 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 {showNote && (
                     <NoteInput
                         value={note}
-                        placeholder={isRequesting ? '' : t('phrases.add-note')}
+                        placeholder={qrData ? '' : t('phrases.add-note')}
                         onChange={ev => setNote(ev.currentTarget.value)}
                         readOnly={isRequesting}
                     />
                 )}
-                {isRequesting && !qrData && (
-                    <Loading>{t('words.pending')}</Loading>
-                )}
-                {typeof qrData === 'string' ? (
-                    <>
-                        <QRCode data={qrData} />
-                        <Button width="full" onClick={handleCopy}>
-                            {t('words.copy')}
-                        </Button>
-                    </>
+                {isRequesting ? (
+                    <QRContainer>
+                        {qrData ? (
+                            <QRCode data={qrData} />
+                        ) : (
+                            <Loading>{t('words.pending')}</Loading>
+                        )}
+                        <CopyInput
+                            value={copyData || ''}
+                            onCopyMessage={t(
+                                'feature.receive.copied-payment-code',
+                            )}
+                        />
+                    </QRContainer>
                 ) : (
                     <Buttons>
                         <Button
                             width="full"
                             onClick={() => setIsRequesting(true)}
-                            loading={isGeneratingQr}>
+                            loading={isRequesting}>
                             {t('words.request')}{' '}
                             {amountUtils.formatNumber(amount)} {t('words.sats')}
                         </Button>
@@ -231,6 +229,12 @@ const Loading = styled('div', {
     alignItems: 'center',
     aspectRatio: '1 / 1',
     opacity: 0.25,
+})
+
+const QRContainer = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
 })
 
 const Buttons = styled('div', {
