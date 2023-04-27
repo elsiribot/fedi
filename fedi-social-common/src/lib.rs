@@ -1,8 +1,6 @@
-use config::FediSocialClientConfig;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::__reexports::serde_json;
-use fedimint_core::module::{CommonModuleGen, ModuleCommon};
+use fedimint_core::module::{CommonModuleGen, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::plugin_types_trait_impl_common;
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +15,7 @@ pub mod common;
 pub mod db;
 
 const KIND: ModuleKind = ModuleKind::from_static_str("fedi-social");
+const VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
 
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,
@@ -81,11 +80,11 @@ impl CommonModuleGen for FediSocialCommonGen {
         FediSocialModuleTypes::decoder_builder().build()
     }
 
-    fn hash_client_module(
-        config: serde_json::Value,
-    ) -> anyhow::Result<bitcoin_hashes::sha256::Hash> {
-        Ok(serde_json::from_value::<FediSocialClientConfig>(config)?.consensus_hash())
-    }
+    // fn hash_client_module(
+    //     config: serde_json::Value,
+    // ) -> anyhow::Result<bitcoin_hashes::sha256::Hash> {
+    //     Ok(serde_json::from_value::<FediSocialClientConfig>(config)?.consensus_hash())
+    // }
 }
 
 plugin_types_trait_impl_common!(

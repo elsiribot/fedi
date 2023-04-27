@@ -1,5 +1,4 @@
 use fedi_social_server::FediSocialGen;
-use fedimint_core::module::ServerModuleGen;
 use fedimintd::fedimintd::Fedimintd;
 // use stabilitypool_server::{PoolConfigGenParams, PoolConfigGenerator};
 

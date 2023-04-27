@@ -8,7 +8,6 @@ use fedimint_client_fedi::UserClientConfig;
 use fedimint_core::api::WsClientConnectInfo;
 use fedimint_core::config::PeerUrl;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::ApiEndpoint;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 

@@ -1,7 +1,6 @@
 use fediffi::bridge::Bridge;
 use fediffi::fedimint_client_legacy::module_decode_stubs;
 use fediffi::fedimint_core::config::FederationId;
-use fediffi::fedimint_core::db::mem_impl::MemDatabase;
 use fediffi::fedimint_core::db::Database;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
 use std::cell::RefCell;
@@ -9,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_family = "wasm")]
 mod db2;
 
 #[wasm_bindgen]
@@ -78,7 +78,7 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
             "info,fediffi=debug,fedimint_client_legacy=trace,fedimint_core::api=trace",
         ))
         .with_writer({
-            use std::io::{self, Write};
+            use std::io::Write;
             use tracing_subscriber::fmt::MakeWriter;
 
             struct MemWriter<'a, T>(std::sync::MutexGuard<'a, T>);

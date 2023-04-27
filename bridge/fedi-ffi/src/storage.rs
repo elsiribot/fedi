@@ -1,5 +1,5 @@
 use fedimint_core::config::FederationId;
-use fedimint_core::db::Database;
+use fedimint_core::db::{Database, IDatabase};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, impl_db_lookup, impl_db_record};
@@ -10,7 +10,7 @@ use std::sync::Arc;
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
     /// Database to store all federation joined
     async fn global_db(&self) -> anyhow::Result<Database>;
-    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Database>;
+    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>>;
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;

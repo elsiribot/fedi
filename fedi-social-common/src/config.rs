@@ -3,11 +3,12 @@ use fedimint_core::config::{
     TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleKind;
-use fedimint_core::encoding::Encodable;
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::module::ModuleConsensusVersion;
 use fedimint_core::PeerId;
 use serde::{Deserialize, Serialize};
 
-use crate::KIND;
+use crate::{KIND, VERSION};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SocialConfig {
@@ -21,16 +22,25 @@ pub struct SocialPrivateConfig {
     pub sk_share: threshold_crypto::serde_impl::SerdeSecret<threshold_crypto::SecretKeyShare>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Encodable)]
+#[derive(Clone, Debug, Serialize, Deserialize, Encodable, Decodable)]
 pub struct FediSocialConsensusConfig {
     pub pk_set: threshold_crypto::PublicKeySet,
     pub threshold: u32,
 }
 
 impl TypedServerModuleConsensusConfig for FediSocialConsensusConfig {
+    fn kind(&self) -> ModuleKind {
+        KIND
+    }
+
+    fn version(&self) -> ModuleConsensusVersion {
+        VERSION
+    }
+
     fn to_client_config(&self) -> ClientModuleConfig {
         ClientModuleConfig::from_typed(
-            KIND,
+            self.kind(),
+            self.version(),
             &FediSocialClientConfig {
                 federation_pk_set: self.pk_set.clone(),
             },
@@ -39,7 +49,7 @@ impl TypedServerModuleConsensusConfig for FediSocialConsensusConfig {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable)]
 pub struct FediSocialClientConfig {
     pub federation_pk_set: threshold_crypto::PublicKeySet,
 }
@@ -54,6 +64,10 @@ impl FediSocialClientConfig {
 impl TypedClientModuleConfig for FediSocialClientConfig {
     fn kind(&self) -> ModuleKind {
         KIND
+    }
+
+    fn version(&self) -> ModuleConsensusVersion {
+        VERSION
     }
 }
 

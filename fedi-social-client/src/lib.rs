@@ -8,7 +8,6 @@ use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
-use fedimint_core::db::mem_impl::DatabaseInsertOperation;
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::ExtendsCommonModuleGen;

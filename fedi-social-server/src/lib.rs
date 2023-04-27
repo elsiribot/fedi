@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 
 use common::common::{SignedRecoveryRequest, VerificationDocument};
@@ -12,17 +12,15 @@ use async_trait::async_trait;
 use common::config::{FediSocialConsensusConfig, SocialPrivateConfig};
 use common::db::DbKeyPrefix;
 use fedimint_core::config::{
-    ConfigGenModuleParams, DkgResult, ModuleConfigResponse, ServerModuleConfig,
-    TypedServerModuleConfig, TypedServerModuleConsensusConfig,
+    ClientModuleConfig, ConfigGenModuleParams, DkgResult, ServerModuleConfig,
+    ServerModuleConsensusConfig, TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{Database, DatabaseVersion, ModuleDatabaseTransaction};
-use fedimint_core::encoding::Encodable;
-use fedimint_core::module::__reexports::serde_json;
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::interconnect::ModuleInterconect;
 use fedimint_core::module::{
-    api_endpoint, ApiEndpoint, ApiError, ApiVersion, ConsensusProposal, CoreConsensusVersion,
+    api_endpoint, ApiEndpoint, ApiError, ConsensusProposal, CoreConsensusVersion,
     ExtendsCommonModuleGen, InputMeta, ModuleConsensusVersion, ModuleError, PeerHandle,
     ServerModuleGen, SupportedModuleApiVersions, TransactionItemAmount,
 };
@@ -127,17 +125,24 @@ impl ServerModuleGen for FediSocialGen {
         Ok(server.to_erased())
     }
 
-    fn to_config_response(
+    fn get_client_config(
         &self,
-        config: serde_json::Value,
-    ) -> anyhow::Result<ModuleConfigResponse> {
-        let config = serde_json::from_value::<FediSocialConsensusConfig>(config)?;
-
-        Ok(ModuleConfigResponse {
-            client: config.to_client_config(),
-            consensus_hash: config.consensus_hash(),
-        })
+        config: &ServerModuleConsensusConfig,
+    ) -> anyhow::Result<ClientModuleConfig> {
+        Ok(FediSocialConsensusConfig::from_erased(config)?.to_client_config())
     }
+
+    // fn to_config_response(
+    //     &self,
+    //     config: serde_json::Value,
+    // ) -> anyhow::Result<ModuleConfigResponse> {
+    //     let config = serde_json::from_value::<FediSocialConsensusConfig>(config)?;
+
+    //     Ok(ModuleConfigResponse {
+    //         client: config.to_client_config(),
+    //         consensus_hash: config.consensus_hash(),
+    //     })
+    // }
 
     fn validate_config(&self, identity: &PeerId, config: ServerModuleConfig) -> anyhow::Result<()> {
         config.to_typed::<SocialConfig>()?.validate_config(identity)

@@ -691,7 +691,6 @@ mod tests {
     use std::path;
     use std::sync::Once;
 
-    use fedi_social_client::common::VerificationDocument;
     use fedimint_logging::TracingSetup;
     use tracing::debug;
 

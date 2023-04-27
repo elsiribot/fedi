@@ -9,7 +9,7 @@ use std::{
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
 use fedimint_client::Client as ClientNg;
 use fedimint_client::{
-    module::gen::{ClientModuleGenRegistry, ClientModuleGenRegistryExt, IClientModuleGen},
+    module::gen::{ClientModuleGenRegistry, IClientModuleGen},
     ClientBuilder,
 };
 use fedimint_client_fedi::{
@@ -24,7 +24,7 @@ use fedimint_client_fedi::{
 };
 use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
-    db::mem_impl::MemDatabase,
+    db::IDatabase,
     module::registry::ModuleDecoderRegistry,
 };
 
@@ -53,14 +53,12 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use fedimint_client_legacy::{
-    api::WalletFederationApi,
-    mint::SpendableNote,
-    modules::{ln::contracts::ContractId, wallet::txoproof::TxOutProof},
+    api::WalletFederationApi, mint::SpendableNote, modules::ln::contracts::ContractId,
     utils::network_to_currency,
 };
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
+use fedimint_core::task::TaskHandle;
 use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
-use fedimint_core::{db::Database, task::TaskHandle};
 use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_derive_secret::ChildId;
 use futures::{stream::FuturesUnordered, StreamExt};
@@ -72,7 +70,7 @@ use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
 
 pub type FediUserClient = FediClient<UserClientConfig>;
 
-const GAP_LIMIT: usize = 100;
+// const GAP_LIMIT: usize = 100;
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
@@ -173,9 +171,7 @@ impl Bridge {
         let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         info!("joining federation: {}", connect_cfg.id);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
-        let cfg: ClientConfig = api
-            .download_client_config(&connect_cfg, module_gens().to_common())
-            .await?;
+        let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
         let federations = self.federations.lock().await;
         let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
         Ok(federation)
@@ -305,15 +301,18 @@ pub struct Federation {
 
 impl Federation {
     pub async fn load(
-        db: Database,
+        db: Box<dyn IDatabase>,
         event_sink: EventSink,
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
-        let mut dbtx = db.begin_transaction().await;
+        let dbtx = db.begin_transaction().await;
+        let notifications = Default::default();
+        let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
         let config = dbtx
             .get_value(&FediClientConfigKey)
             .await
-            .context("config not present in db")?;
+            .context("config not present in db")?
+            .to_string();
         let fedi_config: FediConfig = serde_json::from_str(&config).context("invalid config")?;
         dbtx.commit_tx().await;
         Self::from_config(fedi_config, db, event_sink, task_group).await
@@ -321,34 +320,33 @@ impl Federation {
 
     pub async fn from_config(
         config: FediConfig,
-        db: Database,
+        db: Box<dyn IDatabase>,
         event_sink: EventSink,
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
         let gens = module_gens();
         let decoders = load_decoders(&config.client_config, &gens);
-        let user_client = FediUserClient::new(
-            config.client_config.clone(),
-            gens,
-            decoders,
-            db.clone(),
-            Default::default(),
-        )
-        .await;
 
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen);
         client_builder.with_primary_module(1);
-        client_builder.with_config(config.client_config.0);
+        client_builder.with_config(config.client_config.clone().0);
+        client_builder.with_dyn_database(db);
 
         // FIXME: use real database
-        let db = MemDatabase::new();
         let mut task_group_clone = task_group.clone();
-        let ng = client_builder
-            .build::<MemDatabase>(db, &mut task_group_clone)
-            .await?;
+        let ng = client_builder.build(&mut task_group_clone).await?;
+
+        let user_client = FediUserClient::new(
+            config.client_config,
+            gens,
+            decoders,
+            ng.db().clone(),
+            Default::default(),
+        )
+        .await;
 
         Ok(Self {
             client: Arc::new(user_client),
@@ -373,9 +371,7 @@ impl Federation {
         tracing::info!("parsed connection string");
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         tracing::info!("fetching config");
-        let cfg: ClientConfig = api
-            .download_client_config(&connect_cfg, module_gens().to_common())
-            .await?;
+        let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
 
         // Hack to run against local federation
         let mut cfg_string = serde_json::to_string(&cfg).context("unable to serialize cfg")?;
@@ -397,17 +393,19 @@ impl Federation {
 
         let federation_id: FederationId = fedi_config.client_config.0.federation_id.clone();
 
-        let db = storage.federation_db(&federation_id).await?;
+        let dyn_db = storage.federation_db(&federation_id).await?;
+        let dbtx = dyn_db.begin_transaction().await;
+        let notifications = Default::default();
+        let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
         // Save config to db
         {
-            let mut dbtx = db.begin_transaction().await;
             dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
                 .await;
             dbtx.commit_tx().await;
         }
         // TODO: delete the database if failed
 
-        Self::from_config(fedi_config, db, event_sink, task_group).await
+        Self::from_config(fedi_config, dyn_db, event_sink, task_group).await
     }
 
     pub fn user_client(&self) -> &Client<UserClientConfig> {
@@ -732,6 +730,7 @@ impl Federation {
     #[cfg(not(target_family = "wasm"))]
     pub async fn pegin_script(&self, script: &Script) -> Result<()> {
         use electrum_client::{Client, ElectrumApi};
+        use fedimint_core::txoproof::TxOutProof;
         let electrum = Client::new(&self.electrum_url()?)?;
         let history = electrum.script_get_history(&script)?;
         for item in history {
@@ -1007,12 +1006,12 @@ impl Federation {
 
     /// Restore ecash from federation from current client secret
     pub async fn restore_ecash_from_federation(&self) -> Result<Option<String>> {
-        let mut task_group = TaskGroup::new();
-        let username = self
-            .client
-            .mint_client()
-            .restore_ecash_from_federation(GAP_LIMIT, &mut task_group)
-            .await??;
+        // let mut task_group = TaskGroup::new();
+        // let username = self
+        //     .client
+        //     .mint_client()
+        //     .restore_ecash_from_federation(GAP_LIMIT, &mut task_group)
+        //     .await??;
 
         // Update username
         // {
@@ -1028,7 +1027,7 @@ impl Federation {
 
     /// Upload ecash backup to the federation
     pub async fn back_up_ecash_to_federation(&self) -> Result<()> {
-        let username = self.get_username().await;
+        // let username = self.get_username().await;
         let metadata = Metadata::empty();
         self.user_client()
             .mint_client()
