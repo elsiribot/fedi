@@ -117,6 +117,7 @@
           # straight from Fedimint, without any modifications
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
           fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
+          dbtool-pkgs = fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs;
         } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {
@@ -124,6 +125,7 @@
             nativeBuildInputs = [
               fedimint-build.packages.${system}.fedimint-bin-tests
               fedimint-pkgs.packages.${system}.gateway-pkgs
+              fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
             ] ++ prev.nativeBuildInputs;
           });
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
