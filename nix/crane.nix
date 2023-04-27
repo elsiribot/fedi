@@ -113,6 +113,7 @@ rec {
 
       extraDummyScript = ''
         cp -ar "${src}/.cargo" --no-target-directory $out/.cargo
+        cp -a "${src}/Cargo.wasm32.lock" $out/
       '';
     };
   };
