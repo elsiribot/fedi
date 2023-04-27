@@ -234,7 +234,8 @@
             "send-bitcoin-offline": "Send bitcoin offline",
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
-            "you-sent": "You sent"
+            "you-sent": "You sent",
+            "copied-offline-payment": "Copied offline payment"
         },
         "recovery": {
             "download-failed": "Failed to download",

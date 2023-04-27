@@ -12,6 +12,7 @@ import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Checkbox } from './Checkbox'
+import { CopyInput } from './CopyInput'
 import { QRCode } from './QRCode'
 import { Text } from './Text'
 
@@ -29,6 +30,7 @@ export const SendOffline: React.FC<Props> = ({
     const activeFederation = useAppSelector(selectActiveFederation)
     const [amount, setAmount] = useState(0 as Sats)
     const [isGeneratingEcash, setIsGeneratingEcash] = useState(false)
+    const [offlinePayment, setOfflinePayment] = useState<string | null>(null)
     const [qrFrames, setQrFrames] = useState<string[] | null>(null)
     const [hasConfirmedPayment, setHasConfirmedPayment] = useState(false)
 
@@ -45,6 +47,7 @@ export const SendOffline: React.FC<Props> = ({
                 federationId,
             )
             onEcashGenerated()
+            setOfflinePayment(ecash)
             setQrFrames(dataToFrames(ecash))
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
@@ -52,10 +55,14 @@ export const SendOffline: React.FC<Props> = ({
         setIsGeneratingEcash(false)
     }, [amount, federationId, showErrorToast, onEcashGenerated])
 
-    if (qrFrames) {
+    if (offlinePayment && qrFrames) {
         return (
             <>
                 <QRCode data={qrFrames} />
+                <CopyInput
+                    value={offlinePayment}
+                    onCopyMessage={t('feature.send.copied-offline-payment')}
+                />
                 <Checkbox
                     label={t('feature.send.i-have-sent-payment')}
                     checked={hasConfirmedPayment}
