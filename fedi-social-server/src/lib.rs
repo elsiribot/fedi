@@ -319,7 +319,7 @@ impl ServerModule for FediSocial {
         vec![
             // user's call to make a backup (usually when creating the account)
             api_endpoint! {
-                "/backup",
+                "backup",
                 async |module: &FediSocial, context, request: SignedBackupRequest| -> () {
                         module
                             .handle_backup(&mut context.dbtx(), request).await?;
@@ -328,7 +328,7 @@ impl ServerModule for FediSocial {
             },
             // user's call to initiate the recovery process
             api_endpoint! {
-                "/recover",
+                "recover",
                 async |module: &FediSocial, context, request: SignedRecoveryRequest| -> () {
                         module
                             .handle_recover(&mut context.dbtx(), request).await?;
@@ -337,7 +337,7 @@ impl ServerModule for FediSocial {
             },
             // guardian's call to download verification document
             api_endpoint! {
-                "/get_verification",
+                "get_verification",
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<VerificationDocument> {
                         module
                             .handle_get_verification(&mut context.dbtx(), request).await
@@ -345,7 +345,7 @@ impl ServerModule for FediSocial {
             },
             // guardian's call to approve the recovery and produce decryption share
             api_endpoint! {
-                "/approve_recovery",
+                "approve_recovery",
                 async |module: &FediSocial, context, req: (RecoveryId, String)| -> () {
                         module
                             .handle_approve_recovery(&mut context.dbtx(), req.0, req.1).await?;
@@ -353,7 +353,7 @@ impl ServerModule for FediSocial {
                 }
             },
             api_endpoint! {
-                "/decryption_share",
+                "decryption_share",
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<EncryptedRecoveryShare> {
                         module
                             .handle_get_decryption_share(&mut context.dbtx(), request).await
