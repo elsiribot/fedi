@@ -39,12 +39,6 @@ export const useDebouncedEffect = (
     }, [...(deps || []), delay])
 }
 
-export function useUpdatingRef<T>(value: T) {
-    const ref = useRef(value)
-    ref.current = value
-    return ref
-}
-
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
     const ref = useRef<T>()
     useEffect(() => {

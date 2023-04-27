@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Btc, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppSelector, useUpdatingRef } from '../hooks'
+import { useAppSelector } from '../hooks'
 import { keyframes, styled, theme } from '../styles'
 import { Text } from './Text'
 

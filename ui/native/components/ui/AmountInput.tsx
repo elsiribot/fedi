@@ -3,11 +3,12 @@ import React, { RefObject, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, TextInput } from 'react-native'
 
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Btc, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppSelector, useUpdatingRef } from '../../state/hooks'
+import { useAppSelector } from '../../state/hooks'
 import InvisibleInput from './InvisibleInput'
 import SvgImage from './SvgImage'
 
