@@ -43,7 +43,9 @@
         "transactions": "Transacciones",
         "two": "dos",
         "yes": "Si",
-        "wallet": "Cartera"
+        "wallet": "Cartera",
+        "language": "Lengua",
+        "currency": "Divisa"
     },
     "phrases": {
         "add-note": "Añadir nota",

@@ -59,7 +59,9 @@
         "two": "deux",
         "username": "Nom d'utilisateur",
         "yes": "Oui",
-        "wallet": "Portefeuille"
+        "wallet": "Portefeuille",
+        "language": "Langue",
+        "currency": "Devise"
     },
     "phrases": {
         "add-note": "Ajouter une note",

@@ -59,7 +59,9 @@
         "two": "two",
         "username": "Username",
         "yes": "Yes",
-        "wallet": "Wallet"
+        "wallet": "Wallet",
+        "language": "Language",
+        "currency": "Currency"
     },
     "phrases": {
         "add-note": "Add note",

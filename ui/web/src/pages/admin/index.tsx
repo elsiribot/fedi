@@ -111,7 +111,7 @@ function AdminPage() {
                 {
                     name: 'phrases.app-settings-security',
                     icon: FediLogoICon,
-                    disabled: true,
+                    href: '/admin/settings',
                 },
             ],
         },
