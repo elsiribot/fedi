@@ -1,0 +1,85 @@
+import { Text, Theme, useTheme } from '@rneui/themed'
+import React, { RefObject } from 'react'
+import { Pressable, StyleSheet, TextInput } from 'react-native'
+
+export type Props = {
+    value: string
+    onChangeText: (_: string) => void
+    inputRef: RefObject<TextInput>
+    label?: string
+    labelPosition?: 'left' | 'right'
+}
+
+// The Input/TextInput component can be difficult to customize for some UI
+// so this component makes it convenient to use the state functionality while
+// hiding the default UI and display a simple label + value instead
+const InvisibleInput: React.FC<Props> = ({
+    value,
+    onChangeText,
+    inputRef,
+    label = '',
+    labelPosition = 'right',
+}) => {
+    const { theme } = useTheme()
+
+    return (
+        <Pressable style={styles(theme).container}>
+            <Pressable
+                style={styles(theme).interactionContainer}
+                onPress={() => inputRef.current?.focus()}>
+                {labelPosition === 'left' && (
+                    <Text h2 style={styles(theme).labelText}>
+                        {label}
+                    </Text>
+                )}
+                <Text
+                    h1
+                    h1Style={[
+                        labelPosition === 'left' ? styles(theme).offset : {},
+                    ]}>
+                    {value}
+                </Text>
+                {labelPosition === 'right' && (
+                    <Text h2 style={styles(theme).labelText}>
+                        {label}
+                    </Text>
+                )}
+            </Pressable>
+            <TextInput
+                ref={inputRef}
+                autoFocus
+                onChangeText={onChangeText}
+                value={value}
+                keyboardType="numeric"
+                returnKeyType="done"
+                maxLength={17}
+                style={styles(theme).invisible}
+            />
+        </Pressable>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {},
+        interactionContainer: {
+            marginTop: 'auto',
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            marginHorizontal: theme.spacing.lg,
+            width: '100%',
+        },
+        invisible: {
+            opacity: 0,
+            width: 0,
+            height: 0,
+            position: 'absolute',
+        },
+        labelText: {
+            marginHorizontal: theme.spacing.sm,
+            marginBottom: 3,
+        },
+        offset: {},
+    })
+
+export default InvisibleInput

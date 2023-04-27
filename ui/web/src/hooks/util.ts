@@ -1,11 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
 
-export function useUpdatingRef<T>(value: T) {
-    const ref = useRef(value)
-    ref.current = value
-    return ref
-}
-
 export function useMediaQuery(query: string): boolean {
     const [matches, setMatches] = useState(false)
 

@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -8,22 +8,17 @@ import uuid from 'react-native-uuid'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import FiatAmount from '../components/feature/wallet/FiatAmount'
+import AmountInput from '../components/ui/AmountInput'
+import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import {
     addToMembersSeen,
     addToMessages,
     useChatContext,
 } from '../state/contexts/ChatContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import {
-    Keypair,
-    Message,
-    Payment,
-    PaymentStatus,
-    Sats,
-    SatsString,
-} from '../types'
+import { Keypair, Message, Payment, PaymentStatus, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
@@ -33,9 +28,10 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
     const [isLoading, setIsLoading] = useState(false)
-    const [amount, setAmount] = useState<SatsString>('' as SatsString)
+    const [amount, setAmount] = useState<Sats>(0 as Sats)
     const { sendDirectMessage } = useXmpp()
     const { state, dispatch } = useChatContext()
+    const { toast } = useEnvironmentContext().state
     const { authenticatedMember } = state
     const { recipient } = route.params
 
@@ -67,7 +63,12 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }
 
-    const onChangeText = (updatedValue: SatsString) => {
+    const onChangeAmount = (updatedValue: Sats) => {
+        if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
+            toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
+        } else {
+            toast?.close(0)
+        }
         setAmount(updatedValue)
     }
 
@@ -80,16 +81,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
-            <Input
-                autoFocus
-                onChangeText={onChangeText as (_: string) => any}
-                value={amount}
-                placeholder={`${t('words.amount')} (${t('words.sats')})`}
-                keyboardType="numeric"
-                returnKeyType="done"
-                containerStyle={styles(theme).textInput}
-            />
-            <FiatAmount amountSats={Number(amount) as Sats} />
+
+            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
                     title={t('words.request')}

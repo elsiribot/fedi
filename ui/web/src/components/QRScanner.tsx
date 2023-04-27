@@ -3,9 +3,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { theme } from '@fedi/common/constants/theme'
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useUpdatingRef } from '../hooks'
 import { styled } from '../styles'
 import { Text } from './Text'
 

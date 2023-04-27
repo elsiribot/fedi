@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
@@ -8,10 +8,12 @@ import { Alert, StyleSheet, View } from 'react-native'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import FiatAmount from '../components/feature/wallet/FiatAmount'
+import AmountInput from '../components/ui/AmountInput'
 import SvgImage from '../components/ui/SvgImage'
+import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
-import { Sats, SatsString } from '../types'
+import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -25,7 +27,8 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
-    const [amount, setAmount] = useState<SatsString>('' as SatsString)
+    const [amount, setAmount] = useState<Sats>(0 as Sats)
+    const { toast } = useEnvironmentContext().state
     const { generateEcash } = useBridge()
 
     const onGenerateEcash = async () => {
@@ -57,7 +60,12 @@ const SendOfflineAmount: React.FC<Props> = () => {
         )
     }
 
-    const onChangeText = (updatedValue: SatsString) => {
+    const onChangeAmount = (updatedValue: Sats) => {
+        if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
+            toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
+        } else {
+            toast?.close(0)
+        }
         setAmount(updatedValue)
     }
 
@@ -70,16 +78,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
-            <Input
-                onChangeText={onChangeText as (_: string) => any}
-                value={amount}
-                placeholder={`${t('words.amount')} (${t('words.sats')})`}
-                keyboardType="numeric"
-                returnKeyType="done"
-                containerStyle={styles(theme).textInput}
-                textAlign="center"
-            />
-            <FiatAmount amountSats={Number(amount) as Sats} />
+            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
             <View style={styles(theme).offlineContainer}>
                 <SvgImage
                     name="Offline"

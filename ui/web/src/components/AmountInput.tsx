@@ -1,11 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
-import { Btc, Sats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { useAmountInput } from '@fedi/common/hooks/amount'
+import { Sats } from '@fedi/common/types'
 
-import { useAppSelector, useUpdatingRef } from '../hooks'
 import { keyframes, styled, theme } from '../styles'
 import { Text } from './Text'
 
@@ -23,71 +21,15 @@ export const AmountInput: React.FC<Props> = ({
     onChangeAmount,
 }) => {
     const { t } = useTranslation()
-    const btcToFiatRate = useAppSelector(selectBtcExchangeRate)
-    const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
-    const currency = useAppSelector(selectCurrency)
-    const [isFiat, setIsFiat] = useState(false)
-    const [satsValue, setSatsValue] = useState<string>(
-        amountUtils.formatSats(amount),
-    )
-    const [fiatValue, setFiatValue] = useState<string>(
-        amountUtils.formatFiat(
-            amountUtils.satToFiat(amount, btcToFiatRate),
-            currency,
-            { noSymbol: true },
-        ),
-    )
-
-    const clampSats = useCallback((value: number) => {
-        if (Number.isNaN(value)) return 0 as Sats
-        return Math.round(Math.max(0, value)) as Sats
-    }, [])
-
-    const handleChangeSats = useCallback(
-        (ev: React.ChangeEvent<HTMLInputElement>) => {
-            const sats = clampSats(
-                parseInt(ev.currentTarget.value.replaceAll(',', ''), 10),
-            )
-            const fiat = amountUtils.satToBtc(sats) * btcToFiatRateRef.current
-            onChangeAmount && onChangeAmount(clampSats(sats))
-            setSatsValue(Intl.NumberFormat().format(sats))
-            setFiatValue(
-                amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
-            )
-        },
-        [clampSats, onChangeAmount, currency, btcToFiatRateRef],
-    )
-
-    const handleChangeFiat = useCallback(
-        (ev: React.ChangeEvent<HTMLInputElement>) => {
-            const { value } = ev.currentTarget
-            let fiat = amountUtils.parseFiatString(value)
-            if (Number.isNaN(fiat) || fiat < 0) {
-                fiat = 0
-            }
-
-            // If they've added or removed a sigdig, offset all numbers by a tens place
-            const decimals = amountUtils.getCurrencyDecimals(currency)
-            const decimalSeparator = amountUtils.getDecimalSeparator()
-            const valueDecimals = value.split(decimalSeparator)[1]?.length || 0
-            if (valueDecimals > decimals) {
-                fiat = fiat * 10
-            } else if (valueDecimals < decimals) {
-                fiat = fiat / 10
-            }
-
-            const sats = clampSats(
-                amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
-            )
-
-            onChangeAmount && onChangeAmount(sats)
-            setFiatValue(
-                amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
-            )
-            setSatsValue(amountUtils.formatSats(sats))
-        },
-        [clampSats, btcToFiatRateRef, onChangeAmount, currency],
-    )
+    const {
+        isFiat,
+        setIsFiat,
+        satsValue,
+        fiatValue,
+        handleChangeFiat,
+        handleChangeSats,
+        currencySymbol,
+    } = useAmountInput(amount, onChangeAmount)
 
     const activeWrapProps = {
         active: true,
@@ -107,7 +49,7 @@ export const AmountInput: React.FC<Props> = ({
                 setIsFiat(is => !is)
                 ev.currentTarget.querySelector('input')?.focus()
             },
-            [readOnly],
+            [readOnly, setIsFiat],
         ),
     }
 
@@ -129,19 +71,23 @@ export const AmountInput: React.FC<Props> = ({
                     <input
                         readOnly={isFiat || readOnly}
                         value={satsValue}
-                        onChange={handleChangeSats}
+                        onChange={ev =>
+                            handleChangeSats(ev.currentTarget.value)
+                        }
                     />
                     <div>{satsValue}</div>
                 </SnugInput>
                 <span>{t('words.sats')}</span>
             </FieldWrap>
             <FieldWrap {...(isFiat ? activeWrapProps : inactiveWrapProps)}>
-                <span>{amountUtils.getCurrencySymbol(currency)}</span>
+                <span>{currencySymbol}</span>
                 <SnugInput>
                     <input
                         readOnly={!isFiat || readOnly}
                         value={fiatValue}
-                        onChange={handleChangeFiat}
+                        onChange={ev =>
+                            handleChangeFiat(ev.currentTarget.value)
+                        }
                     />
                     <div>{fiatValue}</div>
                 </SnugInput>

@@ -27,6 +27,7 @@ type CommonReducers = typeof commonReducers
 export type CommonState = {
     [key in keyof CommonReducers]: ReturnType<CommonReducers[key]>
 }
+export type CommonDispatch = ThunkDispatch<CommonState, unknown, AnyAction>
 
 /**
  * Sets up any initial redux behavior that is consistent across all platforms.
