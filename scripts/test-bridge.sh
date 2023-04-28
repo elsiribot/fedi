@@ -15,9 +15,14 @@ trap kill_fedimint_bin_tests EXIT
 # compile binaries in a way that nix can cache
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
 
+# fedi packages
 source scripts/build.sh
 export PATH="$FM_BIN_DIR:$PATH"
 echo "Running in temporary directory $FM_TEST_DIR"
+
+# gateway packages
+nix build -L .#gateway-pkgs
+export PATH="$PWD/result/bin:$PATH"
 
 # a pipe that rust writes to, and user-shell can wait for it
 export FM_READY_FILE=$FM_TMP_DIR/ready
