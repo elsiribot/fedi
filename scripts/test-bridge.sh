@@ -46,6 +46,6 @@ FM_CONNECT_STRING=$(cat $FM_DATA_DIR/client-connect)
 export FM_CONNECT_STRING
 
 echo "## Running tests"
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_ecash_ng
+cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi
 
 echo "## Tests Passed"

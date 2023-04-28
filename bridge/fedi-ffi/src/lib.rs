@@ -700,11 +700,8 @@ mod tests {
     use fedimint_mint_client::{MintClientExt, MintClientModule, SpendableNote};
     use tracing::debug;
 
-    use crate::{
-        event::IEventSink,
-        ffi::{PathBasedStorage, RUNTIME},
-    };
-    use fedimint_bin_tests::{cmd, dev_fed, util::ProcessManager, DevFed};
+    use crate::{event::IEventSink, ffi::PathBasedStorage};
+    use fedimint_bin_tests::cmd;
 
     use super::*;
 
@@ -763,174 +760,139 @@ mod tests {
         Ok((bridge, federation))
     }
 
-    #[test]
-    fn test_join_and_leave_and_joinfederation() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            let (bridge, federation) = setup().await?;
-            leaveFederation(bridge, federation.id().into()).await?;
-            setup().await?;
-            Ok(())
-        })
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_join_and_leave_and_joinfederation() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+        leaveFederation(bridge, federation.id().into()).await?;
+        setup().await?;
+        Ok(())
     }
 
-    #[test]
-    fn test_personal_recovery() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            let (bridge, federation) = setup().await?;
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_personal_recovery() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
 
-            // Get original mnemonic (for comparison later)
-            let words = getMnemonic(bridge.clone(), federation.id().into()).await?;
-            let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
-            info!("initial mnemnoic {:?}", &words);
+        // Get original mnemonic (for comparison later)
+        let words = getMnemonic(bridge.clone(), federation.id().into()).await?;
+        let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
+        info!("initial mnemnoic {:?}", &words);
 
-            // leaveFederation(bridge.clone(), federation.id().into()).await?;
+        // leaveFederation(bridge.clone(), federation.id().into()).await?;
 
-            let _username = recoverFromMnemonic(
-                bridge.clone(),
-                federation.id().into(),
-                initial_mnemonic
-                    .to_string()
-                    .split(" ")
-                    .map(|s| s.to_string())
-                    .collect(),
+        let _username = recoverFromMnemonic(
+            bridge.clone(),
+            federation.id().into(),
+            initial_mnemonic
+                .to_string()
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect(),
+        )
+        .await?;
+        let words_after = getMnemonic(bridge.clone(), federation.id().into()).await?;
+
+        assert_eq!(words, words_after);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_xmpp_credentials() -> anyhow::Result<()> {
+        let (_, fed1) = setup().await?;
+        let (_, fed2) = setup().await?;
+        let cred1 = fed1.xmpp_credentials().await;
+        let cred2 = fed2.xmpp_credentials().await;
+        // assert!(cred1.username != cred2.username);
+        assert!(cred1.password != cred2.password);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_leave_federation() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+        let db_filename = format!("{}.db", federation.id().to_string());
+        let db_path = path::Path::new(&db_filename).join("LOCK").clone();
+        {
+            let federations_lock = bridge.federations.lock().await.clone();
+            assert_eq!(1, federations_lock.keys().len());
+            assert!(&bridge.storage.read_file(db_path.as_path()).await.is_ok());
+        }
+        bridge.leave_federation(&federation.id()).await?;
+        {
+            let federations_lock = bridge.federations.lock().await.clone();
+            assert_eq!(0, federations_lock.keys().len());
+            assert!(&bridge.storage.read_file(db_path.as_path()).await.is_err());
+        }
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_modules() -> anyhow::Result<()> {
+        let (_, federation) = setup().await?;
+        let num_modules = federation.client.config().0.modules.keys().len();
+        assert_eq!(num_modules, 3);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_ecash_ng() -> anyhow::Result<()> {
+        // RUNTIME.block_on(async {
+        let (_, federation) = setup().await?;
+
+        // receive ecash
+        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
+            .out_json()
+            .await?["note"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap();
+        let ecash = parse_ecash(&ecash_string)?;
+        federation.ng_receive_ecash(ecash).await?;
+
+        // check balance
+        let mint_client = federation
+            .ng
+            .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
+            .unwrap();
+        let summary = mint_client
+            .get_wallet_summary(
+                &mut federation
+                    .ng
+                    .db()
+                    .begin_transaction()
+                    .await
+                    .with_module_prefix(1),
+            )
+            .await;
+        assert_eq!(
+            summary.total_amount(),
+            fedimint_core::Amount::from_msats(1000)
+        );
+
+        // spend ecash
+        let (_, notes) = federation
+            .ng
+            .spend_notes(
+                fedimint_core::Amount::from_msats(1000),
+                Duration::from_secs(30),
             )
             .await?;
-            let words_after = getMnemonic(bridge.clone(), federation.id().into()).await?;
 
-            assert_eq!(words, words_after);
+        // receive with fedimint-cli
+        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+        let ecash = serialize_ecash(&notes);
+        cmd!("fedimint-cli", "--data-dir={cfg_dir}", "reissue", ecash)
+            .run()
+            .await?;
 
-            Ok(())
-        })
+        Ok(())
+        // })
     }
 
-    #[test]
-    fn test_xmpp_credentials() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            let (_, fed1) = setup().await?;
-            let (_, fed2) = setup().await?;
-            let cred1 = fed1.xmpp_credentials().await;
-            let cred2 = fed2.xmpp_credentials().await;
-            // assert!(cred1.username != cred2.username);
-            assert!(cred1.password != cred2.password);
-            Ok(())
-        })
-    }
-
-    #[test]
-    fn test_leave_federation() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            let (bridge, federation) = setup().await?;
-            let db_filename = format!("{}.db", federation.id().to_string());
-            let db_path = path::Path::new(&db_filename).join("LOCK").clone();
-            {
-                let federations_lock = bridge.federations.lock().await.clone();
-                assert_eq!(1, federations_lock.keys().len());
-                assert!(&bridge.storage.read_file(db_path.as_path()).await.is_ok());
-            }
-            bridge.leave_federation(&federation.id()).await?;
-            {
-                let federations_lock = bridge.federations.lock().await.clone();
-                assert_eq!(0, federations_lock.keys().len());
-                assert!(&bridge.storage.read_file(db_path.as_path()).await.is_err());
-            }
-            Ok(())
-        })
-    }
-
-    #[test]
-    fn test_modules() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            let (_, federation) = setup().await?;
-            let num_modules = federation.client.config().0.modules.keys().len();
-            assert_eq!(num_modules, 5);
-            Ok(())
-        })
-    }
-
-    #[test]
-    fn test_ecash_ng() -> anyhow::Result<()> {
-        RUNTIME.block_on(async {
-            // fedimint_logging::TracingSetup::default().init()?;
-            // let process_mgr = ProcessManager::new();
-            // let task_group = TaskGroup::new();
-            // task_group.install_kill_handler();
-            // let dev_fed = dev_fed(&task_group, &process_mgr).await?;
-
-            // #[allow(unused_variables)]
-            // let DevFed {
-            //     bitcoind,
-            //     cln,
-            //     lnd,
-            //     fed,
-            //     gw_cln,
-            //     gw_lnd,
-            //     electrs,
-            //     esplora,
-            // } = dev_fed;
-
-            // let (_, federation) = setup().await?;
-            // let ecash_string = cmd!(fed, "spend", "1000").out_json().await?["note"]
-            //     .as_str()
-            //     .map(|s| s.to_owned())
-            //     .unwrap();
-
-            let (_, federation) = setup().await?;
-
-            // receive ecash
-            let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-            let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
-                .out_json()
-                .await?["note"]
-                .as_str()
-                .map(|s| s.to_owned())
-                .unwrap();
-            let ecash = parse_ecash(&ecash_string)?;
-            federation.ng_receive_ecash(ecash).await?;
-
-            // check balance
-            let mint_client = federation
-                .ng
-                .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
-                .unwrap();
-            let summary = mint_client
-                .get_wallet_summary(
-                    &mut federation
-                        .ng
-                        .db()
-                        .begin_transaction()
-                        .await
-                        .with_module_prefix(1),
-                )
-                .await;
-            assert_eq!(
-                summary.total_amount(),
-                fedimint_core::Amount::from_msats(1000)
-            );
-
-            // spend ecash
-            let (operation, notes) = federation
-                .ng
-                .spend_notes(
-                    fedimint_core::Amount::from_msats(1000),
-                    Duration::from_secs(30),
-                )
-                .await?;
-
-            // receive with fedimint-cli
-            let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-            let ecash = serialize_ecash(&notes);
-            cmd!("fedimint-cli", "--data-dir={cfg_dir}", "reissue", ecash)
-                .run()
-                .await?;
-
-            Ok(())
-        })
-    }
-
-    // #[test]
-    // fn test_decryption_shares() -> anyhow::Result<()> {
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_decryption_shares() -> anyhow::Result<()> {
     //     // https://github.com/tokio-rs/tokio/issues/2374#issuecomment-1129447716
-    //     RUNTIME.block_on(async {
     //         let (bridge, federation) = setup().await?;
 
     //         // Get original mnemonic (for comparison later)
@@ -992,6 +954,5 @@ mod tests {
     //         assert_eq!(initial_mnemonic.to_string(), final_mnemnoic.to_string());
 
     //         Ok(())
-    //     })
     // }
 }
