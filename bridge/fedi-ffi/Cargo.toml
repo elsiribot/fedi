@@ -12,6 +12,7 @@ fedimint-client-legacy = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-mint-client = { workspace = true }
+fedimint-ln-client = { workspace = true }
 fedi-social-client = { path = "../../fedi-social-client" }
 fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }

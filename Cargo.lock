@@ -1128,6 +1128,7 @@ dependencies = [
  "fedimint-client-legacy",
  "fedimint-core",
  "fedimint-derive-secret",
+ "fedimint-ln-client",
  "fedimint-logging",
  "fedimint-mint-client",
  "fedimint-rocksdb",

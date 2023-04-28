@@ -23,9 +23,11 @@ use fedimint_client_fedi::{
 };
 use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
+    core::LEGACY_HARDCODED_INSTANCE_ID_LN,
     db::IDatabase,
     module::registry::ModuleDecoderRegistry,
 };
+use fedimint_ln_client::{LightningClientExt, LnPayState};
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -446,6 +448,41 @@ impl Federation {
         Ok(notes)
     }
 
+    pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+        let mut dbtx = self.ng.db().begin_transaction().await;
+        let active_gateway = self
+            .ng
+            .fetch_active_gateway(&mut dbtx.with_module_prefix(LEGACY_HARDCODED_INSTANCE_ID_LN))
+            .await?;
+        dbtx.commit_tx().await;
+
+        let federation_id = self.id();
+        let operation_id = self
+            .ng
+            .pay_bolt11_invoice(federation_id, invoice.to_owned(), active_gateway)
+            .await?;
+
+        let mut updates = self.ng.subscribe_ln_pay_updates(operation_id).await?;
+
+        while let Some(update) = updates.next().await {
+            match update {
+                LnPayState::Success { preimage } => {
+                    return Ok(());
+                }
+                LnPayState::Refunded { refund_txid } => {
+                    self.ng
+                        .await_lightning_refund(operation_id, refund_txid)
+                        .await?;
+                }
+                _ => {}
+            }
+
+            info!("Update: {:?}", update);
+        }
+
+        return Err(anyhow::anyhow!("Lightning Payment failed"));
+    }
+
     pub fn user_client(&self) -> &Client<UserClientConfig> {
         self.client.as_ref()
     }
@@ -463,7 +500,7 @@ impl Federation {
             .clone()
     }
 
-    // FIXME: move this to actually using config.federation_id
+    // FIXME: move to new client
     pub fn id(&self) -> FederationId {
         self.user_client().config().0.federation_id
     }

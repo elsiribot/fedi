@@ -710,6 +710,7 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 #[cfg(test)]
 mod tests {
     use std::sync::Once;
+    use std::time::UNIX_EPOCH;
     use std::{path, time::Duration};
 
     use fedimint_core::encoding::Encodable;
@@ -717,6 +718,7 @@ mod tests {
         core::LEGACY_HARDCODED_INSTANCE_ID_MINT, encoding::Decodable,
         module::registry::ModuleDecoderRegistry, task::TaskGroup, TieredMulti,
     };
+    use fedimint_ln_client::LightningClientModule;
     use fedimint_logging::TracingSetup;
     use fedimint_mint_client::{MintClientExt, MintClientModule, SpendableNote};
     use tracing::debug;
@@ -893,6 +895,68 @@ mod tests {
 
         Ok(())
         // })
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_lightning_send() -> anyhow::Result<()> {
+        // RUNTIME.block_on(async {
+        let (_, federation) = setup().await?;
+
+        // receive ecash
+        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "10000")
+            .out_json()
+            .await?["note"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap();
+        let ecash = parse_ecash(&ecash_string)?;
+        federation.ng_receive_ecash(ecash).await?;
+
+        let label = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .to_string();
+        let label = format!("foo-{}", label);
+
+        // get invoice
+        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
+        let invoice_string = cmd!(
+            "lightning-cli",
+            "--network=regtest",
+            "--lightning-dir={cln_dir}",
+            "invoice",
+            "1000",
+            &label,
+            &label
+        )
+        .out_json()
+        .await?["bolt11"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap();
+        let invoice = Invoice::from_str(&invoice_string)?;
+
+        // check balance
+        federation.ng_pay_invoice(&invoice).await?;
+
+        // check that core-lightning got paid
+        let status = cmd!(
+            "lightning-cli",
+            "--network=regtest",
+            "--lightning-dir={cln_dir}",
+            "waitinvoice",
+            &label
+        )
+        .out_json()
+        .await?["status"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap();
+        assert_eq!(status, "paid");
+
+        Ok(())
     }
 
     // #[tokio::test(flavor = "multi_thread")]
