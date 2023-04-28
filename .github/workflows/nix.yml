@@ -65,16 +65,17 @@ jobs:
         matrix:
           host:
             - linux
-            - macos
+            # Would be nice, but waaaaaaay to slow
+            # - macos
           include:
             - on: linux
               runs-on: buildjet-2vcpu-ubuntu-2004
               build-in-pr: true
               timeout: 10
-            - host: macos
-              runs-on: macos-12
-              build-in-pr: true
-              timeout: 45
+            # - host: macos
+            #   runs-on: macos-12
+            #   build-in-pr: true
+            #   timeout: 45
 
       name: "Dev shells - ${{ matrix.host }}"
       runs-on: ${{ matrix.runs-on }}
