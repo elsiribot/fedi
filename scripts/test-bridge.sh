@@ -1,28 +1,24 @@
 #!/usr/bin/env bash
 set -ex
 
+export RUST_BACKTRACE=1
+
 # kill everything on exit
 function kill_fedimint_bin_tests() {
     kill $FEDIMINT_BIN_TESTS_PID || true
 }
 trap kill_fedimint_bin_tests EXIT
 
-# FIXME: only necessary if not set
-# core lightning / bitcoind need this
-# HOME=$(mktemp -d)
-# export HOME
-
 # compile binaries in a way that nix can cache
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
+cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p ln-gateway
+cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p gateway-cli
+cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedimint-bin-tests
 
 # fedi packages
 source scripts/build.sh
 export PATH="$FM_BIN_DIR:$PATH"
 echo "Running in temporary directory $FM_TEST_DIR"
-
-# gateway packages
-nix build -L .#gateway-pkgs
-export PATH="$PWD/result/bin:$PATH"
 
 # a pipe that rust writes to, and user-shell can wait for it
 export FM_READY_FILE=$FM_TMP_DIR/ready
@@ -50,6 +46,6 @@ FM_CONNECT_STRING=$(cat $FM_DATA_DIR/client-connect)
 export FM_CONNECT_STRING
 
 echo "## Running tests"
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi
+cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_ecash_ng
 
 echo "## Tests Passed"

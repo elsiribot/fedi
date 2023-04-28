@@ -22,8 +22,8 @@ pub type Storage = Arc<dyn IStorage>;
 
 #[repr(u8)]
 enum BridgeDbPrefix {
-    JoinedFederations = 0xa0,
-    ClientConfig = 0xa1,
+    JoinedFederations = 0xb0,
+    ClientConfig = 0xb1,
 }
 
 #[derive(Debug, Decodable, Encodable)]

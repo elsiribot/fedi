@@ -7,7 +7,6 @@ use std::{
 };
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
-use fedimint_client::Client as ClientNg;
 use fedimint_client::{
     module::gen::{ClientModuleGenRegistry, IClientModuleGen},
     ClientBuilder,
@@ -17,7 +16,7 @@ use fedimint_client_fedi::{
     module_gens,
     modules::{
         ln::{contracts::IdentifiableContract, LightningClientGen},
-        mint::MintClientGen,
+        mint::{MintClientExt, MintClientGen},
         wallet::WalletClientGen,
     },
     Client, FediClient, RecoveryFile, SocialRecovery, UserClientConfig, UserSeedPhrase,
@@ -67,6 +66,9 @@ use lightning_invoice::Invoice;
 use fedimint_client_legacy::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
+
+// Client NG
+use fedimint_client::Client as ClientNg;
 
 pub type FediUserClient = FediClient<UserClientConfig>;
 
@@ -406,6 +408,28 @@ impl Federation {
         // TODO: delete the database if failed
 
         Self::from_config(fedi_config, dyn_db, event_sink, task_group).await
+    }
+
+    pub async fn ng_receive_ecash(
+        &self,
+        ecash: TieredMulti<fedimint_mint_client::SpendableNote>,
+    ) -> Result<Amount> {
+        let amount = ecash.total_amount();
+        let operation_id = self.ng.reissue_external_notes(ecash).await?;
+        let mut updates = self
+            .ng
+            .subscribe_reissue_external_notes_updates(operation_id)
+            .await
+            .unwrap();
+
+        while let Some(update) = updates.next().await {
+            if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
+                return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
+            }
+
+            info!("Update: {:?}", update);
+        }
+        Ok(amount)
     }
 
     pub fn user_client(&self) -> &Client<UserClientConfig> {

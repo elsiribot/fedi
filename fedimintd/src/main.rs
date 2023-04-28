@@ -1,4 +1,4 @@
-use fedi_social_server::FediSocialGen;
+// use fedi_social_server::FediSocialGen;
 use fedimintd::fedimintd::Fedimintd;
 // use stabilitypool_server::{PoolConfigGenParams, PoolConfigGenerator};
 
@@ -6,7 +6,7 @@ use fedimintd::fedimintd::Fedimintd;
 async fn main() -> anyhow::Result<()> {
     Fedimintd::new()?
         .with_default_modules()
-        .with_module(FediSocialGen)
+        // .with_module(FediSocialGen)
         // .with_module(PoolConfigGenerator)
         // .with_extra_module_gens_params(PoolConfigGenerator::kind(), PoolConfigGenParams::default())
         .run()

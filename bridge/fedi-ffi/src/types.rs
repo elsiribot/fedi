@@ -136,9 +136,11 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
             .federation_name()
             .expect("federation name should exist")
             .to_string(),
-        connect_info: WsClientConnectInfo::from_str(&client_config_string)
-            .expect("can get connect info")
-            .to_string(),
+        // FIXME: removed this
+        // connect_info: WsClientConnectInfo::from_str(&client_config_string)
+        //     .expect("can get connect info")
+        //     .to_string(),
+        connect_info: "foobar".to_string(),
         // FIXME
         // nodes: client_config.api_endpoints.map(|(peer_id, )),
         nodes: client_config

@@ -22,7 +22,7 @@ use std::{
     sync::{atomic::AtomicU64, Arc},
 };
 
-use fedimint_client_fedi::RecoveryFile;
+use fedimint_client_fedi::{utils::parse_ecash, RecoveryFile};
 pub use fedimint_client_legacy;
 pub use fedimint_core;
 pub use tokio;
@@ -37,7 +37,7 @@ use types::{FederationId, RecoveryId};
 
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
-use fedimint_client_legacy::utils::{parse_ecash, serialize_ecash};
+use fedimint_client_legacy::utils::serialize_ecash;
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use mnemonic::Mnemonic;
@@ -688,21 +688,36 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
-    use std::path;
     use std::sync::Once;
+    use std::{path, time::Duration};
 
+    use fedimint_core::{
+        core::LEGACY_HARDCODED_INSTANCE_ID_MINT, encoding::Decodable,
+        module::registry::ModuleDecoderRegistry, task::TaskGroup, TieredMulti,
+    };
     use fedimint_logging::TracingSetup;
+    use fedimint_mint_client::{MintClientModule, SpendableNote};
     use tracing::debug;
 
     use crate::{
         event::IEventSink,
         ffi::{PathBasedStorage, RUNTIME},
     };
+    use fedimint_bin_tests::{cmd, dev_fed, util::ProcessManager, DevFed};
 
     use super::*;
 
     struct FakeEventSink(pub Vec<(String, String)>);
     static INIT_TRACING: Once = Once::new();
+
+    // FIXME: copied from fedimint-cli which we don't want to take as a dependency
+    pub fn parse_ecash(s: &str) -> anyhow::Result<TieredMulti<SpendableNote>> {
+        let bytes = base64::decode(s)?;
+        Ok(Decodable::consensus_decode(
+            &mut std::io::Cursor::new(bytes),
+            &ModuleDecoderRegistry::default(),
+        )?)
+    }
 
     impl FakeEventSink {
         fn new() -> Self {
@@ -820,6 +835,68 @@ mod tests {
             let (_, federation) = setup().await?;
             let num_modules = federation.client.config().0.modules.keys().len();
             assert_eq!(num_modules, 5);
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn test_ecash_ng() -> anyhow::Result<()> {
+        RUNTIME.block_on(async {
+            // fedimint_logging::TracingSetup::default().init()?;
+            // let process_mgr = ProcessManager::new();
+            // let task_group = TaskGroup::new();
+            // task_group.install_kill_handler();
+            // let dev_fed = dev_fed(&task_group, &process_mgr).await?;
+
+            // #[allow(unused_variables)]
+            // let DevFed {
+            //     bitcoind,
+            //     cln,
+            //     lnd,
+            //     fed,
+            //     gw_cln,
+            //     gw_lnd,
+            //     electrs,
+            //     esplora,
+            // } = dev_fed;
+
+            // let (_, federation) = setup().await?;
+            // let ecash_string = cmd!(fed, "spend", "1000").out_json().await?["note"]
+            //     .as_str()
+            //     .map(|s| s.to_owned())
+            //     .unwrap();
+
+            let (_, federation) = setup().await?;
+
+            let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+            let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
+                .out_json()
+                .await?["note"]
+                .as_str()
+                .map(|s| s.to_owned())
+                .unwrap();
+            tracing::info!("ecash {:?}", ecash_string);
+            let ecash = parse_ecash(&ecash_string)?;
+            federation.ng_receive_ecash(ecash).await?;
+
+            let mint_client = federation
+                .ng
+                .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
+                .unwrap();
+            let summary = mint_client
+                .get_wallet_summary(
+                    &mut federation
+                        .ng
+                        .db()
+                        .begin_transaction()
+                        .await
+                        .with_module_prefix(1),
+                )
+                .await;
+            assert_eq!(
+                summary.total_amount(),
+                fedimint_core::Amount::from_msats(1000)
+            );
             Ok(())
         })
     }

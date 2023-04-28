@@ -11,10 +11,14 @@ name = "fediffi"
 fedimint-client-legacy = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
+fedimint-mint-client = { workspace = true }
 fedi-social-client = { path = "../../fedi-social-client" }
 fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
+fedimint-bin-tests = { workspace = true }
+ln-gateway = { workspace = true }
+gateway-cli = { workspace = true }
 
 bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"
@@ -49,6 +53,7 @@ uniffi_build = { version = "0.21.0", features = ["builtin-bindgen"] }
 
 [dev-dependencies]
 tempfile = "3.3.0"
+base64 = "0.20.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 fedimint-logging = { workspace = true }
