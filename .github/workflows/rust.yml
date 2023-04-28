@@ -32,7 +32,7 @@ jobs:
           run: nix develop --ignore-environment .#lint --command ./misc/git-hooks/pre-commit
 
     build:
-        name: 'Build Rust'
+        name: 'Build'
         runs-on: buildjet-4vcpu-ubuntu-2004
         timeout-minutes: 30
         steps:
@@ -59,3 +59,46 @@ jobs:
 
             # - name: Test bridge
             #   run: nix build -L .#testBridge
+
+    shell:
+      strategy:
+        matrix:
+          host:
+            - linux
+            - macos
+          include:
+            - on: linux
+              runs-on: buildjet-2vcpu-ubuntu-2004
+              build-in-pr: true
+              timeout: 10
+            - host: macos
+              runs-on: macos-12
+              build-in-pr: true
+              timeout: 20
+
+      name: "Dev shells - ${{ matrix.host }}"
+      runs-on: ${{ matrix.runs-on }}
+      timeout-minutes: ${{ matrix.timeout }}
+
+      steps:
+        - uses: actions/checkout@v3
+          if: github.ref == 'refs/heads/master' || matrix.build-in-pr
+
+        - uses: cachix/install-nix-action@v20
+          if: github.ref == 'refs/heads/master' || matrix.build-in-pr
+          with:
+            nix_path: nixpkgs=channel:nixos-22.05
+        - uses: cachix/cachix-action@v12
+          if: github.ref == 'refs/heads/master' || matrix.build-in-pr
+          with:
+            name: fedibtc
+            authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          continue-on-error: true
+
+        - name: Dev shell
+          if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
+          run: nix develop -L .# -c true
+
+        - name: Cross shell
+          if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
+          run: nix develop -L .#cross -c true
