@@ -432,6 +432,20 @@ impl Federation {
         Ok(amount)
     }
 
+    pub async fn ng_generate_ecash(
+        &self,
+        amount: Amount,
+    ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
+        let (_, notes) = self
+            .ng
+            .spend_notes(
+                fedimint_core::Amount::from_msats(1000),
+                Duration::from_secs(30),
+            )
+            .await?;
+        Ok(notes)
+    }
+
     pub fn user_client(&self) -> &Client<UserClientConfig> {
         self.client.as_ref()
     }

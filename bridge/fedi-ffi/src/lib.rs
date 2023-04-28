@@ -22,9 +22,15 @@ use std::{
     sync::{atomic::AtomicU64, Arc},
 };
 
-use fedimint_client_fedi::{utils::parse_ecash, RecoveryFile};
+use fedimint_client_fedi::RecoveryFile;
 pub use fedimint_client_legacy;
 pub use fedimint_core;
+use fedimint_core::{
+    encoding::{Decodable, Encodable},
+    module::registry::ModuleDecoderRegistry,
+    TieredMulti,
+};
+use fedimint_mint_client::SpendableNote;
 pub use tokio;
 
 use bitcoin::{secp256k1::Message, Address};
@@ -37,7 +43,6 @@ use types::{FederationId, RecoveryId};
 
 use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
-use fedimint_client_legacy::utils::serialize_ecash;
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use mnemonic::Mnemonic;
@@ -54,6 +59,22 @@ use crate::{error::get_error_code, types::federation_to_fedimint_federation};
 pub enum FedimintError {
     #[error("{0}")]
     OtherError(#[from] anyhow::Error),
+}
+
+// FIXME: copied from fedimint-cli which we don't want to take as a dependency
+pub fn parse_ecash(s: &str) -> anyhow::Result<TieredMulti<SpendableNote>> {
+    let bytes = base64::decode(s)?;
+    Ok(Decodable::consensus_decode(
+        &mut std::io::Cursor::new(bytes),
+        &ModuleDecoderRegistry::default(),
+    )?)
+}
+
+// FIXME: copied from fedimint-cli which we don't want to take as a dependency
+pub fn serialize_ecash(c: &TieredMulti<SpendableNote>) -> String {
+    let mut bytes = Vec::new();
+    Encodable::consensus_encode(c, &mut bytes).expect("encodes correctly");
+    base64::encode(&bytes)
 }
 
 pub async fn fedimint_initialize_async(
@@ -242,7 +263,7 @@ async fn generateEcash(
     amount: Amount,
 ) -> anyhow::Result<String> {
     let federation = get_federation(&bridge, &federation_id).await?;
-    let ecash = federation.generate_ecash(amount.0).await?;
+    let ecash = federation.ng_generate_ecash(amount.0).await?;
     let ecash = serialize_ecash(&ecash);
     Ok(ecash)
 }
@@ -259,7 +280,7 @@ async fn receiveEcash(
     // Add a poller to check for ecash notes in the table and try to redeem them periodically.
     // If redeemed, send transaction event and update their entry.
     let ecash = parse_ecash(&ecash)?;
-    Ok(Amount(federation.receive_ecash(ecash).await?))
+    Ok(Amount(federation.ng_receive_ecash(ecash).await?))
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -276,7 +297,7 @@ async fn validateEcash(
     ecash: String,
 ) -> anyhow::Result<ValidateEcashResponse> {
     let federation = get_federation(&bridge, &federation_id).await?;
-    let ecash = parse_ecash(&ecash)?;
+    let ecash = fedimint_client_fedi::utils::parse_ecash(&ecash)?;
     let (valid, amount) = federation.validate_ecash(ecash).await;
     Ok(ValidateEcashResponse {
         valid,
@@ -707,22 +728,6 @@ mod tests {
 
     struct FakeEventSink(pub Vec<(String, String)>);
     static INIT_TRACING: Once = Once::new();
-
-    // FIXME: copied from fedimint-cli which we don't want to take as a dependency
-    pub fn parse_ecash(s: &str) -> anyhow::Result<TieredMulti<SpendableNote>> {
-        let bytes = base64::decode(s)?;
-        Ok(Decodable::consensus_decode(
-            &mut std::io::Cursor::new(bytes),
-            &ModuleDecoderRegistry::default(),
-        )?)
-    }
-
-    // FIXME: copied from fedimint-cli which we don't want to take as a dependency
-    pub fn serialize_ecash(c: &TieredMulti<SpendableNote>) -> String {
-        let mut bytes = Vec::new();
-        Encodable::consensus_encode(c, &mut bytes).expect("encodes correctly");
-        base64::encode(&bytes)
-    }
 
     impl FakeEventSink {
         fn new() -> Self {
