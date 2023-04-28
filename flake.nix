@@ -145,4 +145,10 @@
           });
         };
       });
+
+
+  nixConfig = {
+    extra-substituters = [ "https://fedibtc.cachix.org" ];
+    extra-trusted-public-keys = [ "fedibtc.cachix.org-1:KyG8I1663EYQm2ThciPUvjm1r9PHiZbOYz4goj+U76k=" ];
+  };
 }
