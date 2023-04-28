@@ -691,12 +691,13 @@ mod tests {
     use std::sync::Once;
     use std::{path, time::Duration};
 
+    use fedimint_core::encoding::Encodable;
     use fedimint_core::{
         core::LEGACY_HARDCODED_INSTANCE_ID_MINT, encoding::Decodable,
         module::registry::ModuleDecoderRegistry, task::TaskGroup, TieredMulti,
     };
     use fedimint_logging::TracingSetup;
-    use fedimint_mint_client::{MintClientModule, SpendableNote};
+    use fedimint_mint_client::{MintClientExt, MintClientModule, SpendableNote};
     use tracing::debug;
 
     use crate::{
@@ -717,6 +718,13 @@ mod tests {
             &mut std::io::Cursor::new(bytes),
             &ModuleDecoderRegistry::default(),
         )?)
+    }
+
+    // FIXME: copied from fedimint-cli which we don't want to take as a dependency
+    pub fn serialize_ecash(c: &TieredMulti<SpendableNote>) -> String {
+        let mut bytes = Vec::new();
+        Encodable::consensus_encode(c, &mut bytes).expect("encodes correctly");
+        base64::encode(&bytes)
     }
 
     impl FakeEventSink {
@@ -868,6 +876,7 @@ mod tests {
 
             let (_, federation) = setup().await?;
 
+            // receive ecash
             let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
             let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
                 .out_json()
@@ -875,10 +884,10 @@ mod tests {
                 .as_str()
                 .map(|s| s.to_owned())
                 .unwrap();
-            tracing::info!("ecash {:?}", ecash_string);
             let ecash = parse_ecash(&ecash_string)?;
             federation.ng_receive_ecash(ecash).await?;
 
+            // check balance
             let mint_client = federation
                 .ng
                 .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
@@ -897,6 +906,23 @@ mod tests {
                 summary.total_amount(),
                 fedimint_core::Amount::from_msats(1000)
             );
+
+            // spend ecash
+            let (operation, notes) = federation
+                .ng
+                .spend_notes(
+                    fedimint_core::Amount::from_msats(1000),
+                    Duration::from_secs(30),
+                )
+                .await?;
+
+            // receive with fedimint-cli
+            let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+            let ecash = serialize_ecash(&notes);
+            cmd!("fedimint-cli", "--data-dir={cfg_dir}", "reissue", ecash)
+                .run()
+                .await?;
+
             Ok(())
         })
     }
