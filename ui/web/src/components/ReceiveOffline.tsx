@@ -1,12 +1,13 @@
-import React, { use, useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppSelector, useToast, useUpdatingRef } from '../hooks'
+import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
 import { Input } from './Input'
