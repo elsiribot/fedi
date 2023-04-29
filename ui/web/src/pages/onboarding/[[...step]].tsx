@@ -6,7 +6,7 @@ import { Onboarding } from '../../components/Onboarding'
 
 const OnboardingPage: React.FC = () => {
     const { query, isReady } = useRouter()
-    const step = Array.isArray(query.step) ? query.step[0] : query.step
+    const step = Array.isArray(query.step) ? query.step.join('/') : query.step
 
     if (!isReady) return null
 

@@ -5,23 +5,20 @@ import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 import { selectActiveFederation } from '@fedi/common/redux'
 
-import { ActionCard } from '../../components/ActionCard'
-import { Button } from '../../components/Button'
-import { Text } from '../../components/Text'
-import { useAppSelector } from '../../hooks'
-import { Redirect } from '../Redirect'
-import { OnboardingContainer, OnboardingContent } from './components'
+import { ActionCard } from '../../../components/ActionCard'
+import { Button } from '../../../components/Button'
+import { ContentBlock } from '../../../components/ContentBlock'
+import { Text } from '../../../components/Text'
+import { useAppSelector } from '../../../hooks'
+import { styled } from '../../../styles'
 
-export const WalletRecovery: React.FC = () => {
+function RecoverPage() {
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-
-    if (!activeFederation) return <Redirect path="/onboarding" />
-
     return (
-        <OnboardingContainer fullWidth>
-            <OnboardingContent gap="md">
-                <Text variant="h1">{t('feature.recovery.choose-method')}</Text>
+        <ContentBlock>
+            <Text variant="h1">{t('feature.recovery.choose-method')}</Text>
+            <ActionCards>
                 <ActionCard
                     icon={WordListIcon}
                     title={t('feature.recovery.personal-recovery')}
@@ -30,7 +27,7 @@ export const WalletRecovery: React.FC = () => {
                         { federation: activeFederation?.name },
                     )}
                     action={
-                        <Button href="/onboarding/recover/personal">
+                        <Button href="/admin/recover/personal">
                             {t('feature.recovery.start-personal-recovery')}
                         </Button>
                     }
@@ -43,7 +40,17 @@ export const WalletRecovery: React.FC = () => {
                     )}
                     action={<Button disabled>Coming soon</Button>}
                 />
-            </OnboardingContent>
-        </OnboardingContainer>
+            </ActionCards>
+        </ContentBlock>
     )
 }
+
+const ActionCards = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 16,
+})
+
+export default RecoverPage

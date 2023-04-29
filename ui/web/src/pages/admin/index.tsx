@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -14,16 +15,16 @@ import {
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
 
-import { Avatar } from '../components/Avatar'
-import { ConfirmDialog } from '../components/ConfirmDialog'
-import { ContentBlock } from '../components/ContentBlock'
-import { Icon } from '../components/Icon'
-import { IconProps } from '../components/Icon'
-import { InviteMemberDialog } from '../components/InviteMemberDialog'
-import { Text } from '../components/Text'
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
-import { fedimint } from '../lib/bridge'
-import { styled, theme } from '../styles'
+import { Avatar } from '../../components/Avatar'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { ContentBlock } from '../../components/ContentBlock'
+import { Icon } from '../../components/Icon'
+import { IconProps } from '../../components/Icon'
+import { InviteMemberDialog } from '../../components/InviteMemberDialog'
+import { Text } from '../../components/Text'
+import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
+import { styled, theme } from '../../styles'
 
 type Menu = Array<{
     name: string // TODO: Type as valid translation key?
@@ -31,6 +32,7 @@ type Menu = Array<{
         name: string // TODO: Type as valid translation key?
         icon: IconProps['icon']
         disabled?: boolean
+        href?: string
         onClick?: () => void
     }>
 }>
@@ -94,12 +96,12 @@ function AdminPage() {
                 {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
-                    disabled: true,
+                    href: '/admin/backup',
                 },
                 {
                     name: 'feature.recovery.recover-a-wallet',
                     icon: RecoveryIcon,
-                    disabled: true,
+                    href: '/admin/recover',
                 },
             ],
         },
@@ -133,16 +135,22 @@ function AdminPage() {
                             <Text>{t(group.name as any)}</Text>
                         </MenuGroupName>
                         <MenuGroupItems>
-                            {group.items.map(item => (
-                                <MenuItem
-                                    key={item.name}
-                                    disabled={item.disabled}
-                                    onClick={item.onClick}>
-                                    <Icon icon={item.icon} />
-                                    <Text>{t(item.name as any)}</Text>
-                                    <Icon icon={ChevronRightIcon} />
-                                </MenuItem>
-                            ))}
+                            {group.items.map(item => {
+                                const linkProps = item.href
+                                    ? { as: Link, href: item.href }
+                                    : undefined
+                                return (
+                                    <MenuItem
+                                        {...linkProps}
+                                        key={item.name}
+                                        disabled={item.disabled}
+                                        onClick={item.onClick}>
+                                        <Icon icon={item.icon} />
+                                        <Text>{t(item.name as any)}</Text>
+                                        <Icon icon={ChevronRightIcon} />
+                                    </MenuItem>
+                                )
+                            })}
                         </MenuGroupItems>
                     </MenuGroup>
                 ))}
@@ -225,14 +233,18 @@ const MenuItem = styled('button', {
         },
     },
 
-    '&[disabled]': {
-        cursor: 'not-allowed',
-        color: theme.colors.grey,
-        background: 'none',
+    variants: {
+        disabled: {
+            true: {
+                cursor: 'not-allowed',
+                color: theme.colors.grey,
+                background: 'none',
 
-        '& > *:last-child': {
-            opacity: 1,
-            transform: 'none',
+                '& > *:last-child': {
+                    opacity: 1,
+                    transform: 'none',
+                },
+            },
         },
     },
 })

@@ -61,6 +61,7 @@ const CheckboxRoot = styled(RadixCheckbox.Root, {
     display: 'inline-flex',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
     width: 22,
     height: 22,
     padding: 0,
@@ -96,6 +97,8 @@ const CheckboxIndicator = styled(RadixCheckbox.Indicator, {
 })
 
 const Label = styled('div', {
+    flex: 1,
+
     variants: {
         disabled: {
             true: {

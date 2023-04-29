@@ -10,6 +10,7 @@ interface BaseProps {
     icon?: IconProps['icon']
     width?: 'auto' | 'full'
     loading?: boolean
+    disabled?: boolean
 }
 type ButtonProps = BaseProps &
     Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof BaseProps>
@@ -30,6 +31,7 @@ export const Button: React.FC<Props> = ({
     icon,
     children,
     loading,
+    disabled,
     ...props
 }) => {
     const content = (
@@ -50,7 +52,7 @@ export const Button: React.FC<Props> = ({
                     variant={variant}
                     size={size}
                     width={width}
-                    disabled={loading}>
+                    disabled={disabled || loading}>
                     {content}
                 </ButtonBase>
             )
@@ -63,7 +65,7 @@ export const Button: React.FC<Props> = ({
                     variant={variant}
                     size={size}
                     width={width}
-                    disabled={loading}>
+                    disabled={disabled || loading}>
                     {content}
                 </ButtonBase>
             )
@@ -75,7 +77,7 @@ export const Button: React.FC<Props> = ({
                 variant={variant}
                 size={size}
                 width={width}
-                disabled={loading}>
+                disabled={disabled || loading}>
                 {content}
             </ButtonBase>
         )
