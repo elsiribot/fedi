@@ -11,7 +11,6 @@ export function renderStyledQrSvg(qrData: QRCode) {
     const data = qrData.modules.data
     const size = qrData.modules.size
     const moduleSize = 97
-    console.log({ size })
 
     const qrSvg = `
         <svg

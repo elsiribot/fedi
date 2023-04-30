@@ -5,7 +5,6 @@ import type {
     AddressOrInvoice,
     ValidateEcashResponse,
     LnurlSignedMessage,
-    ReceiveEcashResponse,
     XmppCredentials,
     RecoveredUsername,
     SeedWords,
@@ -99,7 +98,7 @@ export class FedimintBridge {
     }
 
     async receiveEcash(ecash: string, federationId: string) {
-        return this.rpc<ReceiveEcashResponse>('receiveEcash', {
+        return this.rpc<MSats>('receiveEcash', {
             federationId,
             ecash,
         })

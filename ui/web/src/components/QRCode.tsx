@@ -5,19 +5,37 @@ import { styled, theme } from '../styles'
 import { renderStyledQrSvg } from '../utils/qrcode'
 
 interface Props {
-    data: string
+    data: string | string[]
 }
 
 export const QRCode: React.FC<Props> = ({ data }) => {
-    const [qrSvg, setQrSvg] = useState('')
+    const [qrSvgs, setQrSvgs] = useState<string[] | null>(null)
+    const [activeFrame, setActiveFrame] = useState(0)
 
     useEffect(() => {
-        setQrSvg(renderStyledQrSvg(createQrCode(data)))
+        const dataArr = Array.isArray(data) ? data : [data]
+        const svgs = dataArr.map(d => renderStyledQrSvg(createQrCode(d)))
+        setQrSvgs(svgs)
+        setActiveFrame(0)
     }, [data])
+
+    useEffect(() => {
+        if (!qrSvgs || qrSvgs.length < 2) return
+        const interval = setInterval(
+            () => setActiveFrame(f => (f + 1) % qrSvgs.length),
+            250,
+        )
+        return () => clearInterval(interval)
+    }, [qrSvgs])
 
     return (
         <Container>
-            <Inner dangerouslySetInnerHTML={{ __html: qrSvg }} />
+            {qrSvgs && (
+                <Inner
+                    key={activeFrame}
+                    dangerouslySetInnerHTML={{ __html: qrSvgs[activeFrame] }}
+                />
+            )}
         </Container>
     )
 }
