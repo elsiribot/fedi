@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { CommonState } from '.'
-import type { Federation, FederationEvent, Guardian } from '../types'
+import { authenticateChat, CommonState } from '.'
+import type { Federation, FederationEvent, Guardian, SeedWords } from '../types'
 import type { FedimintBridge } from '../utils/fedimint'
 
 /*** Initial State ***/
@@ -100,6 +100,29 @@ export const leaveFederation = createAsyncThunk<
 >('federation/leaveFederation', async ({ fedimint, federationId }) => {
     await fedimint.leaveFederation(federationId)
 })
+
+export const recoverFromMnemonic = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string; mnemonic: SeedWords },
+    { state: CommonState }
+>(
+    'federation/recoverFromMnemonic',
+    async ({ fedimint, federationId, mnemonic }, { dispatch }) => {
+        const username = await fedimint.recoverFromMnemonic(
+            mnemonic,
+            federationId,
+        )
+        // Kick off chat authentication and refresh, but don't reject
+        // if either fail. The new mnemonic has been written to bridge
+        // so it's fulfilled either way.
+        if (username !== null) {
+            await dispatch(
+                authenticateChat({ fedimint, federationId, username }),
+            )
+        }
+        await dispatch(refreshFederations(fedimint))
+    },
+)
 
 /*** Selectors ***/
 

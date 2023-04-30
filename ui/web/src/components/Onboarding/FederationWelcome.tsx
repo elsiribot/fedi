@@ -49,7 +49,7 @@ export const FederationWelcome: React.FC = () => {
                 <Button
                     width="full"
                     variant="tertiary"
-                    href="/onboarding/recovery">
+                    href="/onboarding/recover">
                     I am a returning member
                 </Button>
                 <Button width="full" href="/onboarding/username">

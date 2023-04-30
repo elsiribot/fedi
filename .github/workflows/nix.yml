@@ -65,17 +65,17 @@ jobs:
         matrix:
           host:
             - linux
-            # Would be nice, but waaaaaaay to slow
-            # - macos
+            - macos
           include:
             - on: linux
               runs-on: buildjet-2vcpu-ubuntu-2004
               build-in-pr: true
               timeout: 10
-            # - host: macos
-            #   runs-on: macos-12
-            #   build-in-pr: true
-            #   timeout: 45
+            - host: macos
+              runs-on: self-hosted
+              os: macOS
+              build-in-pr: true
+              timeout: 45
 
       name: "Dev shells - ${{ matrix.host }}"
       runs-on: ${{ matrix.runs-on }}
@@ -89,6 +89,7 @@ jobs:
           if: github.ref == 'refs/heads/master' || matrix.build-in-pr
           with:
             nix_path: nixpkgs=channel:nixos-22.05
+
         - uses: cachix/cachix-action@v12
           if: github.ref == 'refs/heads/master' || matrix.build-in-pr
           with:

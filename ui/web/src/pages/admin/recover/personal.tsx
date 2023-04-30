@@ -1,0 +1,80 @@
+import { useRouter } from 'next/router'
+import React, { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
+import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
+import { SeedWords } from '@fedi/common/types'
+
+import { Button } from '../../../components/Button'
+import { ContentBlock } from '../../../components/ContentBlock'
+import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
+import { Text } from '../../../components/Text'
+import { useAppDispatch, useAppSelector, useToast } from '../../../hooks'
+import { fedimint } from '../../../lib/bridge'
+import { styled } from '../../../styles'
+
+function PersonalRecoverPage() {
+    const { t } = useTranslation()
+    const { showToast, showErrorToast } = useToast()
+    const { push } = useRouter()
+    const dispatch = useAppDispatch()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const [words, setWords] = useState<SeedWords>([])
+    const [isRecovering, setIsRecovering] = useState(false)
+
+    const federationId = activeFederation?.id
+    const isValid =
+        words.length && words.every(word => BIP39_WORD_LIST.includes(word))
+
+    const handleRecovery = useCallback(async () => {
+        if (!federationId) return
+        setIsRecovering(true)
+        try {
+            await dispatch(
+                recoverFromMnemonic({
+                    fedimint,
+                    federationId,
+                    mnemonic: words,
+                }),
+            ).unwrap()
+            push('/')
+            showToast({
+                content: t('feature.recovery.you-completed-personal-recovery'),
+                duration: 5000,
+            })
+        } catch (err) {
+            showErrorToast(err, 'errors.unknown-error')
+        }
+        setIsRecovering(false)
+    }, [federationId, words, dispatch, showToast, showErrorToast, t, push])
+
+    return (
+        <ContentBlock>
+            <Text variant="h1">{t('feature.recovery.personal-recovery')}</Text>
+            <Content>
+                <Text>
+                    {t('feature.recovery.personal-recovery-instructions', {
+                        federation: activeFederation?.name,
+                    })}
+                </Text>
+                <RecoverySeedWords words={words} onChangeWords={setWords} />
+                <Button
+                    onClick={handleRecovery}
+                    disabled={!isValid}
+                    loading={isRecovering}>
+                    {t('feature.recovery.recover-wallet')}
+                </Button>
+            </Content>
+        </ContentBlock>
+    )
+}
+
+const Content = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 16,
+})
+
+export default PersonalRecoverPage
