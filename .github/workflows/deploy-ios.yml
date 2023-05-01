@@ -1,7 +1,7 @@
 name: Deploy to TestFlight
 on:
     workflow_dispatch:
-    
+
 defaults:
     run:
         working-directory: ui/native
@@ -30,7 +30,7 @@ jobs:
             - name: Install Rust
               uses: actions-rs/toolchain@v1
               with:
-                  toolchain: nightly
+                  toolchain: stable
                   override: true
                   components: rustfmt, clippy
 

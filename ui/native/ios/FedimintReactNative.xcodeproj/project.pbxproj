@@ -69,6 +69,7 @@
 		3DD2FB1C26C641AEBCA7E84B /* AlbertSans-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-Bold.ttf"; path = "../assets/fonts/AlbertSans-Bold.ttf"; sourceTree = "<group>"; };
 		42187D2041144CAD89D9DD1E /* AlbertSans-ExtraLightItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-ExtraLightItalic.ttf"; path = "../assets/fonts/AlbertSans-ExtraLightItalic.ttf"; sourceTree = "<group>"; };
 		51575EDA2946F9DA00720177 /* hermes.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = hermes.xcframework; path = "Pods/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework"; sourceTree = "<group>"; };
+		517E5CA729EF5E7000F3B65A /* OpenSSL.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = OpenSSL.xcframework; path = "Pods/OpenSSL-Universal/Frameworks/OpenSSL.xcframework"; sourceTree = "<group>"; };
 		51E5161D29C11D6200753F51 /* fedi-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "fedi-swift"; path = "../../../bridge/fedi-swift"; sourceTree = "<group>"; };
 		55AC34EB407849329AE54B10 /* AlbertSans-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-MediumItalic.ttf"; path = "../assets/fonts/AlbertSans-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-FedimintReactNative.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FedimintReactNative.release.xcconfig"; path = "Target Support Files/Pods-FedimintReactNative/Pods-FedimintReactNative.release.xcconfig"; sourceTree = "<group>"; };
@@ -146,6 +147,7 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				517E5CA729EF5E7000F3B65A /* OpenSSL.xcframework */,
 				51575EDA2946F9DA00720177 /* hermes.xcframework */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-FedimintReactNative.a */,
@@ -643,7 +645,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 4JUZY29459;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = FedimintReactNative/Info.plist;
@@ -678,7 +680,7 @@
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4JUZY29459;
 				FRAMEWORK_SEARCH_PATHS = (
