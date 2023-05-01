@@ -4,7 +4,7 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import { ChatMember, Key, Keypair, XmppChatMember } from '@fedi/common/types'
+import { Key, Keypair, XmppChatMember } from '@fedi/common/types'
 
 import { DEFAULT_GROUP_NAME } from '../../constants'
 import i18n from '../../localization/i18n'
@@ -30,9 +30,9 @@ import xmlUtils, {
 } from '../../utils/XmlUtils'
 
 export const addMemberToRoster = (
-    member: ChatMember,
+    member: XmppChatMember,
     xmppClient: Client | null,
-): Promise<ChatMember> => {
+): Promise<XmppChatMember> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 

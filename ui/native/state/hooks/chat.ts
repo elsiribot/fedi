@@ -1,8 +1,10 @@
 import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
+import { selectAllChatMembers } from '@fedi/common/redux'
 import { ChatMember, Key, Keypair, XmppChatMember } from '@fedi/common/types'
 
+import { useAppSelector } from '.'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
@@ -27,12 +29,12 @@ import {
 // This is a React hook providing the full set of functions that use the
 // xmppClient to perform chat operations
 export const useXmpp = () => {
-    const { state } = useChatContext()
-    const { membersSeen, xmppClient } = state
+    const { xmppClient } = useChatContext().state
+    const membersSeen = useAppSelector(selectAllChatMembers)
 
     return {
         addMemberToRoster: useCallback(
-            (member: ChatMember): Promise<ChatMember> => {
+            (member: XmppChatMember): Promise<XmppChatMember> => {
                 return addMemberToRoster(member, xmppClient)
             },
             [xmppClient],
@@ -62,7 +64,7 @@ export const useXmpp = () => {
             return fetchRoster(xmppClient)
         }, [xmppClient]),
         getPublicKeyFor: useCallback(
-            (member: ChatMember): Promise<boolean> => {
+            (member: XmppChatMember): Promise<boolean> => {
                 return getPublicKeyFor(member, xmppClient)
             },
             [xmppClient],
@@ -84,22 +86,22 @@ export const useXmpp = () => {
         ),
         sendDirectMessage: useCallback(
             (
-                to: ChatMember,
+                to: XmppChatMember,
                 message: Message,
                 withEncryptionKeys?: Keypair,
                 updatePayment?: boolean,
             ): Promise<void> => {
                 // Make sure we always pass the member with a pubkey
-                let toMember: ChatMember | undefined = to
+                let toMember: XmppChatMember | undefined = to
                 if (!toMember.publicKeyHex) {
-                    toMember = membersSeen.find(
+                    toMember = (membersSeen as XmppChatMember[]).find(
                         m =>
                             m.username === toMember?.username && m.publicKeyHex,
                     )
                 }
                 if (toMember) {
                     return sendDirectMessage(
-                        toMember as ChatMember,
+                        toMember as XmppChatMember,
                         message,
                         xmppClient,
                         withEncryptionKeys,
