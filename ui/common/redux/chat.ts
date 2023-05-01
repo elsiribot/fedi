@@ -4,6 +4,7 @@ import {
     createSelector,
     createAsyncThunk,
 } from '@reduxjs/toolkit'
+import { orderBy } from 'lodash'
 
 import { CommonState, selectActiveFederation } from '.'
 import {
@@ -309,6 +310,9 @@ export const selectChatConnectionOptions = (s: CommonState) => {
         : null
 }
 
+export const selectLastFetchedMessageId = (s: CommonState) =>
+    selectFederationChatState(s).lastFetchedMessageId
+
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
     members => {
@@ -332,13 +336,11 @@ export const selectChatMessages = createSelector(
         ),
 )
 
-export const selectChatPreviewMessage = createSelector(
+export const selectChatLatestMessage = createSelector(
     selectChatMessages,
     (_: CommonState, chatId: Chat['id']) => chatId,
-    (messages, chatId) => {
-        return [...messages]
-            .reverse()
-            .find(m => m.sentIn === chatId || m.sentTo === chatId)
+    messages => {
+        return [...orderBy(messages, 'sentAt', 'desc')][0]
     },
 )
 
@@ -363,6 +365,14 @@ export const selectChatMembers = createSelector(
 
         // Else return empty array
         return []
+    },
+)
+
+export const selectChatMember = createSelector(
+    selectChatMembers,
+    (_: CommonState, memberId: string) => memberId,
+    (chatMembers, memberId) => {
+        return chatMembers.find(member => member.id === memberId)
     },
 )
 
