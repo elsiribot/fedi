@@ -105,12 +105,21 @@ export enum SupportedCurrency {
     EUR = 'EUR',
     CFA = 'CFA',
 }
-interface ClientConfigMetadata {
-    federation_name: string
-    chat_server_domain: string
-    default_currency: SupportedCurrency
-    invite_codes_disabled: boolean
+
+export enum SupportedFeature {
+    default_currency = 'default_currency',
+    invite_codes_disabled = 'invite_codes_disabled',
+    chat_server_domain = 'chat_server_domain',
 }
+
+interface ClientConfigMetadata {
+    chat_server_domain?: string
+    default_currency?: SupportedCurrency
+    // TODO: This is a boolean true/false but client config meta only
+    // supports strings currently so will need to refactor
+    invite_codes_disabled?: string
+}
+
 export interface Federation {
     id: string
     name: string

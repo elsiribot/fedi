@@ -1,5 +1,10 @@
 import { XMPP_RESOURCE } from '../constants/xmpp'
-import { Federation, SupportedCurrency, XmppConnectionOptions } from '../types'
+import {
+    Federation,
+    SupportedCurrency,
+    SupportedFeature,
+    XmppConnectionOptions,
+} from '../types'
 
 export default class FederationUtils {
     private federation: Federation
@@ -8,31 +13,64 @@ export default class FederationUtils {
         this.federation = federation
     }
 
-    // TODO: Remove this when Federation.defaultCurrency is available
-    getDefaultCurrency(): SupportedCurrency {
-        return this.federation.name.toLowerCase().includes('togo')
-            ? SupportedCurrency.CFA
-            : SupportedCurrency.USD
-    }
-    // TODO: Remove this when Federation.stealthMode is available
-    getShowInviteCode(): boolean {
-        return this.federation.name.toLowerCase().includes('togo')
-            ? false
-            : true
-    }
-    // TODO: Refactor this when Federation.chatServerUrl is available
-    getChatServerOptions(): XmppConnectionOptions | null {
-        let domain = 'xmpp-02.dev.fedibtc.com'
-        if (this.federation.name.toLowerCase().includes('togo')) {
-            domain = 'xmpp-03.dev.fedibtc.com'
-        }
-        const options = {
-            domain,
-            mucDomain: `muc.${domain}`,
-            resource: XMPP_RESOURCE,
-            service: `wss://${domain}/xmpp-websocket`,
+    getSupportedFeatures(): SupportedFeature[] {
+        const { meta } = this.federation
+        const features = []
+
+        for (const feature in SupportedFeature) {
+            if (Object.keys(meta).includes(feature)) {
+                features.push(feature as SupportedFeature)
+            }
         }
 
-        return options
+        return features
+    }
+
+    getDefaultCurrency(): SupportedCurrency {
+        if (
+            this.getSupportedFeatures().includes(
+                SupportedFeature.default_currency,
+            )
+        ) {
+            return this.federation.meta.default_currency as SupportedCurrency
+        }
+
+        return SupportedCurrency.USD
+    }
+
+    getShowInviteCode(): boolean {
+        if (
+            this.getSupportedFeatures().includes(
+                SupportedFeature.invite_codes_disabled,
+            )
+        ) {
+            // This is a boolean true/false but client config meta only
+            // supports strings currently so will need to refactor
+            return this.federation.meta.invite_codes_disabled === 'true'
+                ? false
+                : true
+        }
+
+        return true
+    }
+
+    getChatServerOptions(): XmppConnectionOptions | null {
+        if (
+            this.getSupportedFeatures().includes(
+                SupportedFeature.chat_server_domain,
+            )
+        ) {
+            let domain = this.federation.meta.chat_server_domain
+            const options = {
+                domain,
+                mucDomain: `muc.${domain}`,
+                resource: XMPP_RESOURCE,
+                service: `wss://${domain}/xmpp-websocket`,
+            }
+
+            return options
+        }
+
+        return null
     }
 }
