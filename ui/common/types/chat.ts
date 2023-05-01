@@ -59,7 +59,11 @@ export interface ChatMember {
     /** Unique ID for the member (same as username for xmpp) */
     id: string
     username: string
-    publicKeyHex?: String
+    publicKeyHex?: string
+}
+
+export interface XmppChatMember extends ChatMember {
+    jid: string
 }
 
 export interface ChatGroupSettings {
