@@ -5,10 +5,10 @@ set -e
 
 # re-build bridge bindings for android
 cd ../../bridge
-if [[ -z $FEDI_NIX ]]
-then
-    ./android.sh
-else
+if [ "$FEDI_NIX" == "1" ]; then
     ./nix-android.sh
+else
+    ./android.sh
 fi
+
 cd ../ui/native
