@@ -7,12 +7,17 @@ import { StyleSheet, View } from 'react-native'
 import {
     selectChatConnectionOptions,
     selectChatEncryptionKeys,
+    selectLastFetchedMessageId,
 } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
-import { useChatContext } from '../state/contexts/ChatContext'
+import {
+    changeLastFetchedMessageId,
+    receiveMembersSeen,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { reset } from '../state/navigation'
@@ -33,7 +38,9 @@ const ChatScreen: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { fetchMessagesFromArchive, fetchRoster, publishPublicKey } =
         useXmpp()
-    const { websocketIsHealthy, lastFetchedMessageId } = useChatContext().state
+    const { state, dispatch } = useChatContext()
+    const { websocketIsHealthy } = state
+    const lastFetchedMessageId = useAppSelector(selectLastFetchedMessageId)
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
@@ -57,6 +64,14 @@ const ChatScreen: React.FC<Props> = () => {
                 pagination.after = lastFetchedMessageId
             }
             fetchMessagesFromArchive(null, pagination)
+                .then(messageId => {
+                    if (messageId) {
+                        dispatch(changeLastFetchedMessageId(messageId))
+                    }
+                })
+                .catch(err => {
+                    console.error(err)
+                })
         }
     }, [websocketIsHealthy, fetchMessagesFromArchive, lastFetchedMessageId])
 
@@ -64,6 +79,10 @@ const ChatScreen: React.FC<Props> = () => {
         if (websocketIsHealthy) {
             // Here we fetch the roster and store the results in local storage
             fetchRoster()
+                .then(members => dispatch(receiveMembersSeen(members)))
+                .catch(err => {
+                    console.error(err)
+                })
         }
     }, [websocketIsHealthy, fetchRoster])
 

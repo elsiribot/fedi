@@ -13,7 +13,10 @@ import {
 
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import { useChatContext } from '../state/contexts/ChatContext'
+import {
+    receiveMembersSeen,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useAppSelector, useDebouncedEffect } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { Member } from '../types'
@@ -26,7 +29,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { fetchRoster } = useXmpp()
-    const { state } = useChatContext()
+    const { state, dispatch } = useChatContext()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeChatConnectionOptions = useAppSelector(
@@ -42,6 +45,10 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
         () => {
             if (usernameFilter.length > 1 && authenticatedMember) {
                 fetchRoster()
+                    .then(members => dispatch(receiveMembersSeen(members)))
+                    .catch(err => {
+                        console.error(err)
+                    })
             }
         },
         [usernameFilter],

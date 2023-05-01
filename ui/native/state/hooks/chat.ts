@@ -1,13 +1,12 @@
 import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
-import { Key, Keypair } from '@fedi/common/types'
+import { ChatMember, Key, Keypair, XmppChatMember } from '@fedi/common/types'
 
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
-    Member,
     Message,
 } from '../../types'
 import { useChatContext } from '../contexts/ChatContext'
@@ -28,26 +27,21 @@ import {
 // This is a React hook providing the full set of functions that use the
 // xmppClient to perform chat operations
 export const useXmpp = () => {
-    const { state, dispatch } = useChatContext()
+    const { state } = useChatContext()
     const { membersSeen, xmppClient } = state
 
     return {
         addMemberToRoster: useCallback(
-            (member: Member): Promise<Member> => {
+            (member: ChatMember): Promise<ChatMember> => {
                 return addMemberToRoster(member, xmppClient)
             },
             [xmppClient],
         ),
         changeMucRoomName: useCallback(
-            (group: Group, updatedName: string): Promise<boolean> => {
-                return changeMucRoomName(
-                    group,
-                    updatedName,
-                    dispatch,
-                    xmppClient,
-                )
+            (group: Group, updatedName: string): Promise<Group> => {
+                return changeMucRoomName(group, updatedName, xmppClient)
             },
-            [dispatch, xmppClient],
+            [xmppClient],
         ),
         fetchMucRoomConfig: useCallback(
             (group: Group): Promise<string> => {
@@ -59,21 +53,16 @@ export const useXmpp = () => {
             (
                 filters: ArchiveQueryFilters | null,
                 pagination: ArchiveQueryPagination | null,
-            ): Promise<null> => {
-                return fetchMessagesFromArchive(
-                    filters,
-                    pagination,
-                    dispatch,
-                    xmppClient,
-                )
+            ): Promise<string | null> => {
+                return fetchMessagesFromArchive(filters, pagination, xmppClient)
             },
-            [dispatch, xmppClient],
+            [xmppClient],
         ),
-        fetchRoster: useCallback((): Promise<boolean> => {
-            return fetchRoster(dispatch, xmppClient)
-        }, [dispatch, xmppClient]),
+        fetchRoster: useCallback((): Promise<XmppChatMember[]> => {
+            return fetchRoster(xmppClient)
+        }, [xmppClient]),
         getPublicKeyFor: useCallback(
-            (member: Member): Promise<boolean> => {
+            (member: ChatMember): Promise<boolean> => {
                 return getPublicKeyFor(member, xmppClient)
             },
             [xmppClient],
@@ -95,13 +84,13 @@ export const useXmpp = () => {
         ),
         sendDirectMessage: useCallback(
             (
-                to: Member,
+                to: ChatMember,
                 message: Message,
                 withEncryptionKeys?: Keypair,
                 updatePayment?: boolean,
             ): Promise<void> => {
                 // Make sure we always pass the member with a pubkey
-                let toMember: Member | undefined = to
+                let toMember: ChatMember | undefined = to
                 if (!toMember.publicKeyHex) {
                     toMember = membersSeen.find(
                         m =>
@@ -110,7 +99,7 @@ export const useXmpp = () => {
                 }
                 if (toMember) {
                     return sendDirectMessage(
-                        toMember as Member,
+                        toMember as ChatMember,
                         message,
                         xmppClient,
                         withEncryptionKeys,

@@ -4,7 +4,7 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import { Key, Keypair } from '@fedi/common/types'
+import { ChatMember, Key, Keypair, XmppChatMember } from '@fedi/common/types'
 
 import { DEFAULT_GROUP_NAME } from '../../constants'
 import i18n from '../../localization/i18n'
@@ -12,7 +12,6 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
-    Member,
     Message,
 } from '../../types'
 import xmlUtils, {
@@ -29,17 +28,11 @@ import xmlUtils, {
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
 } from '../../utils/XmlUtils'
-import {
-    Action as ChatAction,
-    changeLastFetchedMessageId,
-    receiveMembersSeen,
-    updateGroup,
-} from '../contexts/ChatContext'
 
 export const addMemberToRoster = (
-    member: Member,
+    member: ChatMember,
     xmppClient: Client | null,
-): Promise<Member> => {
+): Promise<ChatMember> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
@@ -64,9 +57,8 @@ export const addMemberToRoster = (
 export const changeMucRoomName = (
     group: Group,
     updatedName: string,
-    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<boolean> => {
+): Promise<Group> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
@@ -84,8 +76,7 @@ export const changeMucRoomName = (
                 ...group,
                 name: updatedName,
             })
-            dispatch(updateGroup(updatedGroup))
-            resolve(true)
+            resolve(updatedGroup)
         } catch (error: any) {
             console.error('changeMucRoomName', error)
             if (
@@ -105,9 +96,8 @@ export const changeMucRoomName = (
 export const fetchMessagesFromArchive = (
     filters: ArchiveQueryFilters | null,
     pagination: ArchiveQueryPagination | null,
-    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<null> => {
+): Promise<string | null> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid) {
             return reject(i18n.t('errors.unknown-error'))
@@ -131,7 +121,7 @@ export const fetchMessagesFromArchive = (
             const lastMessageId = results.getChild('last')?.getText()
             if (!lastMessageId) return resolve(null)
 
-            dispatch(changeLastFetchedMessageId(lastMessageId))
+            resolve(lastMessageId)
         } catch (error) {
             console.error('fetchMessagesFromArchive', error)
         }
@@ -139,9 +129,8 @@ export const fetchMessagesFromArchive = (
 }
 
 export const fetchRoster = (
-    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<boolean> => {
+): Promise<XmppChatMember[]> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
             return reject(i18n.t('errors.unknown-error'))
@@ -155,7 +144,7 @@ export const fetchRoster = (
             )
             const result = await iqCaller.request(roomConfigQueryXml)
             console.debug('fetchRoster', result)
-            let membersSeen: Member[] = []
+            let membersSeen: XmppChatMember[] = []
             if (result.getChild('query')) {
                 console.debug('query', result.getChild('query'))
                 const rosterMembers = result
@@ -163,15 +152,23 @@ export const fetchRoster = (
                     ?.getChildren('item')
                 console.debug('rosterMembers', rosterMembers)
 
-                membersSeen = rosterMembers!.map(rm => {
-                    return new Member({
-                        jid: jid(rm.getAttr('jid')),
+                membersSeen = rosterMembers!
+                    .map(rm => {
+                        const memberJid = jid(rm.getAttr('jid'))
+                        return {
+                            id: memberJid.getLocal(),
+                            username: memberJid.getLocal(),
+                            jid: rm.getAttr('jid'),
+                        }
                     })
-                })
+                    .filter(m => {
+                        // Never add ourselves to membersSeen
+                        return m.username !== xmppClient?.jid?.getLocal()
+                    })
 
                 console.debug('membersSeen', membersSeen)
 
-                dispatch(receiveMembersSeen(membersSeen))
+                resolve(membersSeen)
             }
         } catch (error) {
             console.error('fetchRoster', error)
@@ -216,7 +213,7 @@ export const fetchMucRoomConfig = (
 }
 
 export const getPublicKeyFor = (
-    member: Member,
+    member: XmppChatMember,
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
@@ -364,7 +361,7 @@ export const publishPublicKey = (
 }
 
 export const sendDirectMessage = (
-    to: Member,
+    to: XmppChatMember,
     message: Message,
     xmppClient: Client | null,
     withEncryptionKeys?: Keypair,

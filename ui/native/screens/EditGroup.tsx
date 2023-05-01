@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { DEFAULT_GROUP_NAME } from '../constants'
-import { useChatContext } from '../state/contexts/ChatContext'
+import { updateGroup, useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { usePrevious } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
@@ -23,7 +23,8 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         group.name || DEFAULT_GROUP_NAME,
     )
     const [editingGroupName, setEditingGroupName] = useState<boolean>(false)
-    const { groups } = useChatContext().state
+    const { state, dispatch } = useChatContext()
+    const { groups } = state
     const { toast } = useEnvironmentContext().state
     const { changeMucRoomName } = useXmpp()
     const currentGroup = groups.find(g => g.id === group.id)
@@ -34,11 +35,14 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     useEffect(() => {
-        const handleEditGroupName = () => {
-            changeMucRoomName(group, groupName)?.catch(error => {
+        const handleEditGroupName = async () => {
+            try {
+                const updatedGroup = await changeMucRoomName(group, groupName)
+                dispatch(updateGroup(updatedGroup))
+            } catch (error) {
                 toast?.show(error as string, 3000)
                 setEditingGroupName(false)
-            })
+            }
         }
         if (editingGroupName === true) {
             handleEditGroupName()
