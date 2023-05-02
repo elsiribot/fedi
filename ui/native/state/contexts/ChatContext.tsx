@@ -699,6 +699,18 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         activeChatCredentials?.password,
     ])
 
+    /*
+        This effect makes sure to tear down the XMPP connection when switching
+        to a federation without a chat server configured
+    */
+    useEffect(() => {
+        if (activeChatConnectionOptions === null && state.xmppClient !== null) {
+            state.xmppClient?.reconnect.stop()
+            state.xmppClient?.stop()
+            dispatch(resetXmppClient())
+        }
+    }, [activeChatConnectionOptions, state.xmppClient])
+
     const configureXmppMessageListeners = useCallback(() => {
         // Handlers for incoming messages
         const handleIncomingGroupMessage = (stanza: Element) => {
