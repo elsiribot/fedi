@@ -4,11 +4,9 @@ import { t } from 'i18next'
 import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useChatContext } from '../../../state/contexts/ChatContext'
-import { useAppSelector } from '../../../state/hooks'
 import { Chat, ChatType, Group, Member, Message, MSats } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ChatTile from './ChatTile'
@@ -18,8 +16,8 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const ChatsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { groups, messages, membersSeen } = useChatContext().state
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const { groups, messages, membersSeen, authenticatedMember } =
+        useChatContext().state
 
     const renderChat: ListRenderItem<Chat> = ({ item }) => {
         return (

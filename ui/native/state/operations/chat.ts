@@ -32,8 +32,6 @@ import xmlUtils, {
 import {
     Action as ChatAction,
     changeLastFetchedMessageId,
-    receiveMembersSeen,
-    updateGroup,
 } from '../contexts/ChatContext'
 
 export const addMemberToRoster = (
@@ -64,9 +62,8 @@ export const addMemberToRoster = (
 export const changeMucRoomName = (
     group: Group,
     updatedName: string,
-    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<boolean> => {
+): Promise<Group> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
@@ -84,8 +81,7 @@ export const changeMucRoomName = (
                 ...group,
                 name: updatedName,
             })
-            dispatch(updateGroup(updatedGroup))
-            resolve(true)
+            resolve(updatedGroup)
         } catch (error: any) {
             console.error('changeMucRoomName', error)
             if (
@@ -138,10 +134,7 @@ export const fetchMessagesFromArchive = (
     })
 }
 
-export const fetchRoster = (
-    dispatch: React.Dispatch<ChatAction>,
-    xmppClient: Client | null,
-): Promise<boolean> => {
+export const fetchRoster = (xmppClient: Client | null): Promise<Member[]> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
             return reject(i18n.t('errors.unknown-error'))
@@ -171,7 +164,7 @@ export const fetchRoster = (
 
                 console.debug('membersSeen', membersSeen)
 
-                dispatch(receiveMembersSeen(membersSeen))
+                resolve(membersSeen)
             }
         } catch (error) {
             console.error('fetchRoster', error)

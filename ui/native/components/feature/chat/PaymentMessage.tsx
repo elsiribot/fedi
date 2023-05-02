@@ -1,10 +1,9 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppSelector } from '../../../state/hooks'
+import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Message, MSats } from '../../../types'
 import IncomingPaymentRequest from './IncomingPaymentRequest'
 import OutgoingPaymentRequest from './OutgoingPaymentRequest'
@@ -17,7 +16,9 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     message,
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const {
+        state: { authenticatedMember },
+    } = useChatContext()
     const { payment } = message
 
     const sentByMe =

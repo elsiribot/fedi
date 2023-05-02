@@ -9,7 +9,6 @@ import {
     authenticateChat,
     changeAuthenticatedGuardian,
     refreshFederations,
-    selectChatConnectionOptions,
     setActiveFederationId,
     setAuthenticatedMember,
     setChatGroups,
@@ -42,14 +41,14 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { reset } = route.params
-    const { dispatch: chatDispatch } = useChatContext()
+    const {
+        state: { connectionOptions },
+        dispatch: chatDispatch,
+    } = useChatContext()
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
         s => s.federation,
-    )
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
     )
 
     // after localstorage has been checked call refreshFederations
@@ -109,7 +108,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             // If there are no stored usernames for the active federation
             // go to FederationWelcome to recover/create username
             // or go to Home if no chat is available
-            if (activeChatConnectionOptions) {
+            if (connectionOptions) {
                 navigation.replace('FederationWelcome')
             } else {
                 navigation.replace('TabsNavigator')
@@ -122,7 +121,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         }
     }, [
         dispatch,
-        activeChatConnectionOptions,
+        connectionOptions,
         activeFederationId,
         federations.length,
         navigation,

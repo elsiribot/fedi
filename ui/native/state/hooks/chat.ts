@@ -10,7 +10,11 @@ import {
     Member,
     Message,
 } from '../../types'
-import { useChatContext } from '../contexts/ChatContext'
+import {
+    receiveMembersSeen,
+    updateGroup,
+    useChatContext,
+} from '../contexts/ChatContext'
 import {
     addMemberToRoster,
     changeMucRoomName,
@@ -39,12 +43,9 @@ export const useXmpp = () => {
             [xmppClient],
         ),
         changeMucRoomName: useCallback(
-            (group: Group, updatedName: string): Promise<boolean> => {
-                return changeMucRoomName(
-                    group,
-                    updatedName,
-                    dispatch,
-                    xmppClient,
+            (group: Group, updatedName: string): Promise<void> => {
+                return changeMucRoomName(group, updatedName, xmppClient).then(
+                    res => dispatch(updateGroup(res)),
                 )
             },
             [dispatch, xmppClient],
@@ -69,8 +70,10 @@ export const useXmpp = () => {
             },
             [dispatch, xmppClient],
         ),
-        fetchRoster: useCallback((): Promise<boolean> => {
-            return fetchRoster(dispatch, xmppClient)
+        fetchRoster: useCallback((): Promise<void> => {
+            return fetchRoster(xmppClient).then(members => {
+                dispatch(receiveMembersSeen(members))
+            })
         }, [dispatch, xmppClient]),
         getPublicKeyFor: useCallback(
             (member: Member): Promise<boolean> => {

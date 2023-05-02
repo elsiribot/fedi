@@ -6,15 +6,13 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import {
-    selectActiveFederation,
-    selectChatConnectionOptions,
-} from '@fedi/common/redux'
+import { selectActiveFederation } from '@fedi/common/redux'
 
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import {
@@ -35,10 +33,8 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
+    const { connectionOptions } = useChatContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
 
     const toggleOffline = () => {
         if (!offline) {
@@ -66,7 +62,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         case 'Home':
                             return <Pressable {...props} />
                         case 'Chat':
-                            if (activeChatConnectionOptions) {
+                            if (connectionOptions) {
                                 return <Pressable {...props} />
                             } else {
                                 return (

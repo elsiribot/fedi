@@ -6,18 +6,10 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import {
-    selectAuthenticatedMember,
-    selectChatConnectionOptions,
-} from '@fedi/common/redux'
-
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import {
-    receiveMembersSeen,
-    useChatContext,
-} from '../state/contexts/ChatContext'
-import { useAppSelector, useDebouncedEffect } from '../state/hooks'
+import { useChatContext } from '../state/contexts/ChatContext'
+import { useDebouncedEffect } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { Member } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -29,38 +21,22 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { fetchRoster } = useXmpp()
-    const { state, dispatch } = useChatContext()
+    const { membersSeen, authenticatedMember, connectionOptions } =
+        useChatContext().state
     const [usernameFilter, setUsernameFilter] = useState<string>('')
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
 
     // filter out members if usernameFilter has text to filter with
     const filteredMembers = usernameFilter
-        ? state.membersSeen.filter(m => m.username.includes(usernameFilter))
-        : state.membersSeen
+        ? membersSeen.filter(m => m.username.includes(usernameFilter))
+        : membersSeen
 
     useDebouncedEffect(
         () => {
             if (usernameFilter.length > 1 && authenticatedMember) {
                 fetchRoster()
-                    .then(members =>
-                        dispatch(
-                            receiveMembersSeen(
-                                members.map(member => ({
-                                    ...member,
-                                    jid: jid(member.jid),
-                                })),
-                            ),
-                        ),
-                    )
-                    .catch(err => {
-                        console.error(err)
-                    })
             }
         },
-        [usernameFilter],
+        [usernameFilter, authenticatedMember, fetchRoster],
         500,
     )
 
@@ -112,9 +88,9 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         <Pressable
                             style={styles(theme, insets).createGroupContainer}
                             onPress={async () => {
-                                if (activeChatConnectionOptions) {
+                                if (connectionOptions) {
                                     const { domain, resource } =
-                                        activeChatConnectionOptions
+                                        connectionOptions
                                     const newMember = new Member({
                                         jid: jid(
                                             `${usernameFilter}@${domain}/${resource}`,

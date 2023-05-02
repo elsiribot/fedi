@@ -17,9 +17,6 @@ import React, {
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
-    selectAllChatGroups,
-    selectAllChatMembers,
-    selectAllChatMessages,
     selectAuthenticatedMember,
     selectChatConnectionOptions,
     selectChatCredentials,
@@ -65,7 +62,13 @@ const initialState: ChatContextState = {
     lastFetchedMessageId: null,
     websocketIsHealthy: false,
 }
-type AppState = typeof initialState
+
+interface ChatReduxState {
+    authenticatedMember: ReturnType<typeof selectAuthenticatedMember>
+    encryptionKeys: ReturnType<typeof selectChatEncryptionKeys>
+    connectionOptions: ReturnType<typeof selectChatConnectionOptions>
+}
+type ChatComboState = ChatContextState & ChatReduxState
 
 // Define actions that can change the state within this Context
 enum ActionType {
@@ -94,7 +97,7 @@ export interface Action {
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {
-    state: ChatContextState
+    state: ChatComboState
     dispatch: React.Dispatch<Action>
 }
 export const ChatContext = createContext({} as BaseContext)
@@ -196,7 +199,10 @@ export function resetChatState(): Action {
 }
 
 // Implement the reducer with actions and state changes
-export function reducer(state: AppState, action: Action): AppState {
+export function reducer(
+    state: ChatContextState,
+    action: Action,
+): ChatContextState {
     switch (action.type) {
         case ActionType.ADD_TO_MEMBERS_SEEN: {
             const memberToAdd = new Member({ jid: action.payload.jid })
@@ -530,10 +536,9 @@ export function reducer(state: AppState, action: Action): AppState {
 }
 
 function ChatProvider(props: React.PropsWithChildren<{}>) {
-    const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
-        reducer,
-        initialState,
-    )
+    const [state, dispatch] = useReducer<
+        React.Reducer<ChatContextState, Action>
+    >(reducer, initialState)
     const appStateRef = useRef<AppStateStatus>(
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
@@ -547,16 +552,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
-    )
-    const activeChatGroups = useAppSelector(selectAllChatGroups)
-    const activeChatMembers = useAppSelector(selectAllChatMembers)
-    const activeChatMessages = useAppSelector(selectAllChatMessages)
-
-    // useMemo makes sure the Provider only re-renders when
-    // there is a state change
-    const providerValue = useMemo(
-        () => ({ state, dispatch }),
-        [state, dispatch],
     )
 
     // Takes a username + password to construct a new XMPP client
@@ -1044,35 +1039,56 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when groups are added
     useEffect(() => {
-        if (activeChatGroups.length > DEFAULT_GROUPS.length) {
-            console.info('storing', activeChatGroups.length, 'groups')
+        if (state.groups.length > DEFAULT_GROUPS.length) {
+            console.info('storing', state.groups.length, 'groups')
             AsyncStorage.setItem(
                 `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ groups: activeChatGroups }),
+                JSON.stringify({ groups: state.groups }),
             )
         }
-    }, [activeChatGroups, activeFederationId])
+    }, [state.groups, activeFederationId])
     // Update async storage when members are added
     useEffect(() => {
-        if (activeChatMembers.length > 0) {
-            console.info('storing', activeChatMembers.length, 'members')
+        if (state.groups.length > 0) {
+            console.info('storing', state.groups.length, 'members')
             AsyncStorage.setItem(
                 `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ members: activeChatMembers }),
+                JSON.stringify({ members: state.groups }),
             )
         }
-    }, [activeChatMembers, activeFederationId])
+    }, [state.groups, activeFederationId])
 
     // Update async storage when messages are added
     useEffect(() => {
-        if (activeChatMessages.length > 0) {
-            console.info('storing', activeChatMessages.length, 'messages')
+        if (state.groups.length > 0) {
+            console.info('storing', state.groups.length, 'messages')
             AsyncStorage.setItem(
                 `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ messages: activeChatMessages }),
+                JSON.stringify({ messages: state.groups }),
             )
         }
-    }, [activeChatMessages, activeFederationId])
+    }, [state.groups, activeFederationId])
+
+    // useMemo makes sure the Provider only re-renders when
+    // there is a state change. Some state from redux is also added in.
+    const providerValue = useMemo(
+        () => ({
+            state: {
+                ...state,
+                authenticatedMember,
+                encryptionKeys: activeChatEncryptionKeys,
+                connectionOptions: activeChatConnectionOptions,
+            },
+            dispatch,
+        }),
+        [
+            state,
+            authenticatedMember,
+            activeChatEncryptionKeys,
+            activeChatConnectionOptions,
+            dispatch,
+        ],
+    )
 
     return <ChatContext.Provider value={providerValue} {...props} />
 }

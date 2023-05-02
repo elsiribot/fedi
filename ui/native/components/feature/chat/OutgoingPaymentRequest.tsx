@@ -29,8 +29,10 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
     const { sendDirectMessage } = useXmpp()
-    const { dispatch } = useChatContext()
-    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
+    const {
+        dispatch,
+        state: { encryptionKeys },
+    } = useChatContext()
     const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
     // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
     const [validatingToken, setValidatingToken] = useState<boolean>(false)
@@ -51,7 +53,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     token: null,
                 },
             })
-            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
+            const withEncryptionKeys = encryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
                 sentTo as Member,
@@ -68,7 +70,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         payment,
         sendDirectMessage,
         sentTo,
-        activeChatEncryptionKeys,
+        encryptionKeys,
     ])
 
     useEffect(() => {
