@@ -90,6 +90,12 @@ impl Event {
 pub trait IEventSink: MaybeSend + MaybeSync + 'static {
     /// Send event. Body is JSON-serialized
     fn event(&self, event_type: String, body: String);
+    fn events(&self) -> Vec<(String, String)> {
+        panic!("IEventSink.events() is only for testing")
+    }
+    fn num_events_of_type(&self, event_type: String) -> usize {
+        panic!("IEventSink.num_events_of_type() is only for testing")
+    }
 }
 
 pub type EventSink = Arc<dyn IEventSink>;

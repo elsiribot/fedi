@@ -498,7 +498,8 @@ impl Federation {
 
         while let Some(update) = updates.next().await {
             match update {
-                LnPayState::Success { preimage } => {
+                LnPayState::Success { .. } => {
+                    self.ng_save_outgoing_lightning_tx(invoice).await;
                     return Ok(());
                 }
                 LnPayState::Refunded { refund_txid } => {
@@ -524,6 +525,19 @@ impl Federation {
     ) -> Result<Vec<(ChronologicalOperationLogKey, OperationLogEntry)>> {
         let ops = self.ng.get_operations(100).await;
         Ok(ops)
+    }
+
+    // FIXME: remove this
+    pub async fn ng_save_outgoing_lightning_tx(&self, invoice: &Invoice) {
+        let amount = fedimint_core::Amount::from_msats(
+            invoice
+                .amount_milli_satoshis()
+                .expect("assuming we only receive payments for invoices with amount"),
+        );
+        let fee = None;
+        let tx =
+            Transaction::lightning(TransactionDirection::Receive, amount, fee, invoice.clone());
+        self.save_transaction(&tx, true).await;
     }
 
     pub fn user_client(&self) -> &Client<UserClientConfig> {

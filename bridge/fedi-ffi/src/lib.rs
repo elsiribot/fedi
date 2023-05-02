@@ -717,27 +717,47 @@ mod tests {
     use fedimint_core::core::LEGACY_HARDCODED_INSTANCE_ID_MINT;
     use fedimint_logging::TracingSetup;
     use fedimint_mint_client::{MintClientExt, MintClientModule};
-    use tracing::debug;
+    use std::sync::RwLock;
 
     use crate::{event::IEventSink, ffi::PathBasedStorage};
     use devimint::cmd;
 
     use super::*;
 
-    struct FakeEventSink(pub Vec<(String, String)>);
+    struct FakeEventSink {
+        pub events: RwLock<Vec<(String, String)>>,
+    }
+
+    fn transaction_event_type() -> String {
+        "transaction".into()
+    }
+
     static INIT_TRACING: Once = Once::new();
 
     impl FakeEventSink {
         fn new() -> Self {
-            Self(vec![])
+            Self {
+                events: RwLock::new(vec![]),
+            }
         }
     }
 
     impl IEventSink for FakeEventSink {
         fn event(&self, event_type: String, body: String) {
-            debug!("event {} {}", event_type, body);
-            // TODO:
-            // self.0.push((event_type, body));
+            let mut events = self
+                .events
+                .write()
+                .expect("couldn't acquire FakeEventSink lock");
+            events.push((event_type, body));
+        }
+        fn events(&self) -> Vec<(String, String)> {
+            self.events
+                .read()
+                .expect("FakeEventSink could not acquire read lock")
+                .clone()
+        }
+        fn num_events_of_type(&self, event_type: String) -> usize {
+            self.events().iter().filter(|e| e.0 == event_type).count()
         }
     }
 
@@ -786,7 +806,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_join_and_leave_and_joinfederation() -> anyhow::Result<()> {
+    async fn test_join_and_leave_and_join_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         leaveFederation(bridge, federation.id().into()).await?;
         setup().await?;
@@ -801,8 +821,6 @@ mod tests {
         let words = getMnemonic(bridge.clone(), federation.id().into()).await?;
         let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
         info!("initial mnemnoic {:?}", &words);
-
-        // leaveFederation(bridge.clone(), federation.id().into()).await?;
 
         let _username = recoverFromMnemonic(
             bridge.clone(),
@@ -861,7 +879,6 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_ng() -> anyhow::Result<()> {
-        // RUNTIME.block_on(async {
         let (_, federation) = setup().await?;
 
         // receive ecash
@@ -912,7 +929,6 @@ mod tests {
             .await?;
 
         Ok(())
-        // })
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -944,7 +960,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_send() -> anyhow::Result<()> {
-        let (_, federation) = setup().await?;
+        let (bridge, federation) = setup().await?;
 
         // receive ecash
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
@@ -963,14 +979,6 @@ mod tests {
             .as_millis()
             .to_string();
         let label = format!("foo-{}", label);
-
-        // FIXME: explicitely choose a gateway
-        // let config = federation
-        //     .client
-        //     .config()
-        //     .0
-        //     .get_module_cfg("LEGACY_HARDCODED_INSTANCE_ID_LN")?;
-        // let gateways = config.
 
         // get invoice
         let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
@@ -991,7 +999,19 @@ mod tests {
         let invoice = Invoice::from_str(&invoice_string)?;
 
         // check balance
+        assert_eq!(
+            0,
+            bridge
+                .event_sink
+                .num_events_of_type(transaction_event_type())
+        );
         federation.ng_pay_invoice(&invoice).await?;
+        assert_eq!(
+            1,
+            bridge
+                .event_sink
+                .num_events_of_type(transaction_event_type())
+        );
 
         // check that core-lightning got paid
         let status = cmd!(
