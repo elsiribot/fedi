@@ -4,7 +4,10 @@ import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { selectChatEncryptionKeys } from '@fedi/common/redux'
+import {
+    selectChatConnectionOptions,
+    selectChatEncryptionKeys,
+} from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 
 import ChatsList from '../components/feature/chat/ChatsList'
@@ -12,6 +15,7 @@ import SvgImage from '../components/ui/SvgImage'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
+import { reset } from '../state/navigation'
 import { ArchiveQueryPagination } from '../types'
 import {
     NavigationHook,
@@ -31,6 +35,15 @@ const ChatScreen: React.FC<Props> = () => {
         useXmpp()
     const { websocketIsHealthy, lastFetchedMessageId } = useChatContext().state
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
+    )
+
+    useEffect(() => {
+        if (!activeChatConnectionOptions) {
+            navigation.dispatch(reset('TabsNavigator'))
+        }
+    }, [activeChatConnectionOptions, navigation])
 
     useEffect(() => {
         if (websocketIsHealthy) {

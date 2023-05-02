@@ -176,7 +176,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     />
                 </View>
                 <Text h2 medium>
-                    {authenticatedMember?.username}
+                    {authenticatedMember?.username || 'satoshi'}
                 </Text>
             </View>
             {/* TODO: Add offline status indicator here */}

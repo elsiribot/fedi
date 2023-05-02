@@ -4,7 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
@@ -19,6 +22,9 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
+    )
 
     return (
         <View style={styles(theme).container}>
@@ -61,7 +67,11 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     title={t('feature.onboarding.join-new-member')}
                     onPress={() => {
-                        navigation.navigate('CreateUsername')
+                        if (activeChatConnectionOptions) {
+                            navigation.navigate('CreateUsername')
+                        } else {
+                            navigation.navigate('TabsNavigator')
+                        }
                     }}
                     containerStyle={styles(theme).button}
                 />

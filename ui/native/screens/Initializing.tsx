@@ -9,6 +9,7 @@ import {
     authenticateChat,
     changeAuthenticatedGuardian,
     refreshFederations,
+    selectChatConnectionOptions,
     setActiveFederationId,
     setAuthenticatedMember,
 } from '@fedi/common/redux'
@@ -43,6 +44,9 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
         s => s.federation,
+    )
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
     )
 
     // after localstorage has been checked call refreshFederations
@@ -99,16 +103,27 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     return navigation.replace('TabsNavigator')
                 }
             }
-            // Go to the welcome screen if there are no stored usernames
-            // for the active federation
-            navigation.replace('FederationWelcome')
+            // If there are no stored usernames for the active federation
+            // go to FederationWelcome to recover/create username
+            // or go to Home if no chat is available
+            if (activeChatConnectionOptions) {
+                navigation.replace('FederationWelcome')
+            } else {
+                navigation.replace('TabsNavigator')
+            }
         }
         // activeFederationId should be null if there are 0 federations so
         // this should only ever be called once
         if (activeFederationId && federations.length === 0) {
             initializeFederations()
         }
-    }, [dispatch, activeFederationId, federations.length, navigation])
+    }, [
+        dispatch,
+        activeChatConnectionOptions,
+        activeFederationId,
+        federations.length,
+        navigation,
+    ])
 
     // this useEffect checks async storage to restore
     // federations state on a fresh app load
