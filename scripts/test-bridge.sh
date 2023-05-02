@@ -30,7 +30,7 @@ ln -s $FM_LOGS_DIR target/logs
 rm target/test || true
 ln -s $FM_DATA_DIR target/test
 
-export RUST_LOG=debug
+# export RUST_LOG=debug
 export RUST_BACKTRACE=1
 devimint dev-fed &>$FM_LOGS_DIR/fedimint-dev.log &
 DEVIMINT_PID=$!
@@ -53,6 +53,7 @@ echo Funding LND gateway e-cash wallet ...
 scripts/pegin.sh 20000.0 1 "LND"
 
 echo "## Running tests"
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_lightning_receive
+# cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_ecash_ng
+cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi -- --test-threads=1
 
 echo "## Tests Passed"

@@ -25,7 +25,6 @@ use fedimint_client_fedi::{
 };
 use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
-    core::LEGACY_HARDCODED_INSTANCE_ID_LN,
     db::IDatabase,
     module::registry::ModuleDecoderRegistry,
 };
@@ -449,19 +448,16 @@ impl Federation {
         amount: fedimint_core::Amount,
         description: String,
         expiry_time: Option<u64>,
-    ) -> Result<(Invoice, OperationId)> {
-        let mut dbtx = self.ng.db().begin_transaction().await;
-        let active_gateway = self
-            .ng
-            .fetch_active_gateway(&mut dbtx.with_module_prefix(LEGACY_HARDCODED_INSTANCE_ID_LN))
-            .await?;
+    ) -> Result<(OperationId, Invoice)> {
+        let dbtx = self.ng.db().begin_transaction().await;
+        let active_gateway = self.ng.fetch_active_gateway().await?;
         dbtx.commit_tx().await;
 
-        let (invoice, operation_id) = self
+        let (operation_id, invoice) = self
             .ng
             .create_bolt11_invoice_and_receive(amount, description, expiry_time, active_gateway)
             .await?;
-        Ok((invoice, operation_id))
+        Ok((operation_id, invoice))
     }
 
     pub async fn ng_await_invoice(&self, operation_id: OperationId) -> Result<()> {
@@ -488,11 +484,8 @@ impl Federation {
     }
 
     pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        let mut dbtx = self.ng.db().begin_transaction().await;
-        let active_gateway = self
-            .ng
-            .fetch_active_gateway(&mut dbtx.with_module_prefix(LEGACY_HARDCODED_INSTANCE_ID_LN))
-            .await?;
+        let dbtx = self.ng.db().begin_transaction().await;
+        let active_gateway = self.ng.fetch_active_gateway().await?;
         dbtx.commit_tx().await;
 
         let federation_id = self.id();
@@ -521,14 +514,8 @@ impl Federation {
     }
 
     pub async fn ng_switch_gateway(&self, pubkey: PublicKey) -> Result<()> {
-        let mut dbtx = self.ng.db().begin_transaction().await;
-        self.ng
-            .switch_active_gateway(
-                Some(pubkey),
-                &mut dbtx.with_module_prefix(LEGACY_HARDCODED_INSTANCE_ID_LN),
-            )
-            .await?;
-        dbtx.commit_tx().await;
+        let dbtx = self.ng.db().begin_transaction().await;
+        self.ng.switch_active_gateway(Some(pubkey), dbtx).await?;
         Ok(())
     }
 

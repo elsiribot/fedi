@@ -921,7 +921,7 @@ mod tests {
         let amount = fedimint_core::Amount::from_msats(10000);
         let description = "test".to_string();
         let expiry_time = None;
-        let (invoice, operation_id) = federation
+        let (operation_id, invoice) = federation
             .ng_generate_invoice(amount, description, expiry_time)
             .await?;
         let invoice_string = invoice.to_string();
