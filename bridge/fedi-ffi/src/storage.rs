@@ -2,7 +2,7 @@ use fedimint_core::config::FederationId;
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_core::{apply, async_trait_maybe_send, impl_db_lookup, impl_db_record};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -27,22 +27,21 @@ enum BridgeDbPrefix {
 }
 
 #[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederationsKey;
+pub struct JoinedFederation(pub FederationId);
 
 #[derive(Clone, Debug, Decodable, Encodable)]
 pub struct JoinedFederationsPrefix;
 
-impl fedimint_core::db::DatabaseRecord for JoinedFederationsKey {
-    const DB_PREFIX: u8 = BridgeDbPrefix::JoinedFederations as u8;
-    type Key = Self;
-    type Value = FederationId;
-}
+impl_db_record!(
+    key = JoinedFederation,
+    value = (),
+    db_prefix = BridgeDbPrefix::JoinedFederations,
+);
 
-impl fedimint_core::db::DatabaseRecord for JoinedFederationsPrefix {
-    const DB_PREFIX: u8 = BridgeDbPrefix::JoinedFederations as u8;
-    type Key = JoinedFederationsKey;
-    type Value = FederationId;
-}
+impl_db_lookup!(
+    key = JoinedFederation,
+    query_prefix = JoinedFederationsPrefix
+);
 
 #[derive(Debug, Decodable, Encodable)]
 pub struct FediClientConfigKey;
