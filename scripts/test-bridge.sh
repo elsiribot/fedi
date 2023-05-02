@@ -47,6 +47,11 @@ fi
 FM_CONNECT_STRING=$(cat $FM_DATA_DIR/client-connect)
 export FM_CONNECT_STRING
 
+echo Funding CLN gateway e-cash wallet ...
+scripts/pegin.sh 20000.0 1
+echo Funding LND gateway e-cash wallet ...
+scripts/pegin.sh 20000.0 1 "LND"
+
 echo "## Running tests"
 cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_lightning_receive
 
