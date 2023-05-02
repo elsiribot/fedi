@@ -11,9 +11,6 @@ import {
     refreshFederations,
     setActiveFederationId,
     setAuthenticatedMember,
-    setChatGroups,
-    setChatMembersSeen,
-    setChatMessages,
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
@@ -21,17 +18,9 @@ import { fedimint } from '../bridge'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    CHAT_GROUPS_PERSISTENCE_KEY,
-    CHAT_MEMBERS_PERSISTENCE_KEY,
-    CHAT_MESSAGES_PERSISTENCE_KEY,
     FEDERATION_USERNAME_ID_DB_KEY,
 } from '../constants'
-import {
-    receiveGroups,
-    receiveMembersSeen,
-    receiveMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -41,10 +30,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { reset } = route.params
-    const {
-        state: { connectionOptions },
-        dispatch: chatDispatch,
-    } = useChatContext()
+    const { connectionOptions } = useChatContext().state
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
@@ -102,6 +88,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                             username: usernameMap[activeFederationId!],
                         }),
                     ).unwrap()
+
                     return navigation.replace('TabsNavigator')
                 }
             }
@@ -174,122 +161,18 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                         return navigation.replace('Splash')
                     }
                 } catch (error) {
-                    console.error(error)
+                    console.error('restoreState error', error)
                     return navigation.replace('Splash')
                 }
             }
 
-            const restoreMessages = async (key: string) => {
-                try {
-                    const storedJson = await AsyncStorage.getItem(key)
-
-                    const savedChatMessages = storedJson
-                        ? JSON.parse(storedJson)
-                        : null
-
-                    console.info('savedChatMessages', savedChatMessages)
-
-                    if (savedChatMessages !== null) {
-                        const { messages } = savedChatMessages
-                        console.debug('recovering messages')
-                        if (messages) {
-                            const federationId = key.split(':')[1]
-                            chatDispatch(receiveMessages(messages))
-                            dispatch(
-                                setChatMessages({
-                                    federationId,
-                                    messages,
-                                }),
-                            )
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            }
-
-            const restoreGroups = async (key: string) => {
-                try {
-                    const storedJson = await AsyncStorage.getItem(key)
-
-                    const savedChatGroups = storedJson
-                        ? JSON.parse(storedJson)
-                        : null
-
-                    console.info('savedChatGroups', savedChatGroups)
-
-                    if (savedChatGroups !== null) {
-                        const { groups } = savedChatGroups
-                        console.debug('recovering groups')
-                        if (groups) {
-                            const federationId = key.split(':')[1]
-                            chatDispatch(receiveGroups(groups))
-                            dispatch(
-                                setChatGroups({
-                                    federationId,
-                                    groups,
-                                }),
-                            )
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            }
-
-            const restoreMembers = async (key: string) => {
-                try {
-                    const storedJson = await AsyncStorage.getItem(key)
-
-                    const savedChatMembers = storedJson
-                        ? JSON.parse(storedJson)
-                        : null
-
-                    console.info('savedChatMembers', savedChatMembers)
-
-                    if (savedChatMembers !== null) {
-                        const { members } = savedChatMembers
-                        console.debug('recovering members')
-                        if (members) {
-                            const federationId = key.split(':')[1]
-                            chatDispatch(receiveMembersSeen(members))
-                            dispatch(
-                                setChatMembersSeen({
-                                    federationId,
-                                    membersSeen: members,
-                                }),
-                            )
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            }
-
-            const restoreChatState = async () => {
-                const storageKeys = await AsyncStorage.getAllKeys()
-
-                // all chat keys should be in the format:
-                // `AsyncStorage-ChatContext-${datatype}:${federationId}`
-                storageKeys.forEach(k => {
-                    if (k.startsWith(CHAT_MESSAGES_PERSISTENCE_KEY)) {
-                        restoreMessages(k)
-                    } else if (k.startsWith(CHAT_GROUPS_PERSISTENCE_KEY)) {
-                        restoreGroups(k)
-                    } else if (k.startsWith(CHAT_MEMBERS_PERSISTENCE_KEY)) {
-                        restoreMembers(k)
-                    }
-                })
-            }
-
-            restoreChatState()
             restoreFederationsState()
         }
 
         if (!activeFederationId) {
             restoreState()
         }
-    }, [navigation, reset, chatDispatch, dispatch, activeFederationId])
+    }, [navigation, reset, dispatch, activeFederationId])
 
     return (
         <ImageBackground

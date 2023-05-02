@@ -13,6 +13,7 @@ import React, {
     useMemo,
     useReducer,
     useRef,
+    useState,
 } from 'react'
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
@@ -64,7 +65,7 @@ const initialState: ChatContextState = {
 }
 
 interface ChatReduxState {
-    authenticatedMember: ReturnType<typeof selectAuthenticatedMember>
+    authenticatedMember: Member | null
     encryptionKeys: ReturnType<typeof selectChatEncryptionKeys>
     connectionOptions: ReturnType<typeof selectChatConnectionOptions>
 }
@@ -554,6 +555,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         selectChatConnectionOptions,
     )
 
+    // Maintain state for the federation ID that we're currently writing to storage.
+    // This prevents accidentally writing state to storage while changing federation IDs.
+    const [loadedFederationId, setLoadedFederationId] = useState<
+        string | undefined
+    >()
+
     // Takes a username + password to construct a new XMPP client
     // and store it in state for later use
     const buildXmppClient = useCallback(
@@ -1037,37 +1044,96 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // is killed by the OS
     // TODO: consider refactoring to use SQLite
 
+    const syncStorage = useCallback(
+        (type: StorageType, data: unknown) => {
+            if (!activeFederationId) {
+                console.info('skipping group storage, no active federation id')
+                return
+            }
+            if (activeFederationId !== loadedFederationId) {
+                console.info('skipping group storage, ids dont match')
+                return
+            }
+            AsyncStorage.setItem(
+                makeStorageKey(type, activeFederationId),
+                JSON.stringify(data),
+            )
+        },
+        [activeFederationId, loadedFederationId],
+    )
+
     // Update async storage when groups are added
     useEffect(() => {
         if (state.groups.length > DEFAULT_GROUPS.length) {
             console.info('storing', state.groups.length, 'groups')
-            AsyncStorage.setItem(
-                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ groups: state.groups }),
-            )
+            syncStorage('groups', { groups: state.groups })
         }
-    }, [state.groups, activeFederationId])
+    }, [state.groups, syncStorage])
     // Update async storage when members are added
     useEffect(() => {
-        if (state.groups.length > 0) {
-            console.info('storing', state.groups.length, 'members')
-            AsyncStorage.setItem(
-                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ members: state.groups }),
-            )
+        if (state.membersSeen.length > 0) {
+            console.info('storing', state.membersSeen.length, 'members')
+            syncStorage('messages', { members: state.membersSeen })
         }
-    }, [state.groups, activeFederationId])
-
+    }, [state.membersSeen, syncStorage])
     // Update async storage when messages are added
     useEffect(() => {
-        if (state.groups.length > 0) {
-            console.info('storing', state.groups.length, 'messages')
-            AsyncStorage.setItem(
-                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ messages: state.groups }),
-            )
+        if (state.messages.length > 0) {
+            console.info('storing', state.messages.length, 'messages')
+            syncStorage('messages', { messages: state.messages })
         }
-    }, [state.groups, activeFederationId])
+    }, [state.messages, syncStorage])
+
+    // Reset state and restore stored state on init / federation ID change.
+    // Attempt to handle rapid ID changes by canceling, but storage should be very fast.
+    useEffect(() => {
+        let canceled = false
+        if (activeFederationId && activeFederationId !== loadedFederationId) {
+            console.info('restoring chat state for', activeFederationId)
+
+            const restoreState = async (
+                type: StorageType,
+            ): Promise<undefined | Record<string, any>> => {
+                try {
+                    const json = await AsyncStorage.getItem(
+                        makeStorageKey(type, activeFederationId),
+                    )
+                    if (json && !canceled) {
+                        const data = JSON.parse(json)
+                        return data
+                    }
+                } catch (err) {
+                    console.warn(
+                        `failed to restore ${type} state for ${activeFederationId}`,
+                        err,
+                    )
+                }
+            }
+
+            Promise.all([
+                restoreState('members'),
+                restoreState('messages'),
+                restoreState('groups'),
+            ]).then(([memberData, messageData, groupData]) => {
+                if (canceled) return
+                memberData?.members &&
+                    dispatch(receiveMembersSeen(memberData.members))
+                messageData?.messages &&
+                    dispatch(receiveMessages(messageData.messages))
+                groupData?.groups && dispatch(receiveGroups(groupData.groups))
+                setLoadedFederationId(activeFederationId)
+            })
+        }
+        return () => {
+            canceled = true
+        }
+    }, [activeFederationId, loadedFederationId])
+
+    // Fake our member using xmpp client jid
+    const wrappedAuthenticatedMember = useMemo(() => {
+        if (!state.xmppClient) return null
+        return new Member({ jid: state.xmppClient.jid })
+    }, [state.xmppClient])
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change. Some state from redux is also added in.
@@ -1075,7 +1141,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         () => ({
             state: {
                 ...state,
-                authenticatedMember,
+                authenticatedMember: wrappedAuthenticatedMember,
                 encryptionKeys: activeChatEncryptionKeys,
                 connectionOptions: activeChatConnectionOptions,
             },
@@ -1083,7 +1149,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }),
         [
             state,
-            authenticatedMember,
+            wrappedAuthenticatedMember,
             activeChatEncryptionKeys,
             activeChatConnectionOptions,
             dispatch,
@@ -1091,6 +1157,17 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     )
 
     return <ChatContext.Provider value={providerValue} {...props} />
+}
+
+type StorageType = 'members' | 'messages' | 'groups'
+
+function makeStorageKey(type: StorageType, federationId: string) {
+    const prefix = {
+        members: CHAT_MEMBERS_PERSISTENCE_KEY,
+        messages: CHAT_MESSAGES_PERSISTENCE_KEY,
+        groups: CHAT_GROUPS_PERSISTENCE_KEY,
+    }[type]
+    return `${prefix}:${federationId}`
 }
 
 function useChatContext() {
