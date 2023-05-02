@@ -4,7 +4,7 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import { Key, Keypair, XmppChatMember } from '@fedi/common/types'
+import { Key, Keypair } from '@fedi/common/types'
 
 import { DEFAULT_GROUP_NAME } from '../../constants'
 import i18n from '../../localization/i18n'
@@ -12,6 +12,7 @@ import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Member,
     Message,
 } from '../../types'
 import xmlUtils, {
@@ -28,13 +29,17 @@ import xmlUtils, {
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
 } from '../../utils/XmlUtils'
-
-type JID = ReturnType<typeof jid>
+import {
+    Action as ChatAction,
+    changeLastFetchedMessageId,
+    receiveMembersSeen,
+    updateGroup,
+} from '../contexts/ChatContext'
 
 export const addMemberToRoster = (
-    memberUsername: string,
+    member: Member,
     xmppClient: Client | null,
-): Promise<XmppChatMember> => {
+): Promise<Member> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
@@ -42,7 +47,9 @@ export const addMemberToRoster = (
             const { iqCaller } = xmppClient! as Client
             const roomConfigQueryXml = xmlUtils.buildQuery(
                 new AddToRosterQuery({
-                    newRosterItem: `${memberUsername}@${xmppClient.jid.getDomain()}`,
+                    newRosterItem: `${
+                        member.username
+                    }@${xmppClient.jid.getDomain()}`,
                     from: xmppClient!.jid!.toString(),
                 }),
             )
@@ -57,8 +64,9 @@ export const addMemberToRoster = (
 export const changeMucRoomName = (
     group: Group,
     updatedName: string,
+    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<Group> => {
+): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
@@ -76,7 +84,8 @@ export const changeMucRoomName = (
                 ...group,
                 name: updatedName,
             })
-            resolve(updatedGroup)
+            dispatch(updateGroup(updatedGroup))
+            resolve(true)
         } catch (error: any) {
             console.error('changeMucRoomName', error)
             if (
@@ -96,8 +105,9 @@ export const changeMucRoomName = (
 export const fetchMessagesFromArchive = (
     filters: ArchiveQueryFilters | null,
     pagination: ArchiveQueryPagination | null,
+    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<string | null> => {
+): Promise<null> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid) {
             return reject(i18n.t('errors.unknown-error'))
@@ -121,7 +131,7 @@ export const fetchMessagesFromArchive = (
             const lastMessageId = results.getChild('last')?.getText()
             if (!lastMessageId) return resolve(null)
 
-            resolve(lastMessageId)
+            dispatch(changeLastFetchedMessageId(lastMessageId))
         } catch (error) {
             console.error('fetchMessagesFromArchive', error)
         }
@@ -129,8 +139,9 @@ export const fetchMessagesFromArchive = (
 }
 
 export const fetchRoster = (
+    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<XmppChatMember[]> => {
+): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
             return reject(i18n.t('errors.unknown-error'))
@@ -144,7 +155,7 @@ export const fetchRoster = (
             )
             const result = await iqCaller.request(roomConfigQueryXml)
             console.debug('fetchRoster', result)
-            let membersSeen: XmppChatMember[] = []
+            let membersSeen: Member[] = []
             if (result.getChild('query')) {
                 console.debug('query', result.getChild('query'))
                 const rosterMembers = result
@@ -152,23 +163,15 @@ export const fetchRoster = (
                     ?.getChildren('item')
                 console.debug('rosterMembers', rosterMembers)
 
-                membersSeen = rosterMembers!
-                    .map(rm => {
-                        const memberJid = jid(rm.getAttr('jid'))
-                        return {
-                            id: memberJid.getLocal(),
-                            username: memberJid.getLocal(),
-                            jid: rm.getAttr('jid'),
-                        }
+                membersSeen = rosterMembers!.map(rm => {
+                    return new Member({
+                        jid: jid(rm.getAttr('jid')),
                     })
-                    .filter(m => {
-                        // Never add ourselves to membersSeen
-                        return m.username !== xmppClient?.jid?.getLocal()
-                    })
+                })
 
                 console.debug('membersSeen', membersSeen)
 
-                resolve(membersSeen)
+                dispatch(receiveMembersSeen(membersSeen))
             }
         } catch (error) {
             console.error('fetchRoster', error)
@@ -213,7 +216,7 @@ export const fetchMucRoomConfig = (
 }
 
 export const getPublicKeyFor = (
-    requestedJid: JID,
+    member: Member,
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
@@ -223,15 +226,15 @@ export const getPublicKeyFor = (
             const { iqCaller } = xmppClient! as Client
             const getPubkeyQueryXml = xmlUtils.buildQuery(
                 new GetPublicKeyQuery({
-                    from: xmppClient!.jid!.toString().replace('/chat', ''),
-                    to: requestedJid.toString(),
+                    from: xmppClient!.jid!.toString(),
+                    to: member.jid.toString(),
                 }),
             )
             const result = await iqCaller.request(getPubkeyQueryXml)
             console.debug('getPublicKeyFor', result.toString())
             resolve(true)
         } catch (error: any) {
-            console.error('getPublicKeyFor', error, requestedJid)
+            console.error('getPublicKeyFor', error)
             reject(i18n.t('errors.unknown-error'))
         }
     })
@@ -361,8 +364,7 @@ export const publishPublicKey = (
 }
 
 export const sendDirectMessage = (
-    toJid: JID,
-    toPublicKey: string,
+    to: Member,
     message: Message,
     xmppClient: Client | null,
     withEncryptionKeys?: Keypair,
@@ -373,20 +375,20 @@ export const sendDirectMessage = (
             return reject(i18n.t('errors.unknown-error'))
 
         try {
-            const fromJid = xmppClient!.jid
+            const fromJid = xmppClient!.jid?.toString()
+            const toJid = to.jid.toString()
 
             const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
                 new EncryptedDirectChatMessage({
-                    from: fromJid.toString(),
-                    to: toJid.toString(),
+                    from: fromJid,
+                    to: toJid,
                     message,
                     senderKeys: withEncryptionKeys as Keypair,
-                    recipientPublicKey: { hex: toPublicKey as string },
+                    recipientPublicKey: { hex: to.publicKeyHex as string },
                     updatePayment,
                 }),
             )
             xmppClient!.send(encrypedDirectChatMessageXml)
-            resolve()
         } catch (error) {
             console.error('sendDirectMessage', error)
             reject(i18n.t('errors.unknown-error'))

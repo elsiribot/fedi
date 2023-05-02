@@ -13,7 +13,7 @@ import {
 } from '../../../state/contexts/ChatContext'
 import { useAppSelector, useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import { Message, Payment, PaymentStatus } from '../../../types'
+import { Member, Message, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPaymentActionsProps = {
@@ -54,7 +54,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
-                sentTo?.username!,
+                sentTo as Member,
                 acceptedPaymentMessage,
                 withEncryptionKeys,
                 updatePayment,
@@ -217,7 +217,7 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
             const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
-                message.sentTo?.username!,
+                message.sentTo as Member,
                 canceledPaymentMessage,
                 withEncryptionKeys,
                 updatePayment,

@@ -1,17 +1,13 @@
-import { jid, xml } from '@xmpp/client'
+import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
-import {
-    selectAllChatMembers,
-    selectChatConnectionOptions,
-} from '@fedi/common/redux'
-import { Key, Keypair, XmppChatMember } from '@fedi/common/types'
+import { Key, Keypair } from '@fedi/common/types'
 
-import { useAppSelector } from '.'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
+    Member,
     Message,
 } from '../../types'
 import { useChatContext } from '../contexts/ChatContext'
@@ -32,36 +28,26 @@ import {
 // This is a React hook providing the full set of functions that use the
 // xmppClient to perform chat operations
 export const useXmpp = () => {
-    const { xmppClient } = useChatContext().state
-    const membersSeen = useAppSelector(selectAllChatMembers)
-    const connectionOptions = useAppSelector(selectChatConnectionOptions)
-
-    const makeJid = useCallback(
-        (username: string) => {
-            const domain =
-                connectionOptions?.domain || xmppClient?.jid?.getDomain()
-            const resource =
-                connectionOptions?.resource || xmppClient?.jid?.getResource()
-            if (!domain || !resource) {
-                throw new Error('Cannot make JID, missing domain or resource')
-            }
-            return jid(username, domain, resource)
-        },
-        [connectionOptions, xmppClient],
-    )
+    const { state, dispatch } = useChatContext()
+    const { membersSeen, xmppClient } = state
 
     return {
         addMemberToRoster: useCallback(
-            (username: string): Promise<XmppChatMember> => {
-                return addMemberToRoster(username, xmppClient)
+            (member: Member): Promise<Member> => {
+                return addMemberToRoster(member, xmppClient)
             },
             [xmppClient],
         ),
         changeMucRoomName: useCallback(
-            (group: Group, updatedName: string): Promise<Group> => {
-                return changeMucRoomName(group, updatedName, xmppClient)
+            (group: Group, updatedName: string): Promise<boolean> => {
+                return changeMucRoomName(
+                    group,
+                    updatedName,
+                    dispatch,
+                    xmppClient,
+                )
             },
-            [xmppClient],
+            [dispatch, xmppClient],
         ),
         fetchMucRoomConfig: useCallback(
             (group: Group): Promise<string> => {
@@ -73,19 +59,24 @@ export const useXmpp = () => {
             (
                 filters: ArchiveQueryFilters | null,
                 pagination: ArchiveQueryPagination | null,
-            ): Promise<string | null> => {
-                return fetchMessagesFromArchive(filters, pagination, xmppClient)
+            ): Promise<null> => {
+                return fetchMessagesFromArchive(
+                    filters,
+                    pagination,
+                    dispatch,
+                    xmppClient,
+                )
+            },
+            [dispatch, xmppClient],
+        ),
+        fetchRoster: useCallback((): Promise<boolean> => {
+            return fetchRoster(dispatch, xmppClient)
+        }, [dispatch, xmppClient]),
+        getPublicKeyFor: useCallback(
+            (member: Member): Promise<boolean> => {
+                return getPublicKeyFor(member, xmppClient)
             },
             [xmppClient],
-        ),
-        fetchRoster: useCallback((): Promise<XmppChatMember[]> => {
-            return fetchRoster(xmppClient)
-        }, [xmppClient]),
-        getPublicKeyFor: useCallback(
-            (username: string): Promise<boolean> => {
-                return getPublicKeyFor(makeJid(username), xmppClient)
-            },
-            [xmppClient, makeJid],
         ),
         getUniqueGroupId: useCallback((): Promise<string> => {
             return getUniqueGroupId(xmppClient)
@@ -104,21 +95,22 @@ export const useXmpp = () => {
         ),
         sendDirectMessage: useCallback(
             (
-                toUsername: string,
+                to: Member,
                 message: Message,
                 withEncryptionKeys?: Keypair,
                 updatePayment?: boolean,
             ): Promise<void> => {
                 // Make sure we always pass the member with a pubkey
-                let toPublicKey = membersSeen.find(
-                    member =>
-                        member.username === toUsername && member.publicKeyHex,
-                )?.publicKeyHex
-                console.log({ membersSeen, toPublicKey })
-                if (toPublicKey) {
+                let toMember: Member | undefined = to
+                if (!toMember.publicKeyHex) {
+                    toMember = membersSeen.find(
+                        m =>
+                            m.username === toMember?.username && m.publicKeyHex,
+                    )
+                }
+                if (toMember) {
                     return sendDirectMessage(
-                        makeJid(toUsername),
-                        toPublicKey,
+                        toMember as Member,
                         message,
                         xmppClient,
                         withEncryptionKeys,
@@ -130,7 +122,7 @@ export const useXmpp = () => {
                     )
                 }
             },
-            [membersSeen, xmppClient, makeJid],
+            [membersSeen, xmppClient],
         ),
         sendGroupMessage: useCallback(
             (to: Group, message: Message): Promise<void> => {

@@ -1,11 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import { orderBy } from 'lodash'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
 import { selectChatEncryptionKeys } from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
@@ -21,31 +22,35 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 
-const DirectChat: React.FC<Props> = ({ route }: Props) => {
+const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { member } = route.params
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const { state, dispatch } = useChatContext()
     const { getPublicKeyFor, sendDirectMessage } = useXmpp()
-
     const { member: currentMember } = route.params
-    const { username } = member
 
-    const publicKeyHex = useMemo(
-        () =>
-            member.publicKeyHex ||
-            state.membersSeen.find(
-                m => m.username === username && m.publicKeyHex,
-            )?.publicKeyHex,
-        [username, state.membersSeen, member.publicKeyHex],
-    )
-
-    // If we don't have this member's pubkey, fetch it from chat server
     useEffect(() => {
-        if (!publicKeyHex) {
-            getPublicKeyFor(username)
+        // If we don't have this member's pubkey, check membersSeen
+        // or fetch it from chat server
+        if (currentMember && !currentMember.publicKeyHex) {
+            // Check if we have seen this member before
+            const storedMember = state.membersSeen.find(
+                (m: Member) => m.username === currentMember.username,
+            )
+            // If we have seen this member and have their pubkey
+            // update the route.params with storedMember
+            if (storedMember && storedMember.publicKeyHex) {
+                navigation.setParams({
+                    member: storedMember,
+                })
+            } else {
+                // otherwsie , getPublicKeyFor will update state.membersSeen
+                // with pubkey
+                getPublicKeyFor(currentMember)
+            }
         }
-    }, [publicKeyHex, getPublicKeyFor, username])
+    }, [currentMember, getPublicKeyFor, navigation, state.membersSeen])
 
     const messagesWithMember = state.messages.filter(m => {
         if (
@@ -61,9 +66,9 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
 
     const sendMessage = (messageText: string) => {
         try {
-            // Ensure we have encryption keys
-            if (!activeChatEncryptionKeys) {
-                throw new Error('Missing chat encryption keys, cannot send')
+            // Make sure we have the member's pubkey before trying to send
+            if (!currentMember.publicKeyHex) {
+                return
             }
             const newMessage = new Message({
                 id: uuid.v4(),
@@ -75,9 +80,8 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
                 sentTo: currentMember,
             })
 
-            // Throws if hex key is missing
-            sendDirectMessage(username, newMessage, activeChatEncryptionKeys)
-
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
+            sendDirectMessage(currentMember, newMessage, withEncryptionKeys)
             dispatch(addToMessages(newMessage))
             dispatch(addToMembersSeen(currentMember))
         } catch (error) {
