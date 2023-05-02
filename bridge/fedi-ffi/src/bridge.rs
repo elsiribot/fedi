@@ -460,7 +460,11 @@ impl Federation {
         Ok((operation_id, invoice))
     }
 
-    pub async fn ng_await_invoice(&self, operation_id: OperationId) -> Result<()> {
+    pub async fn ng_await_invoice(
+        &self,
+        operation_id: OperationId,
+        invoice: Invoice, // TODO: fetch the invoice from the db
+    ) -> Result<()> {
         let mut updates = self
             .ng
             .subscribe_to_ln_receive_updates(operation_id)
@@ -469,6 +473,7 @@ impl Federation {
             match update {
                 LnReceiveState::Claimed { txid } => {
                     self.ng.await_claim_notes(operation_id, txid).await?;
+                    self.ng_save_incoming_lightning_tx(&invoice).await;
                     return Ok(());
                 }
                 LnReceiveState::Canceled { reason } => {
@@ -529,6 +534,18 @@ impl Federation {
 
     // FIXME: remove this
     pub async fn ng_save_outgoing_lightning_tx(&self, invoice: &Invoice) {
+        let amount = fedimint_core::Amount::from_msats(
+            invoice
+                .amount_milli_satoshis()
+                .expect("assuming we only receive payments for invoices with amount"),
+        );
+        let fee = None;
+        let tx = Transaction::lightning(TransactionDirection::Send, amount, fee, invoice.clone());
+        self.save_transaction(&tx, true).await;
+    }
+
+    // FIXME: remove this
+    pub async fn ng_save_incoming_lightning_tx(&self, invoice: &Invoice) {
         let amount = fedimint_core::Amount::from_msats(
             invoice
                 .amount_milli_satoshis()

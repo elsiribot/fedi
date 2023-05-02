@@ -933,7 +933,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_receive() -> anyhow::Result<()> {
-        let (_, federation) = setup().await?;
+        let (bridge, federation) = setup().await?;
         let amount = fedimint_core::Amount::from_msats(10000);
         let description = "test".to_string();
         let expiry_time = None;
@@ -953,7 +953,19 @@ mod tests {
         .run()
         .await?;
 
-        federation.ng_await_invoice(operation_id).await?;
+        assert_eq!(
+            0,
+            bridge
+                .event_sink
+                .num_events_of_type(transaction_event_type())
+        );
+        federation.ng_await_invoice(operation_id, invoice).await?;
+        assert_eq!(
+            1,
+            bridge
+                .event_sink
+                .num_events_of_type(transaction_event_type())
+        );
 
         Ok(())
     }

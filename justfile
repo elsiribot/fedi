@@ -72,5 +72,5 @@ format:
   cargo fmt --all
   nixpkgs-fmt $(echo **.nix)
 
-test-bridge:
-  ./scripts/test-bridge.sh
+test-bridge testcase="":
+  ./scripts/test-bridge.sh "{{testcase}}"

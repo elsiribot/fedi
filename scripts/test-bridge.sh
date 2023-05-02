@@ -2,6 +2,7 @@
 set -ex
 
 export RUST_BACKTRACE=1
+export TESTCASE=$1
 
 # kill everything on exit
 function kill_fedimint_bin_tests() {
@@ -53,7 +54,6 @@ echo Funding LND gateway e-cash wallet ...
 scripts/pegin.sh 20000.0 1 "LND"
 
 echo "## Running tests"
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_lightning_send
-# cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi -- --test-threads=1
+cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi $TESTCASE -- --test-threads=1
 
 echo "## Tests Passed"
