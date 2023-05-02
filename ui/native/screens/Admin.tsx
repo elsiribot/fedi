@@ -28,7 +28,13 @@ import {
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
-import { DEFAULT_GROUPS } from '../state/contexts/ChatContext'
+import {
+    DEFAULT_GROUPS,
+    receiveGroups,
+    receiveMembersSeen,
+    receiveMessages,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import {
     changeDeveloperMode,
     useEnvironmentContext,
@@ -50,6 +56,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { leaveFederation } = useBridge()
     const { state: environmentState, dispatch: environmentDispatch } =
         useEnvironmentContext()
+    const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
@@ -67,6 +74,9 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     federationId: activeFederation.id,
                 }),
             )
+            chatDispatch(receiveMembersSeen([]))
+            chatDispatch(receiveMessages([]))
+            chatDispatch(receiveGroups(DEFAULT_GROUPS))
             AsyncStorage.setItem(
                 `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
                 JSON.stringify({ members: [] }),

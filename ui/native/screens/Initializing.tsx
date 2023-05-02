@@ -27,6 +27,12 @@ import {
     CHAT_MESSAGES_PERSISTENCE_KEY,
     FEDERATION_USERNAME_ID_DB_KEY,
 } from '../constants'
+import {
+    receiveGroups,
+    receiveMembersSeen,
+    receiveMessages,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -36,6 +42,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { reset } = route.params
+    const { dispatch: chatDispatch } = useChatContext()
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
@@ -188,6 +195,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                         console.debug('recovering messages')
                         if (messages) {
                             const federationId = key.split(':')[1]
+                            chatDispatch(receiveMessages(messages))
                             dispatch(
                                 setChatMessages({
                                     federationId,
@@ -216,6 +224,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                         console.debug('recovering groups')
                         if (groups) {
                             const federationId = key.split(':')[1]
+                            chatDispatch(receiveGroups(groups))
                             dispatch(
                                 setChatGroups({
                                     federationId,
@@ -244,6 +253,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                         console.debug('recovering members')
                         if (members) {
                             const federationId = key.split(':')[1]
+                            chatDispatch(receiveMembersSeen(members))
                             dispatch(
                                 setChatMembersSeen({
                                     federationId,
@@ -280,7 +290,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         if (!activeFederationId) {
             restoreState()
         }
-    }, [navigation, reset, dispatch, activeFederationId])
+    }, [navigation, reset, chatDispatch, dispatch, activeFederationId])
 
     return (
         <ImageBackground
