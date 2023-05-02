@@ -13,7 +13,7 @@ import {
 } from '../../../state/contexts/ChatContext'
 import { useAppSelector, useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import { Member, Message, Payment, PaymentStatus } from '../../../types'
+import { Message, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPaymentActionsProps = {

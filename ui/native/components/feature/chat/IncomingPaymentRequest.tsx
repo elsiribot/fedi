@@ -17,7 +17,7 @@ import {
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
-import { Member, Message, MSats, Payment, PaymentStatus } from '../../../types'
+import { Message, MSats, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPaymentActionsProps = {

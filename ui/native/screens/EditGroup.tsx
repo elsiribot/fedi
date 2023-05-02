@@ -47,7 +47,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         if (editingGroupName === true) {
             handleEditGroupName()
         }
-    }, [changeMucRoomName, editingGroupName, group, groupName, toast])
+    }, [changeMucRoomName, editingGroupName, group, groupName, toast, dispatch])
 
     useEffect(() => {
         if (

@@ -2,7 +2,7 @@ import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
 import { selectAllChatMembers } from '@fedi/common/redux'
-import { ChatMember, Key, Keypair, XmppChatMember } from '@fedi/common/types'
+import { Key, Keypair, XmppChatMember } from '@fedi/common/types'
 
 import { useAppSelector } from '.'
 import {

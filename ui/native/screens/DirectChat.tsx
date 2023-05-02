@@ -6,7 +6,6 @@ import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
 import { selectChatEncryptionKeys } from '@fedi/common/redux'
-import { Keypair } from '@fedi/common/types'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
@@ -22,7 +21,7 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 
-const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
+const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { member } = route.params
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
@@ -76,7 +75,6 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
                 sentTo: currentMember,
             })
 
-            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             // Throws if hex key is missing
             sendDirectMessage(username, newMessage, activeChatEncryptionKeys)
 

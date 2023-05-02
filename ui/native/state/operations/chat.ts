@@ -211,7 +211,7 @@ export const fetchMucRoomConfig = (
 }
 
 export const getPublicKeyFor = (
-    jid: string,
+    requestedJid: string,
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
@@ -222,7 +222,7 @@ export const getPublicKeyFor = (
             const getPubkeyQueryXml = xmlUtils.buildQuery(
                 new GetPublicKeyQuery({
                     from: xmppClient!.jid!.toString(),
-                    to: jid,
+                    to: requestedJid,
                 }),
             )
             const result = await iqCaller.request(getPubkeyQueryXml)
