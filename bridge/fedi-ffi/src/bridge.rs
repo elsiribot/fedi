@@ -24,7 +24,7 @@ use crate::{
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
     },
-    storage::{FediClientConfigKey, JoinedFederationsKey, JoinedFederationsPrefix, Storage},
+    storage::{FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage},
     tx::{
         self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -102,10 +102,10 @@ async fn load_federations(
         .await
         .collect::<Vec<_>>()
         .await;
-    let iter = joined.iter().map(|(_, federation_id)| async {
+    let iter = joined.iter().map(|(federation_id, _)| async {
         let subgroup = task_group.make_subgroup().await;
         Federation::load(
-            storage.federation_db(federation_id).await?,
+            storage.federation_db(&federation_id.0).await?,
             event_sink.clone(),
             subgroup,
         )
@@ -186,7 +186,7 @@ impl Bridge {
         {
             let global_db = self.storage.global_db().await?;
             let mut dbtx = global_db.begin_transaction().await;
-            dbtx.insert_entry(&JoinedFederationsKey, &federation_id)
+            dbtx.insert_entry(&JoinedFederation(federation_id), &())
                 .await;
             dbtx.commit_tx().await;
             info!("saved joined")
