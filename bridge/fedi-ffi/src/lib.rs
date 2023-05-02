@@ -1,4 +1,6 @@
 #![allow(non_snake_case)]
+// Prevents rust-miniscript compilation error
+#![recursion_limit = "256"]
 
 pub mod bridge;
 pub mod error;
