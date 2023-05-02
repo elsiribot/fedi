@@ -8,8 +8,9 @@ use std::{
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
 use fedimint_client::{
+    db::ChronologicalOperationLogKey,
     module::gen::{ClientModuleGenRegistry, IClientModuleGen},
-    ClientBuilder,
+    ClientBuilder, OperationLogEntry,
 };
 use fedimint_client_fedi::{
     mint::backup::Metadata,
@@ -481,6 +482,13 @@ impl Federation {
         }
 
         return Err(anyhow::anyhow!("Lightning Payment failed"));
+    }
+
+    pub async fn ng_history(
+        &self,
+    ) -> Result<Vec<(ChronologicalOperationLogKey, OperationLogEntry)>> {
+        let ops = self.ng.get_operations(100).await;
+        Ok(ops)
     }
 
     pub fn user_client(&self) -> &Client<UserClientConfig> {

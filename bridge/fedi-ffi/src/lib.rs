@@ -920,6 +920,14 @@ mod tests {
             .to_string();
         let label = format!("foo-{}", label);
 
+        // FIXME: explicitely choose a gateway
+        // let config = federation
+        //     .client
+        //     .config()
+        //     .0
+        //     .get_module_cfg("LEGACY_HARDCODED_INSTANCE_ID_LN")?;
+        // let gateways = config.
+
         // get invoice
         let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
         let invoice_string = cmd!(
@@ -955,6 +963,9 @@ mod tests {
             .map(|s| s.to_owned())
             .unwrap();
         assert_eq!(status, "paid");
+
+        let history = federation.ng_history().await?;
+        tracing::info!("history {:?}", history);
 
         Ok(())
     }
