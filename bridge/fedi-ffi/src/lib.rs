@@ -713,6 +713,7 @@ mod tests {
     use std::time::UNIX_EPOCH;
     use std::{path, time::Duration};
 
+    use bitcoin::secp256k1::PublicKey;
     use fedimint_core::encoding::Encodable;
     use fedimint_core::{
         core::LEGACY_HARDCODED_INSTANCE_ID_MINT, encoding::Decodable,
@@ -750,6 +751,27 @@ mod tests {
         tempfile::tempdir().unwrap().into_path()
     }
 
+    async fn use_lnd_gateway(federation: &Federation) -> anyhow::Result<()> {
+        let lnd_dir = std::env::var("FM_LND_DIR").unwrap();
+        let pubkey: PublicKey = cmd!(
+            "lncli",
+            "-n",
+            "regtest",
+            "--lnddir={lnd_dir}",
+            "--rpcserver=localhost:11009",
+            "getinfo"
+        )
+        .out_json()
+        .await?["identity_pubkey"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap()
+            .parse()
+            .unwrap();
+        federation.ng_switch_gateway(pubkey).await?;
+        Ok(())
+    }
+
     async fn setup() -> anyhow::Result<(Arc<Bridge>, Arc<Federation>)> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
@@ -764,6 +786,7 @@ mod tests {
         let connect_string = std::env::var("FM_CONNECT_STRING").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), connect_string).await?;
         let federation = get_federation(&bridge, &fedimint_federation.id).await?;
+        use_lnd_gateway(&federation).await?;
         Ok((bridge, federation))
     }
 

@@ -51,7 +51,7 @@ use crate::{
 use anyhow::{anyhow, Context, Result};
 use bitcoin::{
     hashes::sha256,
-    secp256k1::{Message, Secp256k1},
+    secp256k1::{Message, PublicKey, Secp256k1},
     Address, Network, Script, Txid,
 };
 use fedimint_client_legacy::{
@@ -482,6 +482,18 @@ impl Federation {
         }
 
         return Err(anyhow::anyhow!("Lightning Payment failed"));
+    }
+
+    pub async fn ng_switch_gateway(&self, pubkey: PublicKey) -> Result<()> {
+        let mut dbtx = self.ng.db().begin_transaction().await;
+        self.ng
+            .switch_active_gateway(
+                Some(pubkey),
+                &mut dbtx.with_module_prefix(LEGACY_HARDCODED_INSTANCE_ID_LN),
+            )
+            .await?;
+        dbtx.commit_tx().await;
+        Ok(())
     }
 
     pub async fn ng_history(
