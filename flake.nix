@@ -132,7 +132,7 @@
         devShells = fmLib.devShells // {
           default = fmLib.devShells.default.overrideAttrs (prev: {
             nativeBuildInputs = [
-              fedimint-build.packages.${system}.fedimint-bin-tests
+              fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
             ] ++ prev.nativeBuildInputs;

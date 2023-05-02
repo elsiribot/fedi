@@ -714,18 +714,13 @@ mod tests {
     use std::{path, time::Duration};
 
     use bitcoin::secp256k1::PublicKey;
-    use fedimint_core::encoding::Encodable;
-    use fedimint_core::{
-        core::LEGACY_HARDCODED_INSTANCE_ID_MINT, encoding::Decodable,
-        module::registry::ModuleDecoderRegistry, task::TaskGroup, TieredMulti,
-    };
-    use fedimint_ln_client::LightningClientModule;
+    use fedimint_core::core::LEGACY_HARDCODED_INSTANCE_ID_MINT;
     use fedimint_logging::TracingSetup;
-    use fedimint_mint_client::{MintClientExt, MintClientModule, SpendableNote};
+    use fedimint_mint_client::{MintClientExt, MintClientModule};
     use tracing::debug;
 
     use crate::{event::IEventSink, ffi::PathBasedStorage};
-    use fedimint_bin_tests::cmd;
+    use devimint::cmd;
 
     use super::*;
 

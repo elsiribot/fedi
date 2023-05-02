@@ -5,7 +5,7 @@ export RUST_BACKTRACE=1
 
 # kill everything on exit
 function kill_fedimint_bin_tests() {
-    kill $FEDIMINT_BIN_TESTS_PID || true
+    kill $DEVIMINT_PID || true
 }
 trap kill_fedimint_bin_tests EXIT
 
@@ -13,7 +13,7 @@ trap kill_fedimint_bin_tests EXIT
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p ln-gateway
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p gateway-cli
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedimint-bin-tests
+cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p devimint
 
 # fedi packages
 source scripts/build.sh
@@ -30,8 +30,8 @@ ln -s $FM_LOGS_DIR target/logs
 rm target/test || true
 ln -s $FM_DATA_DIR target/test
 
-fedimint-bin-tests tmuxinator &>$FM_LOGS_DIR/fedimint-dev.log &
-FEDIMINT_BIN_TESTS_PID=$!
+devimint dev-fed &>$FM_LOGS_DIR/fedimint-dev.log &
+DEVIMINT_PID=$!
 
 # waits for rust to write to this pipe
 STATUS=$(cat $FM_READY_FILE)

@@ -68,7 +68,7 @@ fedimint-aead = { git = "https://github.com/fedimint/fedimint" }
 fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint" }
 tbs = { git = "https://github.com/fedimint/fedimint" }
 fedimint-logging = { git = "https://github.com/fedimint/fedimint" }
-fedimint-bin-tests = { git = "https://github.com/fedimint/fedimint" }
+devimint = { git = "https://github.com/fedimint/fedimint" }
 gateway-cli = { git = "https://github.com/fedimint/fedimint" }
 ln-gateway = { git = "https://github.com/fedimint/fedimint" }
 
@@ -111,7 +111,7 @@ threshold_crypto = { opt-level = 3 }
 # fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "7ff6f95609e02fdaa9a0c272f8f8c92130b55890" }
 # tbs = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "7ff6f95609e02fdaa9a0c272f8f8c92130b55890" }
 # fedimint-logging = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "7ff6f95609e02fdaa9a0c272f8f8c92130b55890" }
-# fedimint-bin-tests = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "7ff6f95609e02fdaa9a0c272f8f8c92130b55890" }
+# devimint = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "7ff6f95609e02fdaa9a0c272f8f8c92130b55890" }
 fedimintd = { path = "../fedimint/fedimintd"}
 fedimint-cli = { path = "../fedimint/fedimint-cli"}
 fedimint-build = { path = "../fedimint/fedimint-build"}
@@ -127,7 +127,7 @@ fedimint-aead = { path = "../fedimint/crypto/aead"}
 fedimint-rocksdb = { path = "../fedimint/fedimint-rocksdb"}
 tbs = { path = "../fedimint/crypto/tbs"}
 fedimint-logging = { path = "../fedimint/fedimint-logging"}
-fedimint-bin-tests = { path = "../fedimint/fedimint-bin-tests"}
+devimint = { path = "../fedimint/devimint"}
 ln-gateway = { path = "../fedimint/gateway/ln-gateway"}
 gateway-cli = { path = "../fedimint/gateway/cli"}
 

@@ -17,7 +17,7 @@ fedi-social-client = { path = "../../fedi-social-client" }
 fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
-fedimint-bin-tests = { workspace = true }
+devimint = { workspace = true }
 ln-gateway = { workspace = true }
 gateway-cli = { workspace = true }
 

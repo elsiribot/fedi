@@ -471,9 +471,7 @@ impl Federation {
                     return Ok(());
                 }
                 LnPayState::Refunded { refund_txid } => {
-                    self.ng
-                        .await_lightning_refund(operation_id, refund_txid)
-                        .await?;
+                    self.ng.await_claim_notes(operation_id, refund_txid).await?;
                 }
                 _ => {}
             }
