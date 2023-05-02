@@ -74,7 +74,12 @@ const ChatScreen: React.FC<Props> = () => {
                     console.error(err)
                 })
         }
-    }, [websocketIsHealthy, fetchMessagesFromArchive, lastFetchedMessageId])
+    }, [
+        dispatch,
+        websocketIsHealthy,
+        fetchMessagesFromArchive,
+        lastFetchedMessageId,
+    ])
 
     useEffect(() => {
         if (websocketIsHealthy) {
@@ -94,7 +99,7 @@ const ChatScreen: React.FC<Props> = () => {
                     console.error(err)
                 })
         }
-    }, [websocketIsHealthy, fetchRoster])
+    }, [dispatch, websocketIsHealthy, fetchRoster])
 
     useEffect(() => {
         if (websocketIsHealthy && activeChatEncryptionKeys) {
