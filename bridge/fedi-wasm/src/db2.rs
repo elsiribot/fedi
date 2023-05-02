@@ -14,7 +14,6 @@ use fedimint_core::db::{
 };
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
-use tracing::info;
 use wasm_bindgen::JsCast;
 
 fn rexie_to_anyhow(e: rexie::Error) -> anyhow::Error {
@@ -89,6 +88,10 @@ impl MemDatabase {
             data: Arc::new(Mutex::new(data)),
             idb,
         })
+    }
+
+    pub async fn delete(self) -> Result<()> {
+        Ok(Rexie::delete(&self.idb.name()).await?)
     }
 }
 

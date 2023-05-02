@@ -4,6 +4,7 @@ use fediffi::fedimint_core::db::{Database, IDatabase};
 use fediffi::fedimint_core::module::registry::ModuleDecoderRegistry;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
@@ -20,24 +21,39 @@ extern "C" {
     fn event(this: &EventSink, event_type: String, body: String);
 }
 
-struct WasmStorage(db2::MemDatabase);
+struct WasmStorage {
+    global: Database,
+    federation: StdMutex<HashMap<FederationId, Database>>,
+}
+
+impl WasmStorage {
+    async fn new() -> anyhow::Result<Self> {
+        let db = db2::MemDatabase::new("main").await.unwrap();
+        let db = Database::new(db, ModuleDecoderRegistry::from_iter([]));
+        Ok(Self {
+            global: db,
+            federation: StdMutex::new(HashMap::new()),
+        })
+    }
+}
 
 #[apply(async_trait_maybe_send!)]
 impl fediffi::storage::IStorage for WasmStorage {
     /// Database to store all federation joined
     async fn global_db(&self) -> anyhow::Result<Database> {
-        Ok(Database::new(
-            self.0.clone(),
-            ModuleDecoderRegistry::from_iter([]),
-        ))
+        Ok(self.global.clone())
     }
     async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
-        // Ok(Box::new(db2::MemDatabase::new("main").await.unwrap()))
-        Ok(Box::new(self.0.clone()))
+        let fed = self.federation.lock().unwrap(); // TODO: find a async mutex
+        let db = db2::MemDatabase::new(&format!("{id}")).await?;
+        fed.insert(id, db.clone());
+        Ok(db)
     }
 
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
-        todo!()
+        let fed = self.federation.lock().unwrap(); // TODO: find a async mutex
+        fed.remove(id);
+        Ok(())
     }
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
         todo!()
@@ -108,11 +124,12 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
         .without_time()
         .init();
 
-    let db = db2::MemDatabase::new("main").await.unwrap();
-    let bridge =
-        fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink))
-            .await
-            .unwrap();
+    let bridge = fediffi::fedimint_initialize_async(
+        Arc::new(WasmStorage::new().await?),
+        Arc::new(event_sink),
+    )
+    .await
+    .unwrap();
     BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
 }
 
