@@ -926,11 +926,12 @@ mod tests {
             .await?;
         let invoice_string = invoice.to_string();
 
-        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
         cmd!(
-            "fedimint-cli",
-            "--data-dir={cfg_dir}",
-            "ln-pay",
+            "lightning-cli",
+            "--network=regtest",
+            "--lightning-dir={cln_dir}",
+            "pay",
             invoice_string
         )
         .run()

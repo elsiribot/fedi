@@ -30,6 +30,8 @@ ln -s $FM_LOGS_DIR target/logs
 rm target/test || true
 ln -s $FM_DATA_DIR target/test
 
+export RUST_LOG=debug
+export RUST_BACKTRACE=1
 devimint dev-fed &>$FM_LOGS_DIR/fedimint-dev.log &
 DEVIMINT_PID=$!
 
