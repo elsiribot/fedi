@@ -17,6 +17,7 @@ import React, {
 } from 'react'
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     selectAuthenticatedMember,
     selectChatConnectionOptions,
@@ -543,6 +544,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const appStateRef = useRef<AppStateStatus>(
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
+    const xmppClientRef = useUpdatingRef(state.xmppClient)
 
     const reduxDispatch = useAppDispatch()
     const activeFederationId = useAppSelector(
@@ -560,6 +562,16 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const [loadedFederationId, setLoadedFederationId] = useState<
         string | undefined
     >()
+
+    // Turns off reconnect and stops the xmpp client. This will trigger all of the
+    // usual reconnect logic if you're on a federation that has chat configured.
+    const shutdownXmppClient = useCallback(() => {
+        const xmppClient = xmppClientRef.current
+        if (!xmppClient) return
+        xmppClient.reconnect.stop()
+        xmppClient.stop()
+        dispatch(resetXmppClient())
+    }, [xmppClientRef])
 
     // Takes a username + password to construct a new XMPP client
     // and store it in state for later use
@@ -652,10 +664,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 console.info(
                     'no response from XMPP server after 3s, rebuilding XMPP client',
                 )
-                state.xmppClient?.reconnect.stop()
-                state.xmppClient?.stop()
-                // this will re-trigger the XMPP instantiation effect above
-                dispatch(resetXmppClient())
+                shutdownXmppClient()
             }, 3000)
             // This expects a response to the presence message which means
             // the stream has been resumed successfully so we can clear
@@ -676,7 +685,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         } catch (error) {
             console.error('Failed to resume XMPP stream')
         }
-    }, [state.xmppClient])
+    }, [state.xmppClient, shutdownXmppClient])
 
     // This effect instantiates the XMPP client with a websocket connection
     // and requires activeChatConnectionOptions with username + password
@@ -713,11 +722,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     */
     useEffect(() => {
         if (activeChatConnectionOptions === null && state.xmppClient !== null) {
-            state.xmppClient?.reconnect.stop()
-            state.xmppClient?.stop()
-            dispatch(resetXmppClient())
+            shutdownXmppClient()
         }
-    }, [activeChatConnectionOptions, state.xmppClient])
+    }, [activeChatConnectionOptions, state.xmppClient, shutdownXmppClient])
 
     const configureXmppMessageListeners = useCallback(() => {
         // Handlers for incoming messages
@@ -1116,18 +1123,23 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 restoreState('groups'),
             ]).then(([memberData, messageData, groupData]) => {
                 if (canceled) return
-                memberData?.members &&
-                    dispatch(receiveMembersSeen(memberData.members))
-                messageData?.messages &&
-                    dispatch(receiveMessages(messageData.messages))
-                groupData?.groups && dispatch(receiveGroups(groupData.groups))
+                shutdownXmppClient()
+                const members = memberData ? memberData.members : []
+                const messages = messageData ? messageData.messages : []
+                const groups = groupData ? groupData.groups : []
+                console.info(
+                    `restoring ${members.length} members, ${messages.length} messages, ${groups.length} groups`,
+                )
+                dispatch(receiveMembersSeen(members))
+                dispatch(receiveMessages(messages))
+                dispatch(receiveGroups(groups))
                 setLoadedFederationId(activeFederationId)
             })
         }
         return () => {
             canceled = true
         }
-    }, [activeFederationId, loadedFederationId])
+    }, [activeFederationId, loadedFederationId, shutdownXmppClient])
 
     // Fake our member using xmpp client jid
     const wrappedAuthenticatedMember = useMemo(() => {
