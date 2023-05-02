@@ -17,6 +17,9 @@ import React, {
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
+    selectAllChatGroups,
+    selectAllChatMembers,
+    selectAllChatMessages,
     selectAuthenticatedMember,
     selectChatConnectionOptions,
     selectChatCredentials,
@@ -545,6 +548,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )
+    const activeChatGroups = useAppSelector(selectAllChatGroups)
+    const activeChatMembers = useAppSelector(selectAllChatMembers)
+    const activeChatMessages = useAppSelector(selectAllChatMessages)
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change
@@ -1038,34 +1044,35 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
     // Update async storage when groups are added
     useEffect(() => {
-        if (state.groups.length > DEFAULT_GROUPS.length) {
-            console.info('storing', state.groups.length, 'groups')
+        if (activeChatGroups.length > DEFAULT_GROUPS.length) {
+            console.info('storing', activeChatGroups.length, 'groups')
             AsyncStorage.setItem(
-                CHAT_GROUPS_PERSISTENCE_KEY,
-                JSON.stringify({ groups: state.groups }),
+                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
+                JSON.stringify({ groups: activeChatGroups }),
             )
         }
-    }, [state.groups])
+    }, [activeChatGroups, activeFederationId])
     // Update async storage when members are added
     useEffect(() => {
-        if (state.membersSeen.length > 0) {
-            console.info('storing', state.membersSeen.length, 'members')
+        if (activeChatMembers.length > 0) {
+            console.info('storing', activeChatMembers.length, 'members')
             AsyncStorage.setItem(
-                CHAT_MEMBERS_PERSISTENCE_KEY,
-                JSON.stringify({ members: state.membersSeen }),
+                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
+                JSON.stringify({ members: activeChatMembers }),
             )
         }
-    }, [state.membersSeen])
+    }, [activeChatMembers, activeFederationId])
+
     // Update async storage when messages are added
     useEffect(() => {
-        if (state.messages.length > 0) {
-            console.info('storing', state.messages.length, 'messages')
+        if (activeChatMessages.length > 0) {
+            console.info('storing', activeChatMessages.length, 'messages')
             AsyncStorage.setItem(
-                CHAT_MESSAGES_PERSISTENCE_KEY,
-                JSON.stringify({ messages: state.messages }),
+                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
+                JSON.stringify({ messages: activeChatMessages }),
             )
         }
-    }, [state.messages])
+    }, [activeChatMessages, activeFederationId])
 
     return <ChatContext.Provider value={providerValue} {...props} />
 }
