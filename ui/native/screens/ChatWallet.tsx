@@ -22,14 +22,7 @@ import {
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import {
-    Member,
-    Message,
-    Payment,
-    PaymentStatus,
-    Sats,
-    SatsString,
-} from '../types'
+import { Member, Message, Payment, PaymentStatus, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
