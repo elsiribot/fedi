@@ -916,8 +916,33 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn test_lightning_receive() -> anyhow::Result<()> {
+        let (_, federation) = setup().await?;
+        let amount = fedimint_core::Amount::from_msats(10000);
+        let description = "test".to_string();
+        let expiry_time = None;
+        let (invoice, operation_id) = federation
+            .ng_generate_invoice(amount, description, expiry_time)
+            .await?;
+        let invoice_string = invoice.to_string();
+
+        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+        cmd!(
+            "fedimint-cli",
+            "--data-dir={cfg_dir}",
+            "ln-pay",
+            invoice_string
+        )
+        .run()
+        .await?;
+
+        federation.ng_await_invoice(operation_id).await?;
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_send() -> anyhow::Result<()> {
-        // RUNTIME.block_on(async {
         let (_, federation) = setup().await?;
 
         // receive ecash

@@ -10,6 +10,7 @@ use fedi_social_client::{common::VerificationDocument, RecoveryId};
 use fedimint_client::{
     db::ChronologicalOperationLogKey,
     module::gen::{ClientModuleGenRegistry, IClientModuleGen},
+    sm::OperationId,
     ClientBuilder, OperationLogEntry,
 };
 use fedimint_client_fedi::{
@@ -28,7 +29,7 @@ use fedimint_core::{
     db::IDatabase,
     module::registry::ModuleDecoderRegistry,
 };
-use fedimint_ln_client::{LightningClientExt, LnPayState};
+use fedimint_ln_client::{LightningClientExt, LnPayState, LnReceiveState};
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -439,14 +440,51 @@ impl Federation {
         &self,
         amount: Amount,
     ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
-        let (_, notes) = self
-            .ng
-            .spend_notes(
-                fedimint_core::Amount::from_msats(1000),
-                Duration::from_secs(30),
-            )
-            .await?;
+        let (_, notes) = self.ng.spend_notes(amount, Duration::from_secs(30)).await?;
         Ok(notes)
+    }
+
+    pub async fn ng_generate_invoice(
+        &self,
+        amount: fedimint_core::Amount,
+        description: String,
+        expiry_time: Option<u64>,
+    ) -> Result<(Invoice, OperationId)> {
+        let mut dbtx = self.ng.db().begin_transaction().await;
+        let active_gateway = self
+            .ng
+            .fetch_active_gateway(&mut dbtx.with_module_prefix(LEGACY_HARDCODED_INSTANCE_ID_LN))
+            .await?;
+        dbtx.commit_tx().await;
+
+        let (invoice, operation_id) = self
+            .ng
+            .create_bolt11_invoice_and_receive(amount, description, expiry_time, active_gateway)
+            .await?;
+        Ok((invoice, operation_id))
+    }
+
+    pub async fn ng_await_invoice(&self, operation_id: OperationId) -> Result<()> {
+        let mut updates = self
+            .ng
+            .subscribe_to_ln_receive_updates(operation_id)
+            .await?;
+        while let Some(update) = updates.next().await {
+            match update {
+                LnReceiveState::Claimed { txid } => {
+                    self.ng.await_claim_notes(operation_id, txid).await?;
+                    return Ok(());
+                }
+                LnReceiveState::Canceled { reason } => {
+                    return Err(reason.into());
+                }
+                _ => {}
+            }
+
+            info!("Update: {:?}", update);
+        }
+
+        return Err(anyhow::anyhow!("Unknown Lightning receive state"));
     }
 
     pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
