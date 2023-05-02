@@ -100,6 +100,7 @@
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
+        "recovery-failed": "Recovery failed, please try again",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
         "invalid-character": "The following characters are not allowed: \" & ' / : < >"

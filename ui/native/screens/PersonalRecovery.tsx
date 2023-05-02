@@ -13,14 +13,14 @@ import {
     View,
 } from 'react-native'
 
-import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
+import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -87,7 +87,6 @@ const SeedWordInput = ({
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { getXmppCredentials, recoverFromMnemonic } = useBridge()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
     const dispatch = useAppDispatch()
@@ -121,21 +120,20 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const recoverFromSeed = async () => {
             try {
-                let username = await recoverFromMnemonic(seedWords)
-                console.info('recovered username', username)
-                if (username != null) {
+                if (activeFederation) {
                     await dispatch(
-                        authenticateChat({
+                        recoverFromMnemonic({
                             fedimint,
-                            federationId: activeFederation!.id,
-                            username,
+                            federationId: activeFederation.id,
+                            mnemonic: seedWords,
                         }),
-                    )
+                    ).unwrap()
+                    setRecoveryInProgress(false)
+                    navigation.dispatch(resetAfterPersonalRecovery())
                 }
-                setRecoveryInProgress(false)
-                navigation.dispatch(resetAfterPersonalRecovery())
             } catch (error) {
-                toast?.show('Recovery failed, please try again', 3000)
+                console.error(error)
+                toast?.show(t('errors.recovery-failed'), 3000)
             }
         }
 
@@ -143,14 +141,13 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             recoverFromSeed()
         }
     }, [
+        activeFederation,
         dispatch,
-        getXmppCredentials,
         navigation,
-        recoverFromMnemonic,
         recoveryInProgress,
         seedWords,
         toast,
-        activeFederation,
+        t,
     ])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
