@@ -1132,8 +1132,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // Fake our member using xmpp client jid
     const wrappedAuthenticatedMember = useMemo(() => {
         if (!state.xmppClient) return null
+        if (!state.xmppClient.jid) return null
         return new Member({ jid: state.xmppClient.jid })
-    }, [state.xmppClient])
+    }, [state.xmppClient?.jid])
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change. Some state from redux is also added in.
