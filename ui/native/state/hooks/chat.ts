@@ -1,7 +1,10 @@
-import { xml } from '@xmpp/client'
+import { jid, xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
-import { selectAllChatMembers } from '@fedi/common/redux'
+import {
+    selectAllChatMembers,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 import { Key, Keypair, XmppChatMember } from '@fedi/common/types'
 
 import { useAppSelector } from '.'
@@ -31,6 +34,21 @@ import {
 export const useXmpp = () => {
     const { xmppClient } = useChatContext().state
     const membersSeen = useAppSelector(selectAllChatMembers)
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
+
+    const makeJid = useCallback(
+        (username: string) => {
+            const domain =
+                connectionOptions?.domain || xmppClient?.jid?.getDomain()
+            const resource =
+                connectionOptions?.resource || xmppClient?.jid?.getResource()
+            if (!domain || !resource) {
+                throw new Error('Cannot make JID, missing domain or resource')
+            }
+            return jid(username, domain, resource)
+        },
+        [connectionOptions, xmppClient],
+    )
 
     return {
         addMemberToRoster: useCallback(
@@ -65,9 +83,9 @@ export const useXmpp = () => {
         }, [xmppClient]),
         getPublicKeyFor: useCallback(
             (username: string): Promise<boolean> => {
-                return getPublicKeyFor(username, xmppClient)
+                return getPublicKeyFor(makeJid(username), xmppClient)
             },
-            [xmppClient],
+            [xmppClient, makeJid],
         ),
         getUniqueGroupId: useCallback((): Promise<string> => {
             return getUniqueGroupId(xmppClient)
@@ -96,9 +114,10 @@ export const useXmpp = () => {
                     member =>
                         member.username === toUsername && member.publicKeyHex,
                 )?.publicKeyHex
+                console.log({ membersSeen, toPublicKey })
                 if (toPublicKey) {
                     return sendDirectMessage(
-                        toUsername,
+                        makeJid(toUsername),
                         toPublicKey,
                         message,
                         xmppClient,
@@ -111,7 +130,7 @@ export const useXmpp = () => {
                     )
                 }
             },
-            [membersSeen, xmppClient],
+            [membersSeen, xmppClient, makeJid],
         ),
         sendGroupMessage: useCallback(
             (to: Group, message: Message): Promise<void> => {

@@ -29,6 +29,8 @@ import xmlUtils, {
     UniqueRoomNameQuery,
 } from '../../utils/XmlUtils'
 
+type JID = ReturnType<typeof jid>
+
 export const addMemberToRoster = (
     memberUsername: string,
     xmppClient: Client | null,
@@ -211,7 +213,7 @@ export const fetchMucRoomConfig = (
 }
 
 export const getPublicKeyFor = (
-    requestedJid: string,
+    requestedJid: JID,
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
@@ -221,15 +223,15 @@ export const getPublicKeyFor = (
             const { iqCaller } = xmppClient! as Client
             const getPubkeyQueryXml = xmlUtils.buildQuery(
                 new GetPublicKeyQuery({
-                    from: xmppClient!.jid!.toString(),
-                    to: requestedJid,
+                    from: xmppClient!.jid!.toString().replace('/chat', ''),
+                    to: requestedJid.toString(),
                 }),
             )
             const result = await iqCaller.request(getPubkeyQueryXml)
             console.debug('getPublicKeyFor', result.toString())
             resolve(true)
         } catch (error: any) {
-            console.error('getPublicKeyFor', error)
+            console.error('getPublicKeyFor', error, requestedJid)
             reject(i18n.t('errors.unknown-error'))
         }
     })
@@ -359,7 +361,7 @@ export const publishPublicKey = (
 }
 
 export const sendDirectMessage = (
-    toJid: string,
+    toJid: JID,
     toPublicKey: string,
     message: Message,
     xmppClient: Client | null,
@@ -371,12 +373,12 @@ export const sendDirectMessage = (
             return reject(i18n.t('errors.unknown-error'))
 
         try {
-            const fromJid = xmppClient!.jid?.toString()
+            const fromJid = xmppClient!.jid
 
             const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
                 new EncryptedDirectChatMessage({
-                    from: fromJid,
-                    to: toJid,
+                    from: fromJid.toString(),
+                    to: toJid.toString(),
                     message,
                     senderKeys: withEncryptionKeys as Keypair,
                     recipientPublicKey: { hex: toPublicKey as string },
@@ -384,6 +386,7 @@ export const sendDirectMessage = (
                 }),
             )
             xmppClient!.send(encrypedDirectChatMessageXml)
+            resolve()
         } catch (error) {
             console.error('sendDirectMessage', error)
             reject(i18n.t('errors.unknown-error'))
