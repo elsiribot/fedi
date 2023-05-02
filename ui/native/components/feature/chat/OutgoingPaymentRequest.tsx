@@ -54,7 +54,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
-                sentTo as Member,
+                sentTo?.username!,
                 acceptedPaymentMessage,
                 withEncryptionKeys,
                 updatePayment,
@@ -217,7 +217,7 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
             const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
-                message.sentTo as Member,
+                message.sentTo?.username!,
                 canceledPaymentMessage,
                 withEncryptionKeys,
                 updatePayment,

@@ -30,7 +30,7 @@ import xmlUtils, {
 } from '../../utils/XmlUtils'
 
 export const addMemberToRoster = (
-    member: XmppChatMember,
+    memberUsername: string,
     xmppClient: Client | null,
 ): Promise<XmppChatMember> => {
     return new Promise(async (resolve, reject) => {
@@ -40,9 +40,7 @@ export const addMemberToRoster = (
             const { iqCaller } = xmppClient! as Client
             const roomConfigQueryXml = xmlUtils.buildQuery(
                 new AddToRosterQuery({
-                    newRosterItem: `${
-                        member.username
-                    }@${xmppClient.jid.getDomain()}`,
+                    newRosterItem: `${memberUsername}@${xmppClient.jid.getDomain()}`,
                     from: xmppClient!.jid!.toString(),
                 }),
             )
@@ -213,7 +211,7 @@ export const fetchMucRoomConfig = (
 }
 
 export const getPublicKeyFor = (
-    member: XmppChatMember,
+    jid: string,
     xmppClient: Client | null,
 ): Promise<boolean> => {
     return new Promise(async (resolve, reject) => {
@@ -224,7 +222,7 @@ export const getPublicKeyFor = (
             const getPubkeyQueryXml = xmlUtils.buildQuery(
                 new GetPublicKeyQuery({
                     from: xmppClient!.jid!.toString(),
-                    to: member.jid.toString(),
+                    to: jid,
                 }),
             )
             const result = await iqCaller.request(getPubkeyQueryXml)
@@ -361,7 +359,8 @@ export const publishPublicKey = (
 }
 
 export const sendDirectMessage = (
-    to: XmppChatMember,
+    toJid: string,
+    toPublicKey: string,
     message: Message,
     xmppClient: Client | null,
     withEncryptionKeys?: Keypair,
@@ -373,7 +372,6 @@ export const sendDirectMessage = (
 
         try {
             const fromJid = xmppClient!.jid?.toString()
-            const toJid = to.jid.toString()
 
             const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
                 new EncryptedDirectChatMessage({
@@ -381,7 +379,7 @@ export const sendDirectMessage = (
                     to: toJid,
                     message,
                     senderKeys: withEncryptionKeys as Keypair,
-                    recipientPublicKey: { hex: to.publicKeyHex as string },
+                    recipientPublicKey: { hex: toPublicKey as string },
                     updatePayment,
                 }),
             )

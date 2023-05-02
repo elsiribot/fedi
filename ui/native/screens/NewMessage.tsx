@@ -45,7 +45,16 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
         () => {
             if (usernameFilter.length > 1 && authenticatedMember) {
                 fetchRoster()
-                    .then(members => dispatch(receiveMembersSeen(members)))
+                    .then(members =>
+                        dispatch(
+                            receiveMembersSeen(
+                                members.map(member => ({
+                                    ...member,
+                                    jid: jid(member.jid),
+                                })),
+                            ),
+                        ),
+                    )
                     .catch(err => {
                         console.error(err)
                     })

@@ -58,7 +58,11 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 }),
             })
             const withEncryptionKeys = activeChatEncryptionKeys as Keypair
-            sendDirectMessage(recipient, ecashRequest, withEncryptionKeys)
+            sendDirectMessage(
+                recipient.username,
+                ecashRequest,
+                withEncryptionKeys,
+            )
             dispatch(addToMessages(ecashRequest))
             dispatch(addToMembersSeen(recipient))
             setIsLoading(false)

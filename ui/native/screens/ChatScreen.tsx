@@ -1,6 +1,7 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
 import { FAB, Theme, useTheme } from '@rneui/themed'
+import { jid } from '@xmpp/client'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -79,7 +80,16 @@ const ChatScreen: React.FC<Props> = () => {
         if (websocketIsHealthy) {
             // Here we fetch the roster and store the results in local storage
             fetchRoster()
-                .then(members => dispatch(receiveMembersSeen(members)))
+                .then(members =>
+                    dispatch(
+                        receiveMembersSeen(
+                            members.map(member => ({
+                                ...member,
+                                jid: jid(member.jid),
+                            })),
+                        ),
+                    ),
+                )
                 .catch(err => {
                     console.error(err)
                 })

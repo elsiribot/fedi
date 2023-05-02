@@ -34,8 +34,8 @@ export const useXmpp = () => {
 
     return {
         addMemberToRoster: useCallback(
-            (member: XmppChatMember): Promise<XmppChatMember> => {
-                return addMemberToRoster(member, xmppClient)
+            (username: string): Promise<XmppChatMember> => {
+                return addMemberToRoster(username, xmppClient)
             },
             [xmppClient],
         ),
@@ -64,8 +64,8 @@ export const useXmpp = () => {
             return fetchRoster(xmppClient)
         }, [xmppClient]),
         getPublicKeyFor: useCallback(
-            (member: XmppChatMember): Promise<boolean> => {
-                return getPublicKeyFor(member, xmppClient)
+            (username: string): Promise<boolean> => {
+                return getPublicKeyFor(username, xmppClient)
             },
             [xmppClient],
         ),
@@ -86,22 +86,20 @@ export const useXmpp = () => {
         ),
         sendDirectMessage: useCallback(
             (
-                to: XmppChatMember,
+                toUsername: string,
                 message: Message,
                 withEncryptionKeys?: Keypair,
                 updatePayment?: boolean,
             ): Promise<void> => {
                 // Make sure we always pass the member with a pubkey
-                let toMember: XmppChatMember | undefined = to
-                if (!toMember.publicKeyHex) {
-                    toMember = (membersSeen as XmppChatMember[]).find(
-                        m =>
-                            m.username === toMember?.username && m.publicKeyHex,
-                    )
-                }
-                if (toMember) {
+                let toPublicKey = membersSeen.find(
+                    member =>
+                        member.username === toUsername && member.publicKeyHex,
+                )?.publicKeyHex
+                if (toPublicKey) {
                     return sendDirectMessage(
-                        toMember as XmppChatMember,
+                        toUsername,
+                        toPublicKey,
                         message,
                         xmppClient,
                         withEncryptionKeys,
