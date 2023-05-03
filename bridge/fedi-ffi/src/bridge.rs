@@ -150,7 +150,8 @@ impl Bridge {
         let federations_vec = load_federations(&storage, event_sink.clone(), &task_group).await?;
 
         // start pollers
-        for mut federation in federations_vec.into_iter() {
+        for federation in federations_vec.into_iter() {
+            info!("bridge loading {:?}", federation.id());
             federations_map.insert(federation.id(), Arc::new(federation));
         }
 
@@ -174,14 +175,18 @@ impl Bridge {
         &self,
         connect_string: String,
     ) -> Result<Option<Arc<Federation>>> {
-        Ok(None)
-        // let connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
-        // info!("joining federation: {}", connect_cfg.id);
-        // let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
-        // let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
-        // let federations = self.federations.lock().await;
-        // let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
-        // Ok(federation)
+        let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
+        if std::env::consts::OS == "android" {
+            connect_cfg.url =
+                url::Url::from_str(&connect_cfg.url.to_string().replace("127.0.0.1", "10.0.2.2"))
+                    .unwrap();
+        };
+        info!("already joined federation?: {}", connect_cfg.id);
+        let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
+        let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
+        let federations = self.federations.lock().await;
+        let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
+        Ok(federation)
     }
 
     /// Adds federation to "federations" and starts polling (if we haven't already joined)
@@ -290,7 +295,6 @@ impl Federation {
         task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
         let gens = module_gens();
-        let decoders = load_decoders(&config.client_config, &gens);
 
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module(MintClientGen);
@@ -328,7 +332,6 @@ impl Federation {
                 url::Url::from_str(&connect_cfg.url.to_string().replace("127.0.0.1", "10.0.2.2"))
                     .unwrap();
         };
-        tracing::info!("parsed connection string {:?}", connect_cfg);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         tracing::info!("fetching config");
         let mut cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
@@ -345,7 +348,6 @@ impl Federation {
                 })
                 .collect();
         };
-        tracing::info!("fetched config {:?}", cfg);
 
         // Hack to run against local federation
         // let mut cfg_string = serde_json::to_string(&cfg).context("unable to serialize cfg")?;
@@ -388,12 +390,13 @@ impl Federation {
     }
 
     // FIXME: don't hardcode
-    async fn name(&self) -> String {
+    fn name(&self) -> String {
         "halz trusty mint".to_string()
     }
 
     pub fn id(&self) -> FederationId {
-        self.ng.config().0.federation_id
+        // FIXME: don't hard-code
+        FederationId::from_str("afee09ca140bf22cf30ed6d935104ebf74e08e0dc0f7d263086989c9e953a666cfcda588fea2384c90bd6d31c4827e1f").unwrap()
     }
 
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
@@ -603,7 +606,10 @@ impl Federation {
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
     /// after recovering wallet.
     pub async fn xmpp_credentials(&self) -> XmppCredentials {
-        unimplemented!()
+        XmppCredentials {
+            password: "password".to_string(),
+            keypair_seed: "keypair".to_string(),
+        }
     }
 
     /// Check whether lightning invoice is safe to pay

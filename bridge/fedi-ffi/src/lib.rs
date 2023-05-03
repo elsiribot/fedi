@@ -237,12 +237,12 @@ async fn addressOrInvoice(
     let federation = get_federation(&bridge, &federation_id).await?;
     if let Ok(invoice) = input.parse::<Invoice>() {
         // validate that we can pay this invoice
-        federation.can_pay_invoice(&invoice).await?;
+        // federation.can_pay_invoice(&invoice).await?;
         return Ok(AddressOrInvoice::Invoice);
     }
     if let Ok(address) = input.parse::<Address>() {
         // validate that we can pay this invoice
-        federation.can_pay_address(&address)?;
+        // federation.can_pay_address(&address)?;
         return Ok(AddressOrInvoice::Address);
     }
     Err(anyhow!("Not an address or invoice"))
@@ -323,46 +323,7 @@ async fn payAddress(
     // TODO: parse this as bitcoin::Amount
     sats: u64,
 ) -> anyhow::Result<String> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let address = bitcoin::util::address::Address::from_str(&address)
-        .map_err(|_| FedimintError::OtherError(anyhow!("Invalid address")))?;
-    federation.can_pay_address(&address)?;
-    let mut rng = rand::rngs::OsRng;
-    let sats = bitcoin::Amount::from_sat(sats);
-    let peg_out = federation
-        .client
-        .new_peg_out_with_fees(sats, address.clone())
-        .await
-        .map_err(|e| anyhow!(e.to_string()))?;
-    let out_point = federation
-        .client
-        .peg_out(peg_out.clone(), &mut rng)
-        .await
-        .map_err(|e| anyhow!(e.to_string()))?;
-    let txid = federation
-        .client
-        .wallet_client()
-        .await_peg_out_outcome(out_point)
-        .await
-        .map_err(|e| anyhow!(e.to_string()))?;
-    federation.send_federation_event().await;
-    let fee = Some(fedimint_core::Amount::from(peg_out.fees.amount()));
-    let amount = fedimint_core::Amount::from(sats);
-    let outgoing_status = Some(IncomingBitcoinTransactionStatus::Pending);
-    federation
-        .save_transaction(
-            &Transaction::bitcoin(
-                tx::TransactionDirection::Send,
-                amount,
-                fee,
-                address,
-                txid,
-                outgoing_status,
-            ),
-            true,
-        )
-        .await;
-    Ok(out_point.txid.to_string())
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -383,22 +344,7 @@ async fn listGateways(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<BridgeLightningGateway>> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let gateways = federation.client.fetch_registered_gateways().await?;
-    let active_gateway = match federation.client.fetch_active_gateway().await {
-        Ok(gw) => Some(gw),
-        Err(_) => None,
-    };
-    let bridge_gateways: Vec<BridgeLightningGateway> = gateways
-        .into_iter()
-        .map(|gw| BridgeLightningGateway {
-            api: gw.api.to_string(),
-            node_pub_key: gw.node_pub_key,
-            mint_pub_key: gw.mint_pub_key,
-            active: active_gateway == Some(gw),
-        })
-        .collect();
-    Ok(bridge_gateways)
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -407,12 +353,7 @@ async fn switchGateway(
     federation_id: FederationId,
     node_pubkey: PublicKey,
 ) -> anyhow::Result<()> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    federation
-        .client
-        .switch_active_gateway(Some(node_pubkey.0))
-        .await?;
-    Ok(())
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -420,9 +361,7 @@ async fn getMnemonic(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<String>> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let mnemonic = federation.get_mnemonic().await;
-    Ok(mnemonic.serialize())
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -431,13 +370,7 @@ async fn recoverFromMnemonic(
     federation_id: FederationId,
     mnemonic: Vec<String>,
 ) -> anyhow::Result<Option<String>> {
-    let mnemonic_string = mnemonic.join(" ");
-    // FIXME: should this happen inside bridge module?
-    let mnemonic = Mnemonic::parse(mnemonic_string).context(ErrorCode::InvalidMnemonic)?;
-    let username = bridge
-        .recover_from_mnemonic(&federation_id.0, &mnemonic)
-        .await?;
-    Ok(username)
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -456,24 +389,13 @@ async fn uploadBackupFile(
     federation_id: FederationId,
     video_file_path: PathBuf,
 ) -> anyhow::Result<PathBuf> {
-    let storage = bridge.storage.clone();
-    let federation = get_federation(&bridge, &federation_id).await?;
-    debug!("uploading backup file {:?}", video_file_path);
-    let video_file = storage.read_file(&video_file_path).await?;
-
-    let recovery_file = federation.upload_backup_file(video_file).await?;
-
-    storage
-        .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
-        .await?;
-    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
+    unimplemented!()
 }
 
 // This method is a bit of a stopgap ...
 #[macro_rules_derive(rpc_method!)]
 async fn locateRecoveryFile(bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
-    let storage = bridge.storage.clone();
-    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -482,15 +404,7 @@ async fn validateRecoveryFile(
     federation_id: FederationId,
     path: PathBuf,
 ) -> anyhow::Result<bool> {
-    let storage = bridge.storage.clone();
-    let contents = storage.read_file(&path).await?;
-    let recovery_file = RecoveryFile::from_bytes(&contents)?;
-    let federation = get_federation(&bridge, &federation_id).await?;
-    federation.start_social_recovery(&recovery_file).await?;
-    // TODO: check that the federation matches and everything
-    // also fixed by using federation-specific location
-    let valid = RecoveryFile::from_bytes(&contents).is_ok();
-    Ok(valid)
+    unimplemented!()
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
@@ -499,17 +413,7 @@ async fn recoveryQr(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryQr> {
-    // Return QR code contents
-    let federation = get_federation(&bridge, &federation_id).await?;
-
-    // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
-    let storage = bridge.storage.clone();
-    let contents = storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
-    let recovery_file = RecoveryFile::from_bytes(&contents)?;
-    // Upload verification document if none exists.
-    federation.start_social_recovery(&recovery_file).await?;
-    let qr = federation.social_recovery_qr().await?;
-    Ok(qr)
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -517,15 +421,7 @@ async fn socialRecoveryApprovals(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryEvent> {
-    // Return QR code contents
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let (approvals, remaining) = federation.social_recovery_approvals().await?;
-    let result = SocialRecoveryEvent {
-        federation_id,
-        approvals,
-        remaining,
-    };
-    Ok(result)
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -534,23 +430,7 @@ async fn socialRecoveryDownloadVerificationDoc(
     federation_id: FederationId,
     recovery_id: RecoveryId,
 ) -> anyhow::Result<Option<PathBuf>> {
-    let storage = bridge.storage.clone();
-    // Return QR code contents
-    let federation = get_federation(&bridge, &federation_id).await?;
-
-    let verification_doc = federation
-        .social_recovery_download_verification_doc(&recovery_id.0)
-        .await?;
-
-    if let Some(verification_doc) = verification_doc {
-        storage
-            .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
-            .await?;
-        tracing::info!("saved verificaiton doc");
-        Ok(Some(storage.platform_path(VERIFICATION_FILENAME.as_ref())))
-    } else {
-        Ok(None)
-    }
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -561,11 +441,7 @@ async fn approveSocialRecoveryRequest(
     peer_id: PeerId,
     password: String,
 ) -> anyhow::Result<()> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    federation
-        .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
-        .await?;
-    Ok(())
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -573,15 +449,7 @@ async fn completeSocialRecovery(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Option<String>> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let mnemonic = federation.social_recovery_combine_shares().await?;
-    tracing::info!("final {:?}", mnemonic.to_string());
-    let username = bridge
-        .recover_from_mnemonic(&federation_id.0, &mnemonic)
-        .await?;
-    federation.delete_social_recovery_state_and_id().await;
-    federation.send_federation_event().await;
-    Ok(username)
+    unimplemented!()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -600,9 +468,7 @@ async fn backupXmppUsername(
     federation_id: FederationId,
     username: String,
 ) -> anyhow::Result<()> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    federation.set_username(username).await;
-    federation.back_up_ecash_to_federation().await?;
+    // FIXME
     Ok(())
 }
 
@@ -934,13 +800,13 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_modules() -> anyhow::Result<()> {
-        let (_, federation) = setup().await?;
-        let num_modules = federation.client.config().0.modules.keys().len();
-        assert_eq!(num_modules, 3);
-        Ok(())
-    }
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_modules() -> anyhow::Result<()> {
+    //     let (_, federation) = setup().await?;
+    //     let num_modules = federation.client.config().0.modules.keys().len();
+    //     assert_eq!(num_modules, 3);
+    //     Ok(())
+    // }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_ng() -> anyhow::Result<()> {

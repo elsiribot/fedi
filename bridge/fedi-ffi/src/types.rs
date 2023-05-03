@@ -124,18 +124,15 @@ pub struct LnurlSignedMessage {
 // FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
     // FIXME: make a mathod to get connect info
-    let client_config = federation.client.config().0;
-    let client_config_string =
-        serde_json::to_string(&client_config).expect("client config serializes");
+    // let client_config_string =
+    //     serde_json::to_string(&client_config).expect("client config serializes");
     let balance = federation.ng_balance().await;
-    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    // let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    let social_recovery_active = false;
 
     FedimintFederation {
-        id: client_config.federation_id.into(),
-        name: client_config
-            .federation_name()
-            .expect("federation name should exist")
-            .to_string(),
+        id: FederationId(federation.id()),
+        name: "name".to_string(),
         // FIXME: removed this
         // connect_info: WsClientConnectInfo::from_str(&client_config_string)
         //     .expect("can get connect info")
@@ -143,11 +140,12 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         connect_info: "foobar".to_string(),
         // FIXME
         // nodes: client_config.api_endpoints.map(|(peer_id, )),
-        nodes: client_config
-            .api_endpoints
-            .iter()
-            .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
-            .collect(),
+        // nodes: client_config
+        //     .api_endpoints
+        //     .iter()
+        //     .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
+        //     .collect(),
+        nodes: BTreeMap::new(),
         balance: Amount(balance),
         social_recovery_active,
         meta: client_config.meta,
