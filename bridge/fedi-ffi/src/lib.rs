@@ -203,7 +203,9 @@ async fn generateInvoice(
         anyhow::bail!("Maximum invoice amount is 200,000 sats");
     }
     let federation = get_federation(&bridge, &federation_id).await?;
-    let invoice = federation.generate_invoice(amount.0, description).await?;
+    let (_, invoice) = federation
+        .ng_generate_invoice(amount.0, description, None)
+        .await?;
     Ok(invoice.to_string())
 }
 
@@ -215,7 +217,7 @@ async fn payInvoice(
 ) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
-    federation.pay_invoice(&invoice).await
+    federation.ng_pay_invoice(&invoice).await
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -709,9 +711,9 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
-    use std::path;
     use std::sync::Once;
     use std::time::UNIX_EPOCH;
+    use std::{path, time::Duration};
 
     use bitcoin::secp256k1::PublicKey;
     use fedimint_logging::TracingSetup;
@@ -722,15 +724,69 @@ mod tests {
 
     use super::*;
 
+    // TODO: make a static TestFed that lasts the entire duration of the test suite
+    // this might make it easier to do these kinds of CLI commands
+
     async fn cli_generate_ecash() -> anyhow::Result<TieredMulti<SpendableNote>> {
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
+        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "10000")
             .out_json()
             .await?["note"]
             .as_str()
             .map(|s| s.to_owned())
             .expect("'note' key not found generating ecash with fedimint-cli");
         parse_ecash(&ecash_string)
+    }
+
+    async fn cli_generate_invoice(label: &str) -> anyhow::Result<Invoice> {
+        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
+        let invoice_string = cmd!(
+            "lightning-cli",
+            "--network=regtest",
+            "--lightning-dir={cln_dir}",
+            "invoice",
+            "1000",
+            label,
+            label
+        )
+        .out_json()
+        .await?["bolt11"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap();
+        Ok(Invoice::from_str(&invoice_string)?)
+    }
+
+    async fn cln_wait_invoice(label: &str) -> anyhow::Result<()> {
+        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
+        let status = cmd!(
+            "lightning-cli",
+            "--network=regtest",
+            "--lightning-dir={cln_dir}",
+            "waitinvoice",
+            label
+        )
+        .out_json()
+        .await?["status"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .unwrap();
+        assert_eq!(status, "paid");
+        Ok(())
+    }
+
+    async fn cln_pay_invoice(invoice_string: &str) -> anyhow::Result<()> {
+        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
+        cmd!(
+            "lightning-cli",
+            "--network=regtest",
+            "--lightning-dir={cln_dir}",
+            "pay",
+            invoice_string
+        )
+        .run()
+        .await?;
+        Ok(())
     }
 
     struct FakeEventSink {
@@ -900,7 +956,7 @@ mod tests {
         // check balance
         assert_eq!(
             federation.ng_balance().await,
-            fedimint_core::Amount::from_msats(1000)
+            fedimint_core::Amount::from_msats(10000)
         );
 
         // spend ecash
@@ -923,27 +979,24 @@ mod tests {
     async fn test_lightning_receive() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let amount = fedimint_core::Amount::from_msats(10000);
+        let rpc_amount = types::Amount(amount);
         let description = "test".to_string();
-        let expiry_time = None;
-        let (operation_id, invoice) = federation
-            .ng_generate_invoice(amount, description, expiry_time)
-            .await?;
-        let invoice_string = invoice.to_string();
-
-        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
-        cmd!(
-            "lightning-cli",
-            "--network=regtest",
-            "--lightning-dir={cln_dir}",
-            "pay",
-            invoice_string
+        let invoice_string = generateInvoice(
+            bridge.clone(),
+            federation.id().into(),
+            rpc_amount,
+            description,
         )
-        .run()
         .await?;
 
-        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
-        federation.ng_await_invoice(operation_id, invoice).await?;
-        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
+        cln_pay_invoice(&invoice_string).await?;
+
+        // TODO: generateInvoice needs to spawn a task that reacts to updates
+        fedimint_core::task::sleep(Duration::from_secs(2)).await;
+
+        assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
+        // TODO: hit balance api and check "federation" events
+        assert_eq!(amount, federation.ng_balance().await);
 
         Ok(())
     }
@@ -953,14 +1006,7 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "10000")
-            .out_json()
-            .await?["note"]
-            .as_str()
-            .map(|s| s.to_owned())
-            .unwrap();
-        let ecash = parse_ecash(&ecash_string)?;
+        let ecash = cli_generate_ecash().await?;
         federation.ng_receive_ecash(ecash).await?;
 
         let label = std::time::SystemTime::now()
@@ -971,42 +1017,16 @@ mod tests {
         let label = format!("foo-{}", label);
 
         // get invoice
-        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
-        let invoice_string = cmd!(
-            "lightning-cli",
-            "--network=regtest",
-            "--lightning-dir={cln_dir}",
-            "invoice",
-            "1000",
-            &label,
-            &label
-        )
-        .out_json()
-        .await?["bolt11"]
-            .as_str()
-            .map(|s| s.to_owned())
-            .unwrap();
-        let invoice = Invoice::from_str(&invoice_string)?;
+        let invoice = cli_generate_invoice(&label).await?;
+        let invoice_string = invoice.to_string();
 
         // check balance
-        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
-        federation.ng_pay_invoice(&invoice).await?;
         assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
+        payInvoice(bridge.clone(), federation.id().into(), invoice_string).await?;
+        assert_eq!(2, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // check that core-lightning got paid
-        let status = cmd!(
-            "lightning-cli",
-            "--network=regtest",
-            "--lightning-dir={cln_dir}",
-            "waitinvoice",
-            &label
-        )
-        .out_json()
-        .await?["status"]
-            .as_str()
-            .map(|s| s.to_owned())
-            .unwrap();
-        assert_eq!(status, "paid");
+        cln_wait_invoice(&label).await?;
 
         let history = federation.ng_history().await?;
         tracing::info!("history {:?}", history);
