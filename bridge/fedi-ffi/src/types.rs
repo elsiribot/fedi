@@ -127,7 +127,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
     let client_config = federation.client.config().0;
     let client_config_string =
         serde_json::to_string(&client_config).expect("client config serializes");
-    let balance = federation.client.notes().await.total_amount();
+    let balance = federation.ng_balance().await;
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
 
     FedimintFederation {

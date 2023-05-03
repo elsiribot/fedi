@@ -13,7 +13,7 @@
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "github:fedimint/fedimint?rev=9eee0873626e562ae8466a737455c8c6d8238d58";
+      url = "github:fedimint/fedimint?rev=f27b61dfd13547299db43a71bf08b3f8ba305c0f";
     };
   };
 

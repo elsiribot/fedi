@@ -1176,6 +1176,7 @@ dependencies = [
  "uniffi",
  "uniffi_build",
  "uniffi_macros",
+ "url",
 ]
 
 [[package]]
