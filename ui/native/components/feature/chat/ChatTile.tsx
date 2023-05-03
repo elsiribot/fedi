@@ -150,10 +150,10 @@ const styles = (theme: Theme) =>
         },
         unreadIndicator: {
             backgroundColor: theme.colors.red,
-            height: theme.sizes.xxs,
-            width: theme.sizes.xxs,
-            marginRight: theme.spacing.xs,
-            borderRadius: theme.sizes.xxs * 0.5,
+            height: theme.sizes.unreadIndicatorSize,
+            width: theme.sizes.unreadIndicatorSize,
+            marginHorizontal: theme.spacing.xs,
+            borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
         namePreview: {
             width: '80%',
