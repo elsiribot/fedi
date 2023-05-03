@@ -1,4 +1,4 @@
-{ pkgs, lib, advisory-db, src, craneLib, target ? null, profile, fedimint-build, fedimint-pkgs }:
+{ pkgs, pkgs-kitman, lib, advisory-db, src, craneLib, target ? null, profile, fedimint-build, fedimint-pkgs, clightning-dev }:
 rec {
   cargo-llvm-cov = craneLib.buildPackage rec {
     pname = "cargo-llvm-cov";
@@ -54,6 +54,9 @@ rec {
       (hiPrio pkgs.bashInteractive)
       bc
       bitcoind
+      clightning-dev
+      electrs
+      pkgs-kitman.esplora
       jq
       lnd
       netcat

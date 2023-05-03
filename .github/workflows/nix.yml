@@ -57,8 +57,8 @@ jobs:
             - name: Build dbtool-pkgs
               run: nix build -L .#dbtool-pkgs
 
-            # - name: Test bridge
-            #   run: nix build -L .#testBridge
+            - name: Test bridge
+              run: nix build -L .#testBridge
 
     shell:
       strategy:
