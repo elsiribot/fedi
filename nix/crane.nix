@@ -95,7 +95,7 @@ rec {
       inherit src;
 
       extraDummyScript = ''
-        cp -ar "${src}/.cargo" --no-target-directory $out/.cargo
+        cp -ar ${../.cargo} --no-target-directory $out/.cargo
       '';
     };
   };
@@ -113,8 +113,8 @@ rec {
       cargoLock = cargoLock;
 
       extraDummyScript = ''
-        cp -ar "${src}/.cargo" --no-target-directory $out/.cargo
-        cp -a "${src}/Cargo.wasm32.lock" $out/
+        cp -ar ${../.cargo} --no-target-directory $out/.cargo
+        cp -a ${../Cargo.wasm32.lock} $out/
       '';
     };
   };
