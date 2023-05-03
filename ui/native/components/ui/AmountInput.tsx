@@ -1,7 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { RefObject, useRef } from 'react'
+import React, { RefObject, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, TextInput } from 'react-native'
+import { Keyboard, Pressable, StyleSheet, TextInput } from 'react-native'
 
 import { useAmountInput } from '@fedi/common/hooks/amount'
 import { Sats } from '@fedi/common/types'
@@ -27,6 +27,20 @@ const AmountInput: React.FC<Props> = ({ amount, onChangeAmount }) => {
         currencySymbol,
     } = useAmountInput(amount, onChangeAmount)
     const inputRef = useRef<TextInput>(null)
+
+    // For some reason the TextInput inside InvisibleInput does not
+    // automatically blur the input when the keyboard is dismissed
+    // which causes the .focus() event to have no effect so here we
+    // force the blur to make sure .isFocused() returns false
+    useEffect(() => {
+        const keyboardHiddenListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => inputRef.current?.blur(),
+        )
+        return () => {
+            keyboardHiddenListener.remove()
+        }
+    }, [])
 
     return (
         <Pressable
@@ -68,6 +82,9 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             marginTop: 'auto',
             marginHorizontal: theme.spacing.xl,
+            // This creates a small buffer zone to block Keyboard.dismiss
+            // events from parent components
+            padding: theme.spacing.xl,
         },
         secondaryAmountText: {
             color: theme.colors.darkGrey,

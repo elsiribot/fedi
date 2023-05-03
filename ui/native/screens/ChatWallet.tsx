@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
 import {
@@ -79,7 +79,9 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <Pressable
+            style={styles(theme).container}
+            onPress={() => Keyboard.dismiss()}>
             <Text caption>
                 {`${t('words.balance')}: `}
                 {`${amountUtils.formatNumber(
@@ -88,7 +90,10 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
 
-            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+            <View>
+                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+            </View>
+
             <View style={styles(theme).buttonsGroupContainer}>
                 <Button
                     title={t('words.request')}
@@ -108,7 +113,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     }
                 />
             </View>
-        </View>
+        </Pressable>
     )
 }
 
@@ -128,9 +133,6 @@ const styles = (theme: Theme) =>
             height: theme.sizes.sm,
             width: theme.sizes.sm,
             marginRight: theme.spacing.md,
-        },
-        textInput: {
-            width: '80%',
         },
         buttonsGroupContainer: {
             flexDirection: 'row',

@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet } from 'react-native'
+import { Keyboard, Pressable, StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -73,7 +73,9 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <Pressable style={styles(theme, insets).container}>
+        <Pressable
+            style={styles(theme, insets).container}
+            onPress={() => Keyboard.dismiss()}>
             <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
             <Button
                 fullWidth

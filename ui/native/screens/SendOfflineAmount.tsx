@@ -78,7 +78,10 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 )} `}
                 {`${t('words.sats').toUpperCase()}`}
             </Text>
-            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+
+            <View>
+                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+            </View>
             <View style={styles(theme).offlineContainer}>
                 <SvgImage
                     name="Offline"
