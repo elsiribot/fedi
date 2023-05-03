@@ -23,11 +23,20 @@
         pkgs = import nixpkgs {
           inherit system;
         };
+        pkgs-kitman = import fedimint-build.inputs.nixpkgs-kitman {
+          inherit system;
+        };
         fmLib = fedimint-build.lib.${system};
         crane = fedimint-build.inputs.crane;
         fenix = fedimint-build.inputs.fenix;
         android-nixpkgs = fedimint-build.inputs.android-nixpkgs;
         advisory-db = fedimint-build.inputs.advisory-db;
+
+        clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
+          configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation";
+        });
 
         filterSubdirs = import ./nix/filterSubdirs.nix { inherit lib; };
 
@@ -69,7 +78,7 @@
         ;
 
         craneLibBuildNative = import ./nix/crane.nix {
-          inherit pkgs lib advisory-db fedimint-build fedimint-pkgs;
+          inherit pkgs pkgs-kitman lib advisory-db fedimint-build fedimint-pkgs clightning-dev;
           src = rustSrc;
           craneLib = craneLibNative;
           profile = "release";
@@ -80,7 +89,7 @@
             (name: target:
               import ./nix/crane.nix
                 {
-                  inherit pkgs lib advisory-db target fedimint-build fedimint-pkgs;
+                  inherit pkgs pkgs-kitman lib advisory-db target fedimint-build fedimint-pkgs clightning-dev;
                   src = rustSrc;
                   craneLib = craneLibCross.${name};
                   profile = "release";
