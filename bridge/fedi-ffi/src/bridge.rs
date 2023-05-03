@@ -25,10 +25,12 @@ use fedimint_client_fedi::{
 };
 use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
+    core::LEGACY_HARDCODED_INSTANCE_ID_MINT,
     db::IDatabase,
     module::registry::ModuleDecoderRegistry,
 };
 use fedimint_ln_client::{LightningClientExt, LnPayState, LnReceiveState};
+use fedimint_mint_client::MintClientModule;
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -413,6 +415,16 @@ impl Federation {
         Self::from_config(fedi_config, dyn_db, event_sink, task_group).await
     }
 
+    pub async fn ng_balance(&self) -> fedimint_core::Amount {
+        let mint_client = self
+            .ng
+            .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
+            .unwrap();
+        let summary = mint_client
+            .get_wallet_summary(&mut self.ng.db().begin_transaction().await.with_module_prefix(1))
+            .await;
+        summary.total_amount()
+    }
     pub async fn ng_receive_ecash(
         &self,
         ecash: TieredMulti<fedimint_mint_client::SpendableNote>,

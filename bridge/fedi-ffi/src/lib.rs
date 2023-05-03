@@ -709,14 +709,12 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
+    use std::path;
     use std::sync::Once;
     use std::time::UNIX_EPOCH;
-    use std::{path, time::Duration};
 
     use bitcoin::secp256k1::PublicKey;
-    use fedimint_core::core::LEGACY_HARDCODED_INSTANCE_ID_MINT;
     use fedimint_logging::TracingSetup;
-    use fedimint_mint_client::{MintClientExt, MintClientModule};
     use std::sync::RwLock;
 
     use crate::{event::IEventSink, ffi::PathBasedStorage};
@@ -724,8 +722,15 @@ mod tests {
 
     use super::*;
 
-    fn assert_num_events(num_events: usize, event_type: String, bridge: &Bridge) {
-        assert_eq!(num_events, bridge.event_sink.num_events_of_type(event_type));
+    async fn cli_generate_ecash() -> anyhow::Result<TieredMulti<SpendableNote>> {
+        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
+        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
+            .out_json()
+            .await?["note"]
+            .as_str()
+            .map(|s| s.to_owned())
+            .expect("'note' key not found generating ecash with fedimint-cli");
+        parse_ecash(&ecash_string)
     }
 
     struct FakeEventSink {
@@ -886,42 +891,22 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "1000")
-            .out_json()
-            .await?["note"]
-            .as_str()
-            .map(|s| s.to_owned())
-            .unwrap();
-        let ecash = parse_ecash(&ecash_string)?;
+        let ecash = cli_generate_ecash().await?;
+        let rpc_ecash = serialize_ecash(&ecash);
         assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
-        federation.ng_receive_ecash(ecash).await?;
+        receiveEcash(bridge.clone(), federation.id().into(), rpc_ecash).await?;
         assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // check balance
-        let mint_client = federation
-            .ng
-            .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
-            .unwrap();
-        let summary = mint_client
-            .get_wallet_summary(
-                &mut federation
-                    .ng
-                    .db()
-                    .begin_transaction()
-                    .await
-                    .with_module_prefix(1),
-            )
-            .await;
         assert_eq!(
-            summary.total_amount(),
+            federation.ng_balance().await,
             fedimint_core::Amount::from_msats(1000)
         );
 
         // spend ecash
-        let notes = federation
-            .ng_generate_ecash(fedimint_core::Amount::from_msats(1000))
-            .await?;
+        let ecash_amount = types::Amount(fedimint_core::Amount::from_msats(1000));
+        let rpc_ecash = generateEcash(bridge.clone(), federation.id().into(), ecash_amount).await?;
+        let notes: TieredMulti<SpendableNote> = parse_ecash(&rpc_ecash)?;
         assert_eq!(2, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // receive with fedimint-cli
