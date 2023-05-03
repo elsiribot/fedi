@@ -1143,8 +1143,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
     // Fake our member using xmpp client jid
     const wrappedAuthenticatedMember = useMemo(() => {
-        if (!state.xmppClient) return null
-        if (!state.xmppClient.jid) return null
+        if (!state.xmppClient?.jid) return null
         return new Member({ jid: state.xmppClient.jid })
     }, [state.xmppClient?.jid])
 
