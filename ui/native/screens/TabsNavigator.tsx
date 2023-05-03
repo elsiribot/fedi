@@ -167,12 +167,12 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         tabBar: {
             backgroundColor: theme.colors.secondary,
             height: theme.sizes.tabBarHeight + insets.bottom,
-            // hides the default top border on nav
-            borderColor: 'transparent',
-            elevation: 0,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.extraLightGrey,
         },
         tabBarLabel: {
             fontFamily: 'AlbertSans-Bold',
+            fontSize: 14,
         },
         tabBarIconContainer: {
             paddingBottom: theme.spacing.xs,
