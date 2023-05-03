@@ -9,7 +9,26 @@ import stringUtils from '@fedi/common/utils/StringUtils'
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
 import HoloAvatar from '../../ui/HoloAvatar'
+import { AvatarSize } from '../../ui/HoloAvatar'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+
+type GroupIconProps = {
+    iconName: SvgImageName
+}
+
+const GroupIcon = ({ iconName }: GroupIconProps) => {
+    const { theme } = useTheme()
+    return (
+        <View style={styles(theme).groupIconContainer}>
+            <View style={styles(theme).holoBackground}>
+                <HoloAvatar title={''} size={AvatarSize.md} />
+            </View>
+            <View style={styles(theme).whiteCircle}>
+                <SvgImage name={iconName} size={SvgImageSize.sm} />
+            </View>
+        </View>
+    )
+}
 
 type ChatTileProps = {
     chat: Chat
@@ -30,31 +49,33 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         chat.hasNewMessages ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
-                {chat.type === ChatType.direct ? (
-                    <View style={styles(theme).icon}>
-                        {chat.members && chat.members[0]?.username ? (
-                            <HoloAvatar
-                                title={stringUtils.getInitialsFromName(
-                                    chat.members[0].username,
-                                )}
-                            />
-                        ) : (
-                            <SvgImage
-                                name="SocialPeople"
-                                size={SvgImageSize.md}
-                            />
-                        )}
-                    </View>
-                ) : (
-                    <SvgImage
-                        name={
-                            chat.icon
-                                ? (chat.icon as SvgImageName)
-                                : 'SocialPeople'
-                        }
-                        size={SvgImageSize.md}
-                    />
-                )}
+                <View style={styles(theme).chatTypeIconContainer}>
+                    {chat.type === ChatType.direct ? (
+                        <View style={styles(theme).directIconContainer}>
+                            {chat.members && chat.members[0]?.username ? (
+                                <HoloAvatar
+                                    title={stringUtils.getInitialsFromName(
+                                        chat.members[0].username,
+                                    )}
+                                    size={AvatarSize.md}
+                                />
+                            ) : (
+                                <SvgImage
+                                    name="SocialPeople"
+                                    size={SvgImageSize.lg}
+                                />
+                            )}
+                        </View>
+                    ) : (
+                        <GroupIcon
+                            iconName={
+                                chat.icon
+                                    ? (chat.icon as SvgImageName)
+                                    : 'SocialPeople'
+                            }
+                        />
+                    )}
+                </View>
             </View>
             <View style={styles(theme).contents}>
                 <View style={styles(theme).topRow}>
@@ -65,7 +86,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         {chat.name || DEFAULT_GROUP_NAME}
                     </Text>
                     {chat.lastReceivedTimestamp && (
-                        <Text small>
+                        <Text small style={styles(theme).timestamp}>
                             {dateUtils.formatChatTileTimestamp(
                                 chat.lastReceivedTimestamp!,
                             )}
@@ -77,14 +98,14 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         <Text
                             caption
                             style={styles(theme).messagePreview}
-                            numberOfLines={2}>
+                            numberOfLines={1}>
                             {chat.messagePreview}
                         </Text>
                     ) : (
                         <Text
                             caption
                             style={styles(theme).emptyMessagePreview}
-                            numberOfLines={2}>
+                            numberOfLines={1}>
                             {t('feature.chat.no-one-is-in-this-group')}
                         </Text>
                     )}
@@ -110,38 +131,69 @@ const styles = (theme: Theme) =>
             height: 64,
             marginVertical: 10,
         },
-        icon: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
+        directIconContainer: {
+            height: theme.sizes.lg,
+            width: theme.sizes.lg,
         },
         iconContainer: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '18%',
+            height: '100%',
+            width: '20%',
         },
         contents: {
-            width: '82%',
+            width: '80%',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
         },
         topRow: {
             flexDirection: 'row',
             justifyContent: 'space-between',
             width: '100%',
-            height: '40%',
         },
         bottomRow: {
             flexDirection: 'row',
             alignItems: 'flex-start',
             width: '100%',
-            height: '60%',
         },
         messagePreview: {
-            width: '90%',
+            width: '85%',
         },
         emptyMessagePreview: {
-            width: '90%',
+            width: '85%',
             color: theme.colors.grey,
             fontStyle: 'italic',
+        },
+        chatTypeIconContainer: {
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+        },
+        groupIconContainer: {
+            position: 'relative',
+            height: theme.sizes.lg,
+            width: theme.sizes.lg,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        holoBackground: {
+            position: 'absolute',
+            height: theme.sizes.lg,
+            width: theme.sizes.lg,
+        },
+        whiteCircle: {
+            position: 'absolute',
+            height: theme.sizes.lg - 5,
+            width: theme.sizes.lg - 5,
+            borderRadius: theme.sizes.lg * 0.5,
+            backgroundColor: theme.colors.white,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
         pinIcon: {
             width: '10%',
@@ -157,6 +209,9 @@ const styles = (theme: Theme) =>
         },
         namePreview: {
             width: '80%',
+        },
+        timestamp: {
+            color: theme.colors.grey,
         },
     })
 
