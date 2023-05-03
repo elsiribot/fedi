@@ -1080,7 +1080,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         if (state.membersSeen.length > 0) {
             console.info('storing', state.membersSeen.length, 'members')
-            syncStorage('messages', { members: state.membersSeen })
+            syncStorage('members', { members: state.membersSeen })
         }
     }, [state.membersSeen, syncStorage])
     // Update async storage when messages are added
