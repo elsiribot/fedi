@@ -11,7 +11,7 @@ import {
     Message,
 } from '../../types'
 import {
-    receiveMembersSeen,
+    mergeMembersSeen,
     updateGroup,
     useChatContext,
 } from '../contexts/ChatContext'
@@ -72,7 +72,7 @@ export const useXmpp = () => {
         ),
         fetchRoster: useCallback((): Promise<void> => {
             return fetchRoster(xmppClient).then(members => {
-                dispatch(receiveMembersSeen(members))
+                dispatch(mergeMembersSeen(members))
             })
         }, [dispatch, xmppClient]),
         getPublicKeyFor: useCallback(

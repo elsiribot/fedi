@@ -79,6 +79,7 @@ enum ActionType {
     ADD_TO_GROUPS = 'ADD_TO_GROUPS',
     CHANGE_WEBSOCKET_IS_HEALTHY = 'CHANGE_WEBSOCKET_IS_HEALTHY',
     CHANGE_LAST_FETCHED_MESSAGE_ID = 'CHANGE_LAST_FETCHED_MESSAGE_ID',
+    MERGE_MEMBERS_SEEN = 'MERGE_MEMBERS_SEEN',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
@@ -133,6 +134,12 @@ export function changeLastFetchedMessageId(messageId: string): Action {
     return {
         type: ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID,
         payload: messageId,
+    }
+}
+export function mergeMembersSeen(members: Member[]): Action {
+    return {
+        type: ActionType.MERGE_MEMBERS_SEEN,
+        payload: members,
     }
 }
 export function receiveMembersSeen(members: Member[]): Action {
@@ -329,7 +336,7 @@ export function reducer(
                 ...state,
                 websocketIsHealthy: action.payload,
             }
-        case ActionType.RECEIVE_MEMBERS_SEEN: {
+        case ActionType.MERGE_MEMBERS_SEEN: {
             const incomingMembers = action.payload
             const newMembersSeen = incomingMembers
                 .map(
@@ -362,6 +369,11 @@ export function reducer(
                 membersSeen: newMembersSeen.map((m: Member) => new Member(m)),
             }
         }
+        case ActionType.RECEIVE_MEMBERS_SEEN:
+            return {
+                ...state,
+                membersSeen: [...action.payload].map(m => new Member(m)),
+            }
         case ActionType.RECEIVE_MESSAGES:
             return {
                 ...state,
