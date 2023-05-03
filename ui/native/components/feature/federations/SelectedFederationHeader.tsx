@@ -75,6 +75,8 @@ const styles = (theme: Theme) =>
         },
         headerContainer: {
             marginTop: theme.spacing.lg,
+            borderBottomColor: theme.colors.extraLightGrey,
+            borderBottomWidth: 1,
         },
     })
 
