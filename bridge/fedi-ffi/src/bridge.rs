@@ -472,35 +472,48 @@ impl Federation {
             .ng
             .create_bolt11_invoice_and_receive(amount, description, expiry_time, active_gateway)
             .await?;
+
+        self.ng_subscribe_invoice(operation_id.clone(), invoice.clone())
+            .await?;
+
         Ok((operation_id, invoice))
     }
 
-    pub async fn ng_await_invoice(
+    pub async fn ng_subscribe_invoice(
         &self,
         operation_id: OperationId,
         invoice: Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
-        let mut updates = self
-            .ng
-            .subscribe_to_ln_receive_updates(operation_id)
-            .await?;
-        while let Some(update) = updates.next().await {
-            match update {
-                LnReceiveState::Claimed { txid } => {
-                    self.ng.await_claim_notes(operation_id, txid).await?;
-                    self.ng_save_incoming_lightning_tx(&invoice).await;
-                    return Ok(());
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn("await invoice", move |_| async move {
+                let mut updates = fed
+                    .ng
+                    .subscribe_to_ln_receive_updates(operation_id)
+                    .await
+                    .expect("failed to subscribe to updates");
+                while let Some(update) = updates.next().await {
+                    info!("Update: {:?}", update);
+                    match update {
+                        LnReceiveState::Claimed { txid } => {
+                            // FIXME: unwrap
+                            fed.ng
+                                .await_claim_notes(operation_id, txid)
+                                .await
+                                .expect("failed to claim notes");
+                            fed.ng_save_incoming_lightning_tx(&invoice).await;
+                        }
+                        LnReceiveState::Canceled { reason } => {
+                            // TODO: send message that it failed
+                            // return Err(reason.into());
+                        }
+                        _ => {}
+                    }
                 }
-                LnReceiveState::Canceled { reason } => {
-                    return Err(reason.into());
-                }
-                _ => {}
-            }
-
-            info!("Update: {:?}", update);
-        }
-
-        return Err(anyhow::anyhow!("Unknown Lightning receive state"));
+            })
+            .await;
+        Ok(())
     }
 
     pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {

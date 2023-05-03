@@ -790,7 +790,7 @@ mod tests {
     }
 
     struct FakeEventSink {
-        pub events: RwLock<Vec<(String, String)>>,
+        pub events: Arc<RwLock<Vec<(String, String)>>>,
     }
 
     fn tx_ev() -> String {
@@ -802,7 +802,7 @@ mod tests {
     impl FakeEventSink {
         fn new() -> Self {
             Self {
-                events: RwLock::new(vec![]),
+                events: Arc::new(RwLock::new(vec![])),
             }
         }
     }
@@ -994,9 +994,9 @@ mod tests {
         // TODO: generateInvoice needs to spawn a task that reacts to updates
         fedimint_core::task::sleep(Duration::from_secs(2)).await;
 
-        assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
         // TODO: hit balance api and check "federation" events
         assert_eq!(amount, federation.ng_balance().await);
+        assert_eq!(1, federation.event_sink.num_events_of_type(tx_ev()));
 
         Ok(())
     }
