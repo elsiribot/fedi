@@ -724,11 +724,15 @@ mod tests {
 
     use super::*;
 
+    fn assert_num_events(num_events: usize, event_type: String, bridge: &Bridge) {
+        assert_eq!(num_events, bridge.event_sink.num_events_of_type(event_type));
+    }
+
     struct FakeEventSink {
         pub events: RwLock<Vec<(String, String)>>,
     }
 
-    fn transaction_event_type() -> String {
+    fn tx_ev() -> String {
         "transaction".into()
     }
 
@@ -879,7 +883,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_ng() -> anyhow::Result<()> {
-        let (_, federation) = setup().await?;
+        let (bridge, federation) = setup().await?;
 
         // receive ecash
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
@@ -890,7 +894,9 @@ mod tests {
             .map(|s| s.to_owned())
             .unwrap();
         let ecash = parse_ecash(&ecash_string)?;
+        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
         federation.ng_receive_ecash(ecash).await?;
+        assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // check balance
         let mint_client = federation
@@ -913,13 +919,10 @@ mod tests {
         );
 
         // spend ecash
-        let (_, notes) = federation
-            .ng
-            .spend_notes(
-                fedimint_core::Amount::from_msats(1000),
-                Duration::from_secs(30),
-            )
+        let notes = federation
+            .ng_generate_ecash(fedimint_core::Amount::from_msats(1000))
             .await?;
+        assert_eq!(2, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // receive with fedimint-cli
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
@@ -953,19 +956,9 @@ mod tests {
         .run()
         .await?;
 
-        assert_eq!(
-            0,
-            bridge
-                .event_sink
-                .num_events_of_type(transaction_event_type())
-        );
+        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
         federation.ng_await_invoice(operation_id, invoice).await?;
-        assert_eq!(
-            1,
-            bridge
-                .event_sink
-                .num_events_of_type(transaction_event_type())
-        );
+        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
 
         Ok(())
     }
@@ -1011,19 +1004,9 @@ mod tests {
         let invoice = Invoice::from_str(&invoice_string)?;
 
         // check balance
-        assert_eq!(
-            0,
-            bridge
-                .event_sink
-                .num_events_of_type(transaction_event_type())
-        );
+        assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
         federation.ng_pay_invoice(&invoice).await?;
-        assert_eq!(
-            1,
-            bridge
-                .event_sink
-                .num_events_of_type(transaction_event_type())
-        );
+        assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // check that core-lightning got paid
         let status = cmd!(

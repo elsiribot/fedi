@@ -432,6 +432,7 @@ impl Federation {
 
             info!("Update: {:?}", update);
         }
+        self.ng_save_incoming_ecash_tx(amount).await;
         Ok(amount)
     }
 
@@ -440,6 +441,8 @@ impl Federation {
         amount: Amount,
     ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
         let (_, notes) = self.ng.spend_notes(amount, Duration::from_secs(30)).await?;
+        let amount = notes.total_amount();
+        self.ng_save_outgoing_ecash_tx(amount).await;
         Ok(notes)
     }
 
@@ -554,6 +557,18 @@ impl Federation {
         let fee = None;
         let tx =
             Transaction::lightning(TransactionDirection::Receive, amount, fee, invoice.clone());
+        self.save_transaction(&tx, true).await;
+    }
+
+    // FIXME: remove this
+    pub async fn ng_save_outgoing_ecash_tx(&self, amount: fedimint_core::Amount) {
+        let tx = Transaction::offline(TransactionDirection::Send, amount);
+        self.save_transaction(&tx, true).await;
+    }
+
+    // FIXME: remove this
+    pub async fn ng_save_incoming_ecash_tx(&self, amount: fedimint_core::Amount) {
+        let tx = Transaction::offline(TransactionDirection::Receive, amount);
         self.save_transaction(&tx, true).await;
     }
 
