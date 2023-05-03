@@ -174,19 +174,21 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
-            <View style={styles(theme).profileHeader}>
-                <View style={styles(theme).avatarContainer}>
-                    <HoloAvatar
-                        size={AvatarSize.lg}
-                        title={stringUtils.getInitialsFromName(
-                            authenticatedMember?.username || '',
-                        )}
-                    />
+            {authenticatedMember && (
+                <View style={styles(theme).profileHeader}>
+                    <View style={styles(theme).avatarContainer}>
+                        <HoloAvatar
+                            size={AvatarSize.lg}
+                            title={stringUtils.getInitialsFromName(
+                                authenticatedMember?.username || '',
+                            )}
+                        />
+                    </View>
+                    <Text h2 medium>
+                        {authenticatedMember?.username || 'satoshi'}
+                    </Text>
                 </View>
-                <Text h2 medium>
-                    {authenticatedMember?.username || 'satoshi'}
-                </Text>
-            </View>
+            )}
             {/* TODO: Add offline status indicator here */}
             <View style={styles(theme).sectionContainer}>
                 <Text style={styles(theme).sectionTitle}>
