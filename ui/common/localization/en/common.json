@@ -93,12 +93,14 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
+        "chat-unavailable": "This federation does not have a chat server.",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
+        "recovery-failed": "Recovery failed, please try again",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
         "invalid-character": "The following characters are not allowed: \" & ' / : < >"

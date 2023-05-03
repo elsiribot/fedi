@@ -14,7 +14,7 @@ import {
 } from '../state/contexts/ChatContext'
 import { usePrevious } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Group, Message } from '../types'
+import { Group, Member, Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
@@ -81,7 +81,9 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
                         id: uuid.v4(),
                         content: messageText,
                         sentAt: Date.now() / 1000,
-                        sentBy: state.authenticatedMember,
+                        sentBy: new Member({
+                            jid: state.xmppClient!.jid,
+                        }),
                         sentIn: currentGroup,
                     })
                     sendGroupMessage(currentGroup, newMessage)

@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectChatEncryptionKeys,
+} from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
@@ -18,7 +22,7 @@ import {
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Keypair, Message, Payment, PaymentStatus, Sats } from '../types'
+import { Member, Message, Payment, PaymentStatus, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
@@ -27,12 +31,12 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
     const { sendDirectMessage } = useXmpp()
-    const { state, dispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
-    const { authenticatedMember } = state
+    const { state, dispatch } = useChatContext()
     const { recipient } = route.params
 
     const requestEcash = async () => {
@@ -42,7 +46,9 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             const ecashRequest = new Message({
                 id: uuid.v4(),
                 content: 'fedi:payment-request:',
-                sentBy: authenticatedMember,
+                sentBy: new Member({
+                    jid: state.xmppClient!.jid,
+                }),
                 sentTo: recipient,
                 sentAt: Date.now() / 1000,
                 payment: new Payment({
@@ -51,7 +57,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     updatedAt: Date.now() / 1000,
                 }),
             })
-            const withEncryptionKeys = state.encryptionKeys as Keypair
+            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
             sendDirectMessage(recipient, ecashRequest, withEncryptionKeys)
             dispatch(addToMessages(ecashRequest))
             dispatch(addToMembersSeen(recipient))

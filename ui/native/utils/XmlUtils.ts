@@ -4,15 +4,10 @@ import { Element } from 'ltx'
 import uuid from 'react-native-uuid'
 import { randomBytes } from 'tweetnacl'
 
-import { XMPP_DEFAULT_PAGE_LIMIT, XMPP_MUC_DOMAIN } from '../constants'
-import {
-    ArchiveQueryFilters,
-    ArchiveQueryPagination,
-    Group,
-    Key,
-    Keypair,
-    Message,
-} from '../types'
+import { Key, Keypair } from '@fedi/common/types'
+
+import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants'
+import { ArchiveQueryFilters, ArchiveQueryPagination, Message } from '../types'
 import encryptionUtils from './EncryptionUtils'
 
 interface CommonXmppAttributes {
@@ -60,7 +55,6 @@ interface EncryptedDirectChatArgs extends CommonXmppAttributes {
 }
 interface GroupChatArgs extends CommonXmppAttributes {
     message: Message
-    toGroup: Group
 }
 export class EncryptedDirectChatMessage extends XmppMessage {
     static id = 'sendEncryptedDirectChat'
@@ -179,8 +173,7 @@ export class GroupChatMessage extends XmppMessage {
         this.args = args
     }
     build = (): Element => {
-        const { from, toGroup, message } = this.args
-        const to = `${toGroup.id}@${XMPP_MUC_DOMAIN}`
+        const { from, to, message } = this.args
 
         const attributes = {
             id: message.id,
@@ -210,7 +203,7 @@ export class GroupChatMessage extends XmppMessage {
     XML with a top-level <presence> tag
 */
 export interface EnterMucRoomArgs extends CommonXmppAttributes {
-    groupId: string
+    toGroup: string
 }
 export class EnterMucRoomPresence extends XmppPresence {
     static id = 'enterMucRoom'
@@ -220,12 +213,12 @@ export class EnterMucRoomPresence extends XmppPresence {
         this.args = args
     }
     build = (): Element => {
-        const { from, groupId } = this.args
+        const { from, toGroup } = this.args
         const fromJid: JID = jid(from!)
         const memberNickname = fromJid.local
         const attributes = {
             from,
-            to: `${groupId}@${XMPP_MUC_DOMAIN}/${memberNickname}`,
+            to: `${toGroup}/${memberNickname}`,
             id: `${EnterMucRoomPresence.id}-${uuid.v4()}`,
         }
 
@@ -260,6 +253,7 @@ type SetPubsubNodeConfigArgs = CommonXmppAttributes
 interface SetRoomConfigArgs extends CommonXmppAttributes {
     roomName: string
 }
+type UniqueRoomNameArgs = CommonXmppAttributes
 export class AddToRosterQuery extends XmppQuery {
     static id = 'addToRoster'
     args: AddToRosterArgs
@@ -608,10 +602,16 @@ export class SetRoomConfigQuery extends XmppQuery {
 }
 export class UniqueRoomNameQuery extends XmppQuery {
     static id = 'uniqueRoomName'
+    args: UniqueRoomNameArgs
+    constructor(args: UniqueRoomNameArgs) {
+        super()
+        this.args = args
+    }
     build = (): Element => {
+        const { to } = this.args
         const attributes = {
             type: 'get',
-            to: XMPP_MUC_DOMAIN,
+            to,
             id: `${UniqueRoomNameQuery.id}-${uuid.v4()}`,
         }
 

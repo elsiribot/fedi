@@ -11,12 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import {
-    authenticateChat,
-    selectActiveFederation,
-    selectAuthenticatedMember,
-    selectChatCredentials,
-} from '@fedi/common/redux'
+import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -28,9 +23,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
-    const activeChatCredentials = useAppSelector(selectChatCredentials)
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const [username, setUsername] = useState<string>('')
@@ -87,7 +80,6 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const handleXmppRegistration = async () => {
             try {
-                console.debug('checking credeitnals')
                 await dispatch(
                     authenticateChat({
                         fedimint,
@@ -95,35 +87,34 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                         username,
                     }),
                 ).unwrap()
-            } catch (error) {
-                if (error instanceof Error) {
-                    console.error(error.toString())
-                } else if (typeof error === 'string') {
+                setXmppAuthInProgress(false)
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'FederationGreeting' }],
+                })
+            } catch (error: unknown) {
+                if ((error as Error).message) {
                     setXmppAuthInProgress(false)
-                    const errorMessage = t(error)
+                    const errorMessage = t((error as Error).message)
                     console.info(errorMessage)
                     toast?.show(errorMessage, 3000)
+                } else {
+                    console.error((error as Error).toString())
                 }
             }
         }
         if (xmppAuthInProgress === true) {
             handleXmppRegistration()
         }
-    }, [dispatch, toast, t, username, xmppAuthInProgress, activeFederation])
-
-    // if we have a successfully authed xmppClient and username set
-    // continue to the FederationGreeting screen
-    useEffect(() => {
-        // TODO: if authenticatedMember is set then chat.credentials
-        // is almost certainly also set... so consider reducing this logic
-        if (authenticatedMember && activeChatCredentials) {
-            setXmppAuthInProgress(false)
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'FederationGreeting' }],
-            })
-        }
-    }, [authenticatedMember, navigation, activeChatCredentials])
+    }, [
+        dispatch,
+        navigation,
+        toast,
+        t,
+        username,
+        xmppAuthInProgress,
+        activeFederation,
+    ])
 
     const handleUsernameChange = (input: string) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)

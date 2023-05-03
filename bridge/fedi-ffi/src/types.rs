@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use anyhow::anyhow;
@@ -87,6 +88,7 @@ pub struct FedimintFederation {
     pub nodes: Vec<ApiEndpoint>,
     pub balance: Amount,
     pub social_recovery_active: bool,
+    pub meta: BTreeMap<String, String>,
 }
 
 // FIXME: should probaby type these as bytes, but don't want to figure out serialization right now
@@ -123,6 +125,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         nodes: client_config.api_endpoints.values().cloned().collect(),
         balance: Amount(balance),
         social_recovery_active,
+        meta: client_config.meta,
     }
 }
 

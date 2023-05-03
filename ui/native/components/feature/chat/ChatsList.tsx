@@ -16,7 +16,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const ChatsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { authenticatedMember, groups, messages, membersSeen } =
+    const { groups, messages, membersSeen, authenticatedMember } =
         useChatContext().state
 
     const renderChat: ListRenderItem<Chat> = ({ item }) => {

@@ -46,16 +46,24 @@ export enum ChatPaymentStatus {
     paid,
 }
 
-export interface KeypairHex {
-    publicKey: string
-    privateKey: string
+export interface Key {
+    hex: string
+}
+
+export interface Keypair {
+    publicKey: Key
+    privateKey: Key
 }
 
 export interface ChatMember {
     /** Unique ID for the member (same as username for xmpp) */
     id: string
     username: string
-    publicKeyHex?: String
+    publicKeyHex?: string
+}
+
+export interface XmppChatMember extends ChatMember {
+    jid: string
 }
 
 export interface ChatGroupSettings {
@@ -80,4 +88,17 @@ export interface ChatGroup extends Chat {
 export interface XmppCredentials {
     password: string
     keypairSeed: string
+}
+
+export interface XmppConnectionOptions {
+    // The domain where the Prosody chat server is hosted
+    domain?: string
+    // This is the XMPP Multi-User-Chat (MUC) domain defined
+    // in prosody.config.lua on the XMPP server
+    // https://prosody.im/doc/modules/mod_muc
+    mucDomain?: string
+    // Should always just be 'chat' for now...
+    resource?: string
+    // Websocket URL to connect to the Prosody chat server
+    service?: string
 }

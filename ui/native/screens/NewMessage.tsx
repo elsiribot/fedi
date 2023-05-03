@@ -8,7 +8,6 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import { XMPP_DOMAIN, XMPP_RESOURCE } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useDebouncedEffect } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
@@ -22,14 +21,14 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { fetchRoster } = useXmpp()
-    const { state } = useChatContext()
+    const { membersSeen, authenticatedMember, connectionOptions } =
+        useChatContext().state
     const [usernameFilter, setUsernameFilter] = useState<string>('')
-    const { authenticatedMember } = useChatContext().state
 
     // filter out members if usernameFilter has text to filter with
     const filteredMembers = usernameFilter
-        ? state.membersSeen.filter(m => m.username.includes(usernameFilter))
-        : state.membersSeen
+        ? membersSeen.filter(m => m.username.includes(usernameFilter))
+        : membersSeen
 
     useDebouncedEffect(
         () => {
@@ -37,7 +36,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                 fetchRoster()
             }
         },
-        [usernameFilter],
+        [usernameFilter, authenticatedMember, fetchRoster],
         500,
     )
 
@@ -89,14 +88,18 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         <Pressable
                             style={styles(theme, insets).createGroupContainer}
                             onPress={async () => {
-                                const newMember = new Member({
-                                    jid: jid(
-                                        `${usernameFilter}@${XMPP_DOMAIN}/${XMPP_RESOURCE}`,
-                                    ),
-                                })
-                                navigation.replace('DirectChat', {
-                                    member: newMember,
-                                })
+                                if (connectionOptions) {
+                                    const { domain, resource } =
+                                        connectionOptions
+                                    const newMember = new Member({
+                                        jid: jid(
+                                            `${usernameFilter}@${domain}/${resource}`,
+                                        ),
+                                    })
+                                    navigation.replace('DirectChat', {
+                                        member: newMember,
+                                    })
+                                }
                             }}>
                             <SvgImage name="SocialPeople" />
                             <Text

@@ -18,17 +18,9 @@ import { fedimint } from '../bridge'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    CHAT_GROUPS_PERSISTENCE_KEY,
-    CHAT_MEMBERS_PERSISTENCE_KEY,
-    CHAT_MESSAGES_PERSISTENCE_KEY,
     FEDERATION_USERNAME_ID_DB_KEY,
 } from '../constants'
-import {
-    receiveGroups,
-    receiveMembersSeen,
-    receiveMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -38,7 +30,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const { reset } = route.params
-    const { dispatch: chatDispatch } = useChatContext()
+    const { connectionOptions } = useChatContext().state
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
@@ -96,19 +88,31 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                             username: usernameMap[activeFederationId!],
                         }),
                     ).unwrap()
+
                     return navigation.replace('TabsNavigator')
                 }
             }
-            // Go to the welcome screen if there are no stored usernames
-            // for the active federation
-            navigation.replace('FederationWelcome')
+            // If there are no stored usernames for the active federation
+            // go to FederationWelcome to recover/create username
+            // or go to Home if no chat is available
+            if (connectionOptions) {
+                navigation.replace('FederationWelcome')
+            } else {
+                navigation.replace('TabsNavigator')
+            }
         }
         // activeFederationId should be null if there are 0 federations so
         // this should only ever be called once
         if (activeFederationId && federations.length === 0) {
             initializeFederations()
         }
-    }, [dispatch, activeFederationId, federations.length, navigation])
+    }, [
+        dispatch,
+        connectionOptions,
+        activeFederationId,
+        federations.length,
+        navigation,
+    ])
 
     // this useEffect checks async storage to restore
     // federations state on a fresh app load
@@ -157,103 +161,18 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                         return navigation.replace('Splash')
                     }
                 } catch (error) {
-                    console.error(error)
+                    console.error('restoreState error', error)
                     return navigation.replace('Splash')
                 }
             }
 
-            const restoreMessages = async () => {
-                try {
-                    const savedChatMessagesJson = await AsyncStorage.getItem(
-                        CHAT_MESSAGES_PERSISTENCE_KEY,
-                    )
-
-                    const savedChatMessages = savedChatMessagesJson
-                        ? JSON.parse(savedChatMessagesJson)
-                        : null
-
-                    console.info('savedChatMessages', savedChatMessages)
-
-                    if (savedChatMessages !== null) {
-                        const { messages } = savedChatMessages
-
-                        console.debug('recovering messages')
-
-                        if (messages) {
-                            chatDispatch(receiveMessages(messages))
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            }
-
-            const restoreGroups = async () => {
-                try {
-                    const savedChatGroupsJson = await AsyncStorage.getItem(
-                        CHAT_GROUPS_PERSISTENCE_KEY,
-                    )
-
-                    const savedChatGroups = savedChatGroupsJson
-                        ? JSON.parse(savedChatGroupsJson)
-                        : null
-
-                    console.info('savedChatGroups', savedChatGroups)
-
-                    if (savedChatGroups !== null) {
-                        const { groups } = savedChatGroups
-
-                        console.debug('recovering groups')
-
-                        if (groups) {
-                            chatDispatch(receiveGroups(groups))
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            }
-
-            const restoreMembers = async () => {
-                try {
-                    const savedChatMembersJson = await AsyncStorage.getItem(
-                        CHAT_MEMBERS_PERSISTENCE_KEY,
-                    )
-
-                    const savedChatMembers = savedChatMembersJson
-                        ? JSON.parse(savedChatMembersJson)
-                        : null
-
-                    console.info('savedChatMembers', savedChatMembers)
-
-                    if (savedChatMembers !== null) {
-                        const { members } = savedChatMembers
-
-                        console.debug('recovering members')
-
-                        if (members) {
-                            chatDispatch(receiveMembersSeen(members))
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            }
-
-            const restoreChatState = async () => {
-                restoreMessages()
-                restoreGroups()
-                restoreMembers()
-            }
-
-            restoreChatState()
             restoreFederationsState()
         }
 
         if (!activeFederationId) {
             restoreState()
         }
-    }, [chatDispatch, navigation, reset, dispatch, activeFederationId])
+    }, [navigation, reset, dispatch, activeFederationId])
 
     return (
         <ImageBackground

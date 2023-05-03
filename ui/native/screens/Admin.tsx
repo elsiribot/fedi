@@ -7,6 +7,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import {
     changeAuthenticatedGuardian,
+    resetFederationChatState,
     resetFederationsState,
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -67,21 +68,28 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     const resetChatState = () => {
-        chatDispatch(receiveMembersSeen([]))
-        chatDispatch(receiveMessages([]))
-        chatDispatch(receiveGroups(DEFAULT_GROUPS))
-        AsyncStorage.setItem(
-            CHAT_MEMBERS_PERSISTENCE_KEY,
-            JSON.stringify({ members: [] }),
-        )
-        AsyncStorage.setItem(
-            CHAT_MESSAGES_PERSISTENCE_KEY,
-            JSON.stringify({ messages: [] }),
-        )
-        AsyncStorage.setItem(
-            CHAT_GROUPS_PERSISTENCE_KEY,
-            JSON.stringify({ groups: DEFAULT_GROUPS }),
-        )
+        if (activeFederation) {
+            dispatch(
+                resetFederationChatState({
+                    federationId: activeFederation.id,
+                }),
+            )
+            chatDispatch(receiveMembersSeen([]))
+            chatDispatch(receiveMessages([]))
+            chatDispatch(receiveGroups(DEFAULT_GROUPS))
+            AsyncStorage.setItem(
+                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                JSON.stringify({ members: [] }),
+            )
+            AsyncStorage.setItem(
+                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                JSON.stringify({ messages: [] }),
+            )
+            AsyncStorage.setItem(
+                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                JSON.stringify({ groups: DEFAULT_GROUPS }),
+            )
+        }
     }
     const resetGuardiansState = () => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -176,7 +184,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                     />
                 </View>
                 <Text h2 medium>
-                    {authenticatedMember?.username}
+                    {authenticatedMember?.username || 'satoshi'}
                 </Text>
             </View>
             {/* TODO: Add offline status indicator here */}

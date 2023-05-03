@@ -1,6 +1,5 @@
 import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
-import { Buffer } from 'buffer'
 import { ImageSourcePropType } from 'react-native'
 
 import { MSats, Invoice } from '@fedi/common/types'
@@ -230,20 +229,4 @@ export type ArchiveQueryPagination = {
 export type MessageArchiveQuery = {
     filters?: ArchiveQueryFilters | null
     pagination?: ArchiveQueryPagination | null
-}
-
-export class Key extends Base {
-    hex: string
-    constructor(data: any) {
-        super(data)
-    }
-    // Makes sure every key has both hex and bytes properties
-    get bytes(): Uint8Array {
-        return Buffer.from(this.hex, 'hex')
-    }
-}
-
-export type Keypair = {
-    publicKey: Key
-    privateKey: Key
 }

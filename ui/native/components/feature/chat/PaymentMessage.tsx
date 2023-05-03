@@ -16,8 +16,9 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     message,
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
-    const { state } = useChatContext()
-    const { authenticatedMember } = state
+    const {
+        state: { authenticatedMember },
+    } = useChatContext()
     const { payment } = message
 
     const sentByMe =

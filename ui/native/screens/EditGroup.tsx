@@ -34,7 +34,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     useEffect(() => {
-        const handleEditGroupName = () => {
+        const handleEditGroupName = async () => {
             changeMucRoomName(group, groupName)?.catch(error => {
                 toast?.show(error as string, 3000)
                 setEditingGroupName(false)

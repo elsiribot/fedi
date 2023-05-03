@@ -4,18 +4,14 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import {
-    DEFAULT_GROUP_NAME,
-    XMPP_DOMAIN,
-    XMPP_MUC_DOMAIN,
-} from '../../constants'
+import { Key, Keypair } from '@fedi/common/types'
+
+import { DEFAULT_GROUP_NAME } from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
     Group,
-    Key,
-    Keypair,
     Member,
     Message,
 } from '../../types'
@@ -36,8 +32,6 @@ import xmlUtils, {
 import {
     Action as ChatAction,
     changeLastFetchedMessageId,
-    receiveMembersSeen,
-    updateGroup,
 } from '../contexts/ChatContext'
 
 export const addMemberToRoster = (
@@ -51,7 +45,9 @@ export const addMemberToRoster = (
             const { iqCaller } = xmppClient! as Client
             const roomConfigQueryXml = xmlUtils.buildQuery(
                 new AddToRosterQuery({
-                    newRosterItem: `${member.username}@${XMPP_DOMAIN}`,
+                    newRosterItem: `${
+                        member.username
+                    }@${xmppClient.jid.getDomain()}`,
                     from: xmppClient!.jid!.toString(),
                 }),
             )
@@ -66,9 +62,8 @@ export const addMemberToRoster = (
 export const changeMucRoomName = (
     group: Group,
     updatedName: string,
-    dispatch: React.Dispatch<ChatAction>,
     xmppClient: Client | null,
-): Promise<boolean> => {
+): Promise<Group> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
 
@@ -78,7 +73,7 @@ export const changeMucRoomName = (
                 new SetRoomConfigQuery({
                     roomName: updatedName,
                     from: xmppClient!.jid!.toString(),
-                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                    to: `${group.id}@muc.${xmppClient.jid.getDomain()}`,
                 }),
             )
             await iqCaller.request(roomConfigQueryXml)
@@ -86,8 +81,7 @@ export const changeMucRoomName = (
                 ...group,
                 name: updatedName,
             })
-            dispatch(updateGroup(updatedGroup))
-            resolve(true)
+            resolve(updatedGroup)
         } catch (error: any) {
             console.error('changeMucRoomName', error)
             if (
@@ -140,10 +134,7 @@ export const fetchMessagesFromArchive = (
     })
 }
 
-export const fetchRoster = (
-    dispatch: React.Dispatch<ChatAction>,
-    xmppClient: Client | null,
-): Promise<boolean> => {
+export const fetchRoster = (xmppClient: Client | null): Promise<Member[]> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
             return reject(i18n.t('errors.unknown-error'))
@@ -170,9 +161,10 @@ export const fetchRoster = (
                         jid: jid(rm.getAttr('jid')),
                     })
                 })
+
                 console.debug('membersSeen', membersSeen)
 
-                dispatch(receiveMembersSeen(membersSeen))
+                resolve(membersSeen)
             }
         } catch (error) {
             console.error('fetchRoster', error)
@@ -193,7 +185,7 @@ export const fetchMucRoomConfig = (
             const roomConfigQueryXml = xmlUtils.buildQuery(
                 new GetRoomConfigQuery({
                     from: xmppClient!.jid!.toString(),
-                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                    to: `${group.id}@muc.${xmppClient.jid!.getDomain()}`,
                 }),
             )
             const result = await iqCaller.request(roomConfigQueryXml)
@@ -251,7 +243,9 @@ export const getUniqueGroupId = (
         try {
             const { iqCaller } = xmppClient! as Client
             const uniqeRoomNameXml = xmlUtils.buildQuery(
-                new UniqueRoomNameQuery(),
+                new UniqueRoomNameQuery({
+                    to: `muc.${xmppClient.jid.getDomain()}`,
+                }),
             )
             const response = await iqCaller.request(uniqeRoomNameXml)
             const roomName = response.getChildText('unique') as string
@@ -273,11 +267,12 @@ export const enterMucRoom = (
 
         try {
             const fromUser = xmppClient!.jid!.toString()
+            const toGroup = `${group.id}@muc.${xmppClient.jid!.getDomain()}`
 
             const enterMucRoomPresence = xmlUtils.buildPresence(
                 new EnterMucRoomPresence({
                     from: fromUser,
-                    groupId: group.id,
+                    toGroup,
                 }),
             )
             const onStanzaReceived = async (stanza: Element) => {
@@ -300,7 +295,9 @@ export const enterMucRoom = (
                                 new SetRoomConfigQuery({
                                     roomName: group.name || DEFAULT_GROUP_NAME,
                                     from: fromUser,
-                                    to: `${group.id}@${XMPP_MUC_DOMAIN}`,
+                                    to: `${
+                                        group.id
+                                    }@muc.${xmppClient.jid!.getDomain()}`,
                                 }),
                             )
                             console.info('Sending config for new group')
@@ -380,7 +377,7 @@ export const sendDirectMessage = (
                     to: toJid,
                     message,
                     senderKeys: withEncryptionKeys as Keypair,
-                    recipientPublicKey: new Key({ hex: to.publicKeyHex! }),
+                    recipientPublicKey: { hex: to.publicKeyHex as string },
                     updatePayment,
                 }),
             )
@@ -403,11 +400,12 @@ export const sendGroupMessage = (
 
         try {
             const fromJid = xmppClient!.jid?.toString()
+            const toGroup = `${to.id}@muc.${xmppClient.jid!.getDomain()}`
 
             const groupChatMessageXml = xmlUtils.buildMessage(
                 new GroupChatMessage({
                     from: fromJid,
-                    toGroup: to,
+                    to: toGroup,
                     message,
                 }),
             )

@@ -2,7 +2,7 @@ import { client, xml } from '@xmpp/client'
 import debug from '@xmpp/debug'
 import XMPPError from '@xmpp/error'
 
-import { XMPP_CONNECTION_OPTIONS, XMPP_DOMAIN } from '../constants/xmpp'
+import { XmppConnectionOptions } from '../types'
 
 /**
  * Creates an ephemeral XMPP client used solely for registration
@@ -11,12 +11,16 @@ import { XMPP_CONNECTION_OPTIONS, XMPP_DOMAIN } from '../constants/xmpp'
 export const registerXmppUser = async (
     username: string,
     password: string,
+    xmppOptions: XmppConnectionOptions,
 ): Promise<boolean> => {
     console.log('register xmpp user', username, password)
     return new Promise((resolve, reject) => {
         // Connect to XMPP server without credentials to establish
         // a session for registration
-        const xmppConnectionOptions = XMPP_CONNECTION_OPTIONS
+        const xmppConnectionOptions = {
+            service: xmppOptions.service,
+            resource: xmppOptions.resource,
+        }
         console.info(
             'registerXmppUser: xmppConnectionOptions',
             xmppConnectionOptions,
@@ -30,7 +34,7 @@ export const registerXmppUser = async (
             xmpp.send(
                 xml(
                     'iq',
-                    { type: 'set', to: XMPP_DOMAIN, id: 'register' },
+                    { type: 'set', to: xmppOptions.domain, id: 'register' },
                     xml(
                         'query',
                         { xmlns: 'jabber:iq:register' },
@@ -78,12 +82,14 @@ export const registerXmppUser = async (
 export const checkXmppUser = async (
     username: string,
     password: string,
+    xmppOptions: XmppConnectionOptions,
 ): Promise<boolean> => {
     return new Promise(resolve => {
         // Connect to XMPP server with provided credentials to check
         // if the user exists
         const xmppConnectionOptions = {
-            ...XMPP_CONNECTION_OPTIONS,
+            service: xmppOptions.service,
+            resource: xmppOptions.resource,
             username,
             password,
         }

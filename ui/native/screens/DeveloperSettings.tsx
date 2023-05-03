@@ -9,8 +9,12 @@ import Share from 'react-native-share'
 
 import {
     changeAuthenticatedGuardian,
+    resetAuthenticatedMember,
     resetFederationChatState,
     selectActiveFederation,
+    setChatGroups,
+    setChatMembersSeen,
+    setChatMessages,
 } from '@fedi/common/redux'
 import { changeSelectedFiatCurrency } from '@fedi/common/redux/currency'
 import {
@@ -27,13 +31,6 @@ import {
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
-import {
-    DEFAULT_GROUPS,
-    receiveGroups,
-    receiveMembersSeen,
-    receiveMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
@@ -48,7 +45,6 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
-    const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -60,7 +56,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     )
 
     // This is a partial refactor of state management from context to redux
-    const reduxDispatch = useAppDispatch()
+    const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
@@ -162,7 +158,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedFiatCurrency === SupportedCurrency.USD}
                     onPress={() =>
-                        reduxDispatch(
+                        dispatch(
                             changeSelectedFiatCurrency(SupportedCurrency.USD),
                         )
                     }
@@ -173,7 +169,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedFiatCurrency === SupportedCurrency.EUR}
                     onPress={() =>
-                        reduxDispatch(
+                        dispatch(
                             changeSelectedFiatCurrency(SupportedCurrency.EUR),
                         )
                     }
@@ -184,7 +180,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedFiatCurrency === SupportedCurrency.CFA}
                     onPress={() =>
-                        reduxDispatch(
+                        dispatch(
                             changeSelectedFiatCurrency(SupportedCurrency.CFA),
                         )
                     }
@@ -194,63 +190,87 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title={'Delete all groups, messages, & members seen'}
                 onPress={() => {
-                    chatDispatch(receiveMembersSeen([]))
-                    chatDispatch(receiveMessages([]))
-                    chatDispatch(receiveGroups(DEFAULT_GROUPS))
-                    AsyncStorage.setItem(
-                        CHAT_MEMBERS_PERSISTENCE_KEY,
-                        JSON.stringify({ members: [] }),
-                    )
-                    AsyncStorage.setItem(
-                        CHAT_MESSAGES_PERSISTENCE_KEY,
-                        JSON.stringify({ messages: [] }),
-                    )
-                    AsyncStorage.setItem(
-                        CHAT_GROUPS_PERSISTENCE_KEY,
-                        JSON.stringify({ groups: DEFAULT_GROUPS }),
-                    )
+                    if (activeFederation) {
+                        dispatch(
+                            resetFederationChatState({
+                                federationId: activeFederation.id,
+                            }),
+                        )
+                        AsyncStorage.setItem(
+                            `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                            JSON.stringify({ groups: [] }),
+                        )
+                        AsyncStorage.setItem(
+                            `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                            JSON.stringify({ members: [] }),
+                        )
+                        AsyncStorage.setItem(
+                            `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                            JSON.stringify({ messages: [] }),
+                        )
+                    }
                 }}
             />
             <Button
                 size="sm"
                 title={'Delete all groups'}
                 onPress={() => {
-                    chatDispatch(receiveGroups(DEFAULT_GROUPS))
-                    AsyncStorage.setItem(
-                        CHAT_GROUPS_PERSISTENCE_KEY,
-                        JSON.stringify({ groups: DEFAULT_GROUPS }),
-                    )
+                    if (activeFederation) {
+                        dispatch(
+                            setChatGroups({
+                                federationId: activeFederation.id,
+                                groups: [],
+                            }),
+                        )
+                        AsyncStorage.setItem(
+                            `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                            JSON.stringify({ groups: [] }),
+                        )
+                    }
                 }}
             />
             <Button
                 size="sm"
                 title={'Delete all messages'}
                 onPress={() => {
-                    chatDispatch(receiveMessages([]))
-                    AsyncStorage.setItem(
-                        CHAT_MESSAGES_PERSISTENCE_KEY,
-                        JSON.stringify({ messages: [] }),
-                    )
+                    if (activeFederation) {
+                        dispatch(
+                            setChatMessages({
+                                federationId: activeFederation.id,
+                                messages: [],
+                            }),
+                        )
+                        AsyncStorage.setItem(
+                            `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                            JSON.stringify({ messages: [] }),
+                        )
+                    }
                 }}
             />
             <Button
                 size="sm"
                 title={'Delete all members seen'}
                 onPress={() => {
-                    chatDispatch(receiveMembersSeen([]))
-                    chatDispatch(receiveGroups(DEFAULT_GROUPS))
-                    AsyncStorage.setItem(
-                        CHAT_MEMBERS_PERSISTENCE_KEY,
-                        JSON.stringify({ members: [] }),
-                    )
+                    if (activeFederation) {
+                        dispatch(
+                            setChatMembersSeen({
+                                federationId: activeFederation.id,
+                                membersSeen: [],
+                            }),
+                        )
+                        AsyncStorage.setItem(
+                            `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                            JSON.stringify({ members: [] }),
+                        )
+                    }
                 }}
             />
             <Button
                 size="sm"
                 title="Reset username"
                 onPress={() => {
-                    reduxDispatch(
-                        resetFederationChatState({
+                    dispatch(
+                        resetAuthenticatedMember({
                             federationId: activeFederation?.id!,
                         }),
                     )
@@ -292,7 +312,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     checkedColor={theme.colors.lightGrey}
                     uncheckedColor={theme.colors.red}
                     onPress={() => {
-                        reduxDispatch(changeAuthenticatedGuardian(null))
+                        dispatch(changeAuthenticatedGuardian(null))
                         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
                 />
@@ -309,9 +329,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                                 authenticatedGuardian?.name === guardian.name
                             }
                             onPress={() => {
-                                reduxDispatch(
-                                    changeAuthenticatedGuardian(guardian),
-                                )
+                                dispatch(changeAuthenticatedGuardian(guardian))
                             }}
                         />
                     )
@@ -321,7 +339,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                         <Text small>{'Confirm guardian password'}</Text>
                         <Input
                             onChangeText={input => {
-                                reduxDispatch(
+                                dispatch(
                                     changeAuthenticatedGuardian({
                                         ...authenticatedGuardian,
                                         password: input,

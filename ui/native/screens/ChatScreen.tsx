@@ -4,11 +4,17 @@ import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { Keypair } from '@fedi/common/types'
+
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
-import { useChatContext } from '../state/contexts/ChatContext'
+import {
+    changeLastFetchedMessageId,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useXmpp } from '../state/hooks/chat'
-import { ArchiveQueryPagination, Keypair } from '../types'
+import { reset } from '../state/navigation'
+import { ArchiveQueryPagination } from '../types'
 import {
     NavigationHook,
     RootStackParamList,
@@ -25,8 +31,19 @@ const ChatScreen: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { fetchMessagesFromArchive, fetchRoster, publishPublicKey } =
         useXmpp()
-    const { websocketIsHealthy, lastFetchedMessageId, encryptionKeys } =
-        useChatContext().state
+    const { state, dispatch } = useChatContext()
+    const {
+        websocketIsHealthy,
+        lastFetchedMessageId,
+        encryptionKeys,
+        connectionOptions,
+    } = state
+
+    useEffect(() => {
+        if (!connectionOptions) {
+            navigation.dispatch(reset('TabsNavigator'))
+        }
+    }, [connectionOptions, navigation])
 
     useEffect(() => {
         if (websocketIsHealthy) {
@@ -40,8 +57,21 @@ const ChatScreen: React.FC<Props> = () => {
                 pagination.after = lastFetchedMessageId
             }
             fetchMessagesFromArchive(null, pagination)
+                .then(messageId => {
+                    if (messageId) {
+                        dispatch(changeLastFetchedMessageId(messageId))
+                    }
+                })
+                .catch(err => {
+                    console.error(err)
+                })
         }
-    }, [websocketIsHealthy, fetchMessagesFromArchive, lastFetchedMessageId])
+    }, [
+        dispatch,
+        websocketIsHealthy,
+        fetchMessagesFromArchive,
+        lastFetchedMessageId,
+    ])
 
     useEffect(() => {
         if (websocketIsHealthy) {

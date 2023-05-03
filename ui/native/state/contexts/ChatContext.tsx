@@ -13,28 +13,31 @@ import React, {
     useMemo,
     useReducer,
     useRef,
+    useState,
 } from 'react'
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     selectAuthenticatedMember,
+    selectChatConnectionOptions,
     selectChatCredentials,
+    selectChatEncryptionKeys,
+    setChatEncryptionKeys,
 } from '@fedi/common/redux'
+import { Keypair } from '@fedi/common/types'
 
 import {
     CHAT_GROUPS_PERSISTENCE_KEY,
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
     FEDI_GENERAL_CHANNEL_GROUP,
-    XMPP_CONNECTION_OPTIONS,
-    XMPP_DOMAIN,
     XMPP_MESSAGE_TYPES,
-    XMPP_RESOURCE,
 } from '../../constants'
-import { Group, Key, Keypair, Member, Message } from '../../types'
+import { Group, Member, Message, XmppConnectionOptions } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { GetMessagesQuery } from '../../utils/XmlUtils'
-import { useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { publishPublicKey } from '../operations/chat'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -45,27 +48,29 @@ export const DEFAULT_GROUPS: Group[] = [
 // Define the structure of this Context and its initial state
 interface ChatContextState {
     xmppClient: Client | null
-    authenticatedMember: Member | null
     username: string | null
     messages: Message[]
     groups: Group[]
     membersSeen: Member[]
     lastFetchedMessageId: string | null
     websocketIsHealthy: boolean
-    encryptionKeys: Keypair | null
 }
 const initialState: ChatContextState = {
     xmppClient: null,
     username: null,
-    authenticatedMember: null,
     messages: [],
     groups: DEFAULT_GROUPS,
     membersSeen: [],
     lastFetchedMessageId: null,
     websocketIsHealthy: false,
-    encryptionKeys: null,
 }
-type AppState = typeof initialState
+
+interface ChatReduxState {
+    authenticatedMember: Member | null
+    encryptionKeys: ReturnType<typeof selectChatEncryptionKeys>
+    connectionOptions: ReturnType<typeof selectChatConnectionOptions>
+}
+type ChatComboState = ChatContextState & ChatReduxState
 
 // Define actions that can change the state within this Context
 enum ActionType {
@@ -74,12 +79,12 @@ enum ActionType {
     ADD_TO_GROUPS = 'ADD_TO_GROUPS',
     CHANGE_WEBSOCKET_IS_HEALTHY = 'CHANGE_WEBSOCKET_IS_HEALTHY',
     CHANGE_LAST_FETCHED_MESSAGE_ID = 'CHANGE_LAST_FETCHED_MESSAGE_ID',
+    MERGE_MEMBERS_SEEN = 'MERGE_MEMBERS_SEEN',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
     RECEIVE_GROUPS = 'RECEIVE_GROUPS',
     RESET_CHAT_STATE = 'RESET_CHAT_STATE',
     RESET_XMPP_CLIENT = 'RESET_XMPP_CLIENT',
-    SET_AUTHENTICATED_MEMBER = 'SET_AUTHENTICATED_MEMBER',
     SET_ENCRYPTION_KEYS = 'SET_ENCRYPTION_KEYS',
     SET_XMPP_CLIENT = 'SET_XMPP_CLIENT',
     UPDATE_GROUP = 'UPDATE_GROUP',
@@ -95,7 +100,7 @@ export interface Action {
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {
-    state: ChatContextState
+    state: ChatComboState
     dispatch: React.Dispatch<Action>
 }
 export const ChatContext = createContext({} as BaseContext)
@@ -131,6 +136,12 @@ export function changeLastFetchedMessageId(messageId: string): Action {
         payload: messageId,
     }
 }
+export function mergeMembersSeen(members: Member[]): Action {
+    return {
+        type: ActionType.MERGE_MEMBERS_SEEN,
+        payload: members,
+    }
+}
 export function receiveMembersSeen(members: Member[]): Action {
     return {
         type: ActionType.RECEIVE_MEMBERS_SEEN,
@@ -147,12 +158,6 @@ export function receiveGroups(groups: Group[]): Action {
     return {
         type: ActionType.RECEIVE_GROUPS,
         payload: groups,
-    }
-}
-export function setAuthenticatedMember(member: Member): Action {
-    return {
-        type: ActionType.SET_AUTHENTICATED_MEMBER,
-        payload: member,
     }
 }
 export function setEncryptionKeys(keys: Keypair): Action {
@@ -203,7 +208,10 @@ export function resetChatState(): Action {
 }
 
 // Implement the reducer with actions and state changes
-export function reducer(state: AppState, action: Action): AppState {
+export function reducer(
+    state: ChatContextState,
+    action: Action,
+): ChatContextState {
     switch (action.type) {
         case ActionType.ADD_TO_MEMBERS_SEEN: {
             const memberToAdd = new Member({ jid: action.payload.jid })
@@ -328,7 +336,7 @@ export function reducer(state: AppState, action: Action): AppState {
                 ...state,
                 websocketIsHealthy: action.payload,
             }
-        case ActionType.RECEIVE_MEMBERS_SEEN: {
+        case ActionType.MERGE_MEMBERS_SEEN: {
             const incomingMembers = action.payload
             const newMembersSeen = incomingMembers
                 .map(
@@ -345,7 +353,7 @@ export function reducer(state: AppState, action: Action): AppState {
                     if (
                         memberExists ||
                         // Never add ourselves to the roster
-                        im.username === state.authenticatedMember?.username
+                        state.xmppClient?.jid?.getLocal() === im.username
                     ) {
                         return false
                     } else {
@@ -361,6 +369,11 @@ export function reducer(state: AppState, action: Action): AppState {
                 membersSeen: newMembersSeen.map((m: Member) => new Member(m)),
             }
         }
+        case ActionType.RECEIVE_MEMBERS_SEEN:
+            return {
+                ...state,
+                membersSeen: [...action.payload].map(m => new Member(m)),
+            }
         case ActionType.RECEIVE_MESSAGES:
             return {
                 ...state,
@@ -375,20 +388,6 @@ export function reducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 xmppClient: initialState.xmppClient,
-            }
-        case ActionType.SET_AUTHENTICATED_MEMBER:
-            return {
-                ...state,
-                authenticatedMember: action.payload,
-            }
-        case ActionType.SET_ENCRYPTION_KEYS:
-            // Avoid unnecessary re-renders
-            if (isEqual(action.payload, state.encryptionKeys)) {
-                return state
-            }
-            return {
-                ...state,
-                encryptionKeys: action.payload,
             }
         case ActionType.SET_XMPP_CLIENT:
             return {
@@ -551,34 +550,54 @@ export function reducer(state: AppState, action: Action): AppState {
 }
 
 function ChatProvider(props: React.PropsWithChildren<{}>) {
-    const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
-        reducer,
-        initialState,
-    )
+    const [state, dispatch] = useReducer<
+        React.Reducer<ChatContextState, Action>
+    >(reducer, initialState)
     const appStateRef = useRef<AppStateStatus>(
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
+    const xmppClientRef = useUpdatingRef(state.xmppClient)
 
+    const reduxDispatch = useAppDispatch()
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const activeChatCredentials = useAppSelector(selectChatCredentials)
-
-    // useMemo makes sure the Provider only re-renders when
-    // there is a state change
-    const providerValue = useMemo(
-        () => ({ state, dispatch }),
-        [state, dispatch],
+    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
     )
+
+    // Maintain state for the federation ID that we're currently writing to storage.
+    // This prevents accidentally writing state to storage while changing federation IDs.
+    const [loadedFederationId, setLoadedFederationId] = useState<
+        string | undefined
+    >()
+
+    // Turns off reconnect and stops the xmpp client. This will trigger all of the
+    // usual reconnect logic if you're on a federation that has chat configured.
+    const shutdownXmppClient = useCallback(() => {
+        const xmppClient = xmppClientRef.current
+        if (!xmppClient) return
+        xmppClient.reconnect.stop()
+        xmppClient.stop()
+        dispatch(resetXmppClient())
+    }, [xmppClientRef])
 
     // Takes a username + password to construct a new XMPP client
     // and store it in state for later use
     const buildXmppClient = useCallback(
-        (username: string, password: string) => {
+        (
+            username: string,
+            password: string,
+            connectionOptions: XmppConnectionOptions,
+        ) => {
+            console.info('building persistent xmpp client')
             try {
                 const xmppConnectionOptions = {
-                    ...XMPP_CONNECTION_OPTIONS,
+                    service: connectionOptions.service,
+                    resource: connectionOptions.resource,
                     username: username as string,
                     password: password as string,
                 }
@@ -657,10 +676,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 console.info(
                     'no response from XMPP server after 3s, rebuilding XMPP client',
                 )
-                state.xmppClient?.reconnect.stop()
-                state.xmppClient?.stop()
-                // this will re-trigger the XMPP instantiation effect above
-                dispatch(resetXmppClient())
+                shutdownXmppClient()
             }, 3000)
             // This expects a response to the presence message which means
             // the stream has been resumed successfully so we can clear
@@ -681,12 +697,14 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         } catch (error) {
             console.error('Failed to resume XMPP stream')
         }
-    }, [state.xmppClient])
+    }, [state.xmppClient, shutdownXmppClient])
 
     // This effect instantiates the XMPP client with a websocket connection
-    // and requires a activeFederationId with username + password
+    // and requires activeChatConnectionOptions with username + password
     useEffect(() => {
-        if (activeFederationId === null) return
+        // If this is null, either there is no active federation
+        // or the active federation does not have a chat server configured
+        if (activeChatConnectionOptions === null) return
         // a username must be set before an XMPP connection is attempted
         // this should be set after creating a username for new members
         // or after recovering from backup for existing members
@@ -699,15 +717,26 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             buildXmppClient(
                 authenticatedMember.username,
                 activeChatCredentials.password,
+                activeChatConnectionOptions,
             )
         }
     }, [
         buildXmppClient,
         state.xmppClient,
-        activeFederationId,
+        activeChatConnectionOptions,
         authenticatedMember?.username,
         activeChatCredentials?.password,
     ])
+
+    /*
+        This effect makes sure to tear down the XMPP connection when switching
+        to a federation without a chat server configured
+    */
+    useEffect(() => {
+        if (activeChatConnectionOptions === null && state.xmppClient !== null) {
+            shutdownXmppClient()
+        }
+    }, [activeChatConnectionOptions, state.xmppClient, shutdownXmppClient])
 
     const configureXmppMessageListeners = useCallback(() => {
         // Handlers for incoming messages
@@ -732,8 +761,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const fromJid = jid(from)
             let userJid: JID = jid(
                 fromJid.getResource(),
-                XMPP_DOMAIN,
-                XMPP_RESOURCE,
+                fromJid.getDomain().replace('muc.', ''),
+                fromJid.getResource(),
             )
             dispatch(addToMembersSeen(new Member({ jid: userJid })))
         }
@@ -741,7 +770,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             let newMessage, directMessageJson, parsedMessage, action
             const encrypted = stanza.getChild('encrypted')
             if (encrypted) {
-                console.debug('encrypted', encrypted.toString())
                 // First decrypt the payload
                 const header = encrypted.getChild('header')
                 const keys = header?.getChild('keys')
@@ -750,7 +778,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 let encryptedPayloadContents = encrypted.getChildText('payload')
 
                 const { privateKey, publicKey } =
-                    state.encryptionKeys as Keypair
+                    activeChatEncryptionKeys as Keypair
 
                 // If we sent this message, decrypt the backup-payload
                 // instead since we encrypted it to our own pubkey
@@ -758,17 +786,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     encryptedPayloadContents =
                         encrypted.getChildText('backup-payload')
                 }
-                console.debug(
-                    'encryptedPayloadContents',
-                    encryptedPayloadContents,
-                )
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
-                    new Key({ hex: senderPublicKey }),
+                    { hex: senderPublicKey as string },
                     privateKey,
                 )
 
-                console.debug('decryptedPayload', decryptedPayload)
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
@@ -781,7 +804,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             }
 
             parsedMessage = JSON.parse(directMessageJson as string)
-            console.debug('parsedMessage', parsedMessage)
             if (!parsedMessage) return
 
             newMessage = new Message({
@@ -836,7 +858,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             let newMessage, directMessageJson, parsedMessage, action
             const encrypted = message.getChild('encrypted')
             if (encrypted) {
-                console.debug('encrypted', encrypted.toString())
                 // First decrypt the payload
                 const header = encrypted.getChild('header')
                 const keys = header?.getChild('keys')
@@ -845,7 +866,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 let encryptedPayloadContents = encrypted.getChildText('payload')
 
                 const { privateKey, publicKey } =
-                    state.encryptionKeys as Keypair
+                    activeChatEncryptionKeys as Keypair
 
                 // If we sent this message, decrypt the backup-payload
                 // instead since we encrypted it to our own pubkey
@@ -853,17 +874,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                     encryptedPayloadContents =
                         encrypted.getChildText('backup-payload')
                 }
-                console.debug(
-                    'encryptedPayloadContents',
-                    encryptedPayloadContents,
-                )
                 const decryptedPayload = encryptionUtils.decryptMessage(
                     encryptedPayloadContents!,
-                    new Key({ hex: senderPublicKey }),
+                    { hex: senderPublicKey as string },
                     privateKey,
                 )
 
-                console.log('decryptedPayload', decryptedPayload)
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
                 directMessageJson = content.getChildText('dm')
@@ -938,7 +954,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
         console.info('setting onStanzaReceived lisetener')
 
-        if (state.xmppClient && state.encryptionKeys) {
+        if (state.xmppClient && activeChatEncryptionKeys) {
             state.xmppClient?.on('stanza', onStanzaReceived)
         }
 
@@ -946,7 +962,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             console.info('removeListener onStanzaReceived lisetener')
             state.xmppClient?.removeListener('stanza', onStanzaReceived)
         }
-    }, [state.encryptionKeys, state.xmppClient])
+    }, [activeChatEncryptionKeys, state.xmppClient])
 
     const configureXmppQueryListeners = useCallback(() => {
         // Monitor for incoming iq responses
@@ -964,7 +980,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
                         const userJid = rosterItem?.getAttr('jid')
 
-                        console.debug('received roster item', userJid)
                         dispatch(
                             addToMembersSeen(
                                 new Member({
@@ -1022,65 +1037,161 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             const derivedKeypair = encryptionUtils.generateDeterministicKeyPair(
                 activeChatCredentials.keypairSeed,
             )
-            dispatch(setEncryptionKeys(derivedKeypair))
-            // reduxDispatch(
-            //     setChatEncryptionKeys({
-            //         federationId: activeFederationId!,
-            //         encryptionKeys: derivedKeypair,
-            //     }),
-            // )
+            reduxDispatch(
+                setChatEncryptionKeys({
+                    federationId: activeFederationId!,
+                    encryptionKeys: derivedKeypair,
+                }),
+            )
         }
-    }, [activeChatCredentials?.keypairSeed])
+    }, [activeFederationId, activeChatCredentials?.keypairSeed, reduxDispatch])
 
     // This effect publishes the user's pubkey to the server so other users
     // can encrypt messages before sending
     useEffect(() => {
         if (
             state.xmppClient &&
-            state.authenticatedMember &&
-            state.encryptionKeys
+            authenticatedMember &&
+            activeChatEncryptionKeys
         ) {
-            const { publicKey } = state.encryptionKeys as Keypair
+            const { publicKey } = activeChatEncryptionKeys as Keypair
             publishPublicKey(publicKey, state.xmppClient)
         }
-    }, [state.encryptionKeys, state.authenticatedMember, state.xmppClient])
+    }, [activeChatEncryptionKeys, authenticatedMember, state.xmppClient])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS
     // TODO: consider refactoring to use SQLite
 
+    const syncStorage = useCallback(
+        (type: StorageType, data: unknown) => {
+            if (!activeFederationId) {
+                console.info('skipping group storage, no active federation id')
+                return
+            }
+            if (activeFederationId !== loadedFederationId) {
+                console.info('skipping group storage, ids dont match')
+                return
+            }
+            AsyncStorage.setItem(
+                makeStorageKey(type, activeFederationId),
+                JSON.stringify(data),
+            )
+        },
+        [activeFederationId, loadedFederationId],
+    )
+
     // Update async storage when groups are added
     useEffect(() => {
         if (state.groups.length > DEFAULT_GROUPS.length) {
             console.info('storing', state.groups.length, 'groups')
-            AsyncStorage.setItem(
-                CHAT_GROUPS_PERSISTENCE_KEY,
-                JSON.stringify({ groups: state.groups }),
-            )
+            syncStorage('groups', { groups: state.groups })
         }
-    }, [state.groups])
+    }, [state.groups, syncStorage])
     // Update async storage when members are added
     useEffect(() => {
         if (state.membersSeen.length > 0) {
             console.info('storing', state.membersSeen.length, 'members')
-            AsyncStorage.setItem(
-                CHAT_MEMBERS_PERSISTENCE_KEY,
-                JSON.stringify({ members: state.membersSeen }),
-            )
+            syncStorage('members', { members: state.membersSeen })
         }
-    }, [state.membersSeen])
+    }, [state.membersSeen, syncStorage])
     // Update async storage when messages are added
     useEffect(() => {
         if (state.messages.length > 0) {
             console.info('storing', state.messages.length, 'messages')
-            AsyncStorage.setItem(
-                CHAT_MESSAGES_PERSISTENCE_KEY,
-                JSON.stringify({ messages: state.messages }),
-            )
+            syncStorage('messages', { messages: state.messages })
         }
-    }, [state.messages])
+    }, [state.messages, syncStorage])
+
+    // Reset state and restore stored state on init / federation ID change.
+    // Attempt to handle rapid ID changes by canceling, but storage should be very fast.
+    useEffect(() => {
+        let canceled = false
+        if (activeFederationId && activeFederationId !== loadedFederationId) {
+            console.info('restoring chat state for', activeFederationId)
+
+            const restoreState = async (
+                type: StorageType,
+            ): Promise<undefined | Record<string, any>> => {
+                try {
+                    const json = await AsyncStorage.getItem(
+                        makeStorageKey(type, activeFederationId),
+                    )
+                    if (json && !canceled) {
+                        const data = JSON.parse(json)
+                        return data
+                    }
+                } catch (err) {
+                    console.warn(
+                        `failed to restore ${type} state for ${activeFederationId}`,
+                        err,
+                    )
+                }
+            }
+
+            Promise.all([
+                restoreState('members'),
+                restoreState('messages'),
+                restoreState('groups'),
+            ]).then(([memberData, messageData, groupData]) => {
+                if (canceled) return
+                shutdownXmppClient()
+                const members = memberData ? memberData.members : []
+                const messages = messageData ? messageData.messages : []
+                const groups = groupData ? groupData.groups : []
+                console.info(
+                    `restoring ${members.length} members, ${messages.length} messages, ${groups.length} groups`,
+                )
+                dispatch(receiveMembersSeen(members))
+                dispatch(receiveMessages(messages))
+                dispatch(receiveGroups(groups))
+                setLoadedFederationId(activeFederationId)
+            })
+        }
+        return () => {
+            canceled = true
+        }
+    }, [activeFederationId, loadedFederationId, shutdownXmppClient])
+
+    // Fake our member using xmpp client jid
+    const wrappedAuthenticatedMember = useMemo(() => {
+        if (!state.xmppClient?.jid) return null
+        return new Member({ jid: state.xmppClient.jid })
+    }, [state.xmppClient?.jid])
+
+    // useMemo makes sure the Provider only re-renders when
+    // there is a state change. Some state from redux is also added in.
+    const providerValue = useMemo(
+        () => ({
+            state: {
+                ...state,
+                authenticatedMember: wrappedAuthenticatedMember,
+                encryptionKeys: activeChatEncryptionKeys,
+                connectionOptions: activeChatConnectionOptions,
+            },
+            dispatch,
+        }),
+        [
+            state,
+            wrappedAuthenticatedMember,
+            activeChatEncryptionKeys,
+            activeChatConnectionOptions,
+            dispatch,
+        ],
+    )
 
     return <ChatContext.Provider value={providerValue} {...props} />
+}
+
+type StorageType = 'members' | 'messages' | 'groups'
+
+function makeStorageKey(type: StorageType, federationId: string) {
+    const prefix = {
+        members: CHAT_MEMBERS_PERSISTENCE_KEY,
+        messages: CHAT_MESSAGES_PERSISTENCE_KEY,
+        groups: CHAT_GROUPS_PERSISTENCE_KEY,
+    }[type]
+    return `${prefix}:${federationId}`
 }
 
 function useChatContext() {

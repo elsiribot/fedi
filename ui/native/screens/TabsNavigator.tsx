@@ -1,20 +1,18 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import { t } from 'i18next'
-import React, { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-} from '@fedi/common/redux'
+import { selectActiveFederation } from '@fedi/common/redux'
 
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import {
@@ -30,12 +28,13 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 const Tab = createBottomTabNavigator<TabsNavigatorParamList>()
 
 const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
+    const { connectionOptions } = useChatContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const toggleOffline = () => {
         if (!offline) {
@@ -46,17 +45,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         setOffline(!offline)
     }
 
-    // Make sure all users have a username and push them to the
-    // FederationWelcome screen if they don't have one
-    useEffect(() => {
-        if (!authenticatedMember?.username) {
-            navigation.replace('FederationWelcome')
-        }
-    }, [navigation, authenticatedMember?.username])
-
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
     if (!activeFederation) {
+        console.log({ activeFederation })
         navigation.navigate('Splash')
         return <View />
     }
@@ -66,6 +58,34 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
             initialRouteName="Home"
             id={TABS_NAVIGATOR_ID}
             screenOptions={({ route }) => ({
+                tabBarButton: props => {
+                    switch (route.name) {
+                        case 'Home':
+                            return <Pressable {...props} />
+                        case 'Chat':
+                            if (connectionOptions) {
+                                return <Pressable {...props} />
+                            } else {
+                                return (
+                                    <Pressable
+                                        {...props}
+                                        style={[
+                                            props.style,
+                                            styles(theme, insets).disabledIcon,
+                                        ]}
+                                        onPress={() => {
+                                            toast?.show(
+                                                t('errors.chat-unavailable'),
+                                                3000,
+                                            )
+                                        }}
+                                    />
+                                )
+                            }
+                        default:
+                            return null
+                    }
+                },
                 tabBarIcon: ({ focused }) => {
                     switch (route.name) {
                         case 'Home':
@@ -160,6 +180,10 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         tabBarItem: {
             paddingBottom: theme.spacing.lg,
+        },
+        disabledIcon: {
+            opacity: 0.2,
+            backgroundColor: theme.colors.grey,
         },
         row: {
             flexDirection: 'row',

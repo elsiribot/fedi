@@ -107,7 +107,6 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 ))}
             </DrawerContentScrollView>
             <Pressable
-                disabled
                 style={styles(theme).addFederationButton}
                 onPress={() => {
                     navigation.navigate('ScanFederationCode')
@@ -131,7 +130,6 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'flex-start',
             padding: theme.spacing.md,
-            opacity: 0.1,
         },
         addFederationText: {
             paddingLeft: theme.spacing.xs,

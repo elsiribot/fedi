@@ -4,6 +4,7 @@ import {
     createSelector,
     createAsyncThunk,
 } from '@reduxjs/toolkit'
+import { orderBy } from 'lodash'
 
 import { CommonState, selectActiveFederation } from '.'
 import {
@@ -11,10 +12,11 @@ import {
     ChatMessage,
     ChatMember,
     ChatGroup,
-    KeypairHex,
+    Keypair,
     ChatType,
     XmppCredentials,
 } from '../types'
+import FederationUtils from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
 
@@ -32,7 +34,7 @@ const initialFederationChatState = {
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
     websocketIsHealthy: false as boolean,
-    encryptionKeys: null as KeypairHex | null,
+    encryptionKeys: null as Keypair | null,
 }
 type FederationChatState = typeof initialFederationChatState
 
@@ -165,13 +167,23 @@ export const chatSlice = createSlice({
         },
         setChatEncryptionKeys(
             state,
-            action: FederationPayloadAction<{ encryptionKeys: KeypairHex }>,
+            action: FederationPayloadAction<{ encryptionKeys: Keypair }>,
         ) {
             const { federationId, encryptionKeys } = action.payload
             const federation = getFederationChatState(state, federationId)
             state[federationId] = {
                 ...federation,
                 encryptionKeys,
+            }
+        },
+        resetAuthenticatedMember(state, action: FederationPayloadAction<{}>) {
+            const { federationId } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                authenticatedMember:
+                    initialFederationChatState.authenticatedMember,
+                encryptionKeys: initialFederationChatState.encryptionKeys,
             }
         },
         resetFederationChatState(state, action: FederationPayloadAction) {
@@ -217,6 +229,7 @@ export const {
     setLastFetchedMessageId,
     setAuthenticatedMember,
     setChatEncryptionKeys,
+    resetAuthenticatedMember,
     resetFederationChatState,
     resetChatState,
 } = chatSlice.actions
@@ -245,15 +258,26 @@ export const authenticateChat = createAsyncThunk<
                 refreshChatCredentials({ fedimint, federationId }),
             ).unwrap()
         }
+        const connectionOptions = selectChatConnectionOptions(getState())
+
+        if (connectionOptions === null) {
+            console.error('No chat connectionOptions for this federation')
+            throw new Error('errors.chat-unavailable')
+        }
 
         // Validate credentials, register if it's a new name
         const normalizedUsername = username.toLowerCase()
         const credentialsAreValid = await checkXmppUser(
             normalizedUsername,
             credentials.password,
+            connectionOptions,
         )
         if (!credentialsAreValid) {
-            await registerXmppUser(normalizedUsername, credentials.password)
+            await registerXmppUser(
+                normalizedUsername,
+                credentials.password,
+                connectionOptions,
+            )
         }
 
         // Backup the username to the fedimint bridge
@@ -274,6 +298,9 @@ const selectFederationChatState = (s: CommonState) =>
 export const selectChatCredentials = (s: CommonState) =>
     selectFederationChatState(s).credentials
 
+export const selectChatEncryptionKeys = (s: CommonState) =>
+    selectFederationChatState(s).encryptionKeys
+
 export const selectAuthenticatedMember = (s: CommonState) =>
     selectFederationChatState(s).authenticatedMember
 
@@ -285,6 +312,17 @@ export const selectAllChatMembers = (s: CommonState) =>
 
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
+
+export const selectChatConnectionOptions = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+
+    return activeFederation
+        ? new FederationUtils(activeFederation).getChatServerOptions()
+        : null
+}
+
+export const selectLastFetchedMessageId = (s: CommonState) =>
+    selectFederationChatState(s).lastFetchedMessageId
 
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
@@ -309,13 +347,11 @@ export const selectChatMessages = createSelector(
         ),
 )
 
-export const selectChatPreviewMessage = createSelector(
+export const selectChatLatestMessage = createSelector(
     selectChatMessages,
     (_: CommonState, chatId: Chat['id']) => chatId,
-    (messages, chatId) => {
-        return [...messages]
-            .reverse()
-            .find(m => m.sentIn === chatId || m.sentTo === chatId)
+    messages => {
+        return [...orderBy(messages, 'sentAt', 'desc')][0]
     },
 )
 
@@ -340,6 +376,14 @@ export const selectChatMembers = createSelector(
 
         // Else return empty array
         return []
+    },
+)
+
+export const selectChatMember = createSelector(
+    selectChatMembers,
+    (_: CommonState, memberId: string) => memberId,
+    (chatMembers, memberId) => {
+        return chatMembers.find(member => member.id === memberId)
     },
 )
 
