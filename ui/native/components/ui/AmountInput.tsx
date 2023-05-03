@@ -24,6 +24,7 @@ const AmountInput: React.FC<Props> = ({ amount, onChangeAmount }) => {
         fiatValue,
         handleChangeFiat,
         handleChangeSats,
+        currency,
         currencySymbol,
     } = useAmountInput(amount, onChangeAmount)
     const inputRef = useRef<TextInput>(null)
@@ -51,8 +52,7 @@ const AmountInput: React.FC<Props> = ({ amount, onChangeAmount }) => {
                     inputRef={inputRef as RefObject<TextInput>}
                     onChangeText={handleChangeFiat}
                     value={fiatValue}
-                    label={currencySymbol}
-                    labelPosition={'left'}
+                    label={currency}
                 />
             ) : (
                 <InvisibleInput
