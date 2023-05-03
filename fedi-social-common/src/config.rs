@@ -36,17 +36,6 @@ impl TypedServerModuleConsensusConfig for FediSocialConsensusConfig {
     fn version(&self) -> ModuleConsensusVersion {
         VERSION
     }
-
-    fn to_client_config(&self) -> ClientModuleConfig {
-        ClientModuleConfig::from_typed(
-            self.kind(),
-            self.version(),
-            &FediSocialClientConfig {
-                federation_pk_set: self.pk_set.clone(),
-            },
-        )
-        .expect("Serialization can't fail")
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable)]
@@ -82,11 +71,5 @@ impl TypedServerModuleConfig for SocialConfig {
 
     fn to_parts(self) -> (ModuleKind, Self::Local, Self::Private, Self::Consensus) {
         (KIND, (), self.private, self.consensus)
-    }
-
-    fn validate_config(&self, _identity: &PeerId) -> anyhow::Result<()> {
-        // TODO: validate anything?
-
-        Ok(())
     }
 }

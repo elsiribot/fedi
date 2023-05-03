@@ -9,7 +9,7 @@ use common::{
 pub use fedi_social_common as common;
 
 use async_trait::async_trait;
-use common::config::{FediSocialConsensusConfig, SocialPrivateConfig};
+use common::config::{FediSocialClientConfig, FediSocialConsensusConfig, SocialPrivateConfig};
 use common::db::DbKeyPrefix;
 use fedimint_core::config::{
     ClientModuleConfig, ConfigGenModuleParams, DkgResult, ServerModuleConfig,
@@ -129,23 +129,24 @@ impl ServerModuleGen for FediSocialGen {
         &self,
         config: &ServerModuleConsensusConfig,
     ) -> anyhow::Result<ClientModuleConfig> {
-        Ok(FediSocialConsensusConfig::from_erased(config)?.to_client_config())
+        let config = FediSocialConsensusConfig::from_erased(config)?;
+        Ok(ClientModuleConfig::from_typed(
+            config.kind(),
+            config.version(),
+            &FediSocialClientConfig {
+                federation_pk_set: config.pk_set.clone(),
+            },
+        )
+        .expect("Serialization can't fail"))
     }
 
-    // fn to_config_response(
-    //     &self,
-    //     config: serde_json::Value,
-    // ) -> anyhow::Result<ModuleConfigResponse> {
-    //     let config = serde_json::from_value::<FediSocialConsensusConfig>(config)?;
-
-    //     Ok(ModuleConfigResponse {
-    //         client: config.to_client_config(),
-    //         consensus_hash: config.consensus_hash(),
-    //     })
-    // }
-
-    fn validate_config(&self, identity: &PeerId, config: ServerModuleConfig) -> anyhow::Result<()> {
-        config.to_typed::<SocialConfig>()?.validate_config(identity)
+    fn validate_config(
+        &self,
+        _identity: &PeerId,
+        _config: ServerModuleConfig,
+    ) -> anyhow::Result<()> {
+        // TODO: validate anything?
+        Ok(())
     }
 
     async fn dump_database(
