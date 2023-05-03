@@ -1,13 +1,7 @@
-import { Text, Theme, useTheme } from '@rneui/themed'
-import { t } from 'i18next'
+import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
-
-import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { Chat, ChatType } from '../../../types'
 import HoloAvatar from '../../ui/HoloAvatar'
 import { AvatarSize } from '../../ui/HoloAvatar'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
