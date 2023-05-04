@@ -95,7 +95,8 @@ const ChatScreen: React.FC<Props> = () => {
 
             <FAB
                 icon={<SvgImage name="Plus" color={theme.colors.secondary} />}
-                color={theme.colors.primary}
+                color={theme.colors.blue}
+                style={styles(theme).actionButton}
                 size="large"
                 placement="right"
                 onPress={() => {
@@ -106,10 +107,15 @@ const ChatScreen: React.FC<Props> = () => {
     )
 }
 
-const styles = (_: Theme) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
+        },
+        actionButton: {
+            elevation: 4,
+            shadowRadius: 4,
+            shadowColor: theme.colors.primary,
         },
     })
 

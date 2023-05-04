@@ -2,6 +2,8 @@ import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
+
 import HoloGradient from './HoloGradient'
 
 /*
@@ -19,11 +21,13 @@ export enum AvatarSize {
 type HoloAvatarProps = {
     size?: AvatarSize
     title: string
+    level?: keyof typeof fediTheme.holoGradient
 }
 
 const HoloAvatar: React.FC<HoloAvatarProps> = ({
     size = AvatarSize.sm,
     title,
+    level = '600',
 }: HoloAvatarProps) => {
     const { theme } = useTheme()
 
@@ -46,7 +50,7 @@ const HoloAvatar: React.FC<HoloAvatarProps> = ({
 
     return (
         <View style={mergedContainerStyle}>
-            <HoloGradient rounded size={customSize} level="600" />
+            <HoloGradient rounded size={customSize} level={level} />
             <Text
                 bold
                 tiny={size === AvatarSize.sm}

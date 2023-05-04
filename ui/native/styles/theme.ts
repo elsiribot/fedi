@@ -135,6 +135,7 @@ const theme = createTheme({
         splashLogoHeight: 32,
         splashLogoWidth: 120,
         tabBarHeight: 72,
+        unreadIndicatorSize: 10,
     },
     spacing: {
         ...fediTheme.spacing,
