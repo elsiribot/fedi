@@ -131,7 +131,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
     let social_recovery_active = false;
 
     FedimintFederation {
-        id: FederationId(federation.id()),
+        id: FederationId(federation.federation_id()),
         name: "name".to_string(),
         // FIXME: removed this
         // connect_info: WsClientConnectInfo::from_str(&client_config_string)

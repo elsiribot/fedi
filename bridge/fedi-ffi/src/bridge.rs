@@ -151,8 +151,8 @@ impl Bridge {
 
         // start pollers
         for federation in federations_vec.into_iter() {
-            info!("bridge loading {:?}", federation.id());
-            federations_map.insert(federation.id(), Arc::new(federation));
+            info!("bridge loading {:?}", federation.federation_id());
+            federations_map.insert(federation.federation_id(), Arc::new(federation));
         }
 
         let bridge = Self {
@@ -206,7 +206,7 @@ impl Bridge {
             self.task_group.make_subgroup().await,
         )
         .await?;
-        let federation_id = federation.id();
+        let federation_id = federation.federation_id();
         tracing::info!("saving joined federaiton key");
         {
             let global_db = self.storage.global_db().await?;
@@ -394,9 +394,8 @@ impl Federation {
         "halz trusty mint".to_string()
     }
 
-    pub fn id(&self) -> FederationId {
-        // FIXME: don't hard-code
-        FederationId::from_str("afee09ca140bf22cf30ed6d935104ebf74e08e0dc0f7d263086989c9e953a666cfcda588fea2384c90bd6d31c4827e1f").unwrap()
+    pub fn federation_id(&self) -> FederationId {
+        self.ng.federation_id()
     }
 
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
@@ -509,7 +508,7 @@ impl Federation {
         let active_gateway = self.ng.fetch_active_gateway().await?;
         dbtx.commit_tx().await;
 
-        let federation_id = self.id();
+        let federation_id = self.federation_id();
         let operation_id = self
             .ng
             .pay_bolt11_invoice(federation_id, invoice.to_owned(), active_gateway)
@@ -703,7 +702,7 @@ impl Federation {
 
     /// Notify React Native that we've observed new or updated transaction
     fn send_transaction_event(&self, tx: &Transaction) {
-        let event = Event::transaction(self.id(), tx.clone());
+        let event = Event::transaction(self.federation_id(), tx.clone());
         self.event_sink.typed_event(&event);
     }
 }

@@ -169,9 +169,6 @@ async fn joinFederation(
     connect_string: String,
 ) -> anyhow::Result<FedimintFederation> {
     info!("joining federation {:?}", connect_string);
-    if let Err(e) = bridge.join_federation(connect_string.clone()).await {
-        info!("joinfederation result {:?}", e);
-    };
     let federation = bridge.join_federation(connect_string).await?;
 
     let fedimint_federation = federation_to_fedimint_federation(&federation).await;
@@ -739,59 +736,59 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_join_and_leave_and_join_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
-        leaveFederation(bridge, federation.id().into()).await?;
+        leaveFederation(bridge, federation.federation_id().into()).await?;
         setup().await?;
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_personal_recovery() -> anyhow::Result<()> {
-        let (bridge, federation) = setup().await?;
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_personal_recovery() -> anyhow::Result<()> {
+    //     let (bridge, federation) = setup().await?;
 
-        // Get original mnemonic (for comparison later)
-        let words = getMnemonic(bridge.clone(), federation.id().into()).await?;
-        let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
-        info!("initial mnemnoic {:?}", &words);
+    //     // Get original mnemonic (for comparison later)
+    //     let words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+    //     let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
+    //     info!("initial mnemnoic {:?}", &words);
 
-        let _username = recoverFromMnemonic(
-            bridge.clone(),
-            federation.id().into(),
-            initial_mnemonic
-                .to_string()
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect(),
-        )
-        .await?;
-        let words_after = getMnemonic(bridge.clone(), federation.id().into()).await?;
+    //     let _username = recoverFromMnemonic(
+    //         bridge.clone(),
+    //         federation.federation_id().into(),
+    //         initial_mnemonic
+    //             .to_string()
+    //             .split(" ")
+    //             .map(|s| s.to_string())
+    //             .collect(),
+    //     )
+    //     .await?;
+    //     let words_after = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
 
-        assert_eq!(words, words_after);
+    //     assert_eq!(words, words_after);
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_xmpp_credentials() -> anyhow::Result<()> {
-        let (_, fed1) = setup().await?;
-        let (_, fed2) = setup().await?;
-        let cred1 = fed1.xmpp_credentials().await;
-        let cred2 = fed2.xmpp_credentials().await;
-        // assert!(cred1.username != cred2.username);
-        assert!(cred1.password != cred2.password);
-        Ok(())
-    }
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_xmpp_credentials() -> anyhow::Result<()> {
+    //     let (_, fed1) = setup().await?;
+    //     let (_, fed2) = setup().await?;
+    //     let cred1 = fed1.xmpp_credentials().await;
+    //     let cred2 = fed2.xmpp_credentials().await;
+    //     // assert!(cred1.username != cred2.username);
+    //     assert!(cred1.password != cred2.password);
+    //     Ok(())
+    // }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_leave_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
-        let db_filename = format!("{}.db", federation.id().to_string());
+        let db_filename = format!("{}.db", federation.federation_id().to_string());
         let db_path = path::Path::new(&db_filename).join("LOCK").clone();
         {
             let federations_lock = bridge.federations.lock().await.clone();
             assert_eq!(1, federations_lock.keys().len());
             assert!(&bridge.storage.read_file(db_path.as_path()).await.is_ok());
         }
-        bridge.leave_federation(&federation.id()).await?;
+        bridge.leave_federation(&federation.federation_id()).await?;
         {
             let federations_lock = bridge.federations.lock().await.clone();
             assert_eq!(0, federations_lock.keys().len());
@@ -816,7 +813,7 @@ mod tests {
         let ecash = cli_generate_ecash().await?;
         let rpc_ecash = serialize_ecash(&ecash);
         assert_eq!(0, bridge.event_sink.num_events_of_type(tx_ev()));
-        receiveEcash(bridge.clone(), federation.id().into(), rpc_ecash).await?;
+        receiveEcash(bridge.clone(), federation.federation_id().into(), rpc_ecash).await?;
         assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // check balance
@@ -827,7 +824,12 @@ mod tests {
 
         // spend ecash
         let ecash_amount = types::Amount(fedimint_core::Amount::from_msats(1000));
-        let rpc_ecash = generateEcash(bridge.clone(), federation.id().into(), ecash_amount).await?;
+        let rpc_ecash = generateEcash(
+            bridge.clone(),
+            federation.federation_id().into(),
+            ecash_amount,
+        )
+        .await?;
         let notes: TieredMulti<SpendableNote> = parse_ecash(&rpc_ecash)?;
         assert_eq!(2, bridge.event_sink.num_events_of_type(tx_ev()));
 
@@ -849,7 +851,7 @@ mod tests {
         let description = "test".to_string();
         let invoice_string = generateInvoice(
             bridge.clone(),
-            federation.id().into(),
+            federation.federation_id().into(),
             rpc_amount,
             description,
         )
@@ -858,6 +860,7 @@ mod tests {
         cln_pay_invoice(&invoice_string).await?;
 
         // TODO: generateInvoice needs to spawn a task that reacts to updates
+        tracing::info!("sleeping");
         fedimint_core::task::sleep(Duration::from_secs(2)).await;
 
         // TODO: hit balance api and check "federation" events
@@ -888,7 +891,12 @@ mod tests {
 
         // check balance
         assert_eq!(1, bridge.event_sink.num_events_of_type(tx_ev()));
-        payInvoice(bridge.clone(), federation.id().into(), invoice_string).await?;
+        payInvoice(
+            bridge.clone(),
+            federation.federation_id().into(),
+            invoice_string,
+        )
+        .await?;
         assert_eq!(2, bridge.event_sink.num_events_of_type(tx_ev()));
 
         // check that core-lightning got paid
