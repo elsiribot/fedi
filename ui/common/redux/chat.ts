@@ -313,16 +313,17 @@ export const selectAllChatMembers = (s: CommonState) =>
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
-export const selectChatConnectionOptions = (s: CommonState) => {
-    const activeFederation = selectActiveFederation(s)
-
-    return activeFederation
-        ? new FederationUtils(activeFederation).getChatServerOptions()
-        : null
-}
-
 export const selectLastFetchedMessageId = (s: CommonState) =>
     selectFederationChatState(s).lastFetchedMessageId
+
+export const selectChatConnectionOptions = createSelector(
+    (s: CommonState) => selectActiveFederation(s),
+    activeFederation => {
+        return activeFederation
+            ? new FederationUtils(activeFederation).getChatServerOptions()
+            : null
+    },
+)
 
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
