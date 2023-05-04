@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, Pressable, StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
@@ -9,7 +9,7 @@ import {
     selectActiveFederation,
     selectChatEncryptionKeys,
 } from '@fedi/common/redux'
-import { Keypair } from '@fedi/common/types'
+import { Keypair, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
@@ -20,7 +20,7 @@ import {
     useChatContext,
 } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
 import { Member, Message, Payment, PaymentStatus, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -32,12 +32,56 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
-    const [isLoading, setIsLoading] = useState(false)
+    const [confirmingSend, setConfirmingSend] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [sendingEcash, setSendingEcash] = useState<boolean>(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
+    const { generateEcash } = useBridge()
     const { sendDirectMessage } = useXmpp()
     const { toast } = useEnvironmentContext().state
     const { state, dispatch } = useChatContext()
     const { recipient } = route.params
+
+    useEffect(() => {
+        const generateAndSendEcash = async () => {
+            try {
+                const millis = amountUtils.satToMsat(Number(amount) as Sats)
+                const ecash = await generateEcash(millis as MSats)
+                const messageWithEcash = new Message({
+                    id: uuid.v4(),
+                    content: 'fedi:payment-request:',
+                    sentBy: new Member({
+                        jid: state.xmppClient!.jid,
+                    }),
+                    sentTo: recipient,
+                    sentAt: Date.now() / 1000,
+                    payment: new Payment({
+                        amount: millis,
+                        recipient: recipient,
+                        updatedAt: Date.now() / 1000,
+                        status: PaymentStatus.accepted,
+                        token: ecash,
+                    }),
+                })
+                const withEncryptionKeys = activeChatEncryptionKeys as Keypair
+                sendDirectMessage(
+                    recipient,
+                    messageWithEcash,
+                    withEncryptionKeys,
+                )
+                dispatch(addToMessages(messageWithEcash))
+                dispatch(addToMembersSeen(recipient))
+                navigation.goBack()
+            } catch (error) {
+                console.error(error)
+                toast?.show(t('errors.unknown-error'), 3000)
+            }
+            setSendingEcash(false)
+        }
+        if (sendingEcash) {
+            generateAndSendEcash()
+        }
+    }, [sendingEcash])
 
     const requestEcash = async () => {
         try {
@@ -69,6 +113,16 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }
 
+    const handleConfirmSend = async () => {
+        console.info('sendEcash', amount, 'sats')
+        setSendingEcash(true)
+    }
+
+    const handleSend = async () => {
+        setConfirmingSend(true)
+        Keyboard.dismiss()
+    }
+
     const onChangeAmount = (updatedValue: Sats) => {
         if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
             toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
@@ -95,23 +149,39 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             </View>
 
             <View style={styles(theme).buttonsGroupContainer}>
-                <Button
-                    title={t('words.request')}
-                    onPress={requestEcash}
-                    containerStyle={styles(theme).buttonContainer}
-                    disabled={!Number(amount) || isLoading}
-                />
-                <Button
-                    title={t('words.send')}
-                    onPress={() => {}}
-                    containerStyle={styles(theme).buttonContainer}
-                    disabled={
-                        !(activeFederation!.balance > 0) ||
-                        !Number(amount) ||
-                        isLoading ||
-                        true
-                    }
-                />
+                {confirmingSend ? (
+                    <Button
+                        title={t('feature.send.hold-to-confirm-send')}
+                        onLongPress={handleConfirmSend}
+                        containerStyle={styles(theme).buttonContainer}
+                        disabled={
+                            !(activeFederation!.balance > 0) ||
+                            !Number(amount) ||
+                            sendingEcash ||
+                            isLoading
+                        }
+                    />
+                ) : (
+                    <>
+                        <Button
+                            title={t('words.request')}
+                            onPress={requestEcash}
+                            containerStyle={styles(theme).buttonContainer}
+                            disabled={!Number(amount) || isLoading}
+                        />
+                        <Button
+                            title={t('words.send')}
+                            onPress={handleSend}
+                            containerStyle={styles(theme).buttonContainer}
+                            disabled={
+                                !(activeFederation!.balance > 0) ||
+                                !Number(amount) ||
+                                sendingEcash ||
+                                isLoading
+                            }
+                        />
+                    </>
+                )}
             </View>
         </Pressable>
     )

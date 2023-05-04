@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import type { ValidateEcashResponse } from '@fedi/common/types'
 import { Keypair } from '@fedi/common/types'
 
@@ -11,20 +10,21 @@ import {
     updateMessage,
     useChatContext,
 } from '../../../state/contexts/ChatContext'
-import { useAppSelector, useBridge } from '../../../state/hooks'
+import { useBridge } from '../../../state/hooks'
 import { useXmpp } from '../../../state/hooks/chat'
 import { Member, Message, Payment, PaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
-type IncomingPaymentActionsProps = {
+type IncomingPushPaymentProps = {
     message: Message
-    onCancel: () => void
+    incomingPayment?: Payment
+    text: string
 }
 
-const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
+const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
     message,
-    onCancel,
-}: IncomingPaymentActionsProps) => {
+    text,
+}: IncomingPushPaymentProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { receiveEcash, validateEcash } = useBridge()
@@ -38,7 +38,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     const [validatingToken, setValidatingToken] = useState<boolean>(false)
     const [processingRedemption, setProcessingRedemption] =
         useState<ValidateEcashResponse | null>(null)
-    const { payment, sentTo } = message
+    const { payment, sentBy } = message
 
     // When paymentProcessing begins, ...
     useEffect(() => {
@@ -56,7 +56,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             const withEncryptionKeys = encryptionKeys as Keypair
             const updatePayment = true
             sendDirectMessage(
-                sentTo as Member,
+                sentBy as Member,
                 acceptedPaymentMessage,
                 withEncryptionKeys,
                 updatePayment,
@@ -69,7 +69,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         message,
         payment,
         sendDirectMessage,
-        sentTo,
+        sentBy,
         encryptionKeys,
     ])
 
@@ -122,111 +122,27 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     }, [payment?.token, payment?.status])
 
     const renderPaymentStatus = () => {
-        let paymentStatus = (
-            <View style={styles(theme).statusContainer}>
-                <Text medium caption style={styles(theme).statusText}>
-                    {t('words.pending')}
-                </Text>
-            </View>
-        )
-        switch (payment?.status!) {
-            case PaymentStatus.paid:
-                paymentStatus = (
-                    <View style={styles(theme).statusContainer}>
-                        <SvgImage
-                            name="Done"
-                            size={SvgImageSize.xs}
-                            color={theme.colors.secondary}
-                        />
-                        <Text medium caption style={styles(theme).statusText}>
-                            {t('words.paid')}
-                        </Text>
-                    </View>
-                )
-                break
-            case PaymentStatus.rejected:
-                paymentStatus = (
-                    <View style={styles(theme).statusContainer}>
-                        <Text medium caption style={styles(theme).statusText}>
-                            {t('words.rejected')}
-                        </Text>
-                    </View>
-                )
-                break
-            case PaymentStatus.canceled:
-                paymentStatus = (
-                    <View style={styles(theme).statusContainer}>
-                        <Text medium caption style={styles(theme).statusText}>
-                            {t('words.canceled')}
-                        </Text>
-                    </View>
-                )
-                break
-            case PaymentStatus.requested:
-                paymentStatus = (
-                    <Button
-                        size="sm"
+        if (payment?.status === PaymentStatus.paid) {
+            return (
+                <View style={styles(theme).statusContainer}>
+                    <SvgImage
+                        name="Done"
+                        size={SvgImageSize.xs}
                         color={theme.colors.secondary}
-                        containerStyle={styles(theme).buttonContainer}
-                        onPress={onCancel}
-                        title={
-                            <Text medium caption>
-                                {t('words.cancel')}
-                            </Text>
-                        }
                     />
-                )
-                break
-            // Redemption in progess & status = accepted
-            default:
-                break
-        }
-        return paymentStatus
-    }
-
-    return (
-        <View style={styles(theme).actionsContainer}>
-            {renderPaymentStatus()}
-        </View>
-    )
-}
-
-type OutgoingPaymentRequestProps = {
-    message: Message
-    incomingPayment?: Payment
-    text: string
-}
-
-const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
-    message,
-    text,
-}: OutgoingPaymentRequestProps) => {
-    const { theme } = useTheme()
-    const { sendDirectMessage } = useXmpp()
-    const { dispatch } = useChatContext()
-    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
-
-    const cancelPayment = () => {
-        try {
-            const canceledPaymentMessage = new Message({
-                ...message,
-                payment: {
-                    ...message.payment,
-                    updatedAt: Date.now() / 1000,
-                    status: PaymentStatus.canceled,
-                },
-            })
-            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
-            const updatePayment = true
-            sendDirectMessage(
-                message.sentTo as Member,
-                canceledPaymentMessage,
-                withEncryptionKeys,
-                updatePayment,
+                    <Text medium caption style={styles(theme).statusText}>
+                        {t('words.paid')}
+                    </Text>
+                </View>
             )
-            dispatch(updateMessage(canceledPaymentMessage))
-        } catch (error) {
-            console.log(error)
+        } else {
+            return (
+                <View style={styles(theme).statusContainer}>
+                    <Text medium caption style={styles(theme).statusText}>
+                        {t('words.pending')}
+                    </Text>
+                </View>
+            )
         }
     }
 
@@ -235,10 +151,9 @@ const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
             <Text caption medium style={styles(theme).messageText}>
                 {text}
             </Text>
-            <IncomingPaymentActions
-                message={message}
-                onCancel={cancelPayment}
-            />
+            <View style={styles(theme).actionsContainer}>
+                {renderPaymentStatus()}
+            </View>
         </View>
     )
 }
@@ -272,4 +187,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default OutgoingPaymentRequest
+export default IncomingPushPayment

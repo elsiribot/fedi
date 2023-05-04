@@ -122,16 +122,16 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
     )
 }
 
-type IncomingPaymentRequestProps = {
+type IncomingPullPaymentProps = {
     message: Message
     outgoingPayment?: Payment
     text: string
 }
 
-const IncomingPaymentRequest: React.FC<IncomingPaymentRequestProps> = ({
+const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
     message,
     text,
-}: IncomingPaymentRequestProps) => {
+}: IncomingPullPaymentProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateEcash } = useBridge()
@@ -323,4 +323,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default IncomingPaymentRequest
+export default IncomingPullPayment
