@@ -112,7 +112,7 @@ export enum SupportedFeature {
     chat_server_domain = 'chat_server_domain',
 }
 
-interface ClientConfigMetadata {
+export interface ClientConfigMetadata {
     chat_server_domain?: string
     default_currency?: SupportedCurrency
     // TODO: This is a boolean true/false but client config meta only

@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import {
+    createAsyncThunk,
+    createSelector,
+    createSlice,
+    PayloadAction,
+} from '@reduxjs/toolkit'
 
 import { authenticateChat, CommonState } from '.'
 import type { Federation, FederationEvent, Guardian, SeedWords } from '../types'
@@ -134,3 +139,10 @@ export const selectActiveFederation = (s: CommonState) => {
 }
 
 export const selectFederations = (s: CommonState) => s.federation.federations
+
+export const selectFederationMetadata = createSelector(
+    selectActiveFederation,
+    activeFederation => {
+        return activeFederation ? activeFederation.meta : {}
+    },
+)

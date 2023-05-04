@@ -16,7 +16,7 @@ import {
 } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import FederationUtils from '@fedi/common/utils/FederationUtils'
+import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
 import {
@@ -39,7 +39,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     const amountInSats = amountUtils.msatToSat(federation.balance)
 
-    const showInviteCode = new FederationUtils(federation).getShowInviteCode()
+    const showInviteCode = shouldShowInviteCode(federation.meta)
 
     return (
         <View style={styles(theme).drawerItemLabel}>

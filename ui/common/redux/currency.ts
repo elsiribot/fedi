@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { CommonState, selectActiveFederation } from '.'
+import { CommonState, selectFederationMetadata } from '.'
 import { SupportedCurrency } from '../types'
-import FederationUtils from '../utils/FederationUtils'
+import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 
 type FiatPriceMap = {
     [currency in SupportedCurrency]: number
@@ -149,11 +149,9 @@ export const watchPrices = createAsyncThunk<void, void, { state: CommonState }>(
 export const selectCurrency = (s: CommonState) => {
     if (s.currency.selectedFiatCurrency) return s.currency.selectedFiatCurrency
 
-    const activeFederation = selectActiveFederation(s)
-    if (activeFederation) {
-        const federationDefaultCurrency = new FederationUtils(
-            activeFederation!,
-        ).getDefaultCurrency()
+    const metadata = selectFederationMetadata(s)
+    if (metadata) {
+        const federationDefaultCurrency = getFederationDefaultCurrency(metadata)
         if (federationDefaultCurrency) return federationDefaultCurrency
     }
 
