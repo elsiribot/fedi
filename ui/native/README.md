@@ -89,3 +89,11 @@ adb -s <emulator> shell "run-as com.fedi cat /data/user/0/com.fedi/files/fedi.lo
 ```
 
 Set `FEDI_EMULATOR=1` to only compile rust code for `aarch64-linux-android`, which is what Justin's emulator uses. Not sure if all emulators use this. Improve later ...
+
+### To run 2 android emulators:
+
+```
+yarn run start
+yarn run android
+yarn run android -- --deviceid=<deviceid>
+```
