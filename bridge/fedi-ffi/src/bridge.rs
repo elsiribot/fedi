@@ -31,6 +31,7 @@ use fedimint_core::{
 };
 use fedimint_ln_client::{LightningClientExt, LnPayState, LnReceiveState};
 use fedimint_mint_client::MintClientModule;
+use url::Url;
 
 use crate::{
     event::{Event, TypedEventExt},
@@ -83,6 +84,16 @@ pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
+
+/// override 127.0.0.1 if we're on android or ios
+pub fn override_localhost(url: &Url) -> Url {
+    let host = match std::env::consts::OS {
+        "android" => "10.0.2.2",
+        "ios" => "localhost",
+        _ => "127.0.0.1",
+    };
+    Url::from_str(&url.to_string().replace("127.0.0.1", host)).unwrap()
+}
 
 fn required_threashold_of(n: usize) -> usize {
     n - ((n - 1) / 3)
@@ -177,10 +188,8 @@ impl Bridge {
     ) -> Result<Option<Arc<Federation>>> {
         let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         if std::env::consts::OS == "android" {
-            connect_cfg.url =
-                url::Url::from_str(&connect_cfg.url.to_string().replace("127.0.0.1", "10.0.2.2"))
-                    .unwrap();
-        };
+            connect_cfg.url = override_localhost(&connect_cfg.url);
+        }
         info!("already joined federation?: {}", connect_cfg.id);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
@@ -327,11 +336,7 @@ impl Federation {
         // Download federation config
         tracing::info!("parsing connection string");
         let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
-        if std::env::consts::OS == "android" {
-            connect_cfg.url =
-                url::Url::from_str(&connect_cfg.url.to_string().replace("127.0.0.1", "10.0.2.2"))
-                    .unwrap();
-        };
+        connect_cfg.url = override_localhost(&connect_cfg.url);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         tracing::info!("fetching config");
         let mut cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
@@ -340,28 +345,12 @@ impl Federation {
                 .api_endpoints
                 .into_iter()
                 .map(|(peer_id, mut peer_url)| {
-                    peer_url.url = url::Url::from_str(
-                        &peer_url.url.to_string().replace("127.0.0.1", "10.0.2.2"),
-                    )
-                    .unwrap();
+                    peer_url.url = override_localhost(&peer_url.url);
                     (peer_id, peer_url)
                 })
                 .collect();
         };
 
-        // Hack to run against local federation
-        // let mut cfg_string = serde_json::to_string(&cfg).context("unable to serialize cfg")?;
-        // if std::env::consts::OS == "android" {
-        //     info!("android hacks");
-        //     cfg_string = cfg_string.replace("localhost", "10.0.2.2");
-        //     cfg_string = cfg_string.replace("127.0.0.1", "10.0.2.2");
-        // };
-        // if std::env::consts::OS == "ios" {
-        //     // I haven't tested this
-        //     info!("ios hacks");
-        //     cfg_string = cfg_string.replace("127.0.0.1", "localhost");
-        // };
-        // let client_config: UserClientConfig = serde_json::from_str(&cfg_string)?;
         let fedi_config = FediConfig {
             username: None,
             client_config: UserClientConfig(cfg),
@@ -505,7 +494,8 @@ impl Federation {
 
     pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
         let dbtx = self.ng.db().begin_transaction().await;
-        let active_gateway = self.ng.fetch_active_gateway().await?;
+        let mut active_gateway = self.ng.fetch_active_gateway().await?;
+        active_gateway.api = override_localhost(&active_gateway.api);
         dbtx.commit_tx().await;
 
         let federation_id = self.federation_id();
