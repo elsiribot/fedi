@@ -89,6 +89,7 @@ export function useAmountInput(
         fiatValue,
         handleChangeFiat,
         handleChangeSats,
+        currency,
         currencySymbol,
     }
 }
