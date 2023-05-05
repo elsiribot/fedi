@@ -1,7 +1,6 @@
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
-    Federation,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
