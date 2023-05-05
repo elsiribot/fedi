@@ -5,6 +5,8 @@ import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.rustylibs.fedi.*
 
+import kotlinx.coroutines.*
+
 object EventDispatcher : EventSink {
     override fun event(eventType: String, body: String) {
         BridgeNativeEventEmitter.send(eventType, body)
@@ -29,8 +31,10 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun rpc(method: String, payload: String, promise: Promise) {
-        var response = fedimintRpc(method, payload)
-        promise.resolve(response)
+        GlobalScope.launch {
+            var response = fedimintRpc(method, payload)
+            promise.resolve(response)
+        }
     }
 
     companion object {
