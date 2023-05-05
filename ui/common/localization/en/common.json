@@ -170,8 +170,6 @@
             "invalid-group": "This is not a valid chat group",
             "invite-link-notice": "Anyone with this link can join this group. Link is valid for 2 hours.",
             "invite-to-group": "Invite to group",
-            "incoming-pull-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
-            "incoming-push-payment": "{{name}} sent you {{amount}} {{unit}} {{memo}}",
             "join-a-group": "Join a group",
             "leave-group": "Leave group",
             "money-changing": "Money Changing",
@@ -179,14 +177,15 @@
             "new-message": "New message",
             "new-group": "New group",
             "no-one-is-in-this-group": "No one is in this group yet.",
-            "outgoing-pull-payment": "You requested {{amount}} {{unit}} {{memo}}",
-            "outgoing-push-payment": "You sent {{amount}} {{unit}} {{memo}}",
-            "payment-requested": "{{name}} requested {{amount}} {{unit}}",
+            "they-requested-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
+            "they-sent-payment": "{{name}} sent you {{amount}} {{unit}} {{memo}}",
             "group-invite": "Group invite",
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
             "view-shared-media": "View shared media",
-            "view-group": "View group"
+            "view-group": "View group",
+            "you-requested-payment": "You requested {{amount}} {{unit}} {{memo}}",
+            "you-sent-payment": "You sent {{amount}} {{unit}} {{memo}}"
         },
         "federations": {
             "add-federation": "Add a Federation",

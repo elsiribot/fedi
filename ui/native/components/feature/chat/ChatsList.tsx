@@ -1,19 +1,20 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
-import { t } from 'i18next'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makePaymentText } from '@fedi/native/utils/ChatUtils'
 
 import { useChatContext } from '../../../state/contexts/ChatContext'
-import { Chat, ChatType, Group, Member, Message, MSats } from '../../../types'
+import { Chat, ChatType, Group, Member, Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
 
 const ChatsList: React.FC<{}> = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const { groups, messages, membersSeen, authenticatedMember } =
@@ -74,7 +75,8 @@ const ChatsList: React.FC<{}> = () => {
                   messagesWithMember[0],
               )
 
-              const { sentAt, payment, sentBy, content } = lastMessageWithMember
+              const { sentAt, payment, sentTo, sentBy, content } =
+                  lastMessageWithMember
 
               chatsResult.push(
                   new Chat({
@@ -85,15 +87,15 @@ const ChatsList: React.FC<{}> = () => {
                       lastReceivedTimestamp: sentAt,
                       // If last message is a payment, render details
                       messagePreview: payment
-                          ? t('feature.chat.payment-requested', {
-                                name: sentBy?.username,
-                                amount: amountUtils.formatNumber(
-                                    amountUtils.msatToSat(
-                                        payment.amount as MSats,
-                                    ),
-                                ),
-                                unit: 'SATS',
-                            })
+                          ? makePaymentText(
+                                t,
+                                sentBy?.username || '',
+                                sentTo?.username || '',
+                                authenticatedMember.username,
+                                payment?.recipient?.username,
+                                payment?.amount,
+                                payment?.memo,
+                            )
                           : content,
                   }),
               )

@@ -99,16 +99,18 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         try {
             setIsLoading(true)
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
+            const me = new Member({
+                jid: state.xmppClient!.jid,
+            })
             const ecashRequest = new Message({
                 id: uuid.v4(),
                 content: 'fedi:payment-request:',
-                sentBy: new Member({
-                    jid: state.xmppClient!.jid,
-                }),
+                sentBy: me,
                 sentTo: recipient,
                 sentAt: Date.now() / 1000,
                 payment: new Payment({
                     amount: millis,
+                    recipient: me,
                     status: PaymentStatus.requested,
                     updatedAt: Date.now() / 1000,
                 }),
