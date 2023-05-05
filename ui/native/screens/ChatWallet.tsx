@@ -81,7 +81,19 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         if (sendingEcash) {
             generateAndSendEcash()
         }
-    }, [sendingEcash])
+    }, [
+        activeChatEncryptionKeys,
+        amount,
+        dispatch,
+        generateEcash,
+        navigation,
+        recipient,
+        sendDirectMessage,
+        sendingEcash,
+        state.xmppClient,
+        t,
+        toast,
+    ])
 
     const requestEcash = async () => {
         try {
