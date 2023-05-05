@@ -87,3 +87,5 @@ Read android logs off emulator:
 ```
 adb -s <emulator> shell "run-as com.fedi cat /data/user/0/com.fedi/files/fedi.log" > fedi.log
 ```
+
+Set `FEDI_EMULATOR=1` to only compile rust code for `aarch64-linux-android`, which is what Justin's emulator uses. Not sure if all emulators use this. Improve later ...
