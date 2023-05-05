@@ -97,3 +97,10 @@ yarn run start
 yarn run android
 yarn run android -- --deviceid=<deviceid>
 ```
+
+### list iOS device IDs
+
+```
+xcrun xctrace list devices
+```
+

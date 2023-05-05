@@ -89,7 +89,7 @@ pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 pub fn override_localhost(url: &Url) -> Url {
     let host = match std::env::consts::OS {
         "android" => "10.0.2.2",
-        "ios" => "localhost",
+        "ios" => "100.85.68.88",
         _ => "127.0.0.1",
     };
     Url::from_str(&url.to_string().replace("127.0.0.1", host)).unwrap()
