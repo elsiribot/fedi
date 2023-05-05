@@ -20,6 +20,7 @@ use std::{
     path::PathBuf,
     str::FromStr,
     sync::{atomic::AtomicU64, Arc},
+    time::Duration,
 };
 
 use fedimint_client_fedi::RecoveryFile;
@@ -297,7 +298,10 @@ async fn validateEcash(
 ) -> anyhow::Result<ValidateEcashResponse> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let ecash = fedimint_client_fedi::utils::parse_ecash(&ecash)?;
-    let (valid, amount) = federation.validate_ecash(ecash).await;
+    // FIXME
+    // let (valid, amount) = federation.validate_ecash(ecash).await;
+    let valid = true;
+    let amount = ecash.total_amount();
     Ok(ValidateEcashResponse {
         valid,
         amount: Amount(amount),
