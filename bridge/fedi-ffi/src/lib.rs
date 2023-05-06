@@ -362,7 +362,8 @@ async fn getMnemonic(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<String>> {
-    unimplemented!()
+    // unimplemented!()
+    Ok(vec!["a".to_string(), "b".to_string(), "c".to_string()])
 }
 
 #[macro_rules_derive(rpc_method!)]

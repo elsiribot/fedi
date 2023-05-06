@@ -1,5 +1,6 @@
 ///! Uses immutable data structures and backups to indexeddb on save
 use std::fmt::Debug;
+use std::sync::Arc;
 
 use anyhow::Result;
 use fediffi::fedimint_core;
@@ -37,9 +38,10 @@ pub enum DatabaseOperation {
     Delete(DatabaseDeleteOperation),
 }
 
+#[derive(Clone)]
 pub struct MemDatabase {
-    data: Mutex<OrdMap<Vec<u8>, Vec<u8>>>,
-    idb: Rexie,
+    data: Arc<Mutex<OrdMap<Vec<u8>, Vec<u8>>>>,
+    idb: Arc<Rexie>,
 }
 
 impl Debug for MemDatabase {
@@ -65,6 +67,7 @@ impl MemDatabase {
             .build()
             .await
             .map_err(rexie_to_anyhow)?;
+        let idb = Arc::new(idb);
         let mut data = OrdMap::new();
 
         let idb_tx = idb
@@ -83,7 +86,7 @@ impl MemDatabase {
             data.insert(key, value);
         }
         Ok(Self {
-            data: Mutex::new(data),
+            data: Arc::new(Mutex::new(data)),
             idb,
         })
     }
@@ -146,7 +149,6 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
             .take_while(|(key, _)| key.starts_with(key_prefix))
             .map(|(key, value)| (key.clone(), value.clone()))
             .collect::<Vec<_>>();
-        data.reverse();
 
         Box::pin(stream::iter(data))
     }
@@ -161,6 +163,7 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
             .take_while(|(key, _)| key.starts_with(key_prefix))
             .map(|(key, value)| (key.clone(), value.clone()))
             .collect::<Vec<_>>();
+        data.sort_by(|a, b| a.cmp(b).reverse());
 
         Ok(Box::pin(stream::iter(data)))
     }

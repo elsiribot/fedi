@@ -1,3 +1,3 @@
 #!/bin/sh
 
-wasm-pack build --target web --out-dir out
+wasm-pack build --target web --out-dir out --dev
