@@ -4,11 +4,11 @@
 set -e
 
 # build the bridge inside nix
-nix develop --ignore-environment .#cross --command cargo build --release -p fedi-ffi --target aarch64-linux-android
+nix develop .#cross --command cargo build --release -p fedi-ffi --target aarch64-linux-android
 
 if [ "$FEDI_EMULATOR" != "1" ]; then
-    nix develop --ignore-environment .#cross --command cargo build --release -p fedi-ffi --target x86_64-linux-android
-    nix develop --ignore-environment .#cross --command cargo build --release -p fedi-ffi --target armv7-linux-androideabi
+    nix develop .#cross --command cargo build --release -p fedi-ffi --target x86_64-linux-android
+    nix develop .#cross --command cargo build --release -p fedi-ffi --target armv7-linux-androideabi
 fi
 
 # copy bridge outputs to where ffi-bindgen expects them
