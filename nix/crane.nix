@@ -63,7 +63,7 @@ rec {
       perl
       procps
       which
-      fedimint-build.packages.${system}.fedimint-bin-tests
+      fedimint-build.packages.${system}.devimint
       fedimint-pkgs.packages.${system}.gateway-pkgs
     ];
 
