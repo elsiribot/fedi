@@ -191,16 +191,16 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
     )
 }
 
-type OutgoingPaymentRequestProps = {
+type OutgoingPullPaymentProps = {
     message: Message
     incomingPayment?: Payment
     text: string
 }
 
-const OutgoingPaymentRequest: React.FC<OutgoingPaymentRequestProps> = ({
+const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
     message,
     text,
-}: OutgoingPaymentRequestProps) => {
+}: OutgoingPullPaymentProps) => {
     const { theme } = useTheme()
     const { sendDirectMessage } = useXmpp()
     const { dispatch } = useChatContext()
@@ -272,4 +272,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default OutgoingPaymentRequest
+export default OutgoingPullPayment

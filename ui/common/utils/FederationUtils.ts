@@ -1,76 +1,74 @@
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
-    Federation,
+    ClientConfigMetadata,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
 } from '../types'
 
-export default class FederationUtils {
-    private federation: Federation
+export const getSupportedFeatures = (
+    meta: ClientConfigMetadata,
+): SupportedFeature[] => {
+    const features = []
 
-    constructor(federation: Federation) {
-        this.federation = federation
-    }
-
-    getSupportedFeatures(): SupportedFeature[] {
-        const { meta } = this.federation
-        const features = []
-
-        for (const feature in SupportedFeature) {
-            if (Object.keys(meta).includes(feature)) {
-                features.push(feature as SupportedFeature)
-            }
+    for (const feature in SupportedFeature) {
+        if (Object.keys(meta).includes(feature)) {
+            features.push(feature as SupportedFeature)
         }
-
-        return features
     }
 
-    getDefaultCurrency(): SupportedCurrency {
-        if (
-            this.getSupportedFeatures().includes(
-                SupportedFeature.default_currency,
-            )
-        ) {
-            return this.federation.meta.default_currency as SupportedCurrency
-        }
+    return features
+}
 
-        return SupportedCurrency.USD
+export const getFederationDefaultCurrency = (
+    metadata: ClientConfigMetadata,
+): SupportedCurrency => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.default_currency)) {
+        return metadata?.default_currency as SupportedCurrency
     }
 
-    getShowInviteCode(): boolean {
-        if (
-            this.getSupportedFeatures().includes(
-                SupportedFeature.invite_codes_disabled,
-            )
-        ) {
-            // This is a boolean true/false but client config meta only
-            // supports strings currently so will need to refactor
-            return this.federation.meta.invite_codes_disabled === 'true'
-                ? false
-                : true
-        }
+    return SupportedCurrency.USD
+}
 
-        return true
+export const getFederationChatServerDomain = (
+    metadata: ClientConfigMetadata,
+): string | null => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.chat_server_domain)) {
+        return metadata?.chat_server_domain as string
+    }
+    return null
+}
+
+export const makeChatServerOptions = (
+    chatServerDomain: string,
+): XmppConnectionOptions => {
+    let domain = chatServerDomain
+    const options = {
+        domain,
+        mucDomain: `muc.${domain}`,
+        resource: XMPP_RESOURCE,
+        service: `wss://${domain}/xmpp-websocket`,
     }
 
-    getChatServerOptions(): XmppConnectionOptions | null {
-        if (
-            this.getSupportedFeatures().includes(
-                SupportedFeature.chat_server_domain,
-            )
-        ) {
-            let domain = this.federation.meta.chat_server_domain
-            const options = {
-                domain,
-                mucDomain: `muc.${domain}`,
-                resource: XMPP_RESOURCE,
-                service: `wss://${domain}/xmpp-websocket`,
-            }
+    return options
+}
 
-            return options
-        }
-
-        return null
+export const shouldShowInviteCode = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.invite_codes_disabled)) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.invite_codes_disabled === 'true' ? false : true
     }
+    return true
 }

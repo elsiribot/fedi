@@ -15,7 +15,7 @@ import {
     setFederations,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import FederationUtils from '@fedi/common/utils/FederationUtils'
+import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
@@ -169,8 +169,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const showInviteCode =
-        activeFederation &&
-        new FederationUtils(activeFederation).getShowInviteCode()
+        activeFederation && shouldShowInviteCode(activeFederation.meta)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

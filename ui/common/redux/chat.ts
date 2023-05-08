@@ -6,7 +6,11 @@ import {
 } from '@reduxjs/toolkit'
 import { orderBy } from 'lodash'
 
-import { CommonState, selectActiveFederation } from '.'
+import {
+    CommonState,
+    selectActiveFederation,
+    selectFederationMetadata,
+} from '.'
 import {
     Chat,
     ChatMessage,
@@ -16,7 +20,10 @@ import {
     ChatType,
     XmppCredentials,
 } from '../types'
-import FederationUtils from '../utils/FederationUtils'
+import {
+    getFederationChatServerDomain,
+    makeChatServerOptions,
+} from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
 
@@ -313,16 +320,21 @@ export const selectAllChatMembers = (s: CommonState) =>
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
-export const selectChatConnectionOptions = (s: CommonState) => {
-    const activeFederation = selectActiveFederation(s)
-
-    return activeFederation
-        ? new FederationUtils(activeFederation).getChatServerOptions()
-        : null
-}
-
 export const selectLastFetchedMessageId = (s: CommonState) =>
     selectFederationChatState(s).lastFetchedMessageId
+
+export const selectChatConnectionOptions = createSelector(
+    (s: CommonState) => {
+        const activeFederationMetadata = selectFederationMetadata(s)
+        return activeFederationMetadata
+    },
+    metadata => {
+        const chatServerDomain = getFederationChatServerDomain(metadata)
+        return chatServerDomain
+            ? makeChatServerOptions(chatServerDomain as string)
+            : null
+    },
+)
 
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
