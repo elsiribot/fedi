@@ -63,6 +63,7 @@ export const federationSlice = createSlice({
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.activeFederationId = action.payload.activeFederationId
+            state.authenticatedGuardian = action.payload.authenticatedGuardian
         })
     },
 })

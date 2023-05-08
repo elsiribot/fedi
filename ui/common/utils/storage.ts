@@ -1,8 +1,6 @@
-import { DeepPartial } from '@reduxjs/toolkit'
 import get from 'lodash/get'
 
 import { CommonState } from '../redux'
-import { SupportedCurrency } from '../types'
 import { AnyStoredState, LatestStoredState, StorageApi } from '../types/storage'
 
 export const STATE_STORAGE_KEY = 'fedi:state'
@@ -16,6 +14,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
+        authenticatedGuardian: state.federation.authenticatedGuardian,
         chatIdentities: Object.entries(state.chat).reduce<
             LatestStoredState['chatIdentities']
         >((identities, [federationId, federationChatState]) => {
@@ -29,24 +28,9 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
 }
 
 /**
- * Given any version of our stored state interface, transform it into a partial
- * instance of the Redux state that can be merged in.
+ * Retrieve state from storage. Automatically runs migrations on it to ensure
+ * it matches the LatestStoredState interface.
  */
-export function transformStorageToState(
-    storedData: AnyStoredState,
-): DeepPartial<CommonState> {
-    const data = migrateStoredState(storedData)
-
-    return {
-        environment: {
-            language: data.language,
-        },
-        currency: {
-            selectedFiatCurrency: enumOrNull(data.currency, SupportedCurrency),
-        },
-    }
-}
-
 export async function getStoredState(
     storage: StorageApi,
 ): Promise<LatestStoredState | null> {
@@ -64,10 +48,15 @@ export function hasStorageStateChanged(
     oldState: CommonState,
     newState: CommonState,
 ) {
+    // This is kind of a pain to keep up to date with transformStateToStorage, but
+    // manually doing this and checking by reference is a TON faster than generating
+    // two storage objects and deeply comparing them, so it's worth the effort to keep
+    // up to date since this will be called on _every_ state change.
     const keysetsToCheck = [
         ['currency', 'selectedFiatCurrency'],
         ['environment', 'language'],
         ['federation', 'activeFederationId'],
+        ['federation', 'authenticatedGuardian'],
     ]
 
     // Only check current federation's chat state
@@ -99,23 +88,10 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             language: null,
             currency: null,
             activeFederationId: null,
+            authenticatedGuardian: null,
             chatIdentities: {},
         }
     }
 
     return migrationState
-}
-
-/**
- * Given a value and an enum, ensure it's a valid member of the enum,
- * otherwise return null.
- */
-function enumOrNull<T extends number | string>(
-    value: T | number | string | null,
-    targetEnum: Record<string, T>,
-): T | null {
-    if (Object.values(targetEnum).includes(value as T)) {
-        return value as T
-    }
-    return null
 }

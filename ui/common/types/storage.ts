@@ -2,7 +2,7 @@
 // be fairly immutable, but if you simply want to add a new key, just make
 // it optional?: value.
 import { ChatMember } from './chat'
-import { SupportedCurrency } from './fedimint'
+import { Guardian, SupportedCurrency } from './fedimint'
 
 export interface StoredStateV0 {
     version: 0 // Not a real version, just implemented for demonstrative purposes
@@ -13,6 +13,7 @@ export interface StoredStateV1 extends Omit<StoredStateV0, 'version'> {
     language: string | null
     currency: SupportedCurrency | null
     activeFederationId: string | null
+    authenticatedGuardian: Guardian | null
     chatIdentities: Record<string, ChatMember | undefined>
 }
 
