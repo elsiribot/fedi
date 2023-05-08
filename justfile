@@ -52,6 +52,9 @@ final-check: lint
 check-wasm:
   nix develop .#cross -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
+build-wasm:
+  ./scripts/build-wasm.sh
+
 [no-exit-message]
 typos:
   #!/usr/bin/env bash
