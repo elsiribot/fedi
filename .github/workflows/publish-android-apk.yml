@@ -83,7 +83,7 @@ jobs:
 
             - name: Build bridge
               env:
-                  FEDI_NIX: 1
+                  FEDI_NIX: 0
               run: |
                   yarn build-bridge-android
 
