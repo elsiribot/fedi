@@ -63,31 +63,20 @@ impl std::fmt::Display for FediSocialConsensusItem {
 
 pub struct FediSocialModuleTypes;
 
-impl ModuleCommon for FediSocialModuleTypes {
-    type Input = FediSocialInput;
-    type Output = FediSocialOutput;
-    type OutputOutcome = FediSocialOutputOutcome;
-    type ConsensusItem = FediSocialConsensusItem;
-}
-
 #[derive(Debug)]
 pub struct FediSocialCommonGen;
 
 impl CommonModuleGen for FediSocialCommonGen {
+    const CONSENSUS_VERSION: ModuleConsensusVersion = VERSION;
     const KIND: ModuleKind = KIND;
 
     fn decoder() -> Decoder {
         FediSocialModuleTypes::decoder_builder().build()
     }
-
-    // fn hash_client_module(
-    //     config: serde_json::Value,
-    // ) -> anyhow::Result<bitcoin_hashes::sha256::Hash> {
-    //     Ok(serde_json::from_value::<FediSocialClientConfig>(config)?.consensus_hash())
-    // }
 }
 
 plugin_types_trait_impl_common!(
+    FediSocialModuleTypes,
     FediSocialInput,
     FediSocialOutput,
     FediSocialOutputOutcome,
