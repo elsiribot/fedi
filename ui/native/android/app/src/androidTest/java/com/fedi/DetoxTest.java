@@ -1,4 +1,4 @@
-package com.fedimintreactnative;
+package com.fedi;
 
 import com.wix.detox.Detox;
 import com.wix.detox.config.DetoxConfig;

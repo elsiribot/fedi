@@ -1,4 +1,4 @@
-package com.fedimintreactnative;
+package com.fedi;
 
 import android.os.Bundle;
 import com.facebook.react.ReactActivity;

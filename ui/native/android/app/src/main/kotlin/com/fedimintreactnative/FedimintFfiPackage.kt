@@ -1,4 +1,4 @@
-package com.fedimintreactnative
+package com.fedi
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

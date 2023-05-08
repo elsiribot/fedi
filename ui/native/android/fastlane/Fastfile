@@ -52,7 +52,7 @@ platform :android do
   lane :upload_internal_build do
     upload_to_play_store(
       track: 'internal',
-      package_name: 'com.fedimintreactnative',
+      package_name: 'com.fedi',
       aab: './app/build/outputs/bundle/productionRelease/app-production-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -65,7 +65,7 @@ platform :android do
   lane :upload_beta_build_production do
     upload_to_play_store(
       track: 'beta',
-      package_name: 'com.fedimintreactnative',
+      package_name: 'com.fedi',
       aab: './app/build/outputs/bundle/productionRelease/app-production-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -109,7 +109,7 @@ platform :android do
   lane :upload_internal_build_bitcoin_lake do
     upload_to_play_store(
       track: 'internal',
-      package_name: 'com.fedimintreactnative.bitcoinlake',
+      package_name: 'com.fedi.bitcoinlake',
       aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -128,7 +128,7 @@ platform :android do
   lane :upload_beta_build_bitcoin_lake do
     upload_to_play_store(
       track: 'beta',
-      package_name: 'com.fedimintreactnative.bitcoinlake',
+      package_name: 'com.fedi.bitcoinlake',
       aab: './app/build/outputs/bundle/bitcoinlakeRelease/app-bitcoinlake-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -166,7 +166,7 @@ platform :android do
   lane :upload_internal_build_bitcoin_jungle do
     upload_to_play_store(
       track: 'internal',
-      package_name: 'com.fedimintreactnative.bitcoinjungle',
+      package_name: 'com.fedi.bitcoinjungle',
       aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -185,7 +185,7 @@ platform :android do
   lane :upload_beta_build_bitcoin_jungle do
     upload_to_play_store(
       track: 'beta',
-      package_name: 'com.fedimintreactnative.bitcoinjungle',
+      package_name: 'com.fedi.bitcoinjungle',
       aab: './app/build/outputs/bundle/bitcoinjungleRelease/app-bitcoinjungle-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -223,7 +223,7 @@ platform :android do
   lane :upload_internal_build_bitcoin_ekasi do
     upload_to_play_store(
       track: 'internal',
-      package_name: 'com.fedimintreactnative.bitcoinekasi',
+      package_name: 'com.fedi.bitcoinekasi',
       aab: './app/build/outputs/bundle/bitcoinekasiRelease/app-bitcoinekasi-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,
@@ -242,7 +242,7 @@ platform :android do
   lane :upload_beta_build_bitcoin_ekasi do
     upload_to_play_store(
       track: 'beta',
-      package_name: 'com.fedimintreactnative.bitcoinekasi',
+      package_name: 'com.fedi.bitcoinekasi',
       aab: './app/build/outputs/bundle/bitcoinekasi/release/app-bitcoinekasi-release.aab',
       skip_upload_images: true,
       skip_upload_screenshots: true,

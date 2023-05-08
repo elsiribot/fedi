@@ -1,4 +1,4 @@
-package com.fedimintreactnative;
+package com.fedi;
 
 import android.app.Application;
 import android.content.Context;
@@ -9,7 +9,7 @@ import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.soloader.SoLoader;
-import com.fedimintreactnative.newarchitecture.MainApplicationReactNativeHost;
+import com.fedi.newarchitecture.MainApplicationReactNativeHost;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class MainApplication extends Application implements ReactApplication {
           List<ReactPackage> packages = new PackageList(this).getPackages();
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
-          packages.add(new com.fedimintreactnative.FedimintFfiPackage());
+          packages.add(new com.fedi.FedimintFfiPackage());
           return packages;
         }
 
@@ -74,7 +74,7 @@ public class MainApplication extends Application implements ReactApplication {
          We use reflection here to pick up the class that initializes Flipper,
         since Flipper library is not available in release mode
         */
-        Class<?> aClass = Class.forName("com.fedimintreactnative.ReactNativeFlipper");
+        Class<?> aClass = Class.forName("com.fedi.ReactNativeFlipper");
         aClass
             .getMethod("initializeFlipper", Context.class, ReactInstanceManager.class)
             .invoke(null, context, reactInstanceManager);
