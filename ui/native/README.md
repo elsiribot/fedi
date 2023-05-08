@@ -103,4 +103,3 @@ yarn run android -- --deviceid=<deviceid>
 ```
 xcrun xctrace list devices
 ```
-
