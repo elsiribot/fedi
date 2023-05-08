@@ -1,6 +1,7 @@
 // Maintain all versions of stored state below. Stored state versions should
 // be fairly immutable, but if you simply want to add a new key, just make
 // it optional?: value.
+import { ChatMember } from './chat'
 import { SupportedCurrency } from './fedimint'
 
 export interface StoredStateV0 {
@@ -12,6 +13,7 @@ export interface StoredStateV1 extends Omit<StoredStateV0, 'version'> {
     language: string | null
     currency: SupportedCurrency | null
     activeFederationId: string | null
+    chatIdentities: Record<string, ChatMember | undefined>
 }
 
 /*** Union of all past shapes of stored state ***/

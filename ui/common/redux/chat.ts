@@ -26,6 +26,7 @@ import {
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
+import { loadFromStorage } from './storage'
 
 type FederationPayloadAction<T = {}> = PayloadAction<
     { federationId: string } & T
@@ -219,6 +220,19 @@ export const chatSlice = createSlice({
                 ...federation,
                 authenticatedMember: action.payload,
             }
+        })
+
+        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
+            if (!action.payload) return
+            Object.entries(action.payload.chatIdentities).forEach(
+                ([federationId, chatIdentity]) => {
+                    if (!chatIdentity) return
+                    state[federationId] = {
+                        ...getFederationChatState(state, federationId),
+                        authenticatedMember: chatIdentity,
+                    }
+                },
+            )
         })
     },
 })

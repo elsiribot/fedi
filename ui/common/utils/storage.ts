@@ -1,4 +1,5 @@
 import { DeepPartial } from '@reduxjs/toolkit'
+import get from 'lodash/get'
 
 import { CommonState } from '../redux'
 import { SupportedCurrency } from '../types'
@@ -15,6 +16,15 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
+        chatIdentities: Object.entries(state.chat).reduce<
+            LatestStoredState['chatIdentities']
+        >((identities, [federationId, federationChatState]) => {
+            if (federationChatState?.authenticatedMember) {
+                identities[federationId] =
+                    federationChatState.authenticatedMember
+            }
+            return identities
+        }, {}),
     }
 }
 
@@ -54,13 +64,24 @@ export function hasStorageStateChanged(
     oldState: CommonState,
     newState: CommonState,
 ) {
-    // TODO: Better way to make this code cleaner? It's gonna look really same-y
-    // as we add a bunch more keys to store.
-    return (
-        oldState.currency.selectedFiatCurrency !==
-            newState.currency.selectedFiatCurrency ||
-        oldState.environment.language !== newState.environment.language
-    )
+    const keysetsToCheck = [
+        ['currency', 'selectedFiatCurrency'],
+        ['environment', 'language'],
+        ['federation', 'activeFederationId'],
+    ]
+
+    // Only check current federation's chat state
+    const activeFederationId = newState.federation.activeFederationId
+    if (activeFederationId) {
+        keysetsToCheck.push(['chat', activeFederationId, 'authenticatedMember'])
+    }
+
+    for (let keysToCheck of keysetsToCheck) {
+        if (get(oldState, keysToCheck) !== get(newState, keysToCheck)) {
+            return true
+        }
+    }
+    return false
 }
 
 /**
@@ -78,6 +99,7 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             language: null,
             currency: null,
             activeFederationId: null,
+            chatIdentities: {},
         }
     }
 
