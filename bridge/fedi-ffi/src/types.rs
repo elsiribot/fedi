@@ -150,6 +150,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         social_recovery_active,
         meta: BTreeMap::from([
             ("federation_name".into(), "hacky-regtest-03".into()),
+            ("chat_server_domain".into(), "xmpp-05.dev.fedibtc.com".into()),
             ("invite_codes_disabled".into(), "true".into()),
         ]),
         // meta: client_config.meta,
