@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { CommonState, selectFederationMetadata } from '.'
 import { SupportedCurrency } from '../types'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
+import { loadFromStorage } from './storage'
 
 type FiatPriceMap = {
     [currency in SupportedCurrency]: number
@@ -46,6 +47,12 @@ export const currencySlice = createSlice({
         resetCurrencyState() {
             return { ...initialState }
         },
+    },
+    extraReducers: builder => {
+        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
+            if (!action.payload) return
+            state.selectedFiatCurrency = action.payload.currency
+        })
     },
 })
 

@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { i18n } from 'i18next'
 
 import { CommonState } from '.'
+import { loadFromStorage } from './storage'
 
 /*** Initial State ***/
 
@@ -25,6 +26,11 @@ export const environmentSlice = createSlice({
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
             state.language = action.meta.arg.language
+        })
+
+        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
+            if (!action.payload) return
+            state.language = action.payload.language
         })
     },
 })

@@ -8,6 +8,7 @@ import {
 import { authenticateChat, CommonState } from '.'
 import type { Federation, FederationEvent, Guardian, SeedWords } from '../types'
 import type { FedimintBridge } from '../utils/fedimint'
+import { loadFromStorage } from './storage'
 
 /*** Initial State ***/
 
@@ -57,6 +58,11 @@ export const federationSlice = createSlice({
             if (state.activeFederationId === federationId) {
                 state.activeFederationId = state.federations[0]?.id
             }
+        })
+
+        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
+            if (!action.payload) return
+            state.activeFederationId = action.payload.activeFederationId
         })
     },
 })

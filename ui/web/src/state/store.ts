@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 
 import {
+    commonMiddleware,
     commonReducers,
     initializeCommonStore,
     selectLanguage,
@@ -10,6 +11,7 @@ import { fedimint } from '../lib/bridge'
 import i18n, { detectLanguage } from '../localization/i18n'
 
 export const store = configureStore({
+    middleware: commonMiddleware,
     reducer: {
         ...commonReducers,
     },
@@ -18,9 +20,16 @@ export const store = configureStore({
 export type AppState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
 
+const asyncLocalStorage = {
+    getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+    setItem: (key: string, item: string) =>
+        Promise.resolve(localStorage.setItem(key, item)),
+    removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key)),
+}
+
 export function initializeWebStore() {
     // Common initialization behavior
-    initializeCommonStore(store.dispatch, fedimint)
+    initializeCommonStore(store.dispatch, fedimint, asyncLocalStorage)
 
     // Initialize i18n, change language on store updates
     const initialLanguage = selectLanguage(store.getState())
