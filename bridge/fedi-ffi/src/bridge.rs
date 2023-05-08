@@ -87,12 +87,14 @@ pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
 /// override 127.0.0.1 if we're on android or ios
 pub fn override_localhost(url: &Url) -> Url {
-    let host = match std::env::consts::OS {
-        "android" => "10.0.2.2",
-        "ios" => "100.85.68.88",
-        _ => "127.0.0.1",
-    };
-    Url::from_str(&url.to_string().replace("127.0.0.1", host)).unwrap()
+    let fedi_localhost: Option<&'static str> = option_env!("FEDI_LOCALHOST");
+    if let Some(fedi_localhost) = fedi_localhost {
+        let url = Url::from_str(&url.to_string().replace("127.0.0.1", fedi_localhost)).unwrap();
+        info!("override localhost {:?}", url);
+        url
+    } else {
+        url.clone()
+    }
 }
 
 fn required_threashold_of(n: usize) -> usize {
@@ -207,8 +209,7 @@ impl Bridge {
         {
             return Ok(federation);
         }
-        tracing::info!("joining new federation");
-        let mut federation = Federation::join(
+        let federation = Federation::join(
             connect_string,
             &self.storage,
             self.event_sink.clone(),
