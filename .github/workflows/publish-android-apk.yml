@@ -5,6 +5,11 @@ on:
         branches:
             - 'release/**.**'
             - '!release/**.**.**'
+        paths:
+            - 'bridge/**'
+            - 'ui/native/**'
+            - 'ui/common/**'
+            - '!ui/native/ios/**' # Don't run for changes in /ios folder
 
 defaults:
     run:
