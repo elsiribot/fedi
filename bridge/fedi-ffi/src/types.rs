@@ -149,12 +149,7 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         balance: Amount(balance),
         social_recovery_active,
         meta: BTreeMap::from([
-            (
-                "chat_server_domain".into(),
-                "xmpp-02.dev.fedibtc.com".into(),
-            ),
-            ("default_currency".into(), "EUR".into()),
-            ("federation_name".into(), "regtest-02".into()),
+            ("federation_name".into(), "hacky-regtest-03".into()),
             ("invite_codes_disabled".into(), "true".into()),
         ]),
         // meta: client_config.meta,
