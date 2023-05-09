@@ -121,7 +121,6 @@ pub struct LnurlSignedMessage {
     pub pubkey: PublicKey,
 }
 
-// FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(
     federation: &Arc<Federation>,
 ) -> anyhow::Result<FedimintFederation> {
