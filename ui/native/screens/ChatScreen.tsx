@@ -4,8 +4,6 @@ import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { Keypair } from '@fedi/common/types'
-
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
 import {
@@ -29,15 +27,10 @@ export type Props = BottomTabScreenProps<
 const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { fetchMessagesFromArchive, fetchRoster, publishPublicKey } =
-        useXmpp()
+    const { fetchMessagesFromArchive, fetchRoster } = useXmpp()
     const { state, dispatch } = useChatContext()
-    const {
-        websocketIsHealthy,
-        lastFetchedMessageId,
-        encryptionKeys,
-        connectionOptions,
-    } = state
+    const { websocketIsHealthy, lastFetchedMessageId, connectionOptions } =
+        state
 
     useEffect(() => {
         if (!connectionOptions) {

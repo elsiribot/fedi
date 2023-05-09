@@ -1,9 +1,5 @@
 import { DrawerNavigationProp } from '@react-navigation/drawer'
-import {
-    LinkingOptions,
-    ParamListBase,
-    RouteProp,
-} from '@react-navigation/native'
+import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import { Transaction } from '@fedi/common/types'
