@@ -583,6 +583,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         const xmppClient = xmppClientRef.current
         if (!xmppClient) return
         console.info('shutting down xmpp client')
+        dispatch(changeWebsocketIsHealthy(false))
         dispatch(resetXmppClient())
     }, [xmppClientRef])
 

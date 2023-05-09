@@ -18,17 +18,12 @@ const ChatHeader: React.FC<{}> = () => {
     const [repairingWebsocket, setRepairingWebsocket] = useState<boolean>(false)
 
     useEffect(() => {
-        const rebuildXmppClient = async () => {
-            await xmppClient?.reconnect.stop()
-            await xmppClient?.stop()
-            dispatch(resetXmppClient())
-        }
         if (
             xmppClient &&
             websocketIsHealthy === false &&
             repairingWebsocket === true
         ) {
-            rebuildXmppClient()
+            dispatch(resetXmppClient())
         }
     }, [dispatch, repairingWebsocket, websocketIsHealthy, xmppClient])
 

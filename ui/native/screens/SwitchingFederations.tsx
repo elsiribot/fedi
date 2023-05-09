@@ -9,7 +9,11 @@ import {
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
-import { resetXmppClient, useChatContext } from '../state/contexts/ChatContext'
+import {
+    changeWebsocketIsHealthy,
+    resetXmppClient,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { MainNavigatorDrawerParamList } from '../types/navigation'
 
@@ -36,6 +40,7 @@ const SwitchingFederations: React.FC<Props> = ({
             previousActiveFederation &&
             federationId !== previousActiveFederation?.id
         ) {
+            dispatch(changeWebsocketIsHealthy(false))
             dispatch(resetXmppClient())
             reduxDispatch(setActiveFederationId(federationId))
             navigation.reset({
