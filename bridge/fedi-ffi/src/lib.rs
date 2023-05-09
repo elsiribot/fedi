@@ -757,43 +757,6 @@ mod tests {
         Ok(())
     }
 
-    // #[tokio::test(flavor = "multi_thread")]
-    // async fn test_personal_recovery() -> anyhow::Result<()> {
-    //     let (bridge, federation) = setup().await?;
-
-    //     // Get original mnemonic (for comparison later)
-    //     let words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
-    //     let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
-    //     info!("initial mnemnoic {:?}", &words);
-
-    //     let _username = recoverFromMnemonic(
-    //         bridge.clone(),
-    //         federation.federation_id().into(),
-    //         initial_mnemonic
-    //             .to_string()
-    //             .split(" ")
-    //             .map(|s| s.to_string())
-    //             .collect(),
-    //     )
-    //     .await?;
-    //     let words_after = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
-
-    //     assert_eq!(words, words_after);
-
-    //     Ok(())
-    // }
-
-    // #[tokio::test(flavor = "multi_thread")]
-    // async fn test_xmpp_credentials() -> anyhow::Result<()> {
-    //     let (_, fed1) = setup().await?;
-    //     let (_, fed2) = setup().await?;
-    //     let cred1 = fed1.xmpp_credentials().await;
-    //     let cred2 = fed2.xmpp_credentials().await;
-    //     // assert!(cred1.username != cred2.username);
-    //     assert!(cred1.password != cred2.password);
-    //     Ok(())
-    // }
-
     #[tokio::test(flavor = "multi_thread")]
     async fn test_leave_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
@@ -812,14 +775,6 @@ mod tests {
         }
         Ok(())
     }
-
-    // #[tokio::test(flavor = "multi_thread")]
-    // async fn test_modules() -> anyhow::Result<()> {
-    //     let (_, federation) = setup().await?;
-    //     let num_modules = federation.client.config().0.modules.keys().len();
-    //     assert_eq!(num_modules, 3);
-    //     Ok(())
-    // }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_ng() -> anyhow::Result<()> {
@@ -923,6 +878,51 @@ mod tests {
 
         Ok(())
     }
+
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_modules() -> anyhow::Result<()> {
+    //     let (_, federation) = setup().await?;
+    //     let num_modules = federation.client.config().0.modules.keys().len();
+    //     assert_eq!(num_modules, 3);
+    //     Ok(())
+    // }
+
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_xmpp_credentials() -> anyhow::Result<()> {
+    //     let (_, fed1) = setup().await?;
+    //     let (_, fed2) = setup().await?;
+    //     let cred1 = fed1.xmpp_credentials().await;
+    //     let cred2 = fed2.xmpp_credentials().await;
+    //     // assert!(cred1.username != cred2.username);
+    //     assert!(cred1.password != cred2.password);
+    //     Ok(())
+    // }
+
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn test_personal_recovery() -> anyhow::Result<()> {
+    //     let (bridge, federation) = setup().await?;
+
+    //     // Get original mnemonic (for comparison later)
+    //     let words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+    //     let initial_mnemonic = Mnemonic::parse(words.join(" "))?;
+    //     info!("initial mnemnoic {:?}", &words);
+
+    //     let _username = recoverFromMnemonic(
+    //         bridge.clone(),
+    //         federation.federation_id().into(),
+    //         initial_mnemonic
+    //             .to_string()
+    //             .split(" ")
+    //             .map(|s| s.to_string())
+    //             .collect(),
+    //     )
+    //     .await?;
+    //     let words_after = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+
+    //     assert_eq!(words, words_after);
+
+    //     Ok(())
+    // }
 
     // #[tokio::test(flavor = "multi_thread")]
     // async fn test_decryption_shares() -> anyhow::Result<()> {
