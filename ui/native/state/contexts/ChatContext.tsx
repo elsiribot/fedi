@@ -37,7 +37,7 @@ import {
 import { Group, Member, Message, XmppConnectionOptions } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { GetMessagesQuery } from '../../utils/XmlUtils'
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector, usePrevious } from '../hooks'
 import { publishPublicKey } from '../operations/chat'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -569,6 +569,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         selectChatConnectionOptions,
     )
 
+    const previousXmppClient = usePrevious(state.xmppClient)
+
     // Maintain state for the federation ID that we're currently writing to storage.
     // This prevents accidentally writing state to storage while changing federation IDs.
     const [loadedFederationId, setLoadedFederationId] = useState<
@@ -580,8 +582,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const shutdownXmppClient = useCallback(() => {
         const xmppClient = xmppClientRef.current
         if (!xmppClient) return
-        xmppClient.reconnect.stop()
-        xmppClient.stop()
+        console.info('shutting down xmpp client')
         dispatch(resetXmppClient())
     }, [xmppClientRef])
 
@@ -699,8 +700,25 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
     }, [state.xmppClient, shutdownXmppClient])
 
-    // This effect instantiates the XMPP client with a websocket connection
-    // and requires activeChatConnectionOptions with username + password
+    /**
+     *  This effect stops the XMPP connections in a previous XMPP client
+     * after resetXmppClient has been called
+     */
+    useEffect(() => {
+        if (previousXmppClient && state.xmppClient === null) {
+            console.info(
+                'shutting down previous xmpp client',
+                previousXmppClient?.entity.options,
+            )
+            previousXmppClient.reconnect.stop()
+            previousXmppClient.stop()
+        }
+    }, [previousXmppClient, state.xmppClient])
+
+    /**
+     *  This effect instantiates the XMPP client with a websocket connection
+     *  and requires activeChatConnectionOptions with username + password
+     */
     useEffect(() => {
         // If this is null, either there is no active federation
         // or the active federation does not have a chat server configured
