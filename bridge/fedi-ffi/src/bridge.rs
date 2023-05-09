@@ -32,7 +32,7 @@ use fedimint_core::{
     module::{registry::ModuleDecoderRegistry, ApiRequestErased},
     query::EventuallyConsistent,
 };
-use fedimint_ln_client::{LightningClientExt, LnPayState, LnReceiveState};
+use fedimint_ln_client::{LightningClientExt, LightningGateway, LnPayState, LnReceiveState};
 use fedimint_mint_client::MintClientModule;
 use serde_json::json;
 use url::Url;
@@ -361,7 +361,7 @@ impl Federation {
     }
 
     /// Create database transaction
-    async fn dbtx(&self) -> DatabaseTransaction<'_> {
+    pub async fn dbtx(&self) -> DatabaseTransaction<'_> {
         self.ng.db().begin_transaction().await
     }
 

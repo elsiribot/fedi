@@ -31,6 +31,7 @@ use fedimint_core::{
     module::registry::ModuleDecoderRegistry,
     TieredMulti,
 };
+use fedimint_ln_client::LightningClientExt;
 use fedimint_mint_client::SpendableNote;
 pub use tokio;
 
@@ -355,7 +356,22 @@ async fn listGateways(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<BridgeLightningGateway>> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let gateways = federation.ng.fetch_registered_gateways().await?;
+    let active_gateway = match federation.ng.fetch_active_gateway().await {
+        Ok(gw) => Some(gw),
+        Err(_) => None,
+    };
+    let bridge_gateways: Vec<BridgeLightningGateway> = gateways
+        .into_iter()
+        .map(|gw| BridgeLightningGateway {
+            api: gw.api.to_string(),
+            node_pub_key: gw.node_pub_key,
+            mint_pub_key: gw.mint_pub_key,
+            active: active_gateway == Some(gw),
+        })
+        .collect();
+    Ok(bridge_gateways)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -364,7 +380,13 @@ async fn switchGateway(
     federation_id: FederationId,
     node_pubkey: PublicKey,
 ) -> anyhow::Result<()> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let dbtx = federation.dbtx().await;
+    federation
+        .ng
+        .switch_active_gateway(Some(node_pubkey.0), dbtx)
+        .await?;
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
