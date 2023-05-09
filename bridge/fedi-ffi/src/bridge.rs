@@ -576,8 +576,17 @@ impl Federation {
 
     /// Sign LNURL message using a key derived from client secret
     /// TODO: use different key per "site"
-    pub fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
-        unimplemented!()
+    pub async fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
+        let secp = Secp256k1::new();
+        let root_secret = self.root_secret().await;
+        let lnurl_secret = root_secret.child_key(LNURL_CHILD_ID);
+        let lnurl_keypair = lnurl_secret.to_secp_key(&secp);
+        let lnurl_pubkey = lnurl_keypair.public_key();
+        let signature = secp.sign_ecdsa(msg, &lnurl_keypair.secret_key());
+        LnurlSignedMessage {
+            signature,
+            pubkey: types::PublicKey(lnurl_pubkey),
+        }
     }
 
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account

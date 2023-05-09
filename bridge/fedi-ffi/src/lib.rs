@@ -346,7 +346,7 @@ async fn lnurlSignMessage(
 ) -> anyhow::Result<LnurlSignedMessage> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let message = Message::from_slice(&hex::decode(message)?)?;
-    let signed_message = federation.sign_lnurl_message(&message);
+    let signed_message = federation.sign_lnurl_message(&message).await;
     Ok(signed_message)
 }
 
