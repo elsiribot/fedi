@@ -74,7 +74,7 @@ use lightning_invoice::Invoice;
 
 use fedimint_client_legacy::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, info_span, instrument, Instrument, Span};
+use tracing::{debug, error, info, info_span, instrument, warn, Instrument, Span};
 
 // Client NG
 use fedimint_client::Client as ClientNg;
@@ -713,7 +713,14 @@ impl Federation {
     /// Send whenever the balance or social recovery state changes
     pub async fn send_federation_event(&self) {
         // FIXME: should handle this result
-        let fedimint_federation = federation_to_fedimint_federation(&Arc::new(self.clone())).await;
+        let fedimint_federation =
+            match federation_to_fedimint_federation(&Arc::new(self.clone())).await {
+                Ok(fedimint_federation) => fedimint_federation,
+                Err(e) => {
+                    warn!("Failed to send 'federation' event {:?}", e);
+                    return;
+                }
+            };
         let event = Event::federation(fedimint_federation).await;
         self.event_sink.typed_event(&event);
     }

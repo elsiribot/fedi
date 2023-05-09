@@ -122,12 +122,17 @@ pub struct LnurlSignedMessage {
 }
 
 // FIXME: this used to be a From implementation, but total_amount needed async
-pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
+pub async fn federation_to_fedimint_federation(
+    federation: &Arc<Federation>,
+) -> anyhow::Result<FedimintFederation> {
     // FIXME: don't hardcode this
     let social_recovery_active = false;
     let balance = federation.ng_balance().await;
-    let client_config = federation.get_config().await.unwrap().client_config.0;
-    let federation_name = client_config.federation_name().unwrap().to_string();
+    let client_config = federation.get_config().await?.client_config.0;
+    let federation_name = client_config
+        .federation_name()
+        .ok_or(anyhow!("federation name not found"))?
+        .to_string();
     let meta = client_config.meta.clone();
     let nodes = client_config
         .api_endpoints
@@ -135,17 +140,15 @@ pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> 
         .iter()
         .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
         .collect();
-    // FIXME: this makes network call so it will be slow
-    let connect_info = federation.get_connect_info().await.unwrap().to_string();
-    FedimintFederation {
+    Ok(FedimintFederation {
         id: FederationId(federation.federation_id()),
         name: federation_name,
-        connect_info,
+        connect_info: "FIXME: call connectionString() method".to_string(),
         nodes,
         balance: Amount(balance),
         social_recovery_active,
         meta,
-    }
+    })
 }
 
 #[derive(Debug, Serialize, TS)]

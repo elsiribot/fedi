@@ -172,13 +172,22 @@ async fn joinFederation(
     info!("joining federation {:?}", connect_string);
     let federation = bridge.join_federation(connect_string).await?;
 
-    let fedimint_federation = federation_to_fedimint_federation(&federation).await;
+    let fedimint_federation = federation_to_fedimint_federation(&federation).await?;
     Ok(fedimint_federation)
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn connectionString(
+    bridge: Arc<Bridge>,
+    federation_id: FederationId,
+) -> anyhow::Result<String> {
+    let federation = get_federation(&bridge, &federation_id).await?;
+    Ok(federation.get_connect_info().await?.to_string())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn listFederations(bridge: Arc<Bridge>) -> anyhow::Result<Vec<FedimintFederation>> {
-    let federations: Vec<FedimintFederation> = futures::future::join_all(
+    futures::future::join_all(
         bridge
             .federations
             .lock()
@@ -186,8 +195,9 @@ async fn listFederations(bridge: Arc<Bridge>) -> anyhow::Result<Vec<FedimintFede
             .values()
             .map(|federation| federation_to_fedimint_federation(federation)),
     )
-    .await;
-    Ok(federations)
+    .await
+    .into_iter()
+    .collect()
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -543,6 +553,7 @@ rpc_methods!(RpcMethods {
     getMnemonic,
     recoverFromMnemonic,
     leaveFederation,
+    connectionString,
     // social
     uploadBackupFile,
     locateRecoveryFile,
