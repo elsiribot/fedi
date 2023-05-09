@@ -85,5 +85,5 @@ TODO:...
 Read android logs off emulator:
 
 ```
-adb -s <emulator> shell "run-as com.fedimintreactnative cat /data/user/0/com.fedimintreactnative/files/fedi.log" > fedi.log
+adb -s <emulator> shell "run-as com.fedi cat /data/user/0/com.fedi/files/fedi.log" > fedi.log
 ```

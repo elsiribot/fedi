@@ -1,4 +1,4 @@
-package com.fedimintreactnative
+package com.fedi
 
 import android.util.Log
 import com.facebook.react.bridge.*
