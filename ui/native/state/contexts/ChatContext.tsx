@@ -742,19 +742,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         buildXmppClient,
         state.xmppClient,
         activeChatConnectionOptions,
-        authenticatedMember?.username,
-        activeChatCredentials?.password,
+        authenticatedMember,
+        activeChatCredentials,
     ])
-
-    /*
-        This effect makes sure to tear down the XMPP connection when switching
-        to a federation without a chat server configured
-    */
-    useEffect(() => {
-        if (activeChatConnectionOptions === null && state.xmppClient !== null) {
-            shutdownXmppClient()
-        }
-    }, [activeChatConnectionOptions, state.xmppClient, shutdownXmppClient])
 
     const configureXmppMessageListeners = useCallback(() => {
         // Handlers for incoming messages
@@ -1038,7 +1028,10 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // to various kinds of XMPP stanzas sent by the server
     useEffect(() => {
         if (state.xmppClient !== null) {
-            console.info('setting up XMPP listeners')
+            console.info(
+                'setting up XMPP listeners for',
+                state.xmppClient?.entity.options,
+            )
             configureXmppMessageListeners()
             configureXmppQueryListeners()
         }
@@ -1153,7 +1146,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 restoreState('groups'),
             ]).then(([memberData, messageData, groupData]) => {
                 if (canceled) return
-                shutdownXmppClient()
                 const members = memberData ? memberData.members : []
                 const messages = messageData ? messageData.messages : []
                 const groups = groupData ? groupData.groups : []
