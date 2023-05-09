@@ -594,7 +594,10 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             password: string,
             connectionOptions: XmppConnectionOptions,
         ) => {
-            console.info('building persistent xmpp client')
+            console.info(
+                'building persistent xmpp client',
+                connectionOptions.service,
+            )
             try {
                 const xmppConnectionOptions = {
                     service: connectionOptions.service,
@@ -1146,6 +1149,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 restoreState('groups'),
             ]).then(([memberData, messageData, groupData]) => {
                 if (canceled) return
+                shutdownXmppClient()
                 const members = memberData ? memberData.members : []
                 const messages = messageData ? messageData.messages : []
                 const groups = groupData ? groupData.groups : []
