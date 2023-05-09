@@ -99,6 +99,7 @@ import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
 import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
+import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 import { useAppSelector } from './state/hooks'
@@ -720,6 +721,14 @@ const Router = ({ routingInstrumentation }: RouterProps) => {
                     name="MainNavigator"
                     component={MainNavigator}
                     options={{ headerShown: false }}
+                />
+                <Drawer.Screen
+                    name="SwitchingFederations"
+                    component={SwitchingFederations}
+                    initialParams={{ federationId: null }}
+                    options={{
+                        headerShown: false,
+                    }}
                 />
             </Drawer.Navigator>
         </NavigationContainer>

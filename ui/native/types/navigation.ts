@@ -23,13 +23,15 @@ export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
 export const TABS_NAVIGATOR_ID: any = 'TabsNavigator'
 
 export type RouteHook = RouteProp<RootStackParamList>
-export type DrawerNavigationHook = DrawerNavigationProp<ParamListBase>
+export type DrawerNavigationHook =
+    DrawerNavigationProp<MainNavigatorDrawerParamList>
 export type NavigationHook = NativeStackNavigationProp<RootStackParamList>
 export type NavigationLinkingConfig = LinkingOptions<
     RootStackParamList | MainNavigatorDrawerParamList
 >
 export type MainNavigatorDrawerParamList = {
     MainNavigator: undefined
+    SwitchingFederations: { federationId: string | null }
 }
 export type TabsNavigatorParamList = {
     Chat: undefined
