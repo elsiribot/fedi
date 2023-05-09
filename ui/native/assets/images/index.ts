@@ -9,7 +9,7 @@ export const Images: ImagesMap = {
     FediQrLogo: require('./fedi-qr-logo.png'),
     HoloBackground: require('./holo-background.jpg'),
     HoloBackgroundStrong: require('./holo-background-strong-900.png'),
-    IllustrationWorld: require('@fedi/common/assets/svgs/alarm.svg'),
+    IllustrationWorld: require('@fedi/common/assets/images/illustration-world.png'),
 }
 
 export const SiteImages: ImagesMap = {
