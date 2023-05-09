@@ -108,6 +108,7 @@ import {
     MAIN_NAVIGATOR_ID,
     NavigationLinkingConfig,
     RootStackParamList,
+    DRAWER_NAVIGATION_ID,
 } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -713,7 +714,7 @@ const Router = ({ routingInstrumentation }: RouterProps) => {
                 routingInstrumentation.registerNavigationContainer(navigation)
             }}>
             <Drawer.Navigator
-                id="ConnectedFederationsDrawer"
+                id={DRAWER_NAVIGATION_ID}
                 drawerContent={ConnectedFederationsDrawer}>
                 <Drawer.Screen
                     name="MainNavigator"
