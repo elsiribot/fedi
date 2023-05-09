@@ -1,3 +1,5 @@
+import type { Status } from '@xmpp/connection'
+
 import type { Invoice } from './fedimint'
 import type { MSats } from './units'
 
@@ -85,6 +87,8 @@ export interface ChatGroup extends Chat {
     invitationCode?: string
 }
 
+export type XmppClientStatus = Status
+
 export interface XmppCredentials {
     password: string
     keypairSeed: string
@@ -101,4 +105,18 @@ export interface XmppConnectionOptions {
     resource?: string
     // Websocket URL to connect to the Prosody chat server
     service?: string
+}
+
+export type ArchiveQueryFilters = {
+    withJid?: string | null
+}
+
+export type ArchiveQueryPagination = {
+    limit?: string | null
+    after?: string | null
+}
+
+export type MessageArchiveQuery = {
+    filters?: ArchiveQueryFilters | null
+    pagination?: ArchiveQueryPagination | null
 }

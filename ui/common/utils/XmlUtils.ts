@@ -39,7 +39,7 @@ class XmppMessage extends XmppStanza {
 class XmppPresence extends XmppStanza {
     tag = 'presence'
 }
-class XmppQuery extends XmppStanza {
+export class XmppQuery extends XmppStanza {
     tag = 'iq'
 }
 

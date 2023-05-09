@@ -3,6 +3,8 @@ import {
     PayloadAction,
     createSelector,
     createAsyncThunk,
+    ThunkDispatch,
+    AnyAction,
 } from '@reduxjs/toolkit'
 import { orderBy } from 'lodash'
 
@@ -19,11 +21,16 @@ import {
     Keypair,
     ChatType,
     XmppCredentials,
+    XmppClientStatus,
+    ArchiveQueryFilters,
+    ArchiveQueryPagination,
 } from '../types'
+import encryptionUtils from '../utils/EncryptionUtils'
 import {
     getFederationChatServerDomain,
     makeChatServerOptions,
 } from '../utils/FederationUtils'
+import { XmppChatClientManager } from '../utils/XmppChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
 import { loadFromStorage } from './storage'
@@ -32,16 +39,19 @@ type FederationPayloadAction<T = {}> = PayloadAction<
     { federationId: string } & T
 >
 
+const xmppChatClientManager = new XmppChatClientManager()
+
 /*** Initial State ***/
 
 const initialFederationChatState = {
+    clientStatus: 'disconnected' as XmppClientStatus,
+    clientError: null as string | null,
     authenticatedMember: null as ChatMember | null,
     credentials: null as XmppCredentials | null,
     messages: [] as ChatMessage[],
     groups: [] as ChatGroup[],
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
-    websocketIsHealthy: false as boolean,
     encryptionKeys: null as Keypair | null,
 }
 type FederationChatState = typeof initialFederationChatState
@@ -62,6 +72,29 @@ export const chatSlice = createSlice({
     name: 'chat',
     initialState,
     reducers: {
+        setChatClientStatus(
+            state,
+            action: FederationPayloadAction<{ status: XmppClientStatus }>,
+        ) {
+            const { federationId, status } = action.payload
+            const chatState = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...chatState,
+                clientStatus: status,
+                // Reset error on successful connection
+                clientError: status === 'online' ? null : chatState.clientError,
+            }
+        },
+        setChatClientError(
+            state,
+            action: FederationPayloadAction<{ error: string }>,
+        ) {
+            const { federationId, error } = action.payload
+            state[federationId] = {
+                ...getFederationChatState(state, federationId),
+                clientError: error,
+            }
+        },
         setChatMembersSeen(
             state,
             action: FederationPayloadAction<{ membersSeen: ChatMember[] }>,
@@ -209,7 +242,7 @@ export const chatSlice = createSlice({
             const federation = getFederationChatState(state, federationId)
             state[federationId] = {
                 ...federation,
-                credentials: action.payload,
+                ...action.payload,
             }
         })
 
@@ -240,6 +273,8 @@ export const chatSlice = createSlice({
 /*** Basic actions ***/
 
 export const {
+    setChatClientStatus,
+    setChatClientError,
     setChatMembersSeen,
     addChatMemberSeen,
     setChatMessages,
@@ -258,11 +293,14 @@ export const {
 /*** Async thunk actions ***/
 
 export const refreshChatCredentials = createAsyncThunk<
-    XmppCredentials,
+    { credentials: XmppCredentials; encryptionKeys: Keypair },
     { fedimint: FedimintBridge; federationId: string }
 >('chat/refreshChatCredentials', async ({ fedimint, federationId }) => {
     const credentials = await fedimint.getXmppCredentials(federationId)
-    return credentials
+    const encryptionKeys = encryptionUtils.generateDeterministicKeyPair(
+        credentials.keypairSeed,
+    )
+    return { credentials, encryptionKeys }
 })
 
 export const authenticateChat = createAsyncThunk<
@@ -283,12 +321,14 @@ export const authenticateChat = createAsyncThunk<
         // Fetch xmpp credentials if we don't have them
         let credentials = getState().chat[federationId]?.credentials
         if (forceCredentialRefresh || !credentials) {
-            credentials = await dispatch(
-                refreshChatCredentials({ fedimint, federationId }),
-            ).unwrap()
+            credentials = (
+                await dispatch(
+                    refreshChatCredentials({ fedimint, federationId }),
+                ).unwrap()
+            ).credentials
         }
-        const connectionOptions = selectChatConnectionOptions(getState())
 
+        const connectionOptions = selectChatConnectionOptions(getState())
         if (connectionOptions === null) {
             console.error('No chat connectionOptions for this federation')
             throw new Error('errors.chat-unavailable')
@@ -318,6 +358,210 @@ export const authenticateChat = createAsyncThunk<
         }
     },
 )
+
+export const connectChat = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>(
+    'chat/connectChat',
+    async ({ fedimint, federationId }, { getState, dispatch }) => {
+        // Assemble all necessary state for starting chat, throw if we are missing anything.
+        const state = getState()
+        const chatState = state.chat[federationId]
+        const federation = state.federation.federations.find(
+            f => f.id === federationId,
+        )
+
+        if (!federation) {
+            console.error(
+                `No federation found with id ${federationId}, cannot start chat`,
+            )
+            throw new Error('errors.chat-unavailable')
+        }
+
+        const chatDomain = getFederationChatServerDomain(federation.meta)
+        if (!chatDomain) {
+            console.info(`No chat domain configured for ${federationId}`)
+            throw new Error('errors.chat-unavailable')
+        }
+
+        const authenticatedMember = chatState?.authenticatedMember
+        if (!authenticatedMember) {
+            console.warn(
+                `No chat member informations was found for ${federationId}, cannot start chat`,
+            )
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Fetch xmpp credentials if we don't have them
+        const { credentials, encryptionKeys } = await getOrFetchCredentials(
+            fedimint,
+            federationId,
+            state,
+            dispatch,
+        )
+
+        // Start the client
+        const connectionOptions = makeChatServerOptions(chatDomain)
+        const client = xmppChatClientManager.getClient(federationId)
+        client.start({
+            service: connectionOptions.service,
+            resource: connectionOptions.resource,
+            username: authenticatedMember.username,
+            password: credentials.password,
+        })
+
+        let hasPublishedPubkey = false
+
+        // Bind listeners to dispatch actions
+        client.on('status', status => {
+            dispatch(setChatClientStatus({ federationId, status }))
+            // On first connection, publish pubkey
+            if (status === 'online' && !hasPublishedPubkey) {
+                client.publishPublicKey(encryptionKeys.publicKey)
+                hasPublishedPubkey
+            }
+        })
+        client.on('error', error => {
+            dispatch(setChatClientError({ federationId, error: error.message }))
+        })
+        client.on('message', message => {
+            dispatch(addChatMessage({ federationId, message }))
+        })
+        client.on('memberSeen', member => {
+            dispatch(addChatMemberSeen({ federationId, member }))
+        })
+    },
+)
+
+export const disconnectChat = createAsyncThunk<void, { federationId: string }>(
+    'chat/disconnectChat',
+    async ({ federationId }) => {
+        await xmppChatClientManager.destroyClient(federationId)
+    },
+)
+
+export const fetchChatHistory = createAsyncThunk<
+    string | null,
+    {
+        federationId: string
+        filters?: ArchiveQueryFilters
+        pagination?: ArchiveQueryPagination
+    }
+>(
+    'chat/fetchChatHistory',
+    ({ federationId, filters = null, pagination = null }) => {
+        const client = xmppChatClientManager.getClient(federationId)
+        return client.fetchMessageHistory(filters, pagination)
+    },
+)
+
+export const fetchChatMembers = createAsyncThunk<
+    ChatMember[],
+    { federationId: string }
+>('chat/fetchChatMembers', ({ federationId }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    return client.fetchMembers()
+})
+
+export const joinChatGroup = createAsyncThunk<
+    void,
+    { federationId: string; groupId: string }
+>('chat/joinChatGroup', ({ federationId, groupId }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    return client.joinGroup(groupId)
+})
+
+export const configureChatGroup = createAsyncThunk<
+    void,
+    { federationId: string; groupId: string; groupName: string }
+>('chat/editChatGroup', ({ federationId, groupId, groupName }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    return client.configureGroup(groupId, groupName)
+})
+
+export const sendDirectMessage = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        recipientId: string
+        message: ChatMessage
+        updatePayment?: boolean
+    },
+    { state: CommonState }
+>(
+    'chat/sendDirectMessage',
+    async (
+        { fedimint, federationId, recipientId, message, updatePayment },
+        { dispatch, getState },
+    ) => {
+        const state = getState()
+        const client = xmppChatClientManager.getClient(federationId)
+
+        // Get the recipient's pubkey, fetch it if we don't have it
+        const chatState = state.chat[federationId]
+        const recipientMember = chatState?.membersSeen.find(
+            m => m.id === recipientId,
+        )
+        let recipientPubkey: string
+        if (recipientMember?.publicKeyHex) {
+            recipientPubkey = recipientMember?.publicKeyHex
+        } else {
+            client.fetchMemberPublicKey(recipientId)
+            recipientPubkey = 'TODO: assign me somehow'
+        }
+
+        // Get or fetch credentials
+        const { encryptionKeys } = await getOrFetchCredentials(
+            fedimint,
+            federationId,
+            state,
+            dispatch,
+        )
+
+        return client.sendDirectMessage(
+            recipientId,
+            recipientPubkey,
+            message,
+            encryptionKeys,
+            updatePayment,
+        )
+    },
+)
+
+export const sendGroupMessage = createAsyncThunk<
+    void,
+    { federationId: string; groupId: string; message: ChatMessage }
+>('chat/sendGroupMessage', ({ federationId, groupId, message }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    return client.sendGroupMessage(groupId, message)
+})
+
+// Async thunk utility functions
+
+async function getOrFetchCredentials(
+    fedimint: FedimintBridge,
+    federationId: string,
+    state: CommonState,
+    dispatch: ThunkDispatch<CommonState, unknown, AnyAction>,
+) {
+    const chatState = state.chat[federationId]
+    let credentials: XmppCredentials
+    let encryptionKeys: Keypair
+    if (chatState?.credentials && chatState?.encryptionKeys) {
+        credentials = chatState.credentials
+        encryptionKeys = chatState.encryptionKeys
+    } else {
+        const res = await dispatch(
+            refreshChatCredentials({ fedimint, federationId }),
+        ).unwrap()
+        credentials = res.credentials
+        encryptionKeys = res.encryptionKeys
+    }
+    return { credentials, encryptionKeys }
+}
 
 /*** Selectors ***/
 
