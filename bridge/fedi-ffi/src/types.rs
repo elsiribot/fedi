@@ -123,37 +123,28 @@ pub struct LnurlSignedMessage {
 
 // FIXME: this used to be a From implementation, but total_amount needed async
 pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
-    // FIXME: make a mathod to get connect info
-    // let client_config_string =
-    //     serde_json::to_string(&client_config).expect("client config serializes");
-    let balance = federation.ng_balance().await;
-    // let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    // FIXME: don't hardcode this
     let social_recovery_active = false;
-
+    let balance = federation.ng_balance().await;
+    let client_config = federation.get_config().await.unwrap().client_config.0;
+    let federation_name = client_config.federation_name().unwrap().to_string();
+    let meta = client_config.meta.clone();
+    let nodes = client_config
+        .api_endpoints
+        .clone()
+        .iter()
+        .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
+        .collect();
+    // FIXME: this makes network call so it will be slow
+    let connect_info = federation.get_connect_info().await.unwrap().to_string();
     FedimintFederation {
         id: FederationId(federation.federation_id()),
-        name: "name".to_string(),
-        // FIXME: removed this
-        // connect_info: WsClientConnectInfo::from_str(&client_config_string)
-        //     .expect("can get connect info")
-        //     .to_string(),
-        connect_info: "foobar".to_string(),
-        // FIXME
-        // nodes: client_config.api_endpoints.map(|(peer_id, )),
-        // nodes: client_config
-        //     .api_endpoints
-        //     .iter()
-        //     .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
-        //     .collect(),
-        nodes: BTreeMap::new(),
+        name: federation_name,
+        connect_info,
+        nodes,
         balance: Amount(balance),
         social_recovery_active,
-        meta: BTreeMap::from([
-            ("federation_name".into(), "hacky-regtest-03".into()),
-            ("chat_server_domain".into(), "xmpp-05.dev.fedibtc.com".into()),
-            ("invite_codes_disabled".into(), "true".into()),
-        ]),
-        // meta: client_config.meta,
+        meta,
     }
 }
 

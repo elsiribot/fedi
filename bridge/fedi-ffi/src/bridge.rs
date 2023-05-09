@@ -24,13 +24,16 @@ use fedimint_client_fedi::{
     Client, FediClient, RecoveryFile, SocialRecovery, UserClientConfig, UserSeedPhrase,
 };
 use fedimint_core::{
+    api::FederationApiExt,
     config::{FederationId, META_FEDERATION_NAME_KEY},
     core::LEGACY_HARDCODED_INSTANCE_ID_MINT,
     db::IDatabase,
-    module::registry::ModuleDecoderRegistry,
+    module::{registry::ModuleDecoderRegistry, ApiRequestErased},
+    query::EventuallyConsistent,
 };
 use fedimint_ln_client::{LightningClientExt, LnPayState, LnReceiveState};
 use fedimint_mint_client::MintClientModule;
+use serde_json::json;
 use url::Url;
 
 use crate::{
@@ -377,6 +380,30 @@ impl Federation {
 
         tracing::info!("loading client");
         Self::from_config(fedi_config, dyn_db, event_sink, task_group).await
+    }
+
+    /// Fetch config from database
+    pub async fn get_config(&self) -> Result<FediConfig> {
+        let config = self
+            .dbtx()
+            .await
+            .get_value(&FediClientConfigKey)
+            .await
+            .context("config not present in db")?
+            .to_string();
+        let fedi_config: FediConfig = serde_json::from_str(&config).context("invalid config")?;
+        Ok(fedi_config)
+    }
+
+    /// Fetch connect code from guardian
+    pub async fn get_connect_info(&self) -> Result<WsClientConnectInfo> {
+        let api = self.ng.api();
+        let params = ApiRequestErased::new(serde_json::Value::Null);
+        let response = api
+            .request_raw(0.into(), "connection_code", &[params.to_json()])
+            .await?;
+        let connect_info = serde_json::from_value(response)?;
+        Ok(connect_info)
     }
 
     // FIXME: don't hardcode
