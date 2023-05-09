@@ -85,7 +85,6 @@ pub type FediUserClient = FediClient<UserClientConfig>;
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
-
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 
 /// override 127.0.0.1 if we're on android or ios
@@ -104,29 +103,7 @@ fn required_threashold_of(n: usize) -> usize {
     n - ((n - 1) / 3)
 }
 
-fn load_decoders(
-    cfg: &UserClientConfig,
-    module_gens: &ClientModuleGenRegistry,
-) -> ModuleDecoderRegistry {
-    ModuleDecoderRegistry::new(
-        cfg.clone()
-            .0
-            .modules
-            .into_iter()
-            .filter_map(|(id, module_cfg)| {
-                module_gens.get(module_cfg.kind()).map(|module_gen| {
-                    (
-                        id,
-                        module_cfg.kind().clone(),
-                        IClientModuleGen::decoder(AsRef::<dyn IClientModuleGen + 'static>::as_ref(
-                            module_gen,
-                        )),
-                    )
-                })
-            }),
-    )
-}
-
+/// Load federations from storage
 async fn load_federations(
     storage: &Storage,
     event_sink: EventSink,
@@ -141,7 +118,7 @@ async fn load_federations(
         .await;
     let iter = joined.iter().map(|(federation_id, _)| async {
         let subgroup = task_group.make_subgroup().await;
-        Federation::load(
+        Federation::from_db(
             storage.federation_db(&federation_id.0).await?,
             event_sink.clone(),
             subgroup,
@@ -151,6 +128,7 @@ async fn load_federations(
     futures::future::try_join_all(iter).await
 }
 
+/// This is instantiated once as a global. When RPC commands come in, this struct is used as a router to look up the federation and handle the RPC command using it.
 pub struct Bridge {
     pub storage: Storage,
     pub federations: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
@@ -165,7 +143,6 @@ impl Bridge {
         let mut federations_map = HashMap::new();
         let federations_vec = load_federations(&storage, event_sink.clone(), &task_group).await?;
 
-        // start pollers
         for federation in federations_vec.into_iter() {
             info!("bridge loading {:?}", federation.federation_id());
             federations_map.insert(federation.federation_id(), Arc::new(federation));
@@ -180,22 +157,13 @@ impl Bridge {
         Ok(bridge)
     }
 
-    pub async fn stop_pollers(&self) -> Result<()> {
-        self.task_group
-            .clone()
-            .shutdown_join_all(Some(Duration::from_secs(3)))
-            .await
-    }
-
+    /// Check if we've already joined a federation corresponding to a connection string
     pub async fn already_joined_federation(
         &self,
         connect_string: String,
     ) -> Result<Option<Arc<Federation>>> {
         let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
-        if std::env::consts::OS == "android" {
-            connect_cfg.url = override_localhost(&connect_cfg.url);
-        }
-        info!("already joined federation?: {}", connect_cfg.id);
+        connect_cfg.url = override_localhost(&connect_cfg.url);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
         let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
         let federations = self.federations.lock().await;
@@ -203,7 +171,9 @@ impl Bridge {
         Ok(federation)
     }
 
-    /// Adds federation to "federations" and starts polling (if we haven't already joined)
+    /// Joins federation from connection string
+    ///
+    /// Federation ID saved to global database, new rocksdb database created for it, and it is saved to local hashmap by ID
     pub async fn join_federation(&self, connect_string: String) -> Result<Arc<Federation>> {
         // If we've already joined, return the federation we have and skip joining
         if let Some(federation) = self
@@ -220,46 +190,29 @@ impl Bridge {
         )
         .await?;
         let federation_id = federation.federation_id();
-        tracing::info!("saving joined federaiton key");
         {
             let global_db = self.storage.global_db().await?;
             let mut dbtx = global_db.begin_transaction().await;
             dbtx.insert_entry(&JoinedFederation(federation_id), &())
                 .await;
             dbtx.commit_tx().await;
-            info!("saved joined")
+            info!("joined {federation_id} in global database")
         }
         let mut federations = self.federations.lock().await;
-        tracing::info!("starting pollers");
         if !federations.contains_key(&federation_id) {
             federations.insert(federation_id, Arc::new(federation.clone()));
         };
         Ok(Arc::new(federation))
     }
 
+    /// Look up federation by id from in-memory hashmap
     pub async fn get_federation(&self, federation_id: &FederationId) -> Option<Arc<Federation>> {
         let lock = self.federations.lock().await;
         lock.get(federation_id).map(|federation| federation.clone())
     }
 
-    pub async fn recover_from_mnemonic(
-        &self,
-        federation_id: &FederationId,
-        mnemonic: &Mnemonic,
-    ) -> Result<Option<String>> {
-        unimplemented!()
-    }
-
     /// Deletes federation client database and config
-    /// Returns error if use has a balance
     pub async fn leave_federation(&self, federation_id: &FederationId) -> anyhow::Result<()> {
-        info!("called leave");
-        // Error if we don't recognize federation
-        let federation = self
-            .get_federation(federation_id)
-            .await
-            .ok_or(anyhow!("Federation not found"))?;
-
         self.storage.delete_federation_db(federation_id).await?;
 
         // Remove from bridge state
@@ -267,15 +220,13 @@ impl Bridge {
         let mut lock = self.federations.lock().await;
         lock.remove(federation_id);
 
-        info!("done");
         Ok(())
     }
 }
 
-/// Should this have the poller reference?
+/// Federation is a wrapper of "client ng" to assist with handling RPC commands
 #[derive(Clone)]
 pub struct Federation {
-    // pub client: Arc<FediUserClient>,
     pub ng: Arc<ClientNg>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
@@ -283,7 +234,8 @@ pub struct Federation {
 }
 
 impl Federation {
-    pub async fn load(
+    /// Instantiate Federation from a federation-specific database
+    pub async fn from_db(
         db: Box<dyn IDatabase>,
         event_sink: EventSink,
         task_group: TaskGroup,
@@ -301,14 +253,13 @@ impl Federation {
         Self::from_config(fedi_config, db, event_sink, task_group).await
     }
 
+    /// Instantiate Federation from FediConfig
     pub async fn from_config(
         config: FediConfig,
         db: Box<dyn IDatabase>,
         event_sink: EventSink,
-        task_group: TaskGroup,
+        mut task_group: TaskGroup,
     ) -> anyhow::Result<Self> {
-        let gens = module_gens();
-
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
@@ -317,10 +268,7 @@ impl Federation {
         client_builder.with_config(config.client_config.clone().0);
         client_builder.with_dyn_database(db);
 
-        // FIXME: use real database
-        let mut task_group_clone = task_group.clone();
-        let ng = client_builder.build(&mut task_group_clone).await?;
-
+        let ng = client_builder.build(&mut task_group).await?;
         Ok(Self {
             ng: Arc::new(ng),
             event_sink,
@@ -338,37 +286,32 @@ impl Federation {
         task_group: TaskGroup,
     ) -> Result<Self> {
         // Download federation config
-        tracing::info!("parsing connection string");
         let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         connect_cfg.url = override_localhost(&connect_cfg.url);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
-        tracing::info!("fetching config");
         let mut cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
-        if std::env::consts::OS == "android" {
-            cfg.api_endpoints = cfg
-                .api_endpoints
-                .into_iter()
-                .map(|(peer_id, mut peer_url)| {
-                    peer_url.url = override_localhost(&peer_url.url);
-                    (peer_id, peer_url)
-                })
-                .collect();
-        };
+
+        // hack for local testing
+        cfg.api_endpoints = cfg
+            .api_endpoints
+            .into_iter()
+            .map(|(peer_id, mut peer_url)| {
+                peer_url.url = override_localhost(&peer_url.url);
+                (peer_id, peer_url)
+            })
+            .collect();
 
         let fedi_config = FediConfig {
             username: None,
             client_config: UserClientConfig(cfg),
         };
-
         let federation_id: FederationId = fedi_config.client_config.0.federation_id.clone();
 
-        tracing::info!("loading db");
+        // Save config to db
         let dyn_db = storage.federation_db(&federation_id).await?;
-        tracing::info!("loadeed db");
         let dbtx = dyn_db.begin_transaction().await;
         let notifications = Default::default();
         let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
-        // Save config to db
         {
             tracing::info!("saving config");
             dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
@@ -406,19 +349,22 @@ impl Federation {
         Ok(connect_info)
     }
 
-    // FIXME: don't hardcode
-    fn name(&self) -> String {
-        "halz trusty mint".to_string()
+    /// Get federation name
+    fn name(&self) -> Option<String> {
+        self.ng.get_meta("federation_name")
     }
 
+    /// Get federation ID
     pub fn federation_id(&self) -> FederationId {
         self.ng.federation_id()
     }
 
+    /// Create database transaction
     async fn dbtx(&self) -> DatabaseTransaction<'_> {
         self.ng.db().begin_transaction().await
     }
 
+    /// Fetch balance
     pub async fn ng_balance(&self) -> fedimint_core::Amount {
         let mint_client = self
             .ng
@@ -429,6 +375,8 @@ impl Federation {
             .await;
         summary.total_amount()
     }
+
+    /// Receive ecash
     pub async fn ng_receive_ecash(
         &self,
         ecash: TieredMulti<fedimint_mint_client::SpendableNote>,
@@ -452,6 +400,7 @@ impl Federation {
         Ok(amount)
     }
 
+    /// Generate ecash
     pub async fn ng_generate_ecash(
         &self,
         amount: Amount,
@@ -462,6 +411,7 @@ impl Federation {
         Ok(notes)
     }
 
+    /// Generate lightning invoice
     pub async fn ng_generate_invoice(
         &self,
         amount: fedimint_core::Amount,
@@ -483,6 +433,7 @@ impl Federation {
         Ok((operation_id, invoice))
     }
 
+    /// Subscribe to state updates for a given lightning invoice
     pub async fn ng_subscribe_invoice(
         &self,
         operation_id: OperationId,
@@ -520,6 +471,7 @@ impl Federation {
         Ok(())
     }
 
+    /// Pay lightning invoice
     pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
         let dbtx = self.ng.db().begin_transaction().await;
         let mut active_gateway = self.ng.fetch_active_gateway().await?;
@@ -552,12 +504,14 @@ impl Federation {
         return Err(anyhow::anyhow!("Lightning Payment failed"));
     }
 
+    /// Switch active lightning gateway
     pub async fn ng_switch_gateway(&self, pubkey: PublicKey) -> Result<()> {
         let dbtx = self.ng.db().begin_transaction().await;
         self.ng.switch_active_gateway(Some(pubkey), dbtx).await?;
         Ok(())
     }
 
+    /// Fetch operation history. This isn't really used yet.
     pub async fn ng_history(
         &self,
     ) -> Result<Vec<(ChronologicalOperationLogKey, OperationLogEntry)>> {
@@ -654,23 +608,28 @@ impl Federation {
         dbtx.commit_tx().await;
         // notify UI
         if send_event {
+            // send transaction event
             self.send_transaction_event(&tx);
+            // send balance update in the background
+            match self.name() {
+                Some(name) => {
+                    let fed = self.clone();
+                    self.task_group
+                        .clone()
+                        .spawn(
+                            format!(
+                                "post transaction ({}) federation update for {}",
+                                tx.id, name
+                            ),
+                            |_| async move {
+                                fed.send_federation_event().await;
+                            },
+                        )
+                        .await;
+                }
+                None => warn!("federation name not set, failed to send transaction notification"),
+            };
         }
-        // send balance update in the background
-        let fed = self.clone();
-        self.task_group
-            .clone()
-            .spawn(
-                format!(
-                    "post transaction ({}) federation update for {}",
-                    tx.id,
-                    fed.name()
-                ),
-                |_| async move {
-                    fed.send_federation_event().await;
-                },
-            )
-            .await;
     }
 
     /// Get transaction from DB
