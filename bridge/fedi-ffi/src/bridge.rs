@@ -9,6 +9,7 @@ use std::{
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
 use fedimint_client::{
     db::ChronologicalOperationLogKey,
+    get_client_root_secret,
     module::gen::{ClientModuleGenRegistry, IClientModuleGen},
     sm::OperationId,
     ClientBuilder, OperationLogEntry,
@@ -68,7 +69,7 @@ use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationA
 use fedimint_core::task::TaskHandle;
 use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
 use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
-use fedimint_derive_secret::ChildId;
+use fedimint_derive_secret::{ChildId, DerivableSecret};
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 
@@ -364,6 +365,11 @@ impl Federation {
         self.ng.db().begin_transaction().await
     }
 
+    /// Get client root secret
+    async fn root_secret(&self) -> DerivableSecret {
+        get_client_root_secret(self.ng.db()).await
+    }
+
     /// Fetch balance
     pub async fn ng_balance(&self) -> fedimint_core::Amount {
         let mint_client = self
@@ -577,9 +583,15 @@ impl Federation {
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
     /// after recovering wallet.
     pub async fn xmpp_credentials(&self) -> XmppCredentials {
+        let root_secret = self.root_secret().await;
+        let xmpp_secret = root_secret.child_key(XMPP_CHILD_ID);
+        let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
+        let keypair_seed_bytes: [u8; 32] =
+            xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
+
         XmppCredentials {
-            password: "password".to_string(),
-            keypair_seed: "keypair".to_string(),
+            password: hex::encode(&password_bytes),
+            keypair_seed: hex::encode(&keypair_seed_bytes),
         }
     }
 
