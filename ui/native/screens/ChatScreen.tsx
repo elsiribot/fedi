@@ -80,15 +80,6 @@ const ChatScreen: React.FC<Props> = () => {
         }
     }, [websocketIsHealthy, fetchRoster])
 
-    useEffect(() => {
-        if (websocketIsHealthy && encryptionKeys) {
-            // Here we make sure this public key is published for other users
-            // to subscribe to and encrypt messages sent to this user
-            const { publicKey } = encryptionKeys as Keypair
-            publishPublicKey(publicKey)
-        }
-    }, [encryptionKeys, publishPublicKey, websocketIsHealthy])
-
     return (
         <View style={styles(theme).container}>
             <ChatsList />
