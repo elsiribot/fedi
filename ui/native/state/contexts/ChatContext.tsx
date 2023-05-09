@@ -1065,13 +1065,19 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         if (
             state.xmppClient &&
+            state.xmppClient.jid &&
             authenticatedMember &&
             activeChatEncryptionKeys
         ) {
             const { publicKey } = activeChatEncryptionKeys as Keypair
             publishPublicKey(publicKey, state.xmppClient)
         }
-    }, [activeChatEncryptionKeys, authenticatedMember, state.xmppClient])
+    }, [
+        activeChatEncryptionKeys,
+        authenticatedMember,
+        state.xmppClient,
+        state.xmppClient?.jid,
+    ])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS
