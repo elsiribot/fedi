@@ -300,12 +300,15 @@ export const chatSlice = createSlice({
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
-            Object.entries(action.payload.chatIdentities).forEach(
-                ([federationId, chatIdentity]) => {
-                    if (!chatIdentity) return
+            Object.entries(action.payload.chat).forEach(
+                ([federationId, chatState]) => {
+                    if (!chatState) return
                     state[federationId] = {
                         ...getFederationChatState(state, federationId),
-                        authenticatedMember: chatIdentity,
+                        authenticatedMember: chatState.authenticatedMember,
+                        messages: chatState.messages,
+                        groups: chatState.groups,
+                        membersSeen: chatState.members,
                     }
                 },
             )
