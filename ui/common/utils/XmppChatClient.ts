@@ -1,5 +1,4 @@
 import {
-    Client,
     xml,
     client as xmppClient,
     Client as XmppClient,
@@ -8,9 +7,11 @@ import {
 import type { Status as XmppStatus } from '@xmpp/connection'
 import debug from '@xmpp/debug'
 import StanzaError from '@xmpp/middleware/lib/StanzaError'
+import parse from '@xmpp/xml/lib/parse'
 import EventEmitter from 'events'
 import type { Element } from 'ltx'
 
+import { XMPP_MESSAGE_TYPES } from '../constants/xmpp'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
@@ -19,6 +20,7 @@ import {
     Key,
     Keypair,
 } from '../types'
+import encryptionUtils from './EncryptionUtils'
 import xmlUtils, {
     EncryptedDirectChatMessage,
     EnterMucRoomPresence,
@@ -46,14 +48,20 @@ interface XmppChatClientEventMap {
  * convenient events and methods that are tailored to the Fedi chat use-case.
  */
 export class XmppChatClient {
-    xmpp!: ReturnType<typeof xmppClient>
     emitter = new EventEmitter()
     clients: Record<string, XmppClient | undefined> = {}
 
+    // We have to defer initiailizing these until `.start()` instead of in the
+    // constructor, so ignore uninitiailzed. Note that most any method will
+    // throw until `.start()` has been called.
+    xmpp!: ReturnType<typeof xmppClient>
+    encryptionKeys!: Keypair
+
     /*** Public methods ***/
 
-    start(options: XmppOptions) {
+    start(options: XmppOptions, encryptionKeys: Keypair) {
         this.xmpp = xmppClient(options)
+        this.encryptionKeys = encryptionKeys
         debug(this.xmpp)
 
         this.xmpp.on('status', this.handleStatus)
@@ -156,7 +164,7 @@ export class XmppChatClient {
                         .getChild('event')
                         ?.getChild('items')
                         ?.getChild('item')
-                        ?.getChild('entry')?.children[0]
+                        ?.getChildText('entry')
 
                     if (pubkey) {
                         resolve(pubkey.toString())
@@ -361,7 +369,7 @@ export class XmppChatClient {
                     updatePayment,
                 }),
             )
-            this.xmpp.send(encrypedDirectChatMessageXml)
+            await this.xmpp.send(encrypedDirectChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
             throw new Error('errors.unknown-error')
@@ -381,7 +389,7 @@ export class XmppChatClient {
                     message,
                 }),
             )
-            this.xmpp.send(groupChatMessageXml)
+            await this.xmpp.send(groupChatMessageXml)
         } catch (error) {
             console.error('sendGroupMessage', error)
             throw new Error('errors.unknown-error')
@@ -426,8 +434,145 @@ export class XmppChatClient {
         this.emit('online', address)
     }
 
-    private handleStanza = (element: Element) => {
-        console.log('xmpp stanza', element)
+    private handleStanza = (stanza: Element) => {
+        try {
+            // Messages
+            if (stanza.is('message')) {
+                switch (stanza.getAttr('type')) {
+                    // Handle incoming messages from GroupChat
+                    case XMPP_MESSAGE_TYPES.GROUPCHAT: {
+                        return this.handleIncomingGroupMessage(stanza)
+                    }
+                    // Handle incoming messages from DirectChat while online
+                    case XMPP_MESSAGE_TYPES.CHAT: {
+                        return this.handleIncomingDirectMessage(stanza)
+                    }
+                    // Handle incoming messages after subscribing to user
+                    // public key for e2e encryption
+                    case XMPP_MESSAGE_TYPES.HEADLINE: {
+                        return this.handleSubscriptionEvent(stanza)
+                    }
+                }
+                // Handle archive messages received while offline, typically
+                // triggered by the fetchMessagesFromArchive hook
+                if (
+                    stanza
+                        .getChild('result')
+                        ?.getAttr('queryid')
+                        .includes(GetMessagesQuery.id)
+                ) {
+                    return this.handleIncomingMessageHistory(stanza)
+                }
+            }
+
+            // Queries
+            if (stanza.is('iq')) {
+                if (stanza.getChild('query')?.getNS() === 'jabber:iq:roster') {
+                    return this.handleIncomingRoster(stanza)
+                }
+            }
+        } catch (err) {
+            console.error('Error parsing XMPP stanza', stanza, err)
+        }
+    }
+
+    private handleIncomingGroupMessage(stanza: Element) {
+        const bodyText = stanza.getChildText('body')
+        if (!bodyText) return
+
+        const groupMessageJson = stanza.getChildText('gm')
+        const parsedMessage = JSON.parse(groupMessageJson as string)
+        if (!parsedMessage) return
+
+        // Emit a 'message'
+        this.emit('message', { ...parsedMessage })
+
+        // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
+        const id = stanza.getAttr('from')?.split('@')[0]
+        if (id) {
+            this.emit('memberSeen', { id, username: id })
+        }
+    }
+
+    private handleIncomingDirectMessage(stanza: Element) {
+        const { parsedMessage } = this.decryptAndParseIncomingMessage(stanza)
+
+        // Emit a 'message'
+        this.emit('message', { ...parsedMessage })
+
+        // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
+        const id = stanza.getAttr('from')?.split('@')[0]
+        if (id) {
+            this.emit('memberSeen', { id, username: id })
+        }
+    }
+
+    private handleSubscriptionEvent(stanza: Element) {
+        const event = stanza.getChild('event')
+
+        const items = event?.getChild('items')
+        const nodeId = items?.getAttr('node') as string
+
+        const publishedItem = items?.getChild('item')
+        const publisherJid: string | undefined =
+            publishedItem?.getAttr('publisher')
+        if (!publisherJid) {
+            console.warn('subscription event did not have jid', stanza)
+            return
+        }
+
+        // if the node ID does not match the publisher JID... this pubkey
+        // was not published by Fedi source code...
+        // do not overwrite the locally stored pubkey for this member
+        // TODO: implement signature validation for authentication?
+        const publisherId = publisherJid.split('@')[0]
+        if (!nodeId.includes(publisherId)) {
+            console.warn('node ID does not match the publisher JID', stanza)
+            return
+        }
+
+        const pubkey = publishedItem?.getChildText('entry')
+        if (!pubkey) {
+            console.warn('subscription event did not have pubkey', stanza)
+            return
+        }
+
+        const publishingMember: ChatMember = {
+            id: publisherId,
+            username: publisherId,
+            publicKeyHex: pubkey,
+        }
+        console.info('publishingMember', publishingMember)
+
+        this.emit('memberSeen', publishingMember)
+    }
+
+    private handleIncomingMessageHistory(stanza: Element) {
+        const result = stanza.getChild('result')
+        const forwarded = result?.getChild('forwarded')
+        const message = forwarded?.getChild('message')
+        if (!message || message.getAttr('type') === 'error') return
+
+        const { parsedMessage } = this.decryptAndParseIncomingMessage(message)
+
+        // Emit a 'message'
+        this.emit('message', { ...parsedMessage })
+
+        // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
+        const id = message.getAttr('from')?.split('@')[0]
+        if (id) {
+            this.emit('memberSeen', { id, username: id })
+        }
+    }
+
+    private handleIncomingRoster(stanza: Element) {
+        const rosterItem = stanza.getChild('query')?.getChild('item')
+        if (!rosterItem) return
+
+        const id = rosterItem?.getAttr('jid')?.split('@')
+        if (id) {
+            this.emit('memberSeen', { id, username: id })
+        }
     }
 
     private handleError = (error: Error) => {
@@ -439,6 +584,60 @@ export class XmppChatClient {
         const { iqCaller, jid } = this.xmpp
         if (!jid) throw new Error('No JID')
         return { iqCaller, jid }
+    }
+
+    private decryptAndParseIncomingMessage(message: Element) {
+        let directMessageJson: string | null
+        let action: Element | undefined
+        const encrypted = message.getChild('encrypted')
+        if (encrypted) {
+            // First decrypt the payload
+            const header = encrypted.getChild('header')
+            const keys = header?.getChild('keys')
+            const senderPublicKey = keys?.getChildText('key')
+            if (!senderPublicKey) {
+                throw new Error('Missing sender public key')
+            }
+
+            let encryptedPayloadContents = encrypted.getChildText('payload')
+
+            const { privateKey, publicKey } = this.encryptionKeys
+
+            // If we sent this message, decrypt the backup-payload
+            // instead since we encrypted it to our own pubkey
+            if (senderPublicKey === publicKey.hex) {
+                encryptedPayloadContents =
+                    encrypted.getChildText('backup-payload')
+            }
+            const decryptedPayload = encryptionUtils.decryptMessage(
+                encryptedPayloadContents!,
+                { hex: senderPublicKey },
+                privateKey,
+            )
+
+            console.log({ decryptedPayload })
+            const decryptedEnvelope = parse(decryptedPayload)
+            console.log({ decryptedEnvelope })
+            const content = decryptedEnvelope.getChild('content')
+            if (!content) {
+                throw new Error('Missing content in decrypted envelope')
+            }
+            directMessageJson = content.getChildText('dm')
+            action = content.getChild('action')
+        } else {
+            // TODO: remove this... only left it in case it helps with
+            // backwards compatibility
+            directMessageJson = message.getChildText('dm')
+            action = message.getChild('action')
+        }
+
+        if (!directMessageJson) {
+            throw new Error('Missing message JSON in message content')
+        }
+
+        // TODO: Validate the message matches the shape?
+        const parsedMessage = JSON.parse(directMessageJson)
+        return { parsedMessage, action }
     }
 }
 

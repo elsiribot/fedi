@@ -6,7 +6,8 @@ import {
     ThunkDispatch,
     AnyAction,
 } from '@reduxjs/toolkit'
-import { orderBy } from 'lodash'
+import isEqual from 'lodash/isEqual'
+import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
 
 import {
@@ -69,6 +70,53 @@ const getFederationChatState = (state: ChatState, federationId: string) =>
         ...initialFederationChatState,
     }
 
+const upsertEntityToChatState = <
+    K extends 'messages' | 'groups' | 'membersSeen',
+    T extends FederationChatState[K][0],
+>(
+    state: ChatState,
+    federationId: string,
+    key: K,
+    newEntity: T,
+): ChatState => {
+    let addToEnd = true
+    let wasEqual = false
+    const chatState = getFederationChatState(state, federationId)
+
+    // Make a new list of entities with the new one updating the old one. Make
+    // note of if we find it (don't need to append) and if it was identical
+    // (don't need to update state at all.)
+    const entities = chatState[key].map(oldEntity => {
+        if (oldEntity.id !== newEntity.id) return oldEntity
+        if (oldEntity.id === newEntity.id) {
+            addToEnd = false
+            const updatedEntity = { ...oldEntity, ...newEntity }
+            wasEqual = isEqual(oldEntity, updatedEntity)
+            return updatedEntity
+        }
+    })
+
+    // If we went to update the old entity but found that it was equal to the new entity, we can return state
+    // exactly as it was and prevent unnecessary updates.
+    if (!addToEnd && wasEqual) {
+        return state
+    }
+
+    // If we didn't find the old one in the list, add the new one to the end of the list
+    if (addToEnd) {
+        entities.push(newEntity)
+    }
+
+    // Return updated state
+    return {
+        ...state,
+        [federationId]: {
+            ...chatState,
+            [key]: entities,
+        },
+    }
+}
+
 export const chatSlice = createSlice({
     name: 'chat',
     initialState,
@@ -111,13 +159,12 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{ member: ChatMember }>,
         ) {
             const { federationId, member } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            // Don't add self to list
-            if (member.id === federation.authenticatedMember?.id) return
-            state[federationId] = {
-                ...federation,
-                membersSeen: [...federation.membersSeen, member],
-            }
+            return upsertEntityToChatState(
+                state,
+                federationId,
+                'membersSeen',
+                member,
+            )
         },
         setChatMessages(
             state,
@@ -135,30 +182,12 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{ message: ChatMessage }>,
         ) {
             const { federationId, message } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                // TODO: Upsert repeat messages
-                messages: [...federation.messages, message],
-            }
-        },
-        updateChatMessage(
-            state,
-            action: FederationPayloadAction<{ message: ChatMessage }>,
-        ) {
-            const { federationId, message } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            const messages = federation.messages.map(m => {
-                if (m.id !== message.id) return m
-                return {
-                    ...m,
-                    ...message,
-                }
-            })
-            state[federationId] = {
-                ...federation,
-                messages,
-            }
+            return upsertEntityToChatState(
+                state,
+                federationId,
+                'messages',
+                message,
+            )
         },
         setChatGroups(
             state,
@@ -176,12 +205,7 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{ group: ChatGroup }>,
         ) {
             const { federationId, group } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                // TODO: Upsert repeat messages
-                groups: [...federation.groups, group],
-            }
+            return upsertEntityToChatState(state, federationId, 'groups', group)
         },
         setLastFetchedMessageId(
             state,
@@ -256,6 +280,24 @@ export const chatSlice = createSlice({
             }
         })
 
+        builder.addCase(sendDirectMessage.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'messages',
+                action.payload,
+            )
+        })
+
+        builder.addCase(sendGroupMessage.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'messages',
+                action.payload,
+            )
+        })
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             Object.entries(action.payload.chatIdentities).forEach(
@@ -280,7 +322,6 @@ export const {
     addChatMemberSeen,
     setChatMessages,
     addChatMessage,
-    updateChatMessage,
     setChatGroups,
     addChatGroup,
     setLastFetchedMessageId,
@@ -438,13 +479,16 @@ export const connectChat = createAsyncThunk<
 
         // Start the client
         const connectionOptions = makeChatServerOptions(chatDomain)
-        client.start({
-            domain: connectionOptions.domain,
-            service: connectionOptions.service,
-            resource: connectionOptions.resource,
-            username: authenticatedMember.username,
-            password: credentials.password,
-        })
+        client.start(
+            {
+                domain: connectionOptions.domain,
+                service: connectionOptions.service,
+                resource: connectionOptions.resource,
+                username: authenticatedMember.username,
+                password: credentials.password,
+            },
+            encryptionKeys,
+        )
     },
 )
 
@@ -495,7 +539,7 @@ export const configureChatGroup = createAsyncThunk<
 })
 
 export const sendDirectMessage = createAsyncThunk<
-    void,
+    ChatMessage,
     {
         fedimint: FedimintBridge
         federationId: string
@@ -539,7 +583,7 @@ export const sendDirectMessage = createAsyncThunk<
             throw new Error('errors.chat-unavailable')
         }
 
-        // Construct a message
+        // Construct and send message
         const message: ChatMessage = {
             content,
             id: uuidv4(),
@@ -547,24 +591,45 @@ export const sendDirectMessage = createAsyncThunk<
             sentBy: authenticatedMember.id,
             sentTo: recipientId,
         }
-
-        return client.sendDirectMessage(
+        await client.sendDirectMessage(
             recipientId,
             recipientPubkey,
             message,
             encryptionKeys,
             updatePayment,
         )
+        return message
     },
 )
 
 export const sendGroupMessage = createAsyncThunk<
-    void,
-    { federationId: string; groupId: string; message: ChatMessage }
->('chat/sendGroupMessage', ({ federationId, groupId, message }) => {
-    const client = xmppChatClientManager.getClient(federationId)
-    return client.sendGroupMessage(groupId, message)
-})
+    ChatMessage,
+    { federationId: string; groupId: string; content: string },
+    { state: CommonState }
+>(
+    'chat/sendGroupMessage',
+    async ({ federationId, groupId, content }, { getState }) => {
+        const client = xmppChatClientManager.getClient(federationId)
+
+        // Get our username
+        const authenticatedMember =
+            getState().chat[federationId]?.authenticatedMember
+        if (!authenticatedMember) {
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Construct and send message
+        const message: ChatMessage = {
+            content,
+            id: uuidv4(),
+            sentAt: Date.now(),
+            sentBy: authenticatedMember.id,
+            sentTo: groupId,
+        }
+        await client.sendGroupMessage(groupId, message)
+        return message
+    },
+)
 
 // Async thunk utility functions
 
