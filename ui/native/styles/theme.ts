@@ -44,11 +44,11 @@ const theme = createTheme({
                 opacity: 0.7,
             },
             /*
-                    For button loading states, since we cannot determine the width
-                    of the button unless it is set to fullWidth, we make the
-                    background transparent + ActivityIndicator primary color to avoid
-                    the effect of a button changing sizes when switching load states
-                */
+                For button loading states, since we cannot determine the width
+                of the button unless it is set to fullWidth, we make the
+                background transparent + ActivityIndicator primary color to avoid
+                the effect of a button changing sizes when switching load states
+            */
             loadingProps: {
                 color: theme.colors?.primary,
             },
