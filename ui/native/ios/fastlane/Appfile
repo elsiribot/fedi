@@ -1,4 +1,4 @@
-app_identifier("org.fedi.fedimintreactnative") # The bundle identifier of your app
+app_identifier("org.fedi.alpha") # The bundle identifier of your app
 apple_id("oscar@setlife.network") # Your Apple Developer Portal username
 
 itc_team_id("125743315") # App Store Connect Team ID

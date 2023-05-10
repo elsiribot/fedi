@@ -1,7 +1,7 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
     logger: {
-        level: 'debug'
+        level: 'debug',
     },
     testRunner: {
         args: {
@@ -16,14 +16,14 @@ module.exports = {
         'ios.debug': {
             type: 'ios.app',
             binaryPath:
-                'ios/build/Build/Products/Debug-iphonesimulator/FedimintReactNative.app',
-            build: 'xcodebuild -workspace ios/FedimintReactNative.xcworkspace -scheme FedimintReactNative -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+                'ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app',
+            build: 'xcodebuild -workspace ios/FediReactNative.xcworkspace -scheme FediReactNative -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
         },
         'ios.release': {
             type: 'ios.app',
             binaryPath:
-                'ios/build/Build/Products/Release-iphonesimulator/FedimintReactNative.app',
-            build: 'xcodebuild -workspace ios/FedimintReactNative.xcworkspace -scheme FedimintReactNative -configuration Release -sdk iphonesimulator -derivedDataPath ios/build',
+                'ios/build/Build/Products/Release-iphonesimulator/FediReactNative.app',
+            build: 'xcodebuild -workspace ios/FediReactNative.xcworkspace -scheme FediReactNative -configuration Release -sdk iphonesimulator -derivedDataPath ios/build',
         },
         'android.debug': {
             type: 'android.apk',

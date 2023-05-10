@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "FedimintReactNative.app"
-               BlueprintName = "FedimintReactNative"
-               ReferencedContainer = "container:FedimintReactNative.xcodeproj">
+               BuildableName = "FediReactNative.app"
+               BlueprintName = "FediReactNative"
+               ReferencedContainer = "container:FediReactNative.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "FedimintReactNativeTests.xctest"
-               BlueprintName = "FedimintReactNativeTests"
-               ReferencedContainer = "container:FedimintReactNative.xcodeproj">
+               BuildableName = "FediReactNativeTests.xctest"
+               BlueprintName = "FediReactNativeTests"
+               ReferencedContainer = "container:FediReactNative.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "FedimintReactNative.app"
-            BlueprintName = "FedimintReactNative"
-            ReferencedContainer = "container:FedimintReactNative.xcodeproj">
+            BuildableName = "FediReactNative.app"
+            BlueprintName = "FediReactNative"
+            ReferencedContainer = "container:FediReactNative.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "FedimintReactNative.app"
-            BlueprintName = "FedimintReactNative"
-            ReferencedContainer = "container:FedimintReactNative.xcodeproj">
+            BuildableName = "FediReactNative.app"
+            BlueprintName = "FediReactNative"
+            ReferencedContainer = "container:FediReactNative.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

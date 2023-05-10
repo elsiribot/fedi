@@ -7,11 +7,11 @@
 #define TIMEOUT_SECONDS 600
 #define TEXT_TO_LOOK_FOR @"Welcome to React"
 
-@interface FedimintReactNativeTests : XCTestCase
+@interface FediReactNativeTests : XCTestCase
 
 @end
 
-@implementation FedimintReactNativeTests
+@implementation FediReactNativeTests
 
 - (BOOL)findSubviewInView:(UIView *)view matching:(BOOL (^)(UIView *view))test
 {

@@ -64,7 +64,7 @@ If you are running an AArch64 Mac (M1/M2) and see an error when running `npm run
 yarn run ios-arm64
 ```
 
-If you still have trouble, open the `/ui/native/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
+If you still have trouble, open the `/ui/native/ios/FediReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
 
 ## Directory Structure
 

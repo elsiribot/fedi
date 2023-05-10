@@ -21,11 +21,11 @@ platform :ios do
     setup_ci
     match(type: 'appstore')
     build_app(
-      workspace: "FedimintReactNative.xcworkspace",
-      scheme: "FedimintReactNative",
+      workspace: "FediReactNative.xcworkspace",
+      scheme: "FediReactNative",
       export_options: {
         provisioningProfiles: {
-          "org.fedi.fedimintreactnative" => "match AppStore org.fedi.fedimintreactnative"
+          "org.fedi.alpha" => "match AppStore org.fedi.alpha"
         }
       }
     )
@@ -36,13 +36,14 @@ platform :ios do
   end
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    increment_build_number(xcodeproj: "FedimintReactNative.xcodeproj")
+    increment_build_number(xcodeproj: "FediReactNative.xcodeproj")
+    # pilot(api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json')
     build_app(
-      workspace: "FedimintReactNative.xcworkspace",
-      scheme: "FedimintReactNative",
+      workspace: "FediReactNative.xcworkspace",
+      scheme: "FediReactNative",
       export_options: {
         provisioningProfiles: {
-          "org.fedi.fedimintreactnative" => "match AppStore org.fedi.fedimintreactnative"
+          "org.fedi.alpha" => "match AppStore org.fedi.alpha"
         }
       }
     )
