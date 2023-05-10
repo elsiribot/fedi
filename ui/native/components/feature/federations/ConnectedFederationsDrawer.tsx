@@ -9,21 +9,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
-import {
-    selectActiveFederation,
-    selectFederations,
-    setActiveFederationId,
-} from '@fedi/common/redux'
+import { selectActiveFederation, selectFederations } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
-import {
-    useAppDispatch,
-    useAppSelector,
-    useBtcFiatPrice,
-} from '../../../state/hooks'
+import { useAppSelector, useBtcFiatPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -78,9 +70,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     props: DrawerContentComponentProps,
 ) => {
     const { t } = useTranslation()
-    const navigation = useNavigation<NavigationHook>()
+    const drawerNavigation = props.navigation
+    const mainNavigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
     const federations = useAppSelector(selectFederations)
 
@@ -101,7 +93,19 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         style={styles(theme).drawerItem}
                         focused={f.id === activeFederation?.id}
                         onPress={() => {
-                            dispatch(setActiveFederationId(f.id))
+                            // Dismiss drawer if active federation is clicked
+                            if (f.id === activeFederation?.id) {
+                                return drawerNavigation.closeDrawer()
+                            }
+                            drawerNavigation.reset({
+                                index: 0,
+                                routes: [
+                                    {
+                                        name: 'SwitchingFederations',
+                                        params: { federationId: f.id },
+                                    },
+                                ],
+                            })
                         }}
                     />
                 ))}
@@ -109,7 +113,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
             <Pressable
                 style={styles(theme).addFederationButton}
                 onPress={() => {
-                    navigation.navigate('ScanFederationCode')
+                    mainNavigation.navigate('ScanFederationCode')
                 }}>
                 <SvgImage name="Plus" />
                 <Text style={styles(theme).addFederationText}>

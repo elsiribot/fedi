@@ -37,7 +37,7 @@ import {
 import { Group, Member, Message, XmppConnectionOptions } from '../../types'
 import encryptionUtils from '../../utils/EncryptionUtils'
 import { GetMessagesQuery } from '../../utils/XmlUtils'
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector, usePrevious } from '../hooks'
 import { publishPublicKey } from '../operations/chat'
 
 export const DEFAULT_GROUPS: Group[] = [
@@ -569,6 +569,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         selectChatConnectionOptions,
     )
 
+    const previousXmppClient = usePrevious(state.xmppClient)
+
     // Maintain state for the federation ID that we're currently writing to storage.
     // This prevents accidentally writing state to storage while changing federation IDs.
     const [loadedFederationId, setLoadedFederationId] = useState<
@@ -580,8 +582,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const shutdownXmppClient = useCallback(() => {
         const xmppClient = xmppClientRef.current
         if (!xmppClient) return
-        xmppClient.reconnect.stop()
-        xmppClient.stop()
+        console.info('shutting down xmpp client')
+        dispatch(changeWebsocketIsHealthy(false))
         dispatch(resetXmppClient())
     }, [xmppClientRef])
 
@@ -593,7 +595,10 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             password: string,
             connectionOptions: XmppConnectionOptions,
         ) => {
-            console.info('building persistent xmpp client')
+            console.info(
+                'building persistent xmpp client',
+                connectionOptions.service,
+            )
             try {
                 const xmppConnectionOptions = {
                     service: connectionOptions.service,
@@ -699,8 +704,25 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
     }, [state.xmppClient, shutdownXmppClient])
 
-    // This effect instantiates the XMPP client with a websocket connection
-    // and requires activeChatConnectionOptions with username + password
+    /**
+     *  This effect stops the XMPP connections in a previous XMPP client
+     * after resetXmppClient has been called
+     */
+    useEffect(() => {
+        if (previousXmppClient && state.xmppClient === null) {
+            console.info(
+                'shutting down previous xmpp client',
+                previousXmppClient?.entity.options,
+            )
+            previousXmppClient.reconnect.stop()
+            previousXmppClient.stop()
+        }
+    }, [previousXmppClient, state.xmppClient])
+
+    /**
+     *  This effect instantiates the XMPP client with a websocket connection
+     *  and requires activeChatConnectionOptions with username + password
+     */
     useEffect(() => {
         // If this is null, either there is no active federation
         // or the active federation does not have a chat server configured
@@ -724,19 +746,9 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         buildXmppClient,
         state.xmppClient,
         activeChatConnectionOptions,
-        authenticatedMember?.username,
-        activeChatCredentials?.password,
+        authenticatedMember,
+        activeChatCredentials,
     ])
-
-    /*
-        This effect makes sure to tear down the XMPP connection when switching
-        to a federation without a chat server configured
-    */
-    useEffect(() => {
-        if (activeChatConnectionOptions === null && state.xmppClient !== null) {
-            shutdownXmppClient()
-        }
-    }, [activeChatConnectionOptions, state.xmppClient, shutdownXmppClient])
 
     const configureXmppMessageListeners = useCallback(() => {
         // Handlers for incoming messages
@@ -1020,7 +1032,10 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // to various kinds of XMPP stanzas sent by the server
     useEffect(() => {
         if (state.xmppClient !== null) {
-            console.info('setting up XMPP listeners')
+            console.info(
+                'setting up XMPP listeners for',
+                state.xmppClient?.entity.options,
+            )
             configureXmppMessageListeners()
             configureXmppQueryListeners()
         }
@@ -1051,13 +1066,19 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         if (
             state.xmppClient &&
+            state.xmppClient.jid &&
             authenticatedMember &&
             activeChatEncryptionKeys
         ) {
             const { publicKey } = activeChatEncryptionKeys as Keypair
             publishPublicKey(publicKey, state.xmppClient)
         }
-    }, [activeChatEncryptionKeys, authenticatedMember, state.xmppClient])
+    }, [
+        activeChatEncryptionKeys,
+        authenticatedMember,
+        state.xmppClient,
+        state.xmppClient?.jid,
+    ])
 
     // These effects handle saving any state that should persist after the app
     // is killed by the OS

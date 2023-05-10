@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 
 import {
     selectActiveFederation,
+    selectAuthenticatedMember,
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
 
@@ -25,6 +26,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     return (
         <View style={styles(theme).container}>
@@ -67,7 +69,10 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     title={t('feature.onboarding.join-new-member')}
                     onPress={() => {
-                        if (activeChatConnectionOptions) {
+                        if (
+                            activeChatConnectionOptions &&
+                            authenticatedMember === null
+                        ) {
                             navigation.navigate('CreateUsername')
                         } else {
                             navigation.navigate('TabsNavigator')

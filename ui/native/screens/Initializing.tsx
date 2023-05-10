@@ -2,15 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import {
     authenticateChat,
     changeAuthenticatedGuardian,
     refreshFederations,
+    selectActiveFederation,
+    selectAuthenticatedMember,
     setActiveFederationId,
-    setAuthenticatedMember,
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
@@ -31,6 +32,9 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { reset } = route.params
     const { connectionOptions } = useChatContext().state
+    const [usernameRequired, setUsernameRequired] = useState<boolean>(false)
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
@@ -40,46 +44,24 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     // after localstorage has been checked call refreshFederations
     // to get an updated list from the bridge
     useEffect(() => {
-        const initializeFederations = async () => {
-            const updatedFederations = await dispatch(
-                refreshFederations(fedimint),
-            ).unwrap()
-
+        const initializeChatFeatures = async () => {
+            console.info('initializeChatFeatures')
             const savedUsernames = await AsyncStorage.getItem(
                 `${FEDERATION_USERNAME_ID_DB_KEY}`,
             )
             if (savedUsernames) {
-                console.info('saved usernames found... restoring')
                 const usernameMap = JSON.parse(savedUsernames)
-
-                // Store any usernames found for federations other than
-                // the activeFederation so we can avoid triggering chat
-                // authentication for all federations
-                const inactiveFederations = updatedFederations.filter(
-                    f => f.id !== activeFederationId,
-                )
-                inactiveFederations.map(async f => {
-                    if (usernameMap[f.id]) {
-                        console.info('username found for federation', f.id)
-                        dispatch(
-                            setAuthenticatedMember({
-                                federationId: f.id,
-                                authenticatedMember: {
-                                    id: usernameMap[f.id],
-                                    username: usernameMap[f.id],
-                                },
-                            }),
-                        )
-                    }
-                })
+                console.info('saved usernames found... restoring', usernameMap)
 
                 // For the active federation, trigger chat authentication
-                // with the stored username
+                // with the stored username. Otherwise make sure usernameRequired
+                // is set to push the user to create one
                 if (usernameMap[activeFederationId!]) {
                     console.info(
                         'active federation',
                         activeFederationId,
                         'has a stored username... authenticating',
+                        usernameMap[activeFederationId!],
                     )
                     await dispatch(
                         authenticateChat({
@@ -90,28 +72,61 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     ).unwrap()
 
                     return navigation.replace('TabsNavigator')
+                } else {
+                    console.info(
+                        'no username found in localstorage for active federation',
+                        activeFederationId,
+                    )
+                    setUsernameRequired(true)
                 }
             }
-            // If there are no stored usernames for the active federation
-            // go to FederationWelcome to recover/create username
-            // or go to Home if no chat is available
-            if (connectionOptions) {
-                navigation.replace('FederationWelcome')
-            } else {
-                navigation.replace('TabsNavigator')
-            }
+        }
+        const initializeFederations = async () => {
+            await dispatch(refreshFederations(fedimint)).unwrap()
         }
         // activeFederationId should be null if there are 0 federations so
         // this should only ever be called once
-        if (activeFederationId && federations.length === 0) {
-            initializeFederations()
+        if (activeFederationId) {
+            if (federations.length === 0) {
+                initializeFederations()
+            }
+            if (connectionOptions && authenticatedMember === null) {
+                initializeChatFeatures()
+            }
         }
     }, [
         dispatch,
-        connectionOptions,
         activeFederationId,
+        authenticatedMember,
+        connectionOptions,
         federations.length,
         navigation,
+        federations,
+    ])
+
+    useEffect(() => {
+        // If there are no stored usernames for the active federation
+        // go to FederationWelcome to recover/create username
+        // or go to Home if no chat is available
+        if (activeFederation) {
+            if (connectionOptions === null) {
+                navigation.replace('TabsNavigator')
+            } else if (authenticatedMember !== null) {
+                navigation.replace('TabsNavigator')
+            } else if (
+                usernameRequired &&
+                connectionOptions &&
+                authenticatedMember === null
+            ) {
+                navigation.replace('FederationWelcome')
+            }
+        }
+    }, [
+        activeFederation,
+        authenticatedMember,
+        connectionOptions,
+        navigation,
+        usernameRequired,
     ])
 
     // this useEffect checks async storage to restore
@@ -128,12 +143,10 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
 
                     if (savedJson) {
                         // this logic must be reached to trigger any useEffects
-                        const { activeFederation } = savedJson
-                        console.log('saved federation', activeFederation)
-                        if (activeFederation?.id) {
-                            dispatch(
-                                setActiveFederationId(activeFederation?.id),
-                            )
+                        const savedFederation = savedJson.activeFederation
+                        console.log('saved federation', savedFederation)
+                        if (savedFederation?.id) {
+                            dispatch(setActiveFederationId(savedFederation?.id))
                             // load selected federation id from async storage
                             const savedGuardian = await AsyncStorage.getItem(
                                 AUTHENTICATED_GUARDIAN_DB_KEY,

@@ -48,7 +48,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
     if (!activeFederation) {
-        console.log({ activeFederation })
         navigation.navigate('Splash')
         return <View />
     }

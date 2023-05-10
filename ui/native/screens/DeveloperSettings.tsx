@@ -31,6 +31,12 @@ import {
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
+import {
+    receiveGroups,
+    receiveMembersSeen,
+    receiveMessages,
+    useChatContext,
+} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
@@ -46,6 +52,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
     const { toast } = useEnvironmentContext().state
+    const { dispatch: chatContextDispatch } = useChatContext()
     const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
@@ -56,7 +63,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     )
 
     // This is a partial refactor of state management from context to redux
-    const dispatch = useAppDispatch()
+    const reduxDispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
@@ -158,7 +165,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedFiatCurrency === SupportedCurrency.USD}
                     onPress={() =>
-                        dispatch(
+                        reduxDispatch(
                             changeSelectedFiatCurrency(SupportedCurrency.USD),
                         )
                     }
@@ -169,7 +176,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedFiatCurrency === SupportedCurrency.EUR}
                     onPress={() =>
-                        dispatch(
+                        reduxDispatch(
                             changeSelectedFiatCurrency(SupportedCurrency.EUR),
                         )
                     }
@@ -180,7 +187,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedFiatCurrency === SupportedCurrency.CFA}
                     onPress={() =>
-                        dispatch(
+                        reduxDispatch(
                             changeSelectedFiatCurrency(SupportedCurrency.CFA),
                         )
                     }
@@ -191,7 +198,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title={'Delete all groups, messages, & members seen'}
                 onPress={() => {
                     if (activeFederation) {
-                        dispatch(
+                        reduxDispatch(
                             resetFederationChatState({
                                 federationId: activeFederation.id,
                             }),
@@ -216,7 +223,8 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title={'Delete all groups'}
                 onPress={() => {
                     if (activeFederation) {
-                        dispatch(
+                        chatContextDispatch(receiveGroups([]))
+                        reduxDispatch(
                             setChatGroups({
                                 federationId: activeFederation.id,
                                 groups: [],
@@ -234,7 +242,8 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title={'Delete all messages'}
                 onPress={() => {
                     if (activeFederation) {
-                        dispatch(
+                        chatContextDispatch(receiveMessages([]))
+                        reduxDispatch(
                             setChatMessages({
                                 federationId: activeFederation.id,
                                 messages: [],
@@ -252,7 +261,8 @@ const DeveloperSettings: React.FC<Props> = () => {
                 title={'Delete all members seen'}
                 onPress={() => {
                     if (activeFederation) {
-                        dispatch(
+                        chatContextDispatch(receiveMembersSeen([]))
+                        reduxDispatch(
                             setChatMembersSeen({
                                 federationId: activeFederation.id,
                                 membersSeen: [],
@@ -269,7 +279,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                 size="sm"
                 title="Reset username"
                 onPress={() => {
-                    dispatch(
+                    reduxDispatch(
                         resetAuthenticatedMember({
                             federationId: activeFederation?.id!,
                         }),
@@ -312,7 +322,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     checkedColor={theme.colors.lightGrey}
                     uncheckedColor={theme.colors.red}
                     onPress={() => {
-                        dispatch(changeAuthenticatedGuardian(null))
+                        reduxDispatch(changeAuthenticatedGuardian(null))
                         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
                 />
@@ -329,7 +339,9 @@ const DeveloperSettings: React.FC<Props> = () => {
                                 authenticatedGuardian?.name === guardian.name
                             }
                             onPress={() => {
-                                dispatch(changeAuthenticatedGuardian(guardian))
+                                reduxDispatch(
+                                    changeAuthenticatedGuardian(guardian),
+                                )
                             }}
                         />
                     )
@@ -339,7 +351,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                         <Text small>{'Confirm guardian password'}</Text>
                         <Input
                             onChangeText={input => {
-                                dispatch(
+                                reduxDispatch(
                                     changeAuthenticatedGuardian({
                                         ...authenticatedGuardian,
                                         password: input,

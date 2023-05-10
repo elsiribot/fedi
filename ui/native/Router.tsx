@@ -99,6 +99,7 @@ import Splash from './screens/Splash'
 import StartPersonalBackup from './screens/StartPersonalBackup'
 import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
+import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 import { useAppSelector } from './state/hooks'
@@ -108,6 +109,7 @@ import {
     MAIN_NAVIGATOR_ID,
     NavigationLinkingConfig,
     RootStackParamList,
+    DRAWER_NAVIGATION_ID,
 } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -713,12 +715,20 @@ const Router = ({ routingInstrumentation }: RouterProps) => {
                 routingInstrumentation.registerNavigationContainer(navigation)
             }}>
             <Drawer.Navigator
-                id="ConnectedFederationsDrawer"
+                id={DRAWER_NAVIGATION_ID}
                 drawerContent={ConnectedFederationsDrawer}>
                 <Drawer.Screen
                     name="MainNavigator"
                     component={MainNavigator}
                     options={{ headerShown: false }}
+                />
+                <Drawer.Screen
+                    name="SwitchingFederations"
+                    component={SwitchingFederations}
+                    initialParams={{ federationId: null }}
+                    options={{
+                        headerShown: false,
+                    }}
                 />
             </Drawer.Navigator>
         </NavigationContainer>
