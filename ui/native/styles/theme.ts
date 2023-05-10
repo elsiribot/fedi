@@ -1,6 +1,7 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
-import { createTheme, lightColors } from '@rneui/themed'
-import { Dimensions } from 'react-native'
+import { ButtonProps, createTheme, lightColors } from '@rneui/themed'
+import { Dimensions, ViewStyle } from 'react-native'
+import LinearGradient from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
@@ -9,6 +10,20 @@ const dimensions = Dimensions.get('window')
 const colors = {
     ...lightColors,
     ...fediTheme.colors,
+}
+
+// The default background Button color is a nightHoloGradient so this
+// checks if any Button props were provided that should override the background
+const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
+    let defaultBackground = true
+    if (
+        props.type ||
+        props.color ||
+        (props.buttonStyle as ViewStyle)?.backgroundColor
+    ) {
+        defaultBackground = false
+    }
+    return defaultBackground
 }
 
 const theme = createTheme({
@@ -29,11 +44,11 @@ const theme = createTheme({
                 opacity: 0.7,
             },
             /*
-                For button loading states, since we cannot determine the width
-                of the button unless it is set to fullWidth, we make the
-                background transparent + ActivityIndicator primary color to avoid
-                the effect of a button changing sizes when switching load states
-            */
+                    For button loading states, since we cannot determine the width
+                    of the button unless it is set to fullWidth, we make the
+                    background transparent + ActivityIndicator primary color to avoid
+                    the effect of a button changing sizes when switching load states
+                */
             loadingProps: {
                 color: theme.colors?.primary,
             },
@@ -45,6 +60,16 @@ const theme = createTheme({
                       }
                     : {}),
             },
+            ...(shouldShowDefaultButtonBackground(props)
+                ? {
+                      ViewComponent: LinearGradient,
+                      linearGradientProps: {
+                          colors: fediTheme.nightHoloAmbientGradient,
+                          start: { x: 0, y: 0.75 },
+                          end: { x: 1, y: 0.95 },
+                      },
+                  }
+                : {}),
         }),
         Text: props => ({
             style: {
