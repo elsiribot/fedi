@@ -26,6 +26,8 @@ target 'FedimintReactNative' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  pod 'OpenSSL-Universal', :modular_headers => true, :configurations => ['Release']
+
   target 'FedimintReactNativeTests' do
     inherit! :complete
     # Pods for testing
