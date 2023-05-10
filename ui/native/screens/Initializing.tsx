@@ -53,27 +53,6 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                 const usernameMap = JSON.parse(savedUsernames)
                 console.info('saved usernames found... restoring', usernameMap)
 
-                // Store any usernames found for federations other than
-                // the activeFederation so we can avoid triggering chat
-                // authentication for all federations
-                // const inactiveFederations = federations.filter(
-                //     f => f.id !== activeFederationId,
-                // )
-                // inactiveFederations.map(async f => {
-                //     if (usernameMap[f.id]) {
-                //         console.info('username found for federation', f.id)
-                //         dispatch(
-                //             setAuthenticatedMember({
-                //                 federationId: f.id,
-                //                 authenticatedMember: {
-                //                     id: usernameMap[f.id],
-                //                     username: usernameMap[f.id],
-                //                 },
-                //             }),
-                //         )
-                //     }
-                // })
-
                 // For the active federation, trigger chat authentication
                 // with the stored username. Otherwise make sure usernameRequired
                 // is set to push the user to create one
