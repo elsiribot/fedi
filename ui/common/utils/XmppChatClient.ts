@@ -1,5 +1,6 @@
 import {
     Client,
+    xml,
     client as xmppClient,
     Client as XmppClient,
     Options as XmppOptions,
@@ -34,6 +35,7 @@ import xmlUtils, {
 
 interface XmppChatClientEventMap {
     status: XmppStatus
+    online: string
     message: ChatMessage
     memberSeen: ChatMember
     error: Error
@@ -44,20 +46,18 @@ interface XmppChatClientEventMap {
  * convenient events and methods that are tailored to the Fedi chat use-case.
  */
 export class XmppChatClient {
-    xmpp = xmppClient()
+    xmpp!: ReturnType<typeof xmppClient>
     emitter = new EventEmitter()
     clients: Record<string, XmppClient | undefined> = {}
-
-    constructor() {
-        this.xmpp = xmppClient()
-        debug(this.xmpp)
-    }
 
     /*** Public methods ***/
 
     start(options: XmppOptions) {
-        this.xmpp.options = options
+        this.xmpp = xmppClient(options)
+        debug(this.xmpp)
+
         this.xmpp.on('status', this.handleStatus)
+        this.xmpp.on('online', this.handleOnline)
         this.xmpp.on('stanza', this.handleStanza)
         this.xmpp.on('error', this.handleError)
         return this.xmpp.start().catch(this.handleError)
@@ -142,21 +142,46 @@ export class XmppChatClient {
     }
 
     async fetchMemberPublicKey(memberId: string) {
-        try {
-            const { iqCaller, jid } = this.getQueryProperties()
-            const getPubkeyQueryXml = xmlUtils.buildQuery(
-                new GetPublicKeyQuery({
-                    from: jid.toString(),
-                    to: `${memberId}@${jid.getDomain()}`,
-                }),
-            )
-            const result = await iqCaller.request(getPubkeyQueryXml)
-            console.debug('fetchMemberPublicKey', result.toString())
-            return true
-        } catch (error: any) {
-            console.error('fetchMemberPublicKey', error)
-            throw new Error('errors.unknown-error')
-        }
+        return new Promise<string>(async (resolve, reject) => {
+            try {
+                const { iqCaller, jid } = this.getQueryProperties()
+                const toJid = `${memberId}@${jid.getDomain()}`
+
+                const onStanzaReceived = (stanza: Element) => {
+                    if (!stanza.is('message')) return
+                    if (stanza.getAttr('from') !== toJid) return
+                    if (stanza.getAttr('type') !== 'headline') return
+
+                    const pubkey = stanza
+                        .getChild('event')
+                        ?.getChild('items')
+                        ?.getChild('item')
+                        ?.getChild('entry')?.children[0]
+
+                    if (pubkey) {
+                        resolve(pubkey.toString())
+                    } else {
+                        reject(
+                            new Error(
+                                `Failed to retrieve pubkey for ${memberId}`,
+                            ),
+                        )
+                    }
+                }
+                this.xmpp.on('stanza', onStanzaReceived)
+
+                const getPubkeyQueryXml = xmlUtils.buildQuery(
+                    new GetPublicKeyQuery({
+                        from: jid.toString(),
+                        to: toJid,
+                    }),
+                )
+                await iqCaller.request(getPubkeyQueryXml)
+            } catch (error: any) {
+                console.error('fetchMemberPublicKey', error)
+                reject(new Error('errors.unknown-error'))
+            }
+        })
     }
 
     async publishPublicKey(pubkey: Key) {
@@ -211,18 +236,14 @@ export class XmppChatClient {
                 const toGroup = `${groupId}@muc.${jid.getDomain()}`
 
                 const onStanzaReceived = (stanza: Element) => {
-                    if (
-                        !stanza.is('presence') ||
-                        !stanza.getAttr('id').includes(EnterMucRoomPresence.id)
-                    )
-                        return
+                    if (!stanza.is('event')) return
 
                     // Receive a registration response from the server
                     const result = stanza.getChild('x')
                     const statusResults = result?.getChildren('status')
                     if (!statusResults) {
-                        throw new Error(
-                            'No status results from presence stanza',
+                        return reject(
+                            new Error('No status results from presence stanza'),
                         )
                     }
 
@@ -378,14 +399,14 @@ export class XmppChatClient {
         eventName: TEventName,
         handler: (argument: XmppChatClientEventMap[TEventName]) => void,
     ) {
-        this.emitter.on(eventName, handler as any)
+        this.emitter.on(eventName, handler)
     }
 
     off<TEventName extends keyof XmppChatClientEventMap>(
         eventName: TEventName,
         handler: (argument: XmppChatClientEventMap[TEventName]) => void,
     ) {
-        this.emitter.off(eventName, handler as any)
+        this.emitter.off(eventName, handler)
     }
 
     removeAllListeners(event?: keyof XmppChatClientEventMap) {
@@ -394,16 +415,22 @@ export class XmppChatClient {
 
     /*** Private methods ***/
 
-    private handleStatus(status: XmppStatus) {
+    private handleStatus = (status: XmppStatus) => {
         console.log('xmpp status', status)
         this.emit('status', status)
     }
 
-    private handleStanza(element: Element) {
+    private handleOnline = (address: string) => {
+        console.log('xmpp online', address)
+        this.xmpp.send(xml('presence'))
+        this.emit('online', address)
+    }
+
+    private handleStanza = (element: Element) => {
         console.log('xmpp stanza', element)
     }
 
-    private handleError(error: Error) {
+    private handleError = (error: Error) => {
         console.error('xmpp error', error)
         this.emit('error', error)
     }

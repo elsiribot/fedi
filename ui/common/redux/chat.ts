@@ -7,6 +7,7 @@ import {
     AnyAction,
 } from '@reduxjs/toolkit'
 import { orderBy } from 'lodash'
+import { v4 as uuidv4 } from 'uuid'
 
 import {
     CommonState,
@@ -402,35 +403,47 @@ export const connectChat = createAsyncThunk<
             dispatch,
         )
 
+        // Get client & bind listeners to dispatch actions
+        const client = xmppChatClientManager.getClient(federationId)
+
+        client.on('status', async status => {
+            dispatch(setChatClientStatus({ federationId, status }))
+        })
+
+        client.on('error', error => {
+            dispatch(setChatClientError({ federationId, error: error.message }))
+        })
+
+        client.on('message', message => {
+            dispatch(addChatMessage({ federationId, message }))
+        })
+
+        client.on('memberSeen', member => {
+            dispatch(addChatMemberSeen({ federationId, member }))
+        })
+
+        // On first availability, publish pubkey
+        let hasPublishedPubkey = false
+        client.on('online', async () => {
+            if (!hasPublishedPubkey) {
+                try {
+                    hasPublishedPubkey = true
+                    await client.publishPublicKey(encryptionKeys.publicKey)
+                } catch (err) {
+                    console.error('Failed to publish public key', err)
+                    hasPublishedPubkey = false
+                }
+            }
+        })
+
         // Start the client
         const connectionOptions = makeChatServerOptions(chatDomain)
-        const client = xmppChatClientManager.getClient(federationId)
         client.start({
+            domain: connectionOptions.domain,
             service: connectionOptions.service,
             resource: connectionOptions.resource,
             username: authenticatedMember.username,
             password: credentials.password,
-        })
-
-        let hasPublishedPubkey = false
-
-        // Bind listeners to dispatch actions
-        client.on('status', status => {
-            dispatch(setChatClientStatus({ federationId, status }))
-            // On first connection, publish pubkey
-            if (status === 'online' && !hasPublishedPubkey) {
-                client.publishPublicKey(encryptionKeys.publicKey)
-                hasPublishedPubkey
-            }
-        })
-        client.on('error', error => {
-            dispatch(setChatClientError({ federationId, error: error.message }))
-        })
-        client.on('message', message => {
-            dispatch(addChatMessage({ federationId, message }))
-        })
-        client.on('memberSeen', member => {
-            dispatch(addChatMemberSeen({ federationId, member }))
         })
     },
 )
@@ -487,14 +500,14 @@ export const sendDirectMessage = createAsyncThunk<
         fedimint: FedimintBridge
         federationId: string
         recipientId: string
-        message: ChatMessage
+        content: string
         updatePayment?: boolean
     },
     { state: CommonState }
 >(
     'chat/sendDirectMessage',
     async (
-        { fedimint, federationId, recipientId, message, updatePayment },
+        { fedimint, federationId, recipientId, content, updatePayment },
         { dispatch, getState },
     ) => {
         const state = getState()
@@ -509,8 +522,7 @@ export const sendDirectMessage = createAsyncThunk<
         if (recipientMember?.publicKeyHex) {
             recipientPubkey = recipientMember?.publicKeyHex
         } else {
-            client.fetchMemberPublicKey(recipientId)
-            recipientPubkey = 'TODO: assign me somehow'
+            recipientPubkey = await client.fetchMemberPublicKey(recipientId)
         }
 
         // Get or fetch credentials
@@ -520,6 +532,21 @@ export const sendDirectMessage = createAsyncThunk<
             state,
             dispatch,
         )
+
+        // Get our username
+        const authenticatedMember = chatState?.authenticatedMember
+        if (!authenticatedMember) {
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Construct a message
+        const message: ChatMessage = {
+            content,
+            id: uuidv4(),
+            sentAt: Date.now(),
+            sentBy: authenticatedMember.id,
+            sentTo: recipientId,
+        }
 
         return client.sendDirectMessage(
             recipientId,
