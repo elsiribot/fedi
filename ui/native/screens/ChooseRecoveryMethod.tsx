@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
 import { selectActiveFederation } from '@fedi/common/redux'
+import { shouldShowSocialRecovery } from '@fedi/common/utils/FederationUtils'
 
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
@@ -30,6 +31,9 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const showSocialRecovery =
+        activeFederation && shouldShowSocialRecovery(activeFederation.meta)
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
@@ -37,23 +41,31 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
                     federation: activeFederation?.name,
                 })}
             </Text>
-
-            <HoloCard
-                iconImage={<SvgImage name="SocialPeople" />}
-                title={t('feature.recovery.social-recovery')}
-                body={
-                    <>
-                        <Text style={styles(theme).recoveryMethodInstructions}>
-                            {t('feature.recovery.social-recovery-method')}
-                        </Text>
-                        <Button
-                            title={t('feature.recovery.start-social-recovery')}
-                            containerStyle={styles(theme).recoveryMethodButton}
-                            onPress={onChooseSocialRecovery}
-                        />
-                    </>
-                }
-            />
+            {showSocialRecovery && (
+                <HoloCard
+                    iconImage={<SvgImage name="SocialPeople" />}
+                    title={t('feature.recovery.social-recovery')}
+                    body={
+                        <>
+                            <Text
+                                style={
+                                    styles(theme).recoveryMethodInstructions
+                                }>
+                                {t('feature.recovery.social-recovery-method')}
+                            </Text>
+                            <Button
+                                title={t(
+                                    'feature.recovery.start-social-recovery',
+                                )}
+                                containerStyle={
+                                    styles(theme).recoveryMethodButton
+                                }
+                                onPress={onChooseSocialRecovery}
+                            />
+                        </>
+                    }
+                />
+            )}
             <LineBreak />
             <HoloCard
                 iconImage={<SvgImage name="Note" />}

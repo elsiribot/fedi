@@ -4,14 +4,16 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
+import { selectFederationMetadata } from '@fedi/common/redux'
 import type { Invoice, TransactionEvent } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { shouldShowOnchainDeposits } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -22,6 +24,8 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { generateAddress } = useBridge()
     const { uri } = route.params
+    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
+
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
         BitcoinOrLightning.lightning,
@@ -137,6 +141,10 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         return unsubscribe
     }, [transactionEventHandler])
 
+    const showOnchainDeposits =
+        activeFederationMetadata &&
+        shouldShowOnchainDeposits(activeFederationMetadata)
+
     if (!decodedUri.body) {
         return <ActivityIndicator />
     }
@@ -147,25 +155,27 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                 TODO: Re-enable lightning-onchain switcher
                 when onchain deposits on mainnet are fixed
             */}
-            <Pressable
-                // style={styles(theme).switchContainer}
-                // onPress={() =>
-                //     requestType === BitcoinOrLightning.lightning
-                //         ? setRequestType(BitcoinOrLightning.bitcoin)
-                //         : setRequestType(BitcoinOrLightning.lightning)
-                // }>
-                style={[styles(theme).switchContainer, { opacity: 0 }]}>
-                <Text caption>
-                    {requestType === BitcoinOrLightning.lightning
-                        ? t('words.lightning')
-                        : t('words.onchain')}
-                </Text>
-                {requestType === BitcoinOrLightning.lightning ? (
-                    <SvgImage name="SwitchLeft" />
-                ) : (
-                    <SvgImage name="SwitchRight" />
-                )}
-            </Pressable>
+            {showOnchainDeposits && (
+                <Pressable
+                    style={styles(theme).switchContainer}
+                    onPress={() =>
+                        requestType === BitcoinOrLightning.lightning
+                            ? setRequestType(BitcoinOrLightning.bitcoin)
+                            : setRequestType(BitcoinOrLightning.lightning)
+                    }>
+                    <Text caption>
+                        {requestType === BitcoinOrLightning.lightning
+                            ? t('words.lightning')
+                            : t('words.onchain')}
+                    </Text>
+                    {requestType === BitcoinOrLightning.lightning ? (
+                        <SvgImage name="SwitchLeft" />
+                    ) : (
+                        <SvgImage name="SwitchRight" />
+                    )}
+                </Pressable>
+            )}
+
             <View style={styles(theme).detailsContainer}>
                 {requestAmount && (
                     <>
