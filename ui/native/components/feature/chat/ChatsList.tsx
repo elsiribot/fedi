@@ -4,11 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { makePaymentText } from '@fedi/native/utils/ChatUtils'
-
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Chat, ChatType, Group, Member, Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
+import { makePaymentText } from '../../../utils/ChatUtils'
 import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
