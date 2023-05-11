@@ -1,4 +1,4 @@
-import { MSats } from './units'
+import { MSats, MsatsString } from './units'
 
 export type LogEvent = {
     log: string
@@ -108,16 +108,26 @@ export enum SupportedCurrency {
 
 export enum SupportedFeature {
     default_currency = 'default_currency',
-    invite_codes_disabled = 'invite_codes_disabled',
     chat_server_domain = 'chat_server_domain',
+    invite_codes_disabled = 'invite_codes_disabled',
+    social_recovery_disabled = 'social_recovery_disabled',
+    offline_wallet_disabled = 'offline_wallet_disabled',
+    onchain_deposits_disabled = 'onchain_deposits_disabled',
+    max_invoice_msats = 'max_invoice_msats',
 }
 
 export interface ClientConfigMetadata {
     chat_server_domain?: string
     default_currency?: SupportedCurrency
-    // TODO: This is a boolean true/false but client config meta only
-    // supports strings currently so will need to refactor
+    // TODO: client config meta only supports strings currently so
+    // will need to refactor these:
+    // 1. switch to boolean true/false
     invite_codes_disabled?: string
+    social_recovery_disabled?: string
+    offline_wallet_disabled?: string
+    onchain_deposits_disabled?: string
+    // 2. switch to MSats (number)
+    max_invoice_msats?: MsatsString
 }
 
 export interface Federation {
