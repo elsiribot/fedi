@@ -23,7 +23,7 @@ export const getSupportedFeatures = (
 
 export const getFederationDefaultCurrency = (
     metadata: ClientConfigMetadata,
-): SupportedCurrency => {
+): SupportedCurrency | null => {
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )
@@ -31,7 +31,7 @@ export const getFederationDefaultCurrency = (
         return metadata?.default_currency as SupportedCurrency
     }
 
-    return SupportedCurrency.USD
+    return null
 }
 
 export const getFederationChatServerDomain = (

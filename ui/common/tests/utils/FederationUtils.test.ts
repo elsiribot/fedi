@@ -67,12 +67,12 @@ describe('FederationUtils', () => {
 
             expect(defaultCurrency).toEqual(SupportedCurrency.EUR)
         })
-        it('returns USD as default if not supported', () => {
+        it('returns null if not supported', () => {
             const defaultCurrency = getFederationDefaultCurrency(
                 fedWithNoMetadata.meta,
             )
 
-            expect(defaultCurrency).toEqual(SupportedCurrency.USD)
+            expect(defaultCurrency).toBeNull()
         })
     })
     describe('shouldShowInviteCode', () => {
