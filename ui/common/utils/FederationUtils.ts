@@ -59,6 +59,8 @@ export const makeChatServerOptions = (
     return options
 }
 
+// The utils below all involve the same inverse default logic where they
+// should return true unless explicitly disabled via feature flag
 export const shouldShowInviteCode = (
     metadata: ClientConfigMetadata,
 ): boolean => {
@@ -69,6 +71,50 @@ export const shouldShowInviteCode = (
         // This is a boolean true/false but client config meta only
         // supports strings currently so will need to refactor
         return metadata.invite_codes_disabled === 'true' ? false : true
+    }
+    return true
+}
+
+export const shouldShowSocialRecovery = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.social_recovery_disabled)) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.social_recovery_disabled === 'true' ? false : true
+    }
+    return true
+}
+
+export const shouldShowOfflineWallet = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.offline_wallet_disabled)) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.social_recovery_disabled === 'true' ? false : true
+    }
+    return true
+}
+
+export const shouldShowOnchainDeposits = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (
+        supportedFeatures.includes(SupportedFeature.onchain_deposits_disabled)
+    ) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.social_recovery_disabled === 'true' ? false : true
     }
     return true
 }
