@@ -38,7 +38,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         } else {
             setAmountIsValid(true)
         }
-    }, [amount])
+    }, [amount, maxReceiveAmount])
 
     useEffect(() => {
         const createNewInvoice = async () => {

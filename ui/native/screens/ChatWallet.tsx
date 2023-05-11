@@ -12,7 +12,6 @@ import {
 } from '@fedi/common/redux'
 import { Keypair, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { getFederationMaxInvoiceMsats } from '@fedi/common/utils/FederationUtils'
 
 import AmountInput from '../components/ui/AmountInput'
 import {
