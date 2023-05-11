@@ -5,12 +5,14 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectMaxReceiveAmount,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
 import SvgImage from '../components/ui/SvgImage'
-import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import { Sats } from '../types'
@@ -25,6 +27,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
@@ -61,7 +64,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
+        if (maxReceiveAmount && updatedValue > maxReceiveAmount) {
             toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
         } else {
             toast?.close(0)

@@ -1,6 +1,7 @@
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
+    MSats,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
@@ -57,6 +58,20 @@ export const makeChatServerOptions = (
     }
 
     return options
+}
+
+export const getFederationMaxInvoiceMsats = (
+    metadata: ClientConfigMetadata,
+): MSats | null => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.max_invoice_msats)) {
+        // This should just be a number but client config meta only
+        // supports strings currently so will need to refactor
+        return Number(metadata?.max_invoice_msats) as MSats
+    }
+    return null
 }
 
 // The utils below all involve the same inverse default logic where they

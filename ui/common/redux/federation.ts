@@ -7,6 +7,8 @@ import {
 
 import { authenticateChat, CommonState } from '.'
 import type { Federation, FederationEvent, Guardian, SeedWords } from '../types'
+import amountUtils from '../utils/AmountUtils'
+import { getFederationMaxInvoiceMsats } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
 
@@ -151,5 +153,21 @@ export const selectFederationMetadata = createSelector(
     selectActiveFederation,
     activeFederation => {
         return activeFederation ? activeFederation.meta : {}
+    },
+)
+
+// For now we set a safe default of 200K sats maximum unless otherwise
+// specified by the federation feature flags. At some points we probably
+// can remove this hard-coded value altogether
+const MAX_INVOICE_AMOUNT_SATS = 20000
+
+export const selectMaxReceiveAmount = createSelector(
+    selectFederationMetadata,
+    metadata => {
+        const maxInvoiceMsats =
+            metadata && getFederationMaxInvoiceMsats(metadata)
+        return maxInvoiceMsats
+            ? amountUtils.msatToSat(maxInvoiceMsats)
+            : MAX_INVOICE_AMOUNT_SATS
     },
 )
