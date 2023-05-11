@@ -13,7 +13,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const [page, setPage] = useState<number>(1)
 
     const handleJoinFederation = async () => {
         navigation.navigate('ScanFederationCode')
