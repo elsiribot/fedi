@@ -29,7 +29,7 @@ const HoloLoader: React.FC<Props> = ({ label }: Props) => {
                 easing: Easing.ease,
             }),
         ).start()
-    }, [])
+    }, [animatedSpin])
 
     const spinInterpolation = animatedSpin.interpolate({
         inputRange: [0, 1],
