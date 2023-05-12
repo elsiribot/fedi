@@ -1,6 +1,7 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
-import { createTheme, lightColors } from '@rneui/themed'
-import { Dimensions } from 'react-native'
+import { ButtonProps, createTheme, lightColors } from '@rneui/themed'
+import { Dimensions, ViewStyle } from 'react-native'
+import LinearGradient from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
@@ -9,6 +10,20 @@ const dimensions = Dimensions.get('window')
 const colors = {
     ...lightColors,
     ...fediTheme.colors,
+}
+
+// The default background Button color is a nightHoloGradient so this
+// checks if any Button props were provided that should override the background
+const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
+    let defaultBackground = true
+    if (
+        props.type ||
+        props.color ||
+        (props.buttonStyle as ViewStyle)?.backgroundColor
+    ) {
+        defaultBackground = false
+    }
+    return defaultBackground
 }
 
 const theme = createTheme({
@@ -45,6 +60,16 @@ const theme = createTheme({
                       }
                     : {}),
             },
+            ...(shouldShowDefaultButtonBackground(props)
+                ? {
+                      ViewComponent: LinearGradient,
+                      linearGradientProps: {
+                          colors: fediTheme.nightHoloAmbientGradient,
+                          start: { x: 0, y: 0.75 },
+                          end: { x: 1, y: 0.95 },
+                      },
+                  }
+                : {}),
         }),
         Text: props => ({
             style: {
@@ -122,7 +147,7 @@ const theme = createTheme({
         defaultHoloGradient: 32,
         holoGuidanceCircle: 180,
         progressBarHeight: 6,
-        progressCircleThickness: 3,
+        progressCircleThickness: 5,
         progressCircle: dimensions.height * 0.25,
         progressInnerCircle: dimensions.height * 0.25 - 10,
         maxMessageWidth: dimensions.width * 0.75,
@@ -132,6 +157,7 @@ const theme = createTheme({
         recordButtonInner: 56,
         socialBackupCameraWidth: dimensions.width * 0.9,
         socialBackupCameraHeight: dimensions.height * 0.4,
+        splashImageSize: 230,
         splashLogoHeight: 32,
         splashLogoWidth: 120,
         tabBarHeight: 72,

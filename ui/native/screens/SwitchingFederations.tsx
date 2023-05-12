@@ -1,14 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { ImageBackground, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import {
     selectActiveFederation,
     setActiveFederationId,
 } from '@fedi/common/redux'
 
-import { Images } from '../assets/images'
+import HoloLoader from '../components/ui/HoloLoader'
 import {
     changeWebsocketIsHealthy,
     resetXmppClient,
@@ -58,11 +58,7 @@ const SwitchingFederations: React.FC<Props> = ({
 
     return (
         <View style={styles(theme).container}>
-            <ImageBackground
-                resizeMode="cover"
-                style={styles(theme).imageBackground}
-                source={Images.IllustrationWorld}
-            />
+            <HoloLoader />
         </View>
     )
 }
@@ -72,11 +68,9 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
+            justifyContent: 'center',
             padding: theme.spacing.lg,
             marginTop: theme.spacing.xl,
-        },
-        imageBackground: {
-            ...theme.styles.h100w100,
         },
     })
 

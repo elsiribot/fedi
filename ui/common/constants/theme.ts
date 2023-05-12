@@ -69,6 +69,16 @@ export const theme = {
         '400': makeHoloGradientRgbas(0.3),
         '100': makeHoloGradientRgbas(0.13),
     },
+    nightHoloAmbientGradient: [
+        'rgba(224, 32, 32, 0.075)',
+        'rgba(247, 181, 0, 0.075)',
+        'rgba(109, 212, 0, 0.075)',
+        'rgba(0, 145, 255, 0.075)',
+        'rgba(250, 100, 0, 0.075)',
+        'rgba(255, 255, 255, 0.03)',
+        'rgba(98, 54, 255, 0.08)',
+        'rgba(182, 32, 224, 0.08)',
+    ],
 }
 
 function makeHoloGradientRgbas(alphaMultiplier: number) {
