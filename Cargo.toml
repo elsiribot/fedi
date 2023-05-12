@@ -128,3 +128,5 @@ fedimint-logging = { git = "https://x-access-token:github_pat_11ABBCQBI0xWGdvtpc
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
 uniffi_bindgen = { git = "https://github.com/fedibtc/uniffi-rs", rev = "a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31" }
 # ring: we overwrite via `cargo` wrapper and nix build, conditionally for wasm32 builds only
+# FIXME: remove this once fedimint is upgraded to include 0.21.0
+rocksdb = { git = "https://github.com/fedibtc/rust-rocksdb.git", rev = "c26cdef16eac3bae6925303e2f7d305d8ed2a72c" }
