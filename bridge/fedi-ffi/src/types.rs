@@ -81,7 +81,7 @@ impl From<FederationId> for fedimint_core::config::FederationId {
 #[ts(export, export_to = "target/bindings/")]
 pub struct PublicKey(#[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::secp256k1::PublicKey);
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct FediConfig {
     #[ts(type = "any")]
