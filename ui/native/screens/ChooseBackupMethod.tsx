@@ -4,9 +4,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
+import { selectFederationMetadata } from '@fedi/common/redux'
+import { shouldShowSocialRecovery } from '@fedi/common/utils/FederationUtils'
+
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -17,6 +21,7 @@ export type Props = NativeStackScreenProps<
 const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
     // TODO: Uncomment when bridge function is ready
     // const { locateRecoveryFile } = useBridge()
     //
@@ -42,27 +47,37 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const showSocialRecovery =
+        activeFederationMetadata &&
+        shouldShowSocialRecovery(activeFederationMetadata)
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <Text style={styles(theme).instructionsText}>
                 {t('feature.backup.choose-method-instructions')}
             </Text>
-            <HoloCard
-                iconImage={<SvgImage name="SocialPeople" />}
-                title={t('feature.backup.social-backup')}
-                body={
-                    <>
-                        <Text style={styles(theme).backupMethodInstructions}>
-                            {t('feature.backup.social-backup-instructions')}
-                        </Text>
-                        <Button
-                            title={t('feature.backup.start-social-backup')}
-                            containerStyle={styles(theme).backupMethodButton}
-                            onPress={handleStartSocialBackup}
-                        />
-                    </>
-                }
-            />
+            {showSocialRecovery && (
+                <HoloCard
+                    iconImage={<SvgImage name="SocialPeople" />}
+                    title={t('feature.backup.social-backup')}
+                    body={
+                        <>
+                            <Text
+                                style={styles(theme).backupMethodInstructions}>
+                                {t('feature.backup.social-backup-instructions')}
+                            </Text>
+                            <Button
+                                title={t('feature.backup.start-social-backup')}
+                                containerStyle={
+                                    styles(theme).backupMethodButton
+                                }
+                                onPress={handleStartSocialBackup}
+                            />
+                        </>
+                    }
+                />
+            )}
+
             <LineBreak />
             <HoloCard
                 iconImage={<SvgImage name="Note" />}

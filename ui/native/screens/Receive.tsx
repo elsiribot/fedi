@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, Pressable, StyleSheet } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { selectMaxReceiveAmount } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
-import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -26,16 +26,19 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
+    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     // TODO integrate memo
     const [memo] = useState<string>('')
 
     useEffect(() => {
-        if (amount === 0 || amount > MAX_INVOICE_AMOUNT_SATS) {
+        if (amount === 0) {
+            setAmountIsValid(false)
+        } else if (maxReceiveAmount && amount > maxReceiveAmount) {
             setAmountIsValid(false)
         } else {
             setAmountIsValid(true)
         }
-    }, [amount])
+    }, [amount, maxReceiveAmount])
 
     useEffect(() => {
         const createNewInvoice = async () => {
@@ -64,11 +67,12 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }, [invoice, navigation])
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
+        if (maxReceiveAmount && updatedValue > maxReceiveAmount) {
             toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
         } else {
             toast?.close(0)
         }
+
         setAmount(updatedValue)
     }
 

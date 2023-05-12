@@ -7,12 +7,14 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
+import { selectFederationMetadata } from '@fedi/common/redux'
 import { AddressOrInvoice } from '@fedi/common/types'
+import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import { normalizePaymentRequest } from '../utils/UriUtils'
@@ -29,6 +31,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     const [paymentRequestUri, setPaymentRequestUri] = useState<BtcLnUri | null>(
         null,
     )
+    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
 
     const handleUserInput = (input: string) => {
         setInputToProcess(input)
@@ -101,6 +104,10 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const showOfflineWallet =
+        activeFederationMetadata &&
+        shouldShowOfflineWallet(activeFederationMetadata)
+
     return (
         <CameraPermissionsRequired
             alternativeActionButton={
@@ -117,12 +124,16 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 </View>
 
                 <View style={styles(theme, insets).buttonsContainer}>
-                    <Button
-                        fullWidth
-                        type="clear"
-                        title={t('feature.send.send-to-offline-user')}
-                        onPress={() => navigation.navigate('SendOfflineAmount')}
-                    />
+                    {showOfflineWallet && (
+                        <Button
+                            fullWidth
+                            type="clear"
+                            title={t('feature.send.send-to-offline-user')}
+                            onPress={() =>
+                                navigation.navigate('SendOfflineAmount')
+                            }
+                        />
+                    )}
                     <Button
                         fullWidth
                         title={t('feature.send.paste-payment-request')}

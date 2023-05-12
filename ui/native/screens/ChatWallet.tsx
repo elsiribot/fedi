@@ -8,12 +8,12 @@ import uuid from 'react-native-uuid'
 import {
     selectActiveFederation,
     selectChatEncryptionKeys,
+    selectMaxReceiveAmount,
 } from '@fedi/common/redux'
 import { Keypair, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
-import { MAX_INVOICE_AMOUNT_SATS } from '../constants'
 import {
     addToMembersSeen,
     addToMessages,
@@ -31,6 +31,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const [confirmingSend, setConfirmingSend] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -138,11 +139,12 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (updatedValue > MAX_INVOICE_AMOUNT_SATS) {
+        if (maxReceiveAmount && updatedValue > maxReceiveAmount) {
             toast?.show(t('feature.receive.maximum-invoice-amount'), 3000)
         } else {
             toast?.close(0)
         }
+
         setAmount(updatedValue)
     }
 

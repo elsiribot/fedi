@@ -1,6 +1,7 @@
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
+    MSats,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
@@ -22,7 +23,7 @@ export const getSupportedFeatures = (
 
 export const getFederationDefaultCurrency = (
     metadata: ClientConfigMetadata,
-): SupportedCurrency => {
+): SupportedCurrency | null => {
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )
@@ -30,7 +31,7 @@ export const getFederationDefaultCurrency = (
         return metadata?.default_currency as SupportedCurrency
     }
 
-    return SupportedCurrency.USD
+    return null
 }
 
 export const getFederationChatServerDomain = (
@@ -59,6 +60,22 @@ export const makeChatServerOptions = (
     return options
 }
 
+export const getFederationMaxInvoiceMsats = (
+    metadata: ClientConfigMetadata,
+): MSats | null => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.max_invoice_msats)) {
+        // This should just be a number but client config meta only
+        // supports strings currently so will need to refactor
+        return Number(metadata?.max_invoice_msats) as MSats
+    }
+    return null
+}
+
+// The utils below all involve the same inverse default logic where they
+// should return true unless explicitly disabled via feature flag
 export const shouldShowInviteCode = (
     metadata: ClientConfigMetadata,
 ): boolean => {
@@ -69,6 +86,50 @@ export const shouldShowInviteCode = (
         // This is a boolean true/false but client config meta only
         // supports strings currently so will need to refactor
         return metadata.invite_codes_disabled === 'true' ? false : true
+    }
+    return true
+}
+
+export const shouldShowSocialRecovery = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.social_recovery_disabled)) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.social_recovery_disabled === 'true' ? false : true
+    }
+    return true
+}
+
+export const shouldShowOfflineWallet = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.offline_wallet_disabled)) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.social_recovery_disabled === 'true' ? false : true
+    }
+    return true
+}
+
+export const shouldShowOnchainDeposits = (
+    metadata: ClientConfigMetadata,
+): boolean => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (
+        supportedFeatures.includes(SupportedFeature.onchain_deposits_disabled)
+    ) {
+        // This is a boolean true/false but client config meta only
+        // supports strings currently so will need to refactor
+        return metadata.social_recovery_disabled === 'true' ? false : true
     }
     return true
 }

@@ -3,6 +3,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
+import { selectFederationMetadata } from '@fedi/common/redux'
+import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
+
+import { useAppSelector } from '../../../state/hooks'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
@@ -17,27 +21,37 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 }: HomeHeaderProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
+
+    const showOfflineWallet =
+        activeFederationMetadata &&
+        shouldShowOfflineWallet(activeFederationMetadata)
 
     return (
         <Header
             headerLeft={
-                <Text onPress={toggleOffline} h2 medium>
+                <Text
+                    onPress={showOfflineWallet ? toggleOffline : () => {}}
+                    h2
+                    medium>
                     {t('words.home')}
                 </Text>
             }
             headerRight={
-                <Pressable
-                    onPress={toggleOffline}
-                    hitSlop={5}
-                    style={styles(theme).iconContainer}>
-                    <SvgImage
-                        name="Offline"
-                        color={theme.colors.primaryLight}
-                        containerStyle={{
-                            opacity: offline ? 1 : 0.2,
-                        }}
-                    />
-                </Pressable>
+                showOfflineWallet && (
+                    <Pressable
+                        onPress={toggleOffline}
+                        hitSlop={5}
+                        style={styles(theme).iconContainer}>
+                        <SvgImage
+                            name="Offline"
+                            color={theme.colors.primaryLight}
+                            containerStyle={{
+                                opacity: offline ? 1 : 0.2,
+                            }}
+                        />
+                    </Pressable>
+                )
             }
             rightContainerStyle={styles(theme).rightContainer}
             // Needed to make more room for Wallet title in headerLeft

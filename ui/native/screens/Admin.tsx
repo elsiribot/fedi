@@ -15,7 +15,10 @@ import {
     setFederations,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
+import {
+    shouldShowInviteCode,
+    shouldShowSocialRecovery,
+} from '@fedi/common/utils/FederationUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
@@ -171,6 +174,9 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const showInviteCode =
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
+    const showSocialRecovery =
+        activeFederation && shouldShowSocialRecovery(activeFederation.meta)
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             {authenticatedMember && (
@@ -210,7 +216,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                         }}
                     />
                 )}
-                {authenticatedGuardian !== null && (
+                {showSocialRecovery && authenticatedGuardian !== null && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
                         label={t('feature.recovery.recovery-assist')}

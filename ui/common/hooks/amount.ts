@@ -1,8 +1,13 @@
 import { useState, useCallback, useMemo } from 'react'
 
-import { selectBtcExchangeRate, selectCurrency } from '../redux'
+import {
+    selectBtcExchangeRate,
+    selectCurrency,
+    selectFederationMetadata,
+} from '../redux'
 import { Btc, Sats } from '../types'
 import amountUtils from '../utils/AmountUtils'
+import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
@@ -17,7 +22,13 @@ export function useAmountInput(
     const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
     const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
     const currency = useCommonSelector(selectCurrency)
-    const [isFiat, setIsFiat] = useState(false)
+
+    // If the federation has a default currency set, isFiat starts as true
+    const federationMetadata = useCommonSelector(selectFederationMetadata)
+    const shouldDefaultToFiat =
+        getFederationDefaultCurrency(federationMetadata) !== null ? true : false
+    const [isFiat, setIsFiat] = useState<boolean>(shouldDefaultToFiat)
+
     const [satsValue, setSatsValue] = useState<string>(
         amountUtils.formatSats(amount),
     )
