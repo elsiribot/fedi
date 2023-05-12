@@ -23,6 +23,12 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             <View style={styles(theme).illustrationContainer}>
                 <ImageBackground
                     resizeMode="contain"
+                    style={styles(theme).illustrationImageBlurred}
+                    source={Images.IllustrationWorld}
+                    blurRadius={20}
+                />
+                <ImageBackground
+                    resizeMode="contain"
                     style={styles(theme).illustrationImage}
                     source={Images.IllustrationWorld}
                 />
@@ -80,6 +86,7 @@ const styles = (theme: Theme) =>
             marginVertical: theme.spacing.sm,
         },
         illustrationContainer: {
+            position: 'relative',
             height: '50%',
             alignItem: 'center',
             justifyContent: 'center',
@@ -87,12 +94,25 @@ const styles = (theme: Theme) =>
             marginVertical: theme.spacing.md,
         },
         illustrationImage: {
+            position: 'absolute',
             minHeight: theme.sizes.splashImageSize,
             minWidth: theme.sizes.splashImageSize,
             width: '100%',
             transform: [
                 {
                     scale: 1.5,
+                },
+            ],
+        },
+        illustrationImageBlurred: {
+            position: 'absolute',
+            minHeight: theme.sizes.splashImageSize,
+            minWidth: theme.sizes.splashImageSize,
+            width: '100%',
+            opacity: 0.5,
+            transform: [
+                {
+                    scale: 1.6,
                 },
             ],
         },
