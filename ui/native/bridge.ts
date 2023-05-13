@@ -9,7 +9,7 @@ async function fedimintRpc<Type = void>(
     method: string,
     payload: object,
 ): Promise<Type> {
-    console.log("rpc method", method);
+    console.log('rpc method', method)
     const jsonPayload = JSON.stringify(payload)
     const json: string = await new Promise(resolve => {
         setTimeout(() => resolve(FedimintFfi.rpc(method, jsonPayload)))
