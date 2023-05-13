@@ -159,7 +159,7 @@ export const selectFederationMetadata = createSelector(
 // For now we set a safe default of 200K sats maximum unless otherwise
 // specified by the federation feature flags. At some points we probably
 // can remove this hard-coded value altogether
-const MAX_INVOICE_AMOUNT_SATS = 20000
+const MAX_INVOICE_AMOUNT_SATS = 200000
 
 export const selectMaxReceiveAmount = createSelector(
     selectFederationMetadata,
