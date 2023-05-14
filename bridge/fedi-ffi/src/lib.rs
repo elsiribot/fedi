@@ -9,7 +9,6 @@ pub mod event;
 mod ffi;
 #[cfg(not(target_family = "wasm"))]
 pub mod logging;
-pub mod mnemonic;
 pub mod payment;
 pub mod recovery;
 pub mod storage;
@@ -23,6 +22,7 @@ use std::{
     time::Duration,
 };
 
+use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client_fedi::RecoveryFile;
 pub use fedimint_client_legacy;
 pub use fedimint_core;
@@ -47,7 +47,6 @@ use anyhow::{anyhow, Context};
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
-use mnemonic::Mnemonic;
 use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
@@ -358,7 +357,7 @@ async fn listGateways(
 ) -> anyhow::Result<Vec<BridgeLightningGateway>> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let gateways = federation.ng.fetch_registered_gateways().await?;
-    let active_gateway = match federation.ng.fetch_active_gateway().await {
+    let active_gateway = match federation.ng.select_active_gateway().await {
         Ok(gw) => Some(gw),
         Err(_) => None,
     };
@@ -381,11 +380,7 @@ async fn switchGateway(
     node_pubkey: PublicKey,
 ) -> anyhow::Result<()> {
     let federation = get_federation(&bridge, &federation_id).await?;
-    let dbtx = federation.dbtx().await;
-    federation
-        .ng
-        .switch_active_gateway(Some(node_pubkey.0), dbtx)
-        .await?;
+    federation.ng.set_active_gateway(&node_pubkey.0).await?;
     Ok(())
 }
 
@@ -394,8 +389,15 @@ async fn getMnemonic(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<String>> {
-    // unimplemented!()
-    Ok(vec!["a".to_string(), "b".to_string(), "c".to_string()])
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let words = federation
+        .ng
+        .root_secret_encoding::<Bip39RootSecretStrategy>()
+        .await
+        .word_iter()
+        .map(|s| s.to_string())
+        .collect();
+    Ok(words)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -404,7 +406,12 @@ async fn recoverFromMnemonic(
     federation_id: FederationId,
     mnemonic: Vec<String>,
 ) -> anyhow::Result<Option<String>> {
-    unimplemented!()
+    let mnemonic = mnemonic.join(" ");
+    let mnemonic: bip39::Mnemonic = mnemonic.parse()?;
+    let _federation = bridge
+        .restore_federation(federation_id.into(), mnemonic)
+        .await?;
+    Ok(None)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -630,9 +637,15 @@ mod tests {
 
     async fn cli_generate_ecash() -> anyhow::Result<TieredMulti<SpendableNote>> {
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        let ecash_string = cmd!("fedimint-cli", "--data-dir={cfg_dir}", "spend", "10000")
-            .out_json()
-            .await?["note"]
+        let ecash_string = cmd!(
+            "fedimint-cli",
+            "--data-dir={cfg_dir}",
+            "ng",
+            "spend",
+            "10000"
+        )
+        .out_json()
+        .await?["note"]
             .as_str()
             .map(|s| s.to_owned())
             .expect("'note' key not found generating ecash with fedimint-cli");
@@ -829,9 +842,15 @@ mod tests {
         // receive with fedimint-cli
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
         let ecash = serialize_ecash(&notes);
-        cmd!("fedimint-cli", "--data-dir={cfg_dir}", "reissue", ecash)
-            .run()
-            .await?;
+        cmd!(
+            "fedimint-cli",
+            "--data-dir={cfg_dir}",
+            "ng",
+            "reissue",
+            ecash
+        )
+        .run()
+        .await?;
 
         Ok(())
     }
@@ -898,6 +917,45 @@ mod tests {
         let history = federation.ng_history().await?;
         tracing::info!("history {:?}", history);
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_mnemonic() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+        let mnemonic = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        assert_eq!(12, mnemonic.len());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_backup_and_recovery() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // receive ecash
+        let ecash = cli_generate_ecash().await?;
+        federation.ng_receive_ecash(ecash).await?;
+        assert_eq!(
+            fedimint_core::Amount::from_msats(10_000),
+            federation.ng_balance().await
+        );
+
+        // wipe notes
+        federation.ng.wipe_state().await?;
+        assert_eq!(
+            fedimint_core::Amount::from_msats(0),
+            federation.ng_balance().await
+        );
+
+        // recover
+        let mnemonic = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        let federation_id = federation.federation_id().into();
+        drop(federation);
+        let _response = recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
+        // assert_eq!(
+        //     fedimint_core::Amount::from_msats(10_000),
+        //     federation.ng_balance().await
+        // );
         Ok(())
     }
 

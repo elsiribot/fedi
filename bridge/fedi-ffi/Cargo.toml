@@ -17,12 +17,13 @@ fedi-social-client = { path = "../../fedi-social-client" }
 fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
+fedimint-bip39 = { workspace = true }
 
-bip39 = { git = "https://github.com/justinmoon/rust-bip39" }
 anyhow = "1"
+bip39 = { version = "2.0.0", features = ["rand"] }
 serde = { version = "1.0.142", features = [ "derive" ] }
 serde_json = "1.0.79"
-rand = "0.8.5"
+rand = "0.8"
 bitcoin = "0.29.2"
 lazy_static = "1.4.0"
 lightning-invoice = "0.21.0"

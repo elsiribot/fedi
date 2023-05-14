@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     default::Default,
+    path::Path,
     str::FromStr,
     sync::Arc,
     time::{Duration, SystemTime},
@@ -29,17 +30,19 @@ use fedimint_core::{
     config::{FederationId, META_FEDERATION_NAME_KEY},
     core::LEGACY_HARDCODED_INSTANCE_ID_MINT,
     db::IDatabase,
-    module::{registry::ModuleDecoderRegistry, ApiRequestErased},
+    module::{registry::ModuleDecoderRegistry, ApiRequestErased, CommonModuleGen},
     query::EventuallyConsistent,
 };
-use fedimint_ln_client::{LightningClientExt, LightningGateway, LnPayState, LnReceiveState};
-use fedimint_mint_client::MintClientModule;
+use fedimint_ln_client::{
+    LightningClientExt, LightningClientModule, LightningCommonGen, LightningGateway, LightningMeta,
+    LnPayState, LnReceiveState,
+};
+use fedimint_mint_client::{MintClientModule, MintCommonGen, MintMeta, MintMetaVariants};
 use serde_json::json;
 use url::Url;
 
 use crate::{
     event::{Event, TypedEventExt},
-    mnemonic::Mnemonic,
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
@@ -55,14 +58,18 @@ use crate::{
     },
     EventSink,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::{
     hashes::sha256,
     secp256k1::{Message, PublicKey, Secp256k1},
     Address, Network, Script, Txid,
 };
+use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client_legacy::{
-    api::WalletFederationApi, mint::SpendableNote, modules::ln::contracts::ContractId,
+    api::WalletFederationApi,
+    ln::db::LightningGatewayKey,
+    mint::SpendableNote,
+    modules::{ln::contracts::ContractId, wallet::WalletCommonGen},
     utils::network_to_currency,
 };
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
@@ -223,6 +230,47 @@ impl Bridge {
 
         Ok(())
     }
+
+    /// Restore state of a joined federation from a mnemonic
+    pub async fn restore_federation(
+        &self,
+        federation_id: FederationId,
+        mnemonic: bip39::Mnemonic,
+    ) -> anyhow::Result<Arc<Federation>> {
+        let mut federations = self.federations.lock().await;
+        let (config, event_sink, client) = match federations.remove(&federation_id) {
+            Some(federation) => {
+                let config = federation.get_config().await?;
+                let event_sink = federation.event_sink.clone();
+                federation
+                    .task_group
+                    .clone()
+                    .shutdown_join_all(Some(Duration::from_secs(10)))
+                    .await?;
+                let client: ClientNg = federation.ng.as_ref().clone();
+                drop(federation);
+                (config, event_sink, client)
+            }
+            None => bail!("Cannot restore a federation we haven't joined"),
+        };
+
+        let federation = Federation::from_mnemonic(
+            mnemonic,
+            config,
+            client,
+            event_sink,
+            self.task_group.make_subgroup().await,
+        )
+        .await?;
+
+        let federation_arc = Arc::new(federation);
+        federations.insert(federation_id, federation_arc.clone());
+
+        // FIXME: where to do this?
+        federation_arc.ng.await_restore_finished().await?;
+
+        Ok(federation_arc)
+    }
 }
 
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
@@ -255,12 +303,7 @@ impl Federation {
     }
 
     /// Instantiate Federation from FediConfig
-    pub async fn from_config(
-        config: FediConfig,
-        db: Box<dyn IDatabase>,
-        event_sink: EventSink,
-        mut task_group: TaskGroup,
-    ) -> anyhow::Result<Self> {
+    fn build_client_builder(config: FediConfig, db: Box<dyn IDatabase>) -> ClientBuilder {
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
@@ -268,8 +311,53 @@ impl Federation {
         client_builder.with_primary_module(1);
         client_builder.with_config(config.client_config.clone().0);
         client_builder.with_dyn_database(db);
+        client_builder
+    }
 
-        let ng = client_builder.build(&mut task_group).await?;
+    /// Instantiate Federation from FediConfig
+    fn build_client_builder_from_client(config: FediConfig, client: ClientNg) -> ClientBuilder {
+        let mut client_builder = ClientBuilder::default();
+        client_builder.with_module(MintClientGen);
+        client_builder.with_module(LightningClientGen);
+        client_builder.with_module(WalletClientGen);
+        client_builder.with_primary_module(1);
+        client_builder.with_config(config.client_config.clone().0);
+        client_builder.with_old_client_database(client);
+        client_builder
+    }
+
+    /// Instantiate Federation by recovering mnemonic
+    pub async fn from_mnemonic(
+        mnemonic: bip39::Mnemonic,
+        config: FediConfig,
+        client: ClientNg,
+        event_sink: EventSink,
+        mut task_group: TaskGroup,
+    ) -> anyhow::Result<Self> {
+        let client_builder = Self::build_client_builder_from_client(config.clone(), client);
+        // TODO: do something with this metadata
+        let (ng, _) = client_builder
+            .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, mnemonic)
+            .await?;
+        Ok(Self {
+            ng: Arc::new(ng),
+            event_sink,
+            task_group,
+            username: Arc::new(Mutex::new(config.username)),
+        })
+    }
+
+    /// Instantiate Federation from FediConfig
+    pub async fn from_config(
+        config: FediConfig,
+        db: Box<dyn IDatabase>,
+        event_sink: EventSink,
+        mut task_group: TaskGroup,
+    ) -> anyhow::Result<Self> {
+        let client_builder = Self::build_client_builder(config.clone(), db);
+        let ng = client_builder
+            .build::<Bip39RootSecretStrategy>(&mut task_group)
+            .await?;
         Ok(Self {
             ng: Arc::new(ng),
             event_sink,
@@ -367,15 +455,14 @@ impl Federation {
 
     /// Get client root secret
     async fn root_secret(&self) -> DerivableSecret {
-        get_client_root_secret(self.ng.db()).await
+        get_client_root_secret::<Bip39RootSecretStrategy>(self.ng.db()).await
     }
 
     /// Fetch balance
     pub async fn ng_balance(&self) -> fedimint_core::Amount {
-        let mint_client = self
+        let (mint_client, _) = self
             .ng
-            .get_module_client::<MintClientModule>(LEGACY_HARDCODED_INSTANCE_ID_MINT)
-            .unwrap();
+            .get_first_module::<MintClientModule>(&fedimint_mint_client::KIND);
         let summary = mint_client
             .get_wallet_summary(&mut self.ng.db().begin_transaction().await.with_module_prefix(1))
             .await;
@@ -388,13 +475,17 @@ impl Federation {
         ecash: TieredMulti<fedimint_mint_client::SpendableNote>,
     ) -> Result<Amount> {
         let amount = ecash.total_amount();
-        let operation_id = self.ng.reissue_external_notes(ecash).await?;
+        // TODO: include metadata as 2nd argument
+        let operation_id = self.ng.reissue_external_notes(ecash, ()).await?;
+        // not saving operation id
         let mut updates = self
             .ng
             .subscribe_reissue_external_notes_updates(operation_id)
             .await
             .unwrap();
 
+        // TODO: run in background
+        // TODO: spawn again on startup
         while let Some(update) = updates.next().await {
             if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
                 return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
@@ -411,7 +502,10 @@ impl Federation {
         &self,
         amount: Amount,
     ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
-        let (_, notes) = self.ng.spend_notes(amount, Duration::from_secs(30)).await?;
+        let (_, notes) = self
+            .ng
+            .spend_notes(amount, Duration::from_secs(30), ())
+            .await?;
         let amount = notes.total_amount();
         self.ng_save_outgoing_ecash_tx(amount).await;
         Ok(notes)
@@ -424,13 +518,9 @@ impl Federation {
         description: String,
         expiry_time: Option<u64>,
     ) -> Result<(OperationId, Invoice)> {
-        let dbtx = self.ng.db().begin_transaction().await;
-        let active_gateway = self.ng.fetch_active_gateway().await?;
-        dbtx.commit_tx().await;
-
         let (operation_id, invoice) = self
             .ng
-            .create_bolt11_invoice_and_receive(amount, description, expiry_time, active_gateway)
+            .create_bolt11_invoice_and_receive(amount, description, expiry_time)
             .await?;
 
         self.ng_subscribe_invoice(operation_id.clone(), invoice.clone())
@@ -477,43 +567,202 @@ impl Federation {
         Ok(())
     }
 
-    /// Pay lightning invoice
-    pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        let dbtx = self.ng.db().begin_transaction().await;
-        let mut active_gateway = self.ng.fetch_active_gateway().await?;
-        active_gateway.api = override_localhost(&active_gateway.api);
+    async fn override_active_gateway(&self) -> Result<()> {
+        let (_lightning, instance) = self
+            .ng
+            .get_first_module::<LightningClientModule>(&fedimint_ln_client::KIND);
+        let mut dbtx = instance.db.begin_transaction().await;
+
+        let mut gateway = self.ng.select_active_gateway().await?;
+        gateway.api = override_localhost(&gateway.api);
+        dbtx.insert_entry(&LightningGatewayKey, &gateway).await;
         dbtx.commit_tx().await;
 
+        Ok(())
+    }
+
+    /// Pay lightning invoice
+    pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+        self.override_active_gateway().await?;
+
         let federation_id = self.federation_id();
-        let operation_id = self
+        let (operation_id, _) = self
             .ng
-            .pay_bolt11_invoice(federation_id, invoice.to_owned(), active_gateway)
+            .pay_bolt11_invoice(federation_id, invoice.to_owned())
             .await?;
 
+        self.subscibe_to_ln_pay(operation_id, invoice.clone())
+            .await?;
+
+        return Ok(());
+    }
+
+    /// Subscribe to updates on all active operations
+    ///
+    /// This currently doesn't have a way to filter out in-active operations ...
+    pub async fn subscribe_to_all_operation(&self) -> Result<()> {
+        // FIXME: paginate this ...
+        let operations = self.ng.get_operations(100).await;
+        for (log_key, log_entry) in operations.iter() {
+            self.subscribe_to_operation(log_key.operation_id).await?;
+        }
+
+        Ok(())
+    }
+
+    /// Called after starting client or after spawning new state machine
+    pub async fn subscribe_to_operation(&self, operation_id: OperationId) -> Result<()> {
+        // get operation
+        let operation = self
+            .ng
+            .get_operation(operation_id)
+            .await
+            .ok_or(anyhow::anyhow!("Operation not found"))?;
+        // let ln_op = LightningCommonGen::KIND.as_str();
+        // let wallet_op = WalletCommonGen::KIND.as_str();
+        // let mint_op = WalletCommonGen::KIND.as_str();
+        match operation.operation_type() {
+            // FIXME: dont' hard-code "ln" / "mint"
+            "ln" => match operation.meta() {
+                LightningMeta::Pay { invoice, .. } => {
+                    let fed = self.clone();
+                    self.task_group
+                        .clone()
+                        .spawn("subscribe_to_ln_pay", move |_| async move {
+                            // FIXME: what happens if it fails?
+                            fed.subscibe_to_ln_pay(operation_id, invoice).await
+                        })
+                        .await;
+                }
+                LightningMeta::Receive { invoice, .. } => {
+                    let fed = self.clone();
+                    self.task_group
+                        .clone()
+                        .spawn("subscribe_to_ln_receive", move |_| async move {
+                            // FIXME: what happens if it fails?
+                            fed.subscibe_to_ln_receive(operation_id, invoice).await
+                        })
+                        .await;
+                }
+            },
+            "mint" => {
+                let meta = operation.meta::<MintMeta>();
+                match meta.variant {
+                    MintMetaVariants::SpendOOB { .. } => {
+                        debug!("can't subscribe to mint spend updates");
+                        ()
+                    }
+                    MintMetaVariants::Reissuance { .. } => {
+                        let fed = self.clone();
+                        self.task_group
+                            .clone()
+                            .spawn("subscribe_to_ecash_reissue", move |_| async move {
+                                // FIXME: what happens if it fails?
+                                fed.subscribe_to_ecash_reissue(operation_id, meta.amount)
+                                    .await
+                            })
+                            .await;
+                    }
+                }
+            }
+            // FIXME: should I return an error or just log something?
+            _ => {
+                return Err(anyhow!(format!(
+                    "unknown operation type: {}",
+                    operation.operation_type()
+                )))
+            }
+        }
+        // match on operation kind, call the right listener (e.g. ecash or lightning etc)
+        // listeners emit events to frontend on every state transition
+        Ok(())
+    }
+
+    pub async fn subscibe_to_ln_pay(
+        &self,
+        operation_id: OperationId,
+        invoice: Invoice,
+    ) -> Result<()> {
         let mut updates = self.ng.subscribe_ln_pay_updates(operation_id).await?;
 
         while let Some(update) = updates.next().await {
             match update {
                 LnPayState::Success { .. } => {
-                    self.ng_save_outgoing_lightning_tx(invoice).await;
+                    self.ng_save_outgoing_lightning_tx(&invoice).await;
                     return Ok(());
                 }
                 LnPayState::Refunded { refund_txid } => {
                     self.ng.await_claim_notes(operation_id, refund_txid).await?;
+                    // TODO: save progress
+                    return Ok(());
                 }
                 _ => {}
             }
 
-            info!("Update: {:?}", update);
+            info!("lightning update: {:?}", update);
         }
 
-        return Err(anyhow::anyhow!("Lightning Payment failed"));
+        Ok(())
+    }
+
+    pub async fn subscibe_to_ln_receive(
+        &self,
+        operation_id: OperationId,
+        invoice: Invoice, // TODO: fetch the invoice from the db
+    ) -> Result<()> {
+        let mut updates = self
+            .ng
+            .subscribe_to_ln_receive_updates(operation_id)
+            .await
+            .expect("failed to subscribe to updates");
+        while let Some(update) = updates.next().await {
+            info!("Update: {:?}", update);
+            match update {
+                LnReceiveState::Claimed { txid } => {
+                    // FIXME: unwrap
+                    self.ng
+                        .await_claim_notes(operation_id, txid)
+                        .await
+                        .expect("failed to claim notes");
+                    self.ng_save_incoming_lightning_tx(&invoice).await;
+                }
+                LnReceiveState::Canceled { .. } => {
+                    // TODO: send message that it failed, save to db
+                    // return Err(reason.into());
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn subscribe_to_ecash_reissue(
+        &self,
+        operation_id: OperationId,
+        amount: Amount,
+    ) -> Result<()> {
+        let mut updates = self
+            .ng
+            .subscribe_reissue_external_notes_updates(operation_id)
+            .await
+            .unwrap();
+
+        while let Some(update) = updates.next().await {
+            if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
+                // FIXME: save a failed transaction to the database
+                return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
+            }
+
+            info!("Update: {:?}", update);
+        }
+        self.ng_save_incoming_ecash_tx(amount).await;
+
+        Ok(())
     }
 
     /// Switch active lightning gateway
     pub async fn ng_switch_gateway(&self, pubkey: PublicKey) -> Result<()> {
-        let dbtx = self.ng.db().begin_transaction().await;
-        self.ng.switch_active_gateway(Some(pubkey), dbtx).await?;
+        self.ng.set_active_gateway(&pubkey).await?;
         Ok(())
     }
 

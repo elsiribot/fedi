@@ -49,11 +49,15 @@ FM_CONNECT_STRING=$(cat $FM_DATA_DIR/client-connect)
 export FM_CONNECT_STRING
 
 echo Funding fedimint-cli wallet ...
-scripts/pegin.sh 20000.0
+scripts/pegin.sh 40000.0
 echo Funding CLN gateway e-cash wallet ...
 scripts/pegin.sh 20000.0 1
 echo Funding LND gateway e-cash wallet ...
 scripts/pegin.sh 20000.0 1 "LND"
+
+echo Funding ClientNG
+ECASH=$($FM_MINT_CLIENT spend 20000000 | jq -e -r '.note')
+fedimint-cli ng reissue $ECASH
 
 echo "## Running tests"
 cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi $TESTCASE -- --test-threads=1

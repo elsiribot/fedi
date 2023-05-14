@@ -142,7 +142,7 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
         Ok(ret)
     }
 
-    async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> PrefixStream<'_> {
+    async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
         let mut data = self
             .tx_data
             .range::<_, Vec<u8>>((key_prefix.to_vec())..)
@@ -150,7 +150,7 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
             .map(|(key, value)| (key.clone(), value.clone()))
             .collect::<Vec<_>>();
 
-        Box::pin(stream::iter(data))
+        Ok(Box::pin(stream::iter(data)))
     }
 
     async fn raw_find_by_prefix_sorted_descending(
