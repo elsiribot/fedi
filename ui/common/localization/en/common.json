@@ -315,7 +315,7 @@
             "copied-payment-code": "Copied payment request",
             "create-lightning-request": "Create lightning request",
             "instructions": "Enter how much you want to receive",
-            "maximum-invoice-amount": "Maximum invoice amount is 200,000 sats",
+            "maximum-invoice-amount": "Maximum invoice amount is {{maxAmount}} sats",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
             "pending-transaction": "pending transaction",
             "request-bitcoin": "Request bitcoin",
