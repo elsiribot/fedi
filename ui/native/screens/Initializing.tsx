@@ -6,8 +6,8 @@ import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import {
-    authenticateChat,
     changeAuthenticatedGuardian,
+    refreshChatCredentials,
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -53,10 +53,9 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     authenticatedMember.username,
                 )
                 await dispatch(
-                    authenticateChat({
+                    refreshChatCredentials({
                         fedimint,
                         federationId: activeFederationId!,
-                        username: authenticatedMember.username,
                     }),
                 ).unwrap()
 
