@@ -222,6 +222,7 @@
             "camera-access-information": "Para recibir dinero sin conexión, necesitarás permitir a Fedi acceder a tu cámara para escanear un código de pago sin conexión",
             "create-lightning-request": "Crear solicitud de lightning",
             "instructions": "Introduce la cantidad que quieres recibir",
+            "maximum-invoice-amount": "La cantidad maxima es {{maxAmount}} sats",
             "onchain-notice": "Los depósitos en la cadena principal tardan ~10 horas en confirmarse. Usa Lightning para transacciones instantáneas",
             "pending-transaction": "transacción pendiente",
             "request-bitcoin": "Solicitar bitcoin",

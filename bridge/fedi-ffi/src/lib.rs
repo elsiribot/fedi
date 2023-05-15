@@ -207,9 +207,6 @@ async fn generateInvoice(
     amount: Amount,
     description: String,
 ) -> anyhow::Result<String> {
-    if amount.0.msats > 200000000 {
-        anyhow::bail!("Maximum invoice amount is 200,000 sats");
-    }
     let federation = get_federation(&bridge, &federation_id).await?;
     let (_, invoice) = federation
         .ng_generate_invoice(amount.0, description, None)
