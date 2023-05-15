@@ -13,7 +13,7 @@ const baseFed = {
     id: 'fedid',
     name: 'testfed',
     connectInfo: 'tesfedconnectinfo',
-    nodes: [{ name: 'alpha', url: 'alphaurl' }],
+    nodes: { '0': { name: 'alpha', url: 'alphaurl' } },
     balance: 0 as MSats,
     socialRecoveryActive: false,
 }

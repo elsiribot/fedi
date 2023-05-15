@@ -61,11 +61,15 @@ function DeveloperPage() {
 
     const guardians = useMemo(() => {
         if (!federationNodes) return []
-        return federationNodes.map((node, idx) => ({
-            ...node,
-            peerId: idx,
-            password: `${idx + 1}${idx + 1}${idx + 1}${idx + 1}`,
-        }))
+        return Object.entries(federationNodes).map(entry => {
+            const [i, node] = entry
+            const idx = Number(i)
+            return {
+                ...node,
+                peerId: idx,
+                password: `${idx + 1}${idx + 1}${idx + 1}${idx + 1}`,
+            }
+        })
     }, [federationNodes])
 
     const guardianOptions = useMemo(

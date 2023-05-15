@@ -89,6 +89,10 @@ export interface Node {
     url: string
 }
 
+export interface NodeMap {
+    [index: string]: Node
+}
+
 export interface Guardian extends Node {
     peerId: number
     password: string
@@ -134,7 +138,7 @@ export interface Federation {
     id: string
     name: string
     connectInfo: string
-    nodes: Node[]
+    nodes: NodeMap
     balance: MSats
     socialRecoveryActive: boolean
     meta: ClientConfigMetadata
