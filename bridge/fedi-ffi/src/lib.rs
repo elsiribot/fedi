@@ -932,10 +932,8 @@ mod tests {
         // receive ecash
         let ecash = cli_generate_ecash().await?;
         federation.ng_receive_ecash(ecash).await?;
-        assert_eq!(
-            fedimint_core::Amount::from_msats(10_000),
-            federation.ng_balance().await
-        );
+        let original_balance = fedimint_core::Amount::from_msats(10_000);
+        assert_eq!(original_balance, federation.ng_balance().await);
 
         // wipe notes
         federation.ng.wipe_state().await?;
@@ -945,14 +943,14 @@ mod tests {
         );
 
         // recover
+        let federation_id = federation.federation_id();
         let mnemonic = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
-        let federation_id = federation.federation_id().into();
         drop(federation);
-        let _response = recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
-        // assert_eq!(
-        //     fedimint_core::Amount::from_msats(10_000),
-        //     federation.ng_balance().await
-        // );
+        let _response = recoverFromMnemonic(bridge.clone(), federation_id.into(), mnemonic).await?;
+
+        // assert that balance is updated
+        let federation = get_federation(&*bridge, &federation_id.into()).await?;
+        assert_eq!(original_balance, federation.ng_balance().await);
         Ok(())
     }
 
