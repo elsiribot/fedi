@@ -806,6 +806,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
+                if (!content)
+                    throw new Error('Decrypted envelope missing content')
                 directMessageJson = content.getChildText('dm')
                 action = content.getChild('action')
             } else {
@@ -894,6 +896,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
 
                 const decryptedEnvelope = parse(decryptedPayload)
                 const content = decryptedEnvelope.getChild('content')
+                if (!content)
+                    throw new Error('Decrypted envelope missing content')
                 directMessageJson = content.getChildText('dm')
                 action = content.getChild('action')
             } else {
