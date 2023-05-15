@@ -454,7 +454,7 @@ PODS:
     - React-Core
   - RNFS (2.20.0):
     - React-Core
-  - RNGestureHandler (2.10.0):
+  - RNGestureHandler (2.9.0):
     - React-Core
   - RNLocalize (2.2.4):
     - React-Core
@@ -493,18 +493,12 @@ PODS:
   - RNScreens (3.18.2):
     - React-Core
     - React-RCTImage
-  - RNSentry (5.3.0):
-    - React-Core
-    - Sentry/HybridSDK (= 8.3.3)
   - RNShare (8.0.0):
     - React-Core
   - RNSVG (13.6.0):
     - React-Core
   - RNVectorIcons (9.2.0):
     - React-Core
-  - Sentry/HybridSDK (8.3.3):
-    - SentryPrivate (= 8.3.3)
-  - SentryPrivate (8.3.3)
   - SocketRocket (0.6.0)
   - vision-camera-code-scanner (0.2.0):
     - GoogleMLKit/BarcodeScanning
@@ -593,7 +587,6 @@ DEPENDENCIES:
   - "RNNotifee (from `../../node_modules/@notifee/react-native`)"
   - RNReanimated (from `../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../node_modules/react-native-screens`)
-  - "RNSentry (from `../../node_modules/@sentry/react-native`)"
   - RNShare (from `../../node_modules/react-native-share`)
   - RNSVG (from `../../node_modules/react-native-svg`)
   - RNVectorIcons (from `../../node_modules/react-native-vector-icons`)
@@ -628,8 +621,6 @@ SPEC REPOS:
     - nanopb
     - OpenSSL-Universal
     - PromisesObjC
-    - Sentry
-    - SentryPrivate
     - SocketRocket
     - YogaKit
 
@@ -732,8 +723,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
-  RNSentry:
-    :path: "../../node_modules/@sentry/react-native"
   RNShare:
     :path: "../../node_modules/react-native-share"
   RNSVG:
@@ -817,17 +806,14 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: b90b71f45b8b97be43bc4284e71a6af48ac9f547
   RNCClipboard: 3f0451a8100393908bea5c5c5b16f96d45f30bfc
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
-  RNGestureHandler: e145476da655f3dbc48ef2f0a08cf7a34338c02b
+  RNGestureHandler: 071d7a9ad81e8b83fe7663b303d132406a7d8f39
   RNLocalize: 0df7970cfc60389f00eb62fd7c097dc75af3fb4f
   RNNotifee: bdc064c29f4d558046f51f0c3ae02bab4fd3cd85
   RNReanimated: 34c66386cbc7347e3fc62a27d30646427581c913
   RNScreens: 34cc502acf1b916c582c60003dc3089fa01dc66d
-  RNSentry: 8363f1eff1c685a502e15080b5e2f447969897c5
   RNShare: 36aa3e6958373a0ad1c95a1c960adef589da3794
   RNSVG: 3a79c0c4992213e4f06c08e62730c5e7b9e4dc17
   RNVectorIcons: fcc2f6cb32f5735b586e66d14103a74ce6ad61f8
-  Sentry: 8ffc397d98fe58d693e73959b26ed0eaee55646a
-  SentryPrivate: bf776a47a131648f5023097215987b40fbd47025
   SocketRocket: fccef3f9c5cedea1353a9ef6ada904fde10d6608
   vision-camera-code-scanner: dda884a7f3ec8243a2a6d6489b91860648371bca
   VisionCamera: 4cfd685b1e671fea4aa0400905ab397f0e972210

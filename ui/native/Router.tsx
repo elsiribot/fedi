@@ -5,7 +5,6 @@ import {
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
-import * as Sentry from '@sentry/react-native'
 import React from 'react'
 
 import { selectActiveFederation } from '@fedi/common/redux'
@@ -696,24 +695,12 @@ const linking: NavigationLinkingConfig = {
     },
 }
 
-type RouterProps = {
-    routingInstrumentation: Sentry.ReactNavigationInstrumentation
-}
-
-const Router = ({ routingInstrumentation }: RouterProps) => {
+const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
 
     return (
-        <NavigationContainer
-            ref={navigation}
-            theme={theme}
-            linking={linking}
-            onReady={() => {
-                // Register the navigation container with Sentry instrumentation
-                // for performance monitoring
-                routingInstrumentation.registerNavigationContainer(navigation)
-            }}>
+        <NavigationContainer ref={navigation} theme={theme} linking={linking}>
             <Drawer.Navigator
                 id={DRAWER_NAVIGATION_ID}
                 drawerContent={ConnectedFederationsDrawer}>
