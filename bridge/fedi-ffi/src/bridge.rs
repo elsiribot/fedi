@@ -293,7 +293,6 @@ pub struct Federation {
     pub ng: Arc<ClientNg>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
-    pub username: Arc<Mutex<Option<String>>>,
 }
 
 impl Federation {
@@ -357,7 +356,6 @@ impl Federation {
             ng: Arc::new(ng),
             event_sink,
             task_group,
-            username: Arc::new(Mutex::new(None)),
         };
 
         // Persist username to DB if one was found
@@ -385,7 +383,6 @@ impl Federation {
             ng: Arc::new(ng),
             event_sink,
             task_group,
-            username: Arc::new(Mutex::new(config.username)),
         })
     }
 
