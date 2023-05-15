@@ -53,7 +53,10 @@ check-wasm:
   nix develop .#cross -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
 build-wasm:
-  ./scripts/build-wasm.sh
+  ./scripts/build-wasm.sh --dev
+
+release-wasm:
+  ./scripts/build-wasm.sh --release
 
 [no-exit-message]
 typos:

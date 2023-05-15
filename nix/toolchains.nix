@@ -187,6 +187,13 @@ let
       if grep -q "wasm32-unknown-unknown" <<< "$@" || [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-unknown" ] ; then
         >&2 echo "Patching your wasm32 build"
 
+        export CARGO_PROFILE_RELEASE_DEBUG=0
+        export CARGO_PROFILE_RELEASE_LTO=fat
+        export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+        export CARGO_PROFILE_RELEASE_OPT_LEVEL=z
+        export CARGO_PROFILE_RELEASE_PANIC=abort
+        export CARGO_PROFILE_RELEASE_STRING=1
+
         # Use `Cargo.wasm32.lock` in place of the normal `Cargo.lock`
         root="$(${fenix.packages.${system}.stable.cargo}/bin/cargo metadata --no-deps --format-version 1 | jq -r '.workspace_root')"
         cp "$root/Cargo.lock" "$root/Cargo.native.lock"
