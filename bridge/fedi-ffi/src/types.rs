@@ -86,7 +86,6 @@ pub struct PublicKey(#[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::se
 pub struct FediConfig {
     #[ts(type = "any")]
     pub client_config: UserClientConfig,
-    pub username: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

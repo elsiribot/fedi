@@ -411,7 +411,6 @@ impl Federation {
             .collect();
 
         let fedi_config = FediConfig {
-            username: None,
             client_config: UserClientConfig(cfg),
         };
         let federation_id: FederationId = fedi_config.client_config.0.federation_id.clone();
