@@ -24,8 +24,6 @@ import {
     ChatType,
     XmppCredentials,
     XmppClientStatus,
-    ArchiveQueryFilters,
-    ArchiveQueryPagination,
 } from '../types'
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
@@ -207,17 +205,6 @@ export const chatSlice = createSlice({
             const { federationId, group } = action.payload
             return upsertEntityToChatState(state, federationId, 'groups', group)
         },
-        setLastFetchedMessageId(
-            state,
-            action: FederationPayloadAction<{ lastFetchedMessageId: string }>,
-        ) {
-            const { federationId, lastFetchedMessageId } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                lastFetchedMessageId,
-            }
-        },
         setAuthenticatedMember(
             state,
             action: FederationPayloadAction<{
@@ -298,6 +285,15 @@ export const chatSlice = createSlice({
             )
         })
 
+        builder.addCase(fetchChatHistory.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastFetchedMessageId: action.payload,
+            }
+        })
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             Object.entries(action.payload.chat).forEach(
@@ -309,6 +305,7 @@ export const chatSlice = createSlice({
                         messages: chatState.messages,
                         groups: chatState.groups,
                         membersSeen: chatState.members,
+                        lastFetchedMessageId: chatState.lastFetchedMessageId,
                     }
                 },
             )
@@ -327,7 +324,6 @@ export const {
     addChatMessage,
     setChatGroups,
     addChatGroup,
-    setLastFetchedMessageId,
     setAuthenticatedMember,
     setChatEncryptionKeys,
     resetAuthenticatedMember,
@@ -466,7 +462,7 @@ export const connectChat = createAsyncThunk<
             dispatch(addChatMemberSeen({ federationId, member }))
         })
 
-        // On first availability, publish pubkey
+        // On first availability, publish pubkey and fetch message history
         let hasPublishedPubkey = false
         client.on('online', async () => {
             if (!hasPublishedPubkey) {
@@ -478,6 +474,7 @@ export const connectChat = createAsyncThunk<
                     hasPublishedPubkey = false
                 }
             }
+            dispatch(fetchChatHistory({ federationId }))
         })
 
         // Start the client
@@ -504,18 +501,33 @@ export const disconnectChat = createAsyncThunk<void, { federationId: string }>(
 
 export const fetchChatHistory = createAsyncThunk<
     string | null,
-    {
-        federationId: string
-        filters?: ArchiveQueryFilters
-        pagination?: ArchiveQueryPagination
+    { federationId: string },
+    { state: CommonState }
+>('chat/fetchChatHistory', async ({ federationId }, { getState }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    let lastFetchedMessageId =
+        getState().chat[federationId]?.lastFetchedMessageId || null
+
+    // Keep requesting until we're totally caught up
+    while (true) {
+        const nextLastFetchedMessageId = await client.fetchMessageHistory(
+            null,
+            {
+                limit: '10',
+                after: lastFetchedMessageId || undefined,
+            },
+        )
+        if (
+            !nextLastFetchedMessageId ||
+            nextLastFetchedMessageId === lastFetchedMessageId
+        ) {
+            break
+        }
+        lastFetchedMessageId = nextLastFetchedMessageId
     }
->(
-    'chat/fetchChatHistory',
-    ({ federationId, filters = null, pagination = null }) => {
-        const client = xmppChatClientManager.getClient(federationId)
-        return client.fetchMessageHistory(filters, pagination)
-    },
-)
+
+    return lastFetchedMessageId
+})
 
 export const fetchChatMembers = createAsyncThunk<
     ChatMember[],
@@ -590,7 +602,7 @@ export const sendDirectMessage = createAsyncThunk<
         const message: ChatMessage = {
             content,
             id: uuidv4(),
-            sentAt: Date.now(),
+            sentAt: Date.now() / 1000,
             sentBy: authenticatedMember.id,
             sentTo: recipientId,
         }
@@ -612,24 +624,29 @@ export const sendGroupMessage = createAsyncThunk<
 >(
     'chat/sendGroupMessage',
     async ({ federationId, groupId, content }, { getState }) => {
+        const chatState = getState().chat[federationId]
         const client = xmppChatClientManager.getClient(federationId)
 
         // Get our username
-        const authenticatedMember =
-            getState().chat[federationId]?.authenticatedMember
+        const authenticatedMember = chatState?.authenticatedMember
         if (!authenticatedMember) {
             throw new Error('errors.chat-unavailable')
+        }
+
+        // Get the group
+        const group = chatState?.groups.find(g => g.id === groupId) || {
+            id: groupId,
         }
 
         // Construct and send message
         const message: ChatMessage = {
             content,
             id: uuidv4(),
-            sentAt: Date.now(),
+            sentAt: Date.now() / 1000,
             sentBy: authenticatedMember.id,
-            sentTo: groupId,
+            sentIn: groupId,
         }
-        await client.sendGroupMessage(groupId, message)
+        await client.sendGroupMessage(group, message)
         return message
     },
 )
@@ -681,9 +698,6 @@ export const selectAllChatMembers = (s: CommonState) =>
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
-export const selectLastFetchedMessageId = (s: CommonState) =>
-    selectFederationChatState(s).lastFetchedMessageId
-
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {
         const activeFederationMetadata = selectFederationMetadata(s)
@@ -700,10 +714,89 @@ export const selectChatConnectionOptions = createSelector(
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
     members => {
-        return members.reduce((prev, member) => {
-            prev[member.id] = member
-            return prev
-        }, {} as Record<string, ChatMember | undefined>)
+        return members.reduce<Record<string, ChatMember | undefined>>(
+            (prev, member) => {
+                prev[member.id] = member
+                return prev
+            },
+            {},
+        )
+    },
+)
+
+export const selectChatGroupMap = createSelector(
+    selectAllChatGroups,
+    groups => {
+        return groups.reduce<Record<string, ChatGroup | undefined>>(
+            (prev, group) => {
+                prev[group.id] = group
+                return prev
+            },
+            {},
+        )
+    },
+)
+
+export const selectOrderedChatMessages = createSelector(
+    selectAllChatMessages,
+    messages => orderBy(messages, 'sentAt', 'desc'),
+)
+
+export const selectOrderedChatList = createSelector(
+    selectOrderedChatMessages,
+    selectChatMemberMap,
+    selectChatGroupMap,
+    selectAuthenticatedMember,
+    (messages, memberMap, groupMap, me) => {
+        const chatMap: Record<string, Chat & { latestMessage: ChatMessage }> =
+            {}
+        messages.forEach(m => {
+            const { sentTo, sentIn, sentBy } = m
+            let id: string
+            let type: ChatType
+            let members: string[]
+
+            if (sentTo) {
+                type = ChatType.direct
+                // Chat "id" is who it's with, determine based on if we or they sent
+                id = sentBy === me?.id ? sentTo : sentBy
+
+                // Filter out members we haven't seen, since we won't have enough
+                // information to construct a chat.
+                const member = memberMap[id]
+                if (!member) return
+                members = [id]
+            } else if (sentIn) {
+                type = ChatType.group
+                id = sentIn
+                members = groupMap[id]?.members || []
+            } else {
+                // Should never happen?
+                return
+            }
+
+            // Initialize chat object if it doesn't exist, otherwise just update
+            // the latestMessage.
+            if (!chatMap[id]) {
+                chatMap[id] = {
+                    id,
+                    name: id,
+                    members,
+                    type,
+                    latestMessage: m,
+                }
+            } else {
+                chatMap[id] = {
+                    ...chatMap[id],
+                    latestMessage: m,
+                }
+            }
+        })
+        return orderBy(
+            Object.values(chatMap),
+            c => c.latestMessage.sentAt,
+            'desc',
+        )
     },
 )
 
@@ -718,14 +811,6 @@ export const selectChatMessages = createSelector(
                 m.sentBy === chatId ||
                 (m.sentBy === me?.id && m.sentTo === chatId),
         ),
-)
-
-export const selectChatLatestMessage = createSelector(
-    selectChatMessages,
-    (_: CommonState, chatId: Chat['id']) => chatId,
-    messages => {
-        return [...orderBy(messages, 'sentAt', 'desc')][0]
-    },
 )
 
 export const selectChatMembers = createSelector(
@@ -753,50 +838,17 @@ export const selectChatMembers = createSelector(
 )
 
 export const selectChatMember = createSelector(
-    selectChatMembers,
+    selectAllChatMembers,
     (_: CommonState, memberId: string) => memberId,
     (chatMembers, memberId) => {
         return chatMembers.find(member => member.id === memberId)
     },
 )
 
-export const selectAllDirectChats = createSelector(
-    selectAuthenticatedMember,
-    selectAllChatMessages,
-    selectChatMemberMap,
-    (me, messages, memberMap) => {
-        const chatMap: Record<string, Chat> = {}
-        messages.forEach(m => {
-            const { sentTo, sentBy } = m
-
-            // Filter out group messages
-            if (!sentTo) return
-
-            // Chat "id" is who it's with, determine based on if we or they sent
-            const id = sentBy === me?.id ? sentTo : sentBy
-
-            // Filter out members we haven't seen
-            const member = memberMap[id]
-            if (!member) return
-
-            // Initialize chat object if it doesn't exist
-            if (!chatMap[id]) {
-                chatMap[id] = {
-                    id,
-                    name: id,
-                    members: [id],
-                    type: ChatType.direct,
-                }
-            }
-        })
-        return Object.values(chatMap)
-    },
-)
-
-export const selectDirectChat = createSelector(
-    selectAllDirectChats,
+export const selectChatById = createSelector(
+    selectOrderedChatList,
     (_: CommonState, memberId: string) => memberId,
-    (directChats, memberId) => {
-        return directChats.find(chat => chat.id === memberId)
+    (chats, memberId) => {
+        return chats.find(chat => chat.id === memberId)
     },
 )

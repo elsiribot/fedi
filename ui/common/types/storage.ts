@@ -27,6 +27,7 @@ export interface StoredStateV2
               messages: ChatMessage[]
               groups: ChatGroup[]
               members: ChatMember[]
+              lastFetchedMessageId: string | null
           }
         | undefined
     >

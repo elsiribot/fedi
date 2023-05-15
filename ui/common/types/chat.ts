@@ -23,7 +23,6 @@ export interface ChatMessage {
     id: string
     content: string
     sentAt: number
-    receivedAt?: number
     sentBy: ChatMember['id']
     sentIn?: ChatGroup['id']
     sentTo?: ChatMember['id']

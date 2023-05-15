@@ -28,6 +28,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
                         messages: chatState.messages,
                         groups: chatState.groups,
                         members: chatState.membersSeen,
+                        lastFetchedMessageId: chatState.lastFetchedMessageId,
                     }
                 }
                 return stored
@@ -76,6 +77,11 @@ export function hasStorageStateChanged(
         keysetsToCheck.push(['chat', activeFederationId, 'messages'])
         keysetsToCheck.push(['chat', activeFederationId, 'groups'])
         keysetsToCheck.push(['chat', activeFederationId, 'membersSeen'])
+        keysetsToCheck.push([
+            'chat',
+            activeFederationId,
+            'lastFetchedMessageId',
+        ])
     }
 
     for (let keysToCheck of keysetsToCheck) {
@@ -120,6 +126,7 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
                             messages: [],
                             groups: [],
                             members: [],
+                            lastFetchedMessageId: null,
                         }
                     }
                     return chat
