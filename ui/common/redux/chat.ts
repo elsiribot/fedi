@@ -462,19 +462,30 @@ export const connectChat = createAsyncThunk<
             dispatch(addChatMemberSeen({ federationId, member }))
         })
 
-        // On first availability, publish pubkey and fetch message history
-        let hasPublishedPubkey = false
+        // On connection, update various states
         client.on('online', async () => {
-            if (!hasPublishedPubkey) {
-                try {
-                    hasPublishedPubkey = true
-                    await client.publishPublicKey(encryptionKeys.publicKey)
-                } catch (err) {
-                    console.error('Failed to publish public key', err)
-                    hasPublishedPubkey = false
-                }
-            }
+            // Publish public key
+            client
+                .publishPublicKey(encryptionKeys.publicKey)
+                .catch(err => console.error('Failed to publish public key'))
+
+            // Fetch chat history
             dispatch(fetchChatHistory({ federationId }))
+
+            // Fix authenticatedMember if it has the wrong id or public key
+            const jid = client.xmpp?.jid?.toString().split('/')[0]
+            if (jid && authenticatedMember.id !== jid) {
+                dispatch(
+                    setAuthenticatedMember({
+                        federationId,
+                        authenticatedMember: {
+                            ...authenticatedMember,
+                            id: jid,
+                            publicKeyHex: encryptionKeys.publicKey.hex,
+                        },
+                    }),
+                )
+            }
         })
 
         // Start the client
@@ -753,6 +764,7 @@ export const selectOrderedChatList = createSelector(
         messages.forEach(m => {
             const { sentTo, sentIn, sentBy } = m
             let id: string
+            let name: string
             let type: ChatType
             let members: string[]
 
@@ -766,9 +778,11 @@ export const selectOrderedChatList = createSelector(
                 const member = memberMap[id]
                 if (!member) return
                 members = [id]
+                name = member.username
             } else if (sentIn) {
                 type = ChatType.group
                 id = sentIn
+                name = groupMap[id]?.name || 'Chat'
                 members = groupMap[id]?.members || []
             } else {
                 // Should never happen?
@@ -780,7 +794,7 @@ export const selectOrderedChatList = createSelector(
             if (!chatMap[id]) {
                 chatMap[id] = {
                     id,
-                    name: id,
+                    name,
                     members,
                     type,
                     latestMessage: m,

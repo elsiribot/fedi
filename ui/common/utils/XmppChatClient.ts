@@ -3,6 +3,7 @@ import {
     client as xmppClient,
     Client as XmppClient,
     Options as XmppOptions,
+    jid as makeJid,
 } from '@xmpp/client'
 import type { Status as XmppStatus } from '@xmpp/connection'
 import debug from '@xmpp/debug'
@@ -11,10 +12,11 @@ import parse from '@xmpp/xml/lib/parse'
 import EventEmitter from 'events'
 import type { Element } from 'ltx'
 
-import { XMPP_MESSAGE_TYPES } from '../constants/xmpp'
+import { XMPP_MESSAGE_TYPES, XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
+    ChatGroup,
     ChatMember,
     ChatMessage,
     Key,
@@ -134,10 +136,10 @@ export class XmppChatClient {
 
                 if (rosterMembers) {
                     membersSeen = rosterMembers.map(memberEl => {
-                        const id = memberEl.getAttr('jid').split('@')[0]
+                        const id = memberEl.getAttr('jid')
                         return {
                             id,
-                            username: id,
+                            username: id.split('@')[0],
                         }
                     })
                 }
@@ -153,11 +155,10 @@ export class XmppChatClient {
         return new Promise<string>(async (resolve, reject) => {
             try {
                 const { iqCaller, jid } = this.getQueryProperties()
-                const toJid = `${memberId}@${jid.getDomain()}`
 
                 const onStanzaReceived = (stanza: Element) => {
                     if (!stanza.is('message')) return
-                    if (stanza.getAttr('from') !== toJid) return
+                    if (stanza.getAttr('from') !== memberId) return
                     if (stanza.getAttr('type') !== 'headline') return
 
                     const pubkey = stanza
@@ -181,7 +182,7 @@ export class XmppChatClient {
                 const getPubkeyQueryXml = xmlUtils.buildQuery(
                     new GetPublicKeyQuery({
                         from: jid.toString(),
-                        to: toJid,
+                        to: memberId,
                     }),
                 )
                 await iqCaller.request(getPubkeyQueryXml)
@@ -357,13 +358,12 @@ export class XmppChatClient {
         try {
             const { jid } = this.getQueryProperties()
             const fromJid = jid.toString()
-            const toJid = `${recipientId}@${jid.getDomain()}`
 
             const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
                 new EncryptedDirectChatMessage({
                     from: fromJid,
-                    to: toJid,
-                    message,
+                    to: recipientId,
+                    message: this.formatOutgoingMessage(message, jid),
                     senderKeys,
                     recipientPublicKey: { hex: recipientPubkey },
                     updatePayment,
@@ -376,17 +376,21 @@ export class XmppChatClient {
         }
     }
 
-    async sendGroupMessage(groupId: string, message: ChatMessage) {
+    async sendGroupMessage(group: Partial<ChatGroup>, message: ChatMessage) {
         try {
             const { jid } = this.getQueryProperties()
             const fromJid = jid.toString()
-            const toGroup = `${groupId}@muc.${jid.getDomain()}`
+            const toGroup = `${group.id}@muc.${jid.getDomain()}`
 
             const groupChatMessageXml = xmlUtils.buildMessage(
                 new GroupChatMessage({
                     from: fromJid,
                     to: toGroup,
-                    message,
+                    message: this.formatOutgoingGroupMessage(
+                        message,
+                        group,
+                        jid,
+                    ),
                 }),
             )
             await this.xmpp.send(groupChatMessageXml)
@@ -485,12 +489,12 @@ export class XmppChatClient {
         if (!parsedMessage) return
 
         // Emit a 'message'
-        this.emit('message', { ...parsedMessage })
+        this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const id = stanza.getAttr('from')?.split('@')[0]
+        const id = stanza.getAttr('from')
         if (id) {
-            this.emit('memberSeen', { id, username: id })
+            this.emit('memberSeen', { id, username: id.split('@')[0] })
         }
     }
 
@@ -498,12 +502,12 @@ export class XmppChatClient {
         const { parsedMessage } = this.decryptAndParseIncomingMessage(stanza)
 
         // Emit a 'message'
-        this.emit('message', { ...parsedMessage })
+        this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const id = stanza.getAttr('from')?.split('@')[0]
+        const id = stanza.getAttr('from')
         if (id) {
-            this.emit('memberSeen', { id, username: id })
+            this.emit('memberSeen', { id, username: id.split('@')[0] })
         }
     }
 
@@ -525,9 +529,12 @@ export class XmppChatClient {
         // was not published by Fedi source code...
         // do not overwrite the locally stored pubkey for this member
         // TODO: implement signature validation for authentication?
-        const publisherId = publisherJid.split('@')[0]
-        if (!nodeId.includes(publisherId)) {
-            console.warn('node ID does not match the publisher JID', stanza)
+        const publisherUsername = publisherJid.split('@')[0]
+        if (!nodeId.includes(publisherUsername)) {
+            console.warn(
+                'node ID does not match the publisher username',
+                stanza,
+            )
             return
         }
 
@@ -538,8 +545,8 @@ export class XmppChatClient {
         }
 
         const publishingMember: ChatMember = {
-            id: publisherId,
-            username: publisherId,
+            id: publisherJid,
+            username: publisherUsername,
             publicKeyHex: pubkey,
         }
         console.info('publishingMember', publishingMember)
@@ -556,12 +563,12 @@ export class XmppChatClient {
         const { parsedMessage } = this.decryptAndParseIncomingMessage(message)
 
         // Emit a 'message'
-        this.emit('message', { ...parsedMessage })
+        this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const id = message.getAttr('from')?.split('@')[0]
+        const id = message.getAttr('from')
         if (id) {
-            this.emit('memberSeen', { id, username: id })
+            this.emit('memberSeen', { id, username: id.split('@')[0] })
         }
     }
 
@@ -569,9 +576,9 @@ export class XmppChatClient {
         const rosterItem = stanza.getChild('query')?.getChild('item')
         if (!rosterItem) return
 
-        const id = rosterItem?.getAttr('jid')?.split('@')
+        const id = rosterItem?.getAttr('jid')
         if (id) {
-            this.emit('memberSeen', { id, username: id })
+            this.emit('memberSeen', { id, username: id.split('@') })
         }
     }
 
@@ -615,9 +622,7 @@ export class XmppChatClient {
                 privateKey,
             )
 
-            console.log({ decryptedPayload })
             const decryptedEnvelope = parse(decryptedPayload)
-            console.log({ decryptedEnvelope })
             const content = decryptedEnvelope.getChild('content')
             if (!content) {
                 throw new Error('Missing content in decrypted envelope')
@@ -638,6 +643,75 @@ export class XmppChatClient {
         // TODO: Validate the message matches the shape?
         const parsedMessage = JSON.parse(directMessageJson)
         return { parsedMessage, action }
+    }
+
+    private formatIncomingMessage(rawMessage: any): ChatMessage {
+        const formatIncomingEntity = (
+            sentEntity:
+                | string
+                | { id: string }
+                | { jid: { _local: string; _domain: string } }
+                | undefined,
+        ) => {
+            if (!sentEntity) return undefined
+            if (typeof sentEntity === 'string') return sentEntity
+            if ('id' in sentEntity) return sentEntity.id
+            if ('jid' in sentEntity)
+                return `${sentEntity.jid._local}@${sentEntity.jid._domain}`
+        }
+
+        const sentBy = formatIncomingEntity(rawMessage.sentBy)
+        if (!sentBy) {
+            throw new Error('Incoming message missing sentBy')
+        }
+
+        return {
+            id: rawMessage.id,
+            content: rawMessage.content,
+            sentAt: rawMessage.sentAt,
+            sentBy,
+            sentTo: formatIncomingEntity(rawMessage.sentTo),
+            sentIn: formatIncomingEntity(rawMessage.sentIn),
+            payment: rawMessage.payment,
+        }
+    }
+
+    private formatOutgoingMessage(
+        message: ChatMessage,
+        jid: ReturnType<typeof makeJid>,
+    ) {
+        const idToJidMember = (id: string) => {
+            return {
+                jid: {
+                    _local: id.split('@')[0],
+                    _domain: id.split('@')[1],
+                },
+            }
+        }
+
+        const outgoing: any = {
+            ...message,
+            sentBy: idToJidMember(jid.toString()),
+        }
+        if (message.sentTo) {
+            outgoing.sentTo = idToJidMember(message.sentTo)
+        }
+
+        return outgoing
+    }
+
+    private formatOutgoingGroupMessage(
+        message: ChatMessage,
+        group: Partial<ChatGroup>,
+        jid: ReturnType<typeof makeJid>,
+    ) {
+        return {
+            ...this.formatOutgoingMessage(message, jid),
+            sentIn: {
+                id: group.id,
+                name: group.name,
+            },
+        }
     }
 }
 
