@@ -26,6 +26,8 @@ import {
     setChatEncryptionKeys,
 } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
+import encryptionUtils from '@fedi/common/utils/EncryptionUtils'
+import { GetMessagesQuery } from '@fedi/common/utils/XmlUtils'
 
 import {
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -35,8 +37,6 @@ import {
     XMPP_MESSAGE_TYPES,
 } from '../../constants'
 import { Group, Member, Message, XmppConnectionOptions } from '../../types'
-import encryptionUtils from '../../utils/EncryptionUtils'
-import { GetMessagesQuery } from '../../utils/XmlUtils'
 import { useAppDispatch, useAppSelector, usePrevious } from '../hooks'
 import { publishPublicKey } from '../operations/chat'
 

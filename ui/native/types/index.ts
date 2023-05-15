@@ -216,17 +216,3 @@ export enum PaymentStatus {
     rejected,
     paid,
 }
-
-export type ArchiveQueryFilters = {
-    withJid?: string | null
-}
-
-export type ArchiveQueryPagination = {
-    limit?: string | null
-    after?: string | null
-}
-
-export type MessageArchiveQuery = {
-    filters?: ArchiveQueryFilters | null
-    pagination?: ArchiveQueryPagination | null
-}

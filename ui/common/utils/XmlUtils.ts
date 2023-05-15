@@ -6,8 +6,8 @@ import { randomBytes } from 'tweetnacl'
 
 import { Key, Keypair } from '@fedi/common/types'
 
-import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants'
-import { ArchiveQueryFilters, ArchiveQueryPagination, Message } from '../types'
+import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants/xmpp'
+import { ArchiveQueryFilters, ArchiveQueryPagination } from '../types'
 import encryptionUtils from './EncryptionUtils'
 
 interface CommonXmppAttributes {
@@ -28,10 +28,10 @@ type XmppArgs =
     | PublishPublicKeyArgs
 
 class XmppStanza {
-    tag: string
-    name: string
+    tag!: string
+    name!: string
     args?: XmppArgs
-    build: () => Element
+    build!: () => Element
 }
 class XmppMessage extends XmppStanza {
     tag = 'message'
@@ -47,6 +47,10 @@ class XmppQuery extends XmppStanza {
     XMPP Message stanzas
     XML with a top-level <message> tag
 */
+interface Message {
+    id?: string
+    content: string
+}
 interface EncryptedDirectChatArgs extends CommonXmppAttributes {
     message: Message
     senderKeys: Keypair
