@@ -19,7 +19,6 @@ import { fedimint } from '../bridge'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    FEDERATION_USERNAME_ID_DB_KEY,
 } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -46,39 +45,28 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
     useEffect(() => {
         const initializeChatFeatures = async () => {
             console.info('initializeChatFeatures')
-            const savedUsernames = await AsyncStorage.getItem(
-                `${FEDERATION_USERNAME_ID_DB_KEY}`,
-            )
-            if (savedUsernames) {
-                const usernameMap = JSON.parse(savedUsernames)
-                console.info('saved usernames found... restoring', usernameMap)
+            if (authenticatedMember) {
+                console.info(
+                    'active federation',
+                    activeFederationId,
+                    'has a stored username... authenticating',
+                    authenticatedMember.username,
+                )
+                await dispatch(
+                    authenticateChat({
+                        fedimint,
+                        federationId: activeFederationId!,
+                        username: authenticatedMember.username,
+                    }),
+                ).unwrap()
 
-                // For the active federation, trigger chat authentication
-                // with the stored username. Otherwise make sure usernameRequired
-                // is set to push the user to create one
-                if (usernameMap[activeFederationId!]) {
-                    console.info(
-                        'active federation',
-                        activeFederationId,
-                        'has a stored username... authenticating',
-                        usernameMap[activeFederationId!],
-                    )
-                    await dispatch(
-                        authenticateChat({
-                            fedimint,
-                            federationId: activeFederationId!,
-                            username: usernameMap[activeFederationId!],
-                        }),
-                    ).unwrap()
-
-                    return navigation.replace('TabsNavigator')
-                } else {
-                    console.info(
-                        'no username found in localstorage for active federation',
-                        activeFederationId,
-                    )
-                    setUsernameRequired(true)
-                }
+                return navigation.replace('TabsNavigator')
+            } else {
+                console.info(
+                    'no username found for active federation',
+                    activeFederationId,
+                )
+                setUsernameRequired(true)
             }
         }
         const initializeFederations = async () => {
@@ -90,7 +78,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
             if (federations.length === 0) {
                 initializeFederations()
             }
-            if (connectionOptions && authenticatedMember === null) {
+            if (connectionOptions) {
                 initializeChatFeatures()
             }
         }
