@@ -11,10 +11,7 @@ export enum ChatType {
 export interface Chat {
     /** Unique ID for the chat, random value for groups and user id for DMs */
     id: string
-    name?: string
-    icon?: string
-    pinned?: boolean
-    hasNewMessages?: boolean
+    name: string
     members: string[]
     type: ChatType
 }
@@ -63,6 +60,11 @@ export interface ChatMember {
     publicKeyHex?: string
 }
 
+export interface ChatGroup {
+    id: string
+    name: string
+}
+
 export interface XmppChatMember extends ChatMember {
     jid: string
 }
@@ -78,12 +80,6 @@ export interface ChatGroupSettings {
     // because each Member would request and store any Messages
     // from other Members upon joining a Group
     showMessageHistory: boolean
-}
-
-export interface ChatGroup extends Chat {
-    description?: string
-    settings?: ChatGroupSettings
-    invitationCode?: string
 }
 
 export type XmppClientStatus = Status

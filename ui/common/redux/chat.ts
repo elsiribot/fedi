@@ -32,7 +32,11 @@ import {
 } from '../utils/FederationUtils'
 import { XmppChatClientManager } from '../utils/XmppChatClient'
 import { FedimintBridge } from '../utils/fedimint'
-import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
+import {
+    checkXmppUser,
+    decodeGroupInvitationLink,
+    registerXmppUser,
+} from '../utils/xmpp'
 import { loadFromStorage } from './storage'
 
 type FederationPayloadAction<T = {}> = PayloadAction<
@@ -285,6 +289,15 @@ export const chatSlice = createSlice({
             )
         })
 
+        builder.addCase(joinChatGroup.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'groups',
+                action.payload,
+            )
+        })
+
         builder.addCase(fetchChatHistory.fulfilled, (state, action) => {
             const { federationId } = action.meta.arg
             const federation = getFederationChatState(state, federationId)
@@ -462,6 +475,10 @@ export const connectChat = createAsyncThunk<
             dispatch(addChatMemberSeen({ federationId, member }))
         })
 
+        client.on('group', group => {
+            dispatch(addChatGroup({ federationId, group }))
+        })
+
         // On connection, update various states
         client.on('online', async () => {
             // Publish public key
@@ -549,11 +566,17 @@ export const fetchChatMembers = createAsyncThunk<
 })
 
 export const joinChatGroup = createAsyncThunk<
-    void,
-    { federationId: string; groupId: string }
->('chat/joinChatGroup', ({ federationId, groupId }) => {
+    ChatGroup,
+    { federationId: string; link: string }
+>('chat/joinChatGroup', async ({ federationId, link }) => {
+    const groupId = decodeGroupInvitationLink(link)
     const client = xmppChatClientManager.getClient(federationId)
-    return client.joinGroup(groupId)
+    const group = await client.joinGroup(groupId)
+    return {
+        ...group,
+        members: [],
+        type: ChatType.group,
+    }
 })
 
 export const configureChatGroup = createAsyncThunk<
@@ -783,7 +806,7 @@ export const selectOrderedChatList = createSelector(
                 type = ChatType.group
                 id = sentIn
                 name = groupMap[id]?.name || 'Chat'
-                members = groupMap[id]?.members || []
+                members = []
             } else {
                 // Should never happen?
                 return
@@ -802,7 +825,7 @@ export const selectOrderedChatList = createSelector(
             } else {
                 chatMap[id] = {
                     ...chatMap[id],
-                    latestMessage: m,
+                    members: [...chatMap[id].members, ...members],
                 }
             }
         })
@@ -827,30 +850,6 @@ export const selectChatMessages = createSelector(
         ),
 )
 
-export const selectChatMembers = createSelector(
-    selectAllChatMembers,
-    selectAllChatGroups,
-    (_: CommonState, chatId: Chat['id']) => chatId,
-    (members, groups, chatId) => {
-        // If it's a group chat id, return the group's members
-        const group = groups.find(g => g.id === chatId)
-        if (group) {
-            return group.members
-                .map(memberId => members.find(m => m.id === memberId))
-                .filter((m): m is ChatMember => !!m)
-        }
-
-        // If it's a member's id, return that member as a 1 length array
-        const member = members.find(m => m.id === chatId)
-        if (member) {
-            return [member]
-        }
-
-        // Else return empty array
-        return []
-    },
-)
-
 export const selectChatMember = createSelector(
     selectAllChatMembers,
     (_: CommonState, memberId: string) => memberId,
@@ -859,10 +858,10 @@ export const selectChatMember = createSelector(
     },
 )
 
-export const selectChatById = createSelector(
-    selectOrderedChatList,
-    (_: CommonState, memberId: string) => memberId,
-    (chats, memberId) => {
-        return chats.find(chat => chat.id === memberId)
+export const selectChatGroup = createSelector(
+    selectAllChatGroups,
+    (_: CommonState, groupId: string) => groupId,
+    (chatGroups, groupId) => {
+        return chatGroups.find(g => g.id === groupId)
     },
 )

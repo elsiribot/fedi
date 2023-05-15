@@ -12,7 +12,7 @@ import parse from '@xmpp/xml/lib/parse'
 import EventEmitter from 'events'
 import type { Element } from 'ltx'
 
-import { XMPP_MESSAGE_TYPES, XMPP_RESOURCE } from '../constants/xmpp'
+import { XMPP_MESSAGE_TYPES } from '../constants/xmpp'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
@@ -42,6 +42,7 @@ interface XmppChatClientEventMap {
     online: string
     message: ChatMessage
     memberSeen: ChatMember
+    group: ChatGroup
     error: Error
 }
 
@@ -237,15 +238,19 @@ export class XmppChatClient {
     async joinGroup(
         groupId: string,
         groupName: string = 'New group',
-    ): Promise<void> {
+    ): Promise<ChatGroup> {
         return new Promise((resolve, reject) => {
             try {
                 const { iqCaller, jid } = this.getQueryProperties()
                 const fromUser = jid.toString()
                 const toGroup = `${groupId}@muc.${jid.getDomain()}`
 
-                const onStanzaReceived = (stanza: Element) => {
-                    if (!stanza.is('event')) return
+                const onStanzaReceived = async (stanza: Element) => {
+                    if (
+                        !stanza.is('presence') ||
+                        !stanza.getAttr('id')?.includes(EnterMucRoomPresence.id)
+                    )
+                        return
 
                     // Receive a registration response from the server
                     const result = stanza.getChild('x')
@@ -256,8 +261,7 @@ export class XmppChatClient {
                         )
                     }
 
-                    console.log('statusResults', statusResults)
-                    statusResults.map(sr => {
+                    for (const sr of statusResults) {
                         // status 201 = configuration required, send a room
                         // configuration query to allow others to join
                         // https://xmpp.org/extensions/xep-0045.html#createroom-reserved
@@ -273,15 +277,16 @@ export class XmppChatClient {
                                 }),
                             )
                             console.info('Sending config for new group')
-                            iqCaller.request(roomConfigQueryXml)
+                            await iqCaller.request(roomConfigQueryXml)
+                            resolve({ id: groupId, name: groupName })
                         }
                         // status 110 = self-presence message which confirms
                         // occupancy in room to be added to context
                         if (sr?.getAttr('code') === '110') {
                             this.xmpp.removeListener('stanza', onStanzaReceived)
-                            resolve(undefined)
+                            resolve({ id: groupId, name: '' })
                         }
-                    })
+                    }
                 }
                 this.xmpp.on('stanza', onStanzaReceived)
 
@@ -428,12 +433,10 @@ export class XmppChatClient {
     /*** Private methods ***/
 
     private handleStatus = (status: XmppStatus) => {
-        console.log('xmpp status', status)
         this.emit('status', status)
     }
 
     private handleOnline = (address: string) => {
-        console.log('xmpp online', address)
         this.xmpp.send(xml('presence'))
         this.emit('online', address)
     }
@@ -495,6 +498,15 @@ export class XmppChatClient {
         const id = stanza.getAttr('from')
         if (id) {
             this.emit('memberSeen', { id, username: id.split('@')[0] })
+        }
+
+        // Emit a 'group' for the group this is in, in case we hadn't seen it or it has a new name
+        const group = parsedMessage.sentIn
+        if (group) {
+            this.emit('group', {
+                id: group.id,
+                name: group.name,
+            })
         }
     }
 
