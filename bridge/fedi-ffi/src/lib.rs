@@ -405,10 +405,11 @@ async fn recoverFromMnemonic(
 ) -> anyhow::Result<Option<String>> {
     let mnemonic = mnemonic.join(" ");
     let mnemonic: bip39::Mnemonic = mnemonic.parse()?;
-    let _federation = bridge
+    let federation = bridge
         .restore_federation(federation_id.into(), mnemonic)
         .await?;
-    Ok(None)
+    let username = federation.get_username().await;
+    Ok(username)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -506,7 +507,9 @@ async fn backupXmppUsername(
     federation_id: FederationId,
     username: String,
 ) -> anyhow::Result<()> {
-    // FIXME
+    let federation = get_federation(&bridge, &federation_id).await?;
+    federation.set_username(username).await;
+    federation.backup().await?;
     Ok(())
 }
 
@@ -951,6 +954,38 @@ mod tests {
         // assert that balance is updated
         let federation = get_federation(&*bridge, &federation_id.into()).await?;
         assert_eq!(original_balance, federation.ng_balance().await);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_username_recovery() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // No username initially
+        assert_eq!(None, federation.get_username().await);
+
+        // Backup username (and ecash)
+        let username = "satoshi123".to_string();
+        backupXmppUsername(
+            bridge.clone(),
+            federation.federation_id().into(),
+            username.clone(),
+        )
+        .await?;
+        let mnemonic = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        let federation_id = federation.federation_id().into();
+
+        // just to be sure, set the username in the client to something wrong
+        federation.set_username("notsatoshi123".to_string()).await;
+        drop(federation);
+        let username_response =
+            recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
+
+        // On recovery, the username is there.
+        assert_eq!(Some(username), username_response);
+
+        // TODO: load config from db and see that the username is in there
+
         Ok(())
     }
 

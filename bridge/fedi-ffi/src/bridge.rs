@@ -9,6 +9,7 @@ use std::{
 
 use fedi_social_client::{common::VerificationDocument, RecoveryId};
 use fedimint_client::{
+    backup::Metadata,
     db::ChronologicalOperationLogKey,
     get_client_root_secret,
     module::gen::{ClientModuleGenRegistry, IClientModuleGen},
@@ -16,7 +17,6 @@ use fedimint_client::{
     ClientBuilder, OperationLogEntry,
 };
 use fedimint_client_fedi::{
-    mint::backup::Metadata,
     module_gens,
     modules::{
         ln::{contracts::IdentifiableContract, LightningClientGen},
@@ -38,6 +38,7 @@ use fedimint_ln_client::{
     LnPayState, LnReceiveState,
 };
 use fedimint_mint_client::{MintClientModule, MintCommonGen, MintMeta, MintMetaVariants};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use url::Url;
 
@@ -47,7 +48,9 @@ use crate::{
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
     },
-    storage::{FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage},
+    storage::{
+        FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage, XmppUsername,
+    },
     tx::{
         self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
         TransactionKeyPrefix,
@@ -94,6 +97,17 @@ pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
+
+#[derive(Serialize, Deserialize)]
+struct FediBackupMetadata {
+    username: Option<String>,
+}
+
+impl FediBackupMetadata {
+    fn new(username: Option<String>) -> Self {
+        Self { username }
+    }
+}
 
 /// override 127.0.0.1 if we're on android or ios
 pub fn override_localhost(url: &Url) -> Url {
@@ -336,15 +350,24 @@ impl Federation {
     ) -> anyhow::Result<Self> {
         let client_builder = Self::build_client_builder_from_client(config.clone(), client);
         // TODO: do something with this metadata
-        let (ng, _) = client_builder
+        let (ng, metadata) = client_builder
             .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, mnemonic)
             .await?;
-        Ok(Self {
+        let federation = Self {
             ng: Arc::new(ng),
             event_sink,
             task_group,
-            username: Arc::new(Mutex::new(config.username)),
-        })
+            username: Arc::new(Mutex::new(None)),
+        };
+
+        // Persist username to DB if one was found
+        if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
+            if let Some(username) = fedi_backup_metadata.username {
+                federation.set_username(username).await
+            };
+        }
+
+        Ok(federation)
     }
 
     /// Instantiate Federation from FediConfig
@@ -456,6 +479,17 @@ impl Federation {
     /// Get client root secret
     async fn root_secret(&self) -> DerivableSecret {
         get_client_root_secret::<Bip39RootSecretStrategy>(self.ng.db()).await
+    }
+
+    /// backup all state and username as metadata with the federation
+    pub async fn backup(&self) -> Result<()> {
+        let backup = FediBackupMetadata::new(self.get_username().await);
+        let username = self.get_username().await;
+        info!("backupz: {username:?}");
+        self.ng
+            .backup_to_federation(Metadata::from_json_serialized(backup))
+            .await?;
+        Ok(())
     }
 
     /// Fetch balance
@@ -816,11 +850,13 @@ impl Federation {
     //
 
     pub async fn get_username(&self) -> Option<String> {
-        self.username.lock().await.clone()
+        self.dbtx().await.get_value(&XmppUsername).await
     }
 
     pub async fn set_username(&self, username: String) {
-        *self.username.lock().await = Some(username);
+        let mut dbtx = self.dbtx().await;
+        dbtx.insert_entry(&XmppUsername, &username).await;
+        dbtx.commit_tx().await;
     }
 
     /// Sign LNURL message using a key derived from client secret
