@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -ex
 
-export RUST_BACKTRACE=1
+export RUST_BACKTRACE=full
 export TESTCASE=$1
 
 # kill everything on exit
-function kill_fedimint_bin_tests() {
+function kill_devimint() {
     kill $DEVIMINT_PID || true
 }
-trap kill_fedimint_bin_tests EXIT
+trap kill_devimint EXIT
 
 # compile binaries in a way that nix can cache
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
@@ -18,32 +18,21 @@ cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p devimint
 
 # fedi packages
 source scripts/build.sh
-export PATH="$FM_BIN_DIR:$PATH"
+export PATH="$PWD/target/${CARGO_PROFILE:-debug}:$PATH"
 echo "Running in temporary directory $FM_TEST_DIR"
 
-# a pipe that rust writes to, and user-shell can wait for it
-export FM_READY_FILE=$FM_TMP_DIR/ready
-mkfifo $FM_READY_FILE
-
 # symlink logs to local gitignored directory so they're easier to find
+pwd
 rm target/logs || true
+echo $FM_LOGS_DIR
 ln -s $FM_LOGS_DIR target/logs
 rm target/test || true
-ln -s $FM_DATA_DIR target/test
+ln -s $FM_LOGS_DIR target/test
 
-# export RUST_LOG=debug
-export RUST_BACKTRACE=1
-devimint dev-fed &>$FM_LOGS_DIR/fedimint-dev.log &
+devimint dev-fed &
 DEVIMINT_PID=$!
-
-# waits for rust to write to this pipe
-STATUS=$(cat $FM_READY_FILE)
-if [ "$STATUS" = "ERROR" ]
-then
-    echo "fedimint didn't start correctly"
-    echo "See other panes for errors"
-    exit 1
-fi
+eval "$(devimint env)"
+devimint wait
 
 FM_CONNECT_STRING=$(cat $FM_DATA_DIR/client-connect)
 export FM_CONNECT_STRING

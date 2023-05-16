@@ -13,19 +13,18 @@
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "github:fedimint/fedimint?rev=42f8587b948879b262cee77d17ec96b2805ce542";
+      url = "github:dpc/fedimint?rev=505c9cc809efc4133ff204a938da6b7c9455ddd4"; # https://github.com/fedimint/fedimint/pull/2546
     };
 
     android-nixpkgs = {
-      # url = "github:tadfisher/android-nixpkgs?rev=39538bf26d9064555c2a77b5bd6eb88049285905"; # stable
-      url = "github:dpc/android-nixpkgs?rev=ffce46832f161877b7c197bfc7def734e8b9caa4"; # stable channel + workaround
+      url = "github:tadfisher/android-nixpkgs?rev=297976c270bfe86feb57bd66c27a5ad9b4dea3f1"; # stable
     };
-
   };
 
   outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        nixpkgs = fedimint-build.inputs.nixpkgs;
         pkgs = import nixpkgs {
           inherit system;
         };
