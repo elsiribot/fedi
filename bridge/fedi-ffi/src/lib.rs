@@ -438,7 +438,8 @@ async fn uploadBackupFile(
 // This method is a bit of a stopgap ...
 #[macro_rules_derive(rpc_method!)]
 async fn locateRecoveryFile(bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1065,7 +1066,8 @@ mod tests {
             video_file_path,
         )
         .await?;
-        info!(recovery_file_path = ?recovery_file_path);
+        let locate_recovery_file_path = locateRecoveryFile(bridge.clone()).await?;
+        assert_eq!(recovery_file_path, locate_recovery_file_path);
 
         // Validate recovery file
         let valid = validateRecoveryFile(
