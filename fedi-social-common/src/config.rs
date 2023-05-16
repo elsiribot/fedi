@@ -1,23 +1,18 @@
-use fedimint_core::config::{
-    ClientModuleConfig, TypedClientModuleConfig, TypedServerModuleConfig,
-    TypedServerModuleConsensusConfig,
-};
 use fedimint_core::core::ModuleKind;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::ModuleConsensusVersion;
-use fedimint_core::PeerId;
+use fedimint_core::plugin_types_trait_impl_config;
 use serde::{Deserialize, Serialize};
 
-use crate::{KIND, VERSION};
+use crate::FediSocialCommonGen;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SocialConfig {
-    pub private: SocialPrivateConfig,
+pub struct FediSocialConfig {
+    pub private: FediSocialPrivateConfig,
     pub consensus: FediSocialConsensusConfig,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SocialPrivateConfig {
+pub struct FediSocialPrivateConfig {
     /// Our share of decryption key
     pub sk_share: threshold_crypto::serde_impl::SerdeSecret<threshold_crypto::SecretKeyShare>,
 }
@@ -26,16 +21,6 @@ pub struct SocialPrivateConfig {
 pub struct FediSocialConsensusConfig {
     pub pk_set: threshold_crypto::PublicKeySet,
     pub threshold: u32,
-}
-
-impl TypedServerModuleConsensusConfig for FediSocialConsensusConfig {
-    fn kind(&self) -> ModuleKind {
-        KIND
-    }
-
-    fn version(&self) -> ModuleConsensusVersion {
-        VERSION
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable)]
@@ -50,26 +35,14 @@ impl FediSocialClientConfig {
     }
 }
 
-impl TypedClientModuleConfig for FediSocialClientConfig {
-    fn kind(&self) -> ModuleKind {
-        KIND
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FediSocialGenParams;
 
-    fn version(&self) -> ModuleConsensusVersion {
-        VERSION
-    }
-}
-
-impl TypedServerModuleConfig for SocialConfig {
-    type Local = ();
-    type Private = SocialPrivateConfig;
-    type Consensus = FediSocialConsensusConfig;
-
-    fn from_parts(_local: Self::Local, private: Self::Private, consensus: Self::Consensus) -> Self {
-        Self { private, consensus }
-    }
-
-    fn to_parts(self) -> (ModuleKind, Self::Local, Self::Private, Self::Consensus) {
-        (KIND, (), self.private, self.consensus)
-    }
-}
+plugin_types_trait_impl_config!(
+    FediSocialCommonGen,
+    FediSocialGenParams,
+    FediSocialConfig,
+    FediSocialPrivateConfig,
+    FediSocialConsensusConfig,
+    FediSocialClientConfig
+);

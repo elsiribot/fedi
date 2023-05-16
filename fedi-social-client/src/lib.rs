@@ -32,7 +32,7 @@ impl ClientModuleGen for FediSocialClientGen {
         _module_root_secret: DerivableSecret,
         _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
     ) -> anyhow::Result<Self::Module> {
-        unimplemented!()
+        Ok(FediSocialClientModule {})
     }
 }
 
@@ -45,7 +45,7 @@ impl ClientModule for FediSocialClientModule {
     type States = FediSocialClientStates;
 
     fn context(&self) -> Self::ModuleStateMachineContext {
-        unimplemented!()
+        ()
     }
 
     fn input_amount(

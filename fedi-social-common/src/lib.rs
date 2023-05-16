@@ -14,7 +14,7 @@ pub mod config;
 pub mod common;
 pub mod db;
 
-const KIND: ModuleKind = ModuleKind::from_static_str("fedi-social");
+pub const KIND: ModuleKind = ModuleKind::from_static_str("fedi-social");
 const VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
 
 #[derive(

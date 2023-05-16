@@ -1081,6 +1081,7 @@ name = "fedi-fedimintd"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "fedi-social-common",
  "fedi-social-server",
  "fedimint-build",
  "fedimint-core",
