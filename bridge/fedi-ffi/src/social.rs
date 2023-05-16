@@ -426,7 +426,7 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("_module_{}_approve_recovery", self.module_id),
+                &format!("module_{}_approve_recovery", self.module_id),
                 &[ApiRequestErased::new(&(id, admin_password)).to_json()],
             )
             .await?;

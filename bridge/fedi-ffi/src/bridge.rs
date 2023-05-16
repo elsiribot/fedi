@@ -1204,4 +1204,19 @@ impl Federation {
 
         Ok(None)
     }
+
+    /// Approve social recovery request
+    pub async fn approve_social_recovery_request(
+        &self,
+        recovery_id: &RecoveryId,
+        peer_id: PeerId,
+        password: &str,
+    ) -> Result<()> {
+        tracing::info!("approve social recovery {} {}", peer_id, password);
+        let verification_client = self.social_verification(peer_id).await?;
+        verification_client
+            .approve_recovery(*recovery_id, password)
+            .await?;
+        Ok(())
+    }
 }

@@ -518,7 +518,11 @@ async fn approveSocialRecoveryRequest(
     peer_id: PeerId,
     password: String,
 ) -> anyhow::Result<()> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    federation
+        .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
+        .await?;
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1072,6 +1076,25 @@ mod tests {
         let contents = tokio::fs::read(verification_doc_path).await?;
         let _ = VerificationDocument::from_raw(&contents);
         assert_eq!(contents, video_file_contents);
+
+        // 3 guardians approves
+        for i in 0..3 {
+            let password = match i {
+                0 => "1111",
+                1 => "2222",
+                2 => "3333",
+                3 => "4444",
+                _ => panic!("invalid peer id"),
+            };
+            approveSocialRecoveryRequest(
+                bridge.clone(),
+                federation.federation_id().into(),
+                recovery_id.clone(),
+                PeerId(fedimint_core::PeerId::from(i)),
+                password.into(),
+            )
+            .await?;
+        }
 
         Ok(())
     }
