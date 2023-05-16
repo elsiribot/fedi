@@ -15,9 +15,15 @@
     fedimint-build = {
       url = "github:fedimint/fedimint?rev=42f8587b948879b262cee77d17ec96b2805ce542";
     };
+
+    android-nixpkgs = {
+      # url = "github:tadfisher/android-nixpkgs?rev=39538bf26d9064555c2a77b5bd6eb88049285905"; # stable
+      url = "github:dpc/android-nixpkgs?rev=ffce46832f161877b7c197bfc7def734e8b9caa4"; # stable channel + workaround
+    };
+
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -29,7 +35,6 @@
         fmLib = fedimint-build.lib.${system};
         crane = fedimint-build.inputs.crane;
         fenix = fedimint-build.inputs.fenix;
-        android-nixpkgs = fedimint-build.inputs.android-nixpkgs;
         advisory-db = fedimint-build.inputs.advisory-db;
 
         clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
