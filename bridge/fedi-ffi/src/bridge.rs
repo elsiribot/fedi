@@ -16,15 +16,10 @@ use fedimint_client::{
     sm::OperationId,
     ClientBuilder, OperationLogEntry,
 };
-use fedimint_client_fedi::{
-    module_gens,
-    modules::{
-        ln::{contracts::IdentifiableContract, LightningClientGen},
-        mint::{MintClientExt, MintClientGen},
-        wallet::WalletClientGen,
-    },
-    Client, FediClient, RecoveryFile, SocialBackup, SocialRecovery, UserSeedPhrase,
-    SOCIAL_RECOVERY_SECRET_CHILD_ID,
+use fedimint_client_fedi::modules::{
+    ln::{contracts::IdentifiableContract, LightningClientGen},
+    mint::{MintClientExt, MintClientGen},
+    wallet::WalletClientGen,
 };
 use fedimint_core::{
     api::FederationApiExt,
@@ -48,6 +43,10 @@ use crate::{
     payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
+    },
+    social::{
+        RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryState, SocialVerification,
+        SOCIAL_RECOVERY_SECRET_CHILD_ID,
     },
     storage::{
         FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage, XmppUsername,
@@ -450,28 +449,6 @@ impl Federation {
             .await?;
         let connect_info = serde_json::from_value(response)?;
         Ok(connect_info)
-    }
-
-    pub fn social_recovery_secret_static(root_secret: &DerivableSecret) -> DerivableSecret {
-        assert_eq!(root_secret.level(), 0);
-        root_secret.child_key(SOCIAL_RECOVERY_SECRET_CHILD_ID)
-    }
-
-    pub async fn social_backup(&self) -> Result<SocialBackup> {
-        let (module_id, cfg) = self
-            .get_config()
-            .await?
-            .client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        Ok(SocialBackup {
-            module_secret: Self::social_recovery_secret_static(&self.root_secret().await),
-            module_id,
-            config: cfg,
-            api: self.ng.dyn_api(),
-        })
     }
 
     /// Get federation name
@@ -1007,5 +984,83 @@ impl Federation {
     fn send_transaction_event(&self, tx: &Transaction) {
         let event = Event::transaction(self.federation_id(), tx.clone());
         self.event_sink.typed_event(&event);
+    }
+
+    /// Generate social recovery secret from root secret
+    pub fn social_recovery_secret_static(root_secret: &DerivableSecret) -> DerivableSecret {
+        assert_eq!(root_secret.level(), 0);
+        root_secret.child_key(SOCIAL_RECOVERY_SECRET_CHILD_ID)
+    }
+
+    // Create social backup client
+    pub async fn social_backup(&self) -> Result<SocialBackup> {
+        let (module_id, cfg) = self
+            .get_config()
+            .await?
+            .client_config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+        Ok(SocialBackup {
+            module_secret: Self::social_recovery_secret_static(&self.root_secret().await),
+            module_id,
+            config: cfg,
+            api: self.ng.dyn_api(),
+        })
+    }
+
+    /// Start social recovery session
+    pub async fn social_recovery_start(
+        &self,
+        recovery_file: RecoveryFile,
+    ) -> anyhow::Result<SocialRecovery> {
+        let (module_id, cfg) = self
+            .get_config()
+            .await?
+            .client_config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+        SocialRecovery::new_start(module_id, cfg, self.ng.dyn_api(), recovery_file)
+    }
+
+    /// Continue social recovery session
+    pub async fn social_recovery_continue(
+        &self,
+        prev_state: SocialRecoveryState,
+    ) -> Result<SocialRecovery> {
+        let (module_id, cfg) = self
+            .get_config()
+            .await?
+            .client_config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+        Ok(SocialRecovery::new_continue(
+            module_id,
+            cfg,
+            self.ng.dyn_api(),
+            prev_state,
+        ))
+    }
+
+    /// Get social verification client for a guardian
+    pub async fn social_verification(&self, peer_id: PeerId) -> Result<SocialVerification> {
+        let (module_id, _cfg) = self
+            .get_config()
+            .await?
+            .client_config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+        Ok(SocialVerification::new(
+            module_id,
+            self.ng.dyn_api(),
+            peer_id,
+        ))
     }
 }
