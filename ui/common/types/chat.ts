@@ -16,6 +16,10 @@ export interface Chat {
     type: ChatType
 }
 
+export interface ChatWithLatestMessage extends Chat {
+    latestMessage?: ChatMessage
+}
+
 export interface ChatMessage {
     id: string
     content: string
@@ -29,7 +33,9 @@ export interface ChatMessage {
 export interface ChatPayment {
     amount: MSats
     status: ChatPaymentStatus
-    recipient?: ChatMember
+    // TODO: Improve types here. Status should dictate
+    // which properties are undefined and which are present.
+    recipient?: string
     updatedAt?: number
     memo?: string
     token?: string

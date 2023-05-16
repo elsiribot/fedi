@@ -24,6 +24,7 @@ import {
     ChatType,
     XmppCredentials,
     XmppClientStatus,
+    ChatWithLatestMessage,
 } from '../types'
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
@@ -782,8 +783,7 @@ export const selectOrderedChatList = createSelector(
     selectChatGroupMap,
     selectAuthenticatedMember,
     (messages, memberMap, groupMap, me) => {
-        const chatMap: Record<string, Chat & { latestMessage: ChatMessage }> =
-            {}
+        const chatMap: Record<string, ChatWithLatestMessage> = {}
         messages.forEach(m => {
             const { sentTo, sentIn, sentBy } = m
             let id: string
@@ -831,7 +831,7 @@ export const selectOrderedChatList = createSelector(
         })
         return orderBy(
             Object.values(chatMap),
-            c => c.latestMessage.sentAt,
+            c => c.latestMessage?.sentAt,
             'desc',
         )
     },

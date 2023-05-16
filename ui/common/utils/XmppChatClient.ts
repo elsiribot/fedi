@@ -362,7 +362,7 @@ export class XmppChatClient {
     ) {
         try {
             const { jid } = this.getQueryProperties()
-            const fromJid = jid.toString()
+            const fromJid = `${jid.getLocal()}@${jid.getDomain()}`
 
             const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
                 new EncryptedDirectChatMessage({
@@ -677,6 +677,11 @@ export class XmppChatClient {
             throw new Error('Incoming message missing sentBy')
         }
 
+        let payment = { ...rawMessage.payment }
+        if (payment.recipient) {
+            payment.recipient = formatIncomingEntity(payment.recipient)
+        }
+
         return {
             id: rawMessage.id,
             content: rawMessage.content,
@@ -684,7 +689,7 @@ export class XmppChatClient {
             sentBy,
             sentTo: formatIncomingEntity(rawMessage.sentTo),
             sentIn: formatIncomingEntity(rawMessage.sentIn),
-            payment: rawMessage.payment,
+            payment,
         }
     }
 
@@ -707,6 +712,14 @@ export class XmppChatClient {
         }
         if (message.sentTo) {
             outgoing.sentTo = idToJidMember(message.sentTo)
+        }
+        if (message.payment) {
+            if (message.payment.recipient) {
+                outgoing.payment = {
+                    ...outgoing.payment,
+                    recipient: idToJidMember(outgoing.payment.recipient),
+                }
+            }
         }
 
         return outgoing
