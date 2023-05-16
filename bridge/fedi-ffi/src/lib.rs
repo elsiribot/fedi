@@ -491,7 +491,23 @@ async fn socialRecoveryDownloadVerificationDoc(
     federation_id: FederationId,
     recovery_id: RecoveryId,
 ) -> anyhow::Result<Option<PathBuf>> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    // Return QR code contents
+    let federation = get_federation(&bridge, &federation_id).await?;
+
+    let verification_doc = federation
+        .social_recovery_download_verification_doc(&recovery_id.0)
+        .await?;
+
+    if let Some(verification_doc) = verification_doc {
+        storage
+            .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
+            .await?;
+        tracing::info!("saved verificaiton doc");
+        Ok(Some(storage.platform_path(VERIFICATION_FILENAME.as_ref())))
+    } else {
+        Ok(None)
+    }
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -646,6 +662,7 @@ mod tests {
     use std::{path, time::Duration};
 
     use bitcoin::secp256k1::PublicKey;
+    use fedi_social_client::common::VerificationDocument;
     use fedimint_logging::TracingSetup;
     use std::sync::RwLock;
 
@@ -1040,8 +1057,22 @@ mod tests {
         .await?;
         assert!(valid);
 
+        // Generate recovery QR
         let qr = recoveryQr(bridge.clone(), federation.federation_id().into()).await?;
         let recovery_id = qr.recovery_id;
+
+        // Download verification document
+        let verification_doc_path = socialRecoveryDownloadVerificationDoc(
+            bridge.clone(),
+            federation.federation_id().into(),
+            recovery_id.clone(),
+        )
+        .await?
+        .unwrap();
+        let contents = tokio::fs::read(verification_doc_path).await?;
+        let _ = VerificationDocument::from_raw(&contents);
+        assert_eq!(contents, video_file_contents);
+
         Ok(())
     }
 

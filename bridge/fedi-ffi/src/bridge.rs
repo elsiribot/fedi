@@ -1184,4 +1184,24 @@ impl Federation {
             .ok_or(anyhow!("No recovery ID found"))?;
         Ok(SocialRecoveryQr { recovery_id })
     }
+
+    /// Download social recovery video to `data_dir`
+    pub async fn social_recovery_download_verification_doc(
+        &self,
+        recovery_id: &RecoveryId,
+    ) -> Result<Option<Vec<u8>>> {
+        tracing::info!("downloading verificaiton doc {}", recovery_id);
+        // FIXME: maybe shouldn't download from only one peer?
+        let verification_client = self.social_verification(PeerId::from(0)).await?;
+        let verification_doc = verification_client
+            .download_verification_doc(*recovery_id)
+            .await?;
+        if let Some(verification_doc) = verification_doc {
+            tracing::info!("downloaded verification doc");
+            return Ok(Some(verification_doc.to_raw()?));
+        };
+        tracing::info!("no verificaiton doc found");
+
+        Ok(None)
+    }
 }
