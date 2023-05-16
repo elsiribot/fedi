@@ -1258,4 +1258,23 @@ impl Federation {
 
         Ok((approvals, remaining))
     }
+
+    /// Attempt to recovery mnemonic from recovery shares available for download from the federation
+    pub async fn social_recovery_combine_shares(&self) -> Result<bip39::Mnemonic> {
+        let recovery_client = self.social_recovery_continue().await?;
+        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
+        let mnemonic = bip39::Mnemonic::parse(seed_phrase.0)?;
+        Ok(mnemonic)
+    }
+
+    /// Delete all social recovery state from DB
+    pub async fn delete_social_recovery_state_and_id(&self) {
+        let mut dbtx = self.dbtx().await;
+        dbtx.remove_entry(&SocialRecoveryStateKey(self.federation_id()))
+            .await;
+        dbtx.remove_entry(&SocialRecoveryIdKey(self.federation_id()))
+            .await;
+        // TODO: delete the verification file?
+        dbtx.commit_tx().await;
+    }
 }

@@ -43,7 +43,7 @@ use storage::Storage;
 use types::{Amount, PeerId, PublicKey};
 use types::{FederationId, RecoveryId};
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
@@ -331,7 +331,7 @@ async fn payAddress(
     // TODO: parse this as bitcoin::Amount
     sats: u64,
 ) -> anyhow::Result<String> {
-    unimplemented!()
+    bail!("not implemented")
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -537,7 +537,15 @@ async fn completeSocialRecovery(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Option<String>> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let mnemonic = federation.social_recovery_combine_shares().await?;
+    let federation = bridge
+        .restore_federation(federation_id.into(), mnemonic)
+        .await?;
+    let username = federation.get_username().await;
+    federation.delete_social_recovery_state_and_id().await;
+    federation.send_federation_event().await;
+    Ok(username)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1044,8 +1052,8 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // Get original mnemonic (for comparison later)
-        let words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
-        info!("initial mnemnoic {:?}", &words);
+        let initial_words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        info!("initial mnemnoic {:?}", &initial_words);
 
         // Upload backup
         let video_file_path =
@@ -1114,6 +1122,14 @@ mod tests {
                 .filter(|app| app.approved)
                 .count()
         );
+
+        // Member combines decryption shares, loading recovered mnemonic back into their db
+        completeSocialRecovery(bridge.clone(), federation.federation_id().into()).await?;
+
+        // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
+        let final_words: Vec<String> =
+            getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        assert_eq!(initial_words, final_words);
 
         Ok(())
     }
