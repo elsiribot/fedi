@@ -53,7 +53,6 @@
               "bridge"
               "fedimintd"
               "fedimint-cli"
-              "fedimint-client-fedi"
               "fedi-social-client"
               "fedi-social-common"
               "fedi-social-server"

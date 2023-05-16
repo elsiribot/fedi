@@ -1355,28 +1355,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fedimint-client-fedi"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "fedi-social-client",
- "fedimint-aead",
- "fedimint-client",
- "fedimint-client-legacy",
- "fedimint-core",
- "fedimint-derive-secret",
- "fedimint-ln-client",
- "fedimint-mint-client",
- "fedimint-wallet-client",
- "ring",
- "secp256k1",
- "serde",
- "serde_json",
- "threshold_crypto",
-]
-
-[[package]]
 name = "fedimint-client-legacy"
 version = "0.1.0"
 dependencies = [

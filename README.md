@@ -12,7 +12,6 @@ This repo contains all source code for the Fedi tech stack:
 - /fedi-social-client
 - /fedi-social-common
 - /fedi-social-server
-- /fedimint-client-fedi
 - /fedimintd
 - /misc
 - /ui

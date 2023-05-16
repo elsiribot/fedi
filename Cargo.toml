@@ -2,7 +2,6 @@
 members = [
     "fedimintd",
     "fedimint-cli",
-    "fedimint-client-fedi",
     "fedi-social-common",
     "fedi-social-server",
     "fedi-social-client",
@@ -13,7 +12,6 @@ members = [
 default-members = [
     "fedimintd",
     "fedimint-cli",
-    "fedimint-client-fedi",
     "fedi-social-common",
     "fedi-social-server",
     "fedi-social-client",
