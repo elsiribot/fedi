@@ -1,7 +1,5 @@
-// TODO: move elsewhere
 use std::collections::BTreeMap;
 use std::fmt;
-use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::format_err;

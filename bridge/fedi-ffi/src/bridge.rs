@@ -1,48 +1,24 @@
-use std::{
-    collections::HashMap,
-    default::Default,
-    path::Path,
-    str::FromStr,
-    sync::Arc,
-    time::{Duration, SystemTime},
-};
+use std::{collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration};
 
-use fedi_social_client::{
-    common::VerificationDocument, FediSocialClientGen, FediSocialClientModule, RecoveryId,
-};
+use fedi_social_client::{common::VerificationDocument, FediSocialClientGen, RecoveryId};
 use fedimint_client::{
-    backup::Metadata,
-    db::ChronologicalOperationLogKey,
-    get_client_root_secret,
-    module::gen::{ClientModuleGenRegistry, IClientModuleGen},
-    sm::OperationId,
+    backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret, sm::OperationId,
     ClientBuilder, OperationLogEntry,
 };
-use fedimint_client_fedi::modules::{
-    ln::{contracts::IdentifiableContract, LightningClientGen},
-    mint::{MintClientExt, MintClientGen},
-    wallet::WalletClientGen,
-};
-use fedimint_core::{
-    api::FederationApiExt,
-    config::{FederationId, META_FEDERATION_NAME_KEY},
-    core::LEGACY_HARDCODED_INSTANCE_ID_MINT,
-    db::IDatabase,
-    module::{registry::ModuleDecoderRegistry, ApiRequestErased, CommonModuleGen},
-    query::EventuallyConsistent,
-};
+use fedimint_core::{config::FederationId, db::IDatabase, module::ApiRequestErased};
 use fedimint_ln_client::{
-    db::LightningGatewayKey, LightningClientExt, LightningClientModule, LightningCommonGen,
-    LightningGateway, LightningMeta, LnPayState, LnReceiveState,
+    db::LightningGatewayKey, LightningClientExt, LightningClientGen, LightningClientModule,
+    LightningMeta, LnPayState, LnReceiveState,
 };
-use fedimint_mint_client::{MintClientModule, MintMeta, MintMetaVariants, SpendableNote};
+use fedimint_mint_client::{
+    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants, SpendableNote,
+};
+use fedimint_wallet_client::WalletClientGen;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use url::Url;
 
 use crate::{
     event::{Event, TypedEventExt},
-    payment::{Payment, PaymentDirection, PaymentKey, PaymentKeyPrefix, PaymentStatus},
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
     },
@@ -53,33 +29,27 @@ use crate::{
     storage::{
         FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage, XmppUsername,
     },
-    tx::{
-        self, IncomingBitcoinTransactionStatus, Transaction, TransactionDirection, TransactionKey,
-        TransactionKeyPrefix,
-    },
+    tx::{Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
     types::{
-        self, federation_to_fedimint_federation, hacky_lightning_invoice_fee, FediConfig,
-        LnurlSignedMessage, XmppCredentials,
+        self, federation_to_fedimint_federation, FediConfig, LnurlSignedMessage, XmppCredentials,
     },
     EventSink,
 };
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::{
-    hashes::sha256,
     secp256k1::{Message, PublicKey, Secp256k1},
-    Address, Network, Script, Txid,
+    Address,
 };
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
-use fedimint_core::task::TaskHandle;
 use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
 use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
-use futures::{stream::FuturesUnordered, StreamExt};
+use futures::StreamExt;
 use lightning_invoice::Invoice;
 
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, info_span, instrument, warn, Instrument, Span};
+use tracing::{debug, info, warn};
 
 // Client NG
 use fedimint_client::Client as ClientNg;
@@ -599,7 +569,7 @@ impl Federation {
                                 .expect("failed to claim notes");
                             fed.ng_save_incoming_lightning_tx(&invoice).await;
                         }
-                        LnReceiveState::Canceled { reason } => {
+                        LnReceiveState::Canceled { .. } => {
                             // TODO: send message that it failed
                             // return Err(reason.into());
                         }
@@ -647,7 +617,7 @@ impl Federation {
     pub async fn subscribe_to_all_operation(&self) -> Result<()> {
         // FIXME: paginate this ...
         let operations = self.ng.get_operations(100).await;
-        for (log_key, log_entry) in operations.iter() {
+        for (log_key, _log_entry) in operations.iter() {
             self.subscribe_to_operation(log_key.operation_id).await?;
         }
 
@@ -900,13 +870,13 @@ impl Federation {
     }
 
     /// Check whether lightning invoice is safe to pay
-    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+    pub async fn can_pay_invoice(&self, _invoice: &Invoice) -> Result<()> {
         unimplemented!()
     }
 
     /// Validate that string is valid ecash and signed by federation.
     /// TODO: check that it's unspent in the federation.
-    pub async fn validate_ecash(&self, ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
+    pub async fn validate_ecash(&self, _ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
         unimplemented!()
     }
 

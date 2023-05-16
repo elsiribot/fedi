@@ -93,7 +93,7 @@ pub trait IEventSink: MaybeSend + MaybeSync + 'static {
     fn events(&self) -> Vec<(String, String)> {
         panic!("IEventSink.events() is only for testing")
     }
-    fn num_events_of_type(&self, event_type: String) -> usize {
+    fn num_events_of_type(&self, _event_type: String) -> usize {
         panic!("IEventSink.num_events_of_type() is only for testing")
     }
 }

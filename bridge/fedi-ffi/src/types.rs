@@ -1,10 +1,8 @@
 use std::collections::BTreeMap;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
-use fedimint_core::api::WsClientConnectInfo;
 use fedimint_core::config::{ClientConfig, PeerUrl};
 use fedimint_core::encoding::{Decodable, Encodable};
 use serde::{Deserialize, Serialize};

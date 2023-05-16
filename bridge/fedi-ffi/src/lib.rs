@@ -18,12 +18,9 @@ pub mod types;
 
 use std::{
     path::PathBuf,
-    str::FromStr,
     sync::{atomic::AtomicU64, Arc},
-    time::Duration,
 };
 
-use fedimint_bip39::Bip39RootSecretStrategy;
 pub use fedimint_core;
 use fedimint_core::{
     encoding::{Decodable, Encodable},
@@ -51,7 +48,7 @@ use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use tracing::{debug, error, info, instrument};
-use tx::{IncomingBitcoinTransactionStatus, Transaction};
+use tx::Transaction;
 use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
 
 use crate::{error::get_error_code, types::federation_to_fedimint_federation};
@@ -235,17 +232,17 @@ pub enum AddressOrInvoice {
 
 #[macro_rules_derive(rpc_method!)]
 async fn addressOrInvoice(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
     input: String,
 ) -> anyhow::Result<AddressOrInvoice> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    if let Ok(invoice) = input.parse::<Invoice>() {
+    // let federation = get_federation(&bridge, &federation_id).await?;
+    if let Ok(_invoice) = input.parse::<Invoice>() {
         // validate that we can pay this invoice
         // federation.can_pay_invoice(&invoice).await?;
         return Ok(AddressOrInvoice::Invoice);
     }
-    if let Ok(address) = input.parse::<Address>() {
+    if let Ok(_address) = input.parse::<Address>() {
         // validate that we can pay this invoice
         // federation.can_pay_address(&address)?;
         return Ok(AddressOrInvoice::Address);
@@ -298,14 +295,14 @@ pub struct ValidateEcashResponse {
 
 #[macro_rules_derive(rpc_method!)]
 async fn validateEcash(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
     // TODO: TieredMulti<SpendableNote>
     ecash: String,
 ) -> anyhow::Result<ValidateEcashResponse> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let ecash = fedimint_client_fedi::utils::parse_ecash(&ecash)?;
+    let ecash = parse_ecash(&ecash)?;
     // FIXME
+    // let federation = get_federation(&bridge, &federation_id).await?;
     // let (valid, amount) = federation.validate_ecash(ecash).await;
     let valid = true;
     let amount = ecash.total_amount();
@@ -325,11 +322,11 @@ async fn decodeInvoice(_bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<
 
 #[macro_rules_derive(rpc_method!)]
 async fn payAddress(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
-    address: String,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
+    _address: String,
     // TODO: parse this as bitcoin::Amount
-    sats: u64,
+    _sats: u64,
 ) -> anyhow::Result<String> {
     bail!("not implemented")
 }
@@ -677,6 +674,7 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
     use std::sync::Once;
     use std::time::UNIX_EPOCH;
     use std::{path, time::Duration};
