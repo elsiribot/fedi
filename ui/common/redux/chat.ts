@@ -312,6 +312,15 @@ export const chatSlice = createSlice({
             )
         })
 
+        builder.addCase(createChatGroup.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'groups',
+                action.payload,
+            )
+        })
+
         builder.addCase(fetchChatHistory.fulfilled, (state, action) => {
             const { federationId } = action.meta.arg
             const federation = getFederationChatState(state, federationId)
@@ -587,11 +596,16 @@ export const joinChatGroup = createAsyncThunk<
     const groupId = decodeGroupInvitationLink(link)
     const client = xmppChatClientManager.getClient(federationId)
     const group = await client.joinGroup(groupId)
-    return {
-        ...group,
-        members: [],
-        type: ChatType.group,
-    }
+    return group
+})
+
+export const createChatGroup = createAsyncThunk<
+    ChatGroup,
+    { federationId: string; id: string; name: string }
+>('chat/createChatGroup', async ({ federationId, id, name }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    const group = await client.joinGroup(id, name)
+    return group
 })
 
 export const configureChatGroup = createAsyncThunk<
@@ -747,6 +761,9 @@ export const selectAllChatMembers = (s: CommonState) =>
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
+export const selectChatClientStatus = (s: CommonState) =>
+    selectFederationChatState(s).clientStatus
+
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {
         const activeFederationMetadata = selectFederationMetadata(s)
@@ -879,3 +896,15 @@ export const selectChatGroup = createSelector(
         return chatGroups.find(g => g.id === groupId)
     },
 )
+
+/**
+ * Selects the XmppChatClient for the currently active federation.
+ * Only returns the client if it is online and ready to send and receive
+ * XMPP messages, otherwise return null.
+ */
+export const selectChatXmppClient = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+    const status = selectChatClientStatus(s)
+    if (!activeFederation || status !== 'online') return null
+    return xmppChatClientManager.getClient(activeFederation.id)
+}
