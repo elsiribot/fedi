@@ -889,7 +889,7 @@ export const selectChatMessages = createSelector(
         messages.filter(
             m =>
                 m.sentIn === chatId ||
-                m.sentBy === chatId ||
+                (m.sentBy === chatId && !m.sentIn) ||
                 (m.sentBy === me?.id && m.sentTo === chatId),
         ),
 )
