@@ -7,7 +7,9 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use fedi_social_client::{common::VerificationDocument, RecoveryId};
+use fedi_social_client::{
+    common::VerificationDocument, FediSocialClientGen, FediSocialClientModule, RecoveryId,
+};
 use fedimint_client::{
     backup::Metadata,
     db::ChronologicalOperationLogKey,
@@ -46,7 +48,7 @@ use crate::{
     },
     social::{
         RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryState, SocialVerification,
-        SOCIAL_RECOVERY_SECRET_CHILD_ID,
+        UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
     },
     storage::{
         FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage, XmppUsername,
@@ -317,6 +319,7 @@ impl Federation {
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen);
+        client_builder.with_module(FediSocialClientGen);
         client_builder.with_primary_module(1);
         client_builder.with_config(config.client_config.clone());
         client_builder.with_dyn_database(db);
@@ -329,6 +332,7 @@ impl Federation {
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen);
+        client_builder.with_module(FediSocialClientGen);
         client_builder.with_primary_module(1);
         client_builder.with_config(config.client_config.clone());
         client_builder.with_old_client_database(client);
@@ -469,6 +473,22 @@ impl Federation {
     /// Get client root secret
     async fn root_secret(&self) -> DerivableSecret {
         get_client_root_secret::<Bip39RootSecretStrategy>(self.ng.db()).await
+    }
+
+    /// Fetch mnemonic from database
+    pub async fn get_mnemonic(&self) -> bip39::Mnemonic {
+        self.ng
+            .root_secret_encoding::<Bip39RootSecretStrategy>()
+            .await
+    }
+
+    /// Fetch mnemonic from database as vec of strings
+    pub async fn get_mnemonic_words(&self) -> Vec<String> {
+        self.get_mnemonic()
+            .await
+            .word_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     /// backup all state and username as metadata with the federation
@@ -1062,5 +1082,22 @@ impl Federation {
             self.ng.dyn_api(),
             peer_id,
         ))
+    }
+
+    /// Upload social recovery recovery file to federation given a recovery video
+    pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
+        let verification_doc = VerificationDocument::from_raw(&video_file);
+
+        let seed_words = self.get_mnemonic_words().await;
+        let seed_string = seed_words.join(" ");
+        let seed_phrase = UserSeedPhrase::from(seed_string);
+
+        let backup_client = self.social_backup().await?;
+        let recovery_file =
+            backup_client.prepare_recovery_file(verification_doc.clone(), seed_phrase.clone());
+        backup_client
+            .upload_backup_to_federation(&recovery_file)
+            .await?;
+        Ok(recovery_file.to_bytes())
     }
 }

@@ -467,7 +467,7 @@ where
         request: &SignedBackupRequest,
     ) -> FederationResult<()> {
         self.request_current_consensus(
-            format!("/module/{module_id}/backup"),
+            format!("module_{module_id}_backup"),
             ApiRequestErased::new(request),
         )
         .await

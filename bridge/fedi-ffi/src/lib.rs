@@ -387,13 +387,7 @@ async fn getMnemonic(
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<String>> {
     let federation = get_federation(&bridge, &federation_id).await?;
-    let words = federation
-        .ng
-        .root_secret_encoding::<Bip39RootSecretStrategy>()
-        .await
-        .word_iter()
-        .map(|s| s.to_string())
-        .collect();
+    let words = federation.get_mnemonic_words().await;
     Ok(words)
 }
 
@@ -428,7 +422,17 @@ async fn uploadBackupFile(
     federation_id: FederationId,
     video_file_path: PathBuf,
 ) -> anyhow::Result<PathBuf> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    let federation = get_federation(&bridge, &federation_id).await?;
+    debug!("uploading backup file {:?}", video_file_path);
+    let video_file = storage.read_file(&video_file_path).await?;
+
+    let recovery_file = federation.upload_backup_file(video_file).await?;
+
+    storage
+        .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
+        .await?;
+    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
 
 // This method is a bit of a stopgap ...
@@ -986,6 +990,24 @@ mod tests {
 
         // TODO: load config from db and see that the username is in there
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_social_recovery() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // Get original mnemonic (for comparison later)
+        let words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        info!("initial mnemnoic {:?}", &words);
+
+        // Upload backup
+        let video_file_path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
+        let video_file_contents = tokio::fs::read(&video_file_path).await?;
+        let recovery_file_path =
+            uploadBackupFile(bridge, federation.federation_id().into(), video_file_path).await?;
+        info!(recovery_file_path = ?recovery_file_path);
         Ok(())
     }
 
