@@ -482,7 +482,14 @@ async fn socialRecoveryApprovals(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryEvent> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let (approvals, remaining) = federation.social_recovery_approvals().await?;
+    let result = SocialRecoveryEvent {
+        federation_id,
+        approvals,
+        remaining,
+    };
+    Ok(result)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1083,7 +1090,6 @@ mod tests {
                 0 => "1111",
                 1 => "2222",
                 2 => "3333",
-                3 => "4444",
                 _ => panic!("invalid peer id"),
             };
             approveSocialRecoveryRequest(
@@ -1095,6 +1101,19 @@ mod tests {
             )
             .await?;
         }
+
+        // Member checks approval status
+        let social_recovery_event =
+            socialRecoveryApprovals(bridge.clone(), federation.federation_id().into()).await?;
+        assert_eq!(0, social_recovery_event.remaining);
+        assert_eq!(
+            3,
+            social_recovery_event
+                .approvals
+                .iter()
+                .filter(|app| app.approved)
+                .count()
+        );
 
         Ok(())
     }

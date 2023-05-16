@@ -1219,4 +1219,43 @@ impl Federation {
             .await?;
         Ok(())
     }
+
+    /// Get a list of the state of all social recoveries from all guardians
+    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
+        let mut recovery_client = self.social_recovery_continue().await?;
+        let guardian_peer_ids: Vec<(String, PeerId)> = self
+            .get_config()
+            .await?
+            .client_config
+            .api_endpoints
+            .into_iter()
+            .map(|(peer_id, endpoint)| (endpoint.name.clone(), peer_id))
+            .collect();
+        let mut approvals = vec![];
+        for (guardian_name, peer_id) in guardian_peer_ids {
+            let approved = recovery_client
+                .get_decryption_share_from(peer_id)
+                .await
+                .unwrap_or_else(|_| {
+                    debug!("failed to get decryption share from peer {}", peer_id);
+                    false
+                });
+            approvals.push(SocialRecoveryApproval {
+                guardian_name,
+                approved,
+            });
+        }
+
+        // calculate approvals remaining
+        let approvals_required = required_threashold_of(approvals.len());
+        let num_approvals = approvals.iter().filter(|a| a.approved).count();
+        let remaining = approvals_required.saturating_sub(num_approvals);
+
+        // Save progress to DB
+        let mut dbtx = self.dbtx().await;
+        self.social_recovery_save(&recovery_client, &mut dbtx).await;
+        dbtx.commit_tx().await;
+
+        Ok((approvals, remaining))
+    }
 }
