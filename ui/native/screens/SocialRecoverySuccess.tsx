@@ -22,11 +22,7 @@ const SocialRecoverySuccess: React.FC<Props> = () => {
             messageText={t('feature.recovery.you-completed-social-recovery')}
             buttonText={t('words.okay')}
             // returning members might still need to set their username
-            nextScreen={
-                authenticatedMember?.username
-                    ? 'TabsNavigator'
-                    : 'CreateUsername'
-            }
+            nextScreen={authenticatedMember ? 'TabsNavigator' : 'Initializing'}
         />
     )
 }
