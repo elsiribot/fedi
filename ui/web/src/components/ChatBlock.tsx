@@ -50,7 +50,7 @@ const Layout = styled('div', {
     overflow: 'hidden',
 
     '@md': {
-        height: 'calc(100vh - 220px)',
+        height: 'calc(100vh - 240px)',
     },
 
     '@sm': {
