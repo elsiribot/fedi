@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router'
 import React from 'react'
 
-import { keyframes, styled, theme } from '../../styles'
+import { useMediaQuery } from '../../hooks'
+import { keyframes, styled, theme, config } from '../../styles'
 import { FederationSelector } from './FederationSelector'
 import { Navigation } from './Navigation'
 
@@ -11,12 +12,23 @@ interface Props {
 
 export const Template: React.FC<Props> = ({ children }) => {
     const router = useRouter()
-    const hideNavigation = router.pathname.startsWith('/onboarding')
+    const isSm = useMediaQuery(config.media.sm)
+
+    // TODO: Move these out of template and into some better configuration management
+    const isFullWidthPage = router.pathname.startsWith('/chat')
+    const isFullScreenPage =
+        router.asPath.startsWith('/chat/group') ||
+        router.asPath.startsWith('/chat/member')
+    const hideNavigation =
+        router.pathname.startsWith('/onboarding') || (isSm && isFullScreenPage)
 
     return (
         <Container>
             {!hideNavigation && <Navigation />}
-            <Content centered={hideNavigation}>
+            <Content
+                centered={hideNavigation}
+                fullWidth={isFullWidthPage}
+                fullScreen={isFullScreenPage}>
                 {!hideNavigation && <FederationSelector />}
                 {children}
             </Content>
@@ -61,6 +73,20 @@ const Content = styled('main', {
         centered: {
             true: {
                 justifyContent: 'center',
+            },
+        },
+        fullWidth: {
+            true: {
+                '@sm': {
+                    padding: '36px 0 0',
+                },
+            },
+        },
+        fullScreen: {
+            true: {
+                '@sm': {
+                    padding: 0,
+                },
             },
         },
     },

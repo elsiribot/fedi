@@ -4,11 +4,16 @@ import { keyframes, styled, theme } from '../styles'
 
 interface Props {
     maxWidth?: number
+    padding?: number
     children: React.ReactNode
 }
 
-export const ContentBlock: React.FC<Props> = ({ children, maxWidth = 600 }) => {
-    return <Container css={{ maxWidth }}>{children}</Container>
+export const ContentBlock: React.FC<Props> = ({
+    children,
+    maxWidth = 600,
+    padding,
+}) => {
+    return <Container css={{ maxWidth, padding }}>{children}</Container>
 }
 
 const Container = styled('div', {
@@ -24,6 +29,7 @@ const Container = styled('div', {
     },
 
     '@sm': {
+        height: '100%',
         padding: 0,
         borderRadius: 0,
         boxShadow: 'none',

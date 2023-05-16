@@ -177,6 +177,7 @@
             "new-message": "New message",
             "new-group": "New group",
             "no-one-is-in-this-group": "No one is in this group yet.",
+            "send-a-message-to": "Send a message to {{name}}",
             "they-requested-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
             "they-sent-payment": "{{name}} sent you {{amount}} {{unit}} {{memo}}",
             "group-invite": "Group invite",

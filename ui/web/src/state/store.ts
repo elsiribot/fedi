@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 
 import {
     commonMiddleware,
@@ -10,11 +10,10 @@ import {
 import { fedimint } from '../lib/bridge'
 import i18n, { detectLanguage } from '../localization/i18n'
 
+const reducer = combineReducers({ ...commonReducers })
 export const store = configureStore({
     middleware: commonMiddleware,
-    reducer: {
-        ...commonReducers,
-    },
+    reducer,
 })
 
 export type AppState = ReturnType<typeof store.getState>
@@ -40,4 +39,11 @@ export function initializeWebStore() {
             i18n.changeLanguage(detectedLanguage)
         })
     }
+}
+
+// Handle hot-reloading reducers.
+if (process.env.NODE_ENV !== 'production' && (module as any)?.hot) {
+    ;(module as any).hot.accept('@fedi/common/redux', () =>
+        store.replaceReducer(reducer),
+    )
 }
