@@ -234,6 +234,19 @@ export const chatSlice = createSlice({
                 encryptionKeys,
             }
         },
+        setLastFetchedMessageId(
+            state,
+            action: FederationPayloadAction<{
+                lastFetchedMessageId: FederationChatState['lastFetchedMessageId']
+            }>,
+        ) {
+            const { federationId, lastFetchedMessageId } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastFetchedMessageId,
+            }
+        },
         resetAuthenticatedMember(state, action: FederationPayloadAction<{}>) {
             const { federationId } = action.payload
             const federation = getFederationChatState(state, federationId)
@@ -340,6 +353,7 @@ export const {
     addChatGroup,
     setAuthenticatedMember,
     setChatEncryptionKeys,
+    setLastFetchedMessageId,
     resetAuthenticatedMember,
     resetFederationChatState,
     resetChatState,
