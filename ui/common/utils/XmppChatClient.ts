@@ -137,11 +137,7 @@ export class XmppChatClient {
 
                 if (rosterMembers) {
                     membersSeen = rosterMembers.map(memberEl => {
-                        const id = memberEl.getAttr('jid')
-                        return {
-                            id,
-                            username: id.split('@')[0],
-                        }
+                        return this.memberFromJid(memberEl.getAttr('jid'))
                     })
                 }
             }
@@ -495,9 +491,9 @@ export class XmppChatClient {
         this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const id = stanza.getAttr('from')
-        if (id) {
-            this.emit('memberSeen', { id, username: id.split('@')[0] })
+        const jid = stanza.getAttr('from')
+        if (jid) {
+            this.emit('memberSeen', this.memberFromJid(jid))
         }
 
         // Emit a 'group' for the group this is in, in case we hadn't seen it or it has a new name
@@ -517,9 +513,9 @@ export class XmppChatClient {
         this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const id = stanza.getAttr('from')
-        if (id) {
-            this.emit('memberSeen', { id, username: id.split('@')[0] })
+        const jid = stanza.getAttr('from')
+        if (jid) {
+            this.emit('memberSeen', this.memberFromJid(jid))
         }
     }
 
@@ -537,12 +533,12 @@ export class XmppChatClient {
             return
         }
 
-        // if the node ID does not match the publisher JID... this pubkey
+        // if the node ID does not match the publisher username... this pubkey
         // was not published by Fedi source code...
         // do not overwrite the locally stored pubkey for this member
         // TODO: implement signature validation for authentication?
-        const publisherUsername = publisherJid.split('@')[0]
-        if (!nodeId.includes(publisherUsername)) {
+        const member = this.memberFromJid(publisherJid)
+        if (!nodeId.includes(member.username)) {
             console.warn(
                 'node ID does not match the publisher username',
                 stanza,
@@ -550,20 +546,16 @@ export class XmppChatClient {
             return
         }
 
-        const pubkey = publishedItem?.getChildText('entry')
-        if (!pubkey) {
+        const publicKeyHex = publishedItem?.getChildText('entry')
+        if (!publicKeyHex) {
             console.warn('subscription event did not have pubkey', stanza)
             return
         }
 
-        const publishingMember: ChatMember = {
-            id: publisherJid,
-            username: publisherUsername,
-            publicKeyHex: pubkey,
-        }
-        console.info('publishingMember', publishingMember)
-
-        this.emit('memberSeen', publishingMember)
+        this.emit('memberSeen', {
+            ...member,
+            publicKeyHex,
+        })
     }
 
     private handleIncomingMessageHistory(stanza: Element) {
@@ -578,9 +570,9 @@ export class XmppChatClient {
         this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const id = message.getAttr('from')
-        if (id) {
-            this.emit('memberSeen', { id, username: id.split('@')[0] })
+        const jid = message.getAttr('from')
+        if (jid) {
+            this.emit('memberSeen', this.memberFromJid(jid))
         }
     }
 
@@ -588,9 +580,9 @@ export class XmppChatClient {
         const rosterItem = stanza.getChild('query')?.getChild('item')
         if (!rosterItem) return
 
-        const id = rosterItem?.getAttr('jid')
-        if (id) {
-            this.emit('memberSeen', { id, username: id.split('@') })
+        const jid = rosterItem?.getAttr('jid')
+        if (jid) {
+            this.emit('memberSeen', this.memberFromJid(jid))
         }
     }
 
@@ -698,11 +690,10 @@ export class XmppChatClient {
         jid: ReturnType<typeof makeJid>,
     ) {
         const idToJidMember = (id: string) => {
+            const [_local, rest] = id.split('@')
+            const [_domain] = (rest || '').split('/')
             return {
-                jid: {
-                    _local: id.split('@')[0],
-                    _domain: id.split('@')[1],
-                },
+                jid: { _local, _domain },
             }
         }
 
@@ -736,6 +727,14 @@ export class XmppChatClient {
                 id: group.id,
                 name: group.name,
             },
+        }
+    }
+
+    private memberFromJid(jidString: string): ChatMember {
+        const id = jidString.split('/')[0]
+        return {
+            id,
+            username: id.split('@')[0],
         }
     }
 }
