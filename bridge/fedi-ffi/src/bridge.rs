@@ -244,6 +244,12 @@ impl Bridge {
         let mut federations = self.federations.lock().await;
         let (config, event_sink, client) = match federations.remove(&federation_id) {
             Some(federation) => {
+                if federation.ng_balance().await > fedimint_core::Amount::from_sats(100) {
+                    bail!("Cannot restore from backup if current balance exceeds 100 sats")
+                }
+                // wipe database
+                info!("wiping database");
+                federation.ng.wipe_state().await?;
                 let config = federation.get_config().await?;
                 let event_sink = federation.event_sink.clone();
                 federation
