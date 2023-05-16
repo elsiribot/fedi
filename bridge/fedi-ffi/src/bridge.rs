@@ -23,7 +23,7 @@ use fedimint_client_fedi::{
         mint::{MintClientExt, MintClientGen},
         wallet::WalletClientGen,
     },
-    Client, FediClient, RecoveryFile, SocialRecovery, UserClientConfig, UserSeedPhrase,
+    Client, FediClient, RecoveryFile, SocialRecovery, UserSeedPhrase,
 };
 use fedimint_core::{
     api::FederationApiExt,
@@ -89,8 +89,6 @@ use tracing::{debug, error, info, info_span, instrument, warn, Instrument, Span}
 
 // Client NG
 use fedimint_client::Client as ClientNg;
-
-pub type FediUserClient = FediClient<UserClientConfig>;
 
 // const GAP_LIMIT: usize = 100;
 pub const XMPP_CHILD_ID: ChildId = ChildId(10);
@@ -322,7 +320,7 @@ impl Federation {
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen);
         client_builder.with_primary_module(1);
-        client_builder.with_config(config.client_config.clone().0);
+        client_builder.with_config(config.client_config.clone());
         client_builder.with_dyn_database(db);
         client_builder
     }
@@ -334,7 +332,7 @@ impl Federation {
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen);
         client_builder.with_primary_module(1);
-        client_builder.with_config(config.client_config.clone().0);
+        client_builder.with_config(config.client_config.clone());
         client_builder.with_old_client_database(client);
         client_builder
     }
@@ -398,10 +396,10 @@ impl Federation {
         let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
         connect_cfg.url = override_localhost(&connect_cfg.url);
         let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
-        let mut cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
+        let mut client_config: ClientConfig = api.download_client_config(&connect_cfg).await?;
 
         // hack for local testing
-        cfg.api_endpoints = cfg
+        client_config.api_endpoints = client_config
             .api_endpoints
             .into_iter()
             .map(|(peer_id, mut peer_url)| {
@@ -410,10 +408,8 @@ impl Federation {
             })
             .collect();
 
-        let fedi_config = FediConfig {
-            client_config: UserClientConfig(cfg),
-        };
-        let federation_id: FederationId = fedi_config.client_config.0.federation_id.clone();
+        let fedi_config = FediConfig { client_config };
+        let federation_id: FederationId = fedi_config.client_config.federation_id.clone();
 
         // Save config to db
         let dyn_db = storage.federation_db(&federation_id).await?;
