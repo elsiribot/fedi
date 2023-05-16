@@ -314,7 +314,7 @@ impl SocialRecovery {
             .api
             .request_raw(
                 peer_id,
-                &format!("/module/{}/decryption_share", self.module_id),
+                &format!("module_{}_decryption_share", self.module_id),
                 &[ApiRequestErased::new(
                     &(self
                         .state
@@ -407,7 +407,7 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("/module/{}/get_verification", self.module_id),
+                &format!("module_{}_get_verification", self.module_id),
                 &[ApiRequestErased::new(&(id)).to_json()],
             )
             .await?;
@@ -426,7 +426,7 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("/module/{}/approve_recovery", self.module_id),
+                &format!("_module_{}_approve_recovery", self.module_id),
                 &[ApiRequestErased::new(&(id, admin_password)).to_json()],
             )
             .await?;
@@ -479,7 +479,7 @@ where
         request: &SignedRecoveryRequest,
     ) -> FederationResult<()> {
         self.request_current_consensus(
-            format!("/module/{module_id}/recover"),
+            format!("module_{module_id}_recover"),
             ApiRequestErased::new(request),
         )
         .await

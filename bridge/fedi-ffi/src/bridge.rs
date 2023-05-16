@@ -1047,7 +1047,7 @@ impl Federation {
     }
 
     /// Continue social recovery session
-    pub async fn social_recovery_continue(
+    pub async fn social_recovery_continue_inner(
         &self,
         prev_state: SocialRecoveryState,
     ) -> Result<SocialRecovery> {
@@ -1065,6 +1065,16 @@ impl Federation {
             self.ng.dyn_api(),
             prev_state,
         ))
+    }
+
+    /// Attempt to continue a previous social recovery session by loading state from DB
+    pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
+        let mut dbtx = self.dbtx().await;
+        let state = dbtx
+            .get_value(&SocialRecoveryStateKey(self.federation_id()))
+            .await
+            .ok_or(anyhow!("no active recovery session"))?;
+        Ok(self.social_recovery_continue_inner(state).await?)
     }
 
     /// Get social verification client for a guardian
@@ -1099,5 +1109,68 @@ impl Federation {
             .upload_backup_to_federation(&recovery_file)
             .await?;
         Ok(recovery_file.to_bytes())
+    }
+
+    /// Save social recovery session state to the DB
+    pub async fn social_recovery_save(
+        &self,
+        recovery_client: &SocialRecovery,
+        dbtx: &mut DatabaseTransaction<'_>,
+    ) {
+        // FIXME: should I pass dbtx from outside?
+        dbtx.insert_entry(
+            &SocialRecoveryStateKey(self.federation_id()),
+            recovery_client.state(),
+        )
+        .await;
+    }
+
+    /// Get social recovery Id from the DB. This is used to generate the recovery QR.
+    pub async fn get_social_recovery_id(&self) -> Option<types::RecoveryId> {
+        self.dbtx()
+            .await
+            .get_value(&SocialRecoveryIdKey(self.federation_id()))
+            .await
+            .map(types::RecoveryId)
+    }
+
+    /// Save social recovery ID to the DB. This is used to generate the recovery QR.
+    pub async fn save_social_recovery_id(
+        &self,
+        recovery_id: &RecoveryId,
+        dbtx: &mut DatabaseTransaction<'_>,
+    ) {
+        dbtx.insert_entry(&SocialRecoveryIdKey(self.federation_id()), &recovery_id)
+            .await;
+    }
+
+    /// Start a new social recovery session if one doesn't exist already
+    /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
+    /// Also won't be able to do simulataneous recoveries in 2 federations.
+    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
+        let mut dbtx = self.dbtx().await;
+        let recovery_client = match self.social_recovery_continue().await {
+            Ok(recovery_client) => recovery_client,
+            Err(_) => {
+                let recovery_client = self.social_recovery_start(recovery_file.clone()).await?;
+                self.social_recovery_save(&recovery_client, &mut dbtx).await;
+                recovery_client
+            }
+        };
+        // If we don't have a social recovery ID in the database, create one
+        if self.get_social_recovery_id().await.is_none() {
+            tracing::info!("saving social recovery id");
+            let verification_request = recovery_client
+                .create_verification_request(recovery_file.verification_document.clone())?;
+            recovery_client
+                .upload_verification_request(&verification_request)
+                .await
+                .context("upload verification request")?;
+            let recovery_id = verification_request.recovery_id();
+            self.save_social_recovery_id(&recovery_id, &mut dbtx).await;
+        }
+        dbtx.commit_tx().await;
+        self.send_federation_event().await;
+        Ok(())
     }
 }

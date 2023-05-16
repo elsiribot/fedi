@@ -24,7 +24,6 @@ use std::{
 };
 
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client_fedi::RecoveryFile;
 pub use fedimint_core;
 use fedimint_core::{
     encoding::{Decodable, Encodable},
@@ -33,6 +32,7 @@ use fedimint_core::{
 };
 use fedimint_ln_client::LightningClientExt;
 use fedimint_mint_client::SpendableNote;
+use social::RecoveryFile;
 pub use tokio;
 
 use bitcoin::{secp256k1::Message, Address};
@@ -447,7 +447,15 @@ async fn validateRecoveryFile(
     federation_id: FederationId,
     path: PathBuf,
 ) -> anyhow::Result<bool> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    let contents = storage.read_file(&path).await?;
+    let recovery_file = RecoveryFile::from_bytes(&contents)?;
+    let federation = get_federation(&bridge, &federation_id).await?;
+    federation.start_social_recovery(&recovery_file).await?;
+    // TODO: check that the federation matches and everything
+    // also fixed by using federation-specific location
+    let valid = RecoveryFile::from_bytes(&contents).is_ok();
+    Ok(valid)
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
@@ -1005,9 +1013,22 @@ mod tests {
         let video_file_path =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
         let video_file_contents = tokio::fs::read(&video_file_path).await?;
-        let recovery_file_path =
-            uploadBackupFile(bridge, federation.federation_id().into(), video_file_path).await?;
+        let recovery_file_path = uploadBackupFile(
+            bridge.clone(),
+            federation.federation_id().into(),
+            video_file_path,
+        )
+        .await?;
         info!(recovery_file_path = ?recovery_file_path);
+
+        // Validate recovery file
+        let valid = validateRecoveryFile(
+            bridge.clone(),
+            federation.federation_id().into(),
+            recovery_file_path,
+        )
+        .await?;
+        assert!(valid);
         Ok(())
     }
 
