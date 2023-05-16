@@ -1173,4 +1173,15 @@ impl Federation {
         self.send_federation_event().await;
         Ok(())
     }
+
+    /// Produce social recovery QR
+    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
+        // Return social recovery QR
+        tracing::info!("looking up recovery id for qr");
+        let recovery_id = self
+            .get_social_recovery_id()
+            .await
+            .ok_or(anyhow!("No recovery ID found"))?;
+        Ok(SocialRecoveryQr { recovery_id })
+    }
 }

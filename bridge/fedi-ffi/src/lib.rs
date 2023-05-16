@@ -464,7 +464,17 @@ async fn recoveryQr(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryQr> {
-    unimplemented!()
+    // Return QR code contents
+    let federation = get_federation(&bridge, &federation_id).await?;
+
+    // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
+    let storage = bridge.storage.clone();
+    let contents = storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
+    let recovery_file = RecoveryFile::from_bytes(&contents)?;
+    // Upload verification document if none exists.
+    federation.start_social_recovery(&recovery_file).await?;
+    let qr = federation.social_recovery_qr().await?;
+    Ok(qr)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1029,6 +1039,9 @@ mod tests {
         )
         .await?;
         assert!(valid);
+
+        let qr = recoveryQr(bridge.clone(), federation.federation_id().into()).await?;
+        let recovery_id = qr.recovery_id;
         Ok(())
     }
 
