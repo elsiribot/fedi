@@ -34,10 +34,10 @@ use fedimint_core::{
     query::EventuallyConsistent,
 };
 use fedimint_ln_client::{
-    LightningClientExt, LightningClientModule, LightningCommonGen, LightningGateway, LightningMeta,
-    LnPayState, LnReceiveState,
+    db::LightningGatewayKey, LightningClientExt, LightningClientModule, LightningCommonGen,
+    LightningGateway, LightningMeta, LnPayState, LnReceiveState,
 };
-use fedimint_mint_client::{MintClientModule, MintCommonGen, MintMeta, MintMetaVariants};
+use fedimint_mint_client::{MintClientModule, MintMeta, MintMetaVariants, SpendableNote};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use url::Url;
@@ -68,13 +68,6 @@ use bitcoin::{
     Address, Network, Script, Txid,
 };
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client_legacy::{
-    api::WalletFederationApi,
-    ln::db::LightningGatewayKey,
-    mint::SpendableNote,
-    modules::{ln::contracts::ContractId, wallet::WalletCommonGen},
-    utils::network_to_currency,
-};
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
 use fedimint_core::task::TaskHandle;
 use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
@@ -83,7 +76,6 @@ use fedimint_derive_secret::{ChildId, DerivableSecret};
 use futures::{stream::FuturesUnordered, StreamExt};
 use lightning_invoice::Invoice;
 
-use fedimint_client_legacy::{utils::from_hex, wallet::db::PegInPrefixKey};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, info_span, instrument, warn, Instrument, Span};
 

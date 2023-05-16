@@ -24,7 +24,6 @@ use std::{
 
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client_fedi::RecoveryFile;
-pub use fedimint_client_legacy;
 pub use fedimint_core;
 use fedimint_core::{
     encoding::{Decodable, Encodable},

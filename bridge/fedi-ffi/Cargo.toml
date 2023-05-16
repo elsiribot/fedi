@@ -8,7 +8,6 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
 [dependencies]
-fedimint-client-legacy = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-mint-client = { workspace = true }
