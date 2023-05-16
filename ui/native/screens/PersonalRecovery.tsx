@@ -121,6 +121,9 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         const recoverFromSeed = async () => {
             try {
                 if (activeFederation) {
+                    // FIXME: this prevents recoverFromMnemonic from being called multiple times (it was)
+                    // but also causes the progress indicator to not show
+                    setRecoveryInProgress(false)
                     await dispatch(
                         recoverFromMnemonic({
                             fedimint,
@@ -128,7 +131,6 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             mnemonic: seedWords,
                         }),
                     ).unwrap()
-                    setRecoveryInProgress(false)
                     navigation.dispatch(resetAfterPersonalRecovery())
                 }
             } catch (error) {
