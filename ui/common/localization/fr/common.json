@@ -312,7 +312,7 @@
             "copied-payment-code": "Demande de paiement copiée",
             "create-lightning-request": "Créer une demande lightning",
             "instructions": "Entrez le montant que vous souhaitez recevoir",
-            "maximum-invoice-amount": "Le montant maximum de la facture est de 200 000 sats",
+            "maximum-invoice-amount": "Le montant maximum de la facture est de {{maxAmount}} sats",
             "onchain-notice": "Les dépôts sur la chaîne prennent environ 10 heures pour être confirmés. Utilisez Lightning pour des transactions instantanées",
             "pending-transaction": "transaction en attente",
             "request-bitcoin": "Demander des bitcoins",
