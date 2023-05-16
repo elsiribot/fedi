@@ -11,6 +11,7 @@ mod ffi;
 pub mod logging;
 pub mod payment;
 pub mod recovery;
+pub mod social;
 pub mod storage;
 pub mod tx;
 pub mod types;

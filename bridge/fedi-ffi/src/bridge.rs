@@ -23,7 +23,8 @@ use fedimint_client_fedi::{
         mint::{MintClientExt, MintClientGen},
         wallet::WalletClientGen,
     },
-    Client, FediClient, RecoveryFile, SocialRecovery, UserSeedPhrase,
+    Client, FediClient, RecoveryFile, SocialBackup, SocialRecovery, UserSeedPhrase,
+    SOCIAL_RECOVERY_SECRET_CHILD_ID,
 };
 use fedimint_core::{
     api::FederationApiExt,
@@ -449,6 +450,28 @@ impl Federation {
             .await?;
         let connect_info = serde_json::from_value(response)?;
         Ok(connect_info)
+    }
+
+    pub fn social_recovery_secret_static(root_secret: &DerivableSecret) -> DerivableSecret {
+        assert_eq!(root_secret.level(), 0);
+        root_secret.child_key(SOCIAL_RECOVERY_SECRET_CHILD_ID)
+    }
+
+    pub async fn social_backup(&self) -> Result<SocialBackup> {
+        let (module_id, cfg) = self
+            .get_config()
+            .await?
+            .client_config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+        Ok(SocialBackup {
+            module_secret: Self::social_recovery_secret_static(&self.root_secret().await),
+            module_id,
+            config: cfg,
+            api: self.ng.dyn_api(),
+        })
     }
 
     /// Get federation name
