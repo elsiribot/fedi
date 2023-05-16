@@ -5,6 +5,7 @@ import {
     createAsyncThunk,
     ThunkDispatch,
     AnyAction,
+    isAnyOf,
 } from '@reduxjs/toolkit'
 import isEqual from 'lodash/isEqual'
 import orderBy from 'lodash/orderBy'
@@ -303,24 +304,6 @@ export const chatSlice = createSlice({
             )
         })
 
-        builder.addCase(joinChatGroup.fulfilled, (state, action) => {
-            return upsertEntityToChatState(
-                state,
-                action.meta.arg.federationId,
-                'groups',
-                action.payload,
-            )
-        })
-
-        builder.addCase(createChatGroup.fulfilled, (state, action) => {
-            return upsertEntityToChatState(
-                state,
-                action.meta.arg.federationId,
-                'groups',
-                action.payload,
-            )
-        })
-
         builder.addCase(fetchChatHistory.fulfilled, (state, action) => {
             const { federationId } = action.meta.arg
             const federation = getFederationChatState(state, federationId)
@@ -346,6 +329,22 @@ export const chatSlice = createSlice({
                 },
             )
         })
+
+        builder.addMatcher(
+            isAnyOf(
+                joinChatGroup.fulfilled,
+                createChatGroup.fulfilled,
+                configureChatGroup.fulfilled,
+            ),
+            (state, action) => {
+                return upsertEntityToChatState(
+                    state,
+                    action.meta.arg.federationId,
+                    'groups',
+                    action.payload,
+                )
+            },
+        )
     },
 })
 
@@ -609,12 +608,26 @@ export const createChatGroup = createAsyncThunk<
 })
 
 export const configureChatGroup = createAsyncThunk<
-    void,
-    { federationId: string; groupId: string; groupName: string }
->('chat/editChatGroup', ({ federationId, groupId, groupName }) => {
-    const client = xmppChatClientManager.getClient(federationId)
-    return client.configureGroup(groupId, groupName)
-})
+    ChatGroup,
+    { federationId: string; groupId: string; groupName: string },
+    { state: CommonState }
+>(
+    'chat/configureChatGroup',
+    async ({ federationId, groupId, groupName }, { getState }) => {
+        const group = getState().chat[federationId]?.groups.find(
+            g => g.id === groupId,
+        )
+        if (!group) throw new Error('No group found with that ID')
+
+        const client = xmppChatClientManager.getClient(federationId)
+        await client.configureGroup(groupId, groupName)
+
+        return {
+            ...group,
+            name: groupName,
+        }
+    },
+)
 
 export const sendDirectMessage = createAsyncThunk<
     ChatMessage,
