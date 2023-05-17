@@ -1,4 +1,6 @@
-export const SITES = [
+import type { Site } from '../types/fedimint'
+
+export const SITES: Site[] = [
     // TODO: Show only for regtest federations
     // shouldn't be used on mainnet
     // {

@@ -132,6 +132,8 @@ export interface ClientConfigMetadata {
     onchain_deposits_disabled?: string
     // 2. switch to MSats (number)
     max_invoice_msats?: MsatsString
+    // 3. Site[]
+    sites?: string
 }
 
 export interface Federation {
@@ -145,6 +147,14 @@ export interface Federation {
 }
 
 export type SeedWords = string[]
+
+export interface Site {
+    id: string
+    title: string
+    url: string
+    description?: string
+    color?: string
+}
 
 /*
  * Mocked-out social backup and recovery events

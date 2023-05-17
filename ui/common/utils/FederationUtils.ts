@@ -1,7 +1,9 @@
+import { SITES } from '../constants/sites'
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
     MSats,
+    Site,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
@@ -93,7 +95,7 @@ export const shouldShowInviteCode = (
 export const shouldShowSocialRecovery = (
     metadata: ClientConfigMetadata,
 ): boolean => {
-    return true;
+    return true
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )
@@ -133,4 +135,19 @@ export const shouldShowOnchainDeposits = (
         return metadata.social_recovery_disabled === 'true' ? false : true
     }
     return true
+}
+
+export const getFederationSites = (metadata: ClientConfigMetadata): Site[] => {
+    if (metadata.sites) {
+        try {
+            // TODO: validate type matches Site[]
+            return JSON.parse(metadata.sites)
+        } catch (err) {
+            console.warn(
+                'Failed to parse federation sites, falling back to defaults',
+                metadata.sites,
+            )
+        }
+    }
+    return SITES
 }
