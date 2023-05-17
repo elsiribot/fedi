@@ -46,7 +46,7 @@
         fedName = fed.id;
         joined = true;
       }
-      // mnemonic = (await rpc.getMnemonic({federationId: fedName})).join(" ");
+      mnemonic = (await rpc.getMnemonic({federationId: fedName})).join(" ");
     } catch (error) {
       console.error(error);
       hasError = true;
@@ -62,7 +62,6 @@
       const fed = await rpc.joinFederation({connectString});
       fedName = fed.name;
       joined = true;
-      mnemonic = "abc";
     } catch (error) {
       console.error(error);
       hasError = true;
