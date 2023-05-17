@@ -236,7 +236,6 @@ async fn addressOrInvoice(
     _federation_id: FederationId,
     input: String,
 ) -> anyhow::Result<AddressOrInvoice> {
-    // let federation = get_federation(&bridge, &federation_id).await?;
     if let Ok(_invoice) = input.parse::<Invoice>() {
         // validate that we can pay this invoice
         // federation.can_pay_invoice(&invoice).await?;

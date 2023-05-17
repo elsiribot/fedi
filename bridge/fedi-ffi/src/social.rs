@@ -100,7 +100,6 @@ pub struct SocialBackup {
     pub config: fedi_social_client::config::FediSocialClientConfig,
 
     pub api: DynFederationApi,
-    // pub context: Arc<ClientContext>,
 }
 
 impl SocialBackup {
@@ -215,7 +214,6 @@ pub struct SocialRecovery {
     config: FediSocialClientConfig,
     module_id: ModuleInstanceId,
     api: DynFederationApi,
-    // context: Arc<ClientContext>,
 }
 
 impl SocialRecovery {
@@ -223,7 +221,6 @@ impl SocialRecovery {
     pub fn new_start(
         module_id: ModuleInstanceId,
         config: FediSocialClientConfig,
-        // context: Arc<ClientContext>,
         api: DynFederationApi,
         recovery_file: RecoveryFile,
     ) -> anyhow::Result<Self> {
@@ -232,7 +229,6 @@ impl SocialRecovery {
         Ok(Self {
             state: SocialRecoveryState::new(recovery_file),
             config,
-            // context,
             api,
             module_id,
         })
@@ -243,7 +239,6 @@ impl SocialRecovery {
     pub fn new_continue(
         module_id: ModuleInstanceId,
         config: FediSocialClientConfig,
-        // context: Arc<ClientContext>,
         api: DynFederationApi,
         state: SocialRecoveryState,
     ) -> Self {
@@ -251,7 +246,6 @@ impl SocialRecovery {
             state,
             config,
             api,
-            // context,
             module_id,
         }
     }
