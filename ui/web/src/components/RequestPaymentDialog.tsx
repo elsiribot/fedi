@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
+import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
@@ -44,6 +45,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         useState<Transaction>()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
+    const isOfflineWalletSupported = useIsOfflineWalletSupported()
 
     // Reset on close, focus input on open
     useEffect(() => {
@@ -202,9 +204,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                             {t('words.request')}{' '}
                             {amountUtils.formatNumber(amount)} {t('words.sats')}
                         </Button>
-                        <Button onClick={() => setIsReceivingOffline(true)}>
-                            {t('feature.receive.receive-bitcoin-offline')}
-                        </Button>
+                        {isOfflineWalletSupported && (
+                            <Button onClick={() => setIsReceivingOffline(true)}>
+                                {t('feature.receive.receive-bitcoin-offline')}
+                            </Button>
+                        )}
                     </Buttons>
                 )}
                 {receivedTransaction && (

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Invoice } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -38,6 +39,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const [hasSent, setHasSent] = useState(false)
     const [sendError, setSendError] = useState<string>()
     const containerRef = useRef<HTMLDivElement | null>(null)
+    const isOfflineWalletSupported = useIsOfflineWalletSupported()
 
     useEffect(() => {
         if (!open) {
@@ -182,9 +184,11 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 <Button onClick={() => setIsScanning(true)}>
                     {t('feature.send.scan-qr-code')}
                 </Button>
-                <Button onClick={() => setIsSendingOffline(true)}>
-                    {t('feature.send.send-to-offline-user')}
-                </Button>
+                {isOfflineWalletSupported && (
+                    <Button onClick={() => setIsSendingOffline(true)}>
+                        {t('feature.send.send-to-offline-user')}
+                    </Button>
+                )}
             </>
         )
     }
