@@ -74,3 +74,7 @@ format:
 
 test-bridge testcase="":
   ./scripts/test-bridge.sh "{{testcase}}"
+
+# start mprocs with a dev federation setup
+mprocs:
+  ./scripts/mprocs.sh

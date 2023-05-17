@@ -10,19 +10,11 @@ function kill_devimint() {
 }
 trap kill_devimint EXIT
 
-# compile binaries in a way that nix can cache
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p ln-gateway
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p gateway-cli
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p devimint
-
 # fedi packages
 source scripts/build.sh
-export PATH="$PWD/target/${CARGO_PROFILE:-debug}:$PATH"
 echo "Running in temporary directory $FM_TEST_DIR"
 
 # symlink logs to local gitignored directory so they're easier to find
-pwd
 rm target/logs || true
 echo $FM_LOGS_DIR
 ln -s $FM_LOGS_DIR target/logs
