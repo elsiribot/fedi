@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
-import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
+import {
+    useIsOfflineWalletSupported,
+    useIsOnchainDepositSupported,
+} from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
@@ -46,6 +49,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const containerRef = useRef<HTMLDivElement | null>(null)
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
     const isOfflineWalletSupported = useIsOfflineWalletSupported()
+    const isOnchainSupported = useIsOnchainDepositSupported()
 
     // Reset on close, focus input on open
     useEffect(() => {
@@ -158,15 +162,24 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     } else {
         content = (
             <>
-                <RequestTypeToggle onClick={() => setIsLightning(!isLightning)}>
-                    <Text variant="caption" weight="medium">
-                        {t(isLightning ? 'words.lightning' : 'words.onchain')}
-                    </Text>
-                    <Icon
-                        size={20}
-                        icon={isLightning ? SwitchLeftIcon : SwitchRightIcon}
-                    />
-                </RequestTypeToggle>
+                {isOnchainSupported && (
+                    <RequestTypeToggle
+                        onClick={() => setIsLightning(!isLightning)}>
+                        <Text variant="caption" weight="medium">
+                            {t(
+                                isLightning
+                                    ? 'words.lightning'
+                                    : 'words.onchain',
+                            )}
+                        </Text>
+                        <Icon
+                            size={20}
+                            icon={
+                                isLightning ? SwitchLeftIcon : SwitchRightIcon
+                            }
+                        />
+                    </RequestTypeToggle>
+                )}
                 <AmountInput
                     amount={amount}
                     error={error}
