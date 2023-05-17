@@ -36,15 +36,17 @@ impl fediffi::storage::IStorage for WasmStorage {
         Ok(self.global.clone())
     }
     async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
-        let fed = self.federation.lock().unwrap(); // TODO: find a async mutex
-        let db = db2::MemDatabase::new(&format!("{id}")).await?;
+        let db = MemAndIndexedDb::new(&format!("{id}")).await?;
+        let fed = self.federation.lock().unwrap();
         fed.insert(*id, db.clone());
         Ok(db)
     }
 
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
-        let fed = self.federation.lock().unwrap(); // TODO: find a async mutex
-        fed.remove(id);
+        let fed = self.federation.lock().unwrap();
+        let db = fed.remove(id).unwrap();
+        drop(fed);
+        db.delete().await?;
         Ok(())
     }
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
