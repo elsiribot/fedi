@@ -4,9 +4,7 @@ use std::sync::Arc;
 use storage::WasmStorage;
 use wasm_bindgen::prelude::*;
 
-#[cfg(target_family = "wasm")]
-mod db2;
-
+mod db;
 mod logging;
 mod storage;
 

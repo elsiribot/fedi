@@ -38,12 +38,12 @@ pub enum DatabaseOperation {
 }
 
 #[derive(Clone)]
-pub struct MemDatabase {
+pub struct MemAndIndexedDb {
     data: Arc<Mutex<OrdMap<Vec<u8>, Vec<u8>>>>,
     idb: Arc<Rexie>,
 }
 
-impl Debug for MemDatabase {
+impl Debug for MemAndIndexedDb {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MemDatabase").finish_non_exhaustive()
     }
@@ -53,13 +53,13 @@ impl Debug for MemDatabase {
 pub struct MemTransaction<'a> {
     operations: Vec<DatabaseOperation>,
     tx_data: OrdMap<Vec<u8>, Vec<u8>>,
-    db: &'a MemDatabase,
+    db: &'a MemAndIndexedDb,
     savepoint: OrdMap<Vec<u8>, Vec<u8>>,
     num_pending_operations: usize,
     num_savepoint_operations: usize,
 }
 
-impl MemDatabase {
+impl MemAndIndexedDb {
     pub async fn new(name: &str) -> Result<Self> {
         let idb = rexie::Rexie::builder(name)
             .add_object_store(rexie::ObjectStore::new("default"))
@@ -96,7 +96,7 @@ impl MemDatabase {
 }
 
 #[apply(async_trait_maybe_send!)]
-impl IDatabase for MemDatabase {
+impl IDatabase for MemAndIndexedDb {
     async fn begin_transaction<'a>(&'a self) -> Box<dyn ISingleUseDatabaseTransaction<'a>> {
         let db_clone = self.data.lock().await.clone();
         let mut memtx = MemTransaction {

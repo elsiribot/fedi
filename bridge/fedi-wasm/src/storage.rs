@@ -11,7 +11,7 @@ use std::{
     sync::Mutex as StdMutex,
 };
 
-use crate::db2;
+use crate::db::MemAndIndexedDb;
 
 pub struct WasmStorage {
     global: Database,
@@ -20,7 +20,7 @@ pub struct WasmStorage {
 
 impl WasmStorage {
     pub async fn new() -> anyhow::Result<Self> {
-        let db = db2::MemDatabase::new("main").await.unwrap();
+        let db = MemAndIndexedDb::new("main").await.unwrap();
         let db = Database::new(db, ModuleDecoderRegistry::from_iter([]));
         Ok(Self {
             global: db,
