@@ -4,7 +4,9 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { SITES } from '../../../constants'
+import { selectFederationSites } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../state/hooks'
 import { navigate } from '../../../state/navigation'
 import { Screen, Shortcut, Site } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
@@ -23,6 +25,7 @@ const SCREEN_SHORTCUTS = [
 const ShortcutsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const sites = useAppSelector(selectFederationSites)
 
     const onSelectSite = (shortcut: Shortcut) => {
         const site = shortcut as Site
@@ -35,7 +38,7 @@ const ShortcutsList: React.FC<{}> = () => {
     }
 
     const renderSiteShortcuts = () => {
-        const sitesShortcuts = SITES.map(s => new Site(s))
+        const sitesShortcuts = sites.map(s => new Site(s))
         return sitesShortcuts.map((s: Site, i: number) => {
             return (
                 <ShortcutTile
@@ -63,7 +66,7 @@ const ShortcutsList: React.FC<{}> = () => {
     // while also left-justifying rows with 1 or 2 tiles so we just
     // make sure to fill the remaining space with invisible elements
     const renderBuffers = () => {
-        const totalShortcuts = SITES.length + SCREEN_SHORTCUTS.length
+        const totalShortcuts = sites.length + SCREEN_SHORTCUTS.length
         const bufferCount = 3 - (totalShortcuts % 3)
 
         return new Array(bufferCount).fill('').map((b, i) => {

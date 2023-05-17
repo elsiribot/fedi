@@ -8,7 +8,10 @@ import {
 import { authenticateChat, CommonState } from '.'
 import type { Federation, FederationEvent, Guardian, SeedWords } from '../types'
 import amountUtils from '../utils/AmountUtils'
-import { getFederationMaxInvoiceMsats } from '../utils/FederationUtils'
+import {
+    getFederationMaxInvoiceMsats,
+    getFederationSites,
+} from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
 
@@ -173,4 +176,9 @@ export const selectMaxReceiveAmount = createSelector(
             ? amountUtils.msatToSat(maxInvoiceMsats)
             : MAX_INVOICE_AMOUNT_SATS
     },
+)
+
+export const selectFederationSites = createSelector(
+    selectFederationMetadata,
+    getFederationSites,
 )
