@@ -64,7 +64,7 @@ If you are running an AArch64 Mac (M1/M2) and see an error when running `npm run
 yarn run ios-arm64
 ```
 
-If you still have trouble, open the `/ui/native/ios/FedimintReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
+If you still have trouble, open the `/ui/native/ios/FediReactNative.xcworkspace` in Xcode and try running the app from there. Otherwise, double-check your React Native environment setup before opening an issue.
 
 ## Directory Structure
 
@@ -86,4 +86,20 @@ Read android logs off emulator:
 
 ```
 adb -s <emulator> shell "run-as com.fedi cat /data/user/0/com.fedi/files/fedi.log" > fedi.log
+```
+
+Set `FEDI_EMULATOR=1` to only compile rust code for `aarch64-linux-android`, which is what Justin's emulator uses. Not sure if all emulators use this. Improve later ...
+
+### To run 2 android emulators:
+
+```
+yarn run start
+yarn run android
+yarn run android -- --deviceid=<deviceid>
+```
+
+### list iOS device IDs
+
+```
+xcrun xctrace list devices
 ```

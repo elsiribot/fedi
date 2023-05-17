@@ -1,5 +1,6 @@
 ///! Uses immutable data structures and backups to indexeddb on save
 use std::fmt::Debug;
+use std::sync::Arc;
 
 use anyhow::Result;
 use fediffi::fedimint_core;
@@ -37,9 +38,10 @@ pub enum DatabaseOperation {
     Delete(DatabaseDeleteOperation),
 }
 
+#[derive(Clone)]
 pub struct MemDatabase {
-    data: Mutex<OrdMap<Vec<u8>, Vec<u8>>>,
-    idb: Rexie,
+    data: Arc<Mutex<OrdMap<Vec<u8>, Vec<u8>>>>,
+    idb: Arc<Rexie>,
 }
 
 impl Debug for MemDatabase {
@@ -65,6 +67,7 @@ impl MemDatabase {
             .build()
             .await
             .map_err(rexie_to_anyhow)?;
+        let idb = Arc::new(idb);
         let mut data = OrdMap::new();
 
         let idb_tx = idb
@@ -83,7 +86,7 @@ impl MemDatabase {
             data.insert(key, value);
         }
         Ok(Self {
-            data: Mutex::new(data),
+            data: Arc::new(Mutex::new(data)),
             idb,
         })
     }
@@ -111,14 +114,14 @@ impl IDatabase for MemDatabase {
 // for production as it doesn't properly implement MVCC
 #[apply(async_trait_maybe_send!)]
 impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
-    async fn raw_insert_bytes(&mut self, key: &[u8], value: Vec<u8>) -> Result<Option<Vec<u8>>> {
+    async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
         let val = self.raw_get_bytes(key).await;
         // Insert data from copy so we can read our own writes
-        self.tx_data.insert(key.to_vec(), value.clone());
+        self.tx_data.insert(key.to_vec(), value.to_vec());
         self.operations
             .push(DatabaseOperation::Insert(DatabaseInsertOperation {
                 key: key.to_vec(),
-                value,
+                value: value.to_vec(),
             }));
         self.num_pending_operations += 1;
         val
@@ -139,16 +142,30 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
         Ok(ret)
     }
 
-    async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> PrefixStream<'_> {
+    async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
         let mut data = self
             .tx_data
             .range::<_, Vec<u8>>((key_prefix.to_vec())..)
             .take_while(|(key, _)| key.starts_with(key_prefix))
             .map(|(key, value)| (key.clone(), value.clone()))
             .collect::<Vec<_>>();
-        data.reverse();
 
-        Box::pin(stream::iter(data))
+        Ok(Box::pin(stream::iter(data)))
+    }
+
+    async fn raw_find_by_prefix_sorted_descending(
+        &mut self,
+        key_prefix: &[u8],
+    ) -> Result<PrefixStream<'_>> {
+        let mut data = self
+            .tx_data
+            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
+            .take_while(|(key, _)| key.starts_with(key_prefix))
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect::<Vec<_>>();
+        data.sort_by(|a, b| a.cmp(b).reverse());
+
+        Ok(Box::pin(stream::iter(data)))
     }
 
     async fn commit_tx(self) -> Result<()> {

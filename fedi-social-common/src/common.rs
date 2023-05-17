@@ -1,13 +1,78 @@
 use std::fmt::{self, Debug};
+use std::io;
 use std::time::SystemTime;
 
 use bitcoin_hashes::{sha256, Hash};
-use fedimint_core::encoding::{Decodable, Encodable, SerdeEncodable};
+use fedimint_core::encoding::{Decodable, DecodeError, Encodable};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::PeerId;
 use impl_tools::autoimpl;
 use secp256k1::{Secp256k1, Signing, Verification};
 use secp256k1_zkp::Message;
 use serde::{Deserialize, Serialize};
+
+// HACK: this was removed upstream
+
+/// A wrapper counting bytes written
+struct CountWrite<'a, W> {
+    inner: &'a mut W,
+    count: usize,
+}
+
+impl<'a, W> CountWrite<'a, W> {
+    fn new(inner: &'a mut W) -> Self {
+        Self { inner, count: 0 }
+    }
+}
+
+impl<'a, W> io::Write for CountWrite<'a, W>
+where
+    W: io::Write,
+{
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let count = self.inner.write(buf)?;
+        self.count += count;
+        Ok(count)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
+
+// #[derive(Debug, Error)]
+// pub struct DecodeError(pub(crate) anyhow::Error);
+
+/// Wrappers for `T` that are `De-Serializable`, while we need them in
+/// `Encodable` context
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Serialize, Deserialize)]
+pub struct SerdeEncodable<T>(pub T);
+
+impl<T> Encodable for SerdeEncodable<T>
+where
+    T: serde::Serialize,
+{
+    fn consensus_encode<W: std::io::Write>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
+        let mut count_writer = CountWrite::new(writer);
+        bincode::serialize_into(&mut count_writer, &self.0)
+            .map_err(|e| std::io::Error::new(io::ErrorKind::Other, e))?;
+        Ok(count_writer.count)
+    }
+}
+
+impl<T> Decodable for SerdeEncodable<T>
+where
+    T: for<'de> serde::Deserialize<'de>,
+{
+    fn consensus_decode<R: std::io::Read>(
+        r: &mut R,
+        _modules: &ModuleDecoderRegistry,
+    ) -> Result<Self, DecodeError> {
+        Ok(Self(
+            bincode::deserialize_from(r).map_err(DecodeError::from_err)?,
+        ))
+    }
+}
 
 /// A document presented (usually in-person) to each guardian during the
 /// social recovery process, that allows the guardian to verify the identity

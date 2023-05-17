@@ -1,13 +1,5 @@
-git_url("https://x-access-token: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@github.com/fedibtc/fedi-react-native-certs")
+git_url("https://x-access-token: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@github.com/fedibtc/fedi-alpha-react-native-certs")
 
 storage_mode("git")
 
-type("development") # The default type, can be: appstore, adhoc, enterprise or development
-
-# app_identifier(["tools.fastlane.app", "tools.fastlane.app2"])
-# username("user@fastlane.tools") # Your Apple Developer Portal username
-
-# For all available options run `fastlane match --help`
-# Remove the # in the beginning of the line to enable the other options
-
-# The docs are available on https://docs.fastlane.tools/actions/match
+type("appstore") # The default type, can be: appstore, adhoc, enterprise or development

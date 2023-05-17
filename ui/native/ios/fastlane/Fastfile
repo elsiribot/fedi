@@ -18,14 +18,16 @@ default_platform(:ios)
 platform :ios do
   desc "Push a new beta build to TestFlight from CI"
   lane :beta_ci do
+    # these 2 extra steps are so CI can download signing certs from Github repo (see Matchfile)
     setup_ci
     match(type: 'appstore')
+    # these steps are the same as standard beta lane
     build_app(
-      workspace: "FedimintReactNative.xcworkspace",
-      scheme: "FedimintReactNative",
+      workspace: "FediReactNative.xcworkspace",
+      scheme: "FediReactNative",
       export_options: {
         provisioningProfiles: {
-          "org.fedi.fedimintreactnative" => "match AppStore org.fedi.fedimintreactnative"
+          "org.fedi.alpha" => "match AppStore org.fedi.alpha"
         }
       }
     )
@@ -34,15 +36,16 @@ platform :ios do
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
   end
+  
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    increment_build_number(xcodeproj: "FedimintReactNative.xcodeproj")
+    increment_build_number(xcodeproj: "FediReactNative.xcodeproj")
     build_app(
-      workspace: "FedimintReactNative.xcworkspace",
-      scheme: "FedimintReactNative",
+      workspace: "FediReactNative.xcworkspace",
+      scheme: "FediReactNative",
       export_options: {
         provisioningProfiles: {
-          "org.fedi.fedimintreactnative" => "match AppStore org.fedi.fedimintreactnative"
+          "org.fedi.alpha" => "match AppStore org.fedi.alpha"
         }
       }
     )
@@ -50,5 +53,13 @@ platform :ios do
     upload_to_testflight(
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
+  end
+
+  # This lane should rarely be needed but if you comment all lines in Matchfile
+  # you can use this to generate new signing certificates and automatically 
+  # upload them to Github
+  desc "Check for signing certificates"
+  lane :check_appstore_certs do
+    match(type: 'appstore')
   end
 end

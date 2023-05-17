@@ -70,7 +70,7 @@ jobs:
             - on: linux
               runs-on: buildjet-2vcpu-ubuntu-2004
               build-in-pr: true
-              timeout: 10
+              timeout: 30
             - host: macos
               runs-on: self-hosted
               os: macOS

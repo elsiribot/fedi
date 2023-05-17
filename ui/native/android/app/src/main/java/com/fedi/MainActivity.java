@@ -13,7 +13,7 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "FedimintReactNative";
+    return "FediReactNative";
   }
 
   @Override

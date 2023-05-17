@@ -1,5 +1,4 @@
 use fedi_social_client::RecoveryId;
-use fedimint_client_fedi::SocialRecoveryState;
 use fedimint_core::{
     config::FederationId,
     db::DatabaseRecord,
@@ -8,7 +7,7 @@ use fedimint_core::{
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::types;
+use crate::{social::SocialRecoveryState, types};
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

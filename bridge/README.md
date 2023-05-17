@@ -91,4 +91,5 @@ The `fedi-ffi/ffi-bingen/` directory contains a binary package which allows us t
 
 ### Reducing the size of the final binaries
 
+
 A special cargo profile is added with many flags turned on/off which allows to significantly reduce binary size.

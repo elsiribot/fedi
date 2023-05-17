@@ -3,12 +3,8 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
-use fedimint_client_fedi::UserClientConfig;
-use fedimint_core::api::WsClientConnectInfo;
-use fedimint_core::{
-    config::ApiEndpoint,
-    encoding::{Decodable, Encodable},
-};
+use fedimint_core::config::{ClientConfig, PeerUrl};
+use fedimint_core::encoding::{Decodable, Encodable};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -33,7 +29,20 @@ pub struct Amount(
     #[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount,
 );
 
-#[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, Copy, TS)]
+#[derive(
+    Debug,
+    Eq,
+    Ord,
+    PartialOrd,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Encodable,
+    Decodable,
+    Clone,
+    Copy,
+    TS,
+)]
 #[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct PeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
@@ -69,12 +78,11 @@ impl From<FederationId> for fedimint_core::config::FederationId {
 #[ts(export, export_to = "target/bindings/")]
 pub struct PublicKey(#[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::secp256k1::PublicKey);
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct FediConfig {
     #[ts(type = "any")]
-    pub client_config: UserClientConfig,
-    pub username: Option<String>,
+    pub client_config: ClientConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -85,7 +93,7 @@ pub struct FedimintFederation {
     pub name: String,
     pub connect_info: String,
     #[ts(type = "Array<{url: string, name: string}>")]
-    pub nodes: Vec<ApiEndpoint>,
+    pub nodes: BTreeMap<PeerId, PeerUrl>,
     pub balance: Amount,
     pub social_recovery_active: bool,
     pub meta: BTreeMap<String, String>,
@@ -109,24 +117,32 @@ pub struct LnurlSignedMessage {
     pub pubkey: PublicKey,
 }
 
-// FIXME: this used to be a From implementation, but total_amount needed async
-pub async fn federation_to_fedimint_federation(federation: &Arc<Federation>) -> FedimintFederation {
-    let client_config = federation.client.config().0;
-    let balance = federation.client.notes().await.total_amount();
+pub async fn federation_to_fedimint_federation(
+    federation: &Arc<Federation>,
+) -> anyhow::Result<FedimintFederation> {
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
-
-    FedimintFederation {
-        id: client_config.federation_id.into(),
-        name: client_config
-            .federation_name()
-            .expect("federation name should exist")
-            .clone(),
-        connect_info: WsClientConnectInfo::from(&client_config).to_string(),
-        nodes: client_config.api_endpoints.values().cloned().collect(),
+    let balance = federation.ng_balance().await;
+    let client_config = federation.get_config().await?.client_config;
+    let federation_name = client_config
+        .federation_name()
+        .ok_or(anyhow!("federation name not found"))?
+        .to_string();
+    let meta = client_config.meta.clone();
+    let nodes = client_config
+        .api_endpoints
+        .clone()
+        .iter()
+        .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
+        .collect();
+    Ok(FedimintFederation {
+        id: FederationId(federation.federation_id()),
+        name: federation_name,
+        connect_info: "FIXME: call connectionString() method".to_string(),
+        nodes,
         balance: Amount(balance),
         social_recovery_active,
-        meta: client_config.meta,
-    }
+        meta,
+    })
 }
 
 #[derive(Debug, Serialize, TS)]

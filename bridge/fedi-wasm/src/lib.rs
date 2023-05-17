@@ -1,14 +1,14 @@
 use fediffi::bridge::Bridge;
 use fediffi::fedimint_core::config::FederationId;
-use fediffi::fedimint_core::db::mem_impl::MemDatabase;
-use fediffi::fedimint_core::db::Database;
+use fediffi::fedimint_core::db::{Database, IDatabase};
+use fediffi::fedimint_core::module::registry::ModuleDecoderRegistry;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
-use fediffi::mint_client::module_decode_stubs;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_family = "wasm")]
 mod db2;
 
 #[wasm_bindgen]
@@ -20,16 +20,20 @@ extern "C" {
     fn event(this: &EventSink, event_type: String, body: String);
 }
 
-struct WasmStorage(Database);
+struct WasmStorage(db2::MemDatabase);
 
 #[apply(async_trait_maybe_send!)]
 impl fediffi::storage::IStorage for WasmStorage {
     /// Database to store all federation joined
     async fn global_db(&self) -> anyhow::Result<Database> {
-        Ok(self.0.clone())
+        Ok(Database::new(
+            self.0.clone(),
+            ModuleDecoderRegistry::from_iter([]),
+        ))
     }
-    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Database> {
-        Ok(self.0.clone())
+    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
+        // Ok(Box::new(db2::MemDatabase::new("main").await.unwrap()))
+        Ok(Box::new(self.0.clone()))
     }
 
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
@@ -75,10 +79,10 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
     tracing_subscriber::fmt()
         .json()
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            "info,fediffi=debug,mint_client=trace,fedimint_core::api=trace",
+            "info,fediffi=debug,fedimint_client=trace,fedimint_core::api=trace",
         ))
         .with_writer({
-            use std::io::{self, Write};
+            use std::io::Write;
             use tracing_subscriber::fmt::MakeWriter;
 
             struct MemWriter<'a, T>(std::sync::MutexGuard<'a, T>);
@@ -105,7 +109,6 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
         .init();
 
     let db = db2::MemDatabase::new("main").await.unwrap();
-    let db = Database::new(db, module_decode_stubs());
     let bridge =
         fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink))
             .await

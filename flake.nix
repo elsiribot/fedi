@@ -9,17 +9,22 @@
     };
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=rel-a03&rev=b2aa3ef8879d9bf736cbf95490bb90facc0b1c76";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=rel-a04&rev=89158d4e590a9814c6fef330280562a82588ff84";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "github:fedimint/fedimint?rev=9eee0873626e562ae8466a737455c8c6d8238d58";
+      url = "github:dpc/fedimint?rev=505c9cc809efc4133ff204a938da6b7c9455ddd4"; # https://github.com/fedimint/fedimint/pull/2546
+    };
+
+    android-nixpkgs = {
+      url = "github:tadfisher/android-nixpkgs?rev=297976c270bfe86feb57bd66c27a5ad9b4dea3f1"; # stable
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        nixpkgs = fedimint-build.inputs.nixpkgs;
         pkgs = import nixpkgs {
           inherit system;
         };
@@ -29,7 +34,6 @@
         fmLib = fedimint-build.lib.${system};
         crane = fedimint-build.inputs.crane;
         fenix = fedimint-build.inputs.fenix;
-        android-nixpkgs = fedimint-build.inputs.android-nixpkgs;
         advisory-db = fedimint-build.inputs.advisory-db;
 
         clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
@@ -53,7 +57,6 @@
               "bridge"
               "fedimintd"
               "fedimint-cli"
-              "fedimint-client-fedi"
               "fedi-social-client"
               "fedi-social-common"
               "fedi-social-server"
@@ -132,7 +135,7 @@
         devShells = fmLib.devShells // {
           default = fmLib.devShells.default.overrideAttrs (prev: {
             nativeBuildInputs = [
-              fedimint-build.packages.${system}.fedimint-bin-tests
+              fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
             ] ++ prev.nativeBuildInputs;

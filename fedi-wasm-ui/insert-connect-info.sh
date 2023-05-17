@@ -2,4 +2,4 @@
 
 set -x
 
-sed -i "s/%FEDERATION_CONNECT_STRING%/$1/g" dist/assets/*.js 
+nix run nixpkgs#gnused -- -i "s/%FEDERATION_CONNECT_STRING%/$1/g" dist/assets/*.js

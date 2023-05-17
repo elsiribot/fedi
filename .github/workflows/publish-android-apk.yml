@@ -27,16 +27,14 @@ jobs:
               with:
                   submodules: true
 
-            - name: Cache
-              uses: actions/cache@v3
-              env:
-                  SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
+            - uses: cachix/install-nix-action@v20
               with:
-                  path: |
-                      ~/.cargo/registry
-                      ~/.cargo/git
-                      ./bridge/target
-                  key: ${{ runner.os }}
+                  nix_path: nixpkgs=channel:nixos-22.05
+
+            - uses: cachix/cachix-action@v12
+              with:
+                  name: fedibtc
+                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Setup JDK
               uses: actions/setup-java@v3
@@ -45,37 +43,6 @@ jobs:
                   java-version: 11
                   cache: 'gradle'
 
-            - name: Install Rust
-              uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
-                  override: true
-                  components: rustfmt, clippy
-
-            - name: Add Rust targets for Android
-              run: |
-                  rustup target add x86_64-linux-android
-                  rustup target add aarch64-linux-android
-                  rustup target add armv7-linux-androideabi
-
-            - name: Setup Android NDK
-              id: setup-ndk
-              uses: nttld/setup-ndk@v1
-              with:
-                  ndk-version: r25c
-                  local-cache: true
-
-            - name: Save ANDROID_NDK_ROOT to environment
-              run: |
-                  echo $'ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}' >> $GITHUB_ENV
-
-            - name: Configure environment for all targets
-              run: |
-                  echo AR=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar >> $GITHUB_ENV
-                  echo "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
-                  cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang
-                  cp $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++ $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/arm-linux-androideabi-clang++
-
             - name: Setup Node
               uses: actions/setup-node@v1
               with:
@@ -83,7 +50,7 @@ jobs:
 
             - name: Build bridge
               env:
-                  FEDI_NIX: 0
+                  FEDI_NIX: 1
               run: |
                   yarn build-bridge-android
 

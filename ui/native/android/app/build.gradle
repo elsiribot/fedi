@@ -148,15 +148,6 @@ def reactNativeArchitectures() {
     return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
-/**
- * Sentry SDK configuration
- */
-project.ext.sentryCli = [
-    logLevel: 'debug',
-    collectModulesScript: '../../../node_modules/@sentry/react-native/dist/js/tools/collectModules.js',
-]
-apply from: "../../../node_modules/@sentry/react-native/sentry.gradle"
-
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -166,8 +157,8 @@ android {
         applicationId "com.fedi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 143
-        versionName "1.9.20"
+        versionCode 152
+        versionName "1.10.10"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
         testBuildType System.getProperty('testBuildType', 'debug')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'

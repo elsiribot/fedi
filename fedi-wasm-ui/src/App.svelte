@@ -2,7 +2,7 @@
   import {fediInit} from "./fedi.ts";
 
   const FEDERATION_CONNECT_STRING = "%FEDERATION_CONNECT_STRING%";
-
+  Error.stackTraceLimit = 10000;
   let hasError = false;
   let isWorking = false;
 
@@ -62,7 +62,6 @@
       const fed = await rpc.joinFederation({connectString});
       fedName = fed.name;
       joined = true;
-      mnemonic = (await rpc.getMnemonic({federationId: fedName})).join(" ");
     } catch (error) {
       console.error(error);
       hasError = true;

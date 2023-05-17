@@ -93,6 +93,7 @@ export const shouldShowInviteCode = (
 export const shouldShowSocialRecovery = (
     metadata: ClientConfigMetadata,
 ): boolean => {
+    return true;
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )

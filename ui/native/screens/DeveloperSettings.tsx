@@ -326,26 +326,30 @@ const DeveloperSettings: React.FC<Props> = () => {
                         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
                 />
-                {activeFederation?.nodes.map((n, i) => {
-                    const guardian: Guardian = {
-                        ...n,
-                        peerId: i,
-                        password: `${i + 1}${i + 1}${i + 1}${i + 1}`,
-                    }
-                    return (
-                        <CheckBox
-                            title={<Text caption>{guardian.name}</Text>}
-                            checked={
-                                authenticatedGuardian?.name === guardian.name
-                            }
-                            onPress={() => {
-                                reduxDispatch(
-                                    changeAuthenticatedGuardian(guardian),
-                                )
-                            }}
-                        />
-                    )
-                })}
+                {activeFederation &&
+                    Object.entries(activeFederation.nodes).map(entry => {
+                        const [index, node] = entry
+                        const id = Number(index)
+                        const guardian: Guardian = {
+                            ...node,
+                            peerId: id,
+                            password: `${id + 1}${id + 1}${id + 1}${id + 1}`,
+                        }
+                        return (
+                            <CheckBox
+                                title={<Text caption>{guardian.name}</Text>}
+                                checked={
+                                    authenticatedGuardian?.name ===
+                                    guardian.name
+                                }
+                                onPress={() => {
+                                    reduxDispatch(
+                                        changeAuthenticatedGuardian(guardian),
+                                    )
+                                }}
+                            />
+                        )
+                    })}
                 {authenticatedGuardian && (
                     <View style={styles(theme).passwordContainer}>
                         <Text small>{'Confirm guardian password'}</Text>

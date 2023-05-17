@@ -2,9 +2,10 @@ pub use fedi_social_common::*;
 
 use fedi_social_common::config::FediSocialClientConfig;
 use fedi_social_common::{FediSocialCommonGen, FediSocialModuleTypes};
+use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::module::gen::ClientModuleGen;
 use fedimint_client::module::ClientModule;
-use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
+use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
 use fedimint_core::db::Database;
@@ -24,8 +25,14 @@ impl ClientModuleGen for FediSocialClientGen {
     type Module = FediSocialClientModule;
     type Config = FediSocialClientConfig;
 
-    async fn init(&self, _cfg: Self::Config, _db: Database) -> anyhow::Result<Self::Module> {
-        unimplemented!()
+    async fn init(
+        &self,
+        _cfg: Self::Config,
+        _db: Database,
+        _module_root_secret: DerivableSecret,
+        _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
+    ) -> anyhow::Result<Self::Module> {
+        Ok(FediSocialClientModule {})
     }
 }
 
@@ -38,7 +45,7 @@ impl ClientModule for FediSocialClientModule {
     type States = FediSocialClientStates;
 
     fn context(&self) -> Self::ModuleStateMachineContext {
-        unimplemented!()
+        ()
     }
 
     fn input_amount(
