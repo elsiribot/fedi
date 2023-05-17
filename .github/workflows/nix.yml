@@ -71,11 +71,13 @@ jobs:
               runs-on: buildjet-2vcpu-ubuntu-2004
               build-in-pr: true
               timeout: 30
+              system: x86_64-linux
             - host: macos
               runs-on: self-hosted
               os: macOS
               build-in-pr: true
               timeout: 45
+              system: x86_64-darwin
 
       name: "Dev shells - ${{ matrix.host }}"
       runs-on: ${{ matrix.runs-on }}
@@ -99,8 +101,8 @@ jobs:
 
         - name: Dev shell
           if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
-          run: nix develop -L .# -c true
+          run: nix build -L .#devShells.${{ matrix.system }}.default
 
         - name: Cross shell
           if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
-          run: nix develop -L .#cross -c true
+          run: nix build -L .#devShells.${{ matrix.system }}.cross
