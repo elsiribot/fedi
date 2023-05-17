@@ -7,38 +7,43 @@ import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import HomeIcon from '@fedi/common/assets/svgs/home.svg'
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 
 import { keyframes, styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
 
-const NAVIGATION = [
-    {
-        name: 'words.home',
-        path: '/',
-        icon: HomeIcon,
-    },
-    {
-        name: 'words.chat',
-        path: '/chat',
-        icon: ChatIcon,
-    },
-    {
-        name: 'words.admin',
-        path: '/admin',
-        icon: CogIcon,
-    },
-] as const
-
 export const Navigation: React.FC = () => {
     const router = useRouter()
     const { t } = useTranslation()
+    const isChatSupported = useIsChatSupported()
 
     const getIsActive = (navPath: string) => {
         if (navPath === router.pathname) return true
         if (navPath !== '/' && router.pathname.startsWith(navPath)) return true
         return false
     }
+
+    const navLinks = [
+        {
+            name: 'words.home' as const,
+            path: '/',
+            icon: HomeIcon,
+            available: true,
+        },
+        {
+            name: 'words.chat' as const,
+            path: '/chat',
+            icon: ChatIcon,
+            available: isChatSupported,
+        },
+        {
+            name: 'words.admin' as const,
+            path: '/admin',
+            icon: CogIcon,
+            available: true,
+        },
+    ].filter(nav => nav.available)
 
     return (
         <Container>
@@ -48,7 +53,7 @@ export const Navigation: React.FC = () => {
                 </Link>
             </Logo>
             <Nav>
-                {NAVIGATION.map(nav => (
+                {navLinks.map(nav => (
                     <NavItem key={nav.path} isActive={getIsActive(nav.path)}>
                         <Link href={nav.path}>
                             <Icon icon={nav.icon} />

@@ -3,8 +3,15 @@ import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
+import {
+    useIsOfflineWalletSupported,
+    useIsOnchainDepositSupported,
+} from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectMaxReceiveAmount,
+} from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -32,6 +39,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     const [amount, setAmount] = useState(0 as Sats)
     const [note, setNote] = useState('')
     const [isRequesting, setIsRequesting] = useState(false)
@@ -44,6 +52,8 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         useState<Transaction>()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
+    const isOfflineWalletSupported = useIsOfflineWalletSupported()
+    const isOnchainSupported = useIsOnchainDepositSupported()
 
     // Reset on close, focus input on open
     useEffect(() => {
@@ -147,7 +157,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
     const copyData = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
     const error =
-        amount > 200_000 ? `Maximum amount is 200,000 sats` : generateError
+        amount > maxReceiveAmount
+            ? t('feature.receive.maximum-invoice-amount', {
+                  maxAmount: amountUtils.formatSats(maxReceiveAmount),
+              })
+            : generateError
     const showNote = !!note || !isRequesting
 
     let content: React.ReactNode
@@ -156,15 +170,24 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     } else {
         content = (
             <>
-                <RequestTypeToggle onClick={() => setIsLightning(!isLightning)}>
-                    <Text variant="caption" weight="medium">
-                        {t(isLightning ? 'words.lightning' : 'words.onchain')}
-                    </Text>
-                    <Icon
-                        size={20}
-                        icon={isLightning ? SwitchLeftIcon : SwitchRightIcon}
-                    />
-                </RequestTypeToggle>
+                {isOnchainSupported && (
+                    <RequestTypeToggle
+                        onClick={() => setIsLightning(!isLightning)}>
+                        <Text variant="caption" weight="medium">
+                            {t(
+                                isLightning
+                                    ? 'words.lightning'
+                                    : 'words.onchain',
+                            )}
+                        </Text>
+                        <Icon
+                            size={20}
+                            icon={
+                                isLightning ? SwitchLeftIcon : SwitchRightIcon
+                            }
+                        />
+                    </RequestTypeToggle>
+                )}
                 <AmountInput
                     amount={amount}
                     error={error}
@@ -202,9 +225,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                             {t('words.request')}{' '}
                             {amountUtils.formatNumber(amount)} {t('words.sats')}
                         </Button>
-                        <Button onClick={() => setIsReceivingOffline(true)}>
-                            {t('feature.receive.receive-bitcoin-offline')}
-                        </Button>
+                        {isOfflineWalletSupported && (
+                            <Button onClick={() => setIsReceivingOffline(true)}>
+                                {t('feature.receive.receive-bitcoin-offline')}
+                            </Button>
+                        )}
                     </Buttons>
                 )}
                 {receivedTransaction && (

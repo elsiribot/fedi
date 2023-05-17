@@ -6,7 +6,13 @@ import {
 } from '@reduxjs/toolkit'
 
 import { authenticateChat, CommonState } from '.'
-import type { Federation, FederationEvent, Guardian, SeedWords } from '../types'
+import type {
+    Federation,
+    FederationEvent,
+    Guardian,
+    Sats,
+    SeedWords,
+} from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
     getFederationMaxInvoiceMsats,
@@ -165,7 +171,7 @@ export const selectFederationMetadata = createSelector(
 // For now we set a safe default of 200K sats maximum unless otherwise
 // specified by the federation feature flags. At some points we probably
 // can remove this hard-coded value altogether
-const MAX_INVOICE_AMOUNT_SATS = 200000
+const MAX_INVOICE_AMOUNT_SATS = 200000 as Sats
 
 export const selectMaxReceiveAmount = createSelector(
     selectFederationMetadata,

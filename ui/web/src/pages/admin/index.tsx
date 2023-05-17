@@ -9,6 +9,7 @@ import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import RecoveryIcon from '@fedi/common/assets/svgs/recovery.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
+import { useIsInviteSupported } from '@fedi/common/hooks/federation'
 import {
     leaveFederation,
     selectActiveFederation,
@@ -45,6 +46,7 @@ function AdminPage() {
     const { showToast, showErrorToast } = useToast()
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
+    const isInviteSupported = useIsInviteSupported()
 
     const federationId = activeFederation?.id
     const balance = activeFederation?.balance
@@ -82,6 +84,7 @@ function AdminPage() {
                     name: 'feature.federations.invite-members',
                     icon: InviteMembersIcon,
                     onClick: () => setIsInvitingMember(true),
+                    disabled: !isInviteSupported,
                 },
                 {
                     name: 'feature.federations.leave-federation',
@@ -144,7 +147,11 @@ function AdminPage() {
                                         {...linkProps}
                                         key={item.name}
                                         disabled={item.disabled}
-                                        onClick={item.onClick}>
+                                        onClick={
+                                            item.disabled
+                                                ? undefined
+                                                : item.onClick
+                                        }>
                                         <Icon icon={item.icon} />
                                         <Text>{t(item.name as any)}</Text>
                                         <Icon icon={ChevronRightIcon} />
