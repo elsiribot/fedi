@@ -11,20 +11,16 @@ mod ffi;
 pub mod logging;
 pub mod payment;
 pub mod recovery;
+pub mod social;
 pub mod storage;
 pub mod tx;
 pub mod types;
 
 use std::{
     path::PathBuf,
-    str::FromStr,
     sync::{atomic::AtomicU64, Arc},
-    time::Duration,
 };
 
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client_fedi::RecoveryFile;
-pub use fedimint_client_legacy;
 pub use fedimint_core;
 use fedimint_core::{
     encoding::{Decodable, Encodable},
@@ -33,6 +29,7 @@ use fedimint_core::{
 };
 use fedimint_ln_client::LightningClientExt;
 use fedimint_mint_client::SpendableNote;
+use social::RecoveryFile;
 pub use tokio;
 
 use bitcoin::{secp256k1::Message, Address};
@@ -43,7 +40,7 @@ use storage::Storage;
 use types::{Amount, PeerId, PublicKey};
 use types::{FederationId, RecoveryId};
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use bridge::{Bridge, Federation};
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
@@ -51,7 +48,7 @@ use recovery::SocialRecoveryQr;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use tracing::{debug, error, info, instrument};
-use tx::{IncomingBitcoinTransactionStatus, Transaction};
+use tx::Transaction;
 use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
 
 use crate::{error::get_error_code, types::federation_to_fedimint_federation};
@@ -235,17 +232,16 @@ pub enum AddressOrInvoice {
 
 #[macro_rules_derive(rpc_method!)]
 async fn addressOrInvoice(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
     input: String,
 ) -> anyhow::Result<AddressOrInvoice> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    if let Ok(invoice) = input.parse::<Invoice>() {
+    if let Ok(_invoice) = input.parse::<Invoice>() {
         // validate that we can pay this invoice
         // federation.can_pay_invoice(&invoice).await?;
         return Ok(AddressOrInvoice::Invoice);
     }
-    if let Ok(address) = input.parse::<Address>() {
+    if let Ok(_address) = input.parse::<Address>() {
         // validate that we can pay this invoice
         // federation.can_pay_address(&address)?;
         return Ok(AddressOrInvoice::Address);
@@ -298,14 +294,14 @@ pub struct ValidateEcashResponse {
 
 #[macro_rules_derive(rpc_method!)]
 async fn validateEcash(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
     // TODO: TieredMulti<SpendableNote>
     ecash: String,
 ) -> anyhow::Result<ValidateEcashResponse> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let ecash = fedimint_client_fedi::utils::parse_ecash(&ecash)?;
+    let ecash = parse_ecash(&ecash)?;
     // FIXME
+    // let federation = get_federation(&bridge, &federation_id).await?;
     // let (valid, amount) = federation.validate_ecash(ecash).await;
     let valid = true;
     let amount = ecash.total_amount();
@@ -325,13 +321,13 @@ async fn decodeInvoice(_bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<
 
 #[macro_rules_derive(rpc_method!)]
 async fn payAddress(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
-    address: String,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
+    _address: String,
     // TODO: parse this as bitcoin::Amount
-    sats: u64,
+    _sats: u64,
 ) -> anyhow::Result<String> {
-    unimplemented!()
+    bail!("not implemented")
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -387,13 +383,7 @@ async fn getMnemonic(
     federation_id: FederationId,
 ) -> anyhow::Result<Vec<String>> {
     let federation = get_federation(&bridge, &federation_id).await?;
-    let words = federation
-        .ng
-        .root_secret_encoding::<Bip39RootSecretStrategy>()
-        .await
-        .word_iter()
-        .map(|s| s.to_string())
-        .collect();
+    let words = federation.get_mnemonic_words().await;
     Ok(words)
 }
 
@@ -405,10 +395,11 @@ async fn recoverFromMnemonic(
 ) -> anyhow::Result<Option<String>> {
     let mnemonic = mnemonic.join(" ");
     let mnemonic: bip39::Mnemonic = mnemonic.parse()?;
-    let _federation = bridge
+    let federation = bridge
         .restore_federation(federation_id.into(), mnemonic)
         .await?;
-    Ok(None)
+    let username = federation.get_username().await;
+    Ok(username)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -427,13 +418,24 @@ async fn uploadBackupFile(
     federation_id: FederationId,
     video_file_path: PathBuf,
 ) -> anyhow::Result<PathBuf> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    let federation = get_federation(&bridge, &federation_id).await?;
+    debug!("uploading backup file {:?}", video_file_path);
+    let video_file = storage.read_file(&video_file_path).await?;
+
+    let recovery_file = federation.upload_backup_file(video_file).await?;
+
+    storage
+        .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
+        .await?;
+    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
 
 // This method is a bit of a stopgap ...
 #[macro_rules_derive(rpc_method!)]
 async fn locateRecoveryFile(bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -442,7 +444,15 @@ async fn validateRecoveryFile(
     federation_id: FederationId,
     path: PathBuf,
 ) -> anyhow::Result<bool> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    let contents = storage.read_file(&path).await?;
+    let recovery_file = RecoveryFile::from_bytes(&contents)?;
+    let federation = get_federation(&bridge, &federation_id).await?;
+    federation.start_social_recovery(&recovery_file).await?;
+    // TODO: check that the federation matches and everything
+    // also fixed by using federation-specific location
+    let valid = RecoveryFile::from_bytes(&contents).is_ok();
+    Ok(valid)
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
@@ -451,7 +461,17 @@ async fn recoveryQr(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryQr> {
-    unimplemented!()
+    // Return QR code contents
+    let federation = get_federation(&bridge, &federation_id).await?;
+
+    // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
+    let storage = bridge.storage.clone();
+    let contents = storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
+    let recovery_file = RecoveryFile::from_bytes(&contents)?;
+    // Upload verification document if none exists.
+    federation.start_social_recovery(&recovery_file).await?;
+    let qr = federation.social_recovery_qr().await?;
+    Ok(qr)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -459,7 +479,14 @@ async fn socialRecoveryApprovals(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<SocialRecoveryEvent> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let (approvals, remaining) = federation.social_recovery_approvals().await?;
+    let result = SocialRecoveryEvent {
+        federation_id,
+        approvals,
+        remaining,
+    };
+    Ok(result)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -468,7 +495,23 @@ async fn socialRecoveryDownloadVerificationDoc(
     federation_id: FederationId,
     recovery_id: RecoveryId,
 ) -> anyhow::Result<Option<PathBuf>> {
-    unimplemented!()
+    let storage = bridge.storage.clone();
+    // Return QR code contents
+    let federation = get_federation(&bridge, &federation_id).await?;
+
+    let verification_doc = federation
+        .social_recovery_download_verification_doc(&recovery_id.0)
+        .await?;
+
+    if let Some(verification_doc) = verification_doc {
+        storage
+            .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
+            .await?;
+        tracing::info!("saved verificaiton doc");
+        Ok(Some(storage.platform_path(VERIFICATION_FILENAME.as_ref())))
+    } else {
+        Ok(None)
+    }
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -479,7 +522,11 @@ async fn approveSocialRecoveryRequest(
     peer_id: PeerId,
     password: String,
 ) -> anyhow::Result<()> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    federation
+        .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
+        .await?;
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -487,7 +534,15 @@ async fn completeSocialRecovery(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
 ) -> anyhow::Result<Option<String>> {
-    unimplemented!()
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let mnemonic = federation.social_recovery_combine_shares().await?;
+    let federation = bridge
+        .restore_federation(federation_id.into(), mnemonic)
+        .await?;
+    let username = federation.get_username().await;
+    federation.delete_social_recovery_state_and_id().await;
+    federation.send_federation_event().await;
+    Ok(username)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -506,7 +561,9 @@ async fn backupXmppUsername(
     federation_id: FederationId,
     username: String,
 ) -> anyhow::Result<()> {
-    // FIXME
+    let federation = get_federation(&bridge, &federation_id).await?;
+    federation.set_username(username).await;
+    federation.backup().await?;
     Ok(())
 }
 
@@ -616,11 +673,13 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
     use std::sync::Once;
     use std::time::UNIX_EPOCH;
     use std::{path, time::Duration};
 
     use bitcoin::secp256k1::PublicKey;
+    use fedi_social_client::common::VerificationDocument;
     use fedimint_logging::TracingSetup;
     use std::sync::RwLock;
 
@@ -951,6 +1010,126 @@ mod tests {
         // assert that balance is updated
         let federation = get_federation(&*bridge, &federation_id.into()).await?;
         assert_eq!(original_balance, federation.ng_balance().await);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_username_recovery() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // No username initially
+        assert_eq!(None, federation.get_username().await);
+
+        // Backup username (and ecash)
+        let username = "satoshi123".to_string();
+        backupXmppUsername(
+            bridge.clone(),
+            federation.federation_id().into(),
+            username.clone(),
+        )
+        .await?;
+        let mnemonic = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        let federation_id = federation.federation_id().into();
+
+        // just to be sure, set the username in the client to something wrong
+        federation.set_username("notsatoshi123".to_string()).await;
+        drop(federation);
+        let username_response =
+            recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
+
+        // On recovery, the username is there.
+        assert_eq!(Some(username), username_response);
+
+        // TODO: load config from db and see that the username is in there
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_social_recovery() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // Get original mnemonic (for comparison later)
+        let initial_words = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        info!("initial mnemnoic {:?}", &initial_words);
+
+        // Upload backup
+        let video_file_path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
+        let video_file_contents = tokio::fs::read(&video_file_path).await?;
+        let recovery_file_path = uploadBackupFile(
+            bridge.clone(),
+            federation.federation_id().into(),
+            video_file_path,
+        )
+        .await?;
+        let locate_recovery_file_path = locateRecoveryFile(bridge.clone()).await?;
+        assert_eq!(recovery_file_path, locate_recovery_file_path);
+
+        // Validate recovery file
+        let valid = validateRecoveryFile(
+            bridge.clone(),
+            federation.federation_id().into(),
+            recovery_file_path,
+        )
+        .await?;
+        assert!(valid);
+
+        // Generate recovery QR
+        let qr = recoveryQr(bridge.clone(), federation.federation_id().into()).await?;
+        let recovery_id = qr.recovery_id;
+
+        // Download verification document
+        let verification_doc_path = socialRecoveryDownloadVerificationDoc(
+            bridge.clone(),
+            federation.federation_id().into(),
+            recovery_id.clone(),
+        )
+        .await?
+        .unwrap();
+        let contents = tokio::fs::read(verification_doc_path).await?;
+        let _ = VerificationDocument::from_raw(&contents);
+        assert_eq!(contents, video_file_contents);
+
+        // 3 guardians approves
+        for i in 0..3 {
+            let password = match i {
+                0 => "1111",
+                1 => "2222",
+                2 => "3333",
+                _ => panic!("invalid peer id"),
+            };
+            approveSocialRecoveryRequest(
+                bridge.clone(),
+                federation.federation_id().into(),
+                recovery_id.clone(),
+                PeerId(fedimint_core::PeerId::from(i)),
+                password.into(),
+            )
+            .await?;
+        }
+
+        // Member checks approval status
+        let social_recovery_event =
+            socialRecoveryApprovals(bridge.clone(), federation.federation_id().into()).await?;
+        assert_eq!(0, social_recovery_event.remaining);
+        assert_eq!(
+            3,
+            social_recovery_event
+                .approvals
+                .iter()
+                .filter(|app| app.approved)
+                .count()
+        );
+
+        // Member combines decryption shares, loading recovered mnemonic back into their db
+        completeSocialRecovery(bridge.clone(), federation.federation_id().into()).await?;
+
+        // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
+        let final_words: Vec<String> =
+            getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
+        assert_eq!(initial_words, final_words);
+
         Ok(())
     }
 

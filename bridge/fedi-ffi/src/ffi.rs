@@ -7,9 +7,9 @@ use crate::{fedimint_initialize_async, fedimint_rpc_async};
 
 use anyhow::Context;
 use async_trait::async_trait;
-use fedimint_client_legacy::module_decode_stubs;
 use fedimint_core::config::FederationId;
 use fedimint_core::db::{Database, IDatabase};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -45,7 +45,7 @@ impl IStorage for PathBasedStorage {
         let db_path = self.data_dir.join("global.gdb");
 
         let db = fedimint_rocksdb::RocksDb::open(db_path)?;
-        Ok(Database::new(db, module_decode_stubs()))
+        Ok(Database::new(db, ModuleDecoderRegistry::from_iter([])))
     }
 
     async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {

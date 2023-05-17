@@ -24,6 +24,7 @@ pub type Storage = Arc<dyn IStorage>;
 enum BridgeDbPrefix {
     JoinedFederations = 0xb0,
     ClientConfig = 0xb1,
+    XmppUsername = 0xb2,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -51,3 +52,12 @@ impl fedimint_core::db::DatabaseRecord for FediClientConfigKey {
     type Key = Self;
     type Value = String;
 }
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct XmppUsername;
+
+impl_db_record!(
+    key = XmppUsername,
+    value = String,
+    db_prefix = BridgeDbPrefix::XmppUsername,
+);

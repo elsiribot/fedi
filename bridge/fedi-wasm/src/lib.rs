@@ -1,7 +1,7 @@
 use fediffi::bridge::Bridge;
-use fediffi::fedimint_client_legacy::module_decode_stubs;
 use fediffi::fedimint_core::config::FederationId;
 use fediffi::fedimint_core::db::{Database, IDatabase};
+use fediffi::fedimint_core::module::registry::ModuleDecoderRegistry;
 use fediffi::fedimint_core::{apply, async_trait_maybe_send};
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
@@ -26,7 +26,10 @@ struct WasmStorage(db2::MemDatabase);
 impl fediffi::storage::IStorage for WasmStorage {
     /// Database to store all federation joined
     async fn global_db(&self) -> anyhow::Result<Database> {
-        Ok(Database::new(self.0.clone(), module_decode_stubs()))
+        Ok(Database::new(
+            self.0.clone(),
+            ModuleDecoderRegistry::from_iter([]),
+        ))
     }
     async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
         // Ok(Box::new(db2::MemDatabase::new("main").await.unwrap()))
@@ -76,7 +79,7 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
     tracing_subscriber::fmt()
         .json()
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            "info,fediffi=debug,fedimint_client_legacy=trace,fedimint_core::api=trace",
+            "info,fediffi=debug,fedimint_client=trace,fedimint_core::api=trace",
         ))
         .with_writer({
             use std::io::Write;
@@ -106,7 +109,6 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
         .init();
 
     let db = db2::MemDatabase::new("main").await.unwrap();
-    // let db = Database::new(db, module_decode_stubs());
     let bridge =
         fediffi::fedimint_initialize_async(Arc::new(WasmStorage(db)), Arc::new(event_sink))
             .await

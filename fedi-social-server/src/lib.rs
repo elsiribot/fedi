@@ -9,7 +9,7 @@ use common::{
 pub use fedi_social_common as common;
 
 use async_trait::async_trait;
-use common::config::{FediSocialClientConfig, FediSocialConsensusConfig, SocialPrivateConfig};
+use common::config::{FediSocialClientConfig, FediSocialConsensusConfig, FediSocialPrivateConfig};
 use common::db::DbKeyPrefix;
 use fedimint_core::config::{
     ClientModuleConfig, ConfigGenModuleParams, DkgResult, ServerModuleConfig,
@@ -38,7 +38,7 @@ use crate::common::{
     BackupId, BackupRequest, EncryptedRecoveryShare, RecoveryId, RecoveryRequest,
     SignedBackupRequest,
 };
-use common::config::SocialConfig;
+use common::config::FediSocialConfig;
 use common::db::{
     BackupKeyPrefix, DecryptionShareId, DecryptionSharePrefix, RecoveryPrefix,
     UsedDoubleEncryptedData, UsedDoubleEncryptedDataPrefix,
@@ -84,8 +84,8 @@ impl ServerModuleGen for FediSocialGen {
 
             (
                 peer,
-                SocialConfig {
-                    private: SocialPrivateConfig {
+                FediSocialConfig {
+                    private: FediSocialPrivateConfig {
                         sk_share: threshold_crypto::serde_impl::SerdeSecret(sk),
                     },
                     consensus: FediSocialConsensusConfig {
@@ -112,8 +112,8 @@ impl ServerModuleGen for FediSocialGen {
             secret_key_share,
         } = g1[&()].threshold_crypto();
 
-        let server = SocialConfig {
-            private: SocialPrivateConfig {
+        let server = FediSocialConfig {
+            private: FediSocialPrivateConfig {
                 sk_share: secret_key_share,
             },
             consensus: FediSocialConsensusConfig {
@@ -211,7 +211,7 @@ impl ServerModuleGen for FediSocialGen {
 /// Federated mint member mint
 #[derive(Debug)]
 pub struct FediSocial {
-    pub cfg: SocialConfig,
+    pub cfg: FediSocialConfig,
 }
 
 #[async_trait]
@@ -372,7 +372,7 @@ impl FediSocial {
     /// * If the amount tiers for secret and public keys are inconsistent
     /// * If the pub key belonging to the secret key share is not in the pub key
     ///   list.
-    pub fn new(cfg: SocialConfig) -> FediSocial {
+    pub fn new(cfg: FediSocialConfig) -> FediSocial {
         FediSocial { cfg }
     }
 

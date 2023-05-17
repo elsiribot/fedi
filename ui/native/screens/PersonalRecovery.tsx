@@ -89,6 +89,9 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const dispatch = useAppDispatch()
     const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
@@ -120,11 +123,11 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const recoverFromSeed = async () => {
             try {
-                if (activeFederation) {
+                if (activeFederationId) {
                     await dispatch(
                         recoverFromMnemonic({
                             fedimint,
-                            federationId: activeFederation.id,
+                            federationId: activeFederationId,
                             mnemonic: seedWords,
                         }),
                     ).unwrap()
@@ -141,7 +144,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             recoverFromSeed()
         }
     }, [
-        activeFederation,
+        activeFederationId,
         dispatch,
         navigation,
         recoveryInProgress,

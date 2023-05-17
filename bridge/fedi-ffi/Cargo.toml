@@ -8,16 +8,17 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
 [dependencies]
-fedimint-client-legacy = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-mint-client = { workspace = true }
 fedimint-ln-client = { workspace = true }
+fedimint-wallet-client = { workspace = true }
 fedi-social-client = { path = "../../fedi-social-client" }
-fedimint-client-fedi = { path = "../../fedimint-client-fedi" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
 fedimint-bip39 = { workspace = true }
+threshold_crypto = { workspace = true }
+fedimint-aead = { workspace = true }
 
 anyhow = "1"
 bip39 = { version = "2.0.0", features = ["rand"] }
@@ -38,6 +39,7 @@ ts-rs = { git = "https://github.com/maan2003/ts-rs", branch = "fix-type-struct-z
 async-trait = "0.1.64"
 base64 = "0.20.0"
 url = "2.3.1"
+ring = "0.16.20"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 electrum-client = "0.12.0"

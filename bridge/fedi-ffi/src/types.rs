@@ -1,12 +1,9 @@
 use std::collections::BTreeMap;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
-use fedimint_client_fedi::UserClientConfig;
-use fedimint_core::api::WsClientConnectInfo;
-use fedimint_core::config::PeerUrl;
+use fedimint_core::config::{ClientConfig, PeerUrl};
 use fedimint_core::encoding::{Decodable, Encodable};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -85,8 +82,7 @@ pub struct PublicKey(#[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::se
 #[ts(export, export_to = "target/bindings/")]
 pub struct FediConfig {
     #[ts(type = "any")]
-    pub client_config: UserClientConfig,
-    pub username: Option<String>,
+    pub client_config: ClientConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -124,10 +120,9 @@ pub struct LnurlSignedMessage {
 pub async fn federation_to_fedimint_federation(
     federation: &Arc<Federation>,
 ) -> anyhow::Result<FedimintFederation> {
-    // FIXME: don't hardcode this
-    let social_recovery_active = false;
+    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
     let balance = federation.ng_balance().await;
-    let client_config = federation.get_config().await?.client_config.0;
+    let client_config = federation.get_config().await?.client_config;
     let federation_name = client_config
         .federation_name()
         .ok_or(anyhow!("federation name not found"))?
