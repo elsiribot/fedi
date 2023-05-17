@@ -15,7 +15,7 @@ use crate::db::MemAndIndexedDb;
 
 pub struct WasmStorage {
     global: Database,
-    federation: StdMutex<HashMap<FederationId, Database>>,
+    federation: StdMutex<HashMap<FederationId, MemAndIndexedDb>>,
 }
 
 impl WasmStorage {
@@ -37,13 +37,13 @@ impl fediffi::storage::IStorage for WasmStorage {
     }
     async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
         let db = MemAndIndexedDb::new(&format!("{id}")).await?;
-        let fed = self.federation.lock().unwrap();
+        let mut fed = self.federation.lock().unwrap();
         fed.insert(*id, db.clone());
-        Ok(db)
+        Ok(Box::new(db))
     }
 
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
-        let fed = self.federation.lock().unwrap();
+        let mut fed = self.federation.lock().unwrap();
         let db = fed.remove(id).unwrap();
         drop(fed);
         db.delete().await?;

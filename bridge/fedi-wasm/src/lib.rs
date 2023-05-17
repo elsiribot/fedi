@@ -31,7 +31,7 @@ thread_local! {
 pub async fn fedimint_initialize(event_sink: EventSink) {
     logging::init();
     let bridge = fediffi::fedimint_initialize_async(
-        Arc::new(WasmStorage::new().await?),
+        Arc::new(WasmStorage::new().await.expect("unable to open storage")),
         Arc::new(event_sink),
     )
     .await

@@ -91,7 +91,9 @@ impl MemAndIndexedDb {
     }
 
     pub async fn delete(self) -> Result<()> {
-        Ok(Rexie::delete(&self.idb.name()).await?)
+        Rexie::delete(&self.idb.name())
+            .await
+            .map_err(|e| anyhow::anyhow!("Error deleting database: {e}"))
     }
 }
 
