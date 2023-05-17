@@ -57,7 +57,9 @@ export const federationSlice = createSlice({
             state.federations = state.federations.filter(
                 fed => fed.id !== federationId,
             )
-            if (state.activeFederationId === federationId) {
+            if (state.federations.length === 0) {
+                state.activeFederationId = null
+            } else if (state.activeFederationId === federationId) {
                 state.activeFederationId = state.federations[0]?.id
             }
         })
@@ -88,6 +90,7 @@ export const refreshFederations = createAsyncThunk<
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch }) => {
     const federations = await fedimint.listFederations()
+    console.debug('refreshFederations', 'federations', federations)
     dispatch(setFederations(federations))
     return federations
 })

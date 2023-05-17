@@ -30,22 +30,27 @@ uniffi_macros::include_scaffolding!("fedi");
 #[derive(Clone)]
 pub struct PathBasedStorage {
     data_dir: PathBuf,
+    global_db: Database,
 }
 
 impl PathBasedStorage {
-    pub fn new(data_dir: PathBuf) -> Self {
-        Self { data_dir }
+    pub async fn new(data_dir: PathBuf) -> anyhow::Result<Self> {
+        // using .gdb instead to .db to avoid collision with federation named `global`
+        let db_path = data_dir.join("global.gdb");
+
+        let db = fedimint_rocksdb::RocksDb::open(db_path)?;
+        let db = Database::new(db, ModuleDecoderRegistry::from_iter([]));
+        Ok(Self {
+            data_dir,
+            global_db: db,
+        })
     }
 }
 
 #[async_trait]
 impl IStorage for PathBasedStorage {
     async fn global_db(&self) -> anyhow::Result<Database> {
-        // using .gdb instead to .db to avoid collision with federation named `global`
-        let db_path = self.data_dir.join("global.gdb");
-
-        let db = fedimint_rocksdb::RocksDb::open(db_path)?;
-        Ok(Database::new(db, ModuleDecoderRegistry::from_iter([])))
+        Ok(self.global_db.clone())
     }
 
     async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
@@ -57,6 +62,9 @@ impl IStorage for PathBasedStorage {
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
         let db_path = self.data_dir.join(&format!("{id}.db"));
         std::fs::remove_dir_all(db_path).context("delete federation db")?;
+        // FIXME: do this so we can make sure we don't have any locks remaining
+        // let db_opts = Options::default();
+        // rocksdb::DB::destroy(&db_opts, db_path)?;
         Ok(())
     }
 
@@ -94,7 +102,7 @@ pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<
         let event_sink: Arc<dyn EventSink> = event_sink.into();
         let data_dir: PathBuf = data_dir.into();
         logging::init_logging(&data_dir, event_sink.clone(), &log_level).unwrap();
-        let storage = Arc::new(PathBasedStorage { data_dir });
+        let storage = Arc::new(PathBasedStorage::new(data_dir).await.unwrap());
         let bridge = match fedimint_initialize_async(storage, event_sink).await {
             Ok(bridge) => bridge,
             Err(e) => {

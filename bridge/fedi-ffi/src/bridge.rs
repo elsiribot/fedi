@@ -196,13 +196,34 @@ impl Bridge {
     }
 
     /// Deletes federation client database and config
+    ///
+    /// FIXME: global db transaction might fail causing us to get into inconsistent state
     pub async fn leave_federation(&self, federation_id: &FederationId) -> anyhow::Result<()> {
-        self.storage.delete_federation_db(federation_id).await?;
+        // shut down state machines
+        {
+            let federation = self.get_federation(federation_id).await.unwrap();
+            federation
+                .task_group
+                .clone()
+                .shutdown_join_all(Some(Duration::from_secs(10)))
+                .await?;
+        }
+
+        // delete federation from global db
+        let global_db = self.storage.global_db().await?;
+        let mut dbtx = global_db.begin_transaction().await;
+        dbtx.remove_entry(&JoinedFederation(federation_id.clone()))
+            .await;
+        dbtx.commit_tx().await;
 
         // Remove from bridge state
-        info!("removing from bridge");
-        let mut lock = self.federations.lock().await;
-        lock.remove(federation_id);
+        {
+            let mut lock = self.federations.lock().await;
+            lock.remove(federation_id);
+        }
+
+        // delete federation db
+        self.storage.delete_federation_db(federation_id).await?;
 
         Ok(())
     }

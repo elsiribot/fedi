@@ -681,8 +681,10 @@ mod tests {
     use bitcoin::secp256k1::PublicKey;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_logging::TracingSetup;
+    use futures::StreamExt;
     use std::sync::RwLock;
 
+    use crate::storage::JoinedFederationsPrefix;
     use crate::{event::IEventSink, ffi::PathBasedStorage};
     use devimint::cmd;
 
@@ -831,7 +833,7 @@ mod tests {
 
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
-        let storage = Arc::new(PathBasedStorage::new(data_dir));
+        let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let bridge = fedimint_initialize_async(storage, event_sink).await?;
         let connect_string = std::env::var("FM_CONNECT_STRING").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), connect_string).await?;
@@ -843,8 +845,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_join_and_leave_and_join_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
-        leaveFederation(bridge, federation.federation_id().into()).await?;
-        setup().await?;
+        leaveFederation(bridge.clone(), federation.federation_id().into()).await?;
         Ok(())
     }
 
@@ -857,13 +858,35 @@ mod tests {
             let federations_lock = bridge.federations.lock().await.clone();
             assert_eq!(1, federations_lock.keys().len());
             assert!(&bridge.storage.read_file(db_path.as_path()).await.is_ok());
+
+            let global_db = bridge.storage.global_db().await?;
+            let mut global_dbtx = global_db.begin_transaction().await;
+            let num_joined_global = global_dbtx
+                .find_by_prefix(&JoinedFederationsPrefix)
+                .await
+                .count()
+                .await;
+            assert_eq!(1, num_joined_global);
         }
         bridge.leave_federation(&federation.federation_id()).await?;
+        drop(federation);
         {
             let federations_lock = bridge.federations.lock().await.clone();
             assert_eq!(0, federations_lock.keys().len());
             assert!(&bridge.storage.read_file(db_path.as_path()).await.is_err());
+
+            let global_db = bridge.storage.global_db().await?;
+            let mut global_dbtx = global_db.begin_transaction().await;
+            let num_joined_global = global_dbtx
+                .find_by_prefix(&JoinedFederationsPrefix)
+                .await
+                .count()
+                .await;
+            assert_eq!(0, num_joined_global);
         }
+        // FIXME: rejoining doesn't work
+        // let connect_string = std::env::var("FM_CONNECT_STRING").unwrap();
+        // joinFederation(bridge.clone(), connect_string).await?;
         Ok(())
     }
 

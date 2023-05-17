@@ -1,18 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import {
     changeAuthenticatedGuardian,
+    leaveFederation,
     resetFederationChatState,
-    resetFederationsState,
     selectActiveFederation,
     selectAuthenticatedMember,
-    setActiveFederationId,
-    setFederations,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
@@ -26,6 +24,7 @@ import SettingsItem from '../components/feature/admin/SettingsItem'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import SvgImage from '../components/ui/SvgImage'
 import {
+    ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
     CHAT_MEMBERS_PERSISTENCE_KEY,
@@ -42,21 +41,14 @@ import {
     changeDeveloperMode,
     useEnvironmentContext,
 } from '../state/contexts/EnvironmentContext'
-import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
-import type {
-    RootStackParamList,
-    TabsNavigatorParamList,
-} from '../types/navigation'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
+import type { RootStackParamList } from '../types/navigation'
 
-export type Props = BottomTabScreenProps<
-    TabsNavigatorParamList & RootStackParamList,
-    'Admin'
->
+export type Props = NativeStackScreenProps<RootStackParamList, 'Admin'>
 
 const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { leaveFederation } = useBridge()
     const { state: environmentState, dispatch: environmentDispatch } =
         useEnvironmentContext()
     const { dispatch: chatDispatch } = useChatContext()
@@ -64,13 +56,16 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(10)
 
     const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
 
-    const resetChatState = () => {
+    const resetChatState = useCallback(() => {
         if (activeFederation) {
             dispatch(
                 resetFederationChatState({
@@ -93,36 +88,39 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
                 JSON.stringify({ groups: DEFAULT_GROUPS }),
             )
         }
-    }
-    const resetGuardiansState = () => {
+    }, [activeFederation, chatDispatch, dispatch])
+
+    const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
-    }
+    }, [dispatch])
 
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
-    const handleLeaveFederation = async () => {
+    const handleLeaveFederation = useCallback(async () => {
         try {
-            await leaveFederation()
+            if (activeFederationId) {
+                await dispatch(
+                    leaveFederation({
+                        fedimint,
+                        federationId: activeFederationId,
+                    }),
+                ).unwrap()
+                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
+            }
         } catch (e) {
             toast?.show('Failed to leave federation', 3000)
             return
         }
         resetChatState()
         resetGuardiansState()
-
-        // update context and navigate
-        const federations = await fedimint.listFederations()
-        if (federations.length > 0) {
-            dispatch(setActiveFederationId(federations[0].id))
-            dispatch(setFederations(federations))
-            // FIXME: this doesn't do enough ...
-            navigation.navigate('TabsNavigator')
-        } else {
-            dispatch(resetFederationsState())
-            navigation.navigate('Splash')
-        }
-    }
+    }, [
+        activeFederationId,
+        dispatch,
+        resetChatState,
+        resetGuardiansState,
+        toast,
+    ])
 
     const confirmLeaveFederation = () => {
         // Only allow leaving if they have less than 100 sats
