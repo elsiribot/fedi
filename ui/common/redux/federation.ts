@@ -133,8 +133,6 @@ export const recoverFromMnemonic = createAsyncThunk<
             await dispatch(
                 authenticateChat({ fedimint, federationId, username }),
             )
-            // FIXME: hack to get the updated username since frontend caches it
-            await dispatch(refreshFederations(fedimint))
         }
         await dispatch(refreshFederations(fedimint))
     },
