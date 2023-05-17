@@ -2,6 +2,7 @@ import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppDispatch, useAppSelector } from '../../hooks'
@@ -23,10 +24,14 @@ export const CreateUsername: React.FC = () => {
     const { push } = useRouter()
     const [username, setUsername] = useState('')
     const federationId = useAppSelector(selectActiveFederation)?.id
+    const isChatSupported = useIsChatSupported()
 
     if (!federationId) {
         // TODO: Show a toast when this happens?
         return <Redirect path="/onboarding" />
+    }
+    if (!isChatSupported) {
+        return <Redirect path="/onboarding/welcome" />
     }
 
     const handleSubmit = async (ev: React.FormEvent) => {

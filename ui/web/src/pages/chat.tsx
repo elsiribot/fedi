@@ -1,12 +1,20 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
+
 import { ContentBlock } from '../components/ContentBlock'
+import { Redirect } from '../components/Redirect'
 import { Text } from '../components/Text'
 import { styled, theme } from '../styles'
 
 function ChatPage() {
     const { t } = useTranslation()
+    const isChatSupported = useIsChatSupported()
+
+    if (!isChatSupported) {
+        return <Redirect path="/" />
+    }
 
     return (
         <ContentBlock>

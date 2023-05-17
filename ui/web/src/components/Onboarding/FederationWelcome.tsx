@@ -1,6 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
@@ -18,6 +19,7 @@ import {
 export const FederationWelcome: React.FC = () => {
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const isChatSupported = useIsChatSupported()
 
     if (!activeFederation) {
         return <Redirect path="/onboarding" />
@@ -52,7 +54,13 @@ export const FederationWelcome: React.FC = () => {
                     href="/onboarding/recover">
                     I am a returning member
                 </Button>
-                <Button width="full" href="/onboarding/username">
+                <Button
+                    width="full"
+                    href={
+                        isChatSupported
+                            ? '/onboarding/username'
+                            : '/onboarding/welcome'
+                    }>
                     Join as a new member
                 </Button>
             </OnboardingActions>
