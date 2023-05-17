@@ -8,7 +8,10 @@ import {
     useIsOnchainDepositSupported,
 } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectMaxReceiveAmount,
+} from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -36,6 +39,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     const [amount, setAmount] = useState(0 as Sats)
     const [note, setNote] = useState('')
     const [isRequesting, setIsRequesting] = useState(false)
@@ -153,7 +157,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
     const copyData = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
     const error =
-        amount > 200_000 ? `Maximum amount is 200,000 sats` : generateError
+        amount > maxReceiveAmount
+            ? t('feature.receive.maximum-invoice-amount', {
+                  maxAmount: amountUtils.formatSats(maxReceiveAmount),
+              })
+            : generateError
     const showNote = !!note || !isRequesting
 
     let content: React.ReactNode
