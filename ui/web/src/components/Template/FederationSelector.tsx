@@ -96,7 +96,7 @@ export const FederationSelector: React.FC = () => {
 
 const Container = styled('div', {})
 
-const ActiveFederation = styled('button', {
+const ActiveFederation = styled('div', {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
