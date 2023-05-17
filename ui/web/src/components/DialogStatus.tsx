@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import CheckIcon from '@fedi/common/assets/svgs/check.svg'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
@@ -19,6 +19,10 @@ export const DialogStatus: React.FC<DialogStatusProps> = ({
     description,
 }) => {
     const [backgroundRotation, setBackgroundRotation] = useState(0)
+    const [expandedScale, setExpandedScale] = useState(3)
+    const containerRef = useRef<HTMLDivElement>(null)
+    const contentRef = useRef<HTMLDivElement>(null)
+
     const icon =
         status === 'success'
             ? CheckIcon
@@ -43,18 +47,37 @@ export const DialogStatus: React.FC<DialogStatusProps> = ({
         }
     }, [status])
 
+    // Measure the necessary scale based on parent size. Re-run on status
+    // change so we have up-to-date sizing on status change.
+    useEffect(() => {
+        const containerEl = containerRef.current
+        const contentEl = contentRef.current
+        if (!containerEl || !contentEl) return
+        const parentEl = containerEl.offsetParent
+        if (!parentEl) return
+        // Calculate necessary scale using larger of width or height
+        const contentRect = contentEl.getBoundingClientRect()
+        const parentRect = parentEl.getBoundingClientRect()
+        const scaleDelta = Math.max(
+            parentRect.width / contentRect.width,
+            parentRect.height / contentRect.height,
+        )
+        // Expand further than delta due to circle having cut off corners
+        setExpandedScale(scaleDelta * 1.333)
+    }, [status])
+
     return (
-        <Container>
+        <Container ref={containerRef}>
             <StatusBackground
                 status={status}
                 style={
                     {
                         '--rotation': `${backgroundRotation}deg`,
-                        '--scale': status === 'loading' ? 1.04 : 3,
+                        '--scale': status === 'loading' ? 1.04 : expandedScale,
                     } as React.CSSProperties
                 }
             />
-            <Content>
+            <Content ref={contentRef}>
                 {icon && <Icon size="md" icon={icon} />}
                 {title && (
                     <Text variant="h2" weight="medium">

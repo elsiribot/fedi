@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { Sats } from '@fedi/common/types'
+import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../hooks'
@@ -14,6 +15,7 @@ import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { CopyInput } from './CopyInput'
 import { Dialog } from './Dialog'
+import { DialogStatus } from './DialogStatus'
 import { Icon } from './Icon'
 import { QRCode } from './QRCode'
 import { ReceiveOffline } from './ReceiveOffline'
@@ -38,7 +40,10 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const [bitcoinUrl, setBitcoinUrl] = useState<string>()
     const [generateError, setGenerateError] = useState<string>()
     const [isReceivingOffline, setIsReceivingOffline] = useState(false)
+    const [receivedTransaction, setReceivedTransaction] =
+        useState<Transaction>()
     const containerRef = useRef<HTMLDivElement | null>(null)
+    const onOpenChangeRef = useUpdatingRef(onOpenChange)
 
     // Reset on close, focus input on open
     useEffect(() => {
@@ -50,6 +55,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             setBitcoinUrl(undefined)
             setGenerateError(undefined)
             setIsReceivingOffline(false)
+            setReceivedTransaction(undefined)
         } else {
             requestAnimationFrame(() =>
                 containerRef.current?.querySelector('input')?.focus(),
@@ -111,6 +117,32 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         bitcoinUrl,
         activeFederationId,
     ])
+
+    // Watch for incoming payments when we're rendering a lightning invoice
+    useEffect(() => {
+        if (!lightningInvoice) return
+        const unsubscribe = fedimint.addListener('transaction', event => {
+            const { lightning, bitcoin } = event.transaction
+            const wasLnPayment =
+                lightningInvoice &&
+                lightning &&
+                lightning.invoice.toLowerCase() ===
+                    lightningInvoice.toLowerCase()
+            const wasBitcoinPayment =
+                bitcoinUrl &&
+                bitcoin &&
+                bitcoinUrl
+                    .toLowerCase()
+                    .includes(bitcoin?.address.toLowerCase())
+            if (wasLnPayment || wasBitcoinPayment) {
+                setReceivedTransaction(event.transaction)
+                setTimeout(() => {
+                    onOpenChangeRef.current(false)
+                }, 3000)
+            }
+        })
+        return () => unsubscribe()
+    }, [lightningInvoice, bitcoinUrl, onOpenChangeRef])
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
     const copyData = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
@@ -174,6 +206,19 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                             {t('feature.receive.receive-bitcoin-offline')}
                         </Button>
                     </Buttons>
+                )}
+                {receivedTransaction && (
+                    <DialogStatus
+                        status="success"
+                        title={`${t(
+                            receivedTransaction.bitcoin
+                                ? 'feature.receive.pending-transaction'
+                                : 'feature.receive.you-received',
+                        )}`}
+                        description={`${amountUtils.formatSats(
+                            amountUtils.msatToSat(receivedTransaction.amount),
+                        )} ${t('words.sats')}`}
+                    />
                 )}
             </>
         )
