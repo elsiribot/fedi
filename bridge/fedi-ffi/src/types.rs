@@ -120,8 +120,7 @@ pub struct LnurlSignedMessage {
 pub async fn federation_to_fedimint_federation(
     federation: &Arc<Federation>,
 ) -> anyhow::Result<FedimintFederation> {
-    // FIXME: don't hardcode this
-    let social_recovery_active = false;
+    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
     let balance = federation.ng_balance().await;
     let client_config = federation.get_config().await?.client_config;
     let federation_name = client_config
