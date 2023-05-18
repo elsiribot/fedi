@@ -105,4 +105,10 @@ jobs:
 
         - name: Cross shell
           if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
-          run: nix run nixpkgs#nix-eval-jobs -- --gc-roots-dir .gcroots --flake .#devShells.${{ matrix.system }}.cross
+          run: |
+            # WORKAROUND: broken on MacOS for some reason, so use standard `nix build`
+            if [ "${{ matrix.system }}" == "x86_64-darwin" ]; then
+              nix build -L .#devShells.${{ matrix.system }}.cross
+            else
+              nix run nixpkgs#nix-eval-jobs -- --gc-roots-dir .gcroots --flake .#devShells.${{ matrix.system }}.cross
+            fi
