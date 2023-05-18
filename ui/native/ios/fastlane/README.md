@@ -23,14 +23,6 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Push a new beta build to TestFlight from CI
 
-### ios certs
-
-```sh
-[bundle exec] fastlane ios certs
-```
-
-Check for signing certificates
-
 ### ios beta
 
 ```sh
@@ -38,6 +30,14 @@ Check for signing certificates
 ```
 
 Push a new beta build to TestFlight
+
+### ios check_appstore_certs
+
+```sh
+[bundle exec] fastlane ios check_appstore_certs
+```
+
+Check for signing certificates
 
 ----
 
