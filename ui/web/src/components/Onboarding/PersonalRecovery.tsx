@@ -43,7 +43,7 @@ export const PersonalRecovery: React.FC = () => {
                     mnemonic: words,
                 }),
             ).unwrap()
-            push('/onboarding/welcome')
+            push('/onboarding/complete')
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
