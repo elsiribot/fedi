@@ -9,7 +9,6 @@ pub mod event;
 mod ffi;
 #[cfg(not(target_family = "wasm"))]
 pub mod logging;
-pub mod payment;
 pub mod recovery;
 pub mod social;
 pub mod storage;
@@ -846,6 +845,13 @@ mod tests {
     async fn test_join_and_leave_and_join_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         leaveFederation(bridge.clone(), federation.federation_id().into()).await?;
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_connect_info() -> anyhow::Result<()> {
+        let (_, federation) = setup().await?;
+        let _connect_info = federation.get_connect_info().await?;
         Ok(())
     }
 

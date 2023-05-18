@@ -134,10 +134,11 @@ pub async fn federation_to_fedimint_federation(
         .iter()
         .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
         .collect();
+    let connect_info = federation.get_connect_info().await?;
     Ok(FedimintFederation {
         id: FederationId(federation.federation_id()),
         name: federation_name,
-        connect_info: "FIXME: call connectionString() method".to_string(),
+        connect_info,
         nodes,
         balance: Amount(balance),
         social_recovery_active,

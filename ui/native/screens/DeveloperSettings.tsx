@@ -55,7 +55,9 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { dispatch: chatContextDispatch } = useChatContext()
     const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
+    const [selectedLanguage, setSelectedLanguage] = useState<string>(
+        i18n.language,
+    )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianIndex] = useState<number>(0)
     const selectedFiatCurrency = useAppSelector(
@@ -114,9 +116,10 @@ const DeveloperSettings: React.FC<Props> = () => {
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <Text>Change your lightning gateway</Text>
-            {gateways.map((gw: LightningGateway) => (
-                <View>
+            {gateways.map((gw: LightningGateway, index: number) => (
+                <View key={gw.nodePubKey}>
                     <CheckBox
+                        key={index}
                         title={
                             <Text style={styles(theme).checkboxText}>
                                 {gw.api}
@@ -337,6 +340,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                         }
                         return (
                             <CheckBox
+                                key={id}
                                 title={<Text caption>{guardian.name}</Text>}
                                 checked={
                                     authenticatedGuardian?.name ===
