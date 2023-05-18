@@ -267,14 +267,22 @@ export const refreshChatCredentials = createAsyncThunk<
 
 export const authenticateChat = createAsyncThunk<
     ChatMember,
-    { fedimint: FedimintBridge; federationId: string; username: string },
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        username: string
+        forceCredentialRefresh?: boolean
+    },
     { state: CommonState }
 >(
     'chat/authenticateChat',
-    async ({ fedimint, federationId, username }, { dispatch, getState }) => {
+    async (
+        { fedimint, federationId, username, forceCredentialRefresh },
+        { dispatch, getState },
+    ) => {
         // Fetch xmpp credentials if we don't have them
         let credentials = getState().chat[federationId]?.credentials
-        if (!credentials) {
+        if (forceCredentialRefresh || !credentials) {
             credentials = await dispatch(
                 refreshChatCredentials({ fedimint, federationId }),
             ).unwrap()
