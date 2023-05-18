@@ -28,8 +28,8 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const { t } = useTranslation()
     const balance = useAppSelector(selectActiveFederation)?.balance
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
-    const [invoice, setInvoice] = useState<Invoice>()
     const [invoiceValue, setInvoiceValue] = useState('')
+    const [invoice, setInvoice] = useState<Invoice>()
     const [wantsDecoding, setWantsDecoding] = useState(false)
     const [decodeError, setDecodeError] = useState<string>()
     const [isScanning, setIsScanning] = useState(false)
@@ -62,7 +62,9 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
 
     const decodeInvoice = useCallback(async (invoiceStr: string) => {
         try {
-            const decoded = await fedimint.decodeInvoice(invoiceStr)
+            const normalizedInvoice = invoiceStr.split(':').pop()?.trim()
+            if (!normalizedInvoice) throw new Error('Invalid invoice')
+            const decoded = await fedimint.decodeInvoice(normalizedInvoice)
             setInvoice(decoded)
         } catch (err: any) {
             setDecodeError(err.message || err.toString())
@@ -120,11 +122,13 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             <>
                 <InvoiceContainer>
                     <AmountInput amount={sats} readOnly />
-                    <InvoiceDescription>
-                        <Text variant="caption" weight="medium">
-                            &quot;{invoice.description}&quot;
-                        </Text>
-                    </InvoiceDescription>
+                    {invoice.description && (
+                        <InvoiceDescription>
+                            <Text variant="caption" weight="medium">
+                                &quot;{invoice.description}&quot;
+                            </Text>
+                        </InvoiceDescription>
+                    )}
                 </InvoiceContainer>
                 <Button onClick={handleSend}>
                     {t('words.send')} {satsFmt} {t('words.sats')}
