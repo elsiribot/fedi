@@ -9,7 +9,6 @@ pub mod event;
 mod ffi;
 #[cfg(not(target_family = "wasm"))]
 pub mod logging;
-pub mod payment;
 pub mod recovery;
 pub mod social;
 pub mod storage;
