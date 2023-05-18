@@ -45,6 +45,10 @@ const App = () => {
     useEffect(() => initializeNativeStore(), [])
 
     useEffect(() => {
+        onInitializeBridge()
+    }, [])
+
+    useEffect(() => {
         // Initialize logger
         const unsubscribeLog = fedimint.addListener('log', event =>
             console.log('OS:', Platform.OS, `": log" -> "${event.log}"`),
@@ -81,7 +85,6 @@ const App = () => {
             },
         )
 
-        onInitializeBridge()
         requestPushNotificationPermissions()
 
         return () => {
