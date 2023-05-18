@@ -12,7 +12,7 @@ import parse from '@xmpp/xml/lib/parse'
 import EventEmitter from 'events'
 import type { Element } from 'ltx'
 
-import { XMPP_MESSAGE_TYPES } from '../constants/xmpp'
+import { XMPP_MESSAGE_TYPES, XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
@@ -491,9 +491,16 @@ export class XmppChatClient {
         this.emit('message', this.formatIncomingMessage(parsedMessage))
 
         // Emit a 'memberSeen' for the person who sent it in case we hadn't seen them before
-        const jid = stanza.getAttr('from')
-        if (jid) {
-            this.emit('memberSeen', this.memberFromJid(jid))
+        // MUC `from` is formatted differently than direct chat jids: [roomId]@[domain]/[memberName]
+        const from = stanza.getAttr('from')
+        if (from) {
+            const fromJid = makeJid(from)
+            const memberJid = makeJid(
+                fromJid.getResource(),
+                fromJid.getDomain().replace('muc.', ''),
+                XMPP_RESOURCE,
+            )
+            this.emit('memberSeen', this.memberFromJid(memberJid.toString()))
         }
 
         // Emit a 'group' for the group this is in, in case we hadn't seen it or it has a new name
