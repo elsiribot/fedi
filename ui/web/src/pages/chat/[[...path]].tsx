@@ -30,7 +30,6 @@ function ChatPage() {
     // Connect to chat on this page.
     useEffect(() => {
         if (!federationId) return
-        console.log('connec')
         dispatch(connectChat({ fedimint, federationId }))
 
         return () => {
@@ -51,7 +50,7 @@ function ChatPage() {
     } else if (!chatType) {
         isShowingContent = false
         content = (
-            <EmptyMessage>Select a chat, or start a new chat</EmptyMessage>
+            <EmptyMessage>{t('feature.chat.select-or-start')}</EmptyMessage>
         )
     } else {
         return <Redirect path="/chat" />

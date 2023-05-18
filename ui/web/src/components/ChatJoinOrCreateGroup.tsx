@@ -33,7 +33,9 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
     const [isCreatingGroup, setIsCreatingGroup] = useState(false)
     const [isScanning, setIsScanning] = useState(false)
     const [newGroupLink, setNewGroupLink] = useState('')
-    const [newGroupName, setNewGroupName] = useState('New group')
+    const [newGroupName, setNewGroupName] = useState(
+        t('feature.chat.new-group'),
+    )
     const [isSavingGroup, setIsSavingGroup] = useState(false)
 
     useEffect(() => {
@@ -57,7 +59,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
             ).unwrap()
             push(`/chat/group/${res.id}`)
         } catch (err) {
-            toast.showErrorToast(err, 'Failed to join group')
+            toast.showErrorToast(err, 'errors.chat-unavailable')
         }
     }, [dispatch, toast, federationId, joinGroupLink, push])
 
@@ -96,7 +98,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                     onChange={ev => setNewGroupName(ev.currentTarget.value)}
                 />
                 <CopyInput
-                    label="Group link"
+                    label={t('feature.chat.group-invite')}
                     value={newGroupLink}
                     onCopyMessage={t('feature.chat.copied-group-invite-code')}
                 />
@@ -120,7 +122,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                     </ScanWrap>
                 ) : (
                     <Input
-                        label="Paste group invite"
+                        label={t('feature.chat.paste-group-invite')}
                         placeholder="fedi:group..."
                         value={joinGroupLink}
                         onChange={ev =>
@@ -134,13 +136,13 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                         <Button
                             width="full"
                             onClick={() => setIsScanning(false)}>
-                            Paste group invite
+                            {t('feature.chat.paste-group-invite')}
                         </Button>
                     ) : (
                         <Button
                             width="full"
                             onClick={() => setIsScanning(true)}>
-                            Scan a group invite
+                            {t('feature.chat.scan-group-invite')}
                         </Button>
                     )}
                     <Button

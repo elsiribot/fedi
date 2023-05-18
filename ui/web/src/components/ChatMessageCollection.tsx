@@ -11,7 +11,6 @@ import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { ChatMessage } from './ChatMessage'
-import { ChatPayment } from './ChatPayment'
 
 interface Props {
     collection: ChatMessageType[][]

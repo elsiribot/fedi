@@ -54,7 +54,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const handleEditGroupName = useCallback(() => {
         try {
             if (!federationId || !group) return
-            const newName = prompt('Change group name')
+            const newName = prompt(t('feature.chat.change-group-name'))
             if (!newName) return
             dispatch(
                 configureChatGroup({
@@ -66,7 +66,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
-    }, [dispatch, showErrorToast, federationId, group])
+    }, [t, dispatch, showErrorToast, federationId, group])
 
     const link = group ? encodeGroupInvitationLink(group.id) : ''
 

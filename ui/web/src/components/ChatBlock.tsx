@@ -26,14 +26,13 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                     <SidebarHeader>
                         <Text variant="h2">{t('words.chat')}</Text>
                         <Button size="sm" variant="outline" href="/chat/new">
-                            New chat
+                            {t('feature.chat.new-chat')}
                         </Button>
                     </SidebarHeader>
                     <SidebarList>
                         {chats.map(chat => (
                             <ChatListItem key={chat.id} chat={chat} />
                         ))}
-                        {!chats.length && <div>No chats :(</div>}
                     </SidebarList>
                 </Sidebar>
                 <Content isShowing={isShowingContent}>{children}</Content>
