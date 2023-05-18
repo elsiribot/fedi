@@ -127,6 +127,31 @@ export const leaveFederation = createAsyncThunk<
     await fedimint.leaveFederation(federationId)
 })
 
+export const completeSocialRecovery = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>(
+    'federation/completeSocialRecovery',
+    async ({ fedimint, federationId }, { dispatch }) => {
+        const username = await fedimint.completeSocialRecovery(federationId)
+        // Kick off chat authentication and refresh, but don't reject
+        // if either fail. The new mnemonic has been written to bridge
+        // so it's fulfilled either way.
+        if (username !== null) {
+            await dispatch(
+                authenticateChat({
+                    fedimint,
+                    federationId,
+                    username,
+                    forceCredentialRefresh: true,
+                }),
+            )
+        }
+        await dispatch(refreshFederations(fedimint))
+    },
+)
+
 export const recoverFromMnemonic = createAsyncThunk<
     void,
     { fedimint: FedimintBridge; federationId: string; mnemonic: SeedWords },
