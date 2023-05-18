@@ -99,10 +99,24 @@ impl IStorage for PathBasedStorage {
 // TODO: send error message
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
     RUNTIME.block_on(async {
+        // return if bridge already is initialized
+        if BRIDGE.lock().await.is_some() {
+            error!("bridge is already initialized");
+            return;
+        }
         let event_sink: Arc<dyn EventSink> = event_sink.into();
         let data_dir: PathBuf = data_dir.into();
-        logging::init_logging(&data_dir, event_sink.clone(), &log_level).unwrap();
-        let storage = Arc::new(PathBasedStorage::new(data_dir).await.unwrap());
+        if let Err(e) = logging::init_logging(&data_dir, event_sink.clone(), &log_level) {
+            error!("Failed to initialize logging: {:?}", e);
+            return;
+        }
+        let storage = match PathBasedStorage::new(data_dir).await {
+            Ok(storage) => Arc::new(storage),
+            Err(e) => {
+                error!("Failed to initialize storage {:?}", e);
+                return;
+            }
+        };
         let bridge = match fedimint_initialize_async(storage, event_sink).await {
             Ok(bridge) => bridge,
             Err(e) => {

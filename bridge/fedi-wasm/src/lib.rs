@@ -2,6 +2,7 @@ use fediffi::bridge::Bridge;
 use std::cell::RefCell;
 use std::sync::Arc;
 use storage::WasmStorage;
+use tracing::error;
 use wasm_bindgen::prelude::*;
 
 mod db;
@@ -30,12 +31,24 @@ thread_local! {
 #[wasm_bindgen]
 pub async fn fedimint_initialize(event_sink: EventSink) {
     logging::init();
-    let bridge = fediffi::fedimint_initialize_async(
-        Arc::new(WasmStorage::new().await.expect("unable to open storage")),
-        Arc::new(event_sink),
-    )
-    .await
-    .unwrap();
+    if BRIDGE.with(|b| b.borrow().is_some()) {
+        error!("bridge is already initialized");
+        return;
+    }
+    let storage = match WasmStorage::new().await {
+        Ok(storage) => Arc::new(storage),
+        Err(e) => {
+            error!("Failed to initialize storage {:?}", e);
+            return;
+        }
+    };
+    let bridge = match fediffi::fedimint_initialize_async(storage, Arc::new(event_sink)).await {
+        Ok(bridge) => bridge,
+        Err(e) => {
+            error!("Failed to initialize the bridge: {:?}", e);
+            return;
+        }
+    };
     BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
 }
 
