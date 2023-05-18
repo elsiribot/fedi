@@ -55,7 +55,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { dispatch: chatContextDispatch } = useChatContext()
     const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
+    const [selectedLanguage, setSelectedLanguage] = useState<string>(i18n.language)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianIndex] = useState<number>(0)
     const selectedFiatCurrency = useAppSelector(
