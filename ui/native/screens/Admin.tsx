@@ -53,7 +53,7 @@ const Admin: React.FC<Props> = ({ navigation }: Props) => {
         useEnvironmentContext()
     const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
-    const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(10)
+    const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(

@@ -33,7 +33,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).innerCardContainer}>
                     <SvgImage
-                        name="FedearationxIcon"
+                        name="FederationAlphaIcon"
                         size={SvgImageSize.xl}
                         svgProps={{
                             stroke: 'transparent',
