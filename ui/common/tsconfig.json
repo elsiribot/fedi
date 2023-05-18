@@ -9,7 +9,12 @@
         "incremental": true,
         "composite": true,
         "outDir": "dist",
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "typeRoots": [
+            "typings/",
+            "node_modules/@types/",
+            "../node_modules/@types/"
+        ]
     },
     "include": ["./**/*.tsx", "./**/*.ts", "./**/*.json"],
     "exclude": ["node_modules", "dist"]

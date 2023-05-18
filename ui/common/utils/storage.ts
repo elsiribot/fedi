@@ -1,7 +1,12 @@
 import get from 'lodash/get'
 
 import { CommonState } from '../redux'
-import { AnyStoredState, LatestStoredState, StorageApi } from '../types/storage'
+import {
+    AnyStoredState,
+    LatestStoredState,
+    StorageApi,
+    StoredStateV2,
+} from '../types/storage'
 
 export const STATE_STORAGE_KEY = 'fedi:state'
 
@@ -10,20 +15,26 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 1,
+        version: 2,
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
-        chatIdentities: Object.entries(state.chat).reduce<
-            LatestStoredState['chatIdentities']
-        >((identities, [federationId, federationChatState]) => {
-            if (federationChatState?.authenticatedMember) {
-                identities[federationId] =
-                    federationChatState.authenticatedMember
-            }
-            return identities
-        }, {}),
+        chat: Object.entries(state.chat).reduce<LatestStoredState['chat']>(
+            (stored, [federationId, chatState]) => {
+                if (chatState) {
+                    stored[federationId] = {
+                        authenticatedMember: chatState.authenticatedMember,
+                        messages: chatState.messages,
+                        groups: chatState.groups,
+                        members: chatState.membersSeen,
+                        lastFetchedMessageId: chatState.lastFetchedMessageId,
+                    }
+                }
+                return stored
+            },
+            {},
+        ),
     }
 }
 
@@ -63,6 +74,14 @@ export function hasStorageStateChanged(
     const activeFederationId = newState.federation.activeFederationId
     if (activeFederationId) {
         keysetsToCheck.push(['chat', activeFederationId, 'authenticatedMember'])
+        keysetsToCheck.push(['chat', activeFederationId, 'messages'])
+        keysetsToCheck.push(['chat', activeFederationId, 'groups'])
+        keysetsToCheck.push(['chat', activeFederationId, 'membersSeen'])
+        keysetsToCheck.push([
+            'chat',
+            activeFederationId,
+            'lastFetchedMessageId',
+        ])
     }
 
     for (let keysToCheck of keysetsToCheck) {
@@ -90,6 +109,30 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             activeFederationId: null,
             authenticatedGuardian: null,
             chatIdentities: {},
+        }
+    }
+
+    // Version 1 -> 2
+    if (migrationState.version === 1) {
+        const { chatIdentities, ...rest } = migrationState
+        migrationState = {
+            ...rest,
+            version: 2,
+            chat: Object.entries(chatIdentities).reduce<StoredStateV2['chat']>(
+                (chat, [federationId, authenticatedMember]) => {
+                    if (authenticatedMember) {
+                        chat[federationId] = {
+                            authenticatedMember,
+                            messages: [],
+                            groups: [],
+                            members: [],
+                            lastFetchedMessageId: null,
+                        }
+                    }
+                    return chat
+                },
+                {},
+            ),
         }
     }
 

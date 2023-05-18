@@ -887,10 +887,12 @@ impl Federation {
         let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
         let keypair_seed_bytes: [u8; 32] =
             xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
+        let username = self.get_username().await;
 
         XmppCredentials {
             password: hex::encode(&password_bytes),
             keypair_seed: hex::encode(&keypair_seed_bytes),
+            username,
         }
     }
 

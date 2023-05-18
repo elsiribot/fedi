@@ -3,7 +3,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     changeAuthenticatedGuardian,
     selectActiveFederation,
-    selectAuthenticatedMember,
+    setChatGroups,
+    setChatMembersSeen,
+    setChatMessages,
+    setLastFetchedMessageId,
 } from '@fedi/common/redux'
 import { LightningGateway } from '@fedi/common/types'
 
@@ -102,6 +105,33 @@ function DeveloperPage() {
         setGuardianPassword(authenticatedGuardian?.password || '')
     }, [authenticatedGuardian])
 
+    const deleteMessages = useCallback(async () => {
+        if (!federationId) return
+        await dispatch(setChatMessages({ federationId, messages: [] }))
+        await dispatch(
+            setLastFetchedMessageId({
+                federationId,
+                lastFetchedMessageId: null,
+            }),
+        )
+    }, [dispatch, federationId])
+
+    const deleteGroups = useCallback(async () => {
+        if (!federationId) return
+        await dispatch(setChatGroups({ federationId, groups: [] }))
+    }, [dispatch, federationId])
+
+    const deleteMembers = useCallback(async () => {
+        if (!federationId) return
+        await dispatch(setChatMembersSeen({ federationId, membersSeen: [] }))
+    }, [dispatch, federationId])
+
+    const deleteAllChatData = useCallback(async () => {
+        await deleteGroups()
+        await deleteMembers()
+        await deleteMessages()
+    }, [deleteGroups, deleteMembers, deleteMessages])
+
     return (
         <ContentBlock>
             <Settings>
@@ -135,6 +165,21 @@ function DeveloperPage() {
                             </Button>
                         </>
                     )}
+                </Setting>
+                <Setting>
+                    <Text>Chat storage</Text>
+                    <Button variant="outline" onClick={deleteMessages}>
+                        Delete messages
+                    </Button>
+                    <Button variant="outline" onClick={deleteGroups}>
+                        Delete groups
+                    </Button>
+                    <Button variant="outline" onClick={deleteMembers}>
+                        Delete members
+                    </Button>
+                    <Button onClick={deleteAllChatData}>
+                        Delete all chat data
+                    </Button>
                 </Setting>
             </Settings>
         </ContentBlock>

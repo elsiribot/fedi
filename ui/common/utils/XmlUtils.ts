@@ -1,13 +1,13 @@
 import { jid, xml } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
-import uuid from 'react-native-uuid'
 import { randomBytes } from 'tweetnacl'
+import { v4 as uuidv4 } from 'uuid'
 
 import { Key, Keypair } from '@fedi/common/types'
 
-import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants'
-import { ArchiveQueryFilters, ArchiveQueryPagination, Message } from '../types'
+import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants/xmpp'
+import { ArchiveQueryFilters, ArchiveQueryPagination } from '../types'
 import encryptionUtils from './EncryptionUtils'
 
 interface CommonXmppAttributes {
@@ -28,10 +28,10 @@ type XmppArgs =
     | PublishPublicKeyArgs
 
 class XmppStanza {
-    tag: string
-    name: string
+    tag!: string
+    name!: string
     args?: XmppArgs
-    build: () => Element
+    build!: () => Element
 }
 class XmppMessage extends XmppStanza {
     tag = 'message'
@@ -39,7 +39,7 @@ class XmppMessage extends XmppStanza {
 class XmppPresence extends XmppStanza {
     tag = 'presence'
 }
-class XmppQuery extends XmppStanza {
+export class XmppQuery extends XmppStanza {
     tag = 'iq'
 }
 
@@ -47,6 +47,10 @@ class XmppQuery extends XmppStanza {
     XMPP Message stanzas
     XML with a top-level <message> tag
 */
+interface Message {
+    id?: string
+    content: string
+}
 interface EncryptedDirectChatArgs extends CommonXmppAttributes {
     message: Message
     senderKeys: Keypair
@@ -219,7 +223,7 @@ export class EnterMucRoomPresence extends XmppPresence {
         const attributes = {
             from,
             to: `${toGroup}/${memberNickname}`,
-            id: `${EnterMucRoomPresence.id}-${uuid.v4()}`,
+            id: `${EnterMucRoomPresence.id}-${uuidv4()}`,
         }
 
         return xml(
@@ -265,7 +269,7 @@ export class AddToRosterQuery extends XmppQuery {
         const { from, newRosterItem } = this.args
 
         const attributes = {
-            id: `${AddToRosterQuery.id}-${uuid.v4()}`,
+            id: `${AddToRosterQuery.id}-${uuidv4()}`,
             from,
             type: 'set',
         }
@@ -294,7 +298,7 @@ export class GetMessagesQuery extends XmppQuery {
         const { filters, pagination } = this.args
 
         const attributes = {
-            id: `${GetMessagesQuery.id}-${uuid.v4()}`,
+            id: `${GetMessagesQuery.id}-${uuidv4()}`,
             type: 'set',
         }
 
@@ -357,7 +361,7 @@ export class GetRoomConfigQuery extends XmppQuery {
         const { from, to } = this.args
 
         const attributes = {
-            id: `${GetRoomConfigQuery.id}-${uuid.v4()}`,
+            id: `${GetRoomConfigQuery.id}-${uuidv4()}`,
             from,
             to,
             type: 'get',
@@ -381,7 +385,7 @@ export class GetRosterQuery extends XmppQuery {
         const { from } = this.args
 
         const attributes = {
-            id: `${GetRosterQuery.id}-${uuid.v4()}`,
+            id: `${GetRosterQuery.id}-${uuidv4()}`,
             from,
             type: 'get',
         }
@@ -408,7 +412,7 @@ export class GetPublicKeyQuery extends XmppQuery {
         const nodeId = `${toJid.local}:::pubkey`
 
         const attributes = {
-            id: `${GetPublicKeyQuery.id}-${uuid.v4()}`,
+            id: `${GetPublicKeyQuery.id}-${uuidv4()}`,
             from,
             to: nodeService,
             type: 'set',
@@ -446,7 +450,7 @@ export class PublishPublicKeyQuery extends XmppQuery {
         const nodeId = `${fromJid.local}:::pubkey`
 
         const attributes = {
-            id: `${PublishPublicKeyQuery.id}-${uuid.v4()}`,
+            id: `${PublishPublicKeyQuery.id}-${uuidv4()}`,
             from,
             type: 'set',
         }
@@ -489,7 +493,7 @@ export class SetPubsubNodeConfigQuery extends XmppQuery {
         const nodeId = `${fromJid.local}:::pubkey`
 
         const attributes = {
-            id: `${SetPubsubNodeConfigQuery.id}-${uuid.v4()}`,
+            id: `${SetPubsubNodeConfigQuery.id}-${uuidv4()}`,
             from,
             to: nodeService,
             type: 'set',
@@ -549,7 +553,7 @@ export class SetRoomConfigQuery extends XmppQuery {
         const { roomName, from, to } = this.args
 
         const attributes = {
-            id: `${SetRoomConfigQuery.id}-${uuid.v4()}`,
+            id: `${SetRoomConfigQuery.id}-${uuidv4()}`,
             from,
             to,
             type: 'set',
@@ -612,7 +616,7 @@ export class UniqueRoomNameQuery extends XmppQuery {
         const attributes = {
             type: 'get',
             to,
-            id: `${UniqueRoomNameQuery.id}-${uuid.v4()}`,
+            id: `${UniqueRoomNameQuery.id}-${uuidv4()}`,
         }
 
         return xml(

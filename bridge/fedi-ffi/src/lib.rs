@@ -1058,16 +1058,20 @@ mod tests {
         )
         .await?;
         let mnemonic = getMnemonic(bridge.clone(), federation.federation_id().into()).await?;
-        let federation_id = federation.federation_id().into();
+        let federation_id = federation.federation_id();
 
         // just to be sure, set the username in the client to something wrong
         federation.set_username("notsatoshi123".to_string()).await;
         drop(federation);
         let username_response =
-            recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
+            recoverFromMnemonic(bridge.clone(), federation_id.into(), mnemonic).await?;
 
         // On recovery, the username is there.
-        assert_eq!(Some(username), username_response);
+        assert_eq!(Some(username.clone()), username_response);
+
+        // Username is present in xmpp credentials
+        let xmpp_credentials = xmppCredentials(bridge.clone(), federation_id.into()).await?;
+        assert_eq!(Some(username.clone()), xmpp_credentials.username);
 
         // TODO: load config from db and see that the username is in there
 

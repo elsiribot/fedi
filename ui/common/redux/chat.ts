@@ -3,8 +3,13 @@ import {
     PayloadAction,
     createSelector,
     createAsyncThunk,
+    ThunkDispatch,
+    AnyAction,
+    isAnyOf,
 } from '@reduxjs/toolkit'
-import { orderBy } from 'lodash'
+import isEqual from 'lodash/isEqual'
+import orderBy from 'lodash/orderBy'
+import { v4 as uuidv4 } from 'uuid'
 
 import {
     CommonState,
@@ -19,29 +24,40 @@ import {
     Keypair,
     ChatType,
     XmppCredentials,
+    XmppClientStatus,
+    ChatWithLatestMessage,
 } from '../types'
+import encryptionUtils from '../utils/EncryptionUtils'
 import {
     getFederationChatServerDomain,
     makeChatServerOptions,
 } from '../utils/FederationUtils'
+import { XmppChatClientManager } from '../utils/XmppChatClient'
 import { FedimintBridge } from '../utils/fedimint'
-import { checkXmppUser, registerXmppUser } from '../utils/xmpp'
+import {
+    checkXmppUser,
+    decodeGroupInvitationLink,
+    registerXmppUser,
+} from '../utils/xmpp'
 import { loadFromStorage } from './storage'
 
 type FederationPayloadAction<T = {}> = PayloadAction<
     { federationId: string } & T
 >
 
+const xmppChatClientManager = new XmppChatClientManager()
+
 /*** Initial State ***/
 
 const initialFederationChatState = {
+    clientStatus: 'disconnected' as XmppClientStatus,
+    clientError: null as string | null,
     authenticatedMember: null as ChatMember | null,
     credentials: null as XmppCredentials | null,
     messages: [] as ChatMessage[],
     groups: [] as ChatGroup[],
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
-    websocketIsHealthy: false as boolean,
     encryptionKeys: null as Keypair | null,
 }
 type FederationChatState = typeof initialFederationChatState
@@ -58,10 +74,80 @@ const getFederationChatState = (state: ChatState, federationId: string) =>
         ...initialFederationChatState,
     }
 
+const upsertEntityToChatState = <
+    K extends 'messages' | 'groups' | 'membersSeen',
+    T extends FederationChatState[K][0],
+>(
+    state: ChatState,
+    federationId: string,
+    key: K,
+    newEntity: T,
+): ChatState => {
+    let addToEnd = true
+    let wasEqual = false
+    const chatState = getFederationChatState(state, federationId)
+
+    // Make a new list of entities with the new one updating the old one. Make
+    // note of if we find it (don't need to append) and if it was identical
+    // (don't need to update state at all.)
+    const entities = chatState[key].map(oldEntity => {
+        if (oldEntity.id !== newEntity.id) return oldEntity
+        if (oldEntity.id === newEntity.id) {
+            addToEnd = false
+            const updatedEntity = { ...oldEntity, ...newEntity }
+            wasEqual = isEqual(oldEntity, updatedEntity)
+            return updatedEntity
+        }
+    })
+
+    // If we went to update the old entity but found that it was equal to the new entity, we can return state
+    // exactly as it was and prevent unnecessary updates.
+    if (!addToEnd && wasEqual) {
+        return state
+    }
+
+    // If we didn't find the old one in the list, add the new one to the end of the list
+    if (addToEnd) {
+        entities.push(newEntity)
+    }
+
+    // Return updated state
+    return {
+        ...state,
+        [federationId]: {
+            ...chatState,
+            [key]: entities,
+        },
+    }
+}
+
 export const chatSlice = createSlice({
     name: 'chat',
     initialState,
     reducers: {
+        setChatClientStatus(
+            state,
+            action: FederationPayloadAction<{ status: XmppClientStatus }>,
+        ) {
+            const { federationId, status } = action.payload
+            const chatState = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...chatState,
+                clientStatus: status,
+                // Reset error on successful connection
+                clientError: status === 'online' ? null : chatState.clientError,
+            }
+        },
+        setChatClientError(
+            state,
+            action: FederationPayloadAction<{ error: string }>,
+        ) {
+            const { federationId, error } = action.payload
+            state[federationId] = {
+                ...getFederationChatState(state, federationId),
+                clientError: error,
+            }
+        },
         setChatMembersSeen(
             state,
             action: FederationPayloadAction<{ membersSeen: ChatMember[] }>,
@@ -77,13 +163,12 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{ member: ChatMember }>,
         ) {
             const { federationId, member } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            // Don't add self to list
-            if (member.id === federation.authenticatedMember?.id) return
-            state[federationId] = {
-                ...federation,
-                membersSeen: [...federation.membersSeen, member],
-            }
+            return upsertEntityToChatState(
+                state,
+                federationId,
+                'membersSeen',
+                member,
+            )
         },
         setChatMessages(
             state,
@@ -101,30 +186,12 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{ message: ChatMessage }>,
         ) {
             const { federationId, message } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                // TODO: Upsert repeat messages
-                messages: [...federation.messages, message],
-            }
-        },
-        updateChatMessage(
-            state,
-            action: FederationPayloadAction<{ message: ChatMessage }>,
-        ) {
-            const { federationId, message } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            const messages = federation.messages.map(m => {
-                if (m.id !== message.id) return m
-                return {
-                    ...m,
-                    ...message,
-                }
-            })
-            state[federationId] = {
-                ...federation,
-                messages,
-            }
+            return upsertEntityToChatState(
+                state,
+                federationId,
+                'messages',
+                message,
+            )
         },
         setChatGroups(
             state,
@@ -142,23 +209,7 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{ group: ChatGroup }>,
         ) {
             const { federationId, group } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                // TODO: Upsert repeat messages
-                groups: [...federation.groups, group],
-            }
-        },
-        setLastFetchedMessageId(
-            state,
-            action: FederationPayloadAction<{ lastFetchedMessageId: string }>,
-        ) {
-            const { federationId, lastFetchedMessageId } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                lastFetchedMessageId,
-            }
+            return upsertEntityToChatState(state, federationId, 'groups', group)
         },
         setAuthenticatedMember(
             state,
@@ -182,6 +233,19 @@ export const chatSlice = createSlice({
             state[federationId] = {
                 ...federation,
                 encryptionKeys,
+            }
+        },
+        setLastFetchedMessageId(
+            state,
+            action: FederationPayloadAction<{
+                lastFetchedMessageId: FederationChatState['lastFetchedMessageId']
+            }>,
+        ) {
+            const { federationId, lastFetchedMessageId } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastFetchedMessageId,
             }
         },
         resetAuthenticatedMember(state, action: FederationPayloadAction<{}>) {
@@ -209,7 +273,7 @@ export const chatSlice = createSlice({
             const federation = getFederationChatState(state, federationId)
             state[federationId] = {
                 ...federation,
-                credentials: action.payload,
+                ...action.payload,
             }
         })
 
@@ -222,34 +286,82 @@ export const chatSlice = createSlice({
             }
         })
 
+        builder.addCase(sendDirectMessage.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'messages',
+                action.payload,
+            )
+        })
+
+        builder.addCase(sendGroupMessage.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'messages',
+                action.payload,
+            )
+        })
+
+        builder.addCase(fetchChatHistory.fulfilled, (state, action) => {
+            const { federationId } = action.meta.arg
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastFetchedMessageId: action.payload,
+            }
+        })
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
-            Object.entries(action.payload.chatIdentities).forEach(
-                ([federationId, chatIdentity]) => {
-                    if (!chatIdentity) return
+            Object.entries(action.payload.chat).forEach(
+                ([federationId, chatState]) => {
+                    if (!chatState) return
                     state[federationId] = {
                         ...getFederationChatState(state, federationId),
-                        authenticatedMember: chatIdentity,
+                        authenticatedMember: chatState.authenticatedMember,
+                        messages: chatState.messages,
+                        groups: chatState.groups,
+                        membersSeen: chatState.members,
+                        lastFetchedMessageId: chatState.lastFetchedMessageId,
                     }
                 },
             )
         })
+
+        builder.addMatcher(
+            isAnyOf(
+                joinChatGroup.fulfilled,
+                createChatGroup.fulfilled,
+                configureChatGroup.fulfilled,
+            ),
+            (state, action) => {
+                return upsertEntityToChatState(
+                    state,
+                    action.meta.arg.federationId,
+                    'groups',
+                    action.payload,
+                )
+            },
+        )
     },
 })
 
 /*** Basic actions ***/
 
 export const {
+    setChatClientStatus,
+    setChatClientError,
     setChatMembersSeen,
     addChatMemberSeen,
     setChatMessages,
     addChatMessage,
-    updateChatMessage,
     setChatGroups,
     addChatGroup,
-    setLastFetchedMessageId,
     setAuthenticatedMember,
     setChatEncryptionKeys,
+    setLastFetchedMessageId,
     resetAuthenticatedMember,
     resetFederationChatState,
     resetChatState,
@@ -258,29 +370,42 @@ export const {
 /*** Async thunk actions ***/
 
 export const refreshChatCredentials = createAsyncThunk<
-    XmppCredentials,
+    { credentials: XmppCredentials; encryptionKeys: Keypair },
     { fedimint: FedimintBridge; federationId: string }
 >('chat/refreshChatCredentials', async ({ fedimint, federationId }) => {
     const credentials = await fedimint.getXmppCredentials(federationId)
-    return credentials
+    const encryptionKeys = encryptionUtils.generateDeterministicKeyPair(
+        credentials.keypairSeed,
+    )
+    return { credentials, encryptionKeys }
 })
 
 export const authenticateChat = createAsyncThunk<
     ChatMember,
-    { fedimint: FedimintBridge; federationId: string; username: string },
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        username: string
+        forceCredentialRefresh?: boolean
+    },
     { state: CommonState }
 >(
     'chat/authenticateChat',
-    async ({ fedimint, federationId, username }, { dispatch, getState }) => {
+    async (
+        { fedimint, federationId, username, forceCredentialRefresh },
+        { dispatch, getState },
+    ) => {
         // Fetch xmpp credentials if we don't have them
         let credentials = getState().chat[federationId]?.credentials
-        if (!credentials) {
-            credentials = await dispatch(
-                refreshChatCredentials({ fedimint, federationId }),
-            ).unwrap()
+        if (forceCredentialRefresh || !credentials) {
+            credentials = (
+                await dispatch(
+                    refreshChatCredentials({ fedimint, federationId }),
+                ).unwrap()
+            ).credentials
         }
-        const connectionOptions = selectChatConnectionOptions(getState())
 
+        const connectionOptions = selectChatConnectionOptions(getState())
         if (connectionOptions === null) {
             console.error('No chat connectionOptions for this federation')
             throw new Error('errors.chat-unavailable')
@@ -311,6 +436,321 @@ export const authenticateChat = createAsyncThunk<
     },
 )
 
+export const connectChat = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>(
+    'chat/connectChat',
+    async ({ fedimint, federationId }, { getState, dispatch }) => {
+        // Assemble all necessary state for starting chat, throw if we are missing anything.
+        const state = getState()
+        const chatState = state.chat[federationId]
+        const federation = state.federation.federations.find(
+            f => f.id === federationId,
+        )
+
+        if (!federation) {
+            console.error(
+                `No federation found with id ${federationId}, cannot start chat`,
+            )
+            throw new Error('errors.chat-unavailable')
+        }
+
+        const chatDomain = getFederationChatServerDomain(federation.meta)
+        if (!chatDomain) {
+            console.info(`No chat domain configured for ${federationId}`)
+            throw new Error('errors.chat-unavailable')
+        }
+
+        const authenticatedMember = chatState?.authenticatedMember
+        if (!authenticatedMember) {
+            console.warn(
+                `No chat member informations was found for ${federationId}, cannot start chat`,
+            )
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Fetch xmpp credentials if we don't have them
+        const { credentials, encryptionKeys } = await getOrFetchCredentials(
+            fedimint,
+            federationId,
+            state,
+            dispatch,
+        )
+
+        // Get client & bind listeners to dispatch actions
+        const client = xmppChatClientManager.getClient(federationId)
+
+        client.on('status', async status => {
+            dispatch(setChatClientStatus({ federationId, status }))
+        })
+
+        client.on('error', error => {
+            dispatch(setChatClientError({ federationId, error: error.message }))
+        })
+
+        client.on('message', message => {
+            dispatch(addChatMessage({ federationId, message }))
+        })
+
+        client.on('memberSeen', member => {
+            dispatch(addChatMemberSeen({ federationId, member }))
+        })
+
+        client.on('group', group => {
+            dispatch(addChatGroup({ federationId, group }))
+        })
+
+        // On connection, update various states
+        client.on('online', async () => {
+            // Publish public key
+            client
+                .publishPublicKey(encryptionKeys.publicKey)
+                .catch(err => console.error('Failed to publish public key'))
+
+            // Fetch chat history
+            dispatch(fetchChatHistory({ federationId }))
+
+            // Fix authenticatedMember if it has the wrong id or public key
+            const jid = client.xmpp?.jid?.toString().split('/')[0]
+            if (jid && authenticatedMember.id !== jid) {
+                dispatch(
+                    setAuthenticatedMember({
+                        federationId,
+                        authenticatedMember: {
+                            ...authenticatedMember,
+                            id: jid,
+                            publicKeyHex: encryptionKeys.publicKey.hex,
+                        },
+                    }),
+                )
+            }
+        })
+
+        // Start the client
+        const connectionOptions = makeChatServerOptions(chatDomain)
+        client.start(
+            {
+                domain: connectionOptions.domain,
+                service: connectionOptions.service,
+                resource: connectionOptions.resource,
+                username: authenticatedMember.username,
+                password: credentials.password,
+            },
+            encryptionKeys,
+        )
+    },
+)
+
+export const disconnectChat = createAsyncThunk<void, { federationId: string }>(
+    'chat/disconnectChat',
+    async ({ federationId }) => {
+        await xmppChatClientManager.destroyClient(federationId)
+    },
+)
+
+export const fetchChatHistory = createAsyncThunk<
+    string | null,
+    { federationId: string },
+    { state: CommonState }
+>('chat/fetchChatHistory', async ({ federationId }, { getState }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    let lastFetchedMessageId =
+        getState().chat[federationId]?.lastFetchedMessageId || null
+
+    // Keep requesting until we're totally caught up
+    while (true) {
+        const nextLastFetchedMessageId = await client.fetchMessageHistory(
+            null,
+            {
+                limit: '10',
+                after: lastFetchedMessageId || undefined,
+            },
+        )
+        if (
+            !nextLastFetchedMessageId ||
+            nextLastFetchedMessageId === lastFetchedMessageId
+        ) {
+            break
+        }
+        lastFetchedMessageId = nextLastFetchedMessageId
+    }
+
+    return lastFetchedMessageId
+})
+
+export const fetchChatMembers = createAsyncThunk<
+    ChatMember[],
+    { federationId: string }
+>('chat/fetchChatMembers', ({ federationId }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    return client.fetchMembers()
+})
+
+export const joinChatGroup = createAsyncThunk<
+    ChatGroup,
+    { federationId: string; link: string }
+>('chat/joinChatGroup', async ({ federationId, link }) => {
+    const groupId = decodeGroupInvitationLink(link)
+    const client = xmppChatClientManager.getClient(federationId)
+    const group = await client.joinGroup(groupId)
+    return group
+})
+
+export const createChatGroup = createAsyncThunk<
+    ChatGroup,
+    { federationId: string; id: string; name: string }
+>('chat/createChatGroup', async ({ federationId, id, name }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    const group = await client.joinGroup(id, name)
+    return group
+})
+
+export const configureChatGroup = createAsyncThunk<
+    ChatGroup,
+    { federationId: string; groupId: string; groupName: string },
+    { state: CommonState }
+>(
+    'chat/configureChatGroup',
+    async ({ federationId, groupId, groupName }, { getState }) => {
+        const group = getState().chat[federationId]?.groups.find(
+            g => g.id === groupId,
+        )
+        if (!group) throw new Error('No group found with that ID')
+
+        const client = xmppChatClientManager.getClient(federationId)
+        await client.configureGroup(groupId, groupName)
+
+        return {
+            ...group,
+            name: groupName,
+        }
+    },
+)
+
+export const sendDirectMessage = createAsyncThunk<
+    ChatMessage,
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        recipientId: string
+        content: string
+        updatePayment?: boolean
+    },
+    { state: CommonState }
+>(
+    'chat/sendDirectMessage',
+    async (
+        { fedimint, federationId, recipientId, content, updatePayment },
+        { dispatch, getState },
+    ) => {
+        const state = getState()
+        const client = xmppChatClientManager.getClient(federationId)
+
+        // Get the recipient's pubkey, fetch it if we don't have it
+        const chatState = state.chat[federationId]
+        const recipientMember = chatState?.membersSeen.find(
+            m => m.id === recipientId,
+        )
+        let recipientPubkey: string
+        if (recipientMember?.publicKeyHex) {
+            recipientPubkey = recipientMember?.publicKeyHex
+        } else {
+            recipientPubkey = await client.fetchMemberPublicKey(recipientId)
+        }
+
+        // Get or fetch credentials
+        const { encryptionKeys } = await getOrFetchCredentials(
+            fedimint,
+            federationId,
+            state,
+            dispatch,
+        )
+
+        // Get our username
+        const authenticatedMember = chatState?.authenticatedMember
+        if (!authenticatedMember) {
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Construct and send message
+        const message: ChatMessage = {
+            content,
+            id: uuidv4(),
+            sentAt: Date.now() / 1000,
+            sentBy: authenticatedMember.id,
+            sentTo: recipientId,
+        }
+        await client.sendDirectMessage(
+            recipientId,
+            recipientPubkey,
+            message,
+            encryptionKeys,
+            updatePayment,
+        )
+        return message
+    },
+)
+
+export const sendGroupMessage = createAsyncThunk<
+    ChatMessage,
+    { federationId: string; groupId: string; content: string },
+    { state: CommonState }
+>(
+    'chat/sendGroupMessage',
+    async ({ federationId, groupId, content }, { getState }) => {
+        const chatState = getState().chat[federationId]
+        const client = xmppChatClientManager.getClient(federationId)
+
+        // Get our username
+        const authenticatedMember = chatState?.authenticatedMember
+        if (!authenticatedMember) {
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Get the group
+        const group = chatState?.groups.find(g => g.id === groupId) || {
+            id: groupId,
+        }
+
+        // Construct and send message
+        const message: ChatMessage = {
+            content,
+            id: uuidv4(),
+            sentAt: Date.now() / 1000,
+            sentBy: authenticatedMember.id,
+            sentIn: groupId,
+        }
+        await client.sendGroupMessage(group, message)
+        return message
+    },
+)
+
+// Async thunk utility functions
+
+async function getOrFetchCredentials(
+    fedimint: FedimintBridge,
+    federationId: string,
+    state: CommonState,
+    dispatch: ThunkDispatch<CommonState, unknown, AnyAction>,
+) {
+    const chatState = state.chat[federationId]
+    let credentials: XmppCredentials
+    let encryptionKeys: Keypair
+    if (chatState?.credentials && chatState?.encryptionKeys) {
+        credentials = chatState.credentials
+        encryptionKeys = chatState.encryptionKeys
+    } else {
+        const res = await dispatch(
+            refreshChatCredentials({ fedimint, federationId }),
+        ).unwrap()
+        credentials = res.credentials
+        encryptionKeys = res.encryptionKeys
+    }
+    return { credentials, encryptionKeys }
+}
+
 /*** Selectors ***/
 
 const selectFederationChatState = (s: CommonState) =>
@@ -334,8 +774,8 @@ export const selectAllChatMembers = (s: CommonState) =>
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
-export const selectLastFetchedMessageId = (s: CommonState) =>
-    selectFederationChatState(s).lastFetchedMessageId
+export const selectChatClientStatus = (s: CommonState) =>
+    selectFederationChatState(s).clientStatus
 
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {
@@ -353,10 +793,91 @@ export const selectChatConnectionOptions = createSelector(
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
     members => {
-        return members.reduce((prev, member) => {
-            prev[member.id] = member
-            return prev
-        }, {} as Record<string, ChatMember | undefined>)
+        return members.reduce<Record<string, ChatMember | undefined>>(
+            (prev, member) => {
+                prev[member.id] = member
+                return prev
+            },
+            {},
+        )
+    },
+)
+
+export const selectChatGroupMap = createSelector(
+    selectAllChatGroups,
+    groups => {
+        return groups.reduce<Record<string, ChatGroup | undefined>>(
+            (prev, group) => {
+                prev[group.id] = group
+                return prev
+            },
+            {},
+        )
+    },
+)
+
+export const selectOrderedChatMessages = createSelector(
+    selectAllChatMessages,
+    messages => orderBy(messages, 'sentAt', 'desc'),
+)
+
+export const selectOrderedChatList = createSelector(
+    selectOrderedChatMessages,
+    selectChatMemberMap,
+    selectChatGroupMap,
+    selectAuthenticatedMember,
+    (messages, memberMap, groupMap, me) => {
+        const chatMap: Record<string, ChatWithLatestMessage> = {}
+        messages.forEach(m => {
+            const { sentTo, sentIn, sentBy } = m
+            let id: string
+            let name: string
+            let type: ChatType
+            let members: string[]
+
+            if (sentTo) {
+                type = ChatType.direct
+                // Chat "id" is who it's with, determine based on if we or they sent
+                id = sentBy === me?.id ? sentTo : sentBy
+
+                // Filter out members we haven't seen, since we won't have enough
+                // information to construct a chat.
+                const member = memberMap[id]
+                if (!member) return
+                members = [id]
+                name = member.username
+            } else if (sentIn) {
+                type = ChatType.group
+                id = sentIn
+                name = groupMap[id]?.name || 'Chat'
+                members = []
+            } else {
+                // Should never happen?
+                return
+            }
+
+            // Initialize chat object if it doesn't exist, otherwise just update
+            // the latestMessage.
+            if (!chatMap[id]) {
+                chatMap[id] = {
+                    id,
+                    name,
+                    members,
+                    type,
+                    latestMessage: m,
+                }
+            } else {
+                chatMap[id] = {
+                    ...chatMap[id],
+                    members: [...chatMap[id].members, ...members],
+                }
+            }
+        })
+        return orderBy(
+            Object.values(chatMap),
+            c => c.latestMessage?.sentAt,
+            'desc',
+        )
     },
 )
 
@@ -368,88 +889,35 @@ export const selectChatMessages = createSelector(
         messages.filter(
             m =>
                 m.sentIn === chatId ||
-                m.sentBy === chatId ||
+                (m.sentBy === chatId && !m.sentIn) ||
                 (m.sentBy === me?.id && m.sentTo === chatId),
         ),
 )
 
-export const selectChatLatestMessage = createSelector(
-    selectChatMessages,
-    (_: CommonState, chatId: Chat['id']) => chatId,
-    messages => {
-        return [...orderBy(messages, 'sentAt', 'desc')][0]
-    },
-)
-
-export const selectChatMembers = createSelector(
-    selectAllChatMembers,
-    selectAllChatGroups,
-    (_: CommonState, chatId: Chat['id']) => chatId,
-    (members, groups, chatId) => {
-        // If it's a group chat id, return the group's members
-        const group = groups.find(g => g.id === chatId)
-        if (group) {
-            return group.members
-                .map(memberId => members.find(m => m.id === memberId))
-                .filter((m): m is ChatMember => !!m)
-        }
-
-        // If it's a member's id, return that member as a 1 length array
-        const member = members.find(m => m.id === chatId)
-        if (member) {
-            return [member]
-        }
-
-        // Else return empty array
-        return []
-    },
-)
-
 export const selectChatMember = createSelector(
-    selectChatMembers,
+    selectAllChatMembers,
     (_: CommonState, memberId: string) => memberId,
     (chatMembers, memberId) => {
         return chatMembers.find(member => member.id === memberId)
     },
 )
 
-export const selectAllDirectChats = createSelector(
-    selectAuthenticatedMember,
-    selectAllChatMessages,
-    selectChatMemberMap,
-    (me, messages, memberMap) => {
-        const chatMap: Record<string, Chat> = {}
-        messages.forEach(m => {
-            const { sentTo, sentBy } = m
-
-            // Filter out group messages
-            if (!sentTo) return
-
-            // Chat "id" is who it's with, determine based on if we or they sent
-            const id = sentBy === me?.id ? sentTo : sentBy
-
-            // Filter out members we haven't seen
-            const member = memberMap[id]
-            if (!member) return
-
-            // Initialize chat object if it doesn't exist
-            if (!chatMap[id]) {
-                chatMap[id] = {
-                    id,
-                    name: id,
-                    members: [id],
-                    type: ChatType.direct,
-                }
-            }
-        })
-        return Object.values(chatMap)
+export const selectChatGroup = createSelector(
+    selectAllChatGroups,
+    (_: CommonState, groupId: string) => groupId,
+    (chatGroups, groupId) => {
+        return chatGroups.find(g => g.id === groupId)
     },
 )
 
-export const selectDirectChat = createSelector(
-    selectAllDirectChats,
-    (_: CommonState, memberId: string) => memberId,
-    (directChats, memberId) => {
-        return directChats.find(chat => chat.id === memberId)
-    },
-)
+/**
+ * Selects the XmppChatClient for the currently active federation.
+ * Only returns the client if it is online and ready to send and receive
+ * XMPP messages, otherwise return null.
+ */
+export const selectChatXmppClient = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+    const status = selectChatClientStatus(s)
+    if (!activeFederation || status !== 'online') return null
+    return xmppChatClientManager.getClient(activeFederation.id)
+}

@@ -123,3 +123,24 @@ export const checkXmppUser = async (
         xmpp.start().catch(console.error)
     })
 }
+
+// TODO: Harden this encoding scheme (use standard URL params?)
+export function encodeGroupInvitationLink(groupId: string) {
+    return `fedi:group:${groupId}:::`
+}
+
+export function decodeGroupInvitationLink(link: string): string {
+    const afterPrefix = link.split('fedi:group:')[1]
+    let groupId = afterPrefix.slice(0, -3)
+
+    // handle old group invite codes for backwards compatibility
+    // new group codes have 3 trailing colons `:::` after the group ID
+    const encodingSuffix = afterPrefix.slice(-3)
+    if (encodingSuffix !== ':::') {
+        groupId = afterPrefix
+    }
+
+    if (!groupId) throw new Error('feature.chat.invalid-group')
+
+    return groupId
+}

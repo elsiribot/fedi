@@ -1,4 +1,4 @@
-import { createStitches } from '@stitches/react'
+import { CSS, createStitches } from '@stitches/react'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
@@ -54,6 +54,8 @@ export const {
         }),
     },
 })
+
+export type CSSProp = CSS<typeof config>
 
 function intMapToPx<T extends string>(
     map: Record<T, number>,

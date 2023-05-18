@@ -5,16 +5,6 @@ import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
 import { Key, Keypair } from '@fedi/common/types'
-
-import { DEFAULT_GROUP_NAME } from '../../constants'
-import i18n from '../../localization/i18n'
-import {
-    ArchiveQueryFilters,
-    ArchiveQueryPagination,
-    Group,
-    Member,
-    Message,
-} from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
     EncryptedDirectChatMessage,
@@ -28,7 +18,17 @@ import xmlUtils, {
     SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
-} from '../../utils/XmlUtils'
+} from '@fedi/common/utils/XmlUtils'
+
+import { DEFAULT_GROUP_NAME } from '../../constants'
+import i18n from '../../localization/i18n'
+import {
+    ArchiveQueryFilters,
+    ArchiveQueryPagination,
+    Group,
+    Member,
+    Message,
+} from '../../types'
 import {
     Action as ChatAction,
     changeLastFetchedMessageId,

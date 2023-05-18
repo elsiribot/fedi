@@ -143,7 +143,12 @@ export const recoverFromMnemonic = createAsyncThunk<
         // so it's fulfilled either way.
         if (username !== null) {
             await dispatch(
-                authenticateChat({ fedimint, federationId, username }),
+                authenticateChat({
+                    fedimint,
+                    federationId,
+                    username,
+                    forceCredentialRefresh: true,
+                }),
             )
         }
         await dispatch(refreshFederations(fedimint))

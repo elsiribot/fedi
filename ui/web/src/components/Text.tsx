@@ -1,24 +1,27 @@
 import React from 'react'
 
-import { styled, theme } from '../styles'
+import { styled, theme, CSSProp } from '../styles'
 
 export interface TextProps {
     variant?: 'display' | 'h1' | 'h2' | 'body' | 'caption' | 'small' | 'tiny'
     weight?: 'normal' | 'medium' | 'bold' | 'bolder'
+    ellipsize?: boolean
     children: React.ReactNode
     className?: string
+    css?: CSSProp
 }
 
 export const Text: React.FC<TextProps> = ({
     variant = 'body',
     weight,
     children,
+    ...props
 }) => {
     if (!weight) {
         weight = ['h1', 'h2', 'display'].includes(variant) ? 'bolder' : 'normal'
     }
     return (
-        <TextElement variant={variant} weight={weight}>
+        <TextElement variant={variant} weight={weight} {...props}>
             {children}
         </TextElement>
     )
@@ -56,6 +59,13 @@ const TextElement = styled('div', {
             caption: { fontSize: 14 },
             small: { fontSize: 12 },
             tiny: { fontSize: 10 },
+        },
+        ellipsize: {
+            true: {
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+            },
         },
     },
     defaultVariants: {

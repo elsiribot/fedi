@@ -1,11 +1,7 @@
 import { Keypair } from '@fedi/common/types'
 
-import { XMPP_DEFAULT_PAGE_LIMIT } from '../../constants'
-import {
-    ArchiveQueryFilters,
-    ArchiveQueryPagination,
-    Message,
-} from '../../types'
+import { XMPP_DEFAULT_PAGE_LIMIT } from '../../constants/xmpp'
+import { ArchiveQueryFilters, ArchiveQueryPagination } from '../../types'
 import xmlUtils, {
     AddToRosterQuery,
     EncryptedDirectChatMessage,
@@ -21,13 +17,8 @@ import xmlUtils, {
     UniqueRoomNameQuery,
 } from '../../utils/XmlUtils'
 
-jest.mock('../../constants', () => ({
+jest.mock('../../constants/xmpp', () => ({
     XMPP_DEFAULT_PAGE_LIMIT: 10,
-}))
-jest.mock('../../localization/i18n', () => ({
-    i18n: {
-        t: jest.fn(),
-    },
 }))
 
 describe('buildPresence: EnterMucRoom', () => {
@@ -65,10 +56,10 @@ describe('buildMessage: GroupChatMessage', () => {
             new GroupChatMessage({
                 from: 'fromjid@domain',
                 to: toGroup,
-                message: new Message({
+                message: {
                     id: 'group-chat-message-uuid',
                     content: 'This is a test message',
-                }),
+                },
             }),
         )
         const fromAttr = result.getAttr('from')
@@ -85,10 +76,10 @@ describe('buildMessage: GroupChatMessage', () => {
             new GroupChatMessage({
                 from: 'fromjid@domain',
                 to: toGroup,
-                message: new Message({
+                message: {
                     id: 'group-chat-message-uuid',
                     content: 'This is a test message',
-                }),
+                },
             }),
         )
         const messageId = result.getAttr('id')
@@ -98,10 +89,10 @@ describe('buildMessage: GroupChatMessage', () => {
 })
 
 describe('buildQuery: EncryptedDirectChatMessage', () => {
-    const testMessage = new Message({
+    const testMessage = {
         id: 'test-id',
         content: 'Test message',
-    })
+    }
 
     const testKeypair: Keypair = {
         publicKey: {
