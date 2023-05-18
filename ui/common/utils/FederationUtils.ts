@@ -95,7 +95,6 @@ export const shouldShowInviteCode = (
 export const shouldShowSocialRecovery = (
     metadata: ClientConfigMetadata,
 ): boolean => {
-    return true
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )
@@ -116,7 +115,7 @@ export const shouldShowOfflineWallet = (
     if (supportedFeatures.includes(SupportedFeature.offline_wallet_disabled)) {
         // This is a boolean true/false but client config meta only
         // supports strings currently so will need to refactor
-        return metadata.social_recovery_disabled === 'true' ? false : true
+        return metadata.offline_wallet_disabled === 'true' ? false : true
     }
     return true
 }
@@ -132,7 +131,7 @@ export const shouldShowOnchainDeposits = (
     ) {
         // This is a boolean true/false but client config meta only
         // supports strings currently so will need to refactor
-        return metadata.social_recovery_disabled === 'true' ? false : true
+        return metadata.onchain_deposits_disabled === 'true' ? false : true
     }
     return true
 }
