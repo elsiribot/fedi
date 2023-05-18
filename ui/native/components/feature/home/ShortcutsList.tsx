@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Linking, StyleSheet, View } from 'react-native'
 
 import { selectFederationSites } from '@fedi/common/redux'
 
@@ -29,7 +29,12 @@ const ShortcutsList: React.FC<{}> = () => {
 
     const onSelectSite = (shortcut: Shortcut) => {
         const site = shortcut as Site
-        navigation.navigate('SitesBrowser', { site })
+        // Handle telegram links natively
+        if (site.url.includes('https://t.me')) {
+            Linking.openURL(site.url)
+        } else {
+            navigation.navigate('SitesBrowser', { site })
+        }
     }
 
     const onSelectScreen = (shortcut: Shortcut) => {
