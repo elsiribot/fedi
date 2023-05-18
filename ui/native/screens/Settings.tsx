@@ -66,29 +66,29 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     const resetChatState = useCallback(() => {
-        if (activeFederation) {
+        if (activeFederationId) {
             dispatch(
                 resetFederationChatState({
-                    federationId: activeFederation.id,
+                    federationId: activeFederationId,
                 }),
             )
             chatDispatch(receiveMembersSeen([]))
             chatDispatch(receiveMessages([]))
             chatDispatch(receiveGroups(DEFAULT_GROUPS))
             AsyncStorage.setItem(
-                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
                 JSON.stringify({ members: [] }),
             )
             AsyncStorage.setItem(
-                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
                 JSON.stringify({ messages: [] }),
             )
             AsyncStorage.setItem(
-                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
                 JSON.stringify({ groups: DEFAULT_GROUPS }),
             )
         }
-    }, [activeFederation, chatDispatch, dispatch])
+    }, [activeFederationId, chatDispatch, dispatch])
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -100,20 +100,20 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const handleLeaveFederation = useCallback(async () => {
         try {
             if (activeFederationId) {
+                resetChatState()
+                resetGuardiansState()
+                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
                 await dispatch(
                     leaveFederation({
                         fedimint,
                         federationId: activeFederationId,
                     }),
                 ).unwrap()
-                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
             }
         } catch (e) {
             toast?.show('Failed to leave federation', 3000)
             return
         }
-        resetChatState()
-        resetGuardiansState()
     }, [
         activeFederationId,
         dispatch,
