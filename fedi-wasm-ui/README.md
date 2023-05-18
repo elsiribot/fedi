@@ -1,7 +1,6 @@
 # getting wasm code
 
-- run `./wasm-build.sh` in `bridge/fedi-wasm`
-- run `./copy-from-out.sh` in `fedi-wasm-ui`
+- run `just build-wasm`
 - run `npm install` and `npm run build`
 - run `./insert-connect-info [FEDERATION-CONNECT-STRING]`.
-- run a static web server in `./dist`
+- run a static web server in `./dist`, e.g. `npx http-server dist`
