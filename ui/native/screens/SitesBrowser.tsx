@@ -280,7 +280,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             <SitesBrowserHeader webViewRef={webview} />
             <WebView
                 ref={webview}
-                source={{ uri: site.url }}
+                source={{ uri }}
                 onLoadStart={() => setJsInjected(false)}
                 onLoadProgress={e => {
                     if (!jsInjected && e.nativeEvent.progress > 0.75) {
