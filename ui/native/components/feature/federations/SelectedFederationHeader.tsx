@@ -39,7 +39,7 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                     style={styles(theme).container}
                     onPress={openFederationsDrawer}>
                     <SvgImage
-                        name="FedearationxIcon"
+                        name="FederationAlphaIcon"
                         svgProps={{
                             stroke: 'transparent',
                             height: 20,

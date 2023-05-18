@@ -36,7 +36,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     return (
         <View style={styles(theme).drawerItemLabel}>
             <SvgImage
-                name="FedearationxIcon"
+                name="FederationAlphaIcon"
                 size={SvgImageSize.lg}
                 svgProps={{ stroke: 'transparent' }}
             />
