@@ -25,6 +25,7 @@ enum BridgeDbPrefix {
     JoinedFederations = 0xb0,
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
+    FederationConnectInfo = 0xb3,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -61,3 +62,12 @@ impl_db_record!(
     value = String,
     db_prefix = BridgeDbPrefix::XmppUsername,
 );
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct FederationConnectInfo;
+
+impl fedimint_core::db::DatabaseRecord for FederationConnectInfo {
+    const DB_PREFIX: u8 = BridgeDbPrefix::FederationConnectInfo as u8;
+    type Key = Self;
+    type Value = String;
+}
