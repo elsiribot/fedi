@@ -43,9 +43,12 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                         </Text>
                     )}
                 </TopContent>
-                <div>
-                    <small>{chat.latestMessage?.content}</small>
-                </div>
+                <Text
+                    variant="small"
+                    ellipsize
+                    css={{ color: theme.colors.darkGrey }}>
+                    {chat.latestMessage?.content}
+                </Text>
             </Content>
         </Container>
     )
@@ -79,4 +82,5 @@ const TopContent = styled('div', {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 6,
 })
