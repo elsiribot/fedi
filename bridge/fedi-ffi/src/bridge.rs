@@ -27,7 +27,8 @@ use crate::{
         UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
     },
     storage::{
-        FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix, Storage, XmppUsername,
+        FederationConnectInfo, FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix,
+        Storage, XmppUsername,
     },
     tx::{Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
     types::{
@@ -410,8 +411,10 @@ impl Federation {
         let notifications = Default::default();
         let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
         {
-            tracing::info!("saving config");
+            tracing::info!("saving config and join code");
             dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
+                .await;
+            dbtx.insert_entry(&FederationConnectInfo, &connect_string)
                 .await;
             dbtx.commit_tx().await;
             tracing::info!("saved config");
@@ -435,14 +438,15 @@ impl Federation {
         Ok(fedi_config)
     }
 
-    /// Fetch connect code from guardian
-    pub async fn get_connect_info(&self) -> Result<WsClientConnectInfo> {
-        let api = self.ng.api();
-        let params = ApiRequestErased::new(serde_json::Value::Null);
-        let response = api
-            .request_raw(0.into(), "connection_code", &[params.to_json()])
-            .await?;
-        let connect_info = serde_json::from_value(response)?;
+    /// Fetch connect info we used to join this federation from the database
+    pub async fn get_connect_info(&self) -> Result<String> {
+        let connect_info = self
+            .dbtx()
+            .await
+            .get_value(&FederationConnectInfo)
+            .await
+            .context("join code not present in db")?
+            .to_string();
         Ok(connect_info)
     }
 

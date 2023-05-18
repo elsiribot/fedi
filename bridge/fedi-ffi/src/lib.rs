@@ -849,6 +849,13 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_connect_info() -> anyhow::Result<()> {
+        let (_, federation) = setup().await?;
+        let _connect_info = federation.get_connect_info().await?;
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_leave_federation() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let db_filename = format!("{}.db", federation.federation_id().to_string());
