@@ -1,3 +1,4 @@
+use fedimint_core::config::EmptyGenParams;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::plugin_types_trait_impl_config;
@@ -9,6 +10,7 @@ use crate::FediSocialCommonGen;
 pub struct FediSocialConfig {
     pub private: FediSocialPrivateConfig,
     pub consensus: FediSocialConsensusConfig,
+    pub local: FediSocialConfigLocal,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -28,6 +30,9 @@ pub struct FediSocialClientConfig {
     pub federation_pk_set: threshold_crypto::PublicKeySet,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FediSocialConfigLocal;
+
 impl FediSocialClientConfig {
     /// Get the combined public key
     pub fn pk(&self) -> threshold_crypto::PublicKey {
@@ -36,12 +41,27 @@ impl FediSocialClientConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FediSocialGenParams;
+pub struct FediSocialGenParams {
+    consensus: EmptyGenParams,
+    local: EmptyGenParams,
+}
+
+impl FediSocialGenParams {
+    pub fn new() -> Self {
+        Self {
+            consensus: EmptyGenParams {},
+            local: EmptyGenParams {},
+        }
+    }
+}
 
 plugin_types_trait_impl_config!(
     FediSocialCommonGen,
     FediSocialGenParams,
+    EmptyGenParams,
+    EmptyGenParams,
     FediSocialConfig,
+    FediSocialConfigLocal,
     FediSocialPrivateConfig,
     FediSocialConsensusConfig,
     FediSocialClientConfig

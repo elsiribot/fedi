@@ -9,7 +9,10 @@ use common::{
 pub use fedi_social_common as common;
 
 use async_trait::async_trait;
-use common::config::{FediSocialClientConfig, FediSocialConsensusConfig, FediSocialPrivateConfig};
+use common::config::{
+    FediSocialClientConfig, FediSocialConfigLocal, FediSocialConsensusConfig, FediSocialGenParams,
+    FediSocialPrivateConfig,
+};
 use common::db::DbKeyPrefix;
 use fedimint_core::config::{
     ClientModuleConfig, ConfigGenModuleParams, DkgResult, ServerModuleConfig,
@@ -53,6 +56,7 @@ impl ExtendsCommonModuleGen for FediSocialGen {
 
 #[async_trait]
 impl ServerModuleGen for FediSocialGen {
+    type Params = FediSocialGenParams;
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
@@ -63,7 +67,6 @@ impl ServerModuleGen for FediSocialGen {
         &self,
         cfg: ServerModuleConfig,
         _db: Database,
-        _env: &BTreeMap<OsString, OsString>,
         _task_group: &mut TaskGroup,
     ) -> anyhow::Result<DynServerModule> {
         Ok(FediSocial {
@@ -92,6 +95,7 @@ impl ServerModuleGen for FediSocialGen {
                         threshold: u32::try_from(peers.threshold()).expect("must not fail"),
                         pk_set: pks.clone(),
                     },
+                    local: FediSocialConfigLocal {},
                 }
                 .to_erased(),
             )
@@ -120,6 +124,7 @@ impl ServerModuleGen for FediSocialGen {
                 pk_set: public_key_set,
                 threshold: u32::try_from(peers.peer_ids().threshold()).expect("must not fail"),
             },
+            local: FediSocialConfigLocal {},
         };
 
         Ok(server.to_erased())
