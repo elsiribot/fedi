@@ -1,6 +1,6 @@
 {
     "name": "@fedi/native",
-    "version": "1.10.11",
+    "version": "1.10.12",
     "private": true,
     "scripts": {
         "build-bridge-android": "bash scripts/build-bridge-android.sh",
