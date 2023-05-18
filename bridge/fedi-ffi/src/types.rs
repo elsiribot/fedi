@@ -106,6 +106,7 @@ pub struct FedimintFederation {
 pub struct XmppCredentials {
     pub password: String,
     pub keypair_seed: String,
+    pub username: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
