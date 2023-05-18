@@ -55,14 +55,14 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
             const res = await dispatch(
                 joinChatGroup({ federationId, link: joinGroupLink }),
             ).unwrap()
-            console.log({ res })
+            push(`/chat/group/${res.id}`)
         } catch (err) {
             toast.showErrorToast(err, 'Failed to join group')
         }
-    }, [dispatch, toast, federationId, joinGroupLink])
+    }, [dispatch, toast, federationId, joinGroupLink, push])
 
     const handleSaveNewGroup = useCallback(async () => {
-        setIsCreatingGroup(true)
+        setIsSavingGroup(true)
         try {
             if (!federationId) throw new Error('errors.chat-unavailable')
             const id = decodeGroupInvitationLink(newGroupLink)
@@ -73,7 +73,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         } catch (err) {
             toast.showErrorToast(err, 'errors.chat-unavailable')
         }
-        setIsCreatingGroup(false)
+        setIsSavingGroup(false)
     }, [federationId, newGroupLink, newGroupName, dispatch, push, toast])
 
     // Automatically attempt to join group after changing value
