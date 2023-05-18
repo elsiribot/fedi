@@ -101,8 +101,8 @@ jobs:
 
         - name: Dev shell
           if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
-          run: nix build -L .#devShells.${{ matrix.system }}.default
+          run: nix run nixpkgs#nix-eval-jobs -- --gc-roots-dir .gcroots --flake .#devShells.${{ matrix.system }}.default
 
         - name: Cross shell
           if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
-          run: nix build -L .#devShells.${{ matrix.system }}.cross
+          run: nix run nixpkgs#nix-eval-jobs -- --gc-roots-dir .gcroots --flake .#devShells.${{ matrix.system }}.cross
