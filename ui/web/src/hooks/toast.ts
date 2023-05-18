@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -36,5 +36,7 @@ export function useToast() {
         [dispatch],
     )
 
-    return { showToast, showErrorToast, closeToast }
+    return useMemo(() => {
+        return { showToast, showErrorToast, closeToast }
+    }, [showToast, showErrorToast, closeToast])
 }
