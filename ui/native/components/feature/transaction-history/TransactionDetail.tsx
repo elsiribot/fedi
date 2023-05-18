@@ -65,7 +65,7 @@ const TransactionDetail = ({
                 <SvgImage name="Close" size={SvgImageSize.md} />
             </TouchableOpacity>
             <SvgImage
-                name="Bitcoin"
+                name="BitcoinCircle"
                 size={SvgImageSize.lg}
                 color={theme.colors.orange}
             />
