@@ -8,7 +8,7 @@ import {
     decodeBase64,
 } from 'tweetnacl-util'
 
-import { Key, Keypair } from '@fedi/common/types'
+import { Key, Keypair } from '../types'
 
 class EncryptionUtils {
     static newNonce = () => randomBytes(box.nonceLength)

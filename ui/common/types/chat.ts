@@ -1,3 +1,5 @@
+import type { Status } from '@xmpp/connection'
+
 import type { Invoice } from './fedimint'
 import type { MSats } from './units'
 
@@ -9,19 +11,19 @@ export enum ChatType {
 export interface Chat {
     /** Unique ID for the chat, random value for groups and user id for DMs */
     id: string
-    name?: string
-    icon?: string
-    pinned?: boolean
-    hasNewMessages?: boolean
+    name: string
     members: string[]
     type: ChatType
+}
+
+export interface ChatWithLatestMessage extends Chat {
+    latestMessage?: ChatMessage
 }
 
 export interface ChatMessage {
     id: string
     content: string
     sentAt: number
-    receivedAt?: number
     sentBy: ChatMember['id']
     sentIn?: ChatGroup['id']
     sentTo?: ChatMember['id']
@@ -31,7 +33,9 @@ export interface ChatMessage {
 export interface ChatPayment {
     amount: MSats
     status: ChatPaymentStatus
-    recipient?: ChatMember
+    // TODO: Improve types here. Status should dictate
+    // which properties are undefined and which are present.
+    recipient?: string
     updatedAt?: number
     memo?: string
     token?: string
@@ -62,6 +66,11 @@ export interface ChatMember {
     publicKeyHex?: string
 }
 
+export interface ChatGroup {
+    id: string
+    name: string
+}
+
 export interface XmppChatMember extends ChatMember {
     jid: string
 }
@@ -79,11 +88,7 @@ export interface ChatGroupSettings {
     showMessageHistory: boolean
 }
 
-export interface ChatGroup extends Chat {
-    description?: string
-    settings?: ChatGroupSettings
-    invitationCode?: string
-}
+export type XmppClientStatus = Status
 
 export interface XmppCredentials {
     password: string
@@ -101,4 +106,18 @@ export interface XmppConnectionOptions {
     resource?: string
     // Websocket URL to connect to the Prosody chat server
     service?: string
+}
+
+export type ArchiveQueryFilters = {
+    withJid?: string | null
+}
+
+export type ArchiveQueryPagination = {
+    limit?: string | null
+    after?: string | null
+}
+
+export type MessageArchiveQuery = {
+    filters?: ArchiveQueryFilters | null
+    pagination?: ArchiveQueryPagination | null
 }

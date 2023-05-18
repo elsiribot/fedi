@@ -3,13 +3,14 @@ import React from 'react'
 
 import StringUtils from '@fedi/common/utils/StringUtils'
 
-import { styled, theme } from '../styles'
+import { CSSProp, styled, theme } from '../styles'
 
 interface Props {
     src?: string
     name?: string
     size?: 'sm' | 'md' | 'lg'
     shape?: 'circle' | 'hexagon'
+    css?: CSSProp
 }
 
 export const Avatar: React.FC<Props> = ({
@@ -17,9 +18,10 @@ export const Avatar: React.FC<Props> = ({
     name,
     size = 'md',
     shape = 'circle',
+    ...props
 }) => {
     return (
-        <Root size={size} shape={shape}>
+        <Root size={size} shape={shape} {...props}>
             {src && <Image src={src} alt="" />}
             {name && (
                 <Fallback delayMs={src ? 500 : 0}>

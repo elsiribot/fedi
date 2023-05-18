@@ -26,6 +26,8 @@ export const globalStyles = globalCss({
     // Reset styles
     '*': {
         margin: 0,
+        scrollbarWidth: 'thin',
+        scrollbarColor: `${theme.colors.lightGrey} ${theme.colors.white}`,
     },
     '*, *:before, *:after': {
         boxSizing: 'border-box',
@@ -76,5 +78,18 @@ export const globalStyles = globalCss({
     '#__next': {
         height: '100%',
         isolation: 'isolate',
+    },
+
+    // Custom scrollbars
+    '*::-webkit-scrollbar': {
+        width: '12px',
+    },
+    '*::-webkit-scrollbar-track': {
+        background: theme.colors.white,
+    },
+    '*::-webkit-scrollbar-thumb': {
+        backgroundColor: theme.colors.lightGrey,
+        borderRadius: '6px',
+        border: `3px solid ${theme.colors.white}`,
     },
 })
