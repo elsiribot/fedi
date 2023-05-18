@@ -268,8 +268,13 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     })
 
     // FIXME: properly url-encode this
-    const uri = jwt ? `${site.url}?token=${jwt}` : site.url
+    let uri = jwt ? `${site.url}?token=${jwt}` : site.url
+    // TODO: Remove me after alpha, just to get webln working on faucet.
+    if (uri.includes('https://faucet.mutinynet.dev.fedibtc.com')) {
+        uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
+    }
     console.log('uri: ', uri)
+
     return (
         <View style={styles.container}>
             <SitesBrowserHeader webViewRef={webview} />
