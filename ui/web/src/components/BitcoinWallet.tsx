@@ -39,7 +39,7 @@ export const BitcoinWallet: React.FC = () => {
                 <Name>
                     <Text weight="bold">{t('words.bitcoin')}</Text>
                 </Name>
-                <Link href="/transactions/bitcoin">
+                <Link href="/transactions">
                     <Icon icon={ListIcon} />
                 </Link>
             </Header>
