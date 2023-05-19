@@ -46,11 +46,19 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     // a localized error message
                     console.error(err)
                     const typedError = err as Error
-                    if (typedError?.message?.startsWith('errors.')) {
-                        console.debug(
-                            'typedError?.message',
-                            typedError?.message,
+                    // This catches specific errors caused by:
+                    // 1. leaving a federation immediately before... After
+                    // force-quitting, joining again is successful so advise
+                    // the user here
+                    // 2. scanning a federation code after you already joined
+                    if (
+                        typedError?.message?.includes(
+                            'No record locks available',
                         )
+                    ) {
+                        toast?.show(t('errors.please-force-quit-the-app'), 5000)
+                    } else if (typedError?.message?.startsWith('errors.')) {
+                        // This catches an error
                         toast?.show(t(typedError.message), 5000)
                     } else {
                         toast?.show(t('errors.failed-to-join-federation'), 5000)
