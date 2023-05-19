@@ -7,7 +7,6 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
-import { selectChatConnectionOptions } from '@fedi/common/redux'
 import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
@@ -15,7 +14,6 @@ import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { XMPP_RESOURCE } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../state/hooks'
 import { Member } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -27,9 +25,6 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const { connectionOptions } = useChatContext().state
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
 
     const handleUserInput = useCallback(
         async (input: string) => {
@@ -53,7 +48,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                 toast?.show(t('feature.chat.invalid-member'), 3000)
             }
         },
-        [activeChatConnectionOptions, navigation, toast, t],
+        [connectionOptions, navigation, toast, t],
     )
 
     const devices = useCameraDevices()
