@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     fetchChatMember,
     selectActiveFederation,
@@ -15,7 +16,9 @@ import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
 import { ChatConversation } from './ChatConversation'
 import { ChatEmptyState } from './ChatEmptyState'
+import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { HoloLoader } from './HoloLoader'
+import { IconButton } from './IconButton'
 
 interface Props {
     memberId: string
@@ -29,6 +32,7 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const [isLoading, setIsLoading] = useState(!member)
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false)
 
     // If we don't have info about this member, attempt to fetch a pubkey for them
     useEffect(() => {
@@ -76,11 +80,25 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     }
 
     return (
-        <ChatConversation
-            name={member?.username || ''}
-            messages={messages}
-            onSendMessage={handleSend}
-        />
+        <>
+            <ChatConversation
+                name={member?.username || ''}
+                messages={messages}
+                onSendMessage={handleSend}
+                inputActions={
+                    <IconButton
+                        size="md"
+                        icon={WalletIcon}
+                        onClick={() => setIsPaymentOpen(true)}
+                    />
+                }
+            />
+            <ChatPaymentDialog
+                recipientId={memberId}
+                open={isPaymentOpen}
+                onOpenChange={setIsPaymentOpen}
+            />
+        </>
     )
 }
 

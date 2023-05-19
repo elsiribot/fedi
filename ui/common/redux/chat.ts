@@ -21,6 +21,7 @@ import {
     ChatMessage,
     ChatMember,
     ChatGroup,
+    ChatPayment,
     Keypair,
     ChatType,
     XmppCredentials,
@@ -663,67 +664,67 @@ export const configureChatGroup = createAsyncThunk<
 
 export const sendDirectMessage = createAsyncThunk<
     ChatMessage,
-    {
-        fedimint: FedimintBridge
-        federationId: string
-        recipientId: string
-        content: string
-        updatePayment?: boolean
-    },
+    | {
+          fedimint: FedimintBridge
+          federationId: string
+          recipientId: string
+      } & ({ content: string } | { payment: ChatPayment }),
     { state: CommonState }
->(
-    'chat/sendDirectMessage',
-    async (
-        { fedimint, federationId, recipientId, content, updatePayment },
-        { dispatch, getState },
-    ) => {
-        const state = getState()
-        const client = xmppChatClientManager.getClient(federationId)
+>('chat/sendDirectMessage', async (args, { dispatch, getState }) => {
+    const { fedimint, federationId, recipientId } = args
+    const content = 'payment' in args ? 'fedi:payment-request:' : args.content
+    let payment = 'payment' in args ? args.payment : undefined
 
-        // Get the recipient's pubkey, fetch it if we don't have it
-        const chatState = state.chat[federationId]
-        const recipientMember = chatState?.membersSeen.find(
-            m => m.id === recipientId,
-        )
-        let recipientPubkey: string
-        if (recipientMember?.publicKeyHex) {
-            recipientPubkey = recipientMember?.publicKeyHex
-        } else {
-            recipientPubkey = await client.fetchMemberPublicKey(recipientId)
-        }
+    const state = getState()
+    const client = xmppChatClientManager.getClient(federationId)
 
-        // Get or fetch credentials
-        const { encryptionKeys } = await getOrFetchCredentials(
-            fedimint,
-            federationId,
-            state,
-            dispatch,
-        )
+    // Get the recipient's pubkey, fetch it if we don't have it
+    const chatState = state.chat[federationId]
+    const recipientMember = chatState?.membersSeen.find(
+        m => m.id === recipientId,
+    )
+    let recipientPubkey: string
+    if (recipientMember?.publicKeyHex) {
+        recipientPubkey = recipientMember?.publicKeyHex
+    } else {
+        recipientPubkey = await client.fetchMemberPublicKey(recipientId)
+    }
 
-        // Get our username
-        const authenticatedMember = chatState?.authenticatedMember
-        if (!authenticatedMember) {
-            throw new Error('errors.chat-unavailable')
-        }
+    // Get or fetch credentials
+    const { encryptionKeys } = await getOrFetchCredentials(
+        fedimint,
+        federationId,
+        state,
+        dispatch,
+    )
 
-        // Construct and send message
-        const message: ChatMessage = {
-            content,
-            id: uuidv4(),
-            sentAt: Date.now() / 1000,
-            sentBy: authenticatedMember.id,
-            sentTo: recipientId,
-        }
-        await client.sendDirectMessage(
-            recipientId,
-            recipientPubkey,
-            message,
-            encryptionKeys,
-            updatePayment,
-        )
-        return message
-    },
-)
+    // Get our username
+    const authenticatedMember = chatState?.authenticatedMember
+    if (!authenticatedMember) {
+        throw new Error('errors.chat-unavailable')
+    }
+
+    // Construct and send message
+    const sentAt = Date.now() / 1000
+    if (payment) {
+        payment = { ...payment, updatedAt: sentAt }
+    }
+    const message: ChatMessage = {
+        content,
+        payment,
+        sentAt,
+        id: uuidv4(),
+        sentBy: authenticatedMember.id,
+        sentTo: recipientId,
+    }
+    await client.sendDirectMessage(
+        recipientId,
+        recipientPubkey,
+        message,
+        encryptionKeys,
+    )
+    return message
+})
 
 export const sendGroupMessage = createAsyncThunk<
     ChatMessage,

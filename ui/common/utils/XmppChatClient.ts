@@ -716,7 +716,7 @@ export class XmppChatClient {
             if (message.payment.recipient) {
                 outgoing.payment = {
                     ...outgoing.payment,
-                    recipient: idToJidMember(outgoing.payment.recipient),
+                    recipient: outgoing.sentTo,
                 }
             }
         }

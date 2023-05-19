@@ -18,6 +18,7 @@ interface Props {
     name: string
     messages: ChatMessageType[]
     headerActions?: React.ReactNode
+    inputActions?: React.ReactNode
     showUsernames?: boolean
     onSendMessage(message: string): Promise<void>
 }
@@ -26,6 +27,7 @@ export const ChatConversation: React.FC<Props> = ({
     name,
     messages,
     headerActions,
+    inputActions,
     showUsernames,
     onSendMessage,
 }) => {
@@ -121,6 +123,7 @@ export const ChatConversation: React.FC<Props> = ({
                 ))}
             </Messages>
             <Actions onSubmit={handleSend}>
+                {inputActions && <InputActions>{inputActions}</InputActions>}
                 <Input
                     ref={inputRef}
                     value={value}
@@ -182,6 +185,12 @@ const Actions = styled('form', {
     flexShrink: 0,
     padding: 8,
     borderTop: `1px solid ${theme.colors.lightGrey}`,
+})
+
+const InputActions = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
 })
 
 const Input = styled('textarea', {

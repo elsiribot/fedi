@@ -10,6 +10,7 @@ import type {
     Federation,
     FederationEvent,
     Guardian,
+    MSats,
     Sats,
     SeedWords,
 } from '../types'
@@ -186,6 +187,19 @@ export const recoverFromMnemonic = createAsyncThunk<
             )
         }
         await dispatch(refreshFederations(fedimint))
+    },
+)
+
+export const generateEcash = createAsyncThunk<
+    string,
+    { fedimint: FedimintBridge; federationId: string; amount: MSats },
+    { state: CommonState }
+>(
+    'federation/generateEcash',
+    async ({ fedimint, federationId, amount }, { dispatch }) => {
+        const ecash = await fedimint.generateEcash(amount, federationId)
+        await dispatch(refreshFederations(fedimint))
+        return ecash
     },
 )
 

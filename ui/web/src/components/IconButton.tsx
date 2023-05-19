@@ -13,7 +13,7 @@ const sizeOrder = ['xs', 'sm', 'md', 'lg', 'xl'] as const
 export const IconButton: React.FC<Props> = ({ onClick, size = 'sm', icon }) => {
     const iconSize = sizeOrder[sizeOrder.indexOf(size) - 1]
     return (
-        <ButtonBase size={size} onClick={onClick}>
+        <ButtonBase size={size} onClick={onClick} type="button">
             <Icon size={iconSize} icon={icon} />
         </ButtonBase>
     )
