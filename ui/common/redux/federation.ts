@@ -190,19 +190,6 @@ export const recoverFromMnemonic = createAsyncThunk<
     },
 )
 
-export const generateEcash = createAsyncThunk<
-    string,
-    { fedimint: FedimintBridge; federationId: string; amount: MSats },
-    { state: CommonState }
->(
-    'federation/generateEcash',
-    async ({ fedimint, federationId, amount }, { dispatch }) => {
-        const ecash = await fedimint.generateEcash(amount, federationId)
-        await dispatch(refreshFederations(fedimint))
-        return ecash
-    },
-)
-
 /*** Selectors ***/
 
 export const selectActiveFederation = (s: CommonState) => {

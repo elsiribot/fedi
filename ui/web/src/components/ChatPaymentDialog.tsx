@@ -3,12 +3,11 @@ import { useTranslation } from 'react-i18next'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
-    generateEcash,
     selectActiveFederation,
     sendDirectMessage,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
-import { ChatPayment, ChatPaymentStatus, Sats } from '@fedi/common/types'
+import { ChatPaymentStatus, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
@@ -86,19 +85,16 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         if (!federationId) return
         setIsSending(true)
         try {
-            const token = await dispatch(
-                generateEcash({
-                    fedimint,
-                    federationId,
-                    amount: amountUtils.satToMsat(amount),
-                }),
-            ).unwrap()
+            const token = await fedimint.generateEcash(
+                amountUtils.satToMsat(amount),
+                federationId,
+            )
             await sendPaymentMessage(token)
         } catch (err) {
             toast.showErrorToast(err, 'errors.unknown-error')
         }
         setIsSending(false)
-    }, [dispatch, sendPaymentMessage, amount, toast, federationId])
+    }, [sendPaymentMessage, amount, toast, federationId])
 
     const handleRequest = useCallback(async () => {
         setIsSending(true)
