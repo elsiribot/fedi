@@ -44,9 +44,9 @@ import {
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'Admin'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 
-const Admin: React.FC<Props> = ({ navigation }: Props) => {
+const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { state: environmentState, dispatch: environmentDispatch } =
@@ -298,4 +298,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default Admin
+export default Settings

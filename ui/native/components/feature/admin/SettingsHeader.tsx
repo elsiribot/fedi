@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const AdminHeader: React.FC<{}> = () => {
+const SettingsHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
@@ -12,7 +12,7 @@ const AdminHeader: React.FC<{}> = () => {
             leftContainerStyle={{ flex: 6 }}
             headerLeft={
                 <Text h2 medium>
-                    {t('words.admin')}
+                    {t('words.settings')}
                 </Text>
             }
             closeButton
@@ -20,4 +20,4 @@ const AdminHeader: React.FC<{}> = () => {
     )
 }
 
-export default AdminHeader
+export default SettingsHeader

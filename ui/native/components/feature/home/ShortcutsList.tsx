@@ -14,8 +14,8 @@ import ShortcutTile from './ShortcutTile'
 
 const SCREEN_SHORTCUTS = [
     new Screen({
-        title: 'Admin',
-        screenName: 'Admin',
+        title: 'Settings',
+        screenName: 'Settings',
         icon: {
             svg: 'Cog',
         },

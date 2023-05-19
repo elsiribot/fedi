@@ -34,7 +34,6 @@ export type TabsNavigatorParamList = {
     Home: { offline: boolean }
 }
 export type RootStackParamList = {
-    Admin: undefined
     BitcoinRequest: { uri: string }
     ChatWallet: { recipient: Member }
     ChooseBackupMethod: undefined
@@ -79,6 +78,7 @@ export type RootStackParamList = {
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
     SendSuccess: { amount: MSats; unit: string }
+    Settings: undefined
     SitesBrowser: { site: Site }
     Splash: undefined
     StartPersonalBackup: undefined
