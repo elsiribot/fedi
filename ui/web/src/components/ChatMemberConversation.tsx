@@ -10,6 +10,7 @@ import {
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { ChatConversation } from './ChatConversation'
+import { ChatEmptyState } from './ChatEmptyState'
 
 interface Props {
     memberId: string
@@ -40,6 +41,15 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
         },
         [dispatch, federationId, memberId, showErrorToast],
     )
+
+    if (!member) {
+        return (
+            <ChatEmptyState>
+                Could not find a member with the username &lsquo;
+                {memberId.split('@')[0]}&rsquo;
+            </ChatEmptyState>
+        )
+    }
 
     return (
         <ChatConversation
