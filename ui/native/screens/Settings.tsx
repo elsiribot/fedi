@@ -51,7 +51,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { state: environmentState, dispatch: environmentDispatch } =
         useEnvironmentContext()
-    const { dispatch: chatDispatch } = useChatContext()
+    const { state: chatState, dispatch: chatDispatch } = useChatContext()
+    const { websocketIsHealthy } = chatState
     const { toast } = useEnvironmentContext().state
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
@@ -188,6 +189,20 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         <ScrollView contentContainerStyle={styles(theme).container}>
             {authenticatedMember && (
                 <View style={styles(theme).profileHeader}>
+                    <View style={styles(theme).actionsContainer}>
+                        {websocketIsHealthy && (
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate('MemberQrCode')
+                                }
+                                hitSlop={5}>
+                                <SvgImage
+                                    name="Qr"
+                                    color={theme.colors.primary}
+                                />
+                            </Pressable>
+                        )}
+                    </View>
                     <View style={styles(theme).avatarContainer}>
                         <HoloAvatar
                             size={AvatarSize.lg}
@@ -291,10 +306,17 @@ const styles = (theme: Theme) =>
         },
         profileHeader: {
             alignItems: 'center',
-            paddingBottom: theme.spacing.lg,
+            padding: theme.spacing.lg,
+            borderRadius: theme.borders.defaultRadius,
+            borderColor: theme.colors.primaryLight,
+        },
+        actionsContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            alignSelf: 'flex-start',
         },
         avatarContainer: {
-            marginTop: theme.spacing.xl,
+            marginTop: theme.spacing.sm,
             marginBottom: theme.spacing.md,
         },
         sectionContainer: {

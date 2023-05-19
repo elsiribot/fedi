@@ -62,12 +62,14 @@ const ChatHeader: React.FC<{}> = () => {
                             }}
                         />
                     </Pressable>
-                    <Pressable
-                        onPress={() => navigation.navigate('MemberQrCode')}
-                        hitSlop={5}
-                        style={styles(theme).iconContainer}>
-                        <SvgImage name="Scan" color={theme.colors.primary} />
-                    </Pressable>
+                    {websocketIsHealthy && (
+                        <Pressable
+                            onPress={() => navigation.navigate('MemberQrCode')}
+                            hitSlop={5}
+                            style={styles(theme).iconContainer}>
+                            <SvgImage name="Qr" color={theme.colors.primary} />
+                        </Pressable>
+                    )}
                 </>
             }
             rightContainerStyle={styles(theme).rightContainer}

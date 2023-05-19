@@ -9,6 +9,7 @@ import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { encodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import { Images } from '../assets/images'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -31,6 +32,14 @@ const MemberQrCode: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
+            <View style={styles(theme).textContainer}>
+                <Text h2 medium>
+                    {member.username}
+                </Text>
+                <Text caption style={styles(theme).noticeText}>
+                    {t('feature.chat.scan-member-code-notice')}
+                </Text>
+            </View>
             <View style={styles(theme).qrCodeContainer}>
                 <QRCode
                     value={directChatLink}
@@ -38,15 +47,17 @@ const MemberQrCode: React.FC<Props> = ({ navigation, route }: Props) => {
                     logo={Images.FediQrLogo}
                 />
             </View>
-            <Text style={styles(theme).noticeText} numberOfLines={2}>
-                {t('feature.chat.scan-member-code-notice')}
-            </Text>
-            <Button
-                fullWidth
-                containerStyle={styles(theme).buttonContainer}
-                title={t('feature.chat.scan-username')}
-                onPress={goToScanMemberCode}
-            />
+            <View style={styles(theme).bottomContainer}>
+                <Button
+                    fullWidth
+                    buttonStyle={styles(theme).button}
+                    titleStyle={styles(theme).buttonText}
+                    containerStyle={styles(theme).buttonContainer}
+                    title={t('feature.chat.open-camera-scanner')}
+                    icon={<SvgImage name="Scan" color={theme.colors.primary} />}
+                    onPress={goToScanMemberCode}
+                />
+            </View>
         </View>
     )
 }
@@ -59,23 +70,41 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
             padding: theme.spacing.xl,
         },
+        textContainer: {
+            flexBasis: 10,
+            flexGrow: 1,
+            flexShrink: 0,
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+        },
         qrCodeContainer: {
             borderRadius: theme.borders.defaultRadius,
-            backgroundColor: theme.colors.secondary,
+            borderColor: theme.colors.primaryLight,
+            borderWidth: 1,
             padding: QR_CODE_SIZE * 0.05,
-            marginVertical: theme.spacing.xl,
             flexDirection: 'row',
             justifyContent: 'center',
         },
         noticeText: {
-            color: theme.colors.secondary,
+            color: theme.colors.grey,
             marginTop: theme.spacing.md,
-            marginBottom: theme.spacing.xl,
-            marginHorizontal: theme.spacing.md,
+            marginBottom: theme.spacing.lg,
             textAlign: 'center',
+        },
+        bottomContainer: {
+            width: '100%',
+            flexBasis: 100,
+            flexGrow: 1,
+            flexShrink: 0,
         },
         buttonContainer: {
             marginTop: 'auto',
+        },
+        button: {
+            backgroundColor: theme.colors.secondary,
+        },
+        buttonText: {
+            color: theme.colors.primary,
         },
     })
 

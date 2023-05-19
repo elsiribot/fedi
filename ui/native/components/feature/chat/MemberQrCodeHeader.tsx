@@ -10,7 +10,7 @@ const MemberQrCodeHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            headerCenter={<Text bold>{t('feature.chat.your-username')}</Text>}
+            headerCenter={<Text bold>{t('feature.chat.chat-invite')}</Text>}
         />
     )
 }
