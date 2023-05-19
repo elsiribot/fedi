@@ -108,17 +108,26 @@ export const joinFederation = createAsyncThunk<
     Federation,
     { fedimint: FedimintBridge; code: string },
     { state: CommonState }
->('federation/joinFederation', async ({ fedimint, code }, { dispatch }) => {
-    const federation = await fedimint.joinFederation(code)
-    const federations = await fedimint.listFederations()
-    if (federations.length > 0) {
-        dispatch(setFederations(federations))
-        dispatch(setActiveFederationId(federation.id))
-    } else {
-        throw new Error('Bridge reported no federations')
-    }
-    return federation
-})
+>(
+    'federation/joinFederation',
+    async ({ fedimint, code }, { dispatch, getState }) => {
+        const federation = await fedimint.joinFederation(code)
+
+        const existingFederations = getState().federation.federations
+        if (existingFederations.find(f => f.id === federation.id)) {
+            throw new Error('errors.you-have-already-joined')
+        }
+
+        const federations = await fedimint.listFederations()
+        if (federations.length > 0) {
+            dispatch(setFederations(federations))
+            dispatch(setActiveFederationId(federation.id))
+        } else {
+            throw new Error('Bridge reported no federations')
+        }
+        return federation
+    },
+)
 
 export const leaveFederation = createAsyncThunk<
     void,

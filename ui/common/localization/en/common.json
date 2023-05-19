@@ -106,7 +106,8 @@
         "recovery-failed": "Recovery failed, please try again",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
-        "invalid-character": "The following characters are not allowed: \" & ' / : < >"
+        "invalid-character": "The following characters are not allowed: \" & ' / : < >",
+        "you-have-already-joined": "You have already joined this federation"
     },
     "feature": {
         "backup": {
@@ -199,7 +200,7 @@
         "federations": {
             "add-federation": "Add a Federation",
             "camera-access-information": "To join a Federation, you will need to allow Fedi access to your camera to scan the Federation invite code",
-            "copied-group-invite-code": "Copied federation invite link",
+            "copied-federation-invite": "Copied federation invite link",
             "federation-details": "Federation Details",
             "invite-members": "Invite members",
             "federation-invite": "Federation invite",
