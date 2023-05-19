@@ -66,29 +66,29 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     const resetChatState = useCallback(() => {
-        if (activeFederation) {
+        if (activeFederationId) {
             dispatch(
                 resetFederationChatState({
-                    federationId: activeFederation.id,
+                    federationId: activeFederationId,
                 }),
             )
             chatDispatch(receiveMembersSeen([]))
             chatDispatch(receiveMessages([]))
             chatDispatch(receiveGroups(DEFAULT_GROUPS))
             AsyncStorage.setItem(
-                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
                 JSON.stringify({ members: [] }),
             )
             AsyncStorage.setItem(
-                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
                 JSON.stringify({ messages: [] }),
             )
             AsyncStorage.setItem(
-                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
                 JSON.stringify({ groups: DEFAULT_GROUPS }),
             )
         }
-    }, [activeFederation, chatDispatch, dispatch])
+    }, [activeFederationId, chatDispatch, dispatch])
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -100,20 +100,29 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const handleLeaveFederation = useCallback(async () => {
         try {
             if (activeFederationId) {
+                // FIXME: currently this specific order of operations fixes a
+                // bug where the username would get stuck in storage and when
+                // rejoining the federation, the user cannot create an new
+                // username with the fresh seed and the stored username fails
+                // to authenticate so chat ends up totally broken
+                // However it's not safe because if leaveFederation fails, then
+                // we are resetting state too early and could corrupt things
+                // Need to investigate further why running leaveFederation first
+                // causes this bug
+                resetChatState()
+                resetGuardiansState()
+                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
                 await dispatch(
                     leaveFederation({
                         fedimint,
                         federationId: activeFederationId,
                     }),
                 ).unwrap()
-                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
             }
         } catch (e) {
             toast?.show('Failed to leave federation', 3000)
             return
         }
-        resetChatState()
-        resetGuardiansState()
     }, [
         activeFederationId,
         dispatch,

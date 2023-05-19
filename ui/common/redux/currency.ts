@@ -168,7 +168,7 @@ export const selectCurrency = (s: CommonState) => {
 export const selectBtcExchangeRate = (s: CommonState) => {
     const selectedFiatCurrency = selectCurrency(s)
 
-    let exchangeRate = s.currency.prices[selectedFiatCurrency]
+    let exchangeRate = s.currency.prices[selectedFiatCurrency] || 0
     // Special case for the CFA franc which is a fixed 650x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CFA) {
         exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
