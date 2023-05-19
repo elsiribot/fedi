@@ -1,10 +1,14 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
+import { makePaymentText } from '@fedi/common/utils/chat'
 
+import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { Text } from './Text'
@@ -14,8 +18,23 @@ interface Props {
 }
 
 export const ChatListItem: React.FC<Props> = ({ chat }) => {
+    const { t } = useTranslation()
     const { query } = useRouter()
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const isActive = chat.id === query?.path?.[1]
+
+    let previewMessage = chat.latestMessage?.content
+    if (chat.latestMessage?.payment) {
+        previewMessage = makePaymentText(
+            t,
+            chat.latestMessage.sentBy.split('@')[0],
+            chat.latestMessage.sentTo?.split('@')[0] || '',
+            authenticatedMember?.username || '',
+            chat.latestMessage.payment.recipient?.split('@')[0],
+            chat.latestMessage.payment.amount,
+            chat.latestMessage.payment.memo,
+        )
+    }
 
     return (
         <Container
@@ -47,7 +66,7 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                     variant="small"
                     ellipsize
                     css={{ color: theme.colors.darkGrey }}>
-                    {chat.latestMessage?.content}
+                    {previewMessage}
                 </Text>
             </Content>
         </Container>
