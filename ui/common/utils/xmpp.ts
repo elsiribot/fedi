@@ -131,6 +131,7 @@ export function encodeGroupInvitationLink(groupId: string) {
 
 export function decodeGroupInvitationLink(link: string): string {
     const afterPrefix = link.split('fedi:group:')[1]
+    if (!afterPrefix) throw new Error('feature.chat.invalid-group')
     let groupId = afterPrefix.slice(0, -3)
 
     // handle old group invite codes for backwards compatibility
