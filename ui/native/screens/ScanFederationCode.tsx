@@ -42,10 +42,19 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                     ).unwrap()
                     navigation.replace('FederationWelcome')
                 } catch (err) {
-                    console.error(err)
                     // TODO: Expect an error code from bridge that maps to
                     // a localized error message
-                    toast?.show(t('errors.failed-to-join-federation'), 5000)
+                    console.error(err)
+                    const typedError = err as Error
+                    if (typedError?.message?.startsWith('errors.')) {
+                        console.debug(
+                            'typedError?.message',
+                            typedError?.message,
+                        )
+                        toast?.show(t(typedError.message), 5000)
+                    } else {
+                        toast?.show(t('errors.failed-to-join-federation'), 5000)
+                    }
                 }
                 setIsJoining(false)
             } else {

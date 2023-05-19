@@ -105,7 +105,8 @@
         "recovery-failed": "Recovery failed, please try again",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
-        "invalid-character": "The following characters are not allowed: \" & ' / : < >"
+        "invalid-character": "The following characters are not allowed: \" & ' / : < >",
+        "you-have-already-joined": "You have already joined this federation"
     },
     "feature": {
         "backup": {
