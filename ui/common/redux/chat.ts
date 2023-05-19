@@ -313,6 +313,15 @@ export const chatSlice = createSlice({
             }
         })
 
+        builder.addCase(fetchChatMember.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'membersSeen',
+                action.payload,
+            )
+        })
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             Object.entries(action.payload.chat).forEach(
@@ -512,6 +521,11 @@ export const connectChat = createAsyncThunk<
             // Fetch chat history
             dispatch(fetchChatHistory({ federationId }))
 
+            // "Enter" every group we have in state
+            chatState.groups.forEach(group => {
+                client.enterGroup(group.id)
+            })
+
             // Fix authenticatedMember if it has the wrong id or public key
             const jid = client.xmpp?.jid?.toString().split('/')[0]
             if (jid && authenticatedMember.id !== jid) {
@@ -588,6 +602,24 @@ export const fetchChatMembers = createAsyncThunk<
     return client.fetchMembers()
 })
 
+export const fetchChatMember = createAsyncThunk<
+    ChatMember,
+    { federationId: string; memberId: string },
+    { state: CommonState }
+>('chat/fetchChatMember', async ({ federationId, memberId }, { getState }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    const pubkey = await client.fetchMemberPublicKey(memberId)
+    if (pubkey) {
+        return {
+            id: memberId,
+            username: memberId.split('@')[0],
+            publicKeyHex: pubkey,
+        }
+    } else {
+        throw new Error('feature.chat.invalid-member')
+    }
+})
+
 export const joinChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; link: string }
@@ -603,7 +635,7 @@ export const createChatGroup = createAsyncThunk<
     { federationId: string; id: string; name: string }
 >('chat/createChatGroup', async ({ federationId, id, name }) => {
     const client = xmppChatClientManager.getClient(federationId)
-    const group = await client.joinGroup(id, name)
+    const group = await client.createGroup(id, name)
     return group
 })
 

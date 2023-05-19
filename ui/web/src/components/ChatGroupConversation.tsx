@@ -15,6 +15,7 @@ import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled } from '../styles'
 import { ChatConversation } from './ChatConversation'
+import { ChatEmptyState } from './ChatEmptyState'
 import { CopyInput } from './CopyInput'
 import { Dialog } from './Dialog'
 import { IconButton } from './IconButton'
@@ -51,25 +52,28 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
         [dispatch, federationId, groupId, showErrorToast],
     )
 
-    const handleEditGroupName = useCallback(() => {
+    const handleEditGroupName = useCallback(async () => {
         try {
             if (!federationId || !group) return
             const newName = prompt(t('feature.chat.change-group-name'))
             if (!newName) return
-            dispatch(
+            await dispatch(
                 configureChatGroup({
                     federationId,
                     groupId: group?.id,
                     groupName: newName,
                 }),
-            )
+            ).unwrap()
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
     }, [t, dispatch, showErrorToast, federationId, group])
 
-    const link = group ? encodeGroupInvitationLink(group.id) : ''
+    if (!group) {
+        return <ChatEmptyState>No group found</ChatEmptyState>
+    }
 
+    const link = group ? encodeGroupInvitationLink(group.id) : ''
     return (
         <ChatConversation
             name={group?.name || ''}
