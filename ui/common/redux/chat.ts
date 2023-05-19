@@ -835,12 +835,14 @@ export const updateChatPayment = createAsyncThunk<
                 break
             }
             case 'pay': {
-                // Attach the token but don't mark it paid yet, they need to then redeem it
                 const token = await fedimint.generateEcash(
                     payment.amount,
                     federationId,
                 )
                 paymentUpdates.token = token
+                paymentUpdates.recipient = recipientId
+                // Mark as accepted, not paid, they need to then redeem it
+                paymentUpdates.status = ChatPaymentStatus.accepted
                 break
             }
             case 'cancel': {
