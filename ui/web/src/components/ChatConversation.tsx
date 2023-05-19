@@ -45,12 +45,13 @@ export const ChatConversation: React.FC<Props> = ({
             try {
                 await onSendMessage(value)
                 setValue('')
+                requestAnimationFrame(() => inputRef.current?.focus())
             } catch (err) {
                 toast.showErrorToast(err, 'errors.chat-connection-unhealthy')
             }
             setIsSending(false)
         },
-        [onSendMessage, value, toast],
+        [onSendMessage, value, toast, inputRef],
     )
 
     const handleInputKeyDown = useCallback(
