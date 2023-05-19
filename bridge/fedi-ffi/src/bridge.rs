@@ -60,6 +60,7 @@ pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
+pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
 
 #[derive(Serialize, Deserialize)]
 struct FediBackupMetadata {
@@ -543,10 +544,7 @@ impl Federation {
         &self,
         amount: Amount,
     ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
-        let (_, notes) = self
-            .ng
-            .spend_notes(amount, Duration::from_secs(30), ())
-            .await?;
+        let (_, notes) = self.ng.spend_notes(amount, ONE_YEAR, ()).await?;
         let amount = notes.total_amount();
         self.ng_save_outgoing_ecash_tx(amount).await;
         Ok(notes)
