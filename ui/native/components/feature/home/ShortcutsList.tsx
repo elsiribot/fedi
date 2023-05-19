@@ -82,8 +82,8 @@ const ShortcutsList: React.FC<{}> = () => {
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).listContainer}>
-                {renderSiteShortcuts()}
                 {renderScreenShortcuts()}
+                {renderSiteShortcuts()}
                 {renderBuffers()}
             </View>
         </View>

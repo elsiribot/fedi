@@ -31,6 +31,7 @@ import {
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
+import { version } from '../package.json'
 import {
     receiveGroups,
     receiveMembersSeen,
@@ -376,6 +377,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     </View>
                 )}
             </View>
+            <Text style={styles(theme).version}>{`v${version}`}</Text>
         </ScrollView>
     )
 }
@@ -399,6 +401,9 @@ const styles = (theme: Theme) =>
         passwordContainer: {
             flexDirection: 'column',
             width: '100%',
+        },
+        version: {
+            alignSelf: 'flex-end',
         },
     })
 
