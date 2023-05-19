@@ -13,6 +13,7 @@ import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { XMPP_RESOURCE } from '../constants'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { Member } from '../types'
@@ -25,6 +26,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
+    const { connectionOptions } = useChatContext().state
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )
@@ -33,14 +35,14 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (input.startsWith('fedi:member:')) {
                 console.info('fedi chat member detected', input)
-                // TODO: show chat unav
-                if (!activeChatConnectionOptions) {
+                // TODO: show chat unavailable
+                if (!connectionOptions) {
                     return toast?.show(t('feature.chat.chat-unavailable'), 3000)
                 }
                 const memberId = decodeDirectChatLink(input)
                 const memberJid = jid(
                     memberId,
-                    activeChatConnectionOptions.domain as string,
+                    connectionOptions.domain as string,
                     XMPP_RESOURCE,
                 )
 

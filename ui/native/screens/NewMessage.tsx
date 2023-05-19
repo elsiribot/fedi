@@ -68,7 +68,11 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
-                    <SvgImage name="Scan" containerStyle={{ opacity: 0.1 }} />
+                    <Pressable
+                        onPress={() => navigation.navigate('ScanMemberCode')}
+                        hitSlop={5}>
+                        <SvgImage name="Scan" />
+                    </Pressable>
                 </View>
                 <Pressable
                     style={styles(theme, insets).createGroupContainer}
