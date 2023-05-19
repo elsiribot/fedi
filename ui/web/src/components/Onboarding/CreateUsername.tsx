@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
 
-import { useAppDispatch, useAppSelector } from '../../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
@@ -22,7 +22,9 @@ export const CreateUsername: React.FC = () => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { push } = useRouter()
+    const toast = useToast()
     const [username, setUsername] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const federationId = useAppSelector(selectActiveFederation)?.id
     const isChatSupported = useIsChatSupported()
 
@@ -36,15 +38,17 @@ export const CreateUsername: React.FC = () => {
 
     const handleSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault()
+        setIsSubmitting(true)
         try {
             await dispatch(
                 authenticateChat({ fedimint, federationId, username }),
             ).unwrap()
             push('/onboarding/complete')
         } catch (err) {
-            // TODO: Show error to user?
             console.error(err)
+            toast.showErrorToast(err, 'errors.unknown-error')
         }
+        setIsSubmitting(false)
     }
 
     return (
@@ -67,7 +71,11 @@ export const CreateUsername: React.FC = () => {
                 </InputWrapper>
             </OnboardingContent>
             <OnboardingActions>
-                <Button width="full" type="submit">
+                <Button
+                    width="full"
+                    type="submit"
+                    disabled={!username}
+                    loading={isSubmitting}>
                     {t('feature.onboarding.create-username')}
                 </Button>
             </OnboardingActions>
