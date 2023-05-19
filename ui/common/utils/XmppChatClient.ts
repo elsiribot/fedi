@@ -362,7 +362,6 @@ export class XmppChatClient {
         recipientPubkey: string,
         message: ChatMessage,
         senderKeys: Keypair,
-        updatePayment?: boolean,
     ) {
         try {
             const { jid } = this.getQueryProperties()
@@ -372,15 +371,39 @@ export class XmppChatClient {
                 new EncryptedDirectChatMessage({
                     from: fromJid,
                     to: recipientId,
-                    message: this.formatOutgoingMessage(message, jid),
+                    message: this.formatOutgoingMessage(message),
                     senderKeys,
                     recipientPublicKey: { hex: recipientPubkey },
-                    updatePayment,
+                    updatePayment: false,
                 }),
             )
             await this.xmpp.send(encrypedDirectChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
+            throw new Error('errors.unknown-error')
+        }
+    }
+
+    async updatePaymentMessage(
+        message: ChatMessage,
+        recipientPubkey: string,
+        senderKeys: Keypair,
+    ) {
+        try {
+            const { jid } = this.getQueryProperties()
+            const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
+                new EncryptedDirectChatMessage({
+                    from: message.sentBy,
+                    to: message.sentTo,
+                    message: this.formatOutgoingMessage(message),
+                    senderKeys,
+                    recipientPublicKey: { hex: recipientPubkey },
+                    updatePayment: true,
+                }),
+            )
+            await this.xmpp.send(encrypedDirectChatMessageXml)
+        } catch (error) {
+            console.error('updatePaymentMessage', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -395,11 +418,7 @@ export class XmppChatClient {
                 new GroupChatMessage({
                     from: fromJid,
                     to: toGroup,
-                    message: this.formatOutgoingGroupMessage(
-                        message,
-                        group,
-                        jid,
-                    ),
+                    message: this.formatOutgoingGroupMessage(message, group),
                 }),
             )
             await this.xmpp.send(groupChatMessageXml)
@@ -677,8 +696,8 @@ export class XmppChatClient {
             throw new Error('Incoming message missing sentBy')
         }
 
-        let payment = { ...rawMessage.payment }
-        if (payment.recipient) {
+        let payment = rawMessage.payment ? { ...rawMessage.payment } : undefined
+        if (payment?.recipient) {
             payment.recipient = formatIncomingEntity(payment.recipient)
         }
 
@@ -693,10 +712,7 @@ export class XmppChatClient {
         }
     }
 
-    private formatOutgoingMessage(
-        message: ChatMessage,
-        jid: ReturnType<typeof makeJid>,
-    ) {
+    private formatOutgoingMessage(message: ChatMessage) {
         const idToJidMember = (id: string) => {
             const [_local, rest] = id.split('@')
             const [_domain] = (rest || '').split('/')
@@ -707,7 +723,7 @@ export class XmppChatClient {
 
         const outgoing: any = {
             ...message,
-            sentBy: idToJidMember(jid.toString()),
+            sentBy: idToJidMember(message.sentBy),
         }
         if (message.sentTo) {
             outgoing.sentTo = idToJidMember(message.sentTo)
@@ -716,7 +732,7 @@ export class XmppChatClient {
             if (message.payment.recipient) {
                 outgoing.payment = {
                     ...outgoing.payment,
-                    recipient: outgoing.sentTo,
+                    recipient: idToJidMember(message.payment.recipient),
                 }
             }
         }
@@ -727,10 +743,9 @@ export class XmppChatClient {
     private formatOutgoingGroupMessage(
         message: ChatMessage,
         group: Partial<ChatGroup>,
-        jid: ReturnType<typeof makeJid>,
     ) {
         return {
-            ...this.formatOutgoingMessage(message, jid),
+            ...this.formatOutgoingMessage(message),
             sentIn: {
                 id: group.id,
                 name: group.name,

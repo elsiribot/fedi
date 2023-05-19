@@ -38,7 +38,7 @@ export interface ChatPayment {
     recipient?: string
     updatedAt?: number
     memo?: string
-    token?: string
+    token?: string | null
     invoice?: Invoice
 }
 

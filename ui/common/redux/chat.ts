@@ -27,6 +27,7 @@ import {
     XmppCredentials,
     XmppClientStatus,
     ChatWithLatestMessage,
+    ChatPaymentStatus,
 } from '../types'
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
@@ -287,24 +288,6 @@ export const chatSlice = createSlice({
             }
         })
 
-        builder.addCase(sendDirectMessage.fulfilled, (state, action) => {
-            return upsertEntityToChatState(
-                state,
-                action.meta.arg.federationId,
-                'messages',
-                action.payload,
-            )
-        })
-
-        builder.addCase(sendGroupMessage.fulfilled, (state, action) => {
-            return upsertEntityToChatState(
-                state,
-                action.meta.arg.federationId,
-                'messages',
-                action.payload,
-            )
-        })
-
         builder.addCase(fetchChatHistory.fulfilled, (state, action) => {
             const { federationId } = action.meta.arg
             const federation = getFederationChatState(state, federationId)
@@ -339,6 +322,22 @@ export const chatSlice = createSlice({
                 },
             )
         })
+
+        builder.addMatcher(
+            isAnyOf(
+                sendDirectMessage.fulfilled,
+                sendGroupMessage.fulfilled,
+                updateChatPayment.fulfilled,
+            ),
+            (state, action) => {
+                return upsertEntityToChatState(
+                    state,
+                    action.meta.arg.federationId,
+                    'messages',
+                    action.payload,
+                )
+            },
+        )
 
         builder.addMatcher(
             isAnyOf(
@@ -757,6 +756,122 @@ export const sendGroupMessage = createAsyncThunk<
         }
         await client.sendGroupMessage(group, message)
         return message
+    },
+)
+
+export const updateChatPayment = createAsyncThunk<
+    ChatMessage,
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        messageId: string
+        action: 'receive' | 'pay' | 'reject' | 'cancel'
+    },
+    { state: CommonState }
+>(
+    'chat/updateChatPayment',
+    async (
+        { fedimint, federationId, messageId, action },
+        { getState, dispatch },
+    ) => {
+        const state = getState()
+        const chatState = state.chat[federationId]
+        const message = state.chat[federationId]?.messages.find(
+            m => m.id === messageId,
+        )
+        const payment = message?.payment
+        const recipientId = message?.sentTo
+        if (!message || !payment || !recipientId)
+            throw new Error('errors.chat-payment-failed')
+
+        const client = xmppChatClientManager.getClient(federationId)
+
+        // Get the recipient's pubkey, fetch it if we don't have it
+        const recipientMember = chatState?.membersSeen.find(
+            m => m.id === recipientId,
+        )
+        let recipientPubkey: string
+        if (recipientMember?.publicKeyHex) {
+            recipientPubkey = recipientMember?.publicKeyHex
+        } else {
+            recipientPubkey = await client.fetchMemberPublicKey(recipientId)
+        }
+
+        // Get or fetch credentials
+        const { encryptionKeys } = await getOrFetchCredentials(
+            fedimint,
+            federationId,
+            state,
+            dispatch,
+        )
+
+        // Update payment depending on action
+        let paymentUpdates: Partial<ChatPayment> = {
+            updatedAt: Date.now() / 1000,
+        }
+        switch (action) {
+            case 'receive': {
+                const { token } = payment
+                if (!token) throw new Error('errors.chat-payment-failed')
+
+                try {
+                    await fedimint.receiveEcash(token, federationId)
+                } catch (err: any) {
+                    console.log({ err })
+                    if (
+                        err &&
+                        err.message.includes('already reissued these notes')
+                    ) {
+                        // No-op if we already claimed
+                    } else {
+                        throw err
+                    }
+                }
+                paymentUpdates.token = null
+                paymentUpdates.status = ChatPaymentStatus.paid
+                break
+            }
+            case 'reject': {
+                paymentUpdates.status = ChatPaymentStatus.rejected
+                break
+            }
+            case 'pay': {
+                // Attach the token but don't mark it paid yet, they need to then redeem it
+                const token = await fedimint.generateEcash(
+                    payment.amount,
+                    federationId,
+                )
+                paymentUpdates.token = token
+                break
+            }
+            case 'cancel': {
+                // Redeem the token back for ourselves to avoid it being otherwise claimed
+                const { token } = payment
+                if (!token) throw new Error('errors.chat-payment-failed')
+                await fedimint.receiveEcash(token, federationId)
+                paymentUpdates.token = null
+                paymentUpdates.status = ChatPaymentStatus.canceled
+                break
+            }
+            default:
+                throw new Error('errors.unknown-error')
+        }
+
+        // Send message as an update
+        const updatedMessage = {
+            ...message,
+            payment: {
+                ...payment,
+                ...paymentUpdates,
+            },
+        }
+        await client.updatePaymentMessage(
+            updatedMessage,
+            recipientPubkey,
+            encryptionKeys,
+        )
+
+        return updatedMessage
     },
 )
 
