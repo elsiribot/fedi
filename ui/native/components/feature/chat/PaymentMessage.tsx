@@ -1,9 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { makePaymentText } from '@fedi/common/utils/chat'
+
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Message } from '../../../types'
-import { makePaymentText } from '../../../utils/ChatUtils'
 import IncomingPullPayment from './IncomingPullPayment'
 import IncomingPushPayment from './IncomingPushPayment'
 import OutgoingPullPayment from './OutgoingPullPayment'
