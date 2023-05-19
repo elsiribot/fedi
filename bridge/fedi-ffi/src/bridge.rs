@@ -3,7 +3,7 @@ use std::{collections::HashMap, default::Default, str::FromStr, sync::Arc, time:
 use fedi_social_client::{common::VerificationDocument, FediSocialClientGen, RecoveryId};
 use fedimint_client::{
     backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret, sm::OperationId,
-    ClientBuilder, OperationLogEntry,
+    ClientBuilder, ClientSecret, OperationLogEntry,
 };
 use fedimint_core::{config::FederationId, db::IDatabase, module::ApiRequestErased};
 use fedimint_ln_client::{
@@ -341,8 +341,9 @@ impl Federation {
     ) -> anyhow::Result<Self> {
         let client_builder = Self::build_client_builder_from_client(config.clone(), client);
         // TODO: do something with this metadata
+        let secret = ClientSecret::<Bip39RootSecretStrategy>::new(mnemonic);
         let (ng, metadata) = client_builder
-            .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, mnemonic)
+            .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, secret)
             .await?;
         let federation = Self {
             ng: Arc::new(ng),
@@ -521,7 +522,8 @@ impl Federation {
             .ng
             .subscribe_reissue_external_notes_updates(operation_id)
             .await
-            .unwrap();
+            .unwrap()
+            .into_stream();
 
         // TODO: run in background
         // TODO: spawn again on startup
@@ -559,7 +561,7 @@ impl Federation {
     ) -> Result<(OperationId, Invoice)> {
         let (operation_id, invoice) = self
             .ng
-            .create_bolt11_invoice_and_receive(amount, description, expiry_time)
+            .create_bolt11_invoice(amount, description, expiry_time)
             .await?;
 
         self.ng_subscribe_invoice(operation_id.clone(), invoice.clone())
@@ -582,16 +584,17 @@ impl Federation {
                     .ng
                     .subscribe_to_ln_receive_updates(operation_id)
                     .await
-                    .expect("failed to subscribe to updates");
+                    .unwrap() // FIXME
+                    .into_stream();
                 while let Some(update) = updates.next().await {
                     info!("Update: {:?}", update);
                     match update {
-                        LnReceiveState::Claimed { txid } => {
+                        LnReceiveState::Claimed => {
                             // FIXME: unwrap
-                            fed.ng
-                                .await_claim_notes(operation_id, txid)
-                                .await
-                                .expect("failed to claim notes");
+                            // fed.ng
+                            //     .await_claim_notes(operation_id, txid)
+                            //     .await
+                            //     .expect("failed to claim notes");
                             fed.ng_save_incoming_lightning_tx(&invoice).await;
                         }
                         LnReceiveState::Canceled { .. } => {
@@ -625,7 +628,7 @@ impl Federation {
         self.override_active_gateway().await?;
 
         let federation_id = self.federation_id();
-        let (operation_id, _) = self
+        let operation_id = self
             .ng
             .pay_bolt11_invoice(federation_id, invoice.to_owned())
             .await?;
@@ -722,7 +725,11 @@ impl Federation {
         operation_id: OperationId,
         invoice: Invoice,
     ) -> Result<()> {
-        let mut updates = self.ng.subscribe_ln_pay_updates(operation_id).await?;
+        let mut updates = self
+            .ng
+            .subscribe_ln_pay_updates(operation_id)
+            .await?
+            .into_stream();
 
         while let Some(update) = updates.next().await {
             match update {
@@ -730,9 +737,7 @@ impl Federation {
                     self.ng_save_outgoing_lightning_tx(&invoice).await;
                     return Ok(());
                 }
-                LnPayState::Refunded { refund_txid } => {
-                    self.ng.await_claim_notes(operation_id, refund_txid).await?;
-                    // TODO: save progress
+                LnPayState::Refunded { gateway_error } => {
                     return Ok(());
                 }
                 _ => {}
@@ -753,16 +758,12 @@ impl Federation {
             .ng
             .subscribe_to_ln_receive_updates(operation_id)
             .await
-            .expect("failed to subscribe to updates");
+            .expect("failed to subscribe to updates")
+            .into_stream();
         while let Some(update) = updates.next().await {
             info!("Update: {:?}", update);
             match update {
-                LnReceiveState::Claimed { txid } => {
-                    // FIXME: unwrap
-                    self.ng
-                        .await_claim_notes(operation_id, txid)
-                        .await
-                        .expect("failed to claim notes");
+                LnReceiveState::Claimed => {
                     self.ng_save_incoming_lightning_tx(&invoice).await;
                 }
                 LnReceiveState::Canceled { .. } => {
@@ -783,8 +784,8 @@ impl Federation {
         let mut updates = self
             .ng
             .subscribe_reissue_external_notes_updates(operation_id)
-            .await
-            .unwrap();
+            .await?
+            .into_stream();
 
         while let Some(update) = updates.next().await {
             if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
