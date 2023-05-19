@@ -185,6 +185,8 @@
             "new-group": "New group",
             "no-one-is-in-this-group": "No one is in this group yet.",
             "scan-group-invite": "Scan a group invite",
+            "scan-member-code-notice": "Anyone who scans this code can chat with you directly",
+            "scan-username": "Scan username",
             "select-or-start": "Select a chat, or start a new chat",
             "send-a-message-to": "Send a message to {{name}}",
             "they-requested-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
@@ -196,7 +198,8 @@
             "view-shared-media": "View shared media",
             "view-group": "View group",
             "you-requested-payment": "You requested {{amount}} {{unit}} {{memo}}",
-            "you-sent-payment": "You sent {{amount}} {{unit}} {{memo}}"
+            "you-sent-payment": "You sent {{amount}} {{unit}} {{memo}}",
+            "your-username": "Your username"
         },
         "federations": {
             "add-federation": "Add a Federation",

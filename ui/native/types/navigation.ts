@@ -55,6 +55,7 @@ export type RootStackParamList = {
     FederationWelcome: undefined
     Initializing: { reset: boolean }
     JoinGroup: undefined
+    MemberQrCode: undefined
     NewMessage: undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
@@ -71,6 +72,7 @@ export type RootStackParamList = {
     GroupAdmin: { group: Group }
     GroupInvite: { group: Group }
     ScanFederationCode: undefined
+    ScanMemberCode: undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }
     SelectRecoveryFileFailure: { fileName: string }

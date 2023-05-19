@@ -21,7 +21,9 @@ import GroupAdminHeader from './components/feature/chat/GroupAdminHeader'
 import GroupHeader from './components/feature/chat/GroupHeader'
 import GroupInviteHeader from './components/feature/chat/GroupInviteHeader'
 import JoinGroupHeader from './components/feature/chat/JoinGroupHeader'
+import MemberQrCodeHeader from './components/feature/chat/MemberQrCodeHeader'
 import NewMessageHeader from './components/feature/chat/NewMessageHeader'
+import ScanMemberCodeHeader from './components/feature/chat/ScanMemberCodeHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
@@ -66,6 +68,7 @@ import GroupInvite from './screens/GroupInvite'
 import Initializing from './screens/Initializing'
 import JoinGroup from './screens/JoinGroup'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
@@ -78,6 +81,7 @@ import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
 import ScanFederationCode from './screens/ScanFederationCode'
+import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
 import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
@@ -254,6 +258,20 @@ const MainNavigator = () => {
                                 component={GroupInvite}
                                 options={() => ({
                                     header: () => <GroupInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="MemberQrCode"
+                                component={MemberQrCode}
+                                options={() => ({
+                                    header: () => <MemberQrCodeHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanMemberCode"
+                                component={ScanMemberCode}
+                                options={() => ({
+                                    header: () => <ScanMemberCodeHeader />,
                                 })}
                             />
                             <Stack.Screen

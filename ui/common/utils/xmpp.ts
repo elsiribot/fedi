@@ -145,3 +145,16 @@ export function decodeGroupInvitationLink(link: string): string {
 
     return groupId
 }
+
+export function encodeDirectChatLink(memberId: string): string {
+    return `fedi:member:${memberId}:::`
+}
+
+export function decodeDirectChatLink(link: string): string {
+    const afterPrefix = link.split('fedi:member:')[1]
+    let memberId = afterPrefix.slice(0, -3)
+
+    if (!memberId) throw new Error('feature.chat.invalid-member')
+
+    return memberId
+}
