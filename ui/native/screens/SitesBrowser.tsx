@@ -288,6 +288,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         setJsInjected(true)
                     }
                 }}
+                allowsInlineMediaPlayback
                 onMessage={onMessage}
                 style={{ width: '100%', height: '100%', flex: 1 }}
             />
