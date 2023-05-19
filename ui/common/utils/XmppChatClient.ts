@@ -256,7 +256,6 @@ export class XmppChatClient {
                     // Receive a registration response from the server
                     const result = stanza.getChild('x')
                     const statusResults = result?.getChildren('status')
-                    console.log({ stanza, result, statusResults })
                     if (!statusResults || !statusResults.length) {
                         reject(
                             new Error('No status results from presence stanza'),
@@ -269,7 +268,6 @@ export class XmppChatClient {
                 this.xmpp.on('stanza', onStanzaReceived)
 
                 this.xmpp.send(enterMucRoomPresence)
-                console.log({ enterMucRoomPresence })
             } catch (err) {
                 console.error('enterGroup', err)
                 reject(new Error('errors.unknown-error'))

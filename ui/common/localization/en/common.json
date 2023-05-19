@@ -173,6 +173,7 @@
             "group-name": "Group name",
             "change-group-name": "Change group name",
             "invalid-group": "This is not a valid chat group",
+            "invalid-member": "This is not a valid chat member",
             "invite-link-notice": "Anyone with this link can join this group. Link is valid for 2 hours.",
             "invite-to-group": "Invite to group",
             "join-a-group": "Join a group",

@@ -313,6 +313,15 @@ export const chatSlice = createSlice({
             }
         })
 
+        builder.addCase(fetchChatMember.fulfilled, (state, action) => {
+            return upsertEntityToChatState(
+                state,
+                action.meta.arg.federationId,
+                'membersSeen',
+                action.payload,
+            )
+        })
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             Object.entries(action.payload.chat).forEach(
@@ -591,6 +600,24 @@ export const fetchChatMembers = createAsyncThunk<
 >('chat/fetchChatMembers', ({ federationId }) => {
     const client = xmppChatClientManager.getClient(federationId)
     return client.fetchMembers()
+})
+
+export const fetchChatMember = createAsyncThunk<
+    ChatMember,
+    { federationId: string; memberId: string },
+    { state: CommonState }
+>('chat/fetchChatMember', async ({ federationId, memberId }, { getState }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    const pubkey = await client.fetchMemberPublicKey(memberId)
+    if (pubkey) {
+        return {
+            id: memberId,
+            username: memberId.split('@')[0],
+            publicKeyHex: pubkey,
+        }
+    } else {
+        throw new Error('feature.chat.invalid-member')
+    }
 })
 
 export const joinChatGroup = createAsyncThunk<

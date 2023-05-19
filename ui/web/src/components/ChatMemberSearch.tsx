@@ -9,6 +9,8 @@ import {
     fetchChatMembers,
     selectActiveFederation,
     selectAllChatMembers,
+    selectChatConnectionOptions,
+    selectChatXmppClient,
 } from '@fedi/common/redux'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
@@ -26,6 +28,7 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederation)?.id
     const members = useAppSelector(selectAllChatMembers)
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(members)
 
@@ -64,8 +67,10 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
                             </Text>
                         </SearchButton>
                     ))}
-                    {query && !isExactMatch && (
-                        <SearchButton as={Link} href={`/chat/member/${query}`}>
+                    {query && !isExactMatch && connectionOptions && (
+                        <SearchButton
+                            as={Link}
+                            href={`/chat/member/${query}@${connectionOptions.domain}`}>
                             <Icon icon={SocialPeopleIcon} />
                             <Text weight="medium">
                                 {t('feature.chat.send-a-message-to', {
