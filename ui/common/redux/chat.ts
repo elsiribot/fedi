@@ -603,7 +603,7 @@ export const createChatGroup = createAsyncThunk<
     { federationId: string; id: string; name: string }
 >('chat/createChatGroup', async ({ federationId, id, name }) => {
     const client = xmppChatClientManager.getClient(federationId)
-    const group = await client.joinGroup(id, name)
+    const group = await client.createGroup(id, name)
     return group
 })
 
