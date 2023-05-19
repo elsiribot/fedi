@@ -493,7 +493,7 @@ export class XmppChatClient {
 
         const groupMessageJson = stanza.getChildText('gm')
         const parsedMessage = JSON.parse(groupMessageJson as string)
-        if (!parsedMessage) return
+        if (!parsedMessage || !parsedMessage.content) return
 
         // Emit a 'message'
         this.emit('message', this.formatIncomingMessage(parsedMessage))
@@ -514,6 +514,7 @@ export class XmppChatClient {
 
     private handleIncomingDirectMessage(stanza: Element) {
         const { parsedMessage } = this.decryptAndParseIncomingMessage(stanza)
+        if (!parsedMessage || !parsedMessage.content) return
 
         // Emit a 'message'
         this.emit('message', this.formatIncomingMessage(parsedMessage))
@@ -571,6 +572,7 @@ export class XmppChatClient {
         if (!message || message.getAttr('type') === 'error') return
 
         const { parsedMessage } = this.decryptAndParseIncomingMessage(message)
+        if (!parsedMessage || !parsedMessage.content) return
 
         // Emit a 'message'
         this.emit('message', this.formatIncomingMessage(parsedMessage))
