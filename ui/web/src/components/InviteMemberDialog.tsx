@@ -28,7 +28,7 @@ export const InviteMemberDialog: React.FC<Props> = props => {
                 <CopyInput
                     value={connectInfo}
                     onCopyMessage={t(
-                        'feature.federations.copied-group-invite-code',
+                        'feature.federations.copied-federation-invite',
                     )}
                 />
                 <Notice>

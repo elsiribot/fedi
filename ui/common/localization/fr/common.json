@@ -190,7 +190,7 @@
         "federations": {
             "add-federation": "Ajouter une Fédération",
             "camera-access-information": "Pour rejoindre une Fédération, vous devez autoriser Fedi à accéder à votre caméra pour scanner le code d'invitation de la Fédération",
-            "copied-group-invite-code": "Lien d'invitation de la fédération copié",
+            "copied-federation-invite": "Lien d'invitation de la fédération copié",
             "federation-details": "Détails de la Fédération",
             "invite-members": "Inviter des membres",
             "federation-invite": "Invitation à la Fédération",
