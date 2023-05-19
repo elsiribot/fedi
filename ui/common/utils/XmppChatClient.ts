@@ -512,15 +512,6 @@ export class XmppChatClient {
             )
             this.emit('memberSeen', this.memberFromJid(memberJid.toString()))
         }
-
-        // Emit a 'group' for the group this is in, in case we hadn't seen it or it has a new name
-        const group = parsedMessage.sentIn
-        if (group) {
-            this.emit('group', {
-                id: group.id,
-                name: group.name,
-            })
-        }
     }
 
     private handleIncomingDirectMessage(stanza: Element) {

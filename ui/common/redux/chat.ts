@@ -512,6 +512,11 @@ export const connectChat = createAsyncThunk<
             // Fetch chat history
             dispatch(fetchChatHistory({ federationId }))
 
+            // "Enter" every group we have in state
+            chatState.groups.forEach(group => {
+                client.enterGroup(group.id)
+            })
+
             // Fix authenticatedMember if it has the wrong id or public key
             const jid = client.xmpp?.jid?.toString().split('/')[0]
             if (jid && authenticatedMember.id !== jid) {
