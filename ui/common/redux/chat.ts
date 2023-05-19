@@ -817,12 +817,11 @@ export const updateChatPayment = createAsyncThunk<
                 try {
                     await fedimint.receiveEcash(token, federationId)
                 } catch (err: any) {
-                    console.log({ err })
                     if (
                         err &&
                         err.message.includes('already reissued these notes')
                     ) {
-                        // No-op if we already claimed
+                        // No-op if we already claimed, just mark it as paid
                     } else {
                         throw err
                     }
@@ -847,8 +846,10 @@ export const updateChatPayment = createAsyncThunk<
             case 'cancel': {
                 // Redeem the token back for ourselves to avoid it being otherwise claimed
                 const { token } = payment
-                if (!token) throw new Error('errors.chat-payment-failed')
-                await fedimint.receiveEcash(token, federationId)
+                if (token) {
+                    // TODO: Replace with cancel method? Receiving your own can be weird.
+                    await fedimint.receiveEcash(token, federationId)
+                }
                 paymentUpdates.token = null
                 paymentUpdates.status = ChatPaymentStatus.canceled
                 break

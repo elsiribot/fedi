@@ -1,0 +1,238 @@
+import React, { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import CheckIcon from '@fedi/common/assets/svgs/check.svg'
+import CloseIcon from '@fedi/common/assets/svgs/close.svg'
+import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
+import {
+    updateChatPayment,
+    selectActiveFederation,
+    selectAuthenticatedMember,
+    selectChatClientStatus,
+} from '@fedi/common/redux'
+import {
+    ChatMessage as ChatMessageType,
+    ChatPayment,
+    ChatPaymentStatus,
+} from '@fedi/common/types'
+import { makePaymentText } from '@fedi/common/utils/chat'
+
+import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { fedimint } from '../lib/bridge'
+import { styled, theme } from '../styles'
+import { Button } from './Button'
+import { HoloLoader } from './HoloLoader'
+import { Icon } from './Icon'
+
+interface Props {
+    message: ChatMessageType
+    payment: ChatPayment
+}
+
+export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
+    const { t } = useTranslation()
+    const dispatch = useAppDispatch()
+    const toast = useToast()
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const federationId = useAppSelector(selectActiveFederation)?.id
+    const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
+    const [didReceiveFail, setDidReceiveFail] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState(false)
+
+    const messageId = message.id
+    const paymentStatus = payment.status
+    const isSentByMe = message.sentBy === authenticatedMember?.id
+    const isSentToMe = message.sentTo === authenticatedMember?.id
+    const isPaymentToMe = payment.recipient === authenticatedMember?.id
+
+    const handleDispatchPaymentUpdate = useCallback(
+        async (action: Parameters<typeof updateChatPayment>[0]['action']) => {
+            if (!federationId) return
+            setIsLoading(true)
+            try {
+                await dispatch(
+                    updateChatPayment({
+                        fedimint,
+                        federationId,
+                        messageId,
+                        action,
+                    }),
+                ).unwrap()
+            } catch (err) {
+                if (action === 'receive') {
+                    setDidReceiveFail(true)
+                } else {
+                    toast.showErrorToast(err, 'errors.chat-payment-failed')
+                }
+            }
+            setIsLoading(false)
+        },
+        [dispatch, toast, federationId, messageId],
+    )
+
+    // Attempt to redeem payment right away
+    useEffect(() => {
+        if (
+            didReceiveFail ||
+            !isPaymentToMe ||
+            paymentStatus !== ChatPaymentStatus.accepted
+        )
+            return
+        handleDispatchPaymentUpdate('receive')
+    }, [
+        isChatOnline,
+        didReceiveFail,
+        isPaymentToMe,
+        paymentStatus,
+        handleDispatchPaymentUpdate,
+    ])
+
+    const handleCancel = useCallback(() => {
+        return handleDispatchPaymentUpdate('cancel')
+    }, [handleDispatchPaymentUpdate])
+
+    const handlePay = useCallback(() => {
+        return handleDispatchPaymentUpdate('pay')
+    }, [handleDispatchPaymentUpdate])
+
+    const handleReject = useCallback(() => {
+        return handleDispatchPaymentUpdate('reject')
+    }, [handleDispatchPaymentUpdate])
+
+    let extra: React.ReactNode = null
+    const messageText = makePaymentText(
+        t,
+        message.sentBy.split('@')[0],
+        message.sentTo?.split('@')[0] || '',
+        authenticatedMember?.username || '',
+        payment.recipient?.split('@')[0],
+        payment.amount,
+        payment.memo,
+    )
+
+    if (payment.status === ChatPaymentStatus.paid) {
+        extra = (
+            <PaymentResult>
+                <Icon size="xs" icon={CheckIcon} />
+                <div>{t('words.paid')}</div>
+            </PaymentResult>
+        )
+    } else if (payment.status === ChatPaymentStatus.rejected) {
+        extra = (
+            <PaymentResult>
+                <Icon size="xs" icon={CloseIcon} />
+                <div>{t('words.rejected')}</div>
+            </PaymentResult>
+        )
+    } else if (payment.status === ChatPaymentStatus.canceled) {
+        extra = (
+            <PaymentResult>
+                <Icon size="xs" icon={CloseIcon} />
+                <div>{t('words.canceled')}</div>
+            </PaymentResult>
+        )
+    } else if (payment.status === ChatPaymentStatus.accepted) {
+        if (isPaymentToMe) {
+            if (didReceiveFail) {
+                extra = (
+                    <>
+                        <PaymentResult>
+                            <Icon size="xs" icon={ErrorIcon} />
+                            <div>{t('errors.chat-payment-failed')}</div>
+                        </PaymentResult>
+                        <PaymentButtons>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setDidReceiveFail(false)}>
+                                {t('words.retry')}
+                            </Button>
+                        </PaymentButtons>
+                    </>
+                )
+            } else {
+                extra = (
+                    <PaymentResult>
+                        <HoloLoader size="xs" />
+                        <div>{t('words.pending')}...</div>
+                    </PaymentResult>
+                )
+            }
+        } else if (isSentByMe) {
+            // TODO: Enable once we add RPC method for canceling your tokens.
+            // extra = (
+            //     <PaymentButtons>
+            //         <Button
+            //             variant="secondary"
+            //             size="sm"
+            //             onClick={handleCancel}
+            //             loading={isLoading}>
+            //             {t('words.cancel')}
+            //         </Button>
+            //     </PaymentButtons>
+            // )
+        }
+    } else if (payment.status === ChatPaymentStatus.requested) {
+        if (isSentToMe) {
+            extra = (
+                <PaymentButtons>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleReject}
+                        loading={isLoading}>
+                        {t('words.reject')}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handlePay}
+                        loading={isLoading}>
+                        {t('words.pay')}
+                    </Button>
+                </PaymentButtons>
+            )
+        } else if (isSentByMe) {
+            extra = (
+                <PaymentButtons>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleCancel}
+                        loading={isLoading}>
+                        {t('words.cancel')}
+                    </Button>
+                </PaymentButtons>
+            )
+        }
+    }
+
+    if (!extra) {
+        return <>{messageText}</>
+    } else {
+        return (
+            <>
+                <div>{messageText}</div>
+                {extra}
+            </>
+        )
+    }
+}
+
+const PaymentResult = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 4,
+})
+
+const PaymentButtons = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 12,
+
+    '> button': {
+        filter: 'drop-shadow(0px 2px 1px rgba(0, 0, 0, 0.15))',
+    },
+})

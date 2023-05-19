@@ -1,26 +1,34 @@
 import React from 'react'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 import type { ChatMessage as ChatMessageType } from '@fedi/common/types'
 
+import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
+import { ChatMessagePayment } from './ChatMessagePayment'
 
 interface Props {
     message: ChatMessageType
-    isMe: boolean
 }
 
-export const ChatMessage: React.FC<Props> = ({ message, isMe }) => {
+export const ChatMessage: React.FC<Props> = ({ message }) => {
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+
     const { payment } = message
+    const isMe = message.sentBy === authenticatedMember?.id
+
     let content: React.ReactNode = message.content
+    let isPayment = false
     if (payment?.status !== undefined) {
-        return (
-            <MessageContent isPayment>
-                Chat payments are not yet supported on the web.
-            </MessageContent>
-        )
+        isPayment = true
+        content = <ChatMessagePayment message={message} payment={payment} />
     }
 
-    return <MessageContent isMe={isMe}>{content}</MessageContent>
+    return (
+        <MessageContent isMe={isMe} isPayment={isPayment}>
+            {content}
+        </MessageContent>
+    )
 }
 
 const MessageContent = styled('div', {
@@ -44,11 +52,26 @@ const MessageContent = styled('div', {
             },
         },
         isPayment: {
-            true: {
-                background: theme.colors.orange,
-                color: theme.colors.white,
-                fontStyle: 'italic',
-            },
+            true: {},
         },
     },
+    compoundVariants: [
+        // Fix a bug where isPayment sometimes doesn't override
+        {
+            isMe: true,
+            isPayment: true,
+            css: {
+                background: theme.colors.orange,
+                color: theme.colors.white,
+            },
+        },
+        {
+            isMe: false,
+            isPayment: true,
+            css: {
+                background: theme.colors.orange,
+                color: theme.colors.white,
+            },
+        },
+    ],
 })

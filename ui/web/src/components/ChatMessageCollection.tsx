@@ -34,10 +34,7 @@ export const ChatMessageCollection: React.FC<Props> = ({
             <MessageCollection>
                 {collection.map(messages => {
                     const member = memberMap[messages[0].sentBy]
-                    const isMe = authenticatedMember
-                        ? authenticatedMember.id === messages[0].sentBy ||
-                          messages[0].sentBy.includes(authenticatedMember.id)
-                        : false
+                    const isMe = messages[0].sentBy === authenticatedMember?.id
                     return (
                         <div key={messages[0].id}>
                             {showUsernames && !isMe && (
@@ -52,7 +49,6 @@ export const ChatMessageCollection: React.FC<Props> = ({
                                         <ChatMessage
                                             key={msg.id}
                                             message={msg}
-                                            isMe={isMe}
                                         />
                                     ))}
                                 </Messages>

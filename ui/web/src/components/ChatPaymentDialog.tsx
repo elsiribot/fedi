@@ -6,6 +6,7 @@ import {
     generateEcash,
     selectActiveFederation,
     sendDirectMessage,
+    selectAuthenticatedMember,
 } from '@fedi/common/redux'
 import { ChatPayment, ChatPaymentStatus, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -32,6 +33,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     const dispatch = useAppDispatch()
     const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const myId = useAppSelector(selectAuthenticatedMember)?.id
     const [amount, setAmount] = useState(0 as Sats)
     const [isSending, setIsSending] = useState(false)
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
@@ -47,7 +49,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
     const sendPaymentMessage = useCallback(
         async (token?: string) => {
-            if (!federationId) return
+            if (!federationId || !myId) return
             try {
                 await dispatch(
                     sendDirectMessage({
@@ -59,6 +61,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                                 ? ChatPaymentStatus.accepted
                                 : ChatPaymentStatus.requested,
                             amount: amountUtils.satToMsat(amount),
+                            recipient: token ? recipientId : myId,
                             token,
                         },
                     }),
@@ -68,7 +71,15 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                 toast.showErrorToast(err, 'errors.chat-unavailable')
             }
         },
-        [dispatch, federationId, recipientId, amount, toast, onOpenChangeRef],
+        [
+            dispatch,
+            federationId,
+            recipientId,
+            myId,
+            amount,
+            toast,
+            onOpenChangeRef,
+        ],
     )
 
     const handleSend = useCallback(async () => {

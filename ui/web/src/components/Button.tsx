@@ -6,7 +6,7 @@ import { Icon, IconProps } from './Icon'
 
 interface BaseProps {
     variant?: 'primary' | 'secondary' | 'tertiary' | 'outline'
-    size?: 'md' | 'sm'
+    size?: 'md' | 'sm' | 'xs'
     icon?: IconProps['icon']
     width?: 'auto' | 'full'
     loading?: boolean
@@ -151,6 +151,11 @@ const ButtonBase = styled('button', {
                 fontSize: 14,
             },
             sm: {
+                height: 32,
+                padding: '0 26px',
+                fontSize: 14,
+            },
+            xs: {
                 height: 24,
                 padding: '0 20px',
                 fontSize: 12,
