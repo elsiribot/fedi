@@ -29,7 +29,6 @@ class AmountUtils {
         return this.btcToFiat(btc, rate)
     }
     btcToFiat = (btc: Btc, rate: number): Usd => {
-        if (isNaN(btc) || isNaN(rate)) return 0 as Usd
         return Number(
             (btc * rate).toFixed(AmountUtils.FIAT_MAX_DECIMAL_PLACES),
         ) as Usd
