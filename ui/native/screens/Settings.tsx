@@ -100,6 +100,15 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const handleLeaveFederation = useCallback(async () => {
         try {
             if (activeFederationId) {
+                // FIXME: currently this specific order of operations fixes a
+                // bug where the username would get stuck in storage and when
+                // rejoining the federation, the user cannot create an new
+                // username with the fresh seed and the stored username fails
+                // to authenticate so chat ends up totally broken
+                // However it's not safe because if leaveFederation fails, then
+                // we are resetting state too early and could corrupt things
+                // Need to investigate further why running leaveFederation first
+                // causes this bug
                 resetChatState()
                 resetGuardiansState()
                 AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
