@@ -17,7 +17,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'MemberQrCode'>
 
 const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 
-const MemberQrCode: React.FC<Props> = ({ navigation, route }: Props) => {
+const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const member = useAppSelector(selectAuthenticatedMember)

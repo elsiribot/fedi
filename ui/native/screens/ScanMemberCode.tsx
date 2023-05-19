@@ -51,7 +51,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                 toast?.show(t('feature.chat.invalid-member'), 3000)
             }
         },
-        [navigation, toast, t],
+        [activeChatConnectionOptions, navigation, toast, t],
     )
 
     const devices = useCameraDevices()
