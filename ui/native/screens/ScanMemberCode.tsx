@@ -14,7 +14,7 @@ import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { XMPP_RESOURCE } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { Member } from '../types'
+import { Group, Member } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ScanMemberCode'>
@@ -43,6 +43,11 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
 
                 navigation.replace('DirectChat', {
                     member: new Member({ jid: memberJid }),
+                })
+            } else if (input.startsWith('fedi:group:')) {
+                console.info('fedi chat group detected', input)
+                navigation.replace('GroupChat', {
+                    group: Group.decodeInvitationLink(input),
                 })
             } else {
                 toast?.show(t('feature.chat.invalid-member'), 3000)
