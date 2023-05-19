@@ -40,8 +40,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
         500,
     )
 
-    const showSendMessage =
-        filteredMembers.length === 0 && usernameFilter.length > 1
+    const showSendMessage = usernameFilter.length > 1
 
     return (
         <View style={styles(theme, insets).container}>
@@ -68,7 +67,11 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
-                    <SvgImage name="Scan" containerStyle={{ opacity: 0.1 }} />
+                    <Pressable
+                        onPress={() => navigation.navigate('ScanMemberCode')}
+                        hitSlop={5}>
+                        <SvgImage name="Scan" />
+                    </Pressable>
                 </View>
                 <Pressable
                     style={styles(theme, insets).createGroupContainer}
@@ -80,35 +83,34 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         {t('feature.chat.create-or-join-a-new-group')}
                     </Text>
                 </Pressable>
+                {showSendMessage && (
+                    <Pressable
+                        style={styles(theme, insets).createGroupContainer}
+                        onPress={async () => {
+                            if (connectionOptions) {
+                                const { domain, resource } = connectionOptions
+                                const newMember = new Member({
+                                    jid: jid(
+                                        `${usernameFilter}@${domain}/${resource}`,
+                                    ),
+                                })
+                                navigation.replace('DirectChat', {
+                                    member: newMember,
+                                })
+                            }
+                        }}>
+                        <SvgImage name="SocialPeople" />
+                        <Text
+                            medium
+                            style={styles(theme, insets).createGroupText}>
+                            {`Send a message to ${usernameFilter}`}
+                        </Text>
+                    </Pressable>
+                )}
                 <Text small medium style={styles(theme, insets).membersLabel}>
                     {t('words.members')}
                 </Text>
                 <View style={styles(theme, insets).membersListContainer}>
-                    {showSendMessage && (
-                        <Pressable
-                            style={styles(theme, insets).createGroupContainer}
-                            onPress={async () => {
-                                if (connectionOptions) {
-                                    const { domain, resource } =
-                                        connectionOptions
-                                    const newMember = new Member({
-                                        jid: jid(
-                                            `${usernameFilter}@${domain}/${resource}`,
-                                        ),
-                                    })
-                                    navigation.replace('DirectChat', {
-                                        member: newMember,
-                                    })
-                                }
-                            }}>
-                            <SvgImage name="SocialPeople" />
-                            <Text
-                                medium
-                                style={styles(theme, insets).createGroupText}>
-                                {`Send a message to ${usernameFilter}`}
-                            </Text>
-                        </Pressable>
-                    )}
                     <MembersList members={filteredMembers} />
                 </View>
             </View>
