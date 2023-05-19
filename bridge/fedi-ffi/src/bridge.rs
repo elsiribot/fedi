@@ -50,7 +50,7 @@ use futures::StreamExt;
 use lightning_invoice::Invoice;
 
 use tokio::sync::Mutex;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 // Client NG
 use fedimint_client::Client as ClientNg;
@@ -588,16 +588,11 @@ impl Federation {
                     info!("Update: {:?}", update);
                     match update {
                         LnReceiveState::Claimed => {
-                            // FIXME: unwrap
-                            // fed.ng
-                            //     .await_claim_notes(operation_id, txid)
-                            //     .await
-                            //     .expect("failed to claim notes");
                             fed.ng_save_incoming_lightning_tx(&invoice).await;
                         }
-                        LnReceiveState::Canceled { .. } => {
-                            // TODO: send message that it failed
-                            // return Err(reason.into());
+                        LnReceiveState::Canceled { reason } => {
+                            // FIXME: handle this
+                            error!("Failed to claim incoming contract: {reason}");
                         }
                         _ => {}
                     }
