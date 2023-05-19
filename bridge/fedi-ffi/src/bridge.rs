@@ -50,7 +50,7 @@ use futures::StreamExt;
 use lightning_invoice::Invoice;
 
 use tokio::sync::Mutex;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 // Client NG
 use fedimint_client::Client as ClientNg;
@@ -60,6 +60,7 @@ pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
+pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
 
 #[derive(Serialize, Deserialize)]
 struct FediBackupMetadata {
@@ -543,10 +544,7 @@ impl Federation {
         &self,
         amount: Amount,
     ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
-        let (_, notes) = self
-            .ng
-            .spend_notes(amount, Duration::from_secs(30), ())
-            .await?;
+        let (_, notes) = self.ng.spend_notes(amount, ONE_YEAR, ()).await?;
         let amount = notes.total_amount();
         self.ng_save_outgoing_ecash_tx(amount).await;
         Ok(notes)
@@ -590,16 +588,11 @@ impl Federation {
                     info!("Update: {:?}", update);
                     match update {
                         LnReceiveState::Claimed => {
-                            // FIXME: unwrap
-                            // fed.ng
-                            //     .await_claim_notes(operation_id, txid)
-                            //     .await
-                            //     .expect("failed to claim notes");
                             fed.ng_save_incoming_lightning_tx(&invoice).await;
                         }
-                        LnReceiveState::Canceled { .. } => {
-                            // TODO: send message that it failed
-                            // return Err(reason.into());
+                        LnReceiveState::Canceled { reason } => {
+                            // FIXME: handle this
+                            error!("Failed to claim incoming contract: {reason}");
                         }
                         _ => {}
                     }
