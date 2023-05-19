@@ -11,7 +11,10 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
+import {
+    completeSocialRecovery,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
 import { Images } from '../assets/images'
@@ -36,8 +39,11 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const { completeSocialRecovery, socialRecoveryApprovals } = useBridge()
+    const { socialRecoveryApprovals } = useBridge()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const dispatch = useAppDispatch()
     const [recovering, setRecovering] = useState(false)
 
@@ -109,35 +115,25 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const completeRecovery = async () => {
             try {
-                let username = await completeSocialRecovery()
-                console.log('recovered username', username)
-                if (username != null) {
+                if (activeFederationId) {
                     await dispatch(
-                        authenticateChat({
+                        completeSocialRecovery({
                             fedimint,
-                            federationId: activeFederation!.id,
-                            username,
+                            federationId: activeFederationId,
                         }),
-                    )
+                    ).unwrap()
+                    setRecovering(false)
+                    navigation.dispatch(resetAfterSocialRecovery())
                 }
-                setRecovering(false)
-                navigation.dispatch(resetAfterSocialRecovery())
-            } catch (e) {
-                // FIXME: internationalize
-                toast?.show("Couldn't complete social recovery", 3000)
+            } catch (error) {
+                console.error(error)
+                toast?.show(t('errors.recovery-failed'), 3000)
             }
         }
         if (recovering) {
             completeRecovery()
         }
-    }, [
-        activeFederation,
-        completeSocialRecovery,
-        dispatch,
-        navigation,
-        recovering,
-        toast,
-    ])
+    }, [activeFederationId, dispatch, navigation, recovering, toast, t])
 
     const renderGuardianApprovalStatus = () => {
         if (approvals?.remaining === 0) {

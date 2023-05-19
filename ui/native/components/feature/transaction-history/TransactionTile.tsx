@@ -29,7 +29,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             ]}>
             <View style={styles(theme).leftContainer}>
                 <SvgImage
-                    name="Bitcoin"
+                    name="BitcoinCircle"
                     color={theme.colors.orange}
                     size={SvgImageSize.md}
                 />

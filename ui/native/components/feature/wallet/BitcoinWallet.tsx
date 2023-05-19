@@ -28,9 +28,9 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
             wrapperStyle={styles(theme).cardWrapper}>
             <View style={styles(theme).titleContainer}>
                 <SvgImage
-                    name="Bitcoin"
+                    name="BitcoinCircle"
                     size={SvgImageSize.md}
-                    color={theme.colors.orange}
+                    color={theme.colors.white}
                 />
                 <Text medium style={styles(theme).titleText}>
                     {t('words.bitcoin')}

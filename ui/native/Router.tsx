@@ -9,7 +9,7 @@ import React from 'react'
 
 import { selectActiveFederation } from '@fedi/common/redux'
 
-import AdminHeader from './components/feature/admin/AdminHeader'
+import SettingsHeader from './components/feature/admin/SettingsHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
@@ -41,7 +41,6 @@ import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOff
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
-import Admin from './screens/Admin'
 import BitcoinRequest from './screens/BitcoinRequest'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
@@ -86,6 +85,7 @@ import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
+import Settings from './screens/Settings'
 import SitesBrowser from './screens/SitesBrowser'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupGuidance from './screens/SocialBackupGuidance'
@@ -191,15 +191,15 @@ const MainNavigator = () => {
                                     headerShown: false,
                                 }}
                             />
-                            {/* Admin */}
+                            {/* Settings */}
                             <Stack.Screen
-                                name="Admin"
-                                component={Admin}
+                                name="Settings"
+                                component={Settings}
                                 options={() => ({
                                     header: () => (
                                         <>
                                             <SelectedFederationHeader />
-                                            <AdminHeader />
+                                            <SettingsHeader />
                                         </>
                                     ),
                                 })}
