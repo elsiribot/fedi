@@ -8,6 +8,7 @@ import { useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
 import { Avatar } from '../Avatar'
 import { Button } from '../Button'
+import { FederationAvatar } from '../FederationAvatar'
 import { Redirect } from '../Redirect'
 import { Text } from '../Text'
 import {
@@ -31,12 +32,9 @@ export const FederationWelcome: React.FC = () => {
                 <FederationInfoOuter>
                     <FederationInfoInner>
                         <AvatarWrapper>
-                            <Avatar
-                                id={activeFederation.id}
-                                shape="hexagon"
+                            <FederationAvatar
+                                federation={activeFederation}
                                 size="lg"
-                                holo
-                                name={activeFederation.name}
                             />
                         </AvatarWrapper>
                         <Text variant="h2" weight="medium">
