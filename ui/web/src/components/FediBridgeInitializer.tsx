@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { refreshFederations, selectActiveFederation } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
@@ -19,11 +20,13 @@ interface Props {
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { isReady, pathname } = useRouter()
+    const { pathname } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
+    const tRef = useUpdatingRef(t)
+    const dispatchRef = useUpdatingRef(dispatch)
 
     useEffect(() => {
         const loadingTimeout = setTimeout(() => {
@@ -31,10 +34,18 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         }, 1000)
 
         initializeBridge()
-            .then(() => dispatch(refreshFederations(fedimint)).unwrap())
+            .then(() =>
+                dispatchRef.current(refreshFederations(fedimint)).unwrap(),
+            )
             .then(() => setIsInitialized(true))
             .catch(err =>
-                setError(formatErrorMessage(t, err, 'errors.unknown-error')),
+                setError(
+                    formatErrorMessage(
+                        tRef.current,
+                        err,
+                        'errors.unknown-error',
+                    ),
+                ),
             )
             .finally(() => {
                 setIsShowingLoading(false)
@@ -42,7 +53,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
 
         return () => clearTimeout(loadingTimeout)
-    }, [dispatch, t])
+    }, [dispatchRef, tRef])
 
     if (isInitialized) {
         if (!activeFederation && !pathname.startsWith('/onboarding')) {
