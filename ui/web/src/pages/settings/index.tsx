@@ -123,7 +123,7 @@ function AdminPage() {
     return (
         <ContentBlock>
             <Title>
-                <Text variant="h1">{t('words.admin')}</Text>
+                <Text variant="h1">{t('words.settings')}</Text>
             </Title>
             {member && (
                 <MemberDetails>
