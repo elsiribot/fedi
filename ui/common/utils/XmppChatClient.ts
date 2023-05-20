@@ -362,6 +362,7 @@ export class XmppChatClient {
         recipientPubkey: string,
         message: ChatMessage,
         senderKeys: Keypair,
+        updatePayment: boolean,
     ) {
         try {
             const { jid } = this.getQueryProperties()
@@ -374,36 +375,12 @@ export class XmppChatClient {
                     message: this.formatOutgoingMessage(message),
                     senderKeys,
                     recipientPublicKey: { hex: recipientPubkey },
-                    updatePayment: false,
+                    updatePayment,
                 }),
             )
             await this.xmpp.send(encrypedDirectChatMessageXml)
         } catch (error) {
             console.error('sendDirectMessage', error)
-            throw new Error('errors.unknown-error')
-        }
-    }
-
-    async updatePaymentMessage(
-        message: ChatMessage,
-        recipientPubkey: string,
-        senderKeys: Keypair,
-    ) {
-        try {
-            const { jid } = this.getQueryProperties()
-            const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
-                new EncryptedDirectChatMessage({
-                    from: message.sentBy,
-                    to: message.sentTo,
-                    message: this.formatOutgoingMessage(message),
-                    senderKeys,
-                    recipientPublicKey: { hex: recipientPubkey },
-                    updatePayment: true,
-                }),
-            )
-            await this.xmpp.send(encrypedDirectChatMessageXml)
-        } catch (error) {
-            console.error('updatePaymentMessage', error)
             throw new Error('errors.unknown-error')
         }
     }

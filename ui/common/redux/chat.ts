@@ -721,6 +721,7 @@ export const sendDirectMessage = createAsyncThunk<
         recipientPubkey,
         message,
         encryptionKeys,
+        false,
     )
     return message
 })
@@ -780,9 +781,22 @@ export const updateChatPayment = createAsyncThunk<
             m => m.id === messageId,
         )
         const payment = message?.payment
-        const recipientId = message?.sentTo
-        if (!message || !payment || !recipientId)
+        if (!message || !payment) throw new Error('errors.chat-payment-failed')
+
+        // Get our identity
+        const authenticatedMember = chatState?.authenticatedMember
+        if (!authenticatedMember) {
+            throw new Error('errors.chat-unavailable')
+        }
+
+        // Always send the update to whoever is _not_ us
+        let recipientId = message.sentTo
+        if (recipientId === authenticatedMember.id) {
+            recipientId = message.sentBy
+        }
+        if (!recipientId) {
             throw new Error('errors.chat-payment-failed')
+        }
 
         const client = xmppChatClientManager.getClient(federationId)
 
@@ -839,10 +853,9 @@ export const updateChatPayment = createAsyncThunk<
                     payment.amount,
                     federationId,
                 )
-                paymentUpdates.token = token
-                paymentUpdates.recipient = recipientId
                 // Mark as accepted, not paid, they need to then redeem it
                 paymentUpdates.status = ChatPaymentStatus.accepted
+                paymentUpdates.token = token
                 break
             }
             case 'cancel': {
@@ -868,10 +881,12 @@ export const updateChatPayment = createAsyncThunk<
                 ...paymentUpdates,
             },
         }
-        await client.updatePaymentMessage(
-            updatedMessage,
+        await client.sendDirectMessage(
+            recipientId,
             recipientPubkey,
+            updatedMessage,
             encryptionKeys,
+            true,
         )
 
         return updatedMessage

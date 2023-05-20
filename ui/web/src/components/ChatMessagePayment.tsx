@@ -171,6 +171,19 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
             //         </Button>
             //     </PaymentButtons>
             // )
+            extra = (
+                <PaymentResult>
+                    <HoloLoader size="xs" />
+                    <div>{t('words.pending')}...</div>
+                </PaymentResult>
+            )
+        } else if (isSentToMe) {
+            extra = (
+                <PaymentResult>
+                    <HoloLoader size="xs" />
+                    <div>{t('words.pending')}...</div>
+                </PaymentResult>
+            )
         }
     } else if (payment.status === ChatPaymentStatus.requested) {
         if (isSentToMe) {
