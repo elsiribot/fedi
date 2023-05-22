@@ -33,11 +33,12 @@ export const ChatMessage: React.FC<Props> = ({ message }) => {
 
 const MessageContent = styled('div', {
     width: 'fit-content',
-    maxWidth: 480,
+    maxWidth: '90%',
     padding: 8,
     fontSize: theme.fontSizes.caption,
     fontWeight: theme.fontWeights.medium,
     lineHeight: '20px',
+    wordWrap: 'break-word',
     borderRadius: 12,
 
     variants: {

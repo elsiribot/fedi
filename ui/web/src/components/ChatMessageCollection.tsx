@@ -106,6 +106,8 @@ const MessageTimestamp = styled('div', {
 })
 
 const Messages = styled('div', {
+    flex: 1,
+    minWidth: 0,
     position: 'relative',
     display: 'flex',
     flexDirection: 'column-reverse',
