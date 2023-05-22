@@ -37,12 +37,12 @@ export const globalStyles = globalCss({
         fontSize: theme.fontSizes.body,
         fontFamily: theme.fonts.body,
         color: theme.colors.primary,
-        holoGradient: '100',
-        backgroundAttachment: 'fixed',
     },
     body: {
         lineHeight: 1.5,
         '-webkit-font-smoothing': 'antialiased',
+        holoGradient: '100',
+        backgroundAttachment: 'fixed',
     },
     'img, picture, video, canvas, svg': {
         display: 'block',
