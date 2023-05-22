@@ -1,7 +1,9 @@
+import { keyframes } from '@stitches/react'
 import Link, { LinkProps } from 'next/link'
 import React from 'react'
 
 import { styled, theme } from '../styles'
+import { CircularLoader } from './CircularLoader'
 import { Icon, IconProps } from './Icon'
 
 interface BaseProps {
@@ -32,14 +34,32 @@ export const Button: React.FC<Props> = ({
     children,
     loading,
     disabled,
+    onClick,
     ...props
 }) => {
     const content = (
-        <ButtonContent>
-            {icon && <Icon icon={icon} size="xs" />}
-            <div>{children}</div>
-        </ButtonContent>
+        <>
+            <ButtonContent loading={loading}>
+                {icon && <Icon icon={icon} size="xs" />}
+                <div>{children}</div>
+            </ButtonContent>
+            <ButtonLoader loading={loading}>
+                <CircularLoader key={`${loading}`} size="xs" />
+            </ButtonLoader>
+        </>
     )
+
+    const sharedProps = {
+        variant: variant,
+        size: size,
+        width: width,
+        disabled: disabled || loading,
+        loading: loading,
+        onClick:
+            disabled || loading
+                ? undefined
+                : (onClick as React.MouseEventHandler<HTMLElement>),
+    }
 
     if ('href' in props) {
         if (typeof props.href === 'string' && props.href.startsWith('http')) {
@@ -48,11 +68,9 @@ export const Button: React.FC<Props> = ({
                     as="a"
                     target="_blank"
                     rel="noopener noreferrer"
+                    href={props.href || ''}
                     {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
-                    variant={variant}
-                    size={size}
-                    width={width}
-                    disabled={disabled || loading}>
+                    {...sharedProps}>
                     {content}
                 </ButtonBase>
             )
@@ -60,12 +78,9 @@ export const Button: React.FC<Props> = ({
             return (
                 <ButtonBase
                     as={Link}
-                    {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
                     href={props.href || ''}
-                    variant={variant}
-                    size={size}
-                    width={width}
-                    disabled={disabled || loading}>
+                    {...(props as React.HTMLAttributes<HTMLAnchorElement>)}
+                    {...sharedProps}>
                     {content}
                 </ButtonBase>
             )
@@ -74,10 +89,7 @@ export const Button: React.FC<Props> = ({
         return (
             <ButtonBase
                 {...(props as React.HTMLAttributes<HTMLButtonElement>)}
-                variant={variant}
-                size={size}
-                width={width}
-                disabled={disabled || loading}>
+                {...sharedProps}>
                 {content}
             </ButtonBase>
         )
@@ -85,6 +97,7 @@ export const Button: React.FC<Props> = ({
 }
 
 const ButtonBase = styled('button', {
+    position: 'relative',
     display: 'inline-flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -93,7 +106,8 @@ const ButtonBase = styled('button', {
     border: 'none',
     textDecoration: 'none',
     cursor: 'pointer',
-    transition: 'background-color 100ms ease, filter 100ms ease',
+    transition:
+        'background-color 100ms ease, filter 100ms ease, opacity 100ms ease',
 
     '&:disabled': {
         pointerEvents: 'none',
@@ -175,7 +189,15 @@ const ButtonBase = styled('button', {
                 opacity: 0.5,
             },
         },
+        loading: { true: {} },
     },
+    compoundVariants: [
+        {
+            disabled: true,
+            loading: true,
+            css: { opacity: 1 },
+        },
+    ],
     defaultVariants: {
         variant: 'primary',
         size: 'md',
@@ -186,4 +208,30 @@ const ButtonContent = styled('div', {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
+    transition: 'opacity 100ms ease',
+
+    variants: {
+        loading: {
+            true: {
+                opacity: 0,
+            },
+        },
+    },
+})
+
+const ButtonLoader = styled('div', {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'none',
+    opacity: 0,
+
+    variants: {
+        loading: {
+            true: {
+                opacity: 1,
+            },
+        },
+    },
 })
