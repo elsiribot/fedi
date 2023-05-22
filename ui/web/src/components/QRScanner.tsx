@@ -14,6 +14,7 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { styled, theme } from '../styles'
+import { HoloLoader } from './HoloLoader'
 import { Icon } from './Icon'
 import { Text } from './Text'
 
@@ -31,6 +32,7 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
     const [mediaError, setMediaError] = useState<string>()
     const [_frames, setFrames] = useState<FrameState | null>(null)
     const [progress, setProgress] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
 
     // Maintain a ref to onScan to avoid re-running useEffects
     const onScanRef = useUpdatingRef(onScan)
@@ -68,6 +70,14 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
     const handleScannerSetup = useCallback(async () => {
         if (!videoEl) return
         try {
+            // Listen for when we start playing to hide loader
+            const onPlaying = () => {
+                setIsLoading(false)
+                videoEl.removeEventListener('playing', onPlaying)
+            }
+            videoEl.addEventListener('playing', onPlaying)
+
+            // Start scanner and play in video element
             const QrScanner = (await import('qr-scanner')).default
             const qrScanner = new QrScanner(
                 videoEl,
@@ -99,6 +109,11 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
     return (
         <Container>
             <Video ref={setVideoEl} />
+            {isLoading && (
+                <Loading>
+                    <HoloLoader size="xl" />
+                </Loading>
+            )}
             {multi && !!progress && (
                 <Progress>
                     <ProgressBar style={{ width: `${progress * 100}%` }} />
@@ -130,8 +145,15 @@ const Video = styled('video', {
     width: '100%',
     height: '100%',
     borderRadius: 16,
-    background: theme.colors.extraLightGrey,
+    background: theme.colors.white,
     objectFit: 'cover',
+})
+
+const Loading = styled('div', {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
 })
 
 const Progress = styled('div', {
