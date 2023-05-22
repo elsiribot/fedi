@@ -38,8 +38,8 @@ export const Navigation: React.FC = () => {
             available: isChatSupported,
         },
         {
-            name: 'words.admin' as const,
-            path: '/admin',
+            name: 'words.settings' as const,
+            path: '/settings',
             icon: CogIcon,
             available: true,
         },
