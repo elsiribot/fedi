@@ -9,10 +9,12 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { styled, theme } from '../styles'
+import { Icon } from './Icon'
 import { Text } from './Text'
 
 export type ScanResult = QrScanner.ScanResult
@@ -107,7 +109,8 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
             )}
             {mediaError && (
                 <Error>
-                    <Text variant="small">{mediaError}</Text>
+                    <Icon icon={ErrorIcon} />
+                    <Text variant="caption">{mediaError}</Text>
                 </Error>
             )}
         </Container>
@@ -168,5 +171,10 @@ const Error = styled('div', {
     right: 0,
     bottom: 0,
     padding: 20,
-    color: theme.colors.red,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    color: theme.colors.darkGrey,
 })
