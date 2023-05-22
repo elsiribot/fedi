@@ -1,11 +1,12 @@
 import { create as createQrCode } from 'qrcode'
 import React, { useEffect, useState } from 'react'
 
-import { styled, theme } from '../styles'
+import { keyframes, styled, theme } from '../styles'
 import { renderStyledQrSvg } from '../utils/qrcode'
+import { HoloLoader } from './HoloLoader'
 
 interface Props {
-    data: string | string[]
+    data: string | string[] | null | undefined
 }
 
 export const QRCode: React.FC<Props> = ({ data }) => {
@@ -13,6 +14,7 @@ export const QRCode: React.FC<Props> = ({ data }) => {
     const [activeFrame, setActiveFrame] = useState(0)
 
     useEffect(() => {
+        if (!data) return
         const dataArr = Array.isArray(data) ? data : [data]
         const svgs = dataArr.map(d => renderStyledQrSvg(createQrCode(d)))
         setQrSvgs(svgs)
@@ -30,11 +32,17 @@ export const QRCode: React.FC<Props> = ({ data }) => {
 
     return (
         <Container>
-            {qrSvgs && (
+            {qrSvgs && qrSvgs.length ? (
                 <Inner
                     key={activeFrame}
                     dangerouslySetInnerHTML={{ __html: qrSvgs[activeFrame] }}
                 />
+            ) : (
+                <Inner>
+                    <Loading>
+                        <HoloLoader size="xl" />
+                    </Loading>
+                </Inner>
             )}
         </Container>
     )
@@ -48,10 +56,27 @@ const Container = styled('div', {
     borderRadius: 20,
 })
 
+const fadeIn = keyframes({
+    '0%': { opacity: 0 },
+    '100%': { opacity: 1 },
+})
+
 const Inner = styled('div', {
+    position: 'relative',
     width: '100%',
     aspectRatio: '1 / 1',
     background: theme.colors.white,
     padding: 20,
     borderRadius: 16,
+
+    '> *': {
+        animation: `${fadeIn} 100ms ease`,
+    },
+})
+
+const Loading = styled('div', {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
 })

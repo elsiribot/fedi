@@ -155,7 +155,8 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     }, [lightningInvoice, bitcoinUrl, onOpenChangeRef])
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
-    const copyData = isLightning ? `lightning:${lightningInvoice}` : bitcoinUrl
+    const lightningUrl = lightningInvoice ? `lightning:${lightningInvoice}` : ''
+    const copyData = isLightning ? lightningUrl : bitcoinUrl
     const error =
         amount > maxReceiveAmount
             ? t('feature.receive.maximum-invoice-amount', {
@@ -204,11 +205,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 )}
                 {isRequesting ? (
                     <QRContainer>
-                        {qrData ? (
-                            <QRCode data={qrData} />
-                        ) : (
-                            <Loading>{t('words.pending')}</Loading>
-                        )}
+                        <QRCode data={qrData} />
                         <CopyInput
                             value={copyData || ''}
                             onCopyMessage={t(
