@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
-    Linking,
     Pressable,
     StyleProp,
     StyleSheet,
@@ -10,7 +9,6 @@ import {
     View,
     ViewStyle,
 } from 'react-native'
-import Hyperlink from 'react-native-hyperlink'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
@@ -108,18 +106,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         {payment ? (
                             <PaymentMessage message={message} />
                         ) : (
-                            <Hyperlink
-                                linkStyle={
-                                    sentByMe
-                                        ? styles(theme).outgoingLinkedText
-                                        : styles(theme).incomingLinkedText
-                                }
-                                onPress={url => Linking.openURL(url)}>
-                                <MessageContents
-                                    content={message.content}
-                                    textStyles={textStyles}
-                                />
-                            </Hyperlink>
+                            <MessageContents
+                                sentByMe={sentByMe}
+                                content={message.content}
+                                textStyles={textStyles}
+                            />
                         )}
                     </OptionalGradient>
                 </View>
@@ -173,14 +164,6 @@ const styles = (theme: Theme) =>
         },
         orangeBubble: {
             backgroundColor: theme.colors.orange,
-        },
-        incomingLinkedText: {
-            textDecorationLine: 'underline',
-            color: theme.colors.blue,
-        },
-        outgoingLinkedText: {
-            textDecorationLine: 'underline',
-            color: theme.colors.primary,
         },
         messageText: {
             textAlign: 'left',

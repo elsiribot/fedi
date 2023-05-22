@@ -1,17 +1,27 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
+import {
+    Linking,
+    StyleProp,
+    StyleSheet,
+    TextStyle,
+    View,
+    ViewStyle,
+} from 'react-native'
+import Hyperlink from 'react-native-hyperlink'
 
 import { Group } from '../../../types'
 import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
 
 type MessageContentsProps = {
     content: string
+    sentByMe: boolean
     textStyles: StyleProp<ViewStyle | TextStyle>[]
 }
 
 const MessageContents: React.FC<MessageContentsProps> = ({
     content,
+    sentByMe,
     textStyles,
 }: MessageContentsProps) => {
     const { theme } = useTheme()
@@ -100,9 +110,20 @@ const MessageContents: React.FC<MessageContentsProps> = ({
     } else {
         // otherwise just render text normally
         return (
-            <Text caption style={textStyles} selectable>
-                {content}
-            </Text>
+            <Hyperlink
+                linkStyle={
+                    sentByMe
+                        ? styles(theme).outgoingLinkedText
+                        : styles(theme).incomingLinkedText
+                }
+                onPress={url => {
+                    console.debug('url', url)
+                    Linking.openURL(url)
+                }}>
+                <Text caption medium style={textStyles} selectable>
+                    {content}
+                </Text>
+            </Hyperlink>
         )
     }
 }
@@ -114,6 +135,14 @@ const styles = (theme: Theme) =>
         },
         bottomPaddedText: {
             marginBottom: theme.spacing.sm,
+        },
+        incomingLinkedText: {
+            textDecorationLine: 'underline',
+            color: theme.colors.blue,
+        },
+        outgoingLinkedText: {
+            textDecorationLine: 'underline',
+            color: theme.colors.primary,
         },
     })
 
