@@ -57,6 +57,9 @@ jobs:
             - name: Build dbtool-pkgs
               run: nix build -L .#dbtool-pkgs
 
+            - name: Build fedi-monitoring
+              run: nix build -L .#fedi-monitoring
+
             - name: Test bridge
               run: nix build -L .#testBridge
 

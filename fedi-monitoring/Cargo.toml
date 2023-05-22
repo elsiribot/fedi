@@ -1,0 +1,24 @@
+[package]
+name = "fedi-monitoring"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+bitcoin = "0.29.2"
+
+fedimint-client = { workspace = true}
+fedimint-core = { workspace = true}
+fedimint-ln-client = { workspace = true}
+fedimint-logging = { workspace = true}
+fedimint-mint-client = { workspace = true}
+fedimint-wallet-client = { workspace = true}
+
+lightning-invoice = { version = "0.21.0", features = [ "serde" ] }
+tracing = "0.1"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3.16"
+reqwest = { version = "0.11.18", features = ["json"] }
+serde = { version = "1.0.149", features = [ "derive" ] }
+clap = { version = "4.3.0", features = ["derive", "env"] }
+axum = "0.6.18"
