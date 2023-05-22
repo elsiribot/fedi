@@ -99,12 +99,12 @@ function AdminPage() {
                 {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
-                    href: '/admin/backup',
+                    href: '/settings/backup',
                 },
                 {
                     name: 'feature.recovery.recover-a-wallet',
                     icon: RecoveryIcon,
-                    href: '/admin/recover',
+                    href: '/settings/recover',
                 },
             ],
         },
@@ -114,7 +114,7 @@ function AdminPage() {
                 {
                     name: 'phrases.app-settings-security',
                     icon: FediLogoICon,
-                    href: '/admin/settings',
+                    href: '/settings/app',
                 },
             ],
         },

@@ -27,7 +27,7 @@ function RecoverPage() {
                         { federation: activeFederation?.name },
                     )}
                     action={
-                        <Button href="/admin/recover/personal">
+                        <Button href="/settings/recover/personal">
                             {t('feature.recovery.start-personal-recovery')}
                         </Button>
                     }

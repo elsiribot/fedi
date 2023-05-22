@@ -16,7 +16,7 @@ import { useAppDispatch, useAppSelector } from '../../hooks'
 import i18n from '../../localization/i18n'
 import { styled } from '../../styles'
 
-function AdminSettings() {
+function AppSettings() {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const currency = useAppSelector(selectCurrency)
@@ -96,4 +96,4 @@ const Setting = styled('label', {
     gap: 12,
 })
 
-export default AdminSettings
+export default AppSettings

@@ -23,7 +23,7 @@ function BackupPage() {
                         'feature.backup.personal-backup-instructions',
                     )}
                     action={
-                        <Button href="/admin/backup/personal">
+                        <Button href="/settings/backup/personal">
                             {t('feature.backup.start-personal-backup')}
                         </Button>
                     }
