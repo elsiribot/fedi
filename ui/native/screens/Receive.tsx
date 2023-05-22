@@ -2,7 +2,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard, Pressable, StyleSheet } from 'react-native'
+import {
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StyleSheet,
+} from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { selectMaxReceiveAmount } from '@fedi/common/redux'
@@ -82,21 +88,27 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <Pressable
+        <KeyboardAvoidingView
             style={styles(theme, insets).container}
-            onPress={() => Keyboard.dismiss()}>
-            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
-            <Button
-                fullWidth
-                title={`${t('words.request')}${
-                    amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
-                }${t('words.sats').toUpperCase()}`}
-                onPress={() => setGeneratingInvoice(true)}
-                disabled={!amountIsValid || generatingInvoice}
-                loading={generatingInvoice}
-                containerStyle={styles(theme, insets).button}
-            />
-        </Pressable>
+            enabled={Platform.OS === 'ios'}
+            keyboardVerticalOffset={insets.bottom}
+            behavior={'padding'}>
+            <Pressable
+                style={styles(theme, insets).dismissableArea}
+                onPress={() => Keyboard.dismiss()}>
+                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+                <Button
+                    fullWidth
+                    title={`${t('words.request')}${
+                        amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
+                    }${t('words.sats').toUpperCase()}`}
+                    onPress={() => setGeneratingInvoice(true)}
+                    disabled={!amountIsValid || generatingInvoice}
+                    loading={generatingInvoice}
+                    containerStyle={styles(theme, insets).button}
+                />
+            </Pressable>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -108,12 +120,13 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             justifyContent: 'center',
             paddingHorizontal: theme.spacing.xl,
         },
+        dismissableArea: {
+            flex: 1,
+            width: '100%',
+        },
         button: {
             marginTop: 'auto',
             marginBottom: theme.spacing.xl + insets.bottom,
-        },
-        textInput: {
-            width: '80%',
         },
     })
 

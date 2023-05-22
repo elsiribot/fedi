@@ -3,7 +3,16 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, StyleSheet, View } from 'react-native'
+import {
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     selectActiveFederation,
@@ -24,6 +33,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const SendOfflineAmount: React.FC<Props> = () => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const navigation = useNavigation()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -78,38 +88,50 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     return (
-        <View style={styles(theme).container}>
-            <Text caption>
-                {`${t('words.balance')}: `}
-                {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(activeFederation?.balance!),
-                )} `}
-                {`${t('words.sats').toUpperCase()}`}
-            </Text>
+        <KeyboardAvoidingView
+            style={styles(theme, insets).container}
+            enabled={Platform.OS === 'ios'}
+            keyboardVerticalOffset={insets.bottom * 1.5}
+            behavior={'padding'}>
+            <Pressable
+                style={styles(theme, insets).dismissableArea}
+                onPress={() => Keyboard.dismiss()}>
+                <Text caption>
+                    {`${t('words.balance')}: `}
+                    {`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(activeFederation?.balance!),
+                    )} `}
+                    {`${t('words.sats').toUpperCase()}`}
+                </Text>
 
-            <View>
-                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
-            </View>
-            <View style={styles(theme).offlineContainer}>
-                <SvgImage
-                    name="Offline"
-                    containerStyle={{
-                        marginRight: theme.spacing.md,
-                    }}
+                <View style={styles(theme, insets).amountInputContainer}>
+                    <AmountInput
+                        amount={amount}
+                        onChangeAmount={onChangeAmount}
+                    />
+                </View>
+                <View style={styles(theme, insets).offlineContainer}>
+                    <SvgImage
+                        name="Offline"
+                        containerStyle={{
+                            marginRight: theme.spacing.md,
+                        }}
+                    />
+                    <Text caption>{t('phrases.you-are-offline')}</Text>
+                </View>
+                <Button
+                    fullWidth
+                    title={t('words.next')}
+                    onPress={onNext}
+                    containerStyle={styles(theme, insets).button}
+                    loading={isLoading}
                 />
-                <Text caption>{t('phrases.you-are-offline')}</Text>
-            </View>
-            <Button
-                fullWidth
-                title={t('words.next')}
-                onPress={onNext}
-                loading={isLoading}
-            />
-        </View>
+            </Pressable>
+        </KeyboardAvoidingView>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
@@ -117,7 +139,16 @@ const styles = (theme: Theme) =>
             justifyContent: 'space-between',
             padding: theme.spacing.xl,
         },
+        dismissableArea: {
+            flex: 1,
+            alignItems: 'center',
+            width: '100%',
+        },
+        amountInputContainer: {
+            marginTop: 'auto',
+        },
         offlineContainer: {
+            marginTop: 'auto',
             flexDirection: 'row',
             alignItems: 'center',
         },
@@ -126,8 +157,9 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
             marginRight: theme.spacing.md,
         },
-        textInput: {
-            width: '80%',
+        button: {
+            marginTop: 'auto',
+            marginBottom: theme.spacing.xl + insets.bottom,
         },
     })
 
