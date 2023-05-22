@@ -5,8 +5,9 @@ import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Invoice } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppSelector } from '../hooks'
+import { useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
@@ -28,10 +29,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const { t } = useTranslation()
     const balance = useAppSelector(selectActiveFederation)?.balance
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const toast = useToast()
     const [invoiceValue, setInvoiceValue] = useState('')
     const [invoice, setInvoice] = useState<Invoice>()
     const [wantsDecoding, setWantsDecoding] = useState(false)
-    const [decodeError, setDecodeError] = useState<string>()
     const [isScanning, setIsScanning] = useState(false)
     const [isSendingOffline, setIsSendingOffline] = useState(false)
     const [isCloseDisabled, setIsCloseDisabled] = useState(false)
@@ -46,7 +47,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setInvoice(undefined)
             setInvoiceValue('')
             setWantsDecoding(false)
-            setDecodeError(undefined)
             setIsScanning(false)
             setIsSendingOffline(false)
             setIsCloseDisabled(false)
@@ -60,17 +60,20 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         }
     }, [open])
 
-    const decodeInvoice = useCallback(async (invoiceStr: string) => {
-        try {
-            const normalizedInvoice = invoiceStr.split(':').pop()?.trim()
-            if (!normalizedInvoice) throw new Error('Invalid invoice')
-            const decoded = await fedimint.decodeInvoice(normalizedInvoice)
-            setInvoice(decoded)
-        } catch (err: any) {
-            setDecodeError(err.message || err.toString())
-            setWantsDecoding(false)
-        }
-    }, [])
+    const decodeInvoice = useCallback(
+        async (invoiceStr: string) => {
+            try {
+                const normalizedInvoice = invoiceStr.split(':').pop()?.trim()
+                if (!normalizedInvoice) throw new Error('Invalid invoice')
+                const decoded = await fedimint.decodeInvoice(normalizedInvoice)
+                setInvoice(decoded)
+            } catch (err) {
+                toast.showErrorToast(err, 'errors.unknown-error')
+                setWantsDecoding(false)
+            }
+        },
+        [toast],
+    )
 
     // Decode invoice after half second of not typing
     useEffect(() => {
@@ -86,7 +89,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             const value = ev.currentTarget.value.trim()
             setInvoiceValue(value)
             setWantsDecoding(!!value)
-            setDecodeError(undefined)
         },
         [],
     )
@@ -106,10 +108,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setHasSent(true)
             setTimeout(() => onOpenChange(false), 2500)
         } catch (err: any) {
-            setSendError(err.message || err.toString())
+            setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
         setIsSending(false)
-    }, [invoice, activeFederationId, onOpenChange])
+    }, [invoice, activeFederationId, onOpenChange, t])
 
     if (typeof balance !== 'number') return null
 
@@ -161,7 +163,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         content = (
             <>
                 <QRScanner onScan={handleScan} />
-                {decodeError && <DecodeError>{decodeError}</DecodeError>}
                 <Button onClick={() => setIsScanning(false)}>
                     {t('feature.send.paste-payment-request')}
                 </Button>
@@ -184,7 +185,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     onChange={handleChangeInvoice}
                     disabled={isScanning || wantsDecoding}
                 />
-                {decodeError && <DecodeError>{decodeError}</DecodeError>}
                 <Button onClick={() => setIsScanning(true)}>
                     {t('feature.send.scan-qr-code')}
                 </Button>
@@ -218,11 +218,6 @@ const Container = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
-})
-
-const DecodeError = styled('div', {
-    textAlign: 'center',
-    color: theme.colors.red,
 })
 
 const InvoiceContainer = styled('div', {
