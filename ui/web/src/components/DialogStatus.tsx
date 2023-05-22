@@ -34,12 +34,13 @@ export const DialogStatus: React.FC<DialogStatusProps> = ({
     useEffect(() => {
         if (status !== 'loading') return
         let isRotating = true
-        let startTime = 0
+        let prevTime = 0
         const rotate = (time: number) => {
             if (!isRotating) return
-            if (!startTime) startTime = time
-            setBackgroundRotation(deg => deg + (time - startTime) * 0.0002)
+            if (!prevTime) prevTime = time
+            setBackgroundRotation(deg => deg + (time - prevTime) * 0.1)
             requestAnimationFrame(rotate)
+            prevTime = time
         }
         requestAnimationFrame(rotate)
         return () => {
