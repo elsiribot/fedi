@@ -226,7 +226,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: theme.spacing.xl,
+            paddingTop: theme.spacing.xl,
             paddingBottom: theme.spacing.xl + insets.bottom,
             width: '100%',
         },
@@ -234,6 +234,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             width: '100%',
             flexDirection: 'row',
             justifyContent: 'space-between',
+            paddingHorizontal: theme.spacing.md,
         },
         buttonContainer: {
             margin: theme.spacing.sm,
