@@ -65,7 +65,7 @@ const KeyboardAwareWrapper: React.FC<KeyboardAwareWrapperProps> = ({
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (_theme: Theme, _insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
