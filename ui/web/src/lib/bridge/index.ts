@@ -32,8 +32,15 @@ async function fedimintRpc<Type = void>(
 
 export const fedimint = new FedimintBridge(fedimintRpc)
 
-export function initializeBridge() {
-    return new Promise<void>((resolve, reject) => {
+let initializePromise: Promise<void> | undefined
+export async function initializeBridge() {
+    // Only initialize once at a time.
+    if (initializePromise) {
+        await initializePromise
+        return
+    }
+
+    initializePromise = new Promise<void>((resolve, reject) => {
         worker = new Worker(new URL('./wasm.worker.ts', import.meta.url))
         worker.onmessage = e => {
             if (e.data.error) {
@@ -59,6 +66,11 @@ export function initializeBridge() {
                 cb(e.data.result)
             }
         }
+    })
+
+    // After initiailizing, clear promise so subsequent calls re-initialize.
+    return initializePromise.finally(() => {
+        initializePromise = undefined
     })
 }
 
