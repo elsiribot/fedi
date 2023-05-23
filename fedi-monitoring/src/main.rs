@@ -5,12 +5,13 @@ use std::{
     path::PathBuf,
     str::FromStr,
     sync::Arc,
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 
 use anyhow::{anyhow, bail, Context};
 use axum::{http::StatusCode, routing::get, Json, Router};
 use bitcoin::secp256k1;
+use chrono::{DateTime, Utc};
 use clap::{arg, Parser, Subcommand};
 use fedimint_client::{
     module::IPrimaryClientModule, secret::PlainRootSecretStrategy, sm::OperationId,
@@ -31,12 +32,15 @@ use fedimint_wallet_client::WalletClientGen;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use serde::Serialize;
+use serde_with::{serde_as, DurationMilliSeconds};
 use tracing::{debug, info, log::warn};
 
 const AMOUNT_TO_REMINT: Amount = Amount::from_msats(1024);
 const AMOUNT_TO_PAY: Amount = Amount::from_msats(1000);
-/// How many results will be considered on response
+/// How many results will be returned on response
 const LATEST_CHECKS_COUNT: usize = 12;
+/// How many results will be required to be successful for the status to be `Ok`
+const LATEST_CHECKS_REQUIRED_SUCCESS: usize = 2;
 /// Should be greater than `LATEST_CHECKS_COUNT`
 const MAX_CHECKS_TO_KEEP_ON_STATE: usize = 120;
 
@@ -73,19 +77,25 @@ enum CliCommand {
     },
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 enum CheckResult {
-    Success { duration: Duration },
-    Failure { error: String },
+    Success {
+        #[serde_as(as = "DurationMilliSeconds")]
+        duration_ms: Duration,
+    },
+    Failure {
+        error: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
 struct Check {
     result: CheckResult,
-    time: SystemTime,
+    time: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, Default)]
 struct CheckState {
     checks: VecDeque<Check>,
 }
@@ -122,15 +132,7 @@ async fn check_mutinynet(
             let summary = get_note_summary(&client).await?;
             if summary.total_amount() <= AMOUNT_TO_REMINT {
                 info!("Not enough funds, getting more");
-                cmd!(FedimintCli, "fetch").out_string().await?;
-                let msats_to_get = AMOUNT_TO_REMINT.msats;
-                let notes = cmd!(FedimintCli, "spend", "{msats_to_get}")
-                    .out_json()
-                    .await?["note"]
-                    .as_str()
-                    .map(parse_ecash)
-                    .transpose()?
-                    .ok_or_else(|| anyhow!("no note returned"))?;
+                let notes = try_get_notes().await?;
                 info!("Reissuing notes");
                 reissue_notes(&client, notes).await?;
             }
@@ -151,7 +153,7 @@ async fn check_mutinynet(
             .await
             {
                 Ok(Ok(invoice)) => invoice,
-                Ok(Err(e)) => bail!("Failed to create invoice: {e}"),
+                Ok(Err(e)) => bail!("Failed to create invoice: {e:?}"),
                 Err(_) => bail!("Timed out while creating invoice"),
             };
             debug!("Invoice: {:?}", invoice);
@@ -159,7 +161,7 @@ async fn check_mutinynet(
             let now = fedimint_core::time::now();
             match timeout(PAY_INVOICE_TIMEOUT, gateway_pay_invoice(&client, invoice)).await {
                 Ok(Ok(())) => info!("Invoice paid"),
-                Ok(Err(e)) => bail!("Failed to pay invoice: {e}"),
+                Ok(Err(e)) => bail!("Failed to pay invoice: {e:?}"),
                 Err(_) => bail!("Timed out while paying invoice"),
             };
             let elapsed = now.elapsed()?;
@@ -167,9 +169,11 @@ async fn check_mutinynet(
         }
         .await;
         let result = match execution_result {
-            Ok(elapsed) => CheckResult::Success { duration: elapsed },
+            Ok(elapsed) => CheckResult::Success {
+                duration_ms: elapsed,
+            },
             Err(e) => {
-                warn!("Mutinynet check failed: {e}");
+                warn!("Mutinynet check failed: {e:?}");
                 CheckResult::Failure {
                     error: e.to_string(),
                 }
@@ -179,13 +183,41 @@ async fn check_mutinynet(
             let mut state = state.write().await;
             state.checks.push_front(Check {
                 result,
-                time: SystemTime::now(),
+                time: fedimint_core::time::now().into(),
             });
             state.checks.truncate(MAX_CHECKS_TO_KEEP_ON_STATE);
         }
         info!("Sleeping for {interval_time:?}");
         tokio::time::sleep(interval_time).await;
     }
+}
+
+async fn get_notes() -> anyhow::Result<TieredMulti<SpendableNote>> {
+    // TODO: use the new client when it's ready.
+    // For instance, when https://github.com/fedimint/fedimint/issues/2567 is solved
+    cmd!(FedimintCli, "fetch").out_string().await?;
+    let msats_to_get = AMOUNT_TO_REMINT.msats;
+    let notes = cmd!(FedimintCli, "spend", "{msats_to_get}")
+        .out_json()
+        .await?["note"]
+        .as_str()
+        .map(parse_ecash)
+        .transpose()?
+        .ok_or_else(|| anyhow!("no note returned"))?;
+    Ok(notes)
+}
+
+async fn try_get_notes() -> anyhow::Result<TieredMulti<SpendableNote>> {
+    for _ in 0..9 {
+        match get_notes().await {
+            Ok(notes) => return Ok(notes),
+            Err(e) => {
+                debug!("Failed to get notes: {e:?}, sleeping a bit");
+                fedimint_core::task::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
+    get_notes().await
 }
 
 #[tokio::main]
@@ -232,22 +264,26 @@ async fn get_mutininynet_status(
         .into_iter()
         .take(LATEST_CHECKS_COUNT)
         .collect::<Vec<_>>();
+
     let status = if latest_checks.is_empty() {
         Status::Empty
-    } else if latest_checks
-        .iter()
-        .all(|check| matches!(check.result, CheckResult::Success { .. }))
-    {
-        let has_recent_checks = latest_checks
-            .iter()
-            .any(|check| check.time.elapsed().unwrap() <= CHECK_INTERVAL_TIME * 2);
-        if has_recent_checks {
-            Status::Ok
-        } else {
-            Status::StaleChecks
-        }
     } else {
-        Status::CheckError
+        let has_required_successes = latest_checks
+            .iter()
+            .take(LATEST_CHECKS_REQUIRED_SUCCESS)
+            .all(|check| matches!(check.result, CheckResult::Success { .. }));
+        if has_required_successes {
+            let has_recent_checks = latest_checks.iter().any(|check| {
+                (Utc::now() - check.time).to_std().unwrap() <= CHECK_INTERVAL_TIME * 2
+            });
+            if has_recent_checks {
+                Status::Ok
+            } else {
+                Status::StaleChecks
+            }
+        } else {
+            Status::CheckError
+        }
     };
     let check_response = CheckResponse {
         latest_checks,
@@ -350,7 +386,7 @@ async fn reissue_notes(client: &Client, notes: TieredMulti<SpendableNote>) -> an
         .into_stream();
     while let Some(update) = updates.next().await {
         if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
-            return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
+            return Err(anyhow::Error::msg(format!("Reissue failed: {e:?}")));
         }
     }
     Ok(())
