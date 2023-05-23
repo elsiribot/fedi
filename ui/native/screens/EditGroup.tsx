@@ -2,8 +2,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import stringUtils from '@fedi/common/utils/StringUtils'
+
+import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
@@ -57,32 +62,34 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [currentGroup, previousGroup, navigation])
 
     return (
-        <View style={styles(theme).container}>
-            <SvgImage name="NewRoom" size={SvgImageSize.lg} />
-            <View style={styles(theme).inputWrapper}>
-                <Text caption style={styles(theme).inputLabel}>
-                    {t('feature.chat.group-name')}
-                </Text>
-                <Input
-                    onChangeText={setGroupName}
-                    value={groupName}
-                    placeholder={`${t('feature.chat.group-name')}`}
-                    returnKeyType="done"
-                    containerStyle={styles(theme).textInputOuter}
-                    inputContainerStyle={styles(theme).textInputInner}
-                    autoCapitalize={'none'}
-                    autoCorrect={false}
+        <KeyboardAwareWrapper>
+            <View style={styles(theme).container}>
+                <HoloAvatar title={groupName[0]} size={AvatarSize.md} />
+                <View style={styles(theme).inputWrapper}>
+                    <Text caption style={styles(theme).inputLabel}>
+                        {t('feature.chat.group-name')}
+                    </Text>
+                    <Input
+                        onChangeText={setGroupName}
+                        value={groupName}
+                        placeholder={`${t('feature.chat.group-name')}`}
+                        returnKeyType="done"
+                        containerStyle={styles(theme).textInputOuter}
+                        inputContainerStyle={styles(theme).textInputInner}
+                        autoCapitalize={'none'}
+                        autoCorrect={false}
+                    />
+                </View>
+                <Button
+                    fullWidth
+                    title={t('phrases.save-changes')}
+                    onPress={handleSubmit}
+                    loading={editingGroupName}
+                    disabled={!groupName || editingGroupName}
+                    containerStyle={styles(theme).button}
                 />
             </View>
-            <Button
-                fullWidth
-                title={t('phrases.save-changes')}
-                onPress={handleSubmit}
-                loading={editingGroupName}
-                disabled={!groupName || editingGroupName}
-                containerStyle={styles(theme).button}
-            />
-        </View>
+        </KeyboardAwareWrapper>
     )
 }
 
@@ -93,6 +100,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
+            width: '100%',
         },
         button: {
             marginTop: 'auto',
