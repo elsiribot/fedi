@@ -76,16 +76,17 @@ export const makeMessageGroups = <
         ) {
             // TODO: Consolidate to a single format for sentBy
             let isSameSender = false
-            if (lastMessage) {
-                if (lastMessage.sentBy === message.sentBy) {
-                    isSameSender = true
-                } else if (
-                    (lastMessage.sentBy as { username: string })?.username ===
+            if (lastMessage.sentBy === message.sentBy) {
+                console.log(`lastMessage.sentBy === message.sentBy`)
+                isSameSender = true
+            } else if (
+                (lastMessage.sentBy as { username: string })?.username &&
+                (lastMessage.sentBy as { username: string })?.username ===
                     (message.sentBy as { username: string }).username
-                ) {
-                    isSameSender = true
-                }
+            ) {
+                isSameSender = true
             }
+            console.log({ lastMessage, message, isSameSender })
 
             if (isSameSender) {
                 // Add the message to the current group of the last sender group
