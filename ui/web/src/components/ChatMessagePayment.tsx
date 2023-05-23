@@ -21,6 +21,7 @@ import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
+import { CircularLoader } from './CircularLoader'
 import { HoloLoader } from './HoloLoader'
 import { Icon } from './Icon'
 
@@ -154,7 +155,7 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
             } else {
                 extra = (
                     <PaymentResult>
-                        <HoloLoader size="xs" />
+                        <CircularLoader size="xs" />
                         <div>{t('words.pending')}...</div>
                     </PaymentResult>
                 )
@@ -174,14 +175,14 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
             // )
             extra = (
                 <PaymentResult>
-                    <HoloLoader size="xs" />
+                    <CircularLoader size="xs" />
                     <div>{t('words.pending')}...</div>
                 </PaymentResult>
             )
         } else if (isSentToMe) {
             extra = (
                 <PaymentResult>
-                    <HoloLoader size="xs" />
+                    <CircularLoader size="xs" />
                     <div>{t('words.pending')}...</div>
                 </PaymentResult>
             )
