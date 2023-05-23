@@ -11,12 +11,14 @@ import {
     ViewStyle,
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
+import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
+import { OptionalGradient } from '../../ui/OptionalGradient'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
@@ -39,6 +41,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     const sentByMe = sentBy?.username === authenticatedMember?.username
 
+    let bubbleGradient: LinearGradientProps | undefined
     let bubbleStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).bubbleContainer,
     ]
@@ -58,6 +61,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
     } else if (sentByMe) {
         if (last) {
             bubbleStyles.push(styles(theme).lastSentMessage)
+        }
+        bubbleGradient = {
+            colors: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0)'],
+            start: { x: 0, y: 0 },
+            end: { x: 0, y: 1 },
         }
         bubbleStyles.push(styles(theme).blueBubble)
         textStyles.push(styles(theme).sentMessageText)
@@ -82,7 +90,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 }}
                 style={styles(theme).messageContainer}>
                 <View style={styles(theme).contentContainer}>
-                    <View style={bubbleStyles}>
+                    <OptionalGradient
+                        gradient={bubbleGradient}
+                        style={bubbleStyles}>
                         {payment ? (
                             <PaymentMessage message={message} />
                         ) : (
@@ -99,7 +109,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                                 />
                             </Hyperlink>
                         )}
-                    </View>
+                    </OptionalGradient>
                 </View>
             </Pressable>
         </View>
@@ -108,7 +118,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {},
+        container: {
+            marginTop: theme.spacing.xxs,
+        },
         avatarContainer: {
             flexDirection: 'row',
             alignItems: 'flex-end',
@@ -116,8 +128,8 @@ const styles = (theme: Theme) =>
         },
         bubbleContainer: {
             marginTop: theme.spacing.xxs,
-            padding: theme.spacing.sm,
-            borderRadius: 12,
+            padding: 10,
+            borderRadius: 16,
             maxWidth: theme.sizes.maxMessageWidth,
         },
         contentContainer: {
@@ -142,7 +154,7 @@ const styles = (theme: Theme) =>
             borderBottomRightRadius: 2,
         },
         greyBubble: {
-            backgroundColor: theme.colors.lightGrey,
+            backgroundColor: theme.colors.extraLightGrey,
         },
         blueBubble: {
             backgroundColor: theme.colors.blue,
@@ -160,6 +172,7 @@ const styles = (theme: Theme) =>
         },
         messageText: {
             textAlign: 'left',
+            lineHeight: 20,
         },
         receivedMessageText: {
             color: theme.colors.primary,

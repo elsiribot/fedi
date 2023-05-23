@@ -74,7 +74,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             <View style={style.timeGroupContainer}>
                 {sentAt && (
                     <View style={style.timestampContainer}>
-                        <Text tiny>
+                        <Text tiny style={style.timestampText}>
                             {dateUtils.formatMessageItemTimestamp(sentAt)}
                         </Text>
                     </View>
@@ -115,11 +115,15 @@ const styles = (theme: Theme) =>
         },
         timeGroupContainer: {
             marginBottom: theme.spacing.md,
+            color: theme.colors.darkGrey,
         },
         timestampContainer: {
             alignItems: 'center',
             width: '100%',
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
+        },
+        timestampText: {
+            color: theme.colors.darkGrey,
         },
         senderGroup: {
             marginBottom: theme.spacing.md,
@@ -127,7 +131,7 @@ const styles = (theme: Theme) =>
         senderAvatar: {
             flexDirection: 'row',
             alignItems: 'flex-end',
-            marginRight: theme.spacing.xs,
+            marginRight: theme.spacing.sm,
         },
         senderGroupContent: {
             flexDirection: 'row',

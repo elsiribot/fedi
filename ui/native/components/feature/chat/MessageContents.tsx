@@ -80,7 +80,6 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             <Text
                                 key={`mi-t-${i}`}
                                 caption
-                                medium
                                 selectable
                                 style={[
                                     ...textStyles,
@@ -101,7 +100,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
     } else {
         // otherwise just render text normally
         return (
-            <Text caption medium style={textStyles} selectable>
+            <Text caption style={textStyles} selectable>
                 {content}
             </Text>
         )
