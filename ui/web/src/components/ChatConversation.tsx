@@ -43,6 +43,7 @@ export const ChatConversation: React.FC<Props> = ({
             if (ev) {
                 ev.preventDefault()
             }
+            if (!value) return
             setIsSending(true)
             try {
                 await onSendMessage(value)
