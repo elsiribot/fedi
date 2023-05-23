@@ -1,4 +1,3 @@
-import orderBy from 'lodash/orderBy'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
@@ -6,6 +5,7 @@ import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { ChatMessage as ChatMessageType, ChatType } from '@fedi/common/types'
+import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import { useToast, useAutosizeTextArea } from '../hooks'
 import { styled, theme } from '../styles'
@@ -71,33 +71,10 @@ export const ChatConversation: React.FC<Props> = ({
         [handleSend],
     )
 
-    // Sort messages in descending order, and group nearby messages together
-    const messageCollections = useMemo(() => {
-        const messageGroups: ChatMessageType[][][] = []
-        let currentTimeGroup: ChatMessageType[][] = []
-        let lastMessage: ChatMessageType | null = null
-
-        const sortedMessages = orderBy(messages, 'sentAt', 'desc')
-        for (const message of sortedMessages) {
-            if (lastMessage && lastMessage.sentAt - message.sentAt <= 600) {
-                if (lastMessage && lastMessage.sentBy === message.sentBy) {
-                    // Add the message to the current group of the last sender group
-                    currentTimeGroup[currentTimeGroup.length - 1].push(message)
-                } else {
-                    // Create a new sender group within the current time group
-                    currentTimeGroup.push([message])
-                }
-            } else {
-                // Start a new time group with the current message
-                currentTimeGroup = [[message]]
-                messageGroups.push(currentTimeGroup)
-            }
-
-            lastMessage = message
-        }
-
-        return messageGroups
-    }, [messages])
+    const messageCollections = useMemo(
+        () => makeMessageGroups(messages, 'desc'),
+        [messages],
+    )
 
     return (
         <Container>
