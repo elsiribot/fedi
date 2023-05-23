@@ -60,6 +60,7 @@
               "fedi-social-client"
               "fedi-social-common"
               "fedi-social-server"
+              "fedi-monitoring"
               # bridge test script
               "scripts"
               "misc"
@@ -115,6 +116,13 @@
             cargoLock = ./Cargo.wasm32.lock;
             pkgs = {
               fedi-wasm = { };
+            };
+          };
+
+          fedi-monitoring = craneLibBuildNative.pkgsBuild {
+            name = "fedi-monitoring";
+            pkgs = {
+              fedi-monitoring = { };
             };
           };
 
