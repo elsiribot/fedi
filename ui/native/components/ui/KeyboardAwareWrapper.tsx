@@ -25,6 +25,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 type KeyboardAwareWrapperProps = {
     children: React.ReactNode
     dismissableArea?: boolean
+    additionalVerticalOffset?: number
     containerStyle?: ViewStyle
     dismissableAreaStyle?: ViewStyle
 }
@@ -32,6 +33,7 @@ type KeyboardAwareWrapperProps = {
 const KeyboardAwareWrapper: React.FC<KeyboardAwareWrapperProps> = ({
     children,
     dismissableArea = true,
+    additionalVerticalOffset = 0,
     containerStyle = {},
     dismissableAreaStyle = {},
 }: KeyboardAwareWrapperProps) => {
@@ -51,7 +53,7 @@ const KeyboardAwareWrapper: React.FC<KeyboardAwareWrapperProps> = ({
         <KeyboardAvoidingView
             style={mergedContainerStyles}
             enabled={Platform.OS === 'ios'}
-            keyboardVerticalOffset={insets.bottom * 2}
+            keyboardVerticalOffset={insets.bottom + additionalVerticalOffset}
             behavior={'padding'}>
             <Pressable
                 disabled={dismissableArea === false}

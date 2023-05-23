@@ -3,15 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { Alert, Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
@@ -21,6 +13,7 @@ import {
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
@@ -57,6 +50,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
         }
     }
 
+    const continueSend = () => {
+        Keyboard.dismiss()
+        onGenerateEcash()
+    }
+
     const onNext = () => {
         Alert.alert(
             t('phrases.please-confirm'),
@@ -67,7 +65,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 },
                 {
                     text: t('words.continue'),
-                    onPress: onGenerateEcash,
+                    onPress: continueSend,
                 },
             ],
         )
@@ -88,14 +86,8 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     return (
-        <KeyboardAvoidingView
-            style={styles(theme, insets).container}
-            enabled={Platform.OS === 'ios'}
-            keyboardVerticalOffset={insets.bottom * 1.5}
-            behavior={'padding'}>
-            <Pressable
-                style={styles(theme, insets).dismissableArea}
-                onPress={() => Keyboard.dismiss()}>
+        <KeyboardAwareWrapper>
+            <View style={styles(theme, insets).container}>
                 <Text caption>
                     {`${t('words.balance')}: `}
                     {`${amountUtils.formatNumber(
@@ -126,8 +118,8 @@ const SendOfflineAmount: React.FC<Props> = () => {
                     containerStyle={styles(theme, insets).button}
                     loading={isLoading}
                 />
-            </Pressable>
-        </KeyboardAvoidingView>
+            </View>
+        </KeyboardAwareWrapper>
     )
 }
 
@@ -137,11 +129,9 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: theme.spacing.xl,
-        },
-        dismissableArea: {
-            flex: 1,
-            alignItems: 'center',
+            paddingTop: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl + insets.bottom,
             width: '100%',
         },
         amountInputContainer: {
@@ -159,7 +149,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         button: {
             marginTop: 'auto',
-            marginBottom: theme.spacing.xl + insets.bottom,
         },
     })
 

@@ -2,14 +2,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -21,6 +18,7 @@ import type { RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'EditGroup'>
 
 const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { group } = route.params
@@ -63,10 +61,10 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <KeyboardAwareWrapper>
-            <View style={styles(theme).container}>
+            <View style={styles(theme, insets).container}>
                 <HoloAvatar title={groupName[0]} size={AvatarSize.md} />
-                <View style={styles(theme).inputWrapper}>
-                    <Text caption style={styles(theme).inputLabel}>
+                <View style={styles(theme, insets).inputWrapper}>
+                    <Text caption style={styles(theme, insets).inputLabel}>
                         {t('feature.chat.group-name')}
                     </Text>
                     <Input
@@ -74,8 +72,10 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                         value={groupName}
                         placeholder={`${t('feature.chat.group-name')}`}
                         returnKeyType="done"
-                        containerStyle={styles(theme).textInputOuter}
-                        inputContainerStyle={styles(theme).textInputInner}
+                        containerStyle={styles(theme, insets).textInputOuter}
+                        inputContainerStyle={
+                            styles(theme, insets).textInputInner
+                        }
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
@@ -86,20 +86,21 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress={handleSubmit}
                     loading={editingGroupName}
                     disabled={!groupName || editingGroupName}
-                    containerStyle={styles(theme).button}
+                    containerStyle={styles(theme, insets).button}
                 />
             </View>
         </KeyboardAwareWrapper>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl + insets.bottom,
             width: '100%',
         },
         button: {

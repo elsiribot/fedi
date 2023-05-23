@@ -2,14 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import uuid from 'react-native-uuid'
 
@@ -22,6 +15,7 @@ import { Keypair, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import {
     addToMembersSeen,
     addToMessages,
@@ -163,14 +157,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <KeyboardAvoidingView
-            style={styles(theme, insets).container}
-            enabled={Platform.OS === 'ios'}
-            keyboardVerticalOffset={insets.bottom * 1.5}
-            behavior={'padding'}>
-            <Pressable
-                style={styles(theme, insets).dismissableArea}
-                onPress={() => Keyboard.dismiss()}>
+        <KeyboardAwareWrapper additionalVerticalOffset={theme.spacing.md}>
+            <View style={styles(theme, insets).container}>
                 <Text caption>
                     {`${t('words.balance')}: `}
                     {`${amountUtils.formatNumber(
@@ -227,8 +215,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                         </>
                     )}
                 </View>
-            </Pressable>
-        </KeyboardAvoidingView>
+            </View>
+        </KeyboardAwareWrapper>
     )
 }
 
@@ -239,18 +227,13 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: theme.spacing.xl,
-        },
-        dismissableArea: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            paddingBottom: theme.spacing.xl + insets.bottom,
             width: '100%',
         },
         buttonsGroupContainer: {
             width: '100%',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginBottom: theme.spacing.xl + insets.bottom,
         },
         buttonContainer: {
             margin: theme.spacing.sm,
