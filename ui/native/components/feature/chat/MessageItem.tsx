@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
     Linking,
@@ -13,30 +13,29 @@ import {
 import Hyperlink from 'react-native-hyperlink'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
-import dateUtils from '@fedi/common/utils/DateUtils'
-import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
-import Avatar from '../../ui/Avatar'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
     message: Message
     multiUserChat?: boolean
+    last?: boolean
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
     multiUserChat = false,
+    last = false,
 }: MessageItemProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
-    const { sentBy, sentAt, payment } = message
+    const { sentBy, payment } = message
 
     const sentByMe = sentBy?.username === authenticatedMember?.username
 
@@ -57,26 +56,21 @@ const MessageItem: React.FC<MessageItemProps> = ({
     if (payment) {
         bubbleStyles.push(styles(theme).orangeBubble)
     } else if (sentByMe) {
-        bubbleStyles.push(styles(theme).sentMessage)
+        if (last) {
+            bubbleStyles.push(styles(theme).lastSentMessage)
+        }
         bubbleStyles.push(styles(theme).blueBubble)
         textStyles.push(styles(theme).sentMessageText)
     } else {
-        bubbleStyles.push(styles(theme).receivedMessage)
+        if (last) {
+            bubbleStyles.push(styles(theme).lastReceivedMessage)
+        }
         bubbleStyles.push(styles(theme).greyBubble)
         textStyles.push(styles(theme).receivedMessageText)
     }
 
-    const shouldShowTimestamp = sentAt !== undefined
-
     return (
         <View style={styles(theme).container}>
-            {shouldShowTimestamp && (
-                <View style={styles(theme).timestampContainer}>
-                    <Text tiny>
-                        {dateUtils.formatChatTileTimestamp(sentAt!)}
-                    </Text>
-                </View>
-            )}
             <Pressable
                 // link to direct chat but only for incoming messages
                 // in group chats
@@ -87,24 +81,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     }
                 }}
                 style={styles(theme).messageContainer}>
-                {!sentByMe && multiUserChat && (
-                    <View style={styles(theme).avatarContainer}>
-                        <Avatar
-                            id={jidToId(sentBy?.jid || '')}
-                            name={sentBy?.username || ''}
-                        />
-                    </View>
-                )}
-
                 <View style={styles(theme).contentContainer}>
-                    {!sentByMe && multiUserChat && (
-                        <View style={styles(theme).senderTextContainer}>
-                            <Text tiny style={styles(theme).senderText}>
-                                {sentBy?.username}
-                            </Text>
-                        </View>
-                    )}
-
                     <View style={bubbleStyles}>
                         {payment ? (
                             <PaymentMessage message={message} />
@@ -131,9 +108,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            marginBottom: theme.spacing.md,
-        },
+        container: {},
         avatarContainer: {
             flexDirection: 'row',
             alignItems: 'flex-end',
@@ -154,23 +129,16 @@ const styles = (theme: Theme) =>
         messageContainer: {
             flexDirection: 'row',
         },
-        senderTextContainer: {},
-        senderText: {},
-        timestampContainer: {
-            alignItems: 'center',
-            width: '100%',
-            marginBottom: theme.spacing.md,
-        },
         leftAlignedMessage: {
             marginRight: 'auto',
         },
         rightAlignedMessage: {
             marginLeft: 'auto',
         },
-        receivedMessage: {
+        lastReceivedMessage: {
             borderBottomLeftRadius: 2,
         },
-        sentMessage: {
+        lastSentMessage: {
             borderBottomRightRadius: 2,
         },
         greyBubble: {

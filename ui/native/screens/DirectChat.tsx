@@ -1,12 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import { orderBy } from 'lodash'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
 import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
+import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
@@ -52,18 +52,6 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }, [currentMember, getPublicKeyFor, navigation, state.membersSeen])
 
-    const messagesWithMember = state.messages.filter(m => {
-        if (
-            (m.sentBy?.username === member.username ||
-                m.sentTo?.username === member.username) &&
-            // filter out groupchat messages
-            !m.sentIn
-        ) {
-            return true
-        }
-    })
-    const sortedMessages = [...orderBy(messagesWithMember, 'sentAt', 'asc')]
-
     const sendMessage = (messageText: string) => {
         try {
             // Make sure we have the member's pubkey before trying to send
@@ -89,9 +77,26 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }
 
+    const groupedMessages = useMemo(() => {
+        // Filter to messages with this member
+        const messagesWithMember = state.messages.filter(m => {
+            if (
+                (m.sentBy?.username === member.username ||
+                    m.sentTo?.username === member.username) &&
+                // filter out groupchat messages
+                !m.sentIn
+            ) {
+                return true
+            }
+        })
+
+        // Group by timestamp / sender
+        return makeMessageGroups(messagesWithMember, 'asc')
+    }, [state.messages, member.username])
+
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={sortedMessages} />
+            <MessagesList messages={groupedMessages} />
             <MessageInput onMessageSubmitted={sendMessage} />
         </View>
     )
