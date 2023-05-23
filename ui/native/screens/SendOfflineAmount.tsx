@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -34,6 +34,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
+    const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
     const { toast } = useEnvironmentContext().state
     const { generateEcash } = useBridge()
 
@@ -85,6 +86,16 @@ const SendOfflineAmount: React.FC<Props> = () => {
         setAmount(updatedValue)
     }
 
+    useEffect(() => {
+        if (amount === 0) {
+            setAmountIsValid(false)
+        } else if (maxReceiveAmount && amount > maxReceiveAmount) {
+            setAmountIsValid(false)
+        } else {
+            setAmountIsValid(true)
+        }
+    }, [amount, maxReceiveAmount])
+
     return (
         <KeyboardAwareWrapper>
             <View style={styles(theme, insets).container}>
@@ -114,6 +125,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 <Button
                     fullWidth
                     title={t('words.next')}
+                    disabled={!amountIsValid || isLoading}
                     onPress={onNext}
                     containerStyle={styles(theme, insets).button}
                     loading={isLoading}
