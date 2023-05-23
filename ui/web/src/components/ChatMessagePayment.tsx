@@ -73,6 +73,7 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
     // Attempt to redeem payment right away
     useEffect(() => {
         if (
+            !isChatOnline ||
             didReceiveFail ||
             !isPaymentToMe ||
             paymentStatus !== ChatPaymentStatus.accepted

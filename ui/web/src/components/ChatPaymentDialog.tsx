@@ -64,7 +64,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                             token,
                         },
                     }),
-                )
+                ).unwrap()
                 onOpenChangeRef.current(false)
             } catch (err) {
                 toast.showErrorToast(err, 'errors.chat-unavailable')
