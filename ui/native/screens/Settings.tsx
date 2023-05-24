@@ -21,7 +21,7 @@ import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
-import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
+import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import SvgImage from '../components/ui/SvgImage'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
@@ -204,7 +204,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         )}
                     </View>
                     <View style={styles(theme).avatarContainer}>
-                        <HoloAvatar
+                        <Avatar
+                            id={authenticatedMember?.id || ''}
                             size={AvatarSize.lg}
                             title={stringUtils.getInitialsFromName(
                                 authenticatedMember?.username || '',

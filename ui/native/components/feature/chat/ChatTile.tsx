@@ -8,8 +8,8 @@ import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
-import HoloAvatar from '../../ui/HoloAvatar'
-import { AvatarSize } from '../../ui/HoloAvatar'
+import Avatar from '../../ui/Avatar'
+import { AvatarSize } from '../../ui/Avatar'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 import GroupIcon from './GroupIcon'
 
@@ -36,7 +36,8 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     {chat.type === ChatType.direct ? (
                         <View style={styles(theme).directIconContainer}>
                             {chat.members && chat.members[0]?.username ? (
-                                <HoloAvatar
+                                <Avatar
+                                    id={chat.members[0].jid.toString()}
                                     title={stringUtils.getInitialsFromName(
                                         chat.members[0].username,
                                     )}
@@ -50,13 +51,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                             )}
                         </View>
                     ) : (
-                        <GroupIcon
-                            iconName={
-                                chat.icon
-                                    ? (chat.icon as SvgImageName)
-                                    : 'SocialPeople'
-                            }
-                        />
+                        <GroupIcon chat={chat} />
                     )}
                 </View>
             </View>

@@ -5,8 +5,10 @@ import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
+import Avatar, { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
+import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
 
@@ -16,7 +18,7 @@ const GroupHeader: React.FC<{}> = () => {
     const route = useRoute<GroupChatRouteProp>()
     const { group } = route.params
 
-    const headerText = group.name || t('feature.chat.new-group')
+    const groupName = group.name || t('feature.chat.new-group')
 
     return (
         <Header
@@ -31,12 +33,12 @@ const GroupHeader: React.FC<{}> = () => {
                     onPress={() => {
                         navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <SvgImage name="NewRoom" />
+                    <GroupIcon chat={group} size={AvatarSize.sm} />
                     <Text
                         bold
                         numberOfLines={1}
                         style={styles(theme).groupNameText}>
-                        {headerText}
+                        {groupName}
                     </Text>
                 </Pressable>
             }

@@ -4,8 +4,8 @@ import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { Props as ChatWalletProps } from '../../../screens/ChatWallet'
+import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
-import HoloAvatar from '../../ui/HoloAvatar'
 
 type ChatWalletRouteProp = ChatWalletProps['route']
 
@@ -32,7 +32,8 @@ const GroupHeader: React.FC<{}> = () => {
             containerStyle={styles(theme).container}
             headerCenter={
                 <View style={styles(theme).recipientContainer}>
-                    <HoloAvatar
+                    <Avatar
+                        id={recipient.jid.toString()}
                         title={getInitialsFromName(recipient.username)}
                     />
                     <Text bold style={styles(theme).recipientText}>

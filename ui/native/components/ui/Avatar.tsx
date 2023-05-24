@@ -2,9 +2,9 @@ import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { theme as fediTheme } from '@fedi/common/constants/theme'
+import { getIdentityColors } from '@fedi/common/utils/color'
 
-import HoloGradient from './HoloGradient'
+import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
 
 /*
     This is a custom Avatar capable of holo background with
@@ -18,18 +18,27 @@ export enum AvatarSize {
     lg = 'lg',
 }
 
-type HoloAvatarProps = {
-    size?: AvatarSize
-    title: string
-    level?: keyof typeof fediTheme.holoGradient
+const imageSizeMapping = {
+    [AvatarSize.sm]: SvgImageSize.xs,
+    [AvatarSize.md]: SvgImageSize.sm,
+    [AvatarSize.lg]: SvgImageSize.md,
 }
 
-const HoloAvatar: React.FC<HoloAvatarProps> = ({
+type HoloAvatarProps = {
+    size?: AvatarSize
+    id: string | number
+    title: string
+    icon?: SvgImageName
+}
+
+const Avatar: React.FC<HoloAvatarProps> = ({
     size = AvatarSize.sm,
+    id,
     title,
-    level = '600',
+    icon,
 }: HoloAvatarProps) => {
     const { theme } = useTheme()
+    const [bgColor, textColor] = getIdentityColors(id)
 
     const customSize =
         size === AvatarSize.sm
@@ -46,18 +55,27 @@ const HoloAvatar: React.FC<HoloAvatarProps> = ({
             width,
             borderRadius: customSize * 0.5,
         },
+        { backgroundColor: bgColor },
     ]
+    const mergedTextStyle = [styles.text, { color: textColor }]
 
     return (
         <View style={mergedContainerStyle}>
-            <HoloGradient rounded size={customSize} level={level} />
-            <Text
-                bold
-                tiny={size === AvatarSize.sm}
-                h2={size === AvatarSize.lg}
-                style={styles.text}>
-                {title}
-            </Text>
+            {icon ? (
+                <SvgImage
+                    name={icon}
+                    size={imageSizeMapping[size]}
+                    color={textColor}
+                />
+            ) : (
+                <Text
+                    bold
+                    tiny={size === AvatarSize.sm}
+                    h2={size === AvatarSize.lg}
+                    style={mergedTextStyle}>
+                    {title}
+                </Text>
+            )}
         </View>
     )
 }
@@ -73,4 +91,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default HoloAvatar
+export default Avatar

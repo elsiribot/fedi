@@ -3,7 +3,7 @@ import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { Member } from '../../../types'
-import HoloAvatar, { AvatarSize } from '../../ui/HoloAvatar'
+import Avatar, { AvatarSize } from '../../ui/Avatar'
 
 type MemberItemProps = {
     member: Member
@@ -22,7 +22,8 @@ const MemberItem: React.FC<MemberItemProps> = ({
             onPress={() => {
                 selectMember(member)
             }}>
-            <HoloAvatar
+            <Avatar
+                id={member.jid.toString()}
                 title={member.username.substring(0, 1).toUpperCase()}
                 size={AvatarSize.md}
             />
