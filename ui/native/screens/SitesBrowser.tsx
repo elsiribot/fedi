@@ -48,6 +48,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             description: '',
             buttons: [],
         })
+    const overlayRejectRef = useRef<(reason: Error) => void>()
     const { lnurlGetToken } = useBridge()
 
     useEffect(() => {
@@ -110,6 +111,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             }
 
             return new Promise((resolve, reject) => {
+                overlayRejectRef.current = reject
                 setOverlayContents({
                     title: t('feature.sites.wants-to-pay-you', {
                         site: site.title,
@@ -179,6 +181,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
+                overlayRejectRef.current = reject
                 setOverlayContents({
                     title: t('feature.sites.payment-request', {
                         site: site.title,
@@ -301,7 +304,13 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             />
             <CustomOverlay
                 show={showOverlay}
-                onBackdropPress={() => setShowOverlay(false)}
+                onBackdropPress={() => {
+                    setShowOverlay(false)
+                    if (overlayRejectRef.current) {
+                        overlayRejectRef.current(new RejectionError('Canceled'))
+                        overlayRejectRef.current = undefined
+                    }
+                }}
                 contents={overlayContents}
                 loading={loading}
             />
