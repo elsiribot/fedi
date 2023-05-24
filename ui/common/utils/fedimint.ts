@@ -78,7 +78,10 @@ export class FedimintBridge {
     }
 
     async payInvoice(invoice: string, federationId: string) {
-        return this.rpc('payInvoice', { invoice, federationId })
+        return this.rpc<{ preimage: string }>('payInvoice', {
+            invoice,
+            federationId,
+        })
     }
 
     async generateAddress(federationId: string) {

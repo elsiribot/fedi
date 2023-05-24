@@ -201,12 +201,11 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             onPress: async () => {
                                 try {
                                     setLoading(true)
-                                    await payInvoice(paymentRequest)
+                                    const { preimage } = await payInvoice(
+                                        paymentRequest,
+                                    )
                                     setShowOverlay(false)
-                                    // resolve(true)
-                                    resolve({
-                                        preimage: 'fixme',
-                                    })
+                                    resolve({ preimage })
                                 } catch (error) {
                                     console.log('pay failed', error)
                                     toast?.show((error as Error).message, 3000)
