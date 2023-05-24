@@ -38,9 +38,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                             {chat.members && chat.members[0]?.username ? (
                                 <Avatar
                                     id={chat.members[0].jid.toString()}
-                                    title={stringUtils.getInitialsFromName(
-                                        chat.members[0].username,
-                                    )}
+                                    name={chat.members[0].username}
                                     size={AvatarSize.md}
                                 />
                             ) : (

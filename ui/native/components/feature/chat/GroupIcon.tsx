@@ -16,7 +16,7 @@ const GroupIcon = ({ chat, size = AvatarSize.md }: GroupIconProps) => {
     return (
         <Avatar
             id={chat.id}
-            title={chat.name || ''}
+            name={chat.name || ''}
             icon={(chat.icon as SvgImageName) || 'SocialPeople'}
             size={size}
         />

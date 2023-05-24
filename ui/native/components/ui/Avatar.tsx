@@ -2,6 +2,7 @@ import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import stringUtils from '@fedi/common/utils/StringUtils'
 import { getIdentityColors } from '@fedi/common/utils/color'
 
 import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
@@ -27,14 +28,14 @@ const imageSizeMapping = {
 type HoloAvatarProps = {
     size?: AvatarSize
     id: string | number
-    title: string
+    name: string
     icon?: SvgImageName
 }
 
 const Avatar: React.FC<HoloAvatarProps> = ({
     size = AvatarSize.sm,
     id,
-    title,
+    name,
     icon,
 }: HoloAvatarProps) => {
     const { theme } = useTheme()
@@ -73,7 +74,7 @@ const Avatar: React.FC<HoloAvatarProps> = ({
                     tiny={size === AvatarSize.sm}
                     h2={size === AvatarSize.lg}
                     style={mergedTextStyle}>
-                    {title}
+                    {stringUtils.getInitialsFromName(name)}
                 </Text>
             )}
         </View>

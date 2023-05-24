@@ -91,9 +91,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     <View style={styles(theme).avatarContainer}>
                         <Avatar
                             id={sentBy?.jid.toString() || ''}
-                            title={stringUtils.getInitialsFromName(
-                                sentBy?.username || '',
-                            )}
+                            name={sentBy?.username || ''}
                         />
                     </View>
                 )}

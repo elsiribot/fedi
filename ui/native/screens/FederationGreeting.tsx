@@ -28,9 +28,7 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
                     <Avatar
                         id={authenticatedMember?.id || ''}
                         size={AvatarSize.lg}
-                        title={stringUtils.getInitialsFromName(
-                            authenticatedMember?.username || '',
-                        )}
+                        name={authenticatedMember?.username || ''}
                     />
                 </View>
                 <Text h2 medium style={styles(theme).welcomeTitle}>

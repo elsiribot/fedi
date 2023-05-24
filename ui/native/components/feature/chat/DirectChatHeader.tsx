@@ -30,10 +30,7 @@ const DirectChatHeader: React.FC<{}> = () => {
                         // TODO: implement admin settings for 1on1 chat
                         // navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <Avatar
-                        id={member.jid.toString()}
-                        title={stringUtils.getInitialsFromName(member.username)}
-                    />
+                    <Avatar id={member.jid.toString()} name={member.username} />
                     <Text
                         bold
                         numberOfLines={1}

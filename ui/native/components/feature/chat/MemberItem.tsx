@@ -24,7 +24,7 @@ const MemberItem: React.FC<MemberItemProps> = ({
             }}>
             <Avatar
                 id={member.jid.toString()}
-                title={member.username.substring(0, 1).toUpperCase()}
+                name={member.username}
                 size={AvatarSize.md}
             />
             <Text numberOfLines={1} bold style={[styles(theme).usernameText]}>
