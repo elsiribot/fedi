@@ -2,11 +2,11 @@ import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef, useState } from 'react'
 import {
     Animated,
-    ActivityIndicator,
     StyleSheet,
     View,
     Easing,
     Platform,
+    LayoutChangeEvent,
 } from 'react-native'
 
 type CustomOverlayButton = {
@@ -38,25 +38,32 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
 }) => {
     const { theme } = useTheme()
     const [overlayHeight, setOverlayHeight] = useState(0)
-    const animatedTranslateY = useRef(new Animated.Value(overlayHeight)).current
+    const animatedTranslateY = useRef(new Animated.Value(0)).current
 
     const { title, message, description, buttons } =
         contents as CustomOverlayContents
 
+    // Animate overlay in and out
     useEffect(() => {
+        if (!overlayHeight) return
         Animated.timing(animatedTranslateY, {
-            toValue: show ? 0 : 200,
+            toValue: show ? 0 : overlayHeight,
             duration: 200,
             delay: show ? 150 : 300,
             useNativeDriver: true,
             easing: Easing.out(Easing.quad),
         }).start()
-    }, [show, animatedTranslateY])
+    }, [show, animatedTranslateY, overlayHeight])
 
-    useEffect(() => {
-        if (show) return
-        animatedTranslateY.setValue(overlayHeight)
-    }, [show, overlayHeight, animatedTranslateY])
+    // Set height whenever overlay layout changes.
+    const handleOverlayLayout = (event: LayoutChangeEvent) => {
+        const height = event.nativeEvent.layout.height
+        if (!overlayHeight) {
+            // On initial height report, immediately set height without animation.
+            animatedTranslateY.setValue(height)
+        }
+        setOverlayHeight(height)
+    }
 
     const renderButtons = () => {
         return buttons.map((button: CustomOverlayButton, i: number) => {
@@ -75,7 +82,13 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                             ? { backgroundColor: button.backgroundColor }
                             : { backgroundColor: theme.colors.black }
                     }
+                    loadingProps={{
+                        color: button.backgroundColor
+                            ? theme.colors.primary
+                            : theme.colors.secondary,
+                    }}
                     onPress={button.onPress}
+                    loading={loading}
                 />
             )
         })
@@ -88,9 +101,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
             overlayStyle={styles(theme).overlayContainer}
             animationType="fade">
             <Animated.View
-                onLayout={event =>
-                    setOverlayHeight(event.nativeEvent.layout.height)
-                }
+                onLayout={handleOverlayLayout}
                 style={{
                     ...styles(theme).overlayContents,
                     transform: [{ translateY: animatedTranslateY }],
@@ -106,13 +117,9 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                         {description}
                     </Text>
                 )}
-                {loading ? (
-                    <ActivityIndicator />
-                ) : (
-                    <View style={styles(theme).overlayButtonView}>
-                        {renderButtons()}
-                    </View>
-                )}
+                <View style={styles(theme).overlayButtonView}>
+                    {renderButtons()}
+                </View>
             </Animated.View>
         </Overlay>
     )
