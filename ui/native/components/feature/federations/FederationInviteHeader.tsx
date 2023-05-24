@@ -15,18 +15,12 @@ const FederationInviteHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            backgroundColor={theme.colors.primary}
-            containerStyle={{
-                borderBottomColor: theme.colors.primary,
-            }}
+            dark
             headerCenter={
                 <Text bold style={{ color: theme.colors.secondary }}>
                     {t('feature.federations.federation-invite')}
                 </Text>
             }
-            centerContainerStyle={{
-                borderBottomColor: theme.colors.primary,
-            }}
             headerRight={
                 <Pressable
                     onPress={() => navigation.replace('TabsNavigator')}

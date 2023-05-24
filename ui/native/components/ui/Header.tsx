@@ -15,7 +15,7 @@ interface HeaderBase {
     centerContainerStyle?: ViewStyle
     rightContainerStyle?: ViewStyle
     containerStyle?: ViewStyle
-    backgroundColor?: string
+    dark?: boolean
     backButton?: boolean
     closeButton?: boolean
 }
@@ -40,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({
     centerContainerStyle = {},
     rightContainerStyle = {},
     containerStyle = {},
-    backgroundColor,
+    dark,
     backButton,
     closeButton,
 }: HeaderProps) => {
@@ -102,14 +102,18 @@ const Header: React.FC<HeaderProps> = ({
     }
     const mergedContainerStyle = {
         ...defaultContainerStyle,
+        borderBottomColor: dark
+            ? theme.colors.primary
+            : defaultContainerStyle.borderBottomColor,
         ...containerStyle,
     }
 
     return (
         <HeaderRNE
             backgroundColor={
-                backgroundColor ? backgroundColor : theme.colors.secondary
+                dark ? theme.colors.primary : theme.colors.secondary
             }
+            barStyle={dark ? 'light-content' : 'dark-content'}
             containerStyle={mergedContainerStyle}
             centerComponent={<>{headerCenter || null}</>}
             leftComponent={leftComponent}
