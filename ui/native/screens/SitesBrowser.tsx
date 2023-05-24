@@ -135,6 +135,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             text: t('words.accept'),
                             onPress: async () => {
                                 try {
+                                    setLoading(true)
                                     console.log('generate', amount)
                                     const invoice = await generateInvoice(
                                         amountUtils.satToMsat(amount),
@@ -148,6 +149,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     toast?.show((error as Error).message, 3000)
                                     reject(error)
                                 }
+                                setLoading(false)
                                 setShowOverlay(false)
                             },
                         },
@@ -202,16 +204,15 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     await payInvoice(paymentRequest)
                                     setShowOverlay(false)
                                     // resolve(true)
-                                    setLoading(false)
                                     resolve({
                                         preimage: 'fixme',
                                     })
                                 } catch (error) {
-                                    setLoading(false)
                                     console.log('pay failed', error)
                                     toast?.show((error as Error).message, 3000)
                                     reject(error)
                                 }
+                                setLoading(false)
                             },
                         },
                     ],
@@ -253,19 +254,18 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     const token = await lnurlGetToken(
                                         paymentRequest,
                                     )
-                                    setLoading(false)
                                     setJwt(token)
                                     console.log(
                                         'FIXLN-URL auth successful',
                                         token,
                                     )
                                 } catch (e) {
-                                    setLoading(false)
                                     toast?.show(
                                         t('feature.sites.login-failed'),
                                         3000,
                                     )
                                 }
+                                setLoading(false)
                                 setShowOverlay(false)
                             },
                         },
