@@ -5,7 +5,7 @@ import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
-import Avatar, { AvatarSize } from '../../ui/Avatar'
+import { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 import GroupIcon from './GroupIcon'

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import { useAppSelector } from '../state/hooks'

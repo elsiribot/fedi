@@ -14,7 +14,7 @@ import Hyperlink from 'react-native-hyperlink'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
@@ -90,7 +90,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 {!sentByMe && multiUserChat && (
                     <View style={styles(theme).avatarContainer}>
                         <Avatar
-                            id={sentBy?.jid.toString() || ''}
+                            id={jidToId(sentBy?.jid || '')}
                             name={sentBy?.username || ''}
                         />
                     </View>

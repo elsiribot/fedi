@@ -2,6 +2,8 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
+import { jidToId } from '@fedi/common/utils/chat'
+
 import { Member } from '../../../types'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 
@@ -23,7 +25,7 @@ const MemberItem: React.FC<MemberItemProps> = ({
                 selectMember(member)
             }}>
             <Avatar
-                id={member.jid.toString()}
+                id={jidToId(member.jid)}
                 name={member.username}
                 size={AvatarSize.md}
             />

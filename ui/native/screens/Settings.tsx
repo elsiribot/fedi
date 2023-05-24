@@ -17,7 +17,6 @@ import {
     shouldShowInviteCode,
     shouldShowSocialRecovery,
 } from '@fedi/common/utils/FederationUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'

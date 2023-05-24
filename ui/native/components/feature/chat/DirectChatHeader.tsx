@@ -3,7 +3,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { jidToId } from '@fedi/common/utils/chat'
 
 import { RootStackParamList } from '../../../types/navigation'
 import Avatar from '../../ui/Avatar'
@@ -30,7 +30,7 @@ const DirectChatHeader: React.FC<{}> = () => {
                         // TODO: implement admin settings for 1on1 chat
                         // navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <Avatar id={member.jid.toString()} name={member.username} />
+                    <Avatar id={jidToId(member.jid)} name={member.username} />
                     <Text
                         bold
                         numberOfLines={1}

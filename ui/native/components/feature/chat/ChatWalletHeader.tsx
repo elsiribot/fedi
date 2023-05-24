@@ -3,6 +3,8 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { jidToId } from '@fedi/common/utils/chat'
+
 import { Props as ChatWalletProps } from '../../../screens/ChatWallet'
 import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
@@ -21,7 +23,7 @@ const GroupHeader: React.FC<{}> = () => {
             headerCenter={
                 <View style={styles(theme).recipientContainer}>
                     <Avatar
-                        id={recipient.jid.toString()}
+                        id={jidToId(recipient.jid)}
                         name={recipient.username}
                     />
                     <Text bold style={styles(theme).recipientText}>

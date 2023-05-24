@@ -4,13 +4,13 @@ import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { jidToId } from '@fedi/common/utils/chat'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
 import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
-import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
@@ -37,7 +37,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         <View style={styles(theme).directIconContainer}>
                             {chat.members && chat.members[0]?.username ? (
                                 <Avatar
-                                    id={chat.members[0].jid.toString()}
+                                    id={jidToId(chat.members[0].jid)}
                                     name={chat.members[0].username}
                                     size={AvatarSize.md}
                                 />
