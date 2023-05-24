@@ -11,8 +11,7 @@ import {
 
 type CustomOverlayButton = {
     text: string
-    textColor?: string
-    backgroundColor?: string
+    primary?: boolean
     onPress: () => void
 }
 
@@ -27,7 +26,7 @@ type CustomOverlayProps = {
     onBackdropPress?: () => void
     show?: boolean
     contents: CustomOverlayContents | null
-    loading: boolean
+    loading?: boolean
 }
 
 const CustomOverlay: React.FC<CustomOverlayProps> = ({
@@ -72,23 +71,24 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     key={i}
                     containerStyle={styles(theme).buttonContainer}
                     title={button.text}
-                    titleStyle={[
-                        button.textColor
-                            ? { color: button.textColor }
-                            : { color: theme.colors.white },
-                    ]}
-                    buttonStyle={
-                        button.backgroundColor
-                            ? { backgroundColor: button.backgroundColor }
-                            : { backgroundColor: theme.colors.black }
-                    }
-                    loadingProps={{
-                        color: button.backgroundColor
+                    titleStyle={{
+                        color: button.primary
+                            ? theme.colors.secondary
+                            : theme.colors.primary,
+                    }}
+                    buttonStyle={{
+                        backgroundColor: button.primary
                             ? theme.colors.primary
                             : theme.colors.secondary,
                     }}
+                    loadingProps={{
+                        color: button.primary
+                            ? theme.colors.secondary
+                            : theme.colors.primary,
+                    }}
+                    loading={loading ? button.primary : false}
+                    disabled={loading ? !button.primary : false}
                     onPress={button.onPress}
-                    loading={loading}
                 />
             )
         })

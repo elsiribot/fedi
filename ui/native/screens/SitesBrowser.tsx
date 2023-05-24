@@ -1,5 +1,4 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useTheme } from '@rneui/themed'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -23,7 +22,6 @@ import type { RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
-    const { theme } = useTheme()
     const { site } = route.params
     const { generateInvoice, payInvoice } = useBridge()
     const { t } = useTranslation()
@@ -106,14 +104,13 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     buttons: [
                         {
                             text: t('words.reject'),
-                            textColor: theme.colors.primary,
-                            backgroundColor: theme.colors.secondary,
                             onPress: () => {
                                 reject()
                                 setShowOverlay(false)
                             },
                         },
                         {
+                            primary: true,
                             text: t('words.accept'),
                             onPress: async () => {
                                 try {
@@ -176,14 +173,13 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     buttons: [
                         {
                             text: t('words.reject'),
-                            textColor: theme.colors.primary,
-                            backgroundColor: theme.colors.secondary,
                             onPress: () => {
                                 setShowOverlay(false)
                                 reject()
                             },
                         },
                         {
+                            primary: true,
                             text: t('words.accept'),
                             onPress: async () => {
                                 try {
@@ -230,14 +226,13 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     buttons: [
                         {
                             text: t('words.no'),
-                            textColor: theme.colors.primary,
-                            backgroundColor: theme.colors.secondary,
                             onPress: () => {
                                 console.error('Login denied')
                                 setShowOverlay(false)
                             },
                         },
                         {
+                            primary: true,
                             text: t('words.yes'),
                             onPress: async () => {
                                 try {
