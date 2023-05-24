@@ -1,21 +1,14 @@
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g clip-path="url(#clip0_7750_6643)">
-    <path
-      d="M8.99988 11C11.209 11 12.9999 9.20914 12.9999 7C12.9999 4.79086 11.209 3 8.99988 3C6.79074 3 4.99988 4.79086 4.99988 7C4.99988 9.20914 6.79074 11 8.99988 11Z"
-      stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-    <path
-      d="M3 21V19C3 17.9391 3.42143 16.9217 4.17157 16.1716C4.92172 15.4214 5.93913 15 7 15H11C12.0609 15 13.0783 15.4214 13.8284 16.1716C14.5786 16.9217 15 17.9391 15 19V21"
-      stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-    <path
-      d="M16.0001 3.13C16.8605 3.35031 17.6232 3.85071 18.1678 4.55232C18.7124 5.25392 19.008 6.11683 19.008 7.005C19.008 7.89318 18.7124 8.75608 18.1678 9.45769C17.6232 10.1593 16.8605 10.6597 16.0001 10.88"
-      stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-    <path
-      d="M21 21.0001V19.0001C20.9949 18.1173 20.6979 17.2609 20.1553 16.5645C19.6126 15.8682 18.8548 15.3708 18 15.1501"
-      stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-  </g>
-  <defs>
-    <clipPath id="clip0_7750_6643">
-      <rect width="24" height="24" fill="white" />
-    </clipPath>
-  </defs>
+  <path
+    d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path
+    d="M3 21V19C3 17.9391 3.42143 16.9217 4.17157 16.1716C4.92172 15.4214 5.93913 15 7 15H11C12.0609 15 13.0783 15.4214 13.8284 16.1716C14.5786 16.9217 15 17.9391 15 19V21"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path
+    d="M16 3.12988C16.8604 3.35018 17.623 3.85058 18.1676 4.55219C18.7122 5.2538 19.0078 6.11671 19.0078 7.00488C19.0078 7.89305 18.7122 8.75596 18.1676 9.45757C17.623 10.1592 16.8604 10.6596 16 10.8799"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path
+    d="M21 20.9999V18.9999C20.9949 18.1171 20.6979 17.2607 20.1553 16.5643C19.6126 15.8679 18.8548 15.3706 18 15.1499"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 </svg>
