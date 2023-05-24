@@ -26,7 +26,7 @@ use lightning_invoice::Invoice;
 
 use tracing::{debug, info};
 
-pub async fn mutinynet_faucet_create_invoice(amount: Amount) -> anyhow::Result<Invoice> {
+pub async fn mutinynet_faucet_create_invoice(amount: &Amount) -> anyhow::Result<Invoice> {
     let sats = amount.msats / 1000;
     let mut map = HashMap::new();
     map.insert("amount", sats.to_string());
@@ -48,6 +48,22 @@ pub async fn mutinynet_faucet_create_invoice(amount: Amount) -> anyhow::Result<I
     Ok(invoice)
 }
 
+pub async fn try_mutinynet_faucet_create_invoice(
+    amount: &Amount,
+    tries: usize,
+) -> anyhow::Result<Invoice> {
+    for _ in 0..tries {
+        match mutinynet_faucet_create_invoice(amount).await {
+            Ok(invoice) => return Ok(invoice),
+            Err(e) => {
+                debug!("Failed to get invoice: {e:?}, sleeping a bit");
+                fedimint_core::task::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
+    mutinynet_faucet_create_invoice(amount).await
+}
+
 pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<SpendableNote>> {
     // TODO: use the new client when it's ready.
     // For instance, when https://github.com/fedimint/fedimint/issues/2567 is solved
@@ -63,8 +79,11 @@ pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<Spenda
     Ok(notes)
 }
 
-pub async fn try_cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<SpendableNote>> {
-    for _ in 0..9 {
+pub async fn try_cli_get_notes(
+    amount: &Amount,
+    tries: usize,
+) -> anyhow::Result<TieredMulti<SpendableNote>> {
+    for _ in 0..tries {
         match cli_get_notes(amount).await {
             Ok(notes) => return Ok(notes),
             Err(e) => {
