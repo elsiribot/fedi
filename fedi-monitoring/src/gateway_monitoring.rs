@@ -17,8 +17,8 @@ use serde_with::{serde_as, DurationMilliSeconds};
 use tracing::{debug, info, log::warn};
 
 use crate::common::{
-    build_client, gateway_pay_invoice, get_note_summary, mutinynet_faucet_create_invoice,
-    reissue_notes, remint_denomination, try_cli_get_notes,
+    build_client, gateway_pay_invoice, get_note_summary, reissue_notes, remint_denomination,
+    try_cli_get_notes, try_mutinynet_faucet_create_invoice,
 };
 
 const AMOUNT_TO_REMINT: Amount = Amount::from_msats(1024);
@@ -33,7 +33,10 @@ const MAX_CHECKS_TO_KEEP_ON_STATE: usize = 120;
 const CHECK_INTERVAL_TIME: Duration = Duration::from_secs(5 * 60);
 
 const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(4 * 60);
-const GENERATE_INVOICE_TIMEOUT: Duration = Duration::from_secs(30);
+const GENERATE_INVOICE_TIMEOUT: Duration = Duration::from_secs(45);
+
+/// How many times to retry operations like `get_notes` or `create_invoice` before considering it failed
+const RETRIES_ON_OPERATIONS: usize = 10;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Check {
@@ -90,7 +93,7 @@ pub async fn check_mutinynet(
             let summary = get_note_summary(&client).await?;
             if summary.total_amount() <= AMOUNT_TO_REMINT {
                 info!("Not enough funds, getting more");
-                let notes = try_cli_get_notes(&AMOUNT_TO_REMINT).await?;
+                let notes = try_cli_get_notes(&AMOUNT_TO_REMINT, RETRIES_ON_OPERATIONS).await?;
                 info!("Reissuing notes");
                 reissue_notes(&client, notes).await?;
             }
@@ -106,7 +109,7 @@ pub async fn check_mutinynet(
             info!("Creating invoice");
             let invoice = match timeout(
                 GENERATE_INVOICE_TIMEOUT,
-                mutinynet_faucet_create_invoice(AMOUNT_TO_PAY),
+                try_mutinynet_faucet_create_invoice(&AMOUNT_TO_PAY, RETRIES_ON_OPERATIONS),
             )
             .await
             {
@@ -133,7 +136,7 @@ pub async fn check_mutinynet(
             Err(e) => {
                 warn!("Mutinynet check failed: {e:?}");
                 CheckResult::Failure {
-                    error: e.to_string(),
+                    error: format!("{e:?}"), // uses the debug formatter to get the backtrace
                 }
             }
         };
