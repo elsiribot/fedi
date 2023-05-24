@@ -48,7 +48,10 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use tracing::{debug, error, info, instrument};
 use tx::Transaction;
-use types::{BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, XmppCredentials};
+use types::{
+    BridgeLightningGateway, FedimintFederation, LnurlSignedMessage, PayInvoiceResponse,
+    XmppCredentials,
+};
 
 use crate::{error::get_error_code, types::federation_to_fedimint_federation};
 
@@ -215,7 +218,7 @@ async fn payInvoice(
     bridge: Arc<Bridge>,
     federation_id: FederationId,
     invoice: String,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<PayInvoiceResponse> {
     let federation = get_federation(&bridge, &federation_id).await?;
     let invoice: Invoice = invoice.parse().context(ErrorCode::InvalidInvoice)?;
     federation.ng_pay_invoice(&invoice).await

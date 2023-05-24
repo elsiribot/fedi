@@ -196,3 +196,10 @@ impl TryFrom<&lightning_invoice::Invoice> for Invoice {
         })
     }
 }
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct PayInvoiceResponse {
+    pub preimage: String,
+}

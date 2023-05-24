@@ -32,7 +32,8 @@ use crate::{
     },
     tx::{Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
     types::{
-        self, federation_to_fedimint_federation, FediConfig, LnurlSignedMessage, XmppCredentials,
+        self, federation_to_fedimint_federation, FediConfig, LnurlSignedMessage,
+        PayInvoiceResponse, XmppCredentials,
     },
     EventSink,
 };
@@ -617,7 +618,7 @@ impl Federation {
     }
 
     /// Pay lightning invoice
-    pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+    pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<PayInvoiceResponse> {
         self.override_active_gateway().await?;
 
         let federation_id = self.federation_id();
@@ -626,10 +627,11 @@ impl Federation {
             .pay_bolt11_invoice(federation_id, invoice.to_owned())
             .await?;
 
-        self.subscibe_to_ln_pay(operation_id, invoice.clone())
+        let response = self
+            .subscibe_to_ln_pay(operation_id, invoice.clone())
             .await?;
 
-        return Ok(());
+        return Ok(response);
     }
 
     /// Subscribe to updates on all active operations
@@ -717,7 +719,7 @@ impl Federation {
         &self,
         operation_id: OperationId,
         invoice: Invoice,
-    ) -> Result<()> {
+    ) -> Result<PayInvoiceResponse> {
         let mut updates = self
             .ng
             .subscribe_ln_pay_updates(operation_id)
@@ -726,20 +728,20 @@ impl Federation {
 
         while let Some(update) = updates.next().await {
             match update {
-                LnPayState::Success { .. } => {
+                LnPayState::Success { preimage } => {
                     self.ng_save_outgoing_lightning_tx(&invoice).await;
-                    return Ok(());
+                    return Ok(PayInvoiceResponse { preimage });
                 }
                 LnPayState::Refunded { gateway_error } => {
-                    return Ok(());
+                    return Err(gateway_error.into());
                 }
                 _ => {}
-            }
+            };
 
             info!("lightning update: {:?}", update);
         }
 
-        Ok(())
+        Err(anyhow!("lightning payment failed"))
     }
 
     pub async fn subscibe_to_ln_receive(
