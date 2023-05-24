@@ -4,7 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
-import { KeysendArgs, RequestInvoiceArgs } from 'webln'
+import {
+    RequestInvoiceArgs,
+    RejectionError,
+    UnsupportedMethodError,
+} from 'webln'
 
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -105,7 +109,11 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                         {
                             text: t('words.reject'),
                             onPress: () => {
-                                reject()
+                                reject(
+                                    new RejectionError(
+                                        'Invoice request rejected',
+                                    ),
+                                )
                                 setShowOverlay(false)
                             },
                         },
@@ -125,7 +133,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     })
                                 } catch (error) {
                                     toast?.show((error as Error).message, 3000)
-                                    reject()
+                                    reject(error)
                                 }
                                 setShowOverlay(false)
                             },
@@ -133,12 +141,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     ],
                 })
             })
-
-            //     // FIXME: Check webln spec to see what we should return here
-            // } catch (error) {
-            //     toast?.show((error as Error).message, 3000)
-            //     throw error
-            // }
         },
         sendPayment: async (paymentRequest: string) => {
             var invoice
@@ -175,7 +177,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             text: t('words.reject'),
                             onPress: () => {
                                 setShowOverlay(false)
-                                reject()
+                                reject(new RejectionError('Payment rejected'))
                             },
                         },
                         {
@@ -195,7 +197,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     setLoading(false)
                                     console.log('pay failed', error)
                                     toast?.show((error as Error).message, 3000)
-                                    reject()
+                                    reject(error)
                                 }
                             },
                         },
@@ -203,16 +205,14 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 })
             })
         },
-        signMessage: async (message: string) => {
-            console.log('signMessage', message)
-            return { message, signature: 'fixme' }
+        signMessage: async () => {
+            throw new UnsupportedMethodError('signMessage is not supported')
         },
-        verifyMessage: async (signature: string, message: string) => {
-            console.log('verifyMessage', signature, message)
+        verifyMessage: async () => {
+            throw new UnsupportedMethodError('verifyMessage is not supported')
         },
-        keysend: async (args: KeysendArgs) => {
-            console.log('keysend', args)
-            return { preimage: 'fixme' }
+        keysend: async () => {
+            throw new UnsupportedMethodError('keysend is not supported')
         },
 
         // Non-WebLN
