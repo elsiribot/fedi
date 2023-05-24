@@ -10,7 +10,10 @@ import {
     UnsupportedMethodError,
 } from 'webln'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectAuthenticatedMember,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
@@ -27,9 +30,10 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { site } = route.params
-    const { generateInvoice, payInvoice } = useBridge()
+    const { generateInvoice, payInvoice, listGateways } = useBridge()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const { toast } = useEnvironmentContext().state
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
@@ -68,9 +72,18 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             console.log('enable')
         },
         getInfo: async () => {
-            console.log('getinfo')
-            const node = { alias: 'fixme', pubkey: 'fixme' }
-            return { node }
+            const alias = authenticatedMember?.username || ''
+            let pubkey = ''
+            try {
+                const gateways = await listGateways()
+                const gateway = gateways.find(g => g.active) || gateways[0]
+                if (gateway) {
+                    pubkey = gateway.nodePubKey
+                }
+            } catch (err) {
+                console.warn('Failed to list gateways for webln getInfo', err)
+            }
+            return { node: { alias, pubkey } }
         },
         makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
             console.log('makeinvoice', data)
