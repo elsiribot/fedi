@@ -12831,9 +12831,9 @@ webidl-conversions@^4.0.2:
   resolved "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-4.0.2.tgz"
   integrity sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==
 
-webln@^0.3.0:
+webln@^0.3.2:
   version "0.3.2"
-  resolved "https://registry.npmjs.org/webln/-/webln-0.3.2.tgz"
+  resolved "https://registry.yarnpkg.com/webln/-/webln-0.3.2.tgz#bbadf52916666b6059e3661ef5ab73a76b7cd0f4"
   integrity sha512-YYT83aOCLup2AmqvJdKtdeBTaZpjC6/JDMe8o6x1kbTYWwiwrtWHyO//PAsPixF3jwFsAkj5DmiceB6w/QSe7Q==
   dependencies:
     "@types/chrome" "^0.0.74"

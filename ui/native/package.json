@@ -76,6 +76,7 @@
         "tweetnacl": "^1.0.3",
         "tweetnacl-util": "^0.15.1",
         "vision-camera-code-scanner": "^0.2.0",
+        "webln": "^0.3.2",
         "websocket": "^1.0.34"
     },
     "devDependencies": {
@@ -106,7 +107,6 @@
         "react-native-svg-transformer": "1.0.0",
         "react-native-version": "4.0.0",
         "react-test-renderer": "18.1.0",
-        "typescript": "^5.0.2",
-        "webln": "^0.3.0"
+        "typescript": "^5.0.2"
     }
 }
