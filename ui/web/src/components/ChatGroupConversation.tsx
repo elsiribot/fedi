@@ -10,6 +10,7 @@ import {
     selectChatMessages,
     sendGroupMessage,
 } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
@@ -76,10 +77,11 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const link = group ? encodeGroupInvitationLink(group.id) : ''
     return (
         <ChatConversation
+            type={ChatType.group}
+            id={group.id}
             name={group?.name || ''}
             messages={messages}
             onSendMessage={handleSend}
-            showUsernames
             headerActions={
                 group && (
                     <>

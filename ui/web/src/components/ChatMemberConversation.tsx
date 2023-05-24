@@ -10,6 +10,7 @@ import {
     selectChatXmppClient,
     sendDirectMessage,
 } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
@@ -82,6 +83,8 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     return (
         <>
             <ChatConversation
+                type={ChatType.direct}
+                id={member?.id || ''}
                 name={member?.username || ''}
                 messages={messages}
                 onSendMessage={handleSend}

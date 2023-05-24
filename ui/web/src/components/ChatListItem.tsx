@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -45,7 +46,14 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                     ? `/chat/group/${chat.id}`
                     : `/chat/member/${chat.id}`
             }>
-            <Avatar name={chat.name} css={{ flexShrink: 0 }} />
+            <Avatar
+                id={chat.id}
+                name={chat.name}
+                icon={
+                    chat.type === ChatType.group ? SocialPeopleIcon : undefined
+                }
+                css={{ flexShrink: 0 }}
+            />
             <Content>
                 <TopContent>
                     <Text

@@ -127,7 +127,7 @@ function AdminPage() {
             </Title>
             {member && (
                 <MemberDetails>
-                    <Avatar name={member.username} />
+                    <Avatar id={member.id} name={member.username} />
                     <Text variant="h2">{member.username}</Text>
                 </MemberDetails>
             )}
