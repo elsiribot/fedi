@@ -127,6 +127,9 @@ let
         "x86_64-apple-darwin" = {
           extraEnvs = "";
         };
+        "x86_64-apple-ios" = {
+          extraEnvs = "";
+        };
       };
 
   fenixChannel = fenix.packages.${system}.stable;
