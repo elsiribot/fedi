@@ -27,7 +27,6 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
     const { group: currentGroup } = route.params
     const previousGroup = usePrevious(currentGroup)
-    // const currentGroup = state.groups.find(g => g.id === group.id)
 
     const groupedMessages = useMemo(() => {
         // Filter to messages with this group
@@ -39,29 +38,29 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         return makeMessageGroups(messagesInGroup, 'asc')
     }, [state.messages, currentGroup?.id])
 
+    // TODO: Refactor useEffects and route param to use Redux selectors
     useEffect(() => {
         // announce presence + add to state.groups
-        enterMucRoom(currentGroup).then((group: Group) => {
-            dispatch(addToGroups(group))
-        })
+        enterMucRoom(currentGroup)
+            .then((enteredGroup: Group) => {
+                dispatch(addToGroups(enteredGroup))
+                // fetch room config to see if name has changed
+                return fetchMucRoomConfig(enteredGroup)
+            })
+            .then(configuredGroup => {
+                dispatch(
+                    updateGroup(
+                        new Group({
+                            ...currentGroup,
+                            ...configuredGroup,
+                        }),
+                    ),
+                )
+            })
         // TODO: some new messages will be received automatically after
         // enterMucRoom is called but we should check archive here
         // to make sure we get them all
     }, [currentGroup, dispatch, enterMucRoom])
-
-    // fetch room config to see if name has changed
-    useEffect(() => {
-        fetchMucRoomConfig(currentGroup).then(groupName => {
-            dispatch(
-                updateGroup(
-                    new Group({
-                        ...currentGroup,
-                        name: groupName,
-                    }),
-                ),
-            )
-        })
-    }, [currentGroup, dispatch, fetchMucRoomConfig])
 
     // update route param if name has changed
     useEffect(() => {
