@@ -115,5 +115,5 @@ const Fallback = styled(RadixAvatar.Fallback, {
     pointerEvents: 'none',
     userSelect: 'none',
     color: 'var(--text-color)',
-    fontWeight: theme.fontWeights.medium,
+    fontWeight: theme.fontWeights.bold,
 })

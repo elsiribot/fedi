@@ -64,7 +64,7 @@ const Avatar: React.FC<HoloAvatarProps> = ({
                 />
             ) : (
                 <Text
-                    medium
+                    bold
                     tiny={size === AvatarSize.sm}
                     h2={size === AvatarSize.lg}
                     style={mergedTextStyle}>
