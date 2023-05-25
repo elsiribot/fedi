@@ -10,9 +10,9 @@ import { useXmpp } from '../state/hooks/chat'
 import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'EditGroup'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
-const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
+const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [groupName, setGroupName] = useState<string>('')
@@ -50,7 +50,14 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         if (creatingGroup === true) {
             handleCreateGroup()
         }
-    }, [enterMucRoom, creatingGroup, groupName, toast])
+    }, [
+        creatingGroup,
+        enterMucRoom,
+        getUniqueGroupId,
+        groupName,
+        navigation,
+        toast,
+    ])
 
     return (
         <View style={styles(theme).container}>
