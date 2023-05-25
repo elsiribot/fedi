@@ -158,6 +158,7 @@
                 pkgs.wasm-bindgen-cli
                 pkgs.binaryen
                 pkgs.gnused
+                pkgs.yarn
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
