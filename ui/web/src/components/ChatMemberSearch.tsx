@@ -105,6 +105,7 @@ const SearchPrefix = styled('div', {
 })
 
 const SearchInput = styled('input', {
+    flex: 1,
     background: 'none',
     border: 'none',
     padding: 8,

@@ -38,12 +38,19 @@ export const Template: React.FC<Props> = ({ children }) => {
 
 const Container = styled('div', {
     display: 'flex',
-    minHeight: '-webkit-fill-available',
+    minHeight: '100vh',
+    '@supports (min-height: -webkit-fill-available)': {
+        minHeight: '-webkit-fill-available',
+    },
 
     '@md': {
-        height: '-webkit-fill-available',
+        height: '100vh',
         maxHeight: '100vh',
         flexDirection: 'column-reverse',
+
+        '@supports (height: -webkit-fill-available)': {
+            height: '-webkit-fill-available',
+        },
     },
 
     '@standalone': {

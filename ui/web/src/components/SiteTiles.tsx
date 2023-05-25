@@ -31,7 +31,11 @@ export const SiteTiles: React.FC = () => {
                         ) : (
                             <SiteIcon as="div" />
                         )}
-                        <Text variant="small">{site.title}</Text>
+                        <SiteTitle>
+                            <Text variant="small" ellipsize>
+                                {site.title}
+                            </Text>
+                        </SiteTitle>
                     </SiteTile>
                 )
             })}
@@ -57,7 +61,7 @@ const Container = styled('div', {
 const SiteTile = styled('a', {
     display: 'inline-flex',
     flexDirection: 'column',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
     gap: 8,
@@ -67,6 +71,7 @@ const SiteTile = styled('a', {
     margin: '0 auto',
     borderRadius: 8,
     transition: 'background-color 80ms ease',
+    overflow: 'hidden',
 
     '&:hover, &:focus': {
         background: `rgba(0, 0, 0, 0.04)`,
@@ -77,4 +82,9 @@ const SiteIcon = styled(Image, {
     width: 48,
     height: 48,
     borderRadius: 12,
+})
+
+const SiteTitle = styled('div', {
+    maxWidth: '100%',
+    minWidth: 0,
 })

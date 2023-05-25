@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import cogIcon from '@fedi/common/assets/svgs/cog.svg'
 
@@ -8,35 +8,53 @@ import { styled } from '../../styles'
 export const ButtonDemo: React.FC = () => {
     const sizes = ['md', 'sm'] as const
     const variants = ['primary', 'secondary', 'tertiary', 'outline'] as const
+    const [isLoading, setIsLoading] = useState(false)
+    const [isDisabled, setIsDisabled] = useState(false)
+
+    const toggleLoading = () => {
+        setIsLoading(is => !is)
+    }
+
+    const toggleDisabled = () => {
+        setIsDisabled(is => !is)
+    }
 
     return (
         <Container>
+            <ButtonRow>
+                <button onClick={toggleLoading}>Toggle loading</button>
+                <button onClick={toggleDisabled}>Toggle disabled</button>
+            </ButtonRow>
             {sizes.map(size => (
                 <ButtonGroup key={size}>
                     {variants.map(variant => (
-                        <ButtonRow key={variant}>
-                            <Button size={size} variant={variant}>
-                                Button {size} {variant}
-                            </Button>
-                            <Button
-                                size={size}
-                                variant={variant}
-                                icon={cogIcon}>
-                                Button {size} {variant}
-                            </Button>
-                            <Button
-                                size={size}
-                                variant={variant}
-                                href="/playground">
-                                Internal PWA link
-                            </Button>
-                            <Button
-                                size={size}
-                                variant={variant}
-                                href="https://fedi.xyz">
-                                External link
-                            </Button>
-                        </ButtonRow>
+                        <React.Fragment key={variant}>
+                            <ButtonRow>
+                                <Button
+                                    size={size}
+                                    variant={variant}
+                                    loading={isLoading}
+                                    disabled={isDisabled}>
+                                    Button {size} {variant}
+                                </Button>
+                                <Button
+                                    size={size}
+                                    variant={variant}
+                                    icon={cogIcon}
+                                    loading={isLoading}
+                                    disabled={isDisabled}>
+                                    Button {size} {variant}
+                                </Button>
+                                <Button
+                                    size={size}
+                                    variant={variant}
+                                    href="/playground"
+                                    loading={isLoading}
+                                    disabled={isDisabled}>
+                                    Button link
+                                </Button>
+                            </ButtonRow>
+                        </React.Fragment>
                     ))}
                 </ButtonGroup>
             ))}
