@@ -1,9 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import { orderBy } from 'lodash'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
+
+import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
@@ -27,10 +28,15 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const previousGroup = usePrevious(currentGroup)
     // const currentGroup = state.groups.find(g => g.id === group.id)
 
-    const messagesInGroup = state.messages.filter(
-        m => m.sentIn?.id === currentGroup?.id,
-    )
-    const sortedMessages = [...orderBy(messagesInGroup, 'sentAt', 'asc')]
+    const groupedMessages = useMemo(() => {
+        // Filter to messages with this group
+        const messagesInGroup = state.messages.filter(
+            m => m.sentIn?.id === currentGroup?.id,
+        )
+
+        // Group by timestamp / sender
+        return makeMessageGroups(messagesInGroup, 'asc')
+    }, [state.messages, currentGroup?.id])
 
     useEffect(() => {
         // announce presence + add to state.groups
@@ -74,7 +80,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={sortedMessages} multiUserChat />
+            <MessagesList messages={groupedMessages} multiUserChat />
             <MessageInput
                 onMessageSubmitted={messageText => {
                     const newMessage = new Message({
