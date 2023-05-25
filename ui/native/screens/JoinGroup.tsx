@@ -10,9 +10,7 @@ import { useCameraDevices } from 'react-native-vision-camera'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
-import { DEFAULT_GROUP_NAME } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useXmpp } from '../state/hooks/chat'
 import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -23,7 +21,6 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const { getUniqueGroupId } = useXmpp()
 
     const handleUserInput = useCallback(
         async (input: string) => {
@@ -43,21 +40,6 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
         const text = await Clipboard.getString()
         handleUserInput(text.trim())
     }, [handleUserInput])
-
-    const createGroupInvite = async () => {
-        const groupId = await getUniqueGroupId()
-        const groupName = DEFAULT_GROUP_NAME
-        const groupLink = Group.encodeInvitationLink(groupId)
-
-        // TODO: group link should be a deep link with app download fallback
-        navigation.replace('GroupInvite', {
-            group: new Group({
-                id: groupId,
-                name: groupName,
-                invitationCode: groupLink,
-            }),
-        })
-    }
 
     const devices = useCameraDevices()
     const device = devices.back
@@ -89,7 +71,7 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
                     <LineBreak />
                     <Button
                         title={t('feature.chat.create-a-group')}
-                        onPress={createGroupInvite}
+                        onPress={() => navigation.replace('CreateGroup')}
                     />
                     <LineBreak />
                 </>
@@ -109,7 +91,7 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
                     <Button
                         fullWidth
                         title={t('feature.chat.create-a-group')}
-                        onPress={createGroupInvite}
+                        onPress={() => navigation.replace('CreateGroup')}
                         containerStyle={styles(theme, insets).bottomButton}
                     />
                 </View>

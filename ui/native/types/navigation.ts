@@ -46,6 +46,7 @@ export type RootStackParamList = {
     ConfirmSendLightning: { lightningUri: BtcLnUri }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConnectedFederationsDrawer: undefined
+    CreateGroup: undefined
     CreateUsername: undefined
     DirectChat: { member: Member }
     EditGroup: { group: Group }

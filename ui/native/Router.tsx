@@ -15,6 +15,7 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
+import CreateGroupHeader from './components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from './components/feature/chat/DirectChatHeader'
 import EditGroupHeader from './components/feature/chat/EditGroupHeader'
 import GroupAdminHeader from './components/feature/chat/GroupAdminHeader'
@@ -54,6 +55,7 @@ import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
+import CreateGroup from './screens/CreateGroup'
 import CreateUsername from './screens/CreateUsername'
 import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
@@ -286,6 +288,13 @@ const MainNavigator = () => {
                                 component={GroupChat}
                                 options={() => ({
                                     header: () => <GroupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CreateGroup"
+                                component={CreateGroup}
+                                options={() => ({
+                                    header: () => <CreateGroupHeader />,
                                 })}
                             />
                             <Stack.Screen
