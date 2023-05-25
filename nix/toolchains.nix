@@ -115,6 +115,18 @@ let
         "x86_64-linux-android" = {
           extraEnvs = androidCrossEnvVars;
         };
+        "aarch64-apple-ios" = {
+          extraEnvs = "";
+        };
+        "aarch64-apple-ios-sim" = {
+          extraEnvs = "";
+        };
+        "aarch64-apple-darwin" = {
+          extraEnvs = "";
+        };
+        "x86_64-apple-darwin" = {
+          extraEnvs = "";
+        };
       };
 
   fenixChannel = fenix.packages.${system}.stable;
