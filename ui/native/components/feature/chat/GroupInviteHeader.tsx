@@ -19,10 +19,7 @@ const GroupInviteHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            backgroundColor={theme.colors.primary}
-            containerStyle={{
-                borderBottomColor: theme.colors.primary,
-            }}
+            dark
             headerLeft={
                 <Pressable
                     onPress={() => navigation.goBack()}
