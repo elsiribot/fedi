@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -26,8 +26,8 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
-    useEffect(() => {
-        const handleCreateGroup = async () => {
+    const handleCreateGroup = useCallback(async () => {
+        try {
             const groupId = await getUniqueGroupId()
             const groupLink = Group.encodeInvitationLink(groupId)
             const group = new Group({
@@ -35,18 +35,18 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
                 name: groupName,
                 invitationCode: groupLink,
             })
-            enterMucRoom(group)
-                .then((enteredGroup: Group) => {
-                    console.info('group created', enteredGroup)
-                    setCreatingGroup(false)
-                    navigation.replace('GroupChat', { group })
-                })
-                .catch(error => {
-                    console.error('group create failed', error)
-                    toast?.show(error as string, 3000)
-                    setCreatingGroup(false)
-                })
+            const enteredGroup = await enterMucRoom(group)
+            console.info('group created', enteredGroup)
+            navigation.replace('GroupChat', { group })
+        } catch (error) {
+            console.error(error)
+            console.error('group create failed', error)
+            toast?.show(error as string, 3000)
         }
+        setCreatingGroup(false)
+    }, [enterMucRoom, getUniqueGroupId, groupName, navigation, toast])
+
+    useEffect(() => {
         if (creatingGroup === true) {
             handleCreateGroup()
         }
@@ -55,6 +55,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
         enterMucRoom,
         getUniqueGroupId,
         groupName,
+        handleCreateGroup,
         navigation,
         toast,
     ])
