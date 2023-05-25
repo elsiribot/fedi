@@ -5,21 +5,13 @@ set -e
 
 TARGET=$PWD/../target
 
-rustup install stable-x86_64-apple-darwin
-rustup install stable-aarch64-apple-darwin
-rustup component add rust-src --toolchain stable-x86_64-apple-darwin
-rustup component add rust-src --toolchain stable-aarch64-apple-darwin
-rustup target add aarch64-apple-ios x86_64-apple-ios
-rustup target add aarch64-apple-ios-sim --toolchain stable
-rustup target add aarch64-apple-darwin x86_64-apple-darwin
-
 cd fedi-ffi
 cargo run --package ffi-bindgen -- --language swift --out-dir ../fedi-swift/Sources/Fedi
 cd ..
 
 cargo build --package fedi-ffi --profile release-smaller --target x86_64-apple-ios $CARGO_FLAGS
 cargo build --package fedi-ffi --profile release-smaller --target aarch64-apple-ios $CARGO_FLAGS
-cargo +stable build --package fedi-ffi --release --target aarch64-apple-ios-sim $CARGO_FLAGS
+cargo build --package fedi-ffi --release --target aarch64-apple-ios-sim $CARGO_FLAGS
 
 mkdir -p $TARGET/lipo-ios-sim/release-smaller
 lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output $TARGET/lipo-ios-sim/release-smaller/libfediffi.a
