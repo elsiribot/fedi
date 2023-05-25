@@ -7,6 +7,7 @@ type SettingsItemProps = {
     disabled?: boolean
     image: React.ReactNode
     label: string
+    action?: React.ReactNode
     onPress: (event: GestureResponderEvent) => void
 }
 
@@ -14,6 +15,7 @@ const SettingsItem = ({
     disabled = false,
     image,
     label,
+    action,
     onPress,
 }: SettingsItemProps) => {
     const { theme } = useTheme()
@@ -23,11 +25,13 @@ const SettingsItem = ({
             onPress={disabled ? () => {} : onPress}>
             {image}
             <Text style={styles(theme).label}>{label}</Text>
-            <SvgImage
-                name="ChevronRight"
-                containerStyle={styles(theme).icon}
-                color={theme.colors.primaryLight}
-            />
+            {action || (
+                <SvgImage
+                    name="ChevronRight"
+                    containerStyle={styles(theme).icon}
+                    color={theme.colors.primaryLight}
+                />
+            )}
         </Pressable>
     )
 }

@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import { Switch, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
@@ -15,6 +15,9 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { group } = route.params
+    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
+        group.broadcastOnly || false,
+    )
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -37,7 +40,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled
                     image={<SvgImage name="SocialPeople" />}
                     label={t('words.members')}
-                    onPress={() => {}}
+                    onPress={() => console.info('not implemented')}
                 />
                 <SettingsItem
                     image={<SvgImage name="Room" />}
@@ -52,13 +55,21 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled
                     image={<SvgImage name="LeaveRoom" />}
                     label={t('feature.chat.leave-group')}
-                    onPress={() => {}}
+                    onPress={() => console.info('not implemented')}
                 />
                 <SettingsItem
-                    disabled
                     image={<SvgImage name="InviteMembers" />}
                     label={t('feature.chat.broadcast-only')}
-                    onPress={() => {}}
+                    disabled
+                    action={
+                        <Switch
+                            value={broadcastOnly}
+                            onValueChange={value =>
+                                console.info('not implemented')
+                            }
+                        />
+                    }
+                    onPress={() => console.info('not implemented')}
                 />
             </View>
             <View>
@@ -69,25 +80,25 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled
                     image={<SvgImage name="Alarm" />}
                     label={t('feature.chat.disappearing-messages')}
-                    onPress={() => {}}
+                    onPress={() => console.info('not implemented')}
                 />
                 <SettingsItem
                     disabled
                     image={<SvgImage name="ChatHistory" />}
                     label={t('feature.chat.show-history-to-new-members')}
-                    onPress={() => {}}
+                    onPress={() => console.info('not implemented')}
                 />
                 <SettingsItem
                     disabled
                     image={<SvgImage name="Photo" />}
                     label={t('feature.chat.view-shared-media')}
-                    onPress={() => {}}
+                    onPress={() => console.info('not implemented')}
                 />
                 <SettingsItem
                     disabled
                     image={<SvgImage name="Cash" />}
                     label={t('words.payments')}
-                    onPress={() => {}}
+                    onPress={() => console.info('not implemented')}
                 />
             </View>
         </ScrollView>
