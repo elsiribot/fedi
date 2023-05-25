@@ -303,7 +303,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
     return (
         <View style={styles.container}>
-            <SitesBrowserHeader webViewRef={webview} />
+            <SitesBrowserHeader webViewRef={webview} site={site} />
             <WebView
                 ref={webview}
                 source={{ uri }}
