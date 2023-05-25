@@ -7,7 +7,7 @@ import dateUtils from '@fedi/common/utils/DateUtils'
 import { jidToId } from '@fedi/common/utils/chat'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { Chat, ChatType } from '../../../types'
+import { Chat, ChatType, Group } from '../../../types'
 import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -46,7 +46,11 @@ const ChatTile = ({ chat, unread, selectChat }: ChatTileProps) => {
                                 />
                             ) : (
                                 <SvgImage
-                                    name="SocialPeople"
+                                    name={
+                                        (chat as Group).broadcastOnly
+                                            ? 'SpeakerPhone'
+                                            : 'SocialPeople'
+                                    }
                                     size={SvgImageSize.lg}
                                 />
                             )}
