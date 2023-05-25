@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { ReactNode } from 'react'
 import {
     Linking,
     StyleProp,
@@ -26,6 +26,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
 }: MessageContentsProps) => {
     const { theme } = useTheme()
 
+    let text: ReactNode = null
     // Check if there are any group invite codes in the message like this
     //      fedi:group:uuid_generated_on_group_creation:::
     // this group invite scheme was updated to add 3 trailing colons for more
@@ -73,7 +74,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
             content,
         )
 
-        return (
+        text = (
             <View>
                 {messageElements.map((m: string, i: number) => {
                     const isGroupCode = m.startsWith('fedi:group:')
@@ -109,23 +110,27 @@ const MessageContents: React.FC<MessageContentsProps> = ({
         )
     } else {
         // otherwise just render text normally
-        return (
-            <Hyperlink
-                linkStyle={
-                    sentByMe
-                        ? styles(theme).outgoingLinkedText
-                        : styles(theme).incomingLinkedText
-                }
-                onPress={url => {
-                    console.debug('url', url)
-                    Linking.openURL(url)
-                }}>
-                <Text caption medium style={textStyles} selectable>
-                    {content}
-                </Text>
-            </Hyperlink>
+        text = (
+            <Text caption medium style={textStyles} selectable>
+                {content}
+            </Text>
         )
     }
+
+    return (
+        <Hyperlink
+            linkStyle={
+                sentByMe
+                    ? styles(theme).outgoingLinkedText
+                    : styles(theme).incomingLinkedText
+            }
+            onPress={url => {
+                console.debug('url', url)
+                Linking.openURL(url)
+            }}>
+            {text}
+        </Hyperlink>
+    )
 }
 
 const styles = (theme: Theme) =>
