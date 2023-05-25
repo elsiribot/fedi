@@ -18,7 +18,7 @@ const GroupHeader: React.FC<{}> = () => {
     const route = useRoute<GroupChatRouteProp>()
     const { group } = route.params
 
-    const groupName = group.name || t('feature.chat.new-group')
+    const headerText = group.name || t('feature.chat.new-group')
 
     return (
         <Header
@@ -38,7 +38,7 @@ const GroupHeader: React.FC<{}> = () => {
                         bold
                         numberOfLines={1}
                         style={styles(theme).groupNameText}>
-                        {groupName}
+                        {headerText}
                     </Text>
                 </Pressable>
             }
