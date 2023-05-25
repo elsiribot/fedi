@@ -255,7 +255,8 @@ interface PublishPublicKeyArgs extends CommonXmppAttributes {
 }
 type SetPubsubNodeConfigArgs = CommonXmppAttributes
 interface SetRoomConfigArgs extends CommonXmppAttributes {
-    roomName: string
+    roomName?: string
+    moderatedRoom?: boolean
 }
 type UniqueRoomNameArgs = CommonXmppAttributes
 export class AddToRosterQuery extends XmppQuery {
@@ -550,7 +551,7 @@ export class SetRoomConfigQuery extends XmppQuery {
         this.args = args
     }
     build = (): Element => {
-        const { roomName, from, to } = this.args
+        const { moderatedRoom, roomName = '', from, to } = this.args
 
         const attributes = {
             id: `${SetRoomConfigQuery.id}-${uuidv4()}`,
@@ -559,15 +560,7 @@ export class SetRoomConfigQuery extends XmppQuery {
             type: 'set',
         }
 
-        const roomNameFieldXml = xml(
-            'field',
-            {
-                var: 'muc#roomconfig_roomname',
-            },
-            xml('value', {}, roomName),
-        )
-        // When sending a new configuration for this room we make
-        // sure the room remains persistent
+        // make sure the room remains persistent
         const persistenceFieldXml = xml(
             'field',
             {
@@ -575,6 +568,28 @@ export class SetRoomConfigQuery extends XmppQuery {
             },
             xml('value', {}, '1'),
         )
+
+        let roomNameFieldXml, moderationFieldXml
+        if (roomName) {
+            roomNameFieldXml = xml(
+                'field',
+                {
+                    var: 'muc#roomconfig_roomname',
+                },
+                xml('value', {}, roomName),
+            )
+        }
+        if (moderatedRoom) {
+            // moderated rooms are "broadcast-only" so users can receive but not
+            // send messages unless they are granted "voice"
+            moderationFieldXml = xml(
+                'field',
+                {
+                    var: 'muc#roomconfig_moderatedroom',
+                },
+                xml('value', {}, '1'),
+            )
+        }
 
         const queryBodyXml = xml(
             'query',
@@ -596,8 +611,12 @@ export class SetRoomConfigQuery extends XmppQuery {
                         'http://jabber.org/protocol/muc#roomconfig',
                     ),
                 ),
-                roomNameFieldXml,
                 persistenceFieldXml,
+                // Don't love this conditional logic, but this xml library is
+                // not very Typescipt-friendly and not sure how to do variable
+                // length function parameters with custom typings?
+                ...(roomNameFieldXml ? [roomNameFieldXml] : []),
+                ...(moderationFieldXml ? [moderationFieldXml] : []),
             ),
         )
 

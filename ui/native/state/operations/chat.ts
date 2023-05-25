@@ -20,7 +20,7 @@ import xmlUtils, {
     UniqueRoomNameQuery,
 } from '@fedi/common/utils/XmlUtils'
 
-import { DEFAULT_GROUP_NAME } from '../../constants'
+import { DEFAULT_GROUP_NAME, XMPP_MUC_ROLE_VISITOR } from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
@@ -175,7 +175,7 @@ export const fetchRoster = (xmppClient: Client | null): Promise<Member[]> => {
 export const fetchMucRoomConfig = (
     group: Group,
     xmppClient: Client | null,
-): Promise<string> => {
+): Promise<Group> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
             return reject(i18n.t('errors.unknown-error'))
@@ -191,15 +191,23 @@ export const fetchMucRoomConfig = (
             const result = await iqCaller.request(roomConfigQueryXml)
             console.info('fetchMucRoomConfig', result)
             if (result.getChild('query')) {
-                const groupName = result
-                    .getChild('query')
-                    ?.getChild('x')
+                const fields = result.getChild('query')?.getChild('x')
+                const groupName = fields
                     ?.getChildByAttr('var', 'muc#roomconfig_roomname')
                     ?.getChildText('value')
+                const features = result
+                    .getChild('query')
+                    ?.getChildren('feature')
 
-                console.info('result:groupName', groupName)
+                const moderated = features?.find(
+                    f => f.getAttr('var') === 'muc_moderated',
+                )
 
-                resolve(groupName || DEFAULT_GROUP_NAME)
+                resolve({
+                    ...group,
+                    name: groupName || DEFAULT_GROUP_NAME,
+                    broadcastOnly: moderated !== undefined,
+                })
             }
         } catch (error) {
             console.error('fetchMucRoomConfig', error)
@@ -294,6 +302,7 @@ export const enterMucRoom = (
                             const roomConfigQueryXml = xmlUtils.buildQuery(
                                 new SetRoomConfigQuery({
                                     roomName: group.name || DEFAULT_GROUP_NAME,
+                                    moderatedRoom: group.broadcastOnly || false,
                                     from: fromUser,
                                     to: `${
                                         group.id
@@ -310,7 +319,24 @@ export const enterMucRoom = (
                                 'stanza',
                                 onStanzaReceived,
                             )
-                            resolve(group)
+
+                            // Expected roles:
+                            //  Group creators always have a role = 'owner'
+                            //  Open/unmoderated groups:
+                            //      default role = 'participant'
+                            //  Broadcast-only groups:
+                            //      default role = 'visitor'
+                            // Visitors cannot send messages in the group
+                            const role = result
+                                ?.getChild('item')
+                                ?.getAttr('role')
+
+                            resolve(
+                                new Group({
+                                    ...group,
+                                    myRole: role || XMPP_MUC_ROLE_VISITOR,
+                                }),
+                            )
                         }
                     })
                 }

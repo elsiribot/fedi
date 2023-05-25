@@ -103,6 +103,8 @@ export class Chat extends Base {
     }
 }
 export class Group extends Chat {
+    broadcastOnly?: boolean
+    myRole?: string
     description?: string
     settings?: GroupSettings
     invitationCode?: FediGroupLink

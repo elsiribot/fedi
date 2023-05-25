@@ -51,7 +51,7 @@ export const useXmpp = () => {
             [dispatch, xmppClient],
         ),
         fetchMucRoomConfig: useCallback(
-            (group: Group): Promise<string> => {
+            (group: Group): Promise<Group> => {
                 return fetchMucRoomConfig(group, xmppClient)
             },
             [xmppClient],
