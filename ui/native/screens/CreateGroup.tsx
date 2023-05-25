@@ -5,56 +5,52 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { DEFAULT_GROUP_NAME } from '../constants'
-import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { usePrevious } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { resetAfterGroupNameUpdate } from '../state/navigation'
+import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'EditGroup'>
 
-const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
+const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { group } = route.params
-    const [groupName, setGroupName] = useState<string>(
-        group.name || DEFAULT_GROUP_NAME,
-    )
-    const [editingGroupName, setEditingGroupName] = useState<boolean>(false)
-    const { groups } = useChatContext().state
+    const [groupName, setGroupName] = useState<string>('')
+    const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
+    const { enterMucRoom, getUniqueGroupId } = useXmpp()
     const { toast } = useEnvironmentContext().state
-    const { changeMucRoomName } = useXmpp()
-    const currentGroup = groups.find(g => g.id === group.id)
-    const previousGroup = usePrevious(currentGroup)
 
     const handleSubmit = async () => {
-        setEditingGroupName(true)
+        if (groupName) {
+            setCreatingGroup(true)
+        }
     }
 
     useEffect(() => {
-        const handleEditGroupName = async () => {
-            changeMucRoomName(group, groupName)?.catch(error => {
-                toast?.show(error as string, 3000)
-                setEditingGroupName(false)
+        const handleCreateGroup = async () => {
+            const groupId = await getUniqueGroupId()
+            const groupLink = Group.encodeInvitationLink(groupId)
+            const group = new Group({
+                id: groupId,
+                name: groupName,
+                invitationCode: groupLink,
             })
+            enterMucRoom(group)
+                .then((enteredGroup: Group) => {
+                    console.info('group created', enteredGroup)
+                    setCreatingGroup(false)
+                    navigation.replace('GroupChat', { group })
+                })
+                .catch(error => {
+                    console.error('group create failed', error)
+                    toast?.show(error as string, 3000)
+                    setCreatingGroup(false)
+                })
         }
-        if (editingGroupName === true) {
-            handleEditGroupName()
+        if (creatingGroup === true) {
+            handleCreateGroup()
         }
-    }, [changeMucRoomName, editingGroupName, group, groupName, toast])
-
-    useEffect(() => {
-        if (
-            currentGroup?.name &&
-            previousGroup?.name &&
-            currentGroup?.name !== previousGroup?.name
-        ) {
-            setEditingGroupName(false)
-            navigation.dispatch(resetAfterGroupNameUpdate(currentGroup))
-        }
-    }, [currentGroup, previousGroup, navigation])
+    }, [enterMucRoom, creatingGroup, groupName, toast])
 
     return (
         <View style={styles(theme).container}>
@@ -78,8 +74,8 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 fullWidth
                 title={t('phrases.save-changes')}
                 onPress={handleSubmit}
-                loading={editingGroupName}
-                disabled={!groupName || editingGroupName}
+                loading={creatingGroup}
+                disabled={!groupName || creatingGroup}
                 containerStyle={styles(theme).button}
             />
         </View>
@@ -118,4 +114,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default EditGroup
+export default CreateGroup
