@@ -7,19 +7,13 @@ import { getIdentityColors } from '@fedi/common/utils/color'
 
 import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
 
-/*
-    This is a custom Avatar capable of holo background with
-    combined with a title text since the React Native Elements
-    Avatar component does not support this
-*/
-
 export enum AvatarSize {
     sm = 'sm',
     md = 'md',
     lg = 'lg',
 }
 
-const imageSizeMapping = {
+const svgImageSizeMapping = {
     [AvatarSize.sm]: SvgImageSize.xs,
     [AvatarSize.md]: SvgImageSize.sm,
     [AvatarSize.lg]: SvgImageSize.md,
@@ -65,7 +59,7 @@ const Avatar: React.FC<HoloAvatarProps> = ({
             {icon ? (
                 <SvgImage
                     name={icon}
-                    size={imageSizeMapping[size]}
+                    size={svgImageSizeMapping[size]}
                     color={textColor}
                 />
             ) : (
