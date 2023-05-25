@@ -110,7 +110,11 @@
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
         "invalid-character": "The following characters are not allowed: \" & ' / : < >",
-        "you-have-already-joined": "You have already joined this federation"
+        "you-have-already-joined": "You have already joined this federation",
+        "webln-canceled": "Canceled request",
+        "webln-method-not-supported": "{{method}} is not supported",
+        "webln-payment-rejected": "Payment rejected",
+        "webln-payment-request-rejected": "Payment request rejected"
     },
     "feature": {
         "backup": {

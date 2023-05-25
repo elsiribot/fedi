@@ -126,7 +126,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             onPress: () => {
                                 reject(
                                     new RejectionError(
-                                        'Invoice request rejected',
+                                        t(
+                                            'errors.webln-payment-request-rejected',
+                                        ),
                                     ),
                                 )
                                 setShowOverlay(false)
@@ -195,7 +197,11 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             text: t('words.reject'),
                             onPress: () => {
                                 setShowOverlay(false)
-                                reject(new RejectionError('Payment rejected'))
+                                reject(
+                                    new RejectionError(
+                                        t('errors.webln-payment-rejected'),
+                                    ),
+                                )
                             },
                         },
                         {
@@ -222,13 +228,23 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         signMessage: async () => {
-            throw new UnsupportedMethodError('signMessage is not supported')
+            throw new UnsupportedMethodError(
+                t('errors.webln-method-not-supported', {
+                    method: 'signMessage',
+                }),
+            )
         },
         verifyMessage: async () => {
-            throw new UnsupportedMethodError('verifyMessage is not supported')
+            throw new UnsupportedMethodError(
+                t('errors.webln-method-not-supported', {
+                    method: 'verifyMessage',
+                }),
+            )
         },
         keysend: async () => {
-            throw new UnsupportedMethodError('keysend is not supported')
+            throw new UnsupportedMethodError(
+                t('errors.webln-method-not-supported', { method: 'keysend' }),
+            )
         },
 
         // Non-WebLN
@@ -307,7 +323,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 onBackdropPress={() => {
                     setShowOverlay(false)
                     if (overlayRejectRef.current) {
-                        overlayRejectRef.current(new RejectionError('Canceled'))
+                        overlayRejectRef.current(
+                            new RejectionError(t('errors.webln-canceled')),
+                        )
                         overlayRejectRef.current = undefined
                     }
                 }}
