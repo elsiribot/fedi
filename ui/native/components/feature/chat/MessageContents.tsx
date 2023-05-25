@@ -142,7 +142,7 @@ const styles = (theme: Theme) =>
         },
         outgoingLinkedText: {
             textDecorationLine: 'underline',
-            color: theme.colors.primary,
+            color: theme.colors.secondary,
         },
     })
 
