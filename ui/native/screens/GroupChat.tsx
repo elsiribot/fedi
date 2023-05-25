@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import uuid from 'react-native-uuid'
 
@@ -8,6 +9,7 @@ import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
+import { XMPP_MUC_ROLE_VISITOR } from '../constants'
 import {
     addToGroups,
     changeActiveChatId,
@@ -22,6 +24,7 @@ import type { RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const { state, dispatch } = useChatContext()
     const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
@@ -70,7 +73,8 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
             storedGroup &&
             storedGroup?.name &&
             previousGroup?.name &&
-            storedGroup?.name !== previousGroup?.name
+            (storedGroup?.name !== previousGroup?.name ||
+                storedGroup?.broadcastOnly !== previousGroup?.broadcastOnly)
         ) {
             navigation.setParams({
                 group: storedGroup,
@@ -84,46 +88,51 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         return () => dispatch(changeActiveChatId(null))
     }, [dispatch, currentGroup.id])
 
+    // In a broadcast-only group, members cannot send messages if they have a
+    // role of 'visitor'. The creator of the group has the role of 'owner'
+    const blockMessageInput =
+        currentGroup.broadcastOnly &&
+        currentGroup.myRole === XMPP_MUC_ROLE_VISITOR
+
     return (
         <View style={styles(theme).container}>
             <MessagesList messages={groupedMessages} multiUserChat />
-            <MessageInput
-                onMessageSubmitted={messageText => {
-                    const newMessage = new Message({
-                        id: uuid.v4(),
-                        content: messageText,
-                        sentAt: Date.now() / 1000,
-                        sentBy: new Member({
-                            jid: state.xmppClient!.jid,
-                        }),
-                        sentIn: currentGroup,
-                    })
-                    sendGroupMessage(currentGroup, newMessage)
-                    // TODO: add message locally and validate later
-                    // when server confirms sent message (smoother UX)
-                    // dispatch(
-                    //     addToMessages(
-                    //         new Message({
-                    //             id: randomId(),
-                    //             content: messageText,
-                    //             sentBy: new Member({ username: 'me' }),
-                    //             sentIn: currentGroup,
-                    //             sentAt: Date.now(),
-                    //         }),
-                    //     ),
-                    // )
-                }}
-            />
+            {blockMessageInput ? (
+                <Text style={styles(theme).noticeText}>
+                    {t('feature.chat.broadcast-only-notice')}
+                </Text>
+            ) : (
+                <MessageInput
+                    onMessageSubmitted={messageText => {
+                        const newMessage = new Message({
+                            id: uuid.v4(),
+                            content: messageText,
+                            sentAt: Date.now() / 1000,
+                            sentBy: new Member({
+                                jid: state.xmppClient!.jid,
+                            }),
+                            sentIn: currentGroup,
+                        })
+                        sendGroupMessage(currentGroup, newMessage)
+                    }}
+                />
+            )}
         </View>
     )
 }
 
-const styles = (_: Theme) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        noticeText: {
+            textAlign: 'center',
+            padding: theme.spacing.xl,
+            color: theme.colors.primaryVeryLight,
+            width: '70%',
         },
     })
 
