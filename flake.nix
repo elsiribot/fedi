@@ -9,7 +9,7 @@
     };
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=rel-a05&rev=8aa67910795ecb0fc86c233f3b3d75f51175054a";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=rel-a05&rev=306a5eea459ae3023e7a90c5f4e96e2becd6a5e7";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
