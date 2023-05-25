@@ -5,9 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
-import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
+import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -25,11 +24,10 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <View style={styles(theme).contentContainer}>
                 <View style={styles(theme).avatarContainer}>
-                    <HoloAvatar
+                    <Avatar
+                        id={authenticatedMember?.id || ''}
                         size={AvatarSize.lg}
-                        title={stringUtils.getInitialsFromName(
-                            authenticatedMember?.username || '',
-                        )}
+                        name={authenticatedMember?.username || ''}
                     />
                 </View>
                 <Text h2 medium style={styles(theme).welcomeTitle}>

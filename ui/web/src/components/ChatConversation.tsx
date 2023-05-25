@@ -4,7 +4,8 @@ import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
-import { ChatMessage as ChatMessageType } from '@fedi/common/types'
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
+import { ChatMessage as ChatMessageType, ChatType } from '@fedi/common/types'
 
 import { useToast, useAutosizeTextArea } from '../hooks'
 import { styled, theme } from '../styles'
@@ -15,20 +16,22 @@ import { IconButton } from './IconButton'
 import { Text } from './Text'
 
 interface Props {
+    type: ChatType
+    id: string
     name: string
     messages: ChatMessageType[]
     headerActions?: React.ReactNode
     inputActions?: React.ReactNode
-    showUsernames?: boolean
     onSendMessage(message: string): Promise<void>
 }
 
 export const ChatConversation: React.FC<Props> = ({
+    type,
+    id,
     name,
     messages,
     headerActions,
     inputActions,
-    showUsernames,
     onSendMessage,
 }) => {
     const toast = useToast()
@@ -106,7 +109,13 @@ export const ChatConversation: React.FC<Props> = ({
                         onClick={() => back()}
                     />
                 </BackButton>
-                <Avatar name={name} />
+                <Avatar
+                    id={id}
+                    name={name}
+                    icon={
+                        type === ChatType.group ? SocialPeopleIcon : undefined
+                    }
+                />
                 <Text weight="medium" css={{ flex: 1 }}>
                     {name}
                 </Text>
@@ -119,7 +128,7 @@ export const ChatConversation: React.FC<Props> = ({
                     <ChatMessageCollection
                         key={collection[0][0].id}
                         collection={collection}
-                        showUsernames={showUsernames}
+                        showUsernames={type === ChatType.group}
                     />
                 ))}
             </Messages>

@@ -14,12 +14,12 @@ import Hyperlink from 'react-native-hyperlink'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
-import HoloAvatar from '../../ui/HoloAvatar'
+import Avatar from '../../ui/Avatar'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
@@ -89,10 +89,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 style={styles(theme).messageContainer}>
                 {!sentByMe && multiUserChat && (
                     <View style={styles(theme).avatarContainer}>
-                        <HoloAvatar
-                            title={stringUtils.getInitialsFromName(
-                                sentBy?.username!,
-                            )}
+                        <Avatar
+                            id={jidToId(sentBy?.jid || '')}
+                            name={sentBy?.username || ''}
                         />
                     </View>
                 )}

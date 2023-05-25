@@ -3,23 +3,13 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { jidToId } from '@fedi/common/utils/chat'
+
 import { Props as ChatWalletProps } from '../../../screens/ChatWallet'
+import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
-import HoloAvatar from '../../ui/HoloAvatar'
 
 type ChatWalletRouteProp = ChatWalletProps['route']
-
-const getInitialsFromName = (name: string): string => {
-    const names = name.split(' ')
-    let initials = ''
-    if (names.length === 1) {
-        initials = name.substring(0, 1)
-    }
-    if (names.length >= 2) {
-        initials = `${names[0].substring(0, 1)}${names[1].substring(0, 1)}`
-    }
-    return initials.toUpperCase()
-}
 
 const GroupHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -32,8 +22,9 @@ const GroupHeader: React.FC<{}> = () => {
             containerStyle={styles(theme).container}
             headerCenter={
                 <View style={styles(theme).recipientContainer}>
-                    <HoloAvatar
-                        title={getInitialsFromName(recipient.username)}
+                    <Avatar
+                        id={jidToId(recipient.jid)}
+                        name={recipient.username}
                     />
                     <Text bold style={styles(theme).recipientText}>
                         {recipient.username}

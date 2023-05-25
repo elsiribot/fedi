@@ -2,8 +2,10 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
+import { jidToId } from '@fedi/common/utils/chat'
+
 import { Member } from '../../../types'
-import HoloAvatar, { AvatarSize } from '../../ui/HoloAvatar'
+import Avatar, { AvatarSize } from '../../ui/Avatar'
 
 type MemberItemProps = {
     member: Member
@@ -22,8 +24,9 @@ const MemberItem: React.FC<MemberItemProps> = ({
             onPress={() => {
                 selectMember(member)
             }}>
-            <HoloAvatar
-                title={member.username.substring(0, 1).toUpperCase()}
+            <Avatar
+                id={jidToId(member.jid)}
+                name={member.username}
                 size={AvatarSize.md}
             />
             <Text numberOfLines={1} bold style={[styles(theme).usernameText]}>

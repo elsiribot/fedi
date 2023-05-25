@@ -32,8 +32,10 @@ export const FederationWelcome: React.FC = () => {
                     <FederationInfoInner>
                         <AvatarWrapper>
                             <Avatar
+                                id={activeFederation.id}
                                 shape="hexagon"
                                 size="lg"
+                                holo
                                 name={activeFederation.name}
                             />
                         </AvatarWrapper>

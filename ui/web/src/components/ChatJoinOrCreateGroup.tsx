@@ -2,6 +2,7 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import {
     createChatGroup,
     fetchChatMembers,
@@ -9,13 +10,10 @@ import {
     selectActiveFederation,
     selectChatXmppClient,
 } from '@fedi/common/redux'
-import {
-    decodeGroupInvitationLink,
-    encodeGroupInvitationLink,
-} from '@fedi/common/utils/xmpp'
+import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
-import { styled, theme } from '../styles'
+import { styled } from '../styles'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { CopyInput } from './CopyInput'
@@ -32,7 +30,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
     const [joinGroupLink, setJoinGroupLink] = useState('')
     const [isCreatingGroup, setIsCreatingGroup] = useState(false)
     const [isScanning, setIsScanning] = useState(false)
-    const [newGroupLink, setNewGroupLink] = useState('')
+    const [newGroupId, setNewGroupId] = useState<string>('')
     const [newGroupName, setNewGroupName] = useState(
         t('feature.chat.new-group'),
     )
@@ -45,11 +43,11 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
 
     // Generate a new group when we go to create one
     useEffect(() => {
-        if (!isCreatingGroup || !xmppClient || newGroupLink) return
+        if (!isCreatingGroup || !xmppClient || newGroupId) return
         xmppClient.generateUniqueGroupId().then(id => {
-            setNewGroupLink(encodeGroupInvitationLink(id))
+            setNewGroupId(id)
         })
-    }, [dispatch, isCreatingGroup, xmppClient, newGroupLink])
+    }, [dispatch, isCreatingGroup, xmppClient, newGroupId])
 
     const handleJoinGroup = useCallback(async () => {
         if (!federationId) return
@@ -67,16 +65,19 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         setIsSavingGroup(true)
         try {
             if (!federationId) throw new Error('errors.chat-unavailable')
-            const id = decodeGroupInvitationLink(newGroupLink)
             const newGroup = await dispatch(
-                createChatGroup({ federationId, id, name: newGroupName }),
+                createChatGroup({
+                    federationId,
+                    id: newGroupId,
+                    name: newGroupName,
+                }),
             ).unwrap()
             push(`/chat/group/${newGroup.id}`)
         } catch (err) {
             toast.showErrorToast(err, 'errors.chat-unavailable')
         }
         setIsSavingGroup(false)
-    }, [federationId, newGroupLink, newGroupName, dispatch, push, toast])
+    }, [federationId, newGroupId, newGroupName, dispatch, push, toast])
 
     // Automatically attempt to join group after changing value
     useEffect(() => {
@@ -91,7 +92,12 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
     if (isCreatingGroup) {
         content = (
             <Inner>
-                <Avatar size="lg" name={newGroupName} />
+                <Avatar
+                    id={newGroupId}
+                    size="lg"
+                    name={newGroupName}
+                    icon={SocialPeopleIcon}
+                />
                 <Input
                     label={t('feature.chat.group-name')}
                     value={newGroupName}
@@ -99,13 +105,15 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                 />
                 <CopyInput
                     label={t('feature.chat.group-invite')}
-                    value={newGroupLink}
+                    value={
+                        newGroupId ? encodeGroupInvitationLink(newGroupId) : ''
+                    }
                     onCopyMessage={t('feature.chat.copied-group-invite-code')}
                 />
                 <Buttons>
                     <Button
                         width="full"
-                        disabled={!newGroupLink}
+                        disabled={!newGroupId}
                         loading={isSavingGroup}
                         onClick={handleSaveNewGroup}>
                         {t('feature.chat.view-group')}

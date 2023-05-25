@@ -4,13 +4,13 @@ import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { jidToId } from '@fedi/common/utils/chat'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { Chat, ChatType } from '../../../types'
-import HoloAvatar from '../../ui/HoloAvatar'
-import { AvatarSize } from '../../ui/HoloAvatar'
-import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+import Avatar from '../../ui/Avatar'
+import { AvatarSize } from '../../ui/Avatar'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
@@ -36,10 +36,9 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     {chat.type === ChatType.direct ? (
                         <View style={styles(theme).directIconContainer}>
                             {chat.members && chat.members[0]?.username ? (
-                                <HoloAvatar
-                                    title={stringUtils.getInitialsFromName(
-                                        chat.members[0].username,
-                                    )}
+                                <Avatar
+                                    id={jidToId(chat.members[0].jid)}
+                                    name={chat.members[0].username}
                                     size={AvatarSize.md}
                                 />
                             ) : (
@@ -50,13 +49,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                             )}
                         </View>
                     ) : (
-                        <GroupIcon
-                            iconName={
-                                chat.icon
-                                    ? (chat.icon as SvgImageName)
-                                    : 'SocialPeople'
-                            }
-                        />
+                        <GroupIcon chat={chat} />
                     )}
                 </View>
             </View>

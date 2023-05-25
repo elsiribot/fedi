@@ -33,8 +33,9 @@ export const ChatMessageCollection: React.FC<Props> = ({
             </MessageTimestamp>
             <MessageCollection>
                 {collection.map(messages => {
-                    const member = memberMap[messages[0].sentBy]
-                    const isMe = messages[0].sentBy === authenticatedMember?.id
+                    const sentBy = messages[0].sentBy
+                    const member = memberMap[sentBy]
+                    const isMe = sentBy === authenticatedMember?.id
                     return (
                         <div key={messages[0].id}>
                             {showUsernames && !isMe && (
@@ -43,7 +44,7 @@ export const ChatMessageCollection: React.FC<Props> = ({
                                 </Username>
                             )}
                             <MessageAvatarWrap isMe={isMe}>
-                                <Avatar name={messages[0].sentBy} size="sm" />
+                                <Avatar id={sentBy} name={sentBy} size="sm" />
                                 <Messages isMe={isMe}>
                                     {messages.map(msg => (
                                         <ChatMessage

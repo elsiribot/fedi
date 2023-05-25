@@ -16,17 +16,21 @@ import {
 
 export const OnboardingComplete: React.FC = () => {
     const { t } = useTranslation()
-    const username = useAppSelector(selectAuthenticatedMember)?.username
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     return (
         <OnboardingContainer>
             <OnboardingContent>
                 <AvatarWrapper>
-                    <Avatar name={username || '?'} size="lg" />
+                    <Avatar
+                        id={authenticatedMember?.id || ''}
+                        name={authenticatedMember?.username || '?'}
+                        size="lg"
+                    />
                 </AvatarWrapper>
                 <Text variant="h2" weight="medium">
                     {t('feature.onboarding.nice-to-meet-you', {
-                        username,
+                        username: authenticatedMember?.username || '',
                     })}
                 </Text>
                 <Text>{t('feature.onboarding.greeting-instructions')}</Text>

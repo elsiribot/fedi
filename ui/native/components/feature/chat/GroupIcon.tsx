@@ -1,54 +1,24 @@
-import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
 
-import HoloAvatar from '../../ui/HoloAvatar'
-import { AvatarSize } from '../../ui/HoloAvatar'
-import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+import { Chat } from '../../../types'
+import Avatar from '../../ui/Avatar'
+import { AvatarSize } from '../../ui/Avatar'
+import type { SvgImageName } from '../../ui/SvgImage'
 
 type GroupIconProps = {
-    iconName: SvgImageName
+    chat: Chat
+    size?: AvatarSize
 }
 
-const GroupIcon = ({ iconName }: GroupIconProps) => {
-    const { theme } = useTheme()
+const GroupIcon = ({ chat, size = AvatarSize.md }: GroupIconProps) => {
     return (
-        <View style={styles(theme).container}>
-            <View style={styles(theme).holoBackground}>
-                <HoloAvatar title={''} size={AvatarSize.md} />
-            </View>
-            <View style={styles(theme).whiteCircle}>
-                <SvgImage name={iconName} size={SvgImageSize.sm} />
-            </View>
-        </View>
+        <Avatar
+            id={chat.id}
+            name={chat.name || ''}
+            icon={(chat.icon as SvgImageName) || 'SocialPeople'}
+            size={size}
+        />
     )
 }
-
-const styles = (theme: Theme) =>
-    StyleSheet.create({
-        container: {
-            position: 'relative',
-            height: theme.sizes.lg,
-            width: theme.sizes.lg,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        holoBackground: {
-            position: 'absolute',
-            height: theme.sizes.lg,
-            width: theme.sizes.lg,
-        },
-        whiteCircle: {
-            position: 'absolute',
-            height: theme.sizes.lg - 5,
-            width: theme.sizes.lg - 5,
-            borderRadius: theme.sizes.lg * 0.5,
-            backgroundColor: theme.colors.white,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-    })
 
 export default GroupIcon

@@ -61,7 +61,11 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
                             as={Link}
                             key={member.id}
                             href={`/chat/member/${member.id}`}>
-                            <Avatar size="md" name={member.username} />
+                            <Avatar
+                                id={member.id}
+                                size="md"
+                                name={member.username}
+                            />
                             <Text variant="caption" weight="bold">
                                 {member.username}
                             </Text>

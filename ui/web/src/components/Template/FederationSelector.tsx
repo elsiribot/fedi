@@ -43,7 +43,13 @@ export const FederationSelector: React.FC = () => {
                     <FederationItem
                         active={fed.id === activeFederation.id}
                         onClick={() => handleSelectFederation(fed)}>
-                        <Avatar size="sm" shape="hexagon" name={fed.name} />
+                        <Avatar
+                            id={fed.id}
+                            size="sm"
+                            shape="hexagon"
+                            name={fed.name}
+                            holo
+                        />
                         <div>
                             <Text variant="caption" weight="bold">
                                 {fed.name}
@@ -78,9 +84,11 @@ export const FederationSelector: React.FC = () => {
                 onOpenChange={setIsSelectorOpen}>
                 <ActiveFederation>
                     <Avatar
+                        id={activeFederation.id}
                         size="sm"
                         shape="hexagon"
                         name={activeFederation.name}
+                        holo
                     />
                     <Text variant="caption" weight="bold">
                         {activeFederation.name}
