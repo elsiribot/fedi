@@ -17,7 +17,7 @@ mkdir -p $TARGET/lipo-ios-sim/release-smaller
 lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output $TARGET/lipo-ios-sim/release-smaller/libfediffi.a
 
 pushd fedi-swift
-mv Sources/Fedi/fedi.swift Sources/Fedi/Fedi.swift
+mv Sources/Fedi/fedi.swift Sources/Fedi/Fedi.swift || true
 cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64/fediFFI.framework/Headers
 cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/Headers
 cp Sources/Fedi/fediFFI.h fediFFI.xcframework/macos-arm64_x86_64/fediFFI.framework/Headers
