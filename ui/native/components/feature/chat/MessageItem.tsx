@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
-    Linking,
     Pressable,
     StyleProp,
     StyleSheet,
@@ -10,14 +9,15 @@ import {
     View,
     ViewStyle,
 } from 'react-native'
-import Hyperlink from 'react-native-hyperlink'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
+import Avatar from '../../ui/Avatar'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
@@ -79,16 +79,26 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     return (
         <View style={styles(theme).container}>
-            <Pressable
-                // link to direct chat but only for incoming messages
-                // in group chats
-                disabled={sentByMe || multiUserChat === false}
-                onPress={() => {
-                    if (sentBy) {
-                        navigation.navigate('DirectChat', { member: sentBy })
-                    }
-                }}
-                style={styles(theme).messageContainer}>
+            <View style={styles(theme).messageContainer}>
+                {!sentByMe && multiUserChat && (
+                    // link to direct chat but only for incoming messages
+                    // in group chats
+                    <Pressable
+                        style={styles(theme).avatarContainer}
+                        onPress={() => {
+                            if (sentBy) {
+                                navigation.navigate('DirectChat', {
+                                    member: sentBy,
+                                })
+                            }
+                        }}>
+                        <Avatar
+                            id={jidToId(sentBy?.jid || '')}
+                            name={sentBy?.username || ''}
+                        />
+                    </Pressable>
+                )}
+
                 <View style={styles(theme).contentContainer}>
                     <OptionalGradient
                         gradient={bubbleGradient}
@@ -96,22 +106,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         {payment ? (
                             <PaymentMessage message={message} />
                         ) : (
-                            <Hyperlink
-                                linkStyle={
-                                    sentByMe
-                                        ? styles(theme).outgoingLinkedText
-                                        : styles(theme).incomingLinkedText
-                                }
-                                onPress={url => Linking.openURL(url)}>
-                                <MessageContents
-                                    content={message.content}
-                                    textStyles={textStyles}
-                                />
-                            </Hyperlink>
+                            <MessageContents
+                                sentByMe={sentByMe}
+                                content={message.content}
+                                textStyles={textStyles}
+                            />
                         )}
                     </OptionalGradient>
                 </View>
-            </Pressable>
+            </View>
         </View>
     )
 }
@@ -161,14 +164,6 @@ const styles = (theme: Theme) =>
         },
         orangeBubble: {
             backgroundColor: theme.colors.orange,
-        },
-        incomingLinkedText: {
-            textDecorationLine: 'underline',
-            color: theme.colors.blue,
-        },
-        outgoingLinkedText: {
-            textDecorationLine: 'underline',
-            color: theme.colors.primary,
         },
         messageText: {
             textAlign: 'left',
