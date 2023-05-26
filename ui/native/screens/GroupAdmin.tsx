@@ -15,9 +15,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { group } = route.params
-    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
-        group.broadcastOnly || false,
-    )
+    const [broadcastOnly] = useState<boolean>(group.broadcastOnly || false)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -64,7 +62,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     action={
                         <Switch
                             value={broadcastOnly}
-                            onValueChange={value =>
+                            onValueChange={_value =>
                                 console.info('not implemented')
                             }
                         />

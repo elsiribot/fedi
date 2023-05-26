@@ -46,7 +46,14 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             toast?.show(error as string, 3000)
         }
         setCreatingGroup(false)
-    }, [enterMucRoom, getUniqueGroupId, groupName, navigation, toast])
+    }, [
+        broadcastOnly,
+        enterMucRoom,
+        getUniqueGroupId,
+        groupName,
+        navigation,
+        toast,
+    ])
 
     useEffect(() => {
         if (creatingGroup === true) {

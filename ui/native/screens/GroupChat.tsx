@@ -63,7 +63,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         // TODO: some new messages will be received automatically after
         // enterMucRoom is called but we should check archive here
         // to make sure we get them all
-    }, [currentGroup, dispatch, enterMucRoom])
+    }, [currentGroup, dispatch, enterMucRoom, fetchMucRoomConfig])
 
     // update route param if name has changed
     useEffect(() => {
@@ -80,7 +80,13 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
                 group: storedGroup,
             })
         }
-    }, [currentGroup, previousGroup?.name, navigation, state.groups])
+    }, [
+        currentGroup,
+        previousGroup?.name,
+        navigation,
+        state.groups,
+        previousGroup?.broadcastOnly,
+    ])
 
     // Set active chat while we're on this screen
     useEffect(() => {
