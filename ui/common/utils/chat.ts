@@ -2,7 +2,7 @@ import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 
-import { MSats } from '@fedi/common/types'
+import { ChatMessage, ChatType, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export const makePaymentText = (
@@ -105,4 +105,23 @@ export const makeMessageGroups = <
     }
 
     return messageGroups
+}
+
+export const getChatInfoFromMessage = (message: ChatMessage, myId: string) => {
+    const { sentTo, sentIn, sentBy } = message
+    let id: string
+    let type: ChatType
+
+    if (sentIn) {
+        type = ChatType.group
+        id = sentIn
+    } else if (sentTo) {
+        type = ChatType.direct
+        // Chat "id" is who it's with, determine based on if we or they sent
+        id = sentBy === myId ? sentTo : sentBy
+    } else {
+        throw new Error('Message has no sentTo or sentIn')
+    }
+
+    return { id, type }
 }
