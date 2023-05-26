@@ -18,6 +18,7 @@ export interface Chat {
 
 export interface ChatWithLatestMessage extends Chat {
     latestMessage?: ChatMessage
+    hasNewMessages: boolean
 }
 
 export interface ChatMessage {
