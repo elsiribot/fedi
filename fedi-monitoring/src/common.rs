@@ -1,4 +1,10 @@
-use std::{collections::HashMap, ffi::OsStr, str::FromStr, time::Duration};
+use std::{
+    cmp::{max, min},
+    collections::HashMap,
+    ffi::OsStr,
+    str::FromStr,
+    time::Duration,
+};
 
 use crate::cmd;
 use anyhow::{anyhow, bail, Context};
@@ -25,6 +31,18 @@ use futures::StreamExt;
 use lightning_invoice::Invoice;
 
 use tracing::{debug, info};
+
+pub async fn cli_refill_wallet_with_mutinynet_faucet(amount: Amount) -> anyhow::Result<Amount> {
+    let amount = max(amount, Amount::from_msats(1_000));
+    let amount = min(amount, Amount::from_msats(10_000_000));
+    let invoice = cli_generate_invoice(&amount).await?;
+    debug!("Generated invoice: {invoice}");
+    let preimage = mutinynet_faucet_pay_invoice(&invoice).await?;
+    debug!("Got preimage: {preimage}");
+    let txid = cli_wait_invoice(&invoice).await?;
+    debug!("Got txid: {txid}");
+    Ok(amount)
+}
 
 pub async fn mutinynet_faucet_create_invoice(amount: &Amount) -> anyhow::Result<Invoice> {
     let sats = amount.msats / 1000;
@@ -64,7 +82,28 @@ pub async fn try_mutinynet_faucet_create_invoice(
     mutinynet_faucet_create_invoice(amount).await
 }
 
-pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<SpendableNote>> {
+pub async fn mutinynet_faucet_pay_invoice(invoice: &Invoice) -> anyhow::Result<String> {
+    let mut map = HashMap::new();
+    map.insert("invoice", invoice.to_string());
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post("https://faucet.mutinynet.dev.fedibtc.com/api/pay-invoice")
+        .json(&map)
+        .send()
+        .await?;
+
+    // {"amountMsat":1000,"feeMsat":0,"paymentHash":"xxx","paymentPreimage":"xxx"}
+    let response: serde_json::Value = res.json().await?;
+    debug!("faucet pay invoice response: {response}");
+    let preimage = response["paymentPreimage"].as_str().ok_or_else(|| {
+        anyhow!("Missing preimage field on faucet pay invoice response, response was: {response}")
+    })?;
+
+    Ok(preimage.into())
+}
+
+pub async fn cli_get_notes_raw(amount: &Amount) -> anyhow::Result<serde_json::Value> {
     // TODO: use the new client when it's ready.
     // For instance, when https://github.com/fedimint/fedimint/issues/2567 is solved
     cmd!(FedimintCli, "fetch").out_string().await?;
@@ -72,6 +111,37 @@ pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<Spenda
     let notes = cmd!(FedimintCli, "spend", "{msats_to_get}")
         .out_json()
         .await?["note"]
+        .clone();
+    Ok(notes)
+}
+
+pub async fn cli_get_notes_string(amount: &Amount) -> anyhow::Result<String> {
+    cmd!(FedimintCli, "fetch").out_string().await?;
+    let notes = cli_get_notes_raw(amount)
+        .await?
+        .as_str()
+        .map(ToOwned::to_owned)
+        .ok_or_else(|| anyhow!("no note returned"))?;
+    Ok(notes)
+}
+
+pub async fn try_cli_get_notes_string(amount: &Amount, tries: usize) -> anyhow::Result<String> {
+    for _ in 0..tries {
+        match cli_get_notes_string(amount).await {
+            Ok(notes) => return Ok(notes),
+            Err(e) => {
+                debug!("Failed to get notes: {e:?}, sleeping a bit");
+                fedimint_core::task::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
+    cli_get_notes_string(amount).await
+}
+
+pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<SpendableNote>> {
+    cmd!(FedimintCli, "fetch").out_string().await?;
+    let notes = cli_get_notes_raw(amount)
+        .await?
         .as_str()
         .map(parse_ecash)
         .transpose()?
@@ -93,6 +163,36 @@ pub async fn try_cli_get_notes(
         }
     }
     cli_get_notes(amount).await
+}
+
+pub async fn cli_get_total_amount() -> anyhow::Result<Amount> {
+    cmd!(FedimintCli, "info").out_json().await?["total_amount"]
+        .as_u64()
+        .map(Amount::from_msats)
+        .ok_or_else(|| anyhow!("no total_amount returned"))
+}
+
+pub async fn cli_generate_invoice(amount: &Amount) -> anyhow::Result<Invoice> {
+    let msats = amount.msats;
+    let invoice = cmd!(FedimintCli, "ln-invoice", "--amount", "{msats}")
+        .out_json()
+        .await?["invoice"]
+        .as_str()
+        .map(Invoice::from_str)
+        .transpose()?
+        .ok_or_else(|| anyhow!("no invoice returned"))?;
+    Ok(invoice)
+}
+
+pub async fn cli_wait_invoice(invoice: &Invoice) -> anyhow::Result<String> {
+    let txid = cmd!(FedimintCli, "wait-invoice", "{invoice}")
+        .out_json()
+        .await?["paid_in_tx"]["txid"]
+        .as_str()
+        .map(ToOwned::to_owned)
+        .ok_or_else(|| anyhow!("no transaction found"))?;
+    cmd!(FedimintCli, "fetch").out_string().await?;
+    Ok(txid)
 }
 
 pub async fn build_client(cfg: &ClientConfig, tg: &mut TaskGroup) -> anyhow::Result<Client> {

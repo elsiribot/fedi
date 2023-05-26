@@ -1284,6 +1284,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_with",
+ "tempfile",
  "tokio",
  "tracing",
 ]
