@@ -12,6 +12,29 @@ let
     '' else
     '''');
 
+  iosCrossEnvVars = ''
+    # This will not work in `nix build`, but should for `nix develop`
+    # See https://github.com/svanderburg/nix-xcodeenvtests for explanation of limitations
+    export CC_x86_64_apple_ios="/usr/bin/clang"
+    export CXX_x86_64_apple_ios="/usr/bin/clang++"
+    export LD_x86_64_apple_ios="/usr/bin/cc"
+    export CC_x86_64_apple_ios_sim="/usr/bin/clang"
+    export CXX_x86_64_apple_ios_sim="/usr/bin/clang++"
+    export LD_x86_64_apple_ios_sim="/usr/bin/cc"
+    export CC_x86_64_apple_darwin="/usr/bin/clang"
+    export CXX_x86_64_apple_darwin="/usr/bin/clang++"
+    export LD_x86_64_apple_darwin="/usr/bin/cc"
+    export CC_aarch64_apple_ios="/usr/bin/clang"
+    export CXX_aarch64_apple_ios="/usr/bin/clang++"
+    export LD_aarch64_apple_ios="/usr/bin/cc"
+    export CC_aarch64_apple_ios_sim="/usr/bin/clang"
+    export CXX_aarch64_apple_ios_sim="/usr/bin/clang++"
+    export LD_aarch64_apple_ios_sim="/usr/bin/cc"
+    export CC_aarch64_apple_darwin="/usr/bin/clang"
+    export CXX_aarch64_apple_darwin="/usr/bin/clang++"
+    export LD_aarch64_apple_darwin="/usr/bin/cc"
+  '';
+
   # NDK we use for android cross compilation
   androidSdk =
     android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
@@ -116,19 +139,19 @@ let
           extraEnvs = androidCrossEnvVars;
         };
         "aarch64-apple-ios" = {
-          extraEnvs = "";
+          extraEnvs = iosCrossEnvVars;
         };
         "aarch64-apple-ios-sim" = {
-          extraEnvs = "";
+          extraEnvs = iosCrossEnvVars;
         };
         "aarch64-apple-darwin" = {
-          extraEnvs = "";
+          extraEnvs = iosCrossEnvVars;
         };
         "x86_64-apple-darwin" = {
-          extraEnvs = "";
+          extraEnvs = iosCrossEnvVars;
         };
         "x86_64-apple-ios" = {
-          extraEnvs = "";
+          extraEnvs = iosCrossEnvVars;
         };
       };
 
@@ -204,4 +227,4 @@ let
     ])
     crossTargets;
 in
-{ inherit crossTargets androidCrossEnvVars wasm32CrossEnvVars fenixToolchain fenixChannel fenixToolchainRustfmt fenixToolchainCargoFmt fenixToolchainCrossAll fenixToolchainCrossWasm fenixToolchainCross androidSdk; }
+{ inherit crossTargets androidCrossEnvVars wasm32CrossEnvVars iosCrossEnvVars fenixToolchain fenixChannel fenixToolchainRustfmt fenixToolchainCargoFmt fenixToolchainCrossAll fenixToolchainCrossWasm fenixToolchainCross androidSdk; }
