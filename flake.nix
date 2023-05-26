@@ -159,8 +159,9 @@
                 pkgs.binaryen
                 pkgs.gnused
                 pkgs.yarn
-                pkgs.cocoapods
                 pkgs.nodejs
+              ] ++ lib.optionals stdenv.isDarwin [
+                pkgs.cocoapods
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
