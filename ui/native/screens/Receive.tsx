@@ -2,13 +2,14 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard, Pressable, StyleSheet } from 'react-native'
+import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { selectMaxReceiveAmount } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import { Sats } from '../types'
@@ -82,21 +83,24 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <Pressable
-            style={styles(theme, insets).container}
-            onPress={() => Keyboard.dismiss()}>
-            <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
-            <Button
-                fullWidth
-                title={`${t('words.request')}${
-                    amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
-                }${t('words.sats').toUpperCase()}`}
-                onPress={() => setGeneratingInvoice(true)}
-                disabled={!amountIsValid || generatingInvoice}
-                loading={generatingInvoice}
-                containerStyle={styles(theme, insets).button}
-            />
-        </Pressable>
+        <KeyboardAwareWrapper>
+            <View style={styles(theme, insets).container}>
+                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+                <Button
+                    fullWidth
+                    title={`${t('words.request')}${
+                        amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
+                    }${t('words.sats').toUpperCase()}`}
+                    onPress={() => {
+                        setGeneratingInvoice(true)
+                        Keyboard.dismiss()
+                    }}
+                    disabled={!amountIsValid || generatingInvoice}
+                    loading={generatingInvoice}
+                    containerStyle={styles(theme, insets).button}
+                />
+            </View>
+        </KeyboardAwareWrapper>
     )
 }
 
@@ -104,16 +108,12 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: theme.spacing.xl,
+            padding: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl + insets.bottom,
+            width: '100%',
         },
         button: {
             marginTop: 'auto',
-            marginBottom: theme.spacing.xl + insets.bottom,
-        },
-        textInput: {
-            width: '80%',
         },
     })
 

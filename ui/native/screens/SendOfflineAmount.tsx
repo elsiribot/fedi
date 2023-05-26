@@ -1,9 +1,10 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, Keyboard, StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     selectActiveFederation,
@@ -12,6 +13,7 @@ import {
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
@@ -24,6 +26,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const SendOfflineAmount: React.FC<Props> = () => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const navigation = useNavigation()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -31,6 +34,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
+    const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
     const { toast } = useEnvironmentContext().state
     const { generateEcash } = useBridge()
 
@@ -47,6 +51,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
         }
     }
 
+    const continueSend = () => {
+        Keyboard.dismiss()
+        onGenerateEcash()
+    }
+
     const onNext = () => {
         Alert.alert(
             t('phrases.please-confirm'),
@@ -57,7 +66,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                 },
                 {
                     text: t('words.continue'),
-                    onPress: onGenerateEcash,
+                    onPress: continueSend,
                 },
             ],
         )
@@ -77,47 +86,71 @@ const SendOfflineAmount: React.FC<Props> = () => {
         setAmount(updatedValue)
     }
 
-    return (
-        <View style={styles(theme).container}>
-            <Text caption>
-                {`${t('words.balance')}: `}
-                {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(activeFederation?.balance!),
-                )} `}
-                {`${t('words.sats').toUpperCase()}`}
-            </Text>
+    useEffect(() => {
+        if (amount === 0) {
+            setAmountIsValid(false)
+        } else if (maxReceiveAmount && amount > maxReceiveAmount) {
+            setAmountIsValid(false)
+        } else {
+            setAmountIsValid(true)
+        }
+    }, [amount, maxReceiveAmount])
 
-            <View>
-                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
-            </View>
-            <View style={styles(theme).offlineContainer}>
-                <SvgImage
-                    name="Offline"
-                    containerStyle={{
-                        marginRight: theme.spacing.md,
-                    }}
+    return (
+        <KeyboardAwareWrapper>
+            <View style={styles(theme, insets).container}>
+                <Text caption>
+                    {`${t('words.balance')}: `}
+                    {`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(activeFederation?.balance!),
+                    )} `}
+                    {`${t('words.sats').toUpperCase()}`}
+                </Text>
+
+                <View style={styles(theme, insets).amountInputContainer}>
+                    <AmountInput
+                        amount={amount}
+                        onChangeAmount={onChangeAmount}
+                    />
+                </View>
+                <View style={styles(theme, insets).offlineContainer}>
+                    <SvgImage
+                        name="Offline"
+                        containerStyle={{
+                            marginRight: theme.spacing.md,
+                        }}
+                    />
+                    <Text caption>{t('phrases.you-are-offline')}</Text>
+                </View>
+                <Button
+                    fullWidth
+                    title={t('words.next')}
+                    disabled={!amountIsValid || isLoading}
+                    onPress={onNext}
+                    containerStyle={styles(theme, insets).button}
+                    loading={isLoading}
                 />
-                <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>
-            <Button
-                fullWidth
-                title={t('words.next')}
-                onPress={onNext}
-                loading={isLoading}
-            />
-        </View>
+        </KeyboardAwareWrapper>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: theme.spacing.xl,
+            paddingTop: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl + insets.bottom,
+            width: '100%',
+        },
+        amountInputContainer: {
+            marginTop: 'auto',
         },
         offlineContainer: {
+            marginTop: 'auto',
             flexDirection: 'row',
             alignItems: 'center',
         },
@@ -126,8 +159,8 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
             marginRight: theme.spacing.md,
         },
-        textInput: {
-            width: '80%',
+        button: {
+            marginTop: 'auto',
         },
     })
 

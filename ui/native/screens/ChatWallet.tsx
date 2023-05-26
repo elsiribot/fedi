@@ -2,7 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard, Pressable, StyleSheet, View } from 'react-native'
+import { Keyboard, StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import uuid from 'react-native-uuid'
 
 import {
@@ -14,6 +15,7 @@ import { Keypair, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import {
     addToMembersSeen,
     addToMessages,
@@ -28,6 +30,7 @@ import type { RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 
 const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
+    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -154,46 +157,31 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <Pressable
-            style={styles(theme).container}
-            onPress={() => Keyboard.dismiss()}>
-            <Text caption>
-                {`${t('words.balance')}: `}
-                {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(activeFederation?.balance!),
-                )} `}
-                {`${t('words.sats').toUpperCase()}`}
-            </Text>
+        <KeyboardAwareWrapper additionalVerticalOffset={theme.spacing.md}>
+            <View style={styles(theme, insets).container}>
+                <Text caption>
+                    {`${t('words.balance')}: `}
+                    {`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(activeFederation?.balance!),
+                    )} `}
+                    {`${t('words.sats').toUpperCase()}`}
+                </Text>
 
-            <View>
-                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
-            </View>
-
-            <View style={styles(theme).buttonsGroupContainer}>
-                {confirmingSend ? (
-                    <Button
-                        title={t('feature.send.hold-to-confirm-send')}
-                        onLongPress={handleConfirmSend}
-                        containerStyle={styles(theme).buttonContainer}
-                        disabled={
-                            !(activeFederation!.balance > 0) ||
-                            !Number(amount) ||
-                            sendingEcash ||
-                            isLoading
-                        }
+                <View>
+                    <AmountInput
+                        amount={amount}
+                        onChangeAmount={onChangeAmount}
                     />
-                ) : (
-                    <>
+                </View>
+
+                <View style={styles(theme, insets).buttonsGroupContainer}>
+                    {confirmingSend ? (
                         <Button
-                            title={t('words.request')}
-                            onPress={requestEcash}
-                            containerStyle={styles(theme).buttonContainer}
-                            disabled={!Number(amount) || isLoading}
-                        />
-                        <Button
-                            title={t('words.send')}
-                            onPress={handleSend}
-                            containerStyle={styles(theme).buttonContainer}
+                            title={t('feature.send.hold-to-confirm-send')}
+                            onLongPress={handleConfirmSend}
+                            containerStyle={
+                                styles(theme, insets).buttonContainer
+                            }
                             disabled={
                                 !(activeFederation!.balance > 0) ||
                                 !Number(amount) ||
@@ -201,33 +189,52 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                                 isLoading
                             }
                         />
-                    </>
-                )}
+                    ) : (
+                        <>
+                            <Button
+                                title={t('words.request')}
+                                onPress={requestEcash}
+                                containerStyle={
+                                    styles(theme, insets).buttonContainer
+                                }
+                                disabled={!Number(amount) || isLoading}
+                            />
+                            <Button
+                                title={t('words.send')}
+                                onPress={handleSend}
+                                containerStyle={
+                                    styles(theme, insets).buttonContainer
+                                }
+                                disabled={
+                                    !(activeFederation!.balance > 0) ||
+                                    !Number(amount) ||
+                                    sendingEcash ||
+                                    isLoading
+                                }
+                            />
+                        </>
+                    )}
+                </View>
             </View>
-        </Pressable>
+        </KeyboardAwareWrapper>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: theme.spacing.xl,
-        },
-        offlineContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        offlineIcon: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
-            marginRight: theme.spacing.md,
+            paddingTop: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl + insets.bottom,
+            width: '100%',
         },
         buttonsGroupContainer: {
+            width: '100%',
             flexDirection: 'row',
             justifyContent: 'space-between',
+            paddingHorizontal: theme.spacing.md,
         },
         buttonContainer: {
             margin: theme.spacing.sm,
