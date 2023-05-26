@@ -159,6 +159,8 @@
                 pkgs.binaryen
                 pkgs.gnused
                 pkgs.yarn
+                pkgs.cocoapods
+                pkgs.nodejs
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
