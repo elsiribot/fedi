@@ -6,7 +6,9 @@ import {
     LatestStoredState,
     StorageApi,
     StoredStateV2,
+    StoredStateV3,
 } from '../types/storage'
+import { getLatestMessageIdsForChats, getLatestMessage } from './chat'
 
 export const STATE_STORAGE_KEY = 'fedi:state'
 
@@ -15,7 +17,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 2,
+        version: 3,
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
@@ -29,6 +31,8 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
                         groups: chatState.groups,
                         members: chatState.membersSeen,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
+                        lastReadMessageIds: chatState.lastReadMessageIds,
+                        lastSeenMessageId: chatState.lastSeenMessageId,
                     }
                 }
                 return stored
@@ -82,6 +86,7 @@ export function hasStorageStateChanged(
             activeFederationId,
             'lastFetchedMessageId',
         ])
+        keysetsToCheck.push(['chat', activeFederationId, 'lastReadMessageIds'])
     }
 
     for (let keysToCheck of keysetsToCheck) {
@@ -136,5 +141,40 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         }
     }
 
+    // Version 2 -> 3
+    if (migrationState.version === 2) {
+        // Add lastReadMessageIds to chat state. Initiailize it with every chat
+        // considered "read" by having its latest message ID added to the map.
+        const oldChat = migrationState.chat
+        const newChat = Object.entries(oldChat).reduce(
+            (prevChat, [federationId, chatState]) => {
+                if (!chatState) return prevChat
+                const myId = chatState.authenticatedMember?.id
+                if (!myId) return prevChat
+                const lastReadMessageIds = getLatestMessageIdsForChats(
+                    chatState.messages,
+                    myId,
+                )
+                const lastSeenMessageId =
+                    getLatestMessage(chatState.messages)?.id || null
+                return {
+                    ...prevChat,
+                    [federationId]: {
+                        ...chatState,
+                        lastReadMessageIds,
+                        lastSeenMessageId,
+                    },
+                }
+            },
+            {} as StoredStateV3['chat'],
+        )
+        migrationState = {
+            ...migrationState,
+            version: 3,
+            chat: newChat,
+        }
+    }
+
+    console.log(migrationState.chat)
     return migrationState
 }
