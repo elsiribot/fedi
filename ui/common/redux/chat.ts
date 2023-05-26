@@ -36,7 +36,7 @@ import {
     makeChatServerOptions,
 } from '../utils/FederationUtils'
 import { XmppChatClientManager } from '../utils/XmppChatClient'
-import { getChatInfoFromMessage } from '../utils/chat'
+import { getChatInfoFromMessage, getLatestMessage } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import {
     checkXmppUser,
@@ -61,8 +61,9 @@ const initialFederationChatState = {
     messages: [] as ChatMessage[],
     groups: [] as ChatGroup[],
     membersSeen: [] as ChatMember[],
-    lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
     lastFetchedMessageId: null as string | null,
+    lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
+    lastSeenMessageId: null as string | null,
     encryptionKeys: null as Keypair | null,
 }
 type FederationChatState = typeof initialFederationChatState
@@ -271,6 +272,17 @@ export const chatSlice = createSlice({
                     ...federation.lastReadMessageIds,
                     [chatId]: messageId,
                 },
+            }
+        },
+        setLastSeenMessageId(
+            state,
+            action: FederationPayloadAction<{ messageId: string }>,
+        ) {
+            const { federationId, messageId } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastSeenMessageId: messageId,
             }
         },
         resetAuthenticatedMember(state, action: FederationPayloadAction<{}>) {
@@ -970,6 +982,9 @@ export const selectChatClientStatus = (s: CommonState) =>
 export const selectChatLastReadMessageIds = (s: CommonState) =>
     selectFederationChatState(s).lastReadMessageIds
 
+export const selectChatLastSeenMessageId = (s: CommonState) =>
+    selectFederationChatState(s).lastSeenMessageId
+
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {
         const activeFederationMetadata = selectFederationMetadata(s)
@@ -1007,6 +1022,11 @@ export const selectChatGroupMap = createSelector(
             {},
         )
     },
+)
+
+export const selectLatestChatMessage = createSelector(
+    selectAllChatMessages,
+    messages => getLatestMessage(messages),
 )
 
 export const selectOrderedChatMessages = createSelector(
@@ -1092,6 +1112,13 @@ export const selectChatGroup = createSelector(
     (chatGroups, groupId) => {
         return chatGroups.find(g => g.id === groupId)
     },
+)
+
+export const selectHasUnseenMessages = createSelector(
+    selectLatestChatMessage,
+    selectChatLastSeenMessageId,
+    (latestMessage, lastSeenMessageId) =>
+        !!latestMessage && latestMessage.id !== lastSeenMessageId,
 )
 
 /**

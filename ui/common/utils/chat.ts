@@ -2,7 +2,7 @@ import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 
-import { ChatMessage, ChatType, MSats } from '@fedi/common/types'
+import { Chat, ChatMessage, ChatType, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export const makePaymentText = (
@@ -107,6 +107,9 @@ export const makeMessageGroups = <
     return messageGroups
 }
 
+/**
+ * Given a message, return its chat ID and the type of chat (direct or group).
+ */
 export const getChatInfoFromMessage = (message: ChatMessage, myId: string) => {
     const { sentTo, sentIn, sentBy } = message
     let id: string
@@ -124,4 +127,37 @@ export const getChatInfoFromMessage = (message: ChatMessage, myId: string) => {
     }
 
     return { id, type }
+}
+
+/**
+ * Given a list of messages, return the latest in the list.
+ */
+export const getLatestMessage = (
+    messages: ChatMessage[],
+): ChatMessage | null => {
+    return (
+        messages.reduce(
+            (prev, msg) => (prev.sentAt > msg.sentAt ? prev : msg),
+            messages[0],
+        ) || null
+    )
+}
+
+/**
+ * Given a list of messages, return a map keyed by the chat ID and with a value
+ * of the latest message ID in that chat.
+ */
+export const getLatestMessageIdsForChats = (
+    messages: ChatMessage[],
+    myId: string,
+) => {
+    const sortedMessages = orderBy(messages, 'sentAt', 'desc')
+    const lastReadMessageIds = sortedMessages.reduce((readMsgIds, msg) => {
+        const chatId = getChatInfoFromMessage(msg, myId).id
+        if (!readMsgIds[chatId]) {
+            readMsgIds[chatId] = msg.id
+        }
+        return readMsgIds
+    }, {} as Record<Chat['id'], string | undefined>)
+    return lastReadMessageIds
 }
