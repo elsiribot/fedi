@@ -132,12 +132,13 @@ export const getChatInfoFromMessage = (message: ChatMessage, myId: string) => {
 /**
  * Given a list of messages, return the latest in the list.
  */
-export const getLatestMessage = (
-    messages: ChatMessage[],
-): ChatMessage | null => {
+export const getLatestMessage = <T extends { sentAt?: number }>(
+    messages: T[],
+): T | null => {
     return (
         messages.reduce(
-            (prev, msg) => (prev.sentAt > msg.sentAt ? prev : msg),
+            (prev, msg) =>
+                (prev.sentAt || 0) > (msg.sentAt || 0) ? prev : msg,
             messages[0],
         ) || null
     )
