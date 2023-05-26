@@ -8,15 +8,19 @@ import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import HomeIcon from '@fedi/common/assets/svgs/home.svg'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import { selectHasUnseenMessages } from '@fedi/common/redux'
 
+import { useAppSelector } from '../../hooks'
 import { keyframes, styled, theme } from '../../styles'
 import { Icon } from '../Icon'
+import { NotificationDot } from '../NotificationDot'
 import { Text } from '../Text'
 
 export const Navigation: React.FC = () => {
     const router = useRouter()
     const { t } = useTranslation()
     const isChatSupported = useIsChatSupported()
+    const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
 
     const getIsActive = (navPath: string) => {
         if (navPath === router.pathname) return true
@@ -30,18 +34,21 @@ export const Navigation: React.FC = () => {
             path: '/',
             icon: HomeIcon,
             available: true,
+            hasNotification: false,
         },
         {
             name: 'words.chat' as const,
             path: '/chat',
             icon: ChatIcon,
             available: isChatSupported,
+            hasNotification: hasUnseenMessages,
         },
         {
             name: 'words.settings' as const,
             path: '/settings',
             icon: CogIcon,
             available: true,
+            hasNotification: false,
         },
     ].filter(nav => nav.available)
 
@@ -56,7 +63,9 @@ export const Navigation: React.FC = () => {
                 {navLinks.map(nav => (
                     <NavItem key={nav.path} isActive={getIsActive(nav.path)}>
                         <Link href={nav.path}>
-                            <Icon icon={nav.icon} />
+                            <NotificationDot visible={nav.hasNotification}>
+                                <Icon icon={nav.icon} />
+                            </NotificationDot>
                             <Text variant="body" weight="medium">
                                 {t(nav.name)}
                             </Text>

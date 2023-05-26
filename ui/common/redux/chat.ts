@@ -407,6 +407,8 @@ export const {
     setAuthenticatedMember,
     setChatEncryptionKeys,
     setLastFetchedMessageId,
+    setLastReadMessageId,
+    setLastSeenMessageId,
     resetAuthenticatedMember,
     resetFederationChatState,
     resetChatState,
