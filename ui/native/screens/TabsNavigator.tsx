@@ -1,12 +1,13 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { selectActiveFederation } from '@fedi/common/redux'
+import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
@@ -33,7 +34,8 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
-    const { connectionOptions } = useChatContext().state
+    const { connectionOptions, lastSeenMessageId, messages } =
+        useChatContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
 
     const toggleOffline = () => {
@@ -44,6 +46,13 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         }
         setOffline(!offline)
     }
+
+    // Check if our last seen message doesn't line up with the last message
+    const hasUnseenMessages = useMemo(() => {
+        if (!messages.length) return false
+        const lastMessage = getLatestMessage(messages)
+        return !!lastMessage && lastMessage.id !== lastSeenMessageId
+    }, [messages, lastSeenMessageId])
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
@@ -127,6 +136,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 tabBarItemStyle: styles(theme, insets).tabBarItem,
                 headerTitleStyle: theme.components.Text.style,
                 tabBarLabelStyle: styles(theme, insets).tabBarLabel,
+                tabBarBadgeStyle: styles(theme, insets).tabBarBadge,
             })}>
             <Tab.Screen
                 name="Home"
@@ -155,6 +165,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                             <ChatHeader />
                         </>
                     ),
+                    tabBarBadge: hasUnseenMessages ? '' : undefined,
                 })}
             />
         </Tab.Navigator>
@@ -176,6 +187,16 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         tabBarIconContainer: {
             paddingBottom: theme.spacing.xs,
             marginTop: 'auto',
+        },
+        tabBarBadge: {
+            backgroundColor: theme.colors.red,
+            top: 8,
+            left: 2,
+            borderWidth: 2,
+            borderColor: theme.colors.secondary,
+            width: 12,
+            height: 12,
+            minWidth: 0,
         },
         tabBarItem: {
             paddingBottom: theme.spacing.lg,

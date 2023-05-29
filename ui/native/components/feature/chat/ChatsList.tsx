@@ -1,10 +1,14 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { makePaymentText } from '@fedi/common/utils/chat'
+import {
+    getLatestMessageIdsForChats,
+    jidToId,
+    makePaymentText,
+} from '@fedi/common/utils/chat'
 
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { Chat, ChatType, Group, Member, Message } from '../../../types'
@@ -17,17 +21,43 @@ const ChatsList: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const { groups, messages, membersSeen, authenticatedMember } =
-        useChatContext().state
+    const {
+        groups,
+        messages,
+        membersSeen,
+        authenticatedMember,
+        lastReadMessageIds,
+    } = useChatContext().state
+
+    // Assemble a map of which chats are unread
+    const unreadChatMap = useMemo(() => {
+        if (!authenticatedMember?.jid) return {}
+        const latestMessageIds = getLatestMessageIdsForChats(
+            messages,
+            jidToId(authenticatedMember.jid),
+        )
+        return Object.keys(latestMessageIds).reduce((prev, chatId) => {
+            // If not found in lastReadMessageIds, consider unread.
+            // If found and not matching, consider unread.
+            prev[chatId] = lastReadMessageIds[chatId]
+                ? lastReadMessageIds[chatId] !== latestMessageIds[chatId]
+                : true
+            return prev
+        }, {} as Record<string, boolean | undefined>)
+    }, [authenticatedMember, messages, lastReadMessageIds])
 
     const renderChat: ListRenderItem<Chat> = ({ item }) => {
+        const directMember =
+            item.members && item.members?.length == 1 && item.members[0]
+        const id = directMember ? jidToId(directMember.jid) : item.id
         return (
             <ChatTile
                 chat={item}
+                unread={!!unreadChatMap[id]}
                 selectChat={(chat: Chat) => {
-                    if (chat.members?.length === 1) {
+                    if (directMember) {
                         navigation.navigate('DirectChat', {
-                            member: chat.members[0],
+                            member: directMember,
                         })
                     } else {
                         navigation.navigate('GroupChat', {

@@ -92,7 +92,6 @@ export class Chat extends Base {
     name?: string
     icon?: string
     pinned?: boolean
-    hasNewMessages?: boolean
     messagePreview?: string
     lastReceivedTimestamp?: number
     members?: Member[]

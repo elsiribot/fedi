@@ -6,13 +6,14 @@ import uuid from 'react-native-uuid'
 
 import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
-import { makeMessageGroups } from '@fedi/common/utils/chat'
+import { jidToId, makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import {
     addToMembersSeen,
     addToMessages,
+    changeActiveChatId,
     useChatContext,
 } from '../state/contexts/ChatContext'
 import { useAppSelector } from '../state/hooks'
@@ -51,6 +52,14 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
             }
         }
     }, [currentMember, getPublicKeyFor, navigation, state.membersSeen])
+
+    // Set active chat while we're on this screen
+    useEffect(() => {
+        dispatch(changeActiveChatId(jidToId(member.jid)))
+        return () => {
+            dispatch(changeActiveChatId(null))
+        }
+    }, [dispatch, member.jid])
 
     const sendMessage = (messageText: string) => {
         try {

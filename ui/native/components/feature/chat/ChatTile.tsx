@@ -15,11 +15,14 @@ import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
     chat: Chat
+    unread?: boolean
     selectChat: (chat: Chat) => void
 }
 
-const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
+const ChatTile = ({ chat, unread, selectChat }: ChatTileProps) => {
     const { theme } = useTheme()
+
+    const previewTextWeight = unread ? { medium: true } : {}
 
     return (
         <Pressable
@@ -29,7 +32,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                 <View
                     style={[
                         styles(theme).unreadIndicator,
-                        chat.hasNewMessages ? { opacity: 1 } : { opacity: 0 },
+                        unread ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
@@ -74,14 +77,16 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         <Text
                             caption
                             style={styles(theme).messagePreview}
-                            numberOfLines={1}>
+                            numberOfLines={1}
+                            {...previewTextWeight}>
                             {chat.messagePreview}
                         </Text>
                     ) : (
                         <Text
                             caption
                             style={styles(theme).emptyMessagePreview}
-                            numberOfLines={1}>
+                            numberOfLines={1}
+                            {...previewTextWeight}>
                             {t('feature.chat.no-one-is-in-this-group')}
                         </Text>
                     )}

@@ -1,5 +1,5 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { useNavigation } from '@react-navigation/native'
+import { useIsFocused, useNavigation } from '@react-navigation/native'
 import { FAB, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native'
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
 import {
+    changeIsOnChatScreen,
     changeLastFetchedMessageId,
     useChatContext,
 } from '../state/contexts/ChatContext'
@@ -27,11 +28,13 @@ export type Props = BottomTabScreenProps<
 const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const isFocused = useIsFocused()
     const { fetchMessagesFromArchive, fetchRoster } = useXmpp()
     const { state, dispatch } = useChatContext()
     const { websocketIsHealthy, lastFetchedMessageId, connectionOptions } =
         state
 
+    // Navigate back to home screen if this federation doesn't support chat
     useEffect(() => {
         if (!connectionOptions) {
             navigation.dispatch(reset('TabsNavigator'))
@@ -72,6 +75,15 @@ const ChatScreen: React.FC<Props> = () => {
             fetchRoster()
         }
     }, [websocketIsHealthy, fetchRoster])
+
+    // Set that we're looking at chat on mount, unset on dismount
+    useEffect(() => {
+        if (!isFocused) return
+        dispatch(changeIsOnChatScreen(true))
+        return () => {
+            dispatch(changeIsOnChatScreen(false))
+        }
+    }, [isFocused])
 
     return (
         <View style={styles(theme).container}>
