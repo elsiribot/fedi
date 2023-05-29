@@ -1,41 +1,26 @@
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-    connectChat,
-    disconnectChat,
-    selectActiveFederation,
-} from '@fedi/common/redux'
+import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 
 import { ChatBlock } from '../../components/ChatBlock'
 import { ChatGroupConversation } from '../../components/ChatGroupConversation'
 import { ChatMemberConversation } from '../../components/ChatMemberConversation'
 import { ChatNew } from '../../components/ChatNew'
 import { Redirect } from '../../components/Redirect'
-import { useAppDispatch, useAppSelector } from '../../hooks'
-import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 
 function ChatPage() {
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederation)?.id
     const { query, isReady } = useRouter()
 
     const [chatType, chatId] = Array.isArray(query.path)
         ? [query.path[0], query.path[1]]
         : []
 
-    // Connect to chat on this page.
-    useEffect(() => {
-        if (!federationId) return
-        dispatch(connectChat({ fedimint, federationId }))
-
-        return () => {
-            dispatch(disconnectChat({ federationId }))
-        }
-    }, [federationId, dispatch])
+    // While we have the page open, immediately mark the latest message as seen.
+    useUpdateLastMessageSeen()
 
     if (!isReady) return null
 

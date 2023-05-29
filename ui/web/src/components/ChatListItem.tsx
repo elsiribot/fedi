@@ -12,6 +12,7 @@ import { makePaymentText } from '@fedi/common/utils/chat'
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
+import { NotificationDot } from './NotificationDot'
 import { Text } from './Text'
 
 interface Props {
@@ -23,17 +24,18 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
     const { query } = useRouter()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const isActive = chat.id === query?.path?.[1]
+    const { latestMessage, hasNewMessages } = chat
 
-    let previewMessage = chat.latestMessage?.content
-    if (chat.latestMessage?.payment) {
+    let previewMessage = latestMessage?.content
+    if (latestMessage?.payment) {
         previewMessage = makePaymentText(
             t,
-            chat.latestMessage.sentBy.split('@')[0],
-            chat.latestMessage.sentTo?.split('@')[0] || '',
+            latestMessage.sentBy.split('@')[0],
+            latestMessage.sentTo?.split('@')[0] || '',
             authenticatedMember?.username || '',
-            chat.latestMessage.payment.recipient?.split('@')[0],
-            chat.latestMessage.payment.amount,
-            chat.latestMessage.payment.memo,
+            latestMessage.payment.recipient?.split('@')[0],
+            latestMessage.payment.amount,
+            latestMessage.payment.memo,
         )
     }
 
@@ -46,14 +48,18 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                     ? `/chat/group/${chat.id}`
                     : `/chat/member/${chat.id}`
             }>
-            <Avatar
-                id={chat.id}
-                name={chat.name}
-                icon={
-                    chat.type === ChatType.group ? SocialPeopleIcon : undefined
-                }
-                css={{ flexShrink: 0 }}
-            />
+            <NotificationDot visible={hasNewMessages}>
+                <Avatar
+                    id={chat.id}
+                    name={chat.name}
+                    icon={
+                        chat.type === ChatType.group
+                            ? SocialPeopleIcon
+                            : undefined
+                    }
+                    css={{ flexShrink: 0 }}
+                />
+            </NotificationDot>
             <Content>
                 <TopContent>
                     <Text
@@ -62,10 +68,10 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                         css={{ flex: 1, minWidth: 0 }}>
                         {chat.name}
                     </Text>
-                    {chat.latestMessage?.sentAt && (
+                    {latestMessage?.sentAt && (
                         <Text variant="small" css={{ flexShrink: 0 }}>
                             {dateUtils.formatChatTileTimestamp(
-                                chat.latestMessage?.sentAt,
+                                latestMessage?.sentAt,
                             )}
                         </Text>
                     )}
@@ -73,7 +79,12 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                 <Text
                     variant="small"
                     ellipsize
-                    css={{ color: theme.colors.darkGrey }}>
+                    weight={hasNewMessages ? 'bold' : 'normal'}
+                    css={{
+                        color: hasNewMessages
+                            ? theme.colors.primary
+                            : theme.colors.darkGrey,
+                    }}>
                     {previewMessage}
                 </Text>
             </Content>

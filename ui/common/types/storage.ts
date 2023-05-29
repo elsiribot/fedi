@@ -1,8 +1,8 @@
 // Maintain all versions of stored state below. Stored state versions should
 // be fairly immutable, but if you simply want to add a new key, just make
 // it optional?: value.
-import { ChatGroup, ChatMember, ChatMessage } from './chat'
-import { Guardian, SupportedCurrency } from './fedimint'
+import { Chat, ChatGroup, ChatMember, ChatMessage } from './chat'
+import { Federation, Guardian, SupportedCurrency } from './fedimint'
 
 export interface StoredStateV0 {
     version: 0 // Not a real version, just implemented for demonstrative purposes
@@ -21,7 +21,7 @@ export interface StoredStateV2
     extends Omit<StoredStateV1, 'version' | 'chatIdentities'> {
     version: 2
     chat: Record<
-        string,
+        Federation['id'],
         | {
               authenticatedMember: ChatMember | null
               messages: ChatMessage[]
@@ -33,11 +33,32 @@ export interface StoredStateV2
     >
 }
 
+export interface StoredStateV3 extends Omit<StoredStateV2, 'version' | 'chat'> {
+    version: 3
+    chat: Record<
+        Federation['id'],
+        | {
+              authenticatedMember: ChatMember | null
+              messages: ChatMessage[]
+              groups: ChatGroup[]
+              members: ChatMember[]
+              lastFetchedMessageId: string | null
+              lastReadMessageIds: Record<Chat['id'], string | undefined>
+              lastSeenMessageId: string | null
+          }
+        | undefined
+    >
+}
+
 /*** Union of all past shapes of stored state ***/
-export type AnyStoredState = StoredStateV0 | StoredStateV1 | StoredStateV2
+export type AnyStoredState =
+    | StoredStateV0
+    | StoredStateV1
+    | StoredStateV2
+    | StoredStateV3
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV2
+export type LatestStoredState = StoredStateV3
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

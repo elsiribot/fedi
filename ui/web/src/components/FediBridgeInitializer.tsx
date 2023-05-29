@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { refreshFederations, selectActiveFederation } from '@fedi/common/redux'
+import {
+    connectChat,
+    disconnectChat,
+    refreshFederations,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
@@ -27,6 +32,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [error, setError] = useState<string>()
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
+    const federationId = activeFederation?.id
 
     useEffect(() => {
         const loadingTimeout = setTimeout(() => {
@@ -54,6 +60,16 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
         return () => clearTimeout(loadingTimeout)
     }, [dispatchRef, tRef])
+
+    // Connect to chat of active federation after bridge initializes.
+    // TODO: Move this logic into redux initiailization when PWA and app both use it.
+    useEffect(() => {
+        if (!federationId || !isInitialized) return
+        dispatch(connectChat({ fedimint, federationId }))
+        return () => {
+            dispatch(disconnectChat({ federationId }))
+        }
+    }, [federationId, isInitialized, dispatch])
 
     if (isInitialized) {
         if (!activeFederation && !pathname.startsWith('/onboarding')) {

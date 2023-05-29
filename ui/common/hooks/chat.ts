@@ -1,6 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
-import type { ChatMember } from '@fedi/common/types'
+import type { ChatMember, ChatMessage } from '@fedi/common/types'
+
+import {
+    selectActiveFederation,
+    selectLatestChatMessage,
+    setLastReadMessageId,
+    setLastSeenMessageId,
+} from '../redux'
+import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useChatMemberSearch(members: ChatMember[]) {
     const [query, setQuery] = useState('')
@@ -39,4 +47,42 @@ export function useChatMemberSearch(members: ChatMember[]) {
         searchedMembers,
         isExactMatch,
     }
+}
+
+/**
+ * Automatically dispatch an update to the last message seen while a component
+ * using this hook is mounted.
+ */
+export function useUpdateLastMessageSeen() {
+    const dispatch = useCommonDispatch()
+    const federationId = useCommonSelector(selectActiveFederation)?.id
+    const latestMessage = useCommonSelector(selectLatestChatMessage)
+
+    useEffect(() => {
+        if (!latestMessage || !federationId) return
+        dispatch(
+            setLastSeenMessageId({
+                federationId,
+                messageId: latestMessage.id,
+            }),
+        )
+    }, [dispatch, latestMessage, federationId])
+}
+
+/**
+ * Automatically dispatch an update to the last message read in a chat while a
+ * component using this hook is mounted.
+ */
+export function useUpdateLastMessageRead(
+    chatId: string,
+    latestMessage: ChatMessage | null | undefined,
+) {
+    const dispatch = useCommonDispatch()
+    const federationId = useCommonSelector(selectActiveFederation)?.id
+
+    const messageId = latestMessage?.id
+    useEffect(() => {
+        if (!federationId || !messageId) return
+        dispatch(setLastReadMessageId({ federationId, chatId, messageId }))
+    }, [dispatch, federationId, latestMessage])
 }

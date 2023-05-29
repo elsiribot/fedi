@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react'
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
+import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import { ChatMessage as ChatMessageType, ChatType } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 
@@ -41,6 +42,14 @@ export const ChatConversation: React.FC<Props> = ({
     const inputRef = useRef<HTMLTextAreaElement>(null)
     useAutosizeTextArea(inputRef.current, value)
 
+    const messageCollections = useMemo(
+        () => makeMessageGroups(messages, 'desc'),
+        [messages],
+    )
+
+    // While we have the chat open, mark any message that comes in as read
+    useUpdateLastMessageRead(id, messageCollections[0]?.[0]?.[0])
+
     const handleSend = useCallback(
         async (ev?: React.FormEvent) => {
             if (ev) {
@@ -69,11 +78,6 @@ export const ChatConversation: React.FC<Props> = ({
             }
         },
         [handleSend],
-    )
-
-    const messageCollections = useMemo(
-        () => makeMessageGroups(messages, 'desc'),
-        [messages],
     )
 
     return (
