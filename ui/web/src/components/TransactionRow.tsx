@@ -2,7 +2,6 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import BitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
-import { useTriggerErrorBoundary } from '@fedi/common/hooks/debug'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -21,7 +20,6 @@ export const TransactionRow: React.FC<Props> = ({
     onClick,
 }) => {
     const { t } = useTranslation()
-    useTriggerErrorBoundary(Math.random() > 0.8)
 
     return (
         <Container onClick={onClick} type="button">
