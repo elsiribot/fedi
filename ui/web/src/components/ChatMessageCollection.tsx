@@ -51,7 +51,9 @@ export const ChatMessageCollection: React.FC<Props> = ({
                                     {messages.map(msg => (
                                         <ErrorBoundary
                                             key={msg.id}
-                                            fallback={ChatMessageError}>
+                                            fallback={() => (
+                                                <ChatMessageError />
+                                            )}>
                                             <ChatMessage message={msg} />
                                         </ErrorBoundary>
                                     ))}

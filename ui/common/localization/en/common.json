@@ -91,6 +91,8 @@
         "onchain-address": "On-chain address",
         "paste-from-clipboard": "Paste from clipboard",
         "please-confirm": "Please confirm",
+        "reload-app": "Reload application",
+        "return-to-home": "Return to home",
         "save-changes": "Save changes",
         "transaction-id": "Transaction ID",
         "transaction-received": "Transaction received",
