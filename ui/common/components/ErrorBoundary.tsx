@@ -1,13 +1,16 @@
 import React from 'react'
 
-type ErrorBoundaryState = { didCatch: boolean; error: any }
+interface ErrorBoundaryState {
+    didCatch: boolean
+    error: any
+}
 
 const initialState: ErrorBoundaryState = {
     didCatch: false,
     error: null,
 }
 
-export interface FallbackProps {
+export interface ErrorFallbackProps {
     error: any
     resetErrorBoundary?: () => void
 }
@@ -15,10 +18,10 @@ export interface FallbackProps {
 interface ErrorBoundaryProps {
     children: React.ReactNode
     /**
-     * Can either be a simple ReactNode, or a component that gets an `error` and
-     * optionally a `resetErrorBoundary` prop.
+     * Can either be a simple ReactNode, or a function that returns a ReactNode.
+     * If a function is provided, it will be passed `ErrorFallbackProps`.
      */
-    fallback: React.ReactNode | React.ComponentType<FallbackProps>
+    fallback: React.ReactNode | ((props: ErrorFallbackProps) => React.ReactNode)
     /** Optional callback when an error is encountered, no handling required */
     onError?: (error: Error, info: { componentStack: string }) => void
     /**
@@ -72,15 +75,14 @@ export class ErrorBoundary extends React.Component<
         let childToRender = children
 
         if (didCatch) {
-            console.log({ didCatch })
-            if (React.isValidElement(fallback)) {
-                childToRender = fallback
-            } else if (typeof fallback === 'function') {
-                const props: FallbackProps = {
+            if (typeof fallback === 'function') {
+                const props: ErrorFallbackProps = {
                     error,
                     resetErrorBoundary: this.resetErrorBoundary,
                 }
-                childToRender = React.createElement(fallback, props)
+                childToRender = (
+                    fallback as (props: ErrorFallbackProps) => React.ReactNode
+                )(props)
             } else {
                 childToRender = fallback
             }
