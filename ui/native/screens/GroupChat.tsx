@@ -10,6 +10,7 @@ import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import {
     addToGroups,
+    changeActiveChatId,
     updateGroup,
     useChatContext,
 } from '../state/contexts/ChatContext'
@@ -77,6 +78,12 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
             })
         }
     }, [currentGroup, previousGroup?.name, navigation, state.groups])
+
+    // Set active chat while we're on this screen
+    useEffect(() => {
+        dispatch(changeActiveChatId(currentGroup.id))
+        return () => dispatch(changeActiveChatId(null))
+    }, [dispatch, currentGroup.id])
 
     return (
         <View style={styles(theme).container}>

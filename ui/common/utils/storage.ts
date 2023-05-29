@@ -176,6 +176,5 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         }
     }
 
-    console.log(migrationState.chat)
     return migrationState
 }
