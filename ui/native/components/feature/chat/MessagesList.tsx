@@ -9,6 +9,7 @@ import {
     View,
 } from 'react-native'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { jidToId } from '@fedi/common/utils/chat'
@@ -18,6 +19,7 @@ import { Message } from '../../../types'
 import Avatar from '../../ui/Avatar'
 import EmptyGroupNotice from './EmptyGroupNotice'
 import MessageItem from './MessageItem'
+import { MessageItemError } from './MessageItemError'
 
 type MessagesListProps = {
     messages: Message[][][]
@@ -85,11 +87,16 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                 )}
                                 <View>
                                     {msgs.map((msg, index) => (
-                                        <MessageItem
+                                        <ErrorBoundary
                                             key={msg.id || index}
-                                            message={msg}
-                                            last={index === msgs.length - 1}
-                                        />
+                                            fallback={() => (
+                                                <MessageItemError />
+                                            )}>
+                                            <MessageItem
+                                                message={msg}
+                                                last={index === msgs.length - 1}
+                                            />
+                                        </ErrorBoundary>
                                     ))}
                                 </View>
                             </View>
