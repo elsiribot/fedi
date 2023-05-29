@@ -17,12 +17,15 @@ use serde_with::{serde_as, DurationMilliSeconds};
 use tracing::{debug, info, log::warn};
 
 use crate::common::{
-    build_client, gateway_pay_invoice, get_note_summary, reissue_notes, remint_denomination,
-    try_cli_get_notes, try_mutinynet_faucet_create_invoice,
+    build_client, gateway_pay_invoice, get_note_summary, refill_cli_wallet_if_needed,
+    reissue_notes, remint_denomination, try_cli_get_notes, try_mutinynet_faucet_create_invoice,
 };
 
 const AMOUNT_TO_REMINT: Amount = Amount::from_msats(1024);
 const AMOUNT_TO_PAY: Amount = Amount::from_msats(1000);
+/// Minimum amount to get from faucet
+const MINIMUM_AMOUNT_TO_REFILL: Amount = Amount::from_msats(1_000_000);
+
 /// How many results will be returned on response
 const LATEST_CHECKS_COUNT: usize = 12;
 /// How many results will be required to be successful for the status to be `Ok`
@@ -92,8 +95,12 @@ pub async fn check_mutinynet(
         let execution_result = async {
             let summary = get_note_summary(&client).await?;
             if summary.total_amount() <= AMOUNT_TO_REMINT {
-                info!("Not enough funds, getting more");
-                let notes = try_cli_get_notes(&AMOUNT_TO_REMINT, RETRIES_ON_OPERATIONS).await?;
+                info!("Not enough funds in in-memory wallet, getting more");
+                let notes_amount_required = AMOUNT_TO_REMINT;
+                refill_cli_wallet_if_needed(notes_amount_required, MINIMUM_AMOUNT_TO_REFILL)
+                    .await?;
+                let notes =
+                    try_cli_get_notes(&notes_amount_required, RETRIES_ON_OPERATIONS).await?;
                 info!("Reissuing notes");
                 reissue_notes(&client, notes).await?;
             }

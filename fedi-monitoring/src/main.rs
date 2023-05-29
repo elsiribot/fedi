@@ -16,9 +16,7 @@ use gateway_monitoring::{check_mutinynet, get_status, CheckState};
 use tokio::io::AsyncWriteExt;
 use tracing::{debug, info};
 
-use crate::common::{
-    cli_get_total_amount, cli_refill_wallet_with_mutinynet_faucet, try_cli_get_notes_string,
-};
+use crate::common::{refill_cli_wallet_if_needed, try_cli_get_notes_string};
 
 pub mod common;
 pub mod gateway_monitoring;
@@ -175,14 +173,7 @@ async fn run_mutinynet_load_test(args: MutinynetLoadTestArgs) -> anyhow::Result<
     let notes_amount_required =
         Amount::from_msats(max(amount_required_by_reissue, amount_required_by_invoices));
     // Check if there is enough funds in the wallet
-    if cli_get_total_amount().await? < notes_amount_required {
-        let amount_to_refill = max(notes_amount_required, args.minimum_amount_refill);
-        info!("Not enough funds in the wallet. Refilling with {amount_to_refill}");
-        cli_refill_wallet_with_mutinynet_faucet(amount_to_refill).await?;
-        if cli_get_total_amount().await? < notes_amount_required {
-            bail!("Not enough funds in the wallet. Refilling didn't help")
-        }
-    }
+    refill_cli_wallet_if_needed(notes_amount_required, args.minimum_amount_refill).await?;
     let invoices_output_file_name = tempfile::NamedTempFile::new()?;
     let mut invoices_output_file =
         tokio::io::BufWriter::new(tokio::fs::File::create(&invoices_output_file_name).await?);
