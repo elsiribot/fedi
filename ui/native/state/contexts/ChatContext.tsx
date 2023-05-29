@@ -23,11 +23,19 @@ import {
     selectChatConnectionOptions,
     selectChatCredentials,
     selectChatEncryptionKeys,
+    selectChatLastReadMessageIds,
+    selectChatLastSeenMessageId,
     setChatEncryptionKeys,
+    setLastReadMessageId,
+    setLastSeenMessageId,
 } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 import encryptionUtils from '@fedi/common/utils/EncryptionUtils'
 import { GetMessagesQuery } from '@fedi/common/utils/XmlUtils'
+import {
+    getChatInfoFromMessage,
+    getLatestMessage,
+} from '@fedi/common/utils/chat'
 
 import {
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -54,6 +62,8 @@ interface ChatContextState {
     membersSeen: Member[]
     lastFetchedMessageId: string | null
     websocketIsHealthy: boolean
+    isOnChatScreen: boolean
+    activeChatId: string | null
 }
 const initialState: ChatContextState = {
     xmppClient: null,
@@ -63,12 +73,16 @@ const initialState: ChatContextState = {
     membersSeen: [],
     lastFetchedMessageId: null,
     websocketIsHealthy: false,
+    isOnChatScreen: false,
+    activeChatId: null,
 }
 
 interface ChatReduxState {
     authenticatedMember: Member | null
     encryptionKeys: ReturnType<typeof selectChatEncryptionKeys>
     connectionOptions: ReturnType<typeof selectChatConnectionOptions>
+    lastReadMessageIds: ReturnType<typeof selectChatLastReadMessageIds>
+    lastSeenMessageId: ReturnType<typeof selectChatLastSeenMessageId>
 }
 type ChatComboState = ChatContextState & ChatReduxState
 
@@ -79,6 +93,8 @@ enum ActionType {
     ADD_TO_GROUPS = 'ADD_TO_GROUPS',
     CHANGE_WEBSOCKET_IS_HEALTHY = 'CHANGE_WEBSOCKET_IS_HEALTHY',
     CHANGE_LAST_FETCHED_MESSAGE_ID = 'CHANGE_LAST_FETCHED_MESSAGE_ID',
+    CHANGE_IS_ON_CHAT_SCREEN = 'CHANGE_IS_ON_CHAT_SCREEN',
+    CHANGE_ACTIVE_CHAT_ID = 'CHANGE_ACTIVE_CHAT_ID',
     MERGE_MEMBERS_SEEN = 'MERGE_MEMBERS_SEEN',
     RECEIVE_MEMBERS_SEEN = 'RECEIVE_MEMBERS_SEEN',
     RECEIVE_MESSAGES = 'RECEIVE_MESSAGES',
@@ -134,6 +150,18 @@ export function changeLastFetchedMessageId(messageId: string): Action {
     return {
         type: ActionType.CHANGE_LAST_FETCHED_MESSAGE_ID,
         payload: messageId,
+    }
+}
+export function changeIsOnChatScreen(isOnChatScreen: boolean): Action {
+    return {
+        type: ActionType.CHANGE_IS_ON_CHAT_SCREEN,
+        payload: isOnChatScreen,
+    }
+}
+export function changeActiveChatId(activeChatId: string | null): Action {
+    return {
+        type: ActionType.CHANGE_ACTIVE_CHAT_ID,
+        payload: activeChatId,
     }
 }
 export function mergeMembersSeen(members: Member[]): Action {
@@ -335,6 +363,16 @@ export function reducer(
             return {
                 ...state,
                 websocketIsHealthy: action.payload,
+            }
+        case ActionType.CHANGE_IS_ON_CHAT_SCREEN:
+            return {
+                ...state,
+                isOnChatScreen: action.payload,
+            }
+        case ActionType.CHANGE_ACTIVE_CHAT_ID:
+            return {
+                ...state,
+                activeChatId: action.payload,
             }
         case ActionType.MERGE_MEMBERS_SEEN: {
             const incomingMembers = action.payload
@@ -568,6 +606,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )
+    const lastReadMessageIds = useAppSelector(selectChatLastReadMessageIds)
+    const lastSeenMessageId = useAppSelector(selectChatLastSeenMessageId)
 
     const previousXmppClient = usePrevious(state.xmppClient)
 
@@ -1178,6 +1218,63 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         }
     }, [activeFederationId, loadedFederationId, shutdownXmppClient])
 
+    // While on chat screen, update last seen when it doesn't match
+    const { isOnChatScreen } = state
+    useEffect(() => {
+        if (!isOnChatScreen || !activeFederationId || !state.messages.length)
+            return
+        const latestMessage = getLatestMessage(state.messages)
+        if (!latestMessage?.id || latestMessage.id === lastSeenMessageId) return
+        reduxDispatch(
+            setLastSeenMessageId({
+                federationId: activeFederationId,
+                messageId: latestMessage.id,
+            }),
+        )
+    }, [
+        reduxDispatch,
+        isOnChatScreen,
+        activeFederationId,
+        state.messages,
+        lastSeenMessageId,
+    ])
+
+    // While actively in a chat, update last read when it doesn't match
+    useEffect(() => {
+        if (!activeFederationId || !state.messages.length) return
+
+        const chatId = state.activeChatId
+        if (!chatId) return
+
+        const myId = authenticatedMember?.id
+        if (!myId) return
+
+        const activeChatMessages = state.messages.filter(
+            m => getChatInfoFromMessage(m, myId)?.id === chatId,
+        )
+        const latestMessage = getLatestMessage(activeChatMessages)
+        if (
+            !latestMessage?.id ||
+            lastReadMessageIds[chatId] === latestMessage.id
+        )
+            return
+
+        reduxDispatch(
+            setLastReadMessageId({
+                federationId: activeFederationId,
+                messageId: latestMessage.id,
+                chatId,
+            }),
+        )
+    }, [
+        reduxDispatch,
+        activeFederationId,
+        authenticatedMember,
+        lastReadMessageIds,
+        state.messages,
+        state.activeChatId,
+    ])
+
     // Fake our member using xmpp client jid
     const wrappedAuthenticatedMember = useMemo(() => {
         if (!state.xmppClient?.jid) return null
@@ -1193,6 +1290,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
                 authenticatedMember: wrappedAuthenticatedMember,
                 encryptionKeys: activeChatEncryptionKeys,
                 connectionOptions: activeChatConnectionOptions,
+                lastReadMessageIds,
+                lastSeenMessageId,
             },
             dispatch,
         }),
@@ -1201,6 +1300,8 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             wrappedAuthenticatedMember,
             activeChatEncryptionKeys,
             activeChatConnectionOptions,
+            lastReadMessageIds,
+            lastSeenMessageId,
             dispatch,
         ],
     )
