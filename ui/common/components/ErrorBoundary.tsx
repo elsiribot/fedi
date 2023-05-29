@@ -12,7 +12,7 @@ const initialState: ErrorBoundaryState = {
 
 export interface ErrorFallbackProps {
     error: any
-    resetErrorBoundary?: () => void
+    resetErrorBoundary: () => void
 }
 
 interface ErrorBoundaryProps {
@@ -26,10 +26,8 @@ interface ErrorBoundaryProps {
     onError?: (error: Error, info: { componentStack: string }) => void
     /**
      * Optional callback that's triggered if the `fallback` component implements
-     * and triggers `resetErrorBoundary`. This trigger should do something like
-     * reset some component state or navigate a user elsewhere. If not provided,
-     * the `fallback` component won't receive a `resetErrorBoundary` function,
-     * and shouldn't render an action.
+     * and triggers `resetErrorBoundary`. This trigger could do something like
+     * reset some component state, navigate a user elsewhere, or re-fetch data.
      */
     onReset?: () => void
 }

@@ -2,6 +2,7 @@ import orderBy from 'lodash/orderBy'
 import React, { use, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Transaction } from '@fedi/common/types'
 
@@ -10,6 +11,7 @@ import { HoloLoader } from '../components/HoloLoader'
 import { Text } from '../components/Text'
 import { TransactionDialog } from '../components/TransactionDialog'
 import { TransactionRow } from '../components/TransactionRow'
+import { TransactionRowError } from '../components/TransactionRowError'
 import { useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
@@ -54,12 +56,20 @@ const TransactionsPage: React.FC = () => {
     } else {
         content = (
             <TransactionsList>
-                {transactions.map(transaction => (
-                    <TransactionRow
-                        key={transaction.id}
-                        transaction={transaction}
-                        onClick={() => setSelectedTransaction(transaction)}
-                    />
+                {transactions.map((transaction, idx) => (
+                    <ErrorBoundary
+                        key={transaction?.id || idx}
+                        fallback={props => (
+                            <TransactionRowError
+                                {...props}
+                                transaction={transaction}
+                            />
+                        )}>
+                        <TransactionRow
+                            transaction={transaction}
+                            onClick={() => setSelectedTransaction(transaction)}
+                        />
+                    </ErrorBoundary>
                 ))}
             </TransactionsList>
         )
