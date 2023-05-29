@@ -87,6 +87,7 @@ export function hasStorageStateChanged(
             'lastFetchedMessageId',
         ])
         keysetsToCheck.push(['chat', activeFederationId, 'lastReadMessageIds'])
+        keysetsToCheck.push(['chat', activeFederationId, 'lastSeenMessageId'])
     }
 
     for (let keysToCheck of keysetsToCheck) {

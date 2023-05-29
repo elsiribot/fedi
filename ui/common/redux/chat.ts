@@ -354,6 +354,7 @@ export const chatSlice = createSlice({
                         membersSeen: chatState.members,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
+                        lastSeenMessageId: chatState.lastSeenMessageId,
                     }
                 },
             )
