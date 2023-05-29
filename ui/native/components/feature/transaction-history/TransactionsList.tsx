@@ -1,12 +1,22 @@
-import { Overlay, Theme, useTheme } from '@rneui/themed'
+import { Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
-import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import {
+    Dimensions,
+    FlatList,
+    ListRenderItem,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import type { Transaction } from '@fedi/common/types'
 
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import TransactionDetail from './TransactionDetail'
 import TransactionTile from './TransactionTile'
+import { TransactionTileError } from './TransactionTileError'
 
 type TransactionsListProps = {
     transactions: Transaction[]
@@ -19,18 +29,21 @@ const TransactionsList = ({
     transactions,
     refreshTransactions,
 }: TransactionsListProps) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const [selectedTransaction, setSelectedTransaction] =
         useState<Transaction | null>(null)
 
     const renderTransaction: ListRenderItem<Transaction> = ({ item }) => {
         return (
-            <TransactionTile
-                txn={item}
-                selectTransaction={(txn: Transaction) =>
-                    setSelectedTransaction(txn)
-                }
-            />
+            <ErrorBoundary fallback={() => <TransactionTileError />}>
+                <TransactionTile
+                    txn={item}
+                    selectTransaction={(txn: Transaction) =>
+                        setSelectedTransaction(txn)
+                    }
+                />
+            </ErrorBoundary>
         )
     }
 
@@ -53,11 +66,27 @@ const TransactionsList = ({
                 overlayStyle={styles(theme).overlayContainer}
                 onBackdropPress={() => setSelectedTransaction(null)}>
                 {selectedTransaction && (
-                    <TransactionDetail
-                        txn={selectedTransaction}
-                        handleCloseModal={() => setSelectedTransaction(null)}
-                        refreshTransactions={refreshTransactions}
-                    />
+                    <ErrorBoundary
+                        fallback={
+                            <View style={styles(theme).overlayErrorContainer}>
+                                <SvgImage
+                                    name="Error"
+                                    color={theme.colors.red}
+                                    size={SvgImageSize.lg}
+                                />
+                                <Text style={styles(theme).overlayErrorText}>
+                                    {t('errors.transaction-render-error')}
+                                </Text>
+                            </View>
+                        }>
+                        <TransactionDetail
+                            txn={selectedTransaction}
+                            handleCloseModal={() =>
+                                setSelectedTransaction(null)
+                            }
+                            refreshTransactions={refreshTransactions}
+                        />
+                    </ErrorBoundary>
                 )}
             </Overlay>
         </SafeAreaView>
@@ -74,6 +103,16 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
             width: '90%',
             alignItems: 'center',
+        },
+        overlayErrorContainer: {
+            paddingVertical: theme.spacing.xl,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        overlayErrorText: {
+            marginTop: theme.spacing.lg,
+            textAlign: 'center',
         },
     })
 
