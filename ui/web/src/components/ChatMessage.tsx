@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { useTriggerErrorBoundary } from '@fedi/common/hooks/debug'
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import type { ChatMessage as ChatMessageType } from '@fedi/common/types'
 

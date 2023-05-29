@@ -100,6 +100,7 @@
         "chat-unavailable": "This federation does not have a chat server.",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "chat-payment-failed": "Could not update that chat payment",
+        "chat-message-render-error": "Failed to render this message",
         "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",

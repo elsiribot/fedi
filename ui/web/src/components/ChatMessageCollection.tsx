@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
     selectAuthenticatedMember,
     selectChatMemberMap,
@@ -11,6 +12,7 @@ import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { ChatMessage } from './ChatMessage'
+import { ChatMessageError } from './ChatMessageError'
 
 interface Props {
     collection: ChatMessageType[][]
@@ -47,10 +49,11 @@ export const ChatMessageCollection: React.FC<Props> = ({
                                 <Avatar id={sentBy} name={sentBy} size="sm" />
                                 <Messages isMe={isMe}>
                                     {messages.map(msg => (
-                                        <ChatMessage
+                                        <ErrorBoundary
                                             key={msg.id}
-                                            message={msg}
-                                        />
+                                            fallback={ChatMessageError}>
+                                            <ChatMessage message={msg} />
+                                        </ErrorBoundary>
                                     ))}
                                 </Messages>
                             </MessageAvatarWrap>
