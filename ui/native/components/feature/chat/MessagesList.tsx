@@ -88,7 +88,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                         <MessageItem
                                             key={msg.id || index}
                                             message={msg}
-                                            last={index === messages.length - 1}
+                                            last={index === msgs.length - 1}
                                         />
                                     ))}
                                 </View>

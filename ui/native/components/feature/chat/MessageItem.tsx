@@ -28,57 +28,63 @@ const MessageItem: React.FC<MessageItemProps> = ({
     const sentByMe = sentBy?.username === authenticatedMember?.username
 
     let bubbleGradient: LinearGradientProps | undefined
-    let bubbleStyles: StyleProp<ViewStyle | TextStyle>[] = [
+    const bubbleContainerStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).bubbleContainer,
     ]
-    let textStyles: StyleProp<ViewStyle | TextStyle>[] = [
+    const bubbleInnerStyles: StyleProp<ViewStyle | TextStyle>[] = [
+        styles(theme).bubbleInner,
+    ]
+    const textStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).messageText,
     ]
 
     // Set alignment (left/right) based on sender
     if (sentByMe) {
-        bubbleStyles.push(styles(theme).rightAlignedMessage)
+        bubbleContainerStyles.push(styles(theme).rightAlignedMessage)
     } else {
-        bubbleStyles.push(styles(theme).leftAlignedMessage)
+        bubbleContainerStyles.push(styles(theme).leftAlignedMessage)
     }
 
     if (payment) {
-        bubbleStyles.push(styles(theme).orangeBubble)
+        bubbleInnerStyles.push(styles(theme).orangeBubble)
     } else if (sentByMe) {
         if (last) {
-            bubbleStyles.push(styles(theme).lastSentMessage)
+            bubbleContainerStyles.push(styles(theme).lastSentMessage)
         }
         bubbleGradient = {
             colors: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0)'],
             start: { x: 0, y: 0 },
             end: { x: 0, y: 1 },
         }
-        bubbleStyles.push(styles(theme).blueBubble)
+        bubbleInnerStyles.push(styles(theme).blueBubble)
         textStyles.push(styles(theme).sentMessageText)
     } else {
         if (last) {
-            bubbleStyles.push(styles(theme).lastReceivedMessage)
+            bubbleContainerStyles.push(styles(theme).lastReceivedMessage)
         }
-        bubbleStyles.push(styles(theme).greyBubble)
+        bubbleInnerStyles.push(styles(theme).greyBubble)
         textStyles.push(styles(theme).receivedMessageText)
     }
-
     return (
         <View style={styles(theme).container}>
-            <View style={styles(theme).contentContainer}>
-                <OptionalGradient
-                    gradient={bubbleGradient}
-                    style={bubbleStyles}>
-                    {payment ? (
-                        <PaymentMessage message={message} />
-                    ) : (
-                        <MessageContents
-                            sentByMe={sentByMe}
-                            content={message.content}
-                            textStyles={textStyles}
-                        />
-                    )}
-                </OptionalGradient>
+            <View style={styles(theme).messageContainer}>
+                <View style={styles(theme).contentContainer}>
+                    <View style={bubbleContainerStyles}>
+                        <OptionalGradient
+                            gradient={bubbleGradient}
+                            style={bubbleInnerStyles}>
+                            {payment ? (
+                                <PaymentMessage message={message} />
+                            ) : (
+                                <MessageContents
+                                    sentByMe={sentByMe}
+                                    content={message.content}
+                                    textStyles={textStyles}
+                                />
+                            )}
+                        </OptionalGradient>
+                    </View>
+                </View>
             </View>
         </View>
     )
@@ -96,15 +102,21 @@ const styles = (theme: Theme) =>
         },
         bubbleContainer: {
             marginTop: theme.spacing.xxs,
-            padding: 10,
             borderRadius: 16,
             maxWidth: theme.sizes.maxMessageWidth,
+            overflow: 'hidden',
+        },
+        bubbleInner: {
+            padding: 10,
         },
         contentContainer: {
             flexDirection: 'column',
             alignItems: 'flex-start',
             justifyContent: 'flex-end',
             width: '100%',
+        },
+        messageContainer: {
+            flexDirection: 'row',
         },
         leftAlignedMessage: {
             marginRight: 'auto',
@@ -113,10 +125,10 @@ const styles = (theme: Theme) =>
             marginLeft: 'auto',
         },
         lastReceivedMessage: {
-            borderBottomLeftRadius: 2,
+            borderBottomLeftRadius: 4,
         },
         lastSentMessage: {
-            borderBottomRightRadius: 2,
+            borderBottomRightRadius: 4,
         },
         greyBubble: {
             backgroundColor: theme.colors.extraLightGrey,
