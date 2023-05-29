@@ -1,34 +1,23 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    Pressable,
-    StyleProp,
-    StyleSheet,
-    TextStyle,
-    View,
-    ViewStyle,
-} from 'react-native'
+import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
-import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
-import Avatar from '../../ui/Avatar'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
     message: Message
-    multiUserChat?: boolean
     last?: boolean
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
-    multiUserChat = false,
     last = false,
 }: MessageItemProps) => {
     const { theme } = useTheme()

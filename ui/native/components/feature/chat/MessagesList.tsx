@@ -88,7 +88,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                         <MessageItem
                                             key={msg.id || index}
                                             message={msg}
-                                            multiUserChat={multiUserChat}
                                             last={index === messages.length - 1}
                                         />
                                     ))}
