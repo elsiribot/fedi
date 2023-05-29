@@ -1,6 +1,13 @@
+import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useRef } from 'react'
-import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
+import {
+    FlatList,
+    ListRenderItem,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -22,6 +29,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     multiUserChat = false,
 }: MessagesListProps) => {
     const { theme } = useTheme()
+    const navigation = useNavigation()
     const listRef = useRef<FlatList>(null)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
@@ -53,7 +61,18 @@ const MessagesList: React.FC<MessagesListProps> = ({
                             )}
                             <View style={style.senderGroupContent}>
                                 {!sentByMe && multiUserChat && (
-                                    <View style={style.senderAvatar}>
+                                    <Pressable
+                                        style={style.senderAvatar}
+                                        onPress={() => {
+                                            if (sentBy) {
+                                                navigation.navigate(
+                                                    'DirectChat',
+                                                    {
+                                                        member: sentBy,
+                                                    },
+                                                )
+                                            }
+                                        }}>
                                         <Avatar
                                             id={
                                                 sentBy
@@ -62,7 +81,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                             }
                                             name={sentByName}
                                         />
-                                    </View>
+                                    </Pressable>
                                 )}
                                 <View>
                                     {msgs.map((msg, index) => (

@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import {
@@ -16,7 +15,6 @@ import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
-import { NavigationHook } from '../../../types/navigation'
 import Avatar from '../../ui/Avatar'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import MessageContents from './MessageContents'
@@ -34,7 +32,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
     last = false,
 }: MessageItemProps) => {
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const { sentBy, payment } = message
@@ -79,41 +76,20 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     return (
         <View style={styles(theme).container}>
-            <View style={styles(theme).messageContainer}>
-                {!sentByMe && multiUserChat && (
-                    // link to direct chat but only for incoming messages
-                    // in group chats
-                    <Pressable
-                        style={styles(theme).avatarContainer}
-                        onPress={() => {
-                            if (sentBy) {
-                                navigation.navigate('DirectChat', {
-                                    member: sentBy,
-                                })
-                            }
-                        }}>
-                        <Avatar
-                            id={jidToId(sentBy?.jid || '')}
-                            name={sentBy?.username || ''}
+            <View style={styles(theme).contentContainer}>
+                <OptionalGradient
+                    gradient={bubbleGradient}
+                    style={bubbleStyles}>
+                    {payment ? (
+                        <PaymentMessage message={message} />
+                    ) : (
+                        <MessageContents
+                            sentByMe={sentByMe}
+                            content={message.content}
+                            textStyles={textStyles}
                         />
-                    </Pressable>
-                )}
-
-                <View style={styles(theme).contentContainer}>
-                    <OptionalGradient
-                        gradient={bubbleGradient}
-                        style={bubbleStyles}>
-                        {payment ? (
-                            <PaymentMessage message={message} />
-                        ) : (
-                            <MessageContents
-                                sentByMe={sentByMe}
-                                content={message.content}
-                                textStyles={textStyles}
-                            />
-                        )}
-                    </OptionalGradient>
-                </View>
+                    )}
+                </OptionalGradient>
             </View>
         </View>
     )
@@ -140,9 +116,6 @@ const styles = (theme: Theme) =>
             alignItems: 'flex-start',
             justifyContent: 'flex-end',
             width: '100%',
-        },
-        messageContainer: {
-            flexDirection: 'row',
         },
         leftAlignedMessage: {
             marginRight: 'auto',
