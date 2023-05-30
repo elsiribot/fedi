@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, CheckBox, Text, Theme, useTheme } from '@rneui/themed'
 import { jid } from '@xmpp/client'
@@ -24,6 +25,7 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
     const { group } = route.params
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
+    const isFocused = useIsFocused()
     const { toast } = useEnvironmentContext().state
     const { fetchGroupMembersList, removeAdminFromGroup } = useXmpp()
     const [admins, setAdmins] = useState<ChatMember[]>([])
@@ -37,8 +39,10 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [])
 
     useEffect(() => {
-        refreshAdminList()
-    }, [])
+        if (isFocused) {
+            refreshAdminList()
+        }
+    }, [isFocused])
 
     const handleRemoveAdmin = (member: Member) => {
         Alert.alert(

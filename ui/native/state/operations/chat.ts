@@ -230,7 +230,7 @@ export const fetchGroupMembersList = (
                 const memberItems = result
                     .getChild('query')
                     ?.getChildren('item')
-                if (!memberItems || memberItems.length === 0) return []
+                if (!memberItems || memberItems.length === 0) return resolve([])
 
                 const members = memberItems.map(i => {
                     const username: string = i.getAttr('nick')
