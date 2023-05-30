@@ -34,6 +34,8 @@ export type TabsNavigatorParamList = {
     Home: { offline: boolean }
 }
 export type RootStackParamList = {
+    AddBroadcastAdmin: { group: Group }
+    BroadcastAdminsList: { group: Group }
     BitcoinRequest: { uri: string }
     ChatWallet: { recipient: Member }
     ChooseBackupMethod: undefined

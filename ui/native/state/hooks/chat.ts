@@ -1,7 +1,8 @@
 import { xml } from '@xmpp/client'
 import { useCallback } from 'react'
 
-import { Key, Keypair } from '@fedi/common/types'
+import { ChatMember, Key, Keypair } from '@fedi/common/types'
+import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 
 import {
     ArchiveQueryFilters,
@@ -16,15 +17,18 @@ import {
     useChatContext,
 } from '../contexts/ChatContext'
 import {
+    addAdminToGroup,
     addMemberToRoster,
     changeMucRoomName,
     enterMucRoom,
+    fetchGroupMembersList,
     fetchMessagesFromArchive,
     fetchMucRoomConfig,
     fetchRoster,
     getPublicKeyFor,
     getUniqueGroupId,
     publishPublicKey,
+    removeAdminFromGroup,
     sendDirectMessage,
     sendGroupMessage,
 } from '../operations/chat'
@@ -36,6 +40,12 @@ export const useXmpp = () => {
     const { membersSeen, xmppClient } = state
 
     return {
+        addAdminToGroup: useCallback(
+            (member: Member, group: Group): Promise<Member> => {
+                return addAdminToGroup(member, group, xmppClient)
+            },
+            [xmppClient],
+        ),
         addMemberToRoster: useCallback(
             (member: Member): Promise<Member> => {
                 return addMemberToRoster(member, xmppClient)
@@ -49,6 +59,12 @@ export const useXmpp = () => {
                 )
             },
             [dispatch, xmppClient],
+        ),
+        fetchGroupMembersList: useCallback(
+            (group: Group, role: XmppMemberRole): Promise<ChatMember[]> => {
+                return fetchGroupMembersList(group, role, xmppClient)
+            },
+            [xmppClient],
         ),
         fetchMucRoomConfig: useCallback(
             (group: Group): Promise<Group> => {
@@ -93,6 +109,12 @@ export const useXmpp = () => {
         publishPublicKey: useCallback(
             (pubkey: Key): Promise<boolean> => {
                 return publishPublicKey(pubkey, xmppClient)
+            },
+            [xmppClient],
+        ),
+        removeAdminFromGroup: useCallback(
+            (member: Member, group: Group): Promise<Member> => {
+                return removeAdminFromGroup(member, group, xmppClient)
             },
             [xmppClient],
         ),

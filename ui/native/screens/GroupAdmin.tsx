@@ -56,7 +56,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress={() => console.info('not implemented')}
                 />
                 <SettingsItem
-                    image={<SvgImage name="InviteMembers" />}
+                    image={<SvgImage name="SpeakerPhone" />}
                     label={t('feature.chat.broadcast-only')}
                     disabled
                     action={
@@ -68,6 +68,13 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         />
                     }
                     onPress={() => console.info('not implemented')}
+                />
+                <SettingsItem
+                    image={<SvgImage name="SpeakerPhone" />}
+                    label={t('feature.chat.broadcast-admin-settings')}
+                    onPress={() => {
+                        navigation.navigate('BroadcastAdminsList', { group })
+                    }}
                 />
             </View>
             <View>
