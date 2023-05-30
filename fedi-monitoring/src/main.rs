@@ -85,6 +85,12 @@ struct MutinynetLoadTestArgs {
 
     #[arg(
         long,
+        help = "Additional output with the metrics results in JSON format, besides the one in the archive dir"
+    )]
+    additional_metrics_json_output: Option<PathBuf>,
+
+    #[arg(
+        long,
         default_value = "1",
         help = "How many invoices will be created for each user"
     )]
@@ -212,7 +218,13 @@ async fn run_mutinynet_load_test(args: MutinynetLoadTestArgs) -> anyhow::Result<
         .arg("--archive-dir")
         .arg(args.load_test_archive_dir)
         .arg("--users")
-        .arg(args.users.to_string())
+        .arg(args.users.to_string());
+    if let Some(metrics_json_output) = args.additional_metrics_json_output {
+        load_test_tool
+            .arg("--metrics-json-output")
+            .arg(metrics_json_output);
+    }
+    load_test_tool
         .arg("load-test")
         .arg("--invoices-file")
         .arg(invoices_output_file_name.path())
@@ -226,7 +238,9 @@ async fn run_mutinynet_load_test(args: MutinynetLoadTestArgs) -> anyhow::Result<
         .arg(args.note_denomination.msats.to_string());
     info!("Running load test with {load_test_tool:?}");
     let status = load_test_tool.status().await?;
-    if !status.success() {
+    if status.success() {
+        info!("Load test finished successfully");
+    } else {
         bail!("Load test failed with status: {:?}", status.code())
     }
     Ok(())
