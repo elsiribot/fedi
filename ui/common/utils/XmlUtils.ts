@@ -569,7 +569,7 @@ export class SetRoomConfigQuery extends XmppQuery {
             xml('value', {}, '1'),
         )
 
-        let roomNameFieldXml, moderationFieldXml
+        let roomNameFieldXml, moderationFieldXml, preventPresenceXml
         if (roomName) {
             roomNameFieldXml = xml(
                 'field',
@@ -588,6 +588,16 @@ export class SetRoomConfigQuery extends XmppQuery {
                     var: 'muc#roomconfig_moderatedroom',
                 },
                 xml('value', {}, '1'),
+            )
+            // broadcast-only rooms should only send presence for users who can
+            // send messages
+            preventPresenceXml = xml(
+                'field',
+                {
+                    var: 'muc#roomconfig_presencebroadcast',
+                },
+                xml('value', {}, 'moderator'),
+                xml('value', {}, 'participant'),
             )
         }
 
@@ -617,6 +627,7 @@ export class SetRoomConfigQuery extends XmppQuery {
                 // length function parameters with custom typings?
                 ...(roomNameFieldXml ? [roomNameFieldXml] : []),
                 ...(moderationFieldXml ? [moderationFieldXml] : []),
+                ...(preventPresenceXml ? [preventPresenceXml] : []),
             ),
         )
 
