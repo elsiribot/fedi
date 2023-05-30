@@ -5,7 +5,6 @@ import { jid } from '@xmpp/client'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 
@@ -23,12 +22,12 @@ export type Props = NativeStackScreenProps<
 const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { group } = route.params
-    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const isFocused = useIsFocused()
     const { toast } = useEnvironmentContext().state
     const { fetchGroupMembersList, removeAdminFromGroup } = useXmpp()
     const [admins, setAdmins] = useState<ChatMember[]>([])
+    const style = styles(theme)
 
     const refreshAdminList = useCallback(async () => {
         const groupParticipants = await fetchGroupMembersList(
@@ -36,13 +35,13 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
             XmppMemberRole.participant,
         )
         setAdmins(groupParticipants)
-    }, [])
+    }, [fetchGroupMembersList, group])
 
     useEffect(() => {
         if (isFocused) {
             refreshAdminList()
         }
-    }, [isFocused])
+    }, [isFocused, refreshAdminList])
 
     const handleRemoveAdmin = (member: Member) => {
         Alert.alert(
@@ -93,24 +92,24 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <View style={styles(theme, insets).container}>
-            <Text h2 h2Style={styles(theme, insets).headerText}>
+        <View style={style.container}>
+            <Text h2 h2Style={style.headerText}>
                 {t('feature.chat.admin-settings')}
             </Text>
-            <Text caption medium style={styles(theme, insets).instructions}>
+            <Text caption medium style={style.instructions}>
                 {t('feature.chat.admin-settings-instructions')}
             </Text>
-            <View style={styles(theme, insets).membersListContainer}>
+            <View style={style.membersListContainer}>
                 <FlatList
                     data={admins}
                     renderItem={renderMember}
                     keyExtractor={(item: ChatMember) => `${item.id}`}
-                    style={styles(theme, insets).membersListContainer}
+                    style={style.membersListContainer}
                 />
             </View>
             <Button
                 fullWidth
-                containerStyle={styles(theme, insets).buttonContainer}
+                containerStyle={style.buttonContainer}
                 title={t('feature.chat.add-admin')}
                 onPress={() =>
                     navigation.navigate('AddBroadcastAdmin', {
@@ -122,7 +121,7 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,

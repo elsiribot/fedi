@@ -1,4 +1,4 @@
-import { CheckBox, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { ReactNode } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 

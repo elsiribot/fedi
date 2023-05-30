@@ -234,8 +234,8 @@ export const fetchGroupMembersList = (
 
                 const members = memberItems.map(i => {
                     const username: string = i.getAttr('nick')
-                    const jid: string = i.getAttr('jid')
-                    const id: string = jid.split(`/${XMPP_RESOURCE}`)[0]
+                    const memberJid: string = i.getAttr('jid')
+                    const id: string = memberJid.split(`/${XMPP_RESOURCE}`)[0]
                     return {
                         id,
                         username,

@@ -4,7 +4,6 @@ import { jid } from '@xmpp/client'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 
@@ -22,12 +21,12 @@ export type Props = NativeStackScreenProps<
 const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { group } = route.params
-    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { fetchGroupMembersList, addAdminToGroup } = useXmpp()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
     const [visitors, setVisitors] = useState<ChatMember[]>([])
+    const style = styles(theme)
 
     // filter out members if usernameFilter has text to filter with
     const filteredMembers = usernameFilter
@@ -40,11 +39,11 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
             XmppMemberRole.visitor,
         )
         setVisitors(groupVisitors)
-    }, [])
+    }, [fetchGroupMembersList, group])
 
     useEffect(() => {
         refreshVisitorList()
-    }, [])
+    }, [refreshVisitorList])
 
     const handleAddAdmin = async (member: Member) => {
         Alert.alert(
@@ -88,8 +87,8 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <View style={styles(theme, insets).container}>
-            <View style={styles(theme, insets).filterMembersContainer}>
+        <View style={style.container}>
+            <View style={style.filterMembersContainer}>
                 <Input
                     onChangeText={setUsernameFilter}
                     value={usernameFilter}
@@ -97,13 +96,9 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         'feature.chat.type-to-search-members',
                     )}...`}
                     returnKeyType="done"
-                    containerStyle={
-                        styles(theme, insets).filterMembersTextInputOuter
-                    }
-                    inputContainerStyle={
-                        styles(theme, insets).filterMembersTextInputInner
-                    }
-                    style={styles(theme, insets).filterMembersTextInput}
+                    containerStyle={style.filterMembersTextInputOuter}
+                    inputContainerStyle={style.filterMembersTextInputInner}
+                    style={style.filterMembersTextInput}
                     autoCapitalize={'none'}
                     autoCorrect={false}
                     autoFocus
@@ -115,19 +110,19 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     <SvgImage name="Scan" />
                 </Pressable> */}
             </View>
-            <View style={styles(theme, insets).membersListContainer}>
+            <View style={style.membersListContainer}>
                 <FlatList
                     data={filteredMembers}
                     renderItem={renderMember}
                     keyExtractor={(item: ChatMember) => `${item.id}`}
-                    style={styles(theme, insets).membersList}
+                    style={style.membersList}
                 />
             </View>
         </View>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
@@ -159,15 +154,8 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         membersListContainer: {
             padding: theme.spacing.xl,
-            // flex: 1,
-            // backgroundColor: 'pink',
-            // marginBottom: insets.bottom,
         },
-        membersList: {
-            // flex: 1,
-            // backgroundColor: 'pink',
-            // marginBottom: insets.bottom,
-        },
+        membersList: {},
     })
 
 export default AddBroadcastAdmin
