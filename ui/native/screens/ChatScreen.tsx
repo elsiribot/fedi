@@ -83,7 +83,7 @@ const ChatScreen: React.FC<Props> = () => {
         return () => {
             dispatch(changeIsOnChatScreen(false))
         }
-    }, [isFocused])
+    }, [isFocused, dispatch])
 
     return (
         <View style={styles(theme).container}>
