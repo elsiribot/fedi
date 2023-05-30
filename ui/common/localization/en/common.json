@@ -174,7 +174,7 @@
         },
         "chat": {
             "add-admin": "Add Admin",
-            "added-admin-to-group": "Successfully added {{username}} as an admin",
+            "added-admin-to-group": "Added {{username}} as an admin",
             "admin-settings": "Admin settings",
             "admin-settings-instructions": "These members can send messages in the broadcast only groups",
             "broadcast-admin-settings": "Broadcast Admin settings",
@@ -218,7 +218,7 @@
             "they-sent-payment": "{{name}} sent you {{amount}} {{unit}} {{memo}}",
             "group-invite": "Group invite",
             "paste-group-invite": "Paste group invite",
-            "removed-admin-from-group": "Successfully removed {{username}} as an admin",
+            "removed-admin-from-group": "Removed {{username}} as an admin",
             "show-history-to-new-members": "Show history to new members",
             "try-inviting-someone": "Try inviting someone.",
             "view-shared-media": "View shared media",
