@@ -478,7 +478,7 @@ export const authenticateChat = createAsyncThunk<
         await fedimint.backupXmppUsername(normalizedUsername, federationId)
 
         return {
-            id: normalizedUsername,
+            id: `${normalizedUsername}@${connectionOptions.domain}`,
             username: normalizedUsername,
         }
     },
