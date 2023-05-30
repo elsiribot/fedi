@@ -1,8 +1,11 @@
 import { useRouter } from 'next/router'
 import React from 'react'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+
 import { useMediaQuery } from '../../hooks'
-import { keyframes, styled, theme, config } from '../../styles'
+import { styled, theme, config } from '../../styles'
+import { PageError } from '../PageError'
 import { FederationSelector } from './FederationSelector'
 import { Navigation } from './Navigation'
 
@@ -30,7 +33,9 @@ export const Template: React.FC<Props> = ({ children }) => {
                 fullWidth={isFullWidthPage}
                 fullScreen={isFullScreenPage}>
                 {!hideNavigation && <FederationSelector />}
-                {children}
+                <ErrorBoundary fallback={() => <PageError />}>
+                    {children}
+                </ErrorBoundary>
             </Content>
         </Container>
     )

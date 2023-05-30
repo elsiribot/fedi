@@ -1,6 +1,8 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
 import { SiteTiles } from '../components/SiteTiles'
@@ -17,7 +19,9 @@ function HomePage() {
             </Title>
             <ContentInner>
                 <BitcoinWallet />
-                <SiteTiles />
+                <ErrorBoundary fallback={null}>
+                    <SiteTiles />
+                </ErrorBoundary>
             </ContentInner>
         </ContentBlock>
     )

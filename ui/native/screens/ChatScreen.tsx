@@ -1,8 +1,11 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useIsFocused, useNavigation } from '@react-navigation/native'
-import { FAB, Theme, useTheme } from '@rneui/themed'
+import { FAB, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
@@ -26,6 +29,7 @@ export type Props = BottomTabScreenProps<
 >
 
 const ChatScreen: React.FC<Props> = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const isFocused = useIsFocused()
@@ -87,7 +91,16 @@ const ChatScreen: React.FC<Props> = () => {
 
     return (
         <View style={styles(theme).container}>
-            <ChatsList />
+            <ErrorBoundary
+                fallback={() => (
+                    <View style={styles(theme).errorContainer}>
+                        <Text style={styles(theme).error}>
+                            {t('errors.chat-list-render-error')}
+                        </Text>
+                    </View>
+                )}>
+                <ChatsList />
+            </ErrorBoundary>
 
             <FAB
                 icon={<SvgImage name="Plus" color={theme.colors.secondary} />}
@@ -112,6 +125,14 @@ const styles = (theme: Theme) =>
             elevation: 4,
             shadowRadius: 4,
             shadowColor: theme.colors.primary,
+        },
+        errorContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        error: {
+            color: theme.colors.red,
         },
     })
 

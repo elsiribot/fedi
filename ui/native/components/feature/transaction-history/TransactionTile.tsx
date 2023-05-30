@@ -17,6 +17,7 @@ type TransactionTileProps = {
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}

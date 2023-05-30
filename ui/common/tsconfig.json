@@ -10,6 +10,7 @@
         "composite": true,
         "outDir": "dist",
         "resolveJsonModule": true,
+        "jsx": "preserve",
         "typeRoots": [
             "typings/",
             "node_modules/@types/",

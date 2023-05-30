@@ -2,8 +2,6 @@ import type { AppProps } from 'next/app'
 import { useEffect } from 'react'
 import { Provider as ReduxProvider } from 'react-redux'
 
-import { selectLanguage } from '@fedi/common/redux'
-
 import { FediBridgeInitializer } from '../components/FediBridgeInitializer'
 import { PWAMetaTags } from '../components/PWAMetaTags'
 import { Template } from '../components/Template'

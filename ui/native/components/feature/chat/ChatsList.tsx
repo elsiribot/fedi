@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
     getLatestMessageIdsForChats,
     jidToId,
@@ -51,27 +52,29 @@ const ChatsList: React.FC<{}> = () => {
             item.members && item.members?.length == 1 && item.members[0]
         const id = directMember ? jidToId(directMember.jid) : item.id
         return (
-            <ChatTile
-                chat={item}
-                unread={!!unreadChatMap[id]}
-                selectChat={(chat: Chat) => {
-                    if (directMember) {
-                        navigation.navigate('DirectChat', {
-                            member: directMember,
-                        })
-                    } else {
-                        navigation.navigate('GroupChat', {
-                            group: new Group({
-                                id: chat.id,
-                                name: chat.name,
-                                invitationCode: Group.encodeInvitationLink(
-                                    chat.id,
-                                ),
-                            }),
-                        })
-                    }
-                }}
-            />
+            <ErrorBoundary fallback={null}>
+                <ChatTile
+                    chat={item}
+                    unread={!!unreadChatMap[id]}
+                    selectChat={(chat: Chat) => {
+                        if (directMember) {
+                            navigation.navigate('DirectChat', {
+                                member: directMember,
+                            })
+                        } else {
+                            navigation.navigate('GroupChat', {
+                                group: new Group({
+                                    id: chat.id,
+                                    name: chat.name,
+                                    invitationCode: Group.encodeInvitationLink(
+                                        chat.id,
+                                    ),
+                                }),
+                            })
+                        }
+                    }}
+                />
+            </ErrorBoundary>
         )
     }
 

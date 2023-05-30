@@ -7,12 +7,14 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider as ReduxProvider } from 'react-redux'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import Router from './Router'
 import { fedimint, initializeBridge } from './bridge'
 import CustomToast from './components/ui/CustomToast'
+import { ErrorScreen } from './screens/ErrorScreen'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { ChatProvider } from './state/contexts/ChatContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
@@ -96,18 +98,20 @@ const App = () => {
     return (
         <SafeAreaProvider>
             <ThemeProvider theme={theme}>
-                <ReduxProvider store={store}>
-                    <ProviderComposer
-                        providers={[
-                            EnvironmentProvider,
-                            FederationsProvider,
-                            ChatProvider,
-                            BackupRecoveryProvider,
-                        ]}>
-                        {bridgeIsReady && <Router />}
-                        <CustomToast />
-                    </ProviderComposer>
-                </ReduxProvider>
+                <ErrorBoundary fallback={props => <ErrorScreen {...props} />}>
+                    <ReduxProvider store={store}>
+                        <ProviderComposer
+                            providers={[
+                                EnvironmentProvider,
+                                FederationsProvider,
+                                ChatProvider,
+                                BackupRecoveryProvider,
+                            ]}>
+                            {bridgeIsReady && <Router />}
+                            <CustomToast />
+                        </ProviderComposer>
+                    </ReduxProvider>
+                </ErrorBoundary>
             </ThemeProvider>
         </SafeAreaProvider>
     )

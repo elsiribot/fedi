@@ -4,6 +4,8 @@ import { useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
 import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
@@ -32,7 +34,9 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             ) : (
                 <>
                     <BitcoinWallet offline={offline} />
-                    <ShortcutsList />
+                    <ErrorBoundary fallback={null}>
+                        <ShortcutsList />
+                    </ErrorBoundary>
                 </>
             )}
         </ScrollView>
