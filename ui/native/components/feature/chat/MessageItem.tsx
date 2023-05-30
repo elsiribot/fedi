@@ -1,40 +1,26 @@
-import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    Pressable,
-    StyleProp,
-    StyleSheet,
-    TextStyle,
-    View,
-    ViewStyle,
-} from 'react-native'
+import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
-import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import { Message } from '../../../types'
-import { NavigationHook } from '../../../types/navigation'
-import Avatar from '../../ui/Avatar'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
     message: Message
-    multiUserChat?: boolean
     last?: boolean
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
-    multiUserChat = false,
     last = false,
 }: MessageItemProps) => {
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const { sentBy, payment } = message
@@ -42,77 +28,62 @@ const MessageItem: React.FC<MessageItemProps> = ({
     const sentByMe = sentBy?.username === authenticatedMember?.username
 
     let bubbleGradient: LinearGradientProps | undefined
-    let bubbleStyles: StyleProp<ViewStyle | TextStyle>[] = [
+    const bubbleContainerStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).bubbleContainer,
     ]
-    let textStyles: StyleProp<ViewStyle | TextStyle>[] = [
+    const bubbleInnerStyles: StyleProp<ViewStyle | TextStyle>[] = [
+        styles(theme).bubbleInner,
+    ]
+    const textStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).messageText,
     ]
 
     // Set alignment (left/right) based on sender
     if (sentByMe) {
-        bubbleStyles.push(styles(theme).rightAlignedMessage)
+        bubbleContainerStyles.push(styles(theme).rightAlignedMessage)
     } else {
-        bubbleStyles.push(styles(theme).leftAlignedMessage)
+        bubbleContainerStyles.push(styles(theme).leftAlignedMessage)
     }
 
     if (payment) {
-        bubbleStyles.push(styles(theme).orangeBubble)
+        bubbleInnerStyles.push(styles(theme).orangeBubble)
     } else if (sentByMe) {
         if (last) {
-            bubbleStyles.push(styles(theme).lastSentMessage)
+            bubbleContainerStyles.push(styles(theme).lastSentMessage)
         }
         bubbleGradient = {
             colors: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0)'],
             start: { x: 0, y: 0 },
             end: { x: 0, y: 1 },
         }
-        bubbleStyles.push(styles(theme).blueBubble)
+        bubbleInnerStyles.push(styles(theme).blueBubble)
         textStyles.push(styles(theme).sentMessageText)
     } else {
         if (last) {
-            bubbleStyles.push(styles(theme).lastReceivedMessage)
+            bubbleContainerStyles.push(styles(theme).lastReceivedMessage)
         }
-        bubbleStyles.push(styles(theme).greyBubble)
+        bubbleInnerStyles.push(styles(theme).greyBubble)
         textStyles.push(styles(theme).receivedMessageText)
     }
-
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).messageContainer}>
-                {!sentByMe && multiUserChat && (
-                    // link to direct chat but only for incoming messages
-                    // in group chats
-                    <Pressable
-                        style={styles(theme).avatarContainer}
-                        onPress={() => {
-                            if (sentBy) {
-                                navigation.navigate('DirectChat', {
-                                    member: sentBy,
-                                })
-                            }
-                        }}>
-                        <Avatar
-                            id={jidToId(sentBy?.jid || '')}
-                            name={sentBy?.username || ''}
-                        />
-                    </Pressable>
-                )}
-
                 <View style={styles(theme).contentContainer}>
-                    <OptionalGradient
-                        gradient={bubbleGradient}
-                        style={bubbleStyles}>
-                        {payment ? (
-                            <PaymentMessage message={message} />
-                        ) : (
-                            <MessageContents
-                                sentByMe={sentByMe}
-                                content={message.content}
-                                textStyles={textStyles}
-                            />
-                        )}
-                    </OptionalGradient>
+                    <View style={bubbleContainerStyles}>
+                        <OptionalGradient
+                            gradient={bubbleGradient}
+                            style={bubbleInnerStyles}>
+                            {payment ? (
+                                <PaymentMessage message={message} />
+                            ) : (
+                                <MessageContents
+                                    sentByMe={sentByMe}
+                                    content={message.content}
+                                    textStyles={textStyles}
+                                />
+                            )}
+                        </OptionalGradient>
+                    </View>
                 </View>
             </View>
         </View>
@@ -131,9 +102,12 @@ const styles = (theme: Theme) =>
         },
         bubbleContainer: {
             marginTop: theme.spacing.xxs,
-            padding: 10,
             borderRadius: 16,
             maxWidth: theme.sizes.maxMessageWidth,
+            overflow: 'hidden',
+        },
+        bubbleInner: {
+            padding: 10,
         },
         contentContainer: {
             flexDirection: 'column',
@@ -151,10 +125,10 @@ const styles = (theme: Theme) =>
             marginLeft: 'auto',
         },
         lastReceivedMessage: {
-            borderBottomLeftRadius: 2,
+            borderBottomLeftRadius: 4,
         },
         lastSentMessage: {
-            borderBottomRightRadius: 2,
+            borderBottomRightRadius: 4,
         },
         greyBubble: {
             backgroundColor: theme.colors.extraLightGrey,
