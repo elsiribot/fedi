@@ -2,5 +2,5 @@
 ;(self as any).__WB_DISABLE_DEV_LOGS = true
 
 self.addEventListener('message', ev => {
-    console.log('I got a message', ev)
+    console.info('I got a message', ev)
 })

@@ -165,7 +165,7 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
             )
             dispatch(updateMessage(rejectedPaymentMessage))
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 

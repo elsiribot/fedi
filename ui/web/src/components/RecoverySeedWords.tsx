@@ -19,7 +19,6 @@ export const RecoverySeedWords: React.FC<Props> = ({
     readOnly,
 }) => {
     const [errors, setErrors] = useState(Array(12).fill(false))
-    console.log({ errors })
 
     const handleChangeWord = useCallback(
         (word: string, idx: number) => {

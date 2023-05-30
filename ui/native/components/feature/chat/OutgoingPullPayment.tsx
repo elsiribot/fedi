@@ -226,7 +226,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
             )
             dispatch(updateMessage(canceledPaymentMessage))
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 

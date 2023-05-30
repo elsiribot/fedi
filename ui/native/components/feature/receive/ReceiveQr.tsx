@@ -34,18 +34,18 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
             const result = await Share.share({
                 message: uri.fullString!,
             })
-            console.log(result)
+            console.info(result)
             if (result.action === Share.sharedAction) {
                 if (result.activityType) {
                     // shared with activity type of result.activityType
-                    console.log(result.activityType)
+                    console.info(result.activityType)
                 } else {
                     // shared
-                    console.log(result)
+                    console.info(result)
                 }
             } else if (result.action === Share.dismissedAction) {
                 // dismissed
-                console.log('share dialog dismissed')
+                console.info('share dialog dismissed')
             }
         } catch (error) {
             console.error(error)

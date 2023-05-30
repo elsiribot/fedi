@@ -70,7 +70,7 @@ const RecordVideo = () => {
                 }
             },
             onRecordingError: error => {
-                console.log(error)
+                console.error(error)
             },
             // FIXME: will this always be available?
             fileType: 'mp4',

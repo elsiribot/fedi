@@ -47,7 +47,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             try {
                 await RNFS.unlink(dest)
             } catch (e) {
-                console.log('no existing file to remove')
+                console.error('no existing file to remove')
             }
             // copy file to docs dir
             await RNFS.copyFile(result!.uri, dest)

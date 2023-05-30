@@ -46,7 +46,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
             setIsLoading(false)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
         } catch (error) {
-            console.log(error)
+            console.error(error)
             setIsLoading(false)
         }
     }

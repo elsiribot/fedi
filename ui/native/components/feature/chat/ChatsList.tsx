@@ -49,7 +49,7 @@ const ChatsList: React.FC<{}> = () => {
 
     const renderChat: ListRenderItem<Chat> = ({ item }) => {
         const directMember =
-            item.members && item.members?.length == 1 && item.members[0]
+            item.members && item.members?.length === 1 && item.members[0]
         const id = directMember ? jidToId(directMember.jid) : item.id
         return (
             <ErrorBoundary fallback={null}>

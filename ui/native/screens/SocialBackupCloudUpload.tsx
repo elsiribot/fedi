@@ -23,10 +23,7 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
     const shareVideo = async () => {
         try {
             const recoveryFilePath = await locateRecoveryFile()
-            const result = await Share.open({
-                url: recoveryFilePath,
-            })
-            console.log(result)
+            await Share.open({ url: recoveryFilePath })
             navigation.navigate('CompleteSocialBackup')
         } catch (error) {
             console.error(error)

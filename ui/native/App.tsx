@@ -28,7 +28,7 @@ const App = () => {
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
 
     async function onInitializeBridge() {
-        console.log(
+        console.info(
             'initializing connection to federation',
             RNFS.DocumentDirectoryPath,
         )
@@ -36,7 +36,7 @@ const App = () => {
         await initializeBridge(RNFS.DocumentDirectoryPath)
         setBridgeIsReady(true)
         const stop = Date.now()
-        console.log('initialized:', stop - start, 'ms OS:', Platform.OS)
+        console.info('initialized:', stop - start, 'ms OS:', Platform.OS)
     }
 
     async function requestPushNotificationPermissions() {
@@ -53,7 +53,7 @@ const App = () => {
     useEffect(() => {
         // Initialize logger
         const unsubscribeLog = fedimint.addListener('log', event =>
-            console.log('OS:', Platform.OS, `": log" -> "${event.log}"`),
+            console.info('OS:', Platform.OS, `": log" -> "${event.log}"`),
         )
 
         // Initialize push notification sender

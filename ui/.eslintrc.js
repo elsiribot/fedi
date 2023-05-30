@@ -6,6 +6,7 @@ module.exports = {
         'semi': 'off',
         'react/react-in-jsx-scope': 'off',
         'react-native/no-inline-styles': 'off',
+        'no-console': ['error', { allow: ['debug', 'info', 'warn', 'error'] }],
     },
     overrides: [
         {

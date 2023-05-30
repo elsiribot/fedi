@@ -25,8 +25,6 @@ const ReviewVideo = () => {
     const videoFile = state.videoFile
     const videoRef = useRef<Video | null>(null)
 
-    console.log('videoFile', videoFile)
-
     useEffect(() => {
         const copyVideoAndProceed = async () => {
             try {
@@ -38,7 +36,7 @@ const ReviewVideo = () => {
                     videoFilePath: dest,
                 })
             } catch (e) {
-                console.log('copy failed', e)
+                console.error('copy failed', e)
                 return
             }
         }

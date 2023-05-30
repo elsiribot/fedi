@@ -70,7 +70,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
     const onMessage = onMessageHandler(webview, {
         enable: async () => {
-            console.log('enable')
+            /* no-op */
         },
         getInfo: async () => {
             const alias = authenticatedMember?.username || ''
@@ -87,7 +87,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             return { node: { alias, pubkey } }
         },
         makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
-            console.log('makeinvoice', data)
             // FIXME: copied from blixt
             let amount: Sats
             let description = ''
@@ -140,12 +139,10 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             onPress: async () => {
                                 try {
                                     setLoading(true)
-                                    console.log('generate', amount)
                                     const invoice = await generateInvoice(
                                         amountUtils.satToMsat(amount),
                                         description,
                                     )
-                                    console.log('invoice', invoice)
                                     resolve({
                                         paymentRequest: invoice,
                                     })
@@ -216,7 +213,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     setShowOverlay(false)
                                     resolve({ preimage })
                                 } catch (error) {
-                                    console.log('pay failed', error)
+                                    console.error('pay failed', error)
                                     toast?.show((error as Error).message, 3000)
                                     reject(error)
                                 }
@@ -250,7 +247,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         // Non-WebLN
         // Called when an a-tag containing a `lightning:` uri is found on a page
         foundInvoice: async (paymentRequest: string) => {
-            console.log('foundInvoice', paymentRequest)
             if (paymentRequest.toLowerCase().startsWith('lnurl')) {
                 setOverlayContents({
                     title: t('feature.sites.login-to'),
@@ -273,7 +269,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                         paymentRequest,
                                     )
                                     setJwt(token)
-                                    console.log(
+                                    console.info(
                                         'FIXLN-URL auth successful',
                                         token,
                                     )
@@ -299,7 +295,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     if (uri.includes('https://faucet.mutinynet.dev.fedibtc.com')) {
         uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
     }
-    console.log('uri: ', uri)
+    console.info('uri: ', uri)
 
     return (
         <View style={styles.container}>

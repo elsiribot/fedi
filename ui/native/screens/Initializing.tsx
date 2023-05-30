@@ -131,7 +131,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
                     if (savedJson) {
                         // this logic must be reached to trigger any useEffects
                         const savedFederation = savedJson.activeFederation
-                        console.log('saved federation', savedFederation)
+                        console.info('saved federation', savedFederation)
                         if (savedFederation?.id) {
                             dispatch(setActiveFederationId(savedFederation?.id))
                             // load selected federation id from async storage

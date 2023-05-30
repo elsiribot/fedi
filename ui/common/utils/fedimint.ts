@@ -166,7 +166,7 @@ export class FedimintBridge {
     }
 
     async validateRecoveryFile(path: string, federationId: string) {
-        console.log('backup file path', path)
+        console.debug('backup file path', path)
         return this.rpc<boolean>('validateRecoveryFile', { federationId, path })
     }
 

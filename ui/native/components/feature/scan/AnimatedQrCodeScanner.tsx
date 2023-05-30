@@ -54,7 +54,7 @@ const QrCodeScanner = ({
                         setSendingResult(false)
                     }, 50)
                 } else {
-                    console.log('Progress:', progressOfFrames(updatedFrames))
+                    console.info('Progress:', progressOfFrames(updatedFrames))
                 }
             }
         })

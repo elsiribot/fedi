@@ -91,7 +91,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 }
             } catch (e) {
                 toast?.show('Failed to fetch guardian approval', 3000)
-                console.log('failed to get approvals', e)
+                console.error('failed to get approvals', e)
             }
         }, 1000)
 

@@ -12,11 +12,9 @@ export type Props = NativeStackScreenProps<
     'SelectRecoveryFileSuccess'
 >
 
-const SelectRecoveryFileSuccess: React.FC<Props> = ({ route }: Props) => {
+const SelectRecoveryFileSuccess: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { fileName } = route.params
-    console.log(fileName)
 
     return (
         <Success

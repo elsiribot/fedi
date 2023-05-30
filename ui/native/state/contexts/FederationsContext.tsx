@@ -86,9 +86,9 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
                 }),
             )
             if (authenticatedMember?.username) {
-                console.log(
+                console.debug(
                     'FEDERATION_USERNAME_ID_DB_KEY',
-                    'activeFederation.id',
+                    activeFederation.id,
                     authenticatedMember?.username!,
                 )
                 AsyncStorage.mergeItem(

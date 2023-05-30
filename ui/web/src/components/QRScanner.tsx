@@ -40,7 +40,6 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
     // Accumulate frames
     const handleMultiScan = useCallback(
         (result: ScanResult) => {
-            console.log(result.data)
             setFrames(oldFrames => {
                 try {
                     const newFrames = parseFramesReducer(oldFrames, result.data)

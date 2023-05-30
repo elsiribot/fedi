@@ -86,7 +86,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                     const decoded = await fedimint.decodeInvoice(
                         decodedUri.body,
                     )
-                    console.log('decoded invoice', decoded)
+                    console.info('decoded invoice', decoded)
                     setInvoice(decoded)
                     setRequestAmount(decoded.amount)
                     setRequestNote(decoded.description)

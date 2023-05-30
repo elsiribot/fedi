@@ -56,7 +56,7 @@ export const TransactionDialog: React.FC<Props> = ({
         } catch (err) {
             toast.showErrorToast(err, 'error.unknown-error')
         }
-    }, [t, txn, federationId])
+    }, [t, txn, federationId, onSaveNote, toast])
 
     return (
         <Dialog size="sm" open={open && !!txn} onOpenChange={onOpenChange}>

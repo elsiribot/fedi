@@ -51,7 +51,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         const getDecodedInvoice = async () => {
             try {
                 const decoded = await fedimint.decodeInvoice(lightningUri.body)
-                console.log('decoded invoice', decoded)
+                console.info('decoded invoice', decoded)
                 setDecodedInvoice(decoded)
             } catch (error) {
                 console.error('getDecodedInvoice', error)
@@ -68,9 +68,9 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     useEffect(() => {
         const sendPayment = async () => {
             try {
-                console.log('paying invoice', decodedInvoice?.invoice)
+                console.info('paying invoice', decodedInvoice?.invoice)
                 await payInvoice(decodedInvoice?.invoice)
-                console.log('invoice paid')
+                console.info('invoice paid')
                 setInvoicePaid(true)
             } catch (error) {
                 console.error('onSendBtc', error)

@@ -126,7 +126,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             setIsLoading(false)
             navigation.goBack()
         } catch (error) {
-            console.log(error)
+            console.error(error)
             setIsLoading(false)
         }
     }
