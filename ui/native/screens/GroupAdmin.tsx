@@ -7,6 +7,7 @@ import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
@@ -14,8 +15,11 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { toast } = useEnvironmentContext().state
     const { group } = route.params
-    const [broadcastOnly] = useState<boolean>(group.broadcastOnly || false)
+    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
+        group.broadcastOnly || false,
+    )
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -58,16 +62,22 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <SettingsItem
                     image={<SvgImage name="SpeakerPhone" />}
                     label={t('feature.chat.broadcast-only')}
-                    disabled
                     action={
                         <Switch
                             value={broadcastOnly}
-                            onValueChange={_value =>
+                            onValueChange={_value => {
                                 console.info('not implemented')
-                            }
+                                setBroadcastOnly(broadcastOnly)
+                            }}
                         />
                     }
-                    onPress={() => console.info('not implemented')}
+                    onPress={() => {
+                        console.info('not implemented')
+                        toast?.show(
+                            t('feature.chat.changing-broadcast-not-supported'),
+                            3000,
+                        )
+                    }}
                 />
                 <SettingsItem
                     image={<SvgImage name="SpeakerPhone" />}
