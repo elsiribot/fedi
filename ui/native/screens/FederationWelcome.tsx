@@ -10,7 +10,8 @@ import {
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
 
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import { FederationLogo } from '../components/ui/FederationLogo'
+import { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -32,13 +33,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).innerCardContainer}>
-                    <SvgImage
-                        name="FederationAlphaIcon"
-                        size={SvgImageSize.xl}
-                        svgProps={{
-                            stroke: 'transparent',
-                        }}
-                    />
+                    <FederationLogo size={SvgImageSize.xl} />
                     {/*refer to below image style for above image*/}
                     <Text h2 medium style={styles(theme).welcome}>
                         {t('feature.onboarding.welcome-to-federation')}
