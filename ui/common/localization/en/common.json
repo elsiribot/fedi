@@ -94,6 +94,7 @@
         "reload-app": "Reload application",
         "return-to-home": "Return to home",
         "save-changes": "Save changes",
+        "terms-and-conditions": "Terms & Conditions",
         "transaction-id": "Transaction ID",
         "transaction-received": "Transaction received",
         "user-agreement": "User Agreement",
@@ -358,6 +359,12 @@
             "login-failed": "Login failed",
             "payment-request": "Payment request from {{site}}",
             "bitcoin-sites-fedi-wallet": "Bitcoin sites that work with your Fedi wallet"
+        },
+        "popup": {
+            "ending-in": "Ending in <bold>{{time}}</bold>",
+            "ending-description": "This pop-up federation <bold>will end {{date}}</bold>. Please remove your bitcoin before then. All bitcoin not removed will be donated to a charitable cause.",
+            "ended": "Ended",
+            "ended-description": "This pop-up Federation <bold>ended {{date}}</bold>. Leftover balances were donated to a charitable cause."
         }
     }
 }
