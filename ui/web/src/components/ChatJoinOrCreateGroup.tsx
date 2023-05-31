@@ -1,8 +1,7 @@
 import { useRouter } from 'next/router'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import {
     createChatGroup,
     fetchChatMembers,
@@ -10,12 +9,13 @@ import {
     selectActiveFederation,
     selectChatXmppClient,
 } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled } from '../styles'
-import { Avatar } from './Avatar'
 import { Button } from './Button'
+import { ChatAvatar } from './ChatAvatar'
 import { CopyInput } from './CopyInput'
 import { Input } from './Input'
 import { QRScanner } from './QRScanner'
@@ -88,16 +88,21 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         return () => clearTimeout(timeout)
     }, [joinGroupLink, handleJoinGroup])
 
+    // The chat doesn't actually exist yet, so we need to create a fake one
+    const chat = useMemo(() => {
+        return {
+            id: newGroupId,
+            name: newGroupName,
+            type: ChatType.group,
+            broadcastOnly: false,
+        }
+    }, [newGroupId, newGroupName])
+
     let content: React.ReactNode
     if (isCreatingGroup) {
         content = (
             <Inner>
-                <Avatar
-                    id={newGroupId}
-                    size="lg"
-                    name={newGroupName}
-                    icon={SocialPeopleIcon}
-                />
+                <ChatAvatar chat={chat} css={{ opacity: chat.id ? 1 : 0 }} />
                 <Input
                     label={t('feature.chat.group-name')}
                     value={newGroupName}

@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -11,7 +10,7 @@ import { makePaymentText } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
-import { Avatar } from './Avatar'
+import { ChatAvatar } from './ChatAvatar'
 import { NotificationDot } from './NotificationDot'
 import { Text } from './Text'
 
@@ -49,16 +48,7 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                     : `/chat/member/${chat.id}`
             }>
             <NotificationDot visible={hasNewMessages}>
-                <Avatar
-                    id={chat.id}
-                    name={chat.name}
-                    icon={
-                        chat.type === ChatType.group
-                            ? SocialPeopleIcon
-                            : undefined
-                    }
-                    css={{ flexShrink: 0 }}
-                />
+                <ChatAvatar chat={chat} css={{ flexShrink: 0 }} />
             </NotificationDot>
             <Content>
                 <TopContent>
