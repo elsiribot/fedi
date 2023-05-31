@@ -1,16 +1,21 @@
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
-import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
-import { ChatMessage as ChatMessageType, ChatType } from '@fedi/common/types'
+import { selectChat, selectChatGroupRole } from '@fedi/common/redux'
+import {
+    ChatMessage as ChatMessageType,
+    ChatRole,
+    ChatType,
+} from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 
-import { useToast, useAutosizeTextArea } from '../hooks'
+import { useToast, useAutosizeTextArea, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
-import { Avatar } from './Avatar'
+import { ChatAvatar } from './ChatAvatar'
 import { ChatMessageCollection } from './ChatMessageCollection'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
@@ -35,12 +40,17 @@ export const ChatConversation: React.FC<Props> = ({
     inputActions,
     onSendMessage,
 }) => {
+    const { t } = useTranslation()
     const toast = useToast()
     const { back } = useRouter()
+    const chat = useAppSelector(s => selectChat(s, id))
+    const role = useAppSelector(s => selectChatGroupRole(s, id))
     const [value, setValue] = useState('')
     const [isSending, setIsSending] = useState(false)
     const inputRef = useRef<HTMLTextAreaElement>(null)
     useAutosizeTextArea(inputRef.current, value)
+
+    const isReadOnly = chat?.broadcastOnly && role === ChatRole.visitor
 
     const messageCollections = useMemo(
         () => makeMessageGroups(messages, 'desc'),
@@ -90,13 +100,7 @@ export const ChatConversation: React.FC<Props> = ({
                         onClick={() => back()}
                     />
                 </BackButton>
-                <Avatar
-                    id={id}
-                    name={name}
-                    icon={
-                        type === ChatType.group ? SocialPeopleIcon : undefined
-                    }
-                />
+                <ChatAvatar chat={chat} />
                 <Text weight="medium" css={{ flex: 1 }}>
                     {name}
                 </Text>
@@ -119,11 +123,15 @@ export const ChatConversation: React.FC<Props> = ({
                     ref={inputRef}
                     value={value}
                     onChange={ev => setValue(ev.currentTarget.value)}
-                    placeholder="Message"
+                    placeholder={t(
+                        isReadOnly
+                            ? 'feature.chat.broadcast-only-notice'
+                            : 'words.message',
+                    )}
                     autoFocus
                     rows={1}
                     onKeyDown={handleInputKeyDown}
-                    disabled={isSending}
+                    disabled={isSending || isReadOnly}
                 />
                 <SendButton disabled={!value || isSending} type="submit">
                     <Icon icon={SendArrowUpCircleIcon} />
