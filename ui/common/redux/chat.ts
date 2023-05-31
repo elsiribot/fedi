@@ -1049,6 +1049,7 @@ export const selectOrderedChatList = createSelector(
             const { id, type } = getChatInfoFromMessage(m, me?.id || '')
             let name: string
             let members: string[]
+            let broadcastOnly = false
 
             if (type === ChatType.direct) {
                 // Filter out members we haven't seen, since we won't have enough
@@ -1059,6 +1060,7 @@ export const selectOrderedChatList = createSelector(
                 name = member.username
             } else {
                 name = groupMap[id]?.name || 'Chat'
+                broadcastOnly = !!groupMap[id]?.broadcastOnly
                 members = []
             }
 
@@ -1072,6 +1074,7 @@ export const selectOrderedChatList = createSelector(
                     type,
                     latestMessage: m,
                     hasNewMessages: lastReadMessageIds[id] !== m.id,
+                    broadcastOnly,
                 }
             } else {
                 chatMap[id] = {
@@ -1085,6 +1088,14 @@ export const selectOrderedChatList = createSelector(
             c => c.latestMessage?.sentAt,
             'desc',
         )
+    },
+)
+
+export const selectChatById = createSelector(
+    selectOrderedChatList,
+    (_: CommonState, chatId: Chat['id']) => chatId,
+    (chats, chatId) => {
+        return chats.find(c => c.id === chatId)
     },
 )
 

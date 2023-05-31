@@ -14,6 +14,7 @@ export interface Chat {
     name: string
     members: string[]
     type: ChatType
+    broadcastOnly: boolean
 }
 
 export interface ChatWithLatestMessage extends Chat {
@@ -70,6 +71,7 @@ export interface ChatMember {
 export interface ChatGroup {
     id: string
     name: string
+    broadcastOnly?: boolean
 }
 
 export interface XmppChatMember extends ChatMember {

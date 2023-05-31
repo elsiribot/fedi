@@ -304,11 +304,11 @@ export class XmppChatClient {
         try {
             const res = await this.enterGroup(groupId)
             if (res.find(status => status.getAttr('code') === '110')) {
-                const name = await this.fetchGroupConfig(groupId)
-                if (!name) {
+                const config = await this.fetchGroupConfig(groupId)
+                if (!config.name) {
                     throw new Error('Group does not exist')
                 }
-                return { id: groupId, name }
+                return { id: groupId, ...config }
             } else {
                 throw new Error('Failed to join group')
             }
@@ -333,7 +333,9 @@ export class XmppChatClient {
         }
     }
 
-    async fetchGroupConfig(groupId: string) {
+    async fetchGroupConfig(
+        groupId: string,
+    ): Promise<Pick<ChatGroup, 'name' | 'broadcastOnly'>> {
         try {
             const { iqCaller, jid } = this.getQueryProperties()
             const roomConfigQueryXml = xmlUtils.buildQuery(
@@ -344,13 +346,17 @@ export class XmppChatClient {
             )
             const result = await iqCaller.request(roomConfigQueryXml)
             console.info('fetchMucRoomConfig', result)
-            return (
-                result
-                    .getChild('query')
-                    ?.getChild('x')
+
+            const fields = result.getChild('query')?.getChild('x')
+            const features = result.getChild('query')?.getChildren('feature')
+            const name =
+                fields
                     ?.getChildByAttr('var', 'muc#roomconfig_roomname')
-                    ?.getChildText('value') || null
+                    ?.getChildText('value') || ''
+            const moderated = features?.find(
+                f => f.getAttr('var') === 'muc_moderated',
             )
+            return { name, broadcastOnly: !!moderated }
         } catch (error) {
             console.error('fetchMucRoomConfig', error)
             throw new Error('errors.unknown-error')
