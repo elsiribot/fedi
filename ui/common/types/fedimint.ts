@@ -134,6 +134,9 @@ export interface ClientConfigMetadata {
     max_invoice_msats?: MsatsString
     // 3. Site[]
     sites?: string
+    // 4. Switch to number (unix epoch timestamp)
+    /** Timestamp that popup federations will be completely disabled at */
+    popup_end_timestamp?: string
 }
 
 export interface Federation {
