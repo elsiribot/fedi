@@ -29,6 +29,7 @@ import {
     ChatWithLatestMessage,
     ChatPaymentStatus,
     Federation,
+    ChatRole,
 } from '../types'
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
@@ -60,6 +61,7 @@ const initialFederationChatState = {
     credentials: null as XmppCredentials | null,
     messages: [] as ChatMessage[],
     groups: [] as ChatGroup[],
+    groupRoles: {} as Record<Chat['id'], string | undefined>,
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
     lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
@@ -213,6 +215,20 @@ export const chatSlice = createSlice({
                 groups,
             }
         },
+        setChatGroupRole(
+            state,
+            action: FederationPayloadAction<{ groupId: string; role: string }>,
+        ) {
+            const { federationId, groupId, role } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                groupRoles: {
+                    ...federation.groupRoles,
+                    [groupId]: role,
+                },
+            }
+        },
         addChatGroup(
             state,
             action: FederationPayloadAction<{ group: ChatGroup }>,
@@ -346,11 +362,17 @@ export const chatSlice = createSlice({
             Object.entries(action.payload.chat).forEach(
                 ([federationId, chatState]) => {
                     if (!chatState) return
+                    const prevChatState = getFederationChatState(
+                        state,
+                        federationId,
+                    )
                     state[federationId] = {
-                        ...getFederationChatState(state, federationId),
+                        ...prevChatState,
                         authenticatedMember: chatState.authenticatedMember,
                         messages: chatState.messages,
                         groups: chatState.groups,
+                        groupRoles:
+                            chatState.groupRoles || prevChatState.groupRoles,
                         membersSeen: chatState.members,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
@@ -405,6 +427,7 @@ export const {
     addChatMessage,
     setChatGroups,
     addChatGroup,
+    setChatGroupRole,
     setAuthenticatedMember,
     setChatEncryptionKeys,
     setLastFetchedMessageId,
@@ -548,6 +571,10 @@ export const connectChat = createAsyncThunk<
 
         client.on('group', group => {
             dispatch(addChatGroup({ federationId, group }))
+        })
+
+        client.on('groupRole', ({ groupId, role }) => {
+            dispatch(setChatGroupRole({ federationId, groupId, role }))
         })
 
         // On connection, update various states
@@ -979,6 +1006,9 @@ export const selectAllChatMembers = (s: CommonState) =>
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
+export const selectAllChatGroupRoles = (s: CommonState) =>
+    selectFederationChatState(s).groupRoles
+
 export const selectChatClientStatus = (s: CommonState) =>
     selectFederationChatState(s).clientStatus
 
@@ -1045,6 +1075,8 @@ export const selectOrderedChatList = createSelector(
     selectChatLastReadMessageIds,
     (messages, memberMap, groupMap, me, lastReadMessageIds) => {
         const chatMap: Record<string, ChatWithLatestMessage> = {}
+
+        // First assemble chats from messages
         messages.forEach(m => {
             const { id, type } = getChatInfoFromMessage(m, me?.id || '')
             let name: string
@@ -1083,6 +1115,22 @@ export const selectOrderedChatList = createSelector(
                 }
             }
         })
+
+        // Then add any groups we have that don't have messages yet
+        Object.keys(groupMap).forEach(groupId => {
+            if (chatMap[groupId]) return
+            const group = groupMap[groupId]
+            if (!group) return
+            chatMap[groupId] = {
+                ...group,
+                type: ChatType.group,
+                members: [],
+                hasNewMessages: false,
+                broadcastOnly: !!group.broadcastOnly,
+            }
+        })
+
+        // Return them ordered by most recent message
         return orderBy(
             Object.values(chatMap),
             c => c.latestMessage?.sentAt,
@@ -1091,7 +1139,7 @@ export const selectOrderedChatList = createSelector(
     },
 )
 
-export const selectChatById = createSelector(
+export const selectChat = createSelector(
     selectOrderedChatList,
     (_: CommonState, chatId: Chat['id']) => chatId,
     (chats, chatId) => {
@@ -1133,6 +1181,18 @@ export const selectHasUnseenMessages = createSelector(
     selectChatLastSeenMessageId,
     (latestMessage, lastSeenMessageId) =>
         !!latestMessage && latestMessage.id !== lastSeenMessageId,
+)
+
+export const selectChatGroupRole = createSelector(
+    selectAllChatGroupRoles,
+    (_: CommonState, chatId: Chat['id']) => chatId,
+    (roles, chatId) => {
+        const role = roles[chatId] || ChatRole.visitor
+        if (Object.keys(ChatRole).includes(role)) {
+            return role as ChatRole
+        }
+        return ChatRole.visitor
+    },
 )
 
 /**

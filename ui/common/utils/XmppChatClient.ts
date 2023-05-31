@@ -19,6 +19,7 @@ import {
     ChatGroup,
     ChatMember,
     ChatMessage,
+    ChatRole,
     Key,
     Keypair,
 } from '../types'
@@ -36,6 +37,7 @@ import xmlUtils, {
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
 } from './XmlUtils'
+import { jidToId } from './chat'
 
 interface XmppChatClientEventMap {
     status: XmppStatus
@@ -43,6 +45,7 @@ interface XmppChatClientEventMap {
     message: ChatMessage
     memberSeen: ChatMember
     group: ChatGroup
+    groupRole: { groupId: string; role: ChatRole }
     error: Error
 }
 
@@ -478,6 +481,11 @@ export class XmppChatClient {
                 }
             }
 
+            // Presence
+            if (stanza.is('presence')) {
+                return this.handleIncomingPresence(stanza)
+            }
+
             // Queries
             if (stanza.is('iq')) {
                 if (stanza.getChild('query')?.getNS() === 'jabber:iq:roster') {
@@ -593,6 +601,24 @@ export class XmppChatClient {
         const jid = rosterItem?.getAttr('jid')
         if (jid) {
             this.emit('memberSeen', this.memberFromJid(jid))
+        }
+    }
+
+    private handleIncomingPresence(stanza: Element) {
+        const groupId = stanza.getAttr('from')?.split('@')[0]
+        if (!groupId) return
+
+        // Emit role updates for presence updates about ourselves
+        const item = stanza.getChild('x')?.getChild('item')
+        if (!item) return
+
+        const myJid = this.xmpp.jid?.toString()
+        const itemJid = item.getAttr('jid')
+        if (!myJid || !itemJid || jidToId(myJid) !== jidToId(itemJid)) return
+
+        const role = stanza.getChild('x')?.getChild('item')?.getAttr('role')
+        if (role) {
+            this.emit('groupRole', { groupId, role })
         }
     }
 

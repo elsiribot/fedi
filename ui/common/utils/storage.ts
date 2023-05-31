@@ -29,6 +29,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
                         authenticatedMember: chatState.authenticatedMember,
                         messages: chatState.messages,
                         groups: chatState.groups,
+                        groupRoles: chatState.groupRoles,
                         members: chatState.membersSeen,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
@@ -80,6 +81,7 @@ export function hasStorageStateChanged(
         keysetsToCheck.push(['chat', activeFederationId, 'authenticatedMember'])
         keysetsToCheck.push(['chat', activeFederationId, 'messages'])
         keysetsToCheck.push(['chat', activeFederationId, 'groups'])
+        keysetsToCheck.push(['chat', activeFederationId, 'groupRoles'])
         keysetsToCheck.push(['chat', activeFederationId, 'membersSeen'])
         keysetsToCheck.push([
             'chat',

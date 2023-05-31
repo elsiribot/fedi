@@ -8,6 +8,12 @@ export enum ChatType {
     group = 'group',
 }
 
+export enum ChatRole {
+    visitor = 'visitor',
+    participant = 'participant',
+    moderator = 'moderator',
+}
+
 export interface Chat {
     /** Unique ID for the chat, random value for groups and user id for DMs */
     id: string
