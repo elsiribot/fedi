@@ -14,7 +14,7 @@ on:
 jobs:
     lint:
       name: "Lint"
-      runs-on: buildjet-2vcpu-ubuntu-2004
+      runs-on: [self-hosted, linux]
       timeout-minutes: 5
       steps:
         - uses: actions/checkout@v3
@@ -33,7 +33,7 @@ jobs:
 
     build:
         name: 'Build'
-        runs-on: buildjet-4vcpu-ubuntu-2004
+        runs-on: [self-hosted, linux]
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v3
@@ -71,12 +71,12 @@ jobs:
             - macos
           include:
             - on: linux
-              runs-on: buildjet-2vcpu-ubuntu-2004
+              runs-on: [self-hosted, linux]
               build-in-pr: true
               timeout: 30
               system: x86_64-linux
             - host: macos
-              runs-on: self-hosted
+              runs-on: [self-hosted, macos]
               os: macOS
               build-in-pr: true
               timeout: 45
