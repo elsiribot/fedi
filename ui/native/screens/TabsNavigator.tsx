@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
@@ -37,6 +38,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const { connectionOptions, lastSeenMessageId, messages } =
         useChatContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
+    const popupInfo = usePopupFederationInfo()
 
     const toggleOffline = () => {
         if (!offline) {
@@ -58,6 +60,12 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     // Redirect user to splash screen and render nothing.
     if (!activeFederation) {
         navigation.navigate('Splash')
+        return <View />
+    }
+
+    // If the popup federation has ended, redirect user to end screen.
+    if (popupInfo?.ended) {
+        navigation.navigate('PopupFederationEnded')
         return <View />
     }
 

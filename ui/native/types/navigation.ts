@@ -97,4 +97,5 @@ export type RootStackParamList = {
     TabsNavigator: undefined
     Transactions: undefined
     DeveloperSettings: undefined
+    PopupFederationEnded: undefined
 }

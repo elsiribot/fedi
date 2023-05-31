@@ -119,7 +119,6 @@ const styles = (theme: Theme) =>
             width: '90%',
             maxWidth: 360,
             margin: 'auto',
-            gap: 16,
         },
         overlaySpacing: {
             marginBottom: theme.spacing.lg,

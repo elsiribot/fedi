@@ -44,7 +44,7 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                         style={styles(theme).federation}
                         onPress={openFederationsDrawer}>
                         <FederationLogo size={20} />
-                        <Text bold small style={styles(theme).federationName}>
+                        <Text bold caption style={styles(theme).federationName}>
                             {activeFederation?.name}
                         </Text>
                         <SvgImage name="ChevronRight" size={SvgImageSize.xs} />

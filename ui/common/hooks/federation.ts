@@ -50,9 +50,9 @@ export function usePopupFederationInfo() {
     const [endsInText, setShutdownTime] = useState('')
 
     // Uncomment me to test popup federations
-    const [rawTimestamp] = useState((Date.now() / 1000 + 600).toString())
+    // const [rawTimestamp] = useState((1686584896.205).toString())
 
-    // const rawTimestamp = activeFederation?.meta?.popup_end_timestamp
+    const rawTimestamp = activeFederation?.meta?.popup_end_timestamp
     const endTimestamp = rawTimestamp ? parseInt(rawTimestamp, 10) : null
 
     // Generate and re-generate formatted time for when the federation ends at.
