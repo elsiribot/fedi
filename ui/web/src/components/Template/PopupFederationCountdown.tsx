@@ -17,27 +17,23 @@ export const PopupFederationCountdown: React.FC = () => {
     const popupInfo = usePopupFederationInfo()
     const [isOpen, setIsOpen] = useState(false)
 
-    const ended = !!popupInfo && popupInfo.secondsLeft <= 0
-    const endsSoon =
-        !!popupInfo && !ended && popupInfo.secondsLeft <= 12 * 60 * 60
-
     // When the federation ends soon, force the dialog to open once per session.
     useEffect(() => {
-        if (!endsSoon) return
+        if (!popupInfo?.endsSoon) return
         if (sessionStorage.getItem('has-seen-popup-dialog')) return
         setTimeout(() => {
             setIsOpen(true)
             sessionStorage.setItem('has-seen-popup-dialog', 'true')
         }, 1000)
-    }, [endsSoon])
+    }, [popupInfo?.endsSoon])
 
     if (!popupInfo || !activeFederation) {
         return null
     }
 
     const countdownPillProps = {
-        ended,
-        endsSoon,
+        ended: popupInfo.ended,
+        endsSoon: popupInfo.endsSoon,
     }
     const countdownI18nText =
         popupInfo.secondsLeft <= 0 ? (
@@ -55,8 +51,8 @@ export const PopupFederationCountdown: React.FC = () => {
         <>
             <CountdownPill
                 {...countdownPillProps}
-                as={ended ? 'div' : 'button'}
-                onClick={ended ? undefined : () => setIsOpen(true)}>
+                as={popupInfo.ended ? 'div' : 'button'}
+                onClick={popupInfo.ended ? undefined : () => setIsOpen(true)}>
                 {countdownI18nText}
             </CountdownPill>
             <Dialog size="md" open={isOpen} onOpenChange={setIsOpen}>
