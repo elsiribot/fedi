@@ -102,7 +102,11 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
     if (isCreatingGroup) {
         content = (
             <Inner>
-                <ChatAvatar chat={chat} css={{ opacity: chat.id ? 1 : 0 }} />
+                <ChatAvatar
+                    size="lg"
+                    chat={chat}
+                    css={{ opacity: chat.id ? 1 : 0 }}
+                />
                 <Input
                     label={t('feature.chat.group-name')}
                     value={newGroupName}
