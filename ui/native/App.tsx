@@ -54,9 +54,9 @@ const App = () => {
         // Initialize logger
         const unsubscribeLog = fedimint.addListener('log', event => {
             // Strip escape characters
-            const stripped = event.log.replace('\\', '');
-            console.log('OS:', Platform.OS, `": log" -> "${stripped}"`);
-        });
+            const stripped = event.log.replace('\\', '')
+            console.log('OS:', Platform.OS, `": log" -> "${stripped}"`)
+        })
 
         // Initialize push notification sender
         const unsubscribeTransaction = fedimint.addListener(
