@@ -1,9 +1,14 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme, Text } from '@rneui/themed'
-import React, { useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
+    Animated,
+    Easing,
     FlatList,
     ListRenderItem,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
     Pressable,
     StyleSheet,
     View,
@@ -30,13 +35,71 @@ const MessagesList: React.FC<MessagesListProps> = ({
     messages,
     multiUserChat = false,
 }: MessagesListProps) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation()
     const listRef = useRef<FlatList>(null)
+    const lastScrolledMessageIdRef = useRef(messages[0]?.[0]?.[0].id)
+    const isScrolledToBottomRef = useRef(true)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const [hasNewMessage, setHasNewMessages] = useState(false)
+    const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
 
     const style = styles(theme)
     const myName = authenticatedMember?.username || ''
+
+    // Animate new message button in and out
+    useEffect(() => {
+        Animated.timing(animatedNewMessageBottom, {
+            toValue: hasNewMessage ? 90 : 0,
+            duration: 100,
+            useNativeDriver: false,
+            easing: Easing.linear,
+        }).start()
+    }, [animatedNewMessageBottom, hasNewMessage])
+
+    const scrollToEnd = useCallback(() => {
+        // Use scrollToOffset instead of scrollToEnd because the list is inverted
+        listRef.current?.scrollToOffset({ offset: 0, animated: true })
+        setHasNewMessages(false)
+    }, [])
+
+    // When new messages come in, either scroll to the bottom (if we sent)
+    // or pop up a notice that we have new messages.
+    useEffect(() => {
+        // Bail out if we've already handled this message
+        const lastMessage = messages[0]?.[0]?.[0]
+        const shouldScroll =
+            lastMessage && lastMessage.id !== lastScrolledMessageIdRef.current
+        if (!shouldScroll) return
+
+        // Update ref so we don't scroll again
+        lastScrolledMessageIdRef.current = lastMessage.id
+
+        // If we sent it, or we're already at the bottom, scroll without asking
+        if (
+            lastMessage.sentBy?.username === myName ||
+            isScrolledToBottomRef.current
+        ) {
+            scrollToEnd()
+        }
+        // Otherwise, mark that we have new messages
+        else {
+            setHasNewMessages(true)
+        }
+    }, [messages, myName, scrollToEnd])
+
+    // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
+    const handleScroll = useCallback(
+        (ev: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const isAtBottom = ev.nativeEvent.contentOffset.y <= 10
+            isScrolledToBottomRef.current = isAtBottom
+            if (isAtBottom) {
+                setHasNewMessages(false)
+            }
+        },
+        [],
+    )
 
     const renderTimeGroup: ListRenderItem<Message[][]> = ({ item }) => {
         // Grab the earliest timestamp (last message in the last message group)
@@ -115,23 +178,37 @@ const MessagesList: React.FC<MessagesListProps> = ({
     }
 
     return (
-        <FlatList
-            data={messages}
-            ref={listRef}
-            renderItem={renderTimeGroup}
-            keyExtractor={item => `${item[0][0]?.id}`}
-            style={style.container}
-            contentContainerStyle={style.contentContainer}
-            removeClippedSubviews={false}
-            ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
-            inverted
-        />
+        <>
+            <FlatList
+                data={messages}
+                ref={listRef}
+                renderItem={renderTimeGroup}
+                keyExtractor={item => `${item[0][0]?.id}`}
+                style={style.listContainer}
+                contentContainerStyle={style.contentContainer}
+                removeClippedSubviews={false}
+                ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
+                onScroll={handleScroll}
+                inverted
+            />
+            <Animated.View
+                style={[
+                    style.newMessageButtonContainer,
+                    { bottom: animatedNewMessageBottom },
+                ]}>
+                <Pressable style={style.newMessageButton} onPress={scrollToEnd}>
+                    <Text small bold style={style.newMessageButtonText}>
+                        {t('feature.chat.new-messages')}
+                    </Text>
+                </Pressable>
+            </Animated.View>
+        </>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
+        listContainer: {
             width: '100%',
             paddingHorizontal: theme.spacing.xl,
         },
@@ -170,6 +247,21 @@ const styles = (theme: Theme) =>
         },
         senderMessages: {
             flexDirection: 'column-reverse',
+        },
+        newMessageButtonContainer: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+        },
+        newMessageButton: {
+            paddingVertical: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+            backgroundColor: theme.colors.primary,
+            borderRadius: 30,
+        },
+        newMessageButtonText: {
+            color: theme.colors.secondary,
         },
     })
 
