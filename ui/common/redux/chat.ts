@@ -1087,6 +1087,9 @@ export const selectOrderedChatList = createSelector(
             let members: string[]
             let broadcastOnly = false
 
+            // Exclude ourselves from this list
+            if (id === me?.id) return
+
             if (type === ChatType.direct) {
                 // Filter out members we haven't seen, since we won't have enough
                 // information to construct a chat.
