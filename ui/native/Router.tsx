@@ -80,6 +80,7 @@ import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
+import PopupFederationEnded from './screens/PopupFederationEnded'
 import Receive from './screens/Receive'
 import ReceiveOffline from './screens/ReceiveOffline'
 import ReceiveSuccess from './screens/ReceiveSuccess'
@@ -634,6 +635,15 @@ const MainNavigator = () => {
                                 component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Popup federations */}
+                            <Stack.Screen
+                                name="PopupFederationEnded"
+                                component={PopupFederationEnded}
+                                options={() => ({
+                                    header: () => <SelectedFederationHeader />,
+                                })}
+                            />
+                            {/* Developer-only */}
                             <Stack.Screen
                                 name="DeveloperSettings"
                                 component={DeveloperSettings}

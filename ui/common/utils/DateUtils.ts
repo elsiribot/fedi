@@ -40,6 +40,9 @@ class DateUtils {
         // Otherwise show the day instead of time
         return this.formatTimestamp(unixSeconds, 'MMM dd, h:mmaaa')
     }
+    formatPopupFederationEndsAtTimestamp = (unixSeconds: number): string => {
+        return this.formatTimestamp(unixSeconds, 'LLLL do')
+    }
 }
 
 const dateUtils = new DateUtils()

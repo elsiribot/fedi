@@ -17,6 +17,7 @@ import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 import { Images } from '../../../assets/images'
 import { useAppSelector, useBtcFiatPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
@@ -35,11 +36,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     return (
         <View style={styles(theme).drawerItemLabel}>
-            <SvgImage
-                name="FederationAlphaIcon"
-                size={SvgImageSize.lg}
-                svgProps={{ stroke: 'transparent' }}
-            />
+            <FederationLogo size={SvgImageSize.lg} />
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
                     {federation.name}

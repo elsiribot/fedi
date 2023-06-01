@@ -1,8 +1,9 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -11,13 +12,16 @@ import {
     DRAWER_NAVIGATION_ID,
     NavigationHook,
 } from '../../../types/navigation'
+import { FederationLogo } from '../../ui/FederationLogo'
 import Header from '../../ui/Header'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { PopupFederationCountdown } from './PopupFederationCountdown'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const popupInfo = usePopupFederationInfo()
     const drawerNavigator = navigation.getParent(
         DRAWER_NAVIGATION_ID,
     ) as DrawerNavigationHook
@@ -35,22 +39,18 @@ const SelectedFederationHeader: React.FC<{}> = () => {
         <Header
             centerContainerStyle={{ flex: 10 }}
             headerCenter={
-                <Pressable
-                    style={styles(theme).container}
-                    onPress={openFederationsDrawer}>
-                    <SvgImage
-                        name="FederationAlphaIcon"
-                        svgProps={{
-                            stroke: 'transparent',
-                            height: 20,
-                            width: 20,
-                        }}
-                    />
-                    <Text bold small style={styles(theme).federationName}>
-                        {activeFederation?.name}
-                    </Text>
-                    <SvgImage name="ChevronRight" size={SvgImageSize.xs} />
-                </Pressable>
+                <View style={styles(theme).container}>
+                    <Pressable
+                        style={styles(theme).federation}
+                        onPress={openFederationsDrawer}>
+                        <FederationLogo size={20} />
+                        <Text bold caption style={styles(theme).federationName}>
+                            {activeFederation?.name}
+                        </Text>
+                        <SvgImage name="ChevronRight" size={SvgImageSize.xs} />
+                    </Pressable>
+                    {popupInfo && <PopupFederationCountdown />}
+                </View>
             }
             containerStyle={styles(theme).headerContainer}
         />
@@ -60,6 +60,11 @@ const SelectedFederationHeader: React.FC<{}> = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        federation: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',

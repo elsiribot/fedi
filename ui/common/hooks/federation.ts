@@ -1,11 +1,14 @@
+import { useEffect, useMemo, useState } from 'react'
+
 import { selectActiveFederation } from '../redux'
 import { SupportedFeature } from '../types'
-import { shouldShowOnchainDeposits } from '../utils/FederationUtils'
+import dateUtils from '../utils/DateUtils'
 import {
     shouldShowOfflineWallet,
     shouldShowSocialRecovery,
     shouldShowInviteCode,
     getSupportedFeatures,
+    shouldShowOnchainDeposits,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -39,4 +42,76 @@ export function useIsOnchainDepositSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
     return shouldShowOnchainDeposits(activeFederation.meta)
+}
+
+export function usePopupFederationInfo() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    const [secondsLeft, setTimeLeft] = useState(0)
+    const [endsInText, setShutdownTime] = useState('')
+
+    // Uncomment me to test popup federations
+    // const [rawTimestamp] = useState((1686584896.205).toString())
+
+    const rawTimestamp = activeFederation?.meta?.popup_end_timestamp
+    const endTimestamp = rawTimestamp ? parseInt(rawTimestamp, 10) : null
+
+    // Generate and re-generate formatted time for when the federation ends at.
+    // Don't refactor this into a dateUtils function, because we need to handle
+    // a setTimeout to re-run to update the time.
+    useEffect(() => {
+        if (!endTimestamp) return
+
+        let timeout: ReturnType<typeof setTimeout>
+
+        const updateTimeLeft = () => {
+            const secsLeft = endTimestamp - Date.now() / 1000
+            let msUntilChange: number
+
+            // Over 100h - show days, update time at the next hour
+            if (secsLeft > 100 * 60 * 60) {
+                setShutdownTime(`${Math.floor(secsLeft / (24 * 60 * 60))}d`)
+                msUntilChange = 60 * 60 * 1000
+            }
+            // Over 48h - show hours, update time every minute
+            else if (secsLeft > 48 * 60 * 60) {
+                setShutdownTime(`${Math.floor(secsLeft / (60 * 60))}h`)
+                msUntilChange = 60 * 1000
+            }
+            // Over 12h - show hours & minutes, update time every minute
+            else if (secsLeft > 12 * 60 * 60) {
+                const hours = Math.floor(secsLeft / (60 * 60))
+                const minutes = Math.floor((secsLeft - hours * 60 * 60) / 60)
+                setShutdownTime(`${hours}h ${minutes}m`)
+                msUntilChange = 60 * 1000
+            }
+            // Show hours & minutes & seconds, update time every second
+            else {
+                const hours = Math.floor(secsLeft / (60 * 60))
+                const minutes = Math.floor((secsLeft - hours * 60 * 60) / 60)
+                const seconds = Math.floor(
+                    secsLeft - hours * 60 * 60 - minutes * 60,
+                )
+                setShutdownTime(`${hours}h ${minutes}m ${seconds}s`)
+                msUntilChange = 1 * 1000
+            }
+
+            setTimeLeft(secsLeft)
+            timeout = setTimeout(updateTimeLeft, msUntilChange)
+        }
+        updateTimeLeft()
+
+        return () => clearTimeout(timeout)
+    }, [])
+
+    if (!endTimestamp) return null
+
+    return {
+        endTimestamp,
+        secondsLeft,
+        endsInText,
+        endsAtText:
+            dateUtils.formatPopupFederationEndsAtTimestamp(endTimestamp),
+        endsSoon: secondsLeft > 0 && secondsLeft <= 12 * 60 * 60,
+        ended: secondsLeft <= 0,
+    }
 }
