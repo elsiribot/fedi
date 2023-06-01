@@ -1256,6 +1256,7 @@ dependencies = [
  "threshold_crypto",
  "tokio",
  "tracing",
+ "tracing-serde",
  "tracing-subscriber",
  "ts-rs",
  "uniffi",
