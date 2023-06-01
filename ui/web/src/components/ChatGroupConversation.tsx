@@ -7,10 +7,11 @@ import {
     configureChatGroup,
     selectActiveFederation,
     selectChatGroup,
+    selectChatGroupRole,
     selectChatMessages,
     sendGroupMessage,
 } from '@fedi/common/redux'
-import { ChatType } from '@fedi/common/types'
+import { ChatRole, ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
@@ -33,6 +34,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const federationId = useAppSelector(selectActiveFederation)?.id
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
+    const role = useAppSelector(s => selectChatGroupRole(s, groupId))
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     const handleSend = useCallback(
@@ -85,11 +87,13 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
             headerActions={
                 group && (
                     <>
-                        <IconButton
-                            size="md"
-                            icon={EditIcon}
-                            onClick={handleEditGroupName}
-                        />
+                        {role === ChatRole.moderator && (
+                            <IconButton
+                                size="md"
+                                icon={EditIcon}
+                                onClick={handleEditGroupName}
+                            />
+                        )}
                         <IconButton
                             size="md"
                             icon={QRIcon}

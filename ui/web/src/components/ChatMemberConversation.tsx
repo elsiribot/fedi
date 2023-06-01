@@ -7,7 +7,6 @@ import {
     selectChatClientStatus,
     selectChatMember,
     selectChatMessages,
-    selectChatXmppClient,
     sendDirectMessage,
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'

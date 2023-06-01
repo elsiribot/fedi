@@ -10,10 +10,9 @@ import {
     selectActiveFederation,
     selectAllChatMembers,
     selectChatConnectionOptions,
-    selectChatXmppClient,
 } from '@fedi/common/redux'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { Icon } from './Icon'

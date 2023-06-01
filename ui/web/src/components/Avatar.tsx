@@ -7,7 +7,7 @@ import { getIdentityColors } from '@fedi/common/utils/color'
 import { CSSProp, styled, theme } from '../styles'
 import { Icon } from './Icon'
 
-interface Props {
+export interface AvatarProps {
     id: string
     src?: string
     name?: string
@@ -18,7 +18,7 @@ interface Props {
     css?: CSSProp
 }
 
-export const Avatar: React.FC<Props> = ({
+export const Avatar: React.FC<AvatarProps> = ({
     id,
     src,
     name,

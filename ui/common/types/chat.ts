@@ -8,12 +8,19 @@ export enum ChatType {
     group = 'group',
 }
 
+export enum ChatRole {
+    visitor = 'visitor',
+    participant = 'participant',
+    moderator = 'moderator',
+}
+
 export interface Chat {
     /** Unique ID for the chat, random value for groups and user id for DMs */
     id: string
     name: string
     members: string[]
     type: ChatType
+    broadcastOnly: boolean
 }
 
 export interface ChatWithLatestMessage extends Chat {
@@ -70,6 +77,7 @@ export interface ChatMember {
 export interface ChatGroup {
     id: string
     name: string
+    broadcastOnly?: boolean
 }
 
 export interface XmppChatMember extends ChatMember {

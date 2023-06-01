@@ -19,6 +19,7 @@ import {
     ChatGroup,
     ChatMember,
     ChatMessage,
+    ChatRole,
     Key,
     Keypair,
 } from '../types'
@@ -36,6 +37,7 @@ import xmlUtils, {
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
 } from './XmlUtils'
+import { jidToId } from './chat'
 
 interface XmppChatClientEventMap {
     status: XmppStatus
@@ -43,6 +45,7 @@ interface XmppChatClientEventMap {
     message: ChatMessage
     memberSeen: ChatMember
     group: ChatGroup
+    groupRole: { groupId: string; role: ChatRole }
     error: Error
 }
 
@@ -304,11 +307,11 @@ export class XmppChatClient {
         try {
             const res = await this.enterGroup(groupId)
             if (res.find(status => status.getAttr('code') === '110')) {
-                const name = await this.fetchGroupConfig(groupId)
-                if (!name) {
+                const config = await this.fetchGroupConfig(groupId)
+                if (!config.name) {
                     throw new Error('Group does not exist')
                 }
-                return { id: groupId, name }
+                return { id: groupId, ...config }
             } else {
                 throw new Error('Failed to join group')
             }
@@ -333,7 +336,9 @@ export class XmppChatClient {
         }
     }
 
-    async fetchGroupConfig(groupId: string) {
+    async fetchGroupConfig(
+        groupId: string,
+    ): Promise<Pick<ChatGroup, 'name' | 'broadcastOnly'>> {
         try {
             const { iqCaller, jid } = this.getQueryProperties()
             const roomConfigQueryXml = xmlUtils.buildQuery(
@@ -344,13 +349,17 @@ export class XmppChatClient {
             )
             const result = await iqCaller.request(roomConfigQueryXml)
             console.info('fetchMucRoomConfig', result)
-            return (
-                result
-                    .getChild('query')
-                    ?.getChild('x')
+
+            const fields = result.getChild('query')?.getChild('x')
+            const features = result.getChild('query')?.getChildren('feature')
+            const name =
+                fields
                     ?.getChildByAttr('var', 'muc#roomconfig_roomname')
-                    ?.getChildText('value') || null
+                    ?.getChildText('value') || ''
+            const moderated = features?.find(
+                f => f.getAttr('var') === 'muc_moderated',
             )
+            return { name, broadcastOnly: !!moderated }
         } catch (error) {
             console.error('fetchMucRoomConfig', error)
             throw new Error('errors.unknown-error')
@@ -472,6 +481,11 @@ export class XmppChatClient {
                 }
             }
 
+            // Presence
+            if (stanza.is('presence')) {
+                return this.handleIncomingPresence(stanza)
+            }
+
             // Queries
             if (stanza.is('iq')) {
                 if (stanza.getChild('query')?.getNS() === 'jabber:iq:roster') {
@@ -587,6 +601,24 @@ export class XmppChatClient {
         const jid = rosterItem?.getAttr('jid')
         if (jid) {
             this.emit('memberSeen', this.memberFromJid(jid))
+        }
+    }
+
+    private handleIncomingPresence(stanza: Element) {
+        const groupId = stanza.getAttr('from')?.split('@')[0]
+        if (!groupId) return
+
+        // Emit role updates for presence updates about ourselves
+        const item = stanza.getChild('x')?.getChild('item')
+        if (!item) return
+
+        const myJid = this.xmpp.jid?.toString()
+        const itemJid = item.getAttr('jid')
+        if (!myJid || !itemJid || jidToId(myJid) !== jidToId(itemJid)) return
+
+        const role = stanza.getChild('x')?.getChild('item')?.getAttr('role')
+        if (role) {
+            this.emit('groupRole', { groupId, role })
         }
     }
 
