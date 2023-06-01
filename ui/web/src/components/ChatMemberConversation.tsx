@@ -26,7 +26,6 @@ interface Props {
 
 export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const dispatch = useAppDispatch()
-    const { showErrorToast } = useToast()
     const federationId = useAppSelector(selectActiveFederation)?.id
     const member = useAppSelector(s => selectChatMember(s, memberId))
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
@@ -47,21 +46,18 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
 
     const handleSend = useCallback(
         async (content: string) => {
-            if (!federationId) return
-            try {
-                await dispatch(
-                    sendDirectMessage({
-                        fedimint,
-                        federationId,
-                        recipientId: memberId,
-                        content,
-                    }),
-                ).unwrap()
-            } catch (err) {
-                showErrorToast(err, 'errors.chat-unavailable')
-            }
+            if (!federationId) throw new Error('errors.unknown-error')
+            // No need for try / catch, ChatConversation handles errors
+            await dispatch(
+                sendDirectMessage({
+                    fedimint,
+                    federationId,
+                    recipientId: memberId,
+                    content,
+                }),
+            ).unwrap()
         },
-        [dispatch, federationId, memberId, showErrorToast],
+        [dispatch, federationId, memberId],
     )
 
     if (isLoading) {
