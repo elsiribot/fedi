@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import {
@@ -11,6 +11,7 @@ import {
 } from '@fedi/common/redux'
 
 import { FederationLogo } from '../components/ui/FederationLogo'
+import HoloGradient from '../components/ui/HoloGradient'
 import { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -41,13 +42,37 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     <Text h2 medium style={styles(theme).welcomeTitle}>
                         {activeFederation?.name}
                     </Text>
-                    <Text caption style={styles(theme).welcomeText}>
-                        {/*
+                    {activeFederation?.meta?.welcome_message ? (
+                        <HoloGradient
+                            level="100"
+                            style={styles(theme).customWelcomeContainer}
+                            gradientStyle={styles(theme).customWelcomeInner}>
+                            <Text caption style={styles(theme).welcomeText}>
+                                <Trans
+                                    components={{
+                                        bold: (
+                                            <Text
+                                                caption
+                                                bold
+                                                style={
+                                                    styles(theme).welcomeText
+                                                }
+                                            />
+                                        ),
+                                    }}>
+                                    {activeFederation.meta.welcome_message}
+                                </Trans>
+                            </Text>
+                        </HoloGradient>
+                    ) : (
+                        <Text caption style={styles(theme).welcomeText}>
+                            {/*
                         TODO: Is this welcome text customizable by the
                         federation? If so, fetch from bridge
                     */}
-                        {t('feature.onboarding.welcome-instructions')}
-                    </Text>
+                            {t('feature.onboarding.welcome-instructions')}
+                        </Text>
+                    )}
                 </View>
             </Card>
             <View style={styles(theme).buttonsContainer}>
@@ -121,6 +146,14 @@ const styles = (theme: Theme) =>
         },
         welcomeText: {
             textAlign: 'center',
+            lineHeight: 20,
+        },
+        customWelcomeContainer: {
+            borderRadius: theme.spacing.lg,
+            overflow: 'hidden',
+        },
+        customWelcomeInner: {
+            padding: theme.spacing.md,
         },
     })
 

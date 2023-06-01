@@ -55,16 +55,17 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
             </View>
 
             <View style={styles(theme).buttonsContainer}>
-                <Button
-                    fullWidth
-                    type="clear"
-                    title={t('phrases.terms-and-conditions')}
-                    onPress={() => {
-                        // TODO: Get ToS url from federation or finalize hard-coded tos
-                        Linking.openURL('https://fedi.xyz/btcprague')
-                    }}
-                    containerStyle={styles(theme).button}
-                />
+                {activeFederation?.meta.tos_url && (
+                    <Button
+                        fullWidth
+                        type="clear"
+                        title={t('phrases.terms-and-conditions')}
+                        onPress={() => {
+                            Linking.openURL(activeFederation.meta.tos_url!)
+                        }}
+                        containerStyle={styles(theme).button}
+                    />
+                )}
             </View>
         </View>
     )

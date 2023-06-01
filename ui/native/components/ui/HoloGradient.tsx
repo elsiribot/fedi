@@ -1,4 +1,3 @@
-import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { View, ViewStyle } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
