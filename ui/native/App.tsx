@@ -52,9 +52,11 @@ const App = () => {
 
     useEffect(() => {
         // Initialize logger
-        const unsubscribeLog = fedimint.addListener('log', event =>
-            console.info('OS:', Platform.OS, `": log" -> "${event.log}"`),
-        )
+        const unsubscribeLog = fedimint.addListener('log', event => {
+            // Strip escape characters
+            const stripped = event.log.replace('\\', '');
+            console.log('OS:', Platform.OS, `": log" -> "${stripped}"`);
+        });
 
         // Initialize push notification sender
         const unsubscribeTransaction = fedimint.addListener(
