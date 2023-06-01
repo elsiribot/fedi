@@ -123,6 +123,8 @@ export enum SupportedFeature {
 export interface ClientConfigMetadata {
     chat_server_domain?: string
     default_currency?: SupportedCurrency
+    welcome_message?: string
+    tos_url?: string
     // TODO: client config meta only supports strings currently so
     // will need to refactor these:
     // 1. switch to boolean true/false
