@@ -707,7 +707,7 @@ mod tests {
             "10000"
         )
         .out_json()
-        .await?["note"]
+        .await?["notes"]
             .as_str()
             .map(|s| s.to_owned())
             .expect("'note' key not found generating ecash with fedimint-cli");
