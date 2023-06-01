@@ -1,6 +1,6 @@
 import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { View } from 'react-native'
+import { View, ViewStyle } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
@@ -9,30 +9,35 @@ type HoloGradientProps = {
     size?: number
     level?: keyof typeof fediTheme.holoGradient
     rounded?: boolean
+    style?: ViewStyle
+    gradientStyle?: ViewStyle
+    children?: React.ReactNode
 }
 
 const HoloGradient: React.FC<HoloGradientProps> = ({
     size,
     level = '900',
     rounded = false,
+    style: propStyle,
+    gradientStyle,
+    children,
 }: HoloGradientProps) => {
-    const { theme } = useTheme()
-    const customSize = size || theme.sizes.defaultHoloGradient
-    const height = customSize
-    const width = customSize
+    const height = size
+    const width = size
     const style = {
         height,
         width,
-        ...(rounded ? { borderRadius: customSize * 0.5 } : {}),
+        ...(rounded && size ? { borderRadius: size * 0.5 } : {}),
     }
     return (
-        <View>
+        <View style={propStyle}>
             <LinearGradient
                 start={{ x: 0, y: 0.75 }}
                 end={{ x: 1, y: 0.95 }}
                 colors={fediTheme.holoGradient[level]}
-                style={style}
-            />
+                style={[style, gradientStyle]}>
+                {children}
+            </LinearGradient>
         </View>
     )
 }
