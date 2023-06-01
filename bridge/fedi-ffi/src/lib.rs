@@ -14,6 +14,7 @@ pub mod social;
 pub mod storage;
 pub mod tx;
 pub mod types;
+pub mod utils;
 
 use std::{
     path::PathBuf,
@@ -234,13 +235,14 @@ pub enum AddressOrInvoice {
 
 #[macro_rules_derive(rpc_method!)]
 async fn addressOrInvoice(
-    _bridge: Arc<Bridge>,
-    _federation_id: FederationId,
+    bridge: Arc<Bridge>,
+    federation_id: FederationId,
     input: String,
 ) -> anyhow::Result<AddressOrInvoice> {
-    if let Ok(_invoice) = input.parse::<Invoice>() {
+    let federation = get_federation(&bridge, &federation_id).await?;
+    if let Ok(invoice) = input.parse::<Invoice>() {
         // validate that we can pay this invoice
-        // federation.can_pay_invoice(&invoice).await?;
+        federation.can_pay_invoice(&invoice).await?;
         return Ok(AddressOrInvoice::Invoice);
     }
     if let Ok(_address) = input.parse::<Address>() {

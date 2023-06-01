@@ -7,13 +7,13 @@ use fedimint_client::{
 };
 use fedimint_core::{config::FederationId, db::IDatabase, module::ApiRequestErased};
 use fedimint_ln_client::{
-    db::LightningGatewayKey, LightningClientExt, LightningClientGen, LightningClientModule,
-    LightningMeta, LnPayState, LnReceiveState,
+    db::LightningGatewayKey, network_to_currency, LightningClientExt, LightningClientGen,
+    LightningClientModule, LightningMeta, LnPayState, LnReceiveState,
 };
 use fedimint_mint_client::{
     MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants, SpendableNote,
 };
-use fedimint_wallet_client::WalletClientGen;
+use fedimint_wallet_client::{WalletClientExt, WalletClientGen, WalletClientModule};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -35,12 +35,13 @@ use crate::{
         self, federation_to_fedimint_federation, FediConfig, LnurlSignedMessage,
         PayInvoiceResponse, XmppCredentials,
     },
+    utils::display_currency,
     EventSink,
 };
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::{
     secp256k1::{Message, PublicKey, Secp256k1},
-    Address,
+    Address, Network,
 };
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
@@ -441,6 +442,11 @@ impl Federation {
         Ok(fedi_config)
     }
 
+    // Fetch which network we're using
+    pub fn get_network(&self) -> Network {
+        self.ng.get_network()
+    }
+
     /// Fetch connect info we used to join this federation from the database
     pub async fn get_connect_info(&self) -> Result<String> {
         let connect_info = self
@@ -620,6 +626,8 @@ impl Federation {
     /// Pay lightning invoice
     pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<PayInvoiceResponse> {
         self.override_active_gateway().await?;
+
+        self.can_pay_invoice(invoice).await?;
 
         let federation_id = self.federation_id();
         let operation_id = self
@@ -893,8 +901,22 @@ impl Federation {
     }
 
     /// Check whether lightning invoice is safe to pay
-    pub async fn can_pay_invoice(&self, _invoice: &Invoice) -> Result<()> {
-        unimplemented!()
+    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+        // Has an amount
+        if invoice.amount_milli_satoshis().is_none() {
+            return Err(anyhow!("Invoice is missing amount"));
+        }
+
+        // Same network
+        if network_to_currency(self.get_network()) != invoice.currency() {
+            return Err(anyhow!(format!(
+                "Invoice is for wrong network. Expected {}, got {}",
+                self.get_network(),
+                display_currency(invoice.currency())
+            )));
+        }
+
+        Ok(())
     }
 
     /// Validate that string is valid ecash and signed by federation.
