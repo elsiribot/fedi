@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
+use bitcoin::Network;
 use fedimint_core::config::{ClientConfig, PeerUrl};
 use fedimint_core::encoding::{Decodable, Encodable};
 use serde::{Deserialize, Serialize};
@@ -91,6 +92,8 @@ pub struct FediConfig {
 pub struct FedimintFederation {
     pub id: FederationId,
     pub name: String,
+    #[ts(type = "string")]
+    pub network: Network,
     pub connect_info: String,
     #[ts(type = "Array<{url: string, name: string}>")]
     pub nodes: BTreeMap<PeerId, PeerUrl>,
@@ -136,6 +139,7 @@ pub async fn federation_to_fedimint_federation(
         .map(|(peer_id, peer_url)| (crate::types::PeerId(*peer_id), peer_url.clone()))
         .collect();
     let connect_info = federation.get_connect_info().await?;
+    let network = federation.get_network();
     Ok(FedimintFederation {
         id: FederationId(federation.federation_id()),
         name: federation_name,
@@ -144,6 +148,7 @@ pub async fn federation_to_fedimint_federation(
         balance: Amount(balance),
         social_recovery_active,
         meta,
+        network,
     })
 }
 

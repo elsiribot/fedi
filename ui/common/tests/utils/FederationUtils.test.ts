@@ -1,4 +1,4 @@
-import { Federation, MSats, SupportedCurrency } from '../../types'
+import { Federation, MSats, Network, SupportedCurrency } from '../../types'
 import {
     getFederationChatServerDomain,
     getFederationDefaultCurrency,
@@ -16,6 +16,7 @@ const baseFed = {
     nodes: { '0': { name: 'alpha', url: 'alphaurl' } },
     balance: 0 as MSats,
     socialRecoveryActive: false,
+    network: Network.regtest,
 }
 
 const fedWithNoMetadata: Federation = {

@@ -139,6 +139,13 @@ export interface ClientConfigMetadata {
     popup_end_timestamp?: string
 }
 
+export enum Network {
+    bitcoin = 'bitcoin',
+    testnet = 'testnet',
+    signet = 'signet',
+    regtest = 'regtest',
+}
+
 export interface Federation {
     id: string
     name: string
@@ -147,6 +154,7 @@ export interface Federation {
     balance: MSats
     socialRecoveryActive: boolean
     meta: ClientConfigMetadata
+    network: Network
 }
 
 export type SeedWords = string[]
