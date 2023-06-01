@@ -9,6 +9,7 @@ import { styled, theme } from '../../styles'
 import { Avatar } from '../Avatar'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
+import { FederationAvatar } from '../FederationAvatar'
 import { Text } from '../Text'
 
 export const PopupFederationCountdown: React.FC = () => {
@@ -57,13 +58,7 @@ export const PopupFederationCountdown: React.FC = () => {
             </CountdownPill>
             <Dialog size="md" open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent>
-                    <Avatar
-                        id={activeFederation.id}
-                        size="lg"
-                        shape="hexagon"
-                        name={activeFederation.name}
-                        holo
-                    />
+                    <FederationAvatar federation={activeFederation} size="lg" />
                     <Text variant="h2">{activeFederation.name}</Text>
                     <CountdownPill {...countdownPillProps}>
                         {countdownI18nText}

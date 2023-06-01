@@ -91,7 +91,11 @@ export const FederationSelector: React.FC = () => {
     )
 }
 
-const Container = styled('div', {})
+const Container = styled('div', {
+    '& > button': {
+        display: 'block',
+    },
+})
 
 const ActiveFederation = styled('div', {
     display: 'flex',
