@@ -90,7 +90,7 @@ const Root = styled(RadixAvatar.Root, {
                 borderRadius: '100%',
             },
             square: {
-                borderRadius: 4,
+                borderRadius: 4, // Adjusted based on size in compoundVariants
             },
         },
         holo: {
@@ -99,6 +99,11 @@ const Root = styled(RadixAvatar.Root, {
             },
         },
     },
+    compoundVariants: [
+        { size: 'sm', shape: 'square', css: { borderRadius: 4 } },
+        { size: 'md', shape: 'square', css: { borderRadius: 6 } },
+        { size: 'lg', shape: 'square', css: { borderRadius: 8 } },
+    ],
     defaultVariants: {
         size: 'md',
         shape: 'circle',
