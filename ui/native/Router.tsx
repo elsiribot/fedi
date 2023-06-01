@@ -14,6 +14,8 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import AddBroadcastAdminHeader from './components/feature/chat/AddBroadcastAdminHeader'
+import BroadcastAdminsListHeader from './components/feature/chat/BroadcastAdminsListHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
 import CreateGroupHeader from './components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from './components/feature/chat/DirectChatHeader'
@@ -44,7 +46,9 @@ import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOff
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
+import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
 import BitcoinRequest from './screens/BitcoinRequest'
+import BroadcastAdminsList from './screens/BroadcastAdminsList'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
@@ -309,6 +313,20 @@ const MainNavigator = () => {
                                 component={GroupAdmin}
                                 options={() => ({
                                     header: () => <GroupAdminHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="BroadcastAdminsList"
+                                component={BroadcastAdminsList}
+                                options={() => ({
+                                    header: () => <BroadcastAdminsListHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="AddBroadcastAdmin"
+                                component={AddBroadcastAdmin}
+                                options={() => ({
+                                    header: () => <AddBroadcastAdminHeader />,
                                 })}
                             />
                             <Stack.Screen

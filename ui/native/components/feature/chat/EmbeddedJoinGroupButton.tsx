@@ -30,8 +30,8 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ group }: Props) => {
 
     useEffect(() => {
         if (group.id) {
-            fetchMucRoomConfig(group).then(name => {
-                setGroupName(name)
+            fetchMucRoomConfig(group).then(groupConfig => {
+                setGroupName(groupConfig.name as string)
             })
         }
     }, [fetchMucRoomConfig, group])

@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import React, { ReactNode } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import { jidToId } from '@fedi/common/utils/chat'
 
@@ -10,11 +10,13 @@ import Avatar, { AvatarSize } from '../../ui/Avatar'
 type MemberItemProps = {
     member: Member
     selectMember: (member: Member) => void
+    actionIcon?: ReactNode
 }
 
 const MemberItem: React.FC<MemberItemProps> = ({
     member,
     selectMember,
+    actionIcon = null,
 }: MemberItemProps) => {
     const { theme } = useTheme()
 
@@ -32,6 +34,11 @@ const MemberItem: React.FC<MemberItemProps> = ({
             <Text numberOfLines={1} bold style={[styles(theme).usernameText]}>
                 {member.username}
             </Text>
+            {actionIcon && (
+                <View style={styles(theme).checkboxContainer}>
+                    {actionIcon}
+                </View>
+            )}
         </Pressable>
     )
 }
@@ -43,10 +50,14 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'flex-start',
             paddingVertical: theme.spacing.sm,
+            height: '100%',
+            width: '100%',
         },
         usernameText: {
             marginLeft: theme.spacing.md,
-            width: '80%',
+        },
+        checkboxContainer: {
+            marginLeft: 'auto',
         },
     })
 

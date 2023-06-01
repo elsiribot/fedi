@@ -14,7 +14,11 @@ interface CommonXmppAttributes {
     from?: string
     to?: string
 }
-
+export enum XmppMemberRole {
+    visitor = 'visitor',
+    participant = 'participant',
+    moderator = 'moderator',
+}
 type XmppArgs =
     | AddToRosterArgs
     | GetMessagesArgs
@@ -243,6 +247,12 @@ export class EnterMucRoomPresence extends XmppPresence {
 interface AddToRosterArgs extends CommonXmppAttributes {
     newRosterItem: string
 }
+interface GetMembersListArgs extends CommonXmppAttributes {
+    // can be either 'moderator' or 'visitor'
+    // moderators can send messages in broadcast-only groups
+    // but visitors cannot
+    role: XmppMemberRole
+}
 type GetMessagesArgs = {
     filters?: ArchiveQueryFilters | null
     pagination?: ArchiveQueryPagination | null
@@ -253,9 +263,14 @@ type GetPublicKeyArgs = CommonXmppAttributes
 interface PublishPublicKeyArgs extends CommonXmppAttributes {
     pubkey: string
 }
+interface SetMemberRoleArgs extends CommonXmppAttributes {
+    username: string
+    role: string
+}
 type SetPubsubNodeConfigArgs = CommonXmppAttributes
 interface SetRoomConfigArgs extends CommonXmppAttributes {
     roomName: string
+    moderatedRoom?: boolean
 }
 type UniqueRoomNameArgs = CommonXmppAttributes
 export class AddToRosterQuery extends XmppQuery {
@@ -285,6 +300,37 @@ export class AddToRosterQuery extends XmppQuery {
         )
 
         return xml(this.tag, attributes, queryBodyXml)
+    }
+}
+export class GetMembersListQuery extends XmppQuery {
+    static id = 'getMembersList'
+    args: GetMembersListArgs
+    constructor(args: GetMembersListArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        // fetch visitors by default
+        const { from, to, role = 'visitor' } = this.args
+
+        const attributes = {
+            id: `${GetMembersListQuery.id}-${uuidv4()}`,
+            from,
+            to,
+            type: 'get',
+        }
+
+        return xml(
+            this.tag,
+            attributes,
+            xml(
+                'query',
+                {
+                    xmlns: 'http://jabber.org/protocol/muc#admin',
+                },
+                xml('item', { role }),
+            ),
+        )
     }
 }
 export class GetMessagesQuery extends XmppQuery {
@@ -477,6 +523,36 @@ export class PublishPublicKeyQuery extends XmppQuery {
         return xml(this.tag, attributes, pubsubXml)
     }
 }
+export class SetMemberRoleQuery extends XmppQuery {
+    static id = 'setMemberRole'
+    args: SetMemberRoleArgs
+    constructor(args: SetMemberRoleArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { from, to, username, role } = this.args
+
+        const attributes = {
+            id: `${SetMemberRoleQuery.id}-${uuidv4()}`,
+            from,
+            to,
+            type: 'set',
+        }
+
+        return xml(
+            this.tag,
+            attributes,
+            xml(
+                'query',
+                {
+                    xmlns: 'http://jabber.org/protocol/muc#admin',
+                },
+                xml('item', { role, nick: username }),
+            ),
+        )
+    }
+}
 export class SetPubsubNodeConfigQuery extends XmppQuery {
     static id = 'setPubsubNodeConfig'
     // This configures the pubsub node that stores this user's pubkey to allow
@@ -550,7 +626,7 @@ export class SetRoomConfigQuery extends XmppQuery {
         this.args = args
     }
     build = (): Element => {
-        const { roomName, from, to } = this.args
+        const { moderatedRoom, roomName = '', from, to } = this.args
 
         const attributes = {
             id: `${SetRoomConfigQuery.id}-${uuidv4()}`,
@@ -559,15 +635,7 @@ export class SetRoomConfigQuery extends XmppQuery {
             type: 'set',
         }
 
-        const roomNameFieldXml = xml(
-            'field',
-            {
-                var: 'muc#roomconfig_roomname',
-            },
-            xml('value', {}, roomName),
-        )
-        // When sending a new configuration for this room we make
-        // sure the room remains persistent
+        // make sure the room remains persistent
         const persistenceFieldXml = xml(
             'field',
             {
@@ -575,6 +643,38 @@ export class SetRoomConfigQuery extends XmppQuery {
             },
             xml('value', {}, '1'),
         )
+
+        let roomNameFieldXml, moderationFieldXml, preventPresenceXml
+        if (roomName) {
+            roomNameFieldXml = xml(
+                'field',
+                {
+                    var: 'muc#roomconfig_roomname',
+                },
+                xml('value', {}, roomName),
+            )
+        }
+        if (moderatedRoom) {
+            // moderated rooms are "broadcast-only" so users can receive but not
+            // send messages unless they are granted "voice"
+            moderationFieldXml = xml(
+                'field',
+                {
+                    var: 'muc#roomconfig_moderatedroom',
+                },
+                xml('value', {}, '1'),
+            )
+            // broadcast-only rooms should only send presence for users who can
+            // send messages
+            preventPresenceXml = xml(
+                'field',
+                {
+                    var: 'muc#roomconfig_presencebroadcast',
+                },
+                xml('value', {}, 'moderator'),
+                xml('value', {}, 'participant'),
+            )
+        }
 
         const queryBodyXml = xml(
             'query',
@@ -596,8 +696,13 @@ export class SetRoomConfigQuery extends XmppQuery {
                         'http://jabber.org/protocol/muc#roomconfig',
                     ),
                 ),
-                roomNameFieldXml,
                 persistenceFieldXml,
+                // Don't love this conditional logic, but this xml library is
+                // not very Typescipt-friendly and not sure how to do variable
+                // length function parameters with custom typings?
+                ...(roomNameFieldXml ? [roomNameFieldXml] : []),
+                ...(moderationFieldXml ? [moderationFieldXml] : []),
+                ...(preventPresenceXml ? [preventPresenceXml] : []),
             ),
         )
 

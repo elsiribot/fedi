@@ -4,23 +4,30 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import { Key, Keypair } from '@fedi/common/types'
+import { ChatMember, Key, Keypair } from '@fedi/common/types'
 import xmlUtils, {
     AddToRosterQuery,
     EncryptedDirectChatMessage,
     EnterMucRoomPresence,
+    GetMembersListQuery,
     GetMessagesQuery,
     GetPublicKeyQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
     GroupChatMessage,
     PublishPublicKeyQuery,
+    SetMemberRoleQuery,
     SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
+    XmppMemberRole,
 } from '@fedi/common/utils/XmlUtils'
 
-import { DEFAULT_GROUP_NAME } from '../../constants'
+import {
+    DEFAULT_GROUP_NAME,
+    XMPP_MUC_ROLE_VISITOR,
+    XMPP_RESOURCE,
+} from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
@@ -33,6 +40,33 @@ import {
     Action as ChatAction,
     changeLastFetchedMessageId,
 } from '../contexts/ChatContext'
+
+export const addAdminToGroup = (
+    member: Member,
+    group: Group,
+    xmppClient: Client | null,
+): Promise<Member> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const grantVoiceQueryXml = xmlUtils.buildQuery(
+                new SetMemberRoleQuery({
+                    from: xmppClient!.jid!.toString(),
+                    to: `${group.id}@muc.${xmppClient.jid!.getDomain()}`,
+                    username: member.username,
+                    role: XmppMemberRole.participant,
+                }),
+            )
+            await iqCaller.request(grantVoiceQueryXml)
+            resolve(member)
+        } catch (error: any) {
+            console.error('addAdminToGroup', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
 
 export const addMemberToRoster = (
     member: Member,
@@ -172,10 +206,54 @@ export const fetchRoster = (xmppClient: Client | null): Promise<Member[]> => {
     })
 }
 
+export const fetchGroupMembersList = (
+    group: Group,
+    role: XmppMemberRole,
+    xmppClient: Client | null,
+): Promise<ChatMember[]> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient || !xmppClient?.jid)
+            return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const membersListQueryXml = xmlUtils.buildQuery(
+                new GetMembersListQuery({
+                    from: xmppClient!.jid!.toString(),
+                    to: `${group.id}@muc.${xmppClient.jid!.getDomain()}`,
+                    role,
+                }),
+            )
+            const result = await iqCaller.request(membersListQueryXml)
+            console.info('fetchGroupMembersList', result)
+            if (result.getChild('query')) {
+                const memberItems = result
+                    .getChild('query')
+                    ?.getChildren('item')
+                if (!memberItems || memberItems.length === 0) return resolve([])
+
+                const members = memberItems.map(i => {
+                    const username: string = i.getAttr('nick')
+                    const memberJid: string = i.getAttr('jid')
+                    const id: string = memberJid.split(`/${XMPP_RESOURCE}`)[0]
+                    return {
+                        id,
+                        username,
+                    } as ChatMember
+                })
+                resolve(members)
+            }
+        } catch (error) {
+            console.error('fetchGroupMembersList', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
 export const fetchMucRoomConfig = (
     group: Group,
     xmppClient: Client | null,
-): Promise<string> => {
+): Promise<Group> => {
     return new Promise(async (resolve, reject) => {
         if (!xmppClient || !xmppClient?.jid)
             return reject(i18n.t('errors.unknown-error'))
@@ -191,15 +269,23 @@ export const fetchMucRoomConfig = (
             const result = await iqCaller.request(roomConfigQueryXml)
             console.info('fetchMucRoomConfig', result)
             if (result.getChild('query')) {
-                const groupName = result
-                    .getChild('query')
-                    ?.getChild('x')
+                const fields = result.getChild('query')?.getChild('x')
+                const groupName = fields
                     ?.getChildByAttr('var', 'muc#roomconfig_roomname')
                     ?.getChildText('value')
+                const features = result
+                    .getChild('query')
+                    ?.getChildren('feature')
 
-                console.info('result:groupName', groupName)
+                const moderated = features?.find(
+                    f => f.getAttr('var') === 'muc_moderated',
+                )
 
-                resolve(groupName || DEFAULT_GROUP_NAME)
+                resolve({
+                    ...group,
+                    name: groupName || DEFAULT_GROUP_NAME,
+                    broadcastOnly: moderated !== undefined,
+                })
             }
         } catch (error) {
             console.error('fetchMucRoomConfig', error)
@@ -294,6 +380,7 @@ export const enterMucRoom = (
                             const roomConfigQueryXml = xmlUtils.buildQuery(
                                 new SetRoomConfigQuery({
                                     roomName: group.name || DEFAULT_GROUP_NAME,
+                                    moderatedRoom: group.broadcastOnly || false,
                                     from: fromUser,
                                     to: `${
                                         group.id
@@ -310,7 +397,25 @@ export const enterMucRoom = (
                                 'stanza',
                                 onStanzaReceived,
                             )
-                            resolve(group)
+
+                            // Expected roles:
+                            //  Group creators always have a role = 'owner'
+                            //  Open/unmoderated groups:
+                            //      default role = 'participant'
+                            //  Broadcast-only groups:
+                            //      default role = 'visitor'
+                            // Visitors cannot send messages in the group
+                            const role = result
+                                ?.getChild('item')
+                                ?.getAttr('role')
+
+                            resolve(
+                                new Group({
+                                    ...group,
+                                    // TODO: refactor this out to a group-role map in redux
+                                    myRole: role || XMPP_MUC_ROLE_VISITOR,
+                                }),
+                            )
                         }
                     })
                 }
@@ -356,6 +461,32 @@ export const publishPublicKey = (
     })
 }
 
+export const removeAdminFromGroup = (
+    member: Member,
+    group: Group,
+    xmppClient: Client | null,
+): Promise<Member> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const revokeVoiceQueryXml = xmlUtils.buildQuery(
+                new SetMemberRoleQuery({
+                    from: xmppClient!.jid!.toString(),
+                    to: `${group.id}@muc.${xmppClient.jid!.getDomain()}`,
+                    username: member.username,
+                    role: XmppMemberRole.visitor,
+                }),
+            )
+            await iqCaller.request(revokeVoiceQueryXml)
+            resolve(member)
+        } catch (error: any) {
+            console.error('removeAdminFromGroup', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
 export const sendDirectMessage = (
     to: Member,
     message: Message,
