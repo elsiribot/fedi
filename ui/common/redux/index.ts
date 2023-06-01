@@ -63,7 +63,14 @@ export function initializeCommonStore(
             predicate: (_action, currentState, previousState) => {
                 return hasStorageStateChanged(currentState, previousState)
             },
-            effect: () => {
+            effect: async (_action, listnerApi) => {
+                // Cancel any pending saves
+                listnerApi.cancelActiveListeners()
+
+                // Delay saving to allow for multiple state changes to be batched
+                await listnerApi.delay(100)
+
+                // Save state to storage
                 dispatch(saveToStorage({ storage }))
             },
         })
