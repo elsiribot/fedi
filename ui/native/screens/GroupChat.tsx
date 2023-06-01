@@ -38,7 +38,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         )
 
         // Group by timestamp / sender
-        return makeMessageGroups(messagesInGroup, 'asc')
+        return makeMessageGroups(messagesInGroup, 'desc')
     }, [state.messages, currentGroup?.id])
 
     // TODO: Refactor useEffects and route param to use Redux selectors

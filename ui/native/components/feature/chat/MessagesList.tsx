@@ -39,7 +39,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
     const myName = authenticatedMember?.username || ''
 
     const renderTimeGroup: ListRenderItem<Message[][]> = ({ item }) => {
-        const sentAt = item[0][0]?.sentAt
+        // Grab the earliest timestamp (last message in the last message group)
+        const sentAt =
+            item[item.length - 1][item[item.length - 1].length - 1]?.sentAt
         return (
             <View style={style.timeGroupContainer}>
                 {sentAt && (
@@ -49,60 +51,65 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         </Text>
                     </View>
                 )}
-                {item.map(msgs => {
-                    if (!msgs.length) return null
-                    const sentBy = msgs[0].sentBy
-                    const sentByName = sentBy?.username || ''
-                    const sentByMe = sentByName && sentByName === myName
-                    return (
-                        <View style={style.senderGroup} key={msgs[0].id}>
-                            {!sentByMe && multiUserChat && (
-                                <View style={style.senderNameContainer}>
-                                    <Text tiny>{sentByName}</Text>
-                                </View>
-                            )}
-                            <View style={style.senderGroupContent}>
+                <View style={style.sendersContainer}>
+                    {item.map(msgs => {
+                        if (!msgs.length) return null
+                        const sentBy = msgs[0].sentBy
+                        const sentByName = sentBy?.username || ''
+                        const sentByMe = sentByName && sentByName === myName
+                        return (
+                            <View style={style.senderGroup} key={msgs[0].id}>
                                 {!sentByMe && multiUserChat && (
-                                    <Pressable
-                                        style={style.senderAvatar}
-                                        onPress={() => {
-                                            if (sentBy) {
-                                                navigation.navigate(
-                                                    'DirectChat',
-                                                    {
-                                                        member: sentBy,
-                                                    },
-                                                )
-                                            }
-                                        }}>
-                                        <Avatar
-                                            id={
-                                                sentBy
-                                                    ? jidToId(sentBy.jid)
-                                                    : ''
-                                            }
-                                            name={sentByName}
-                                        />
-                                    </Pressable>
+                                    <View style={style.senderNameContainer}>
+                                        <Text tiny>{sentByName}</Text>
+                                    </View>
                                 )}
-                                <View>
-                                    {msgs.map((msg, index) => (
-                                        <ErrorBoundary
-                                            key={msg.id || index}
-                                            fallback={() => (
-                                                <MessageItemError />
-                                            )}>
-                                            <MessageItem
-                                                message={msg}
-                                                last={index === msgs.length - 1}
+                                <View style={style.senderGroupContent}>
+                                    {!sentByMe && multiUserChat && (
+                                        <Pressable
+                                            style={style.senderAvatar}
+                                            onPress={() => {
+                                                if (sentBy) {
+                                                    navigation.navigate(
+                                                        'DirectChat',
+                                                        {
+                                                            member: sentBy,
+                                                        },
+                                                    )
+                                                }
+                                            }}>
+                                            <Avatar
+                                                id={
+                                                    sentBy
+                                                        ? jidToId(sentBy.jid)
+                                                        : ''
+                                                }
+                                                name={sentByName}
                                             />
-                                        </ErrorBoundary>
-                                    ))}
+                                        </Pressable>
+                                    )}
+                                    <View style={style.senderMessages}>
+                                        {msgs.map((msg, index) => (
+                                            <ErrorBoundary
+                                                key={msg.id || index}
+                                                fallback={() => (
+                                                    <MessageItemError />
+                                                )}>
+                                                <MessageItem
+                                                    message={msg}
+                                                    last={
+                                                        index ===
+                                                        msgs.length - 1
+                                                    }
+                                                />
+                                            </ErrorBoundary>
+                                        ))}
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                    )
-                })}
+                        )
+                    })}
+                </View>
             </View>
         )
     }
@@ -115,9 +122,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
             keyExtractor={item => `${item[0][0]?.id}`}
             style={style.container}
             contentContainerStyle={style.contentContainer}
-            onContentSizeChange={() => listRef.current?.scrollToEnd()}
             removeClippedSubviews={false}
             ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
+            inverted
         />
     )
 }
@@ -140,6 +147,9 @@ const styles = (theme: Theme) =>
             width: '100%',
             marginBottom: theme.spacing.md,
         },
+        sendersContainer: {
+            flexDirection: 'column-reverse',
+        },
         timestampText: {
             color: theme.colors.darkGrey,
         },
@@ -157,6 +167,9 @@ const styles = (theme: Theme) =>
         },
         senderNameContainer: {
             paddingLeft: 42,
+        },
+        senderMessages: {
+            flexDirection: 'column-reverse',
         },
     })
 
