@@ -38,12 +38,14 @@ export const PopupFederationOver: React.FC = () => {
                         components={{ bold: <strong /> }}
                     />
                 </Text>
-                <Button
-                    width="full"
-                    variant="secondary"
-                    href="https://fedi.xyz/btcprague">
-                    {t('phrases.terms-and-conditions')}
-                </Button>
+                {activeFederation.meta?.tos_url && (
+                    <Button
+                        width="full"
+                        variant="secondary"
+                        href={activeFederation.meta.tos_url}>
+                        {t('phrases.terms-and-conditions')}
+                    </Button>
+                )}
             </Container>
         </ContentBlock>
     )

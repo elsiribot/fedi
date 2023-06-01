@@ -44,9 +44,7 @@ export const OnboardingHome: React.FC = () => {
                 <Terms>
                     <Text variant="small">
                         {t('feature.onboarding.by-clicking-you-agree')}{' '}
-                        <a
-                            target="_blank"
-                            href="https://www.fedi.xyz/terms-of-use">
+                        <a target="_blank" href="https://www.fedi.xyz/eula-en">
                             {t('phrases.user-agreement')}
                         </a>
                     </Text>

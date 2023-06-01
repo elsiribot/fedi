@@ -1,11 +1,11 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
-import { styled } from '../../styles'
+import { styled, theme } from '../../styles'
 import { Avatar } from '../Avatar'
 import { Button } from '../Button'
 import { Redirect } from '../Redirect'
@@ -43,9 +43,17 @@ export const FederationWelcome: React.FC = () => {
                             {t('feature.onboarding.welcome-to-federation')}{' '}
                             {activeFederation.name}
                         </Text>
-                        <Text variant="caption">
-                            {t('feature.onboarding.welcome-instructions')}
-                        </Text>
+                        {activeFederation.meta?.welcome_message ? (
+                            <CustomWelcomeMessage>
+                                <Trans components={{ bold: <strong /> }}>
+                                    {activeFederation.meta.welcome_message}
+                                </Trans>
+                            </CustomWelcomeMessage>
+                        ) : (
+                            <Text variant="caption">
+                                {t('feature.onboarding.welcome-instructions')}
+                            </Text>
+                        )}
                     </FederationInfoInner>
                 </FederationInfoOuter>
             </OnboardingContent>
@@ -87,6 +95,15 @@ const FederationInfoInner = styled('div', {
     padding: 24,
     background: '#FFF',
     borderRadius: outerRadius - outerPadding,
+})
+
+const CustomWelcomeMessage = styled('div', {
+    holoGradient: '400',
+    padding: 16,
+    borderRadius: 16,
+    textAlign: 'center',
+    fontSize: theme.fontSizes.caption,
+    lineHeight: '20px',
 })
 
 const AvatarWrapper = styled('div', {
