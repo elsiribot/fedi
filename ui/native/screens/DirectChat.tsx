@@ -100,7 +100,7 @@ const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
         })
 
         // Group by timestamp / sender
-        return makeMessageGroups(messagesWithMember, 'asc')
+        return makeMessageGroups(messagesWithMember, 'desc')
     }, [state.messages, member.username])
 
     return (
