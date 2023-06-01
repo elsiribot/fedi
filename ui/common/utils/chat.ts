@@ -2,7 +2,7 @@ import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 
-import { Chat, ChatMessage, ChatType, MSats } from '@fedi/common/types'
+import { Chat, ChatType, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 // TODO: Remove me in place of ChatMessage when we have full reduxification
@@ -169,4 +169,17 @@ export const getLatestMessageIdsForChats = <T extends ChatMessageLike>(
         return readMsgIds
     }, {} as Record<Chat['id'], string | undefined>)
     return lastReadMessageIds
+}
+
+/**
+ * Returns a timestamp for when an existing payment is updated at.
+ * Ensures the timestamp is always greater, in case of clocks being out of sync.
+ */
+export const makePaymentUpdatedAt = (
+    payment: { updatedAt?: number } | undefined,
+) => {
+    return Math.max(
+        Math.floor(Date.now() / 1000),
+        (payment?.updatedAt || 0) + 1,
+    )
 }

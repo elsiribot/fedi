@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 import { selectChatEncryptionKeys } from '@fedi/common/redux'
 import type { ValidateEcashResponse } from '@fedi/common/types'
 import { Keypair } from '@fedi/common/types'
+import { makePaymentUpdatedAt } from '@fedi/common/utils/chat'
 
 import {
     updateMessage,
@@ -48,7 +49,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                 ...message,
                 payment: {
                     ...payment,
-                    updatedAt: Date.now() / 1000,
+                    updatedAt: makePaymentUpdatedAt(payment),
                     status: PaymentStatus.paid,
                     token: null,
                 },
@@ -212,7 +213,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
                 ...message,
                 payment: {
                     ...message.payment,
-                    updatedAt: Date.now() / 1000,
+                    updatedAt: makePaymentUpdatedAt(message.payment),
                     status: PaymentStatus.canceled,
                 },
             })

@@ -37,7 +37,11 @@ import {
     makeChatServerOptions,
 } from '../utils/FederationUtils'
 import { XmppChatClientManager } from '../utils/XmppChatClient'
-import { getChatInfoFromMessage, getLatestMessage } from '../utils/chat'
+import {
+    getChatInfoFromMessage,
+    getLatestMessage,
+    makePaymentUpdatedAt,
+} from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import {
     checkXmppUser,
@@ -887,7 +891,7 @@ export const updateChatPayment = createAsyncThunk<
 
         // Update payment depending on action
         let paymentUpdates: Partial<ChatPayment> = {
-            updatedAt: Date.now() / 1000,
+            updatedAt: makePaymentUpdatedAt(payment),
         }
         switch (action) {
             case 'receive': {

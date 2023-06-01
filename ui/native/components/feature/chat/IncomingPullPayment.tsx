@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Keypair } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makePaymentUpdatedAt } from '@fedi/common/utils/chat'
 
 import {
     updateMessage,
@@ -151,7 +152,7 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
                 ...message,
                 payment: {
                     ...message.payment,
-                    updatedAt: Date.now() / 1000,
+                    updatedAt: makePaymentUpdatedAt(message.payment),
                     status: PaymentStatus.rejected,
                 },
             })
@@ -226,7 +227,7 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
                         // sender of the payment request should be the recipient
                         // here...  need to refactor for sender-initiated payments
                         recipient: message.sentBy,
-                        updatedAt: Date.now() / 1000,
+                        updatedAt: makePaymentUpdatedAt(message.payment),
                         status: PaymentStatus.accepted,
                         token: generatedEcashToken,
                     },
