@@ -39,20 +39,17 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
 
     const handleSend = useCallback(
         async (content: string) => {
-            if (!federationId) return
-            try {
-                await dispatch(
-                    sendGroupMessage({
-                        federationId,
-                        groupId,
-                        content,
-                    }),
-                ).unwrap()
-            } catch (err) {
-                showErrorToast(err, 'errors.chat-unavailable')
-            }
+            if (!federationId) throw new Error('errors.unknown-error')
+            // No need for try / catch, ChatConversation handles errors
+            await dispatch(
+                sendGroupMessage({
+                    federationId,
+                    groupId,
+                    content,
+                }),
+            ).unwrap()
         },
-        [dispatch, federationId, groupId, showErrorToast],
+        [dispatch, federationId, groupId],
     )
 
     const handleEditGroupName = useCallback(async () => {
