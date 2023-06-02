@@ -58,11 +58,7 @@ export const FederationWelcome: React.FC = () => {
                 </Button>
                 <Button
                     width="full"
-                    href={
-                        isChatSupported
-                            ? '/onboarding/username'
-                            : '/onboarding/welcome'
-                    }>
+                    href={isChatSupported ? '/onboarding/username' : '/'}>
                     Join as a new member
                 </Button>
             </OnboardingActions>

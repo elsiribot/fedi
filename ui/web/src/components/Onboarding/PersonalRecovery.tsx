@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
@@ -25,6 +26,7 @@ export const PersonalRecovery: React.FC = () => {
     const { push } = useRouter()
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const isChatSupported = useIsChatSupported()
     const [words, setWords] = useState<SeedWords>([])
     const [isRecovering, setIsRecovering] = useState(false)
 
@@ -43,12 +45,12 @@ export const PersonalRecovery: React.FC = () => {
                     mnemonic: words,
                 }),
             ).unwrap()
-            push('/onboarding/complete')
+            push(isChatSupported ? '/onboarding/complete' : '/')
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [federationId, words, dispatch, showErrorToast, push])
+    }, [federationId, words, isChatSupported, dispatch, showErrorToast, push])
 
     if (!activeFederation) return <Redirect path="/onboarding" />
 
