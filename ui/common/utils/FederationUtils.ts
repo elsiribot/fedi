@@ -39,7 +39,6 @@ export const getFederationDefaultCurrency = (
 export const getFederationChatServerDomain = (
     metadata: ClientConfigMetadata,
 ): string | null => {
-    return 'xmpp-05.dev.fedibtc.com'
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )
