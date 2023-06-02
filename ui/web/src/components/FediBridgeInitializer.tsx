@@ -9,6 +9,7 @@ import {
     disconnectChat,
     refreshFederations,
     selectActiveFederation,
+    selectAuthenticatedMember,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
@@ -27,6 +28,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { t } = useTranslation()
     const { pathname } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
@@ -64,12 +66,12 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     // Connect to chat of active federation after bridge initializes.
     // TODO: Move this logic into redux initiailization when PWA and app both use it.
     useEffect(() => {
-        if (!federationId || !isInitialized) return
+        if (!federationId || !isInitialized || !authenticatedMember?.id) return
         dispatch(connectChat({ fedimint, federationId }))
         return () => {
             dispatch(disconnectChat({ federationId }))
         }
-    }, [federationId, isInitialized, dispatch])
+    }, [federationId, isInitialized, authenticatedMember?.id, dispatch])
 
     if (isInitialized) {
         if (!activeFederation && !pathname.startsWith('/onboarding')) {
