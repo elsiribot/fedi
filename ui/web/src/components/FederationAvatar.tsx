@@ -14,9 +14,9 @@ export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {
     let src: string | undefined
 
     // TODO: pull icon from federation meta, not hard coded name matching
-    if (federation.name === 'Fedi Alpha') {
+    if (federation.name.toLowerCase().includes('alpha')) {
         src = FederationAlphaImage.src
-    } else if (federation.name === 'BTC Prague') {
+    } else if (federation.name.toLowerCase().includes('prague')) {
         src = FederationPragueImage.src
     }
 
