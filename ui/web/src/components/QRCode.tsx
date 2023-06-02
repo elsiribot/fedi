@@ -35,6 +35,7 @@ export const QRCode: React.FC<Props> = ({ data }) => {
             {qrSvgs && qrSvgs.length ? (
                 <Inner
                     key={activeFrame}
+                    noAnimation={qrSvgs.length > 1}
                     dangerouslySetInnerHTML={{ __html: qrSvgs[activeFrame] }}
                 />
             ) : (
@@ -71,6 +72,16 @@ const Inner = styled('div', {
 
     '> *': {
         animation: `${fadeIn} 100ms ease`,
+    },
+
+    variants: {
+        noAnimation: {
+            true: {
+                '> *': {
+                    animation: 'none',
+                },
+            },
+        },
     },
 })
 
