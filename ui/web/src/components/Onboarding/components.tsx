@@ -9,7 +9,7 @@ export const OnboardingContainer = styled('div', {
     alignItems: 'center',
     height: '100%',
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 330,
 
     variants: {
         fullWidth: {
