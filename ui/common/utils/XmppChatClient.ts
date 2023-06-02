@@ -373,48 +373,26 @@ export class XmppChatClient {
         senderKeys: Keypair,
         updatePayment: boolean,
     ) {
-        return new Promise<void>(async (resolve, reject) => {
-            try {
-                const { jid } = this.getQueryProperties()
-                const fromJid = `${jid.getLocal()}@${jid.getDomain()}`
+        try {
+            const { jid } = this.getQueryProperties()
+            const fromJid = `${jid.getLocal()}@${jid.getDomain()}`
 
-                const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
-                    new EncryptedDirectChatMessage({
-                        from: fromJid,
-                        to: recipientId,
-                        message: this.formatOutgoingMessage(message),
-                        senderKeys,
-                        recipientPublicKey: { hex: recipientPubkey },
-                        updatePayment,
-                    }),
-                )
+            const encrypedDirectChatMessageXml = xmlUtils.buildMessage(
+                new EncryptedDirectChatMessage({
+                    from: fromJid,
+                    to: recipientId,
+                    message: this.formatOutgoingMessage(message),
+                    senderKeys,
+                    recipientPublicKey: { hex: recipientPubkey },
+                    updatePayment,
+                }),
+            )
 
-                const onStanzaReceived = async (stanza: Element) => {
-                    if (
-                        !stanza.is('message') ||
-                        stanza.getAttr('id') !==
-                            encrypedDirectChatMessageXml.getAttr('id')
-                    )
-                        return
-
-                    // Check for if the message has an error attached
-                    const error = stanza.getChild('error')
-                    if (error) {
-                        const errorText = error.getChildText('text')
-                        reject(new Error(errorText || 'errors.unknown-error'))
-                    } else {
-                        resolve()
-                    }
-                    this.xmpp.removeListener('stanza', onStanzaReceived)
-                }
-                this.xmpp.on('stanza', onStanzaReceived)
-
-                await this.xmpp.send(encrypedDirectChatMessageXml)
-            } catch (error) {
-                console.error('sendDirectMessage', error)
-                reject(new Error('errors.unknown-error'))
-            }
-        })
+            await this.xmpp.send(encrypedDirectChatMessageXml)
+        } catch (error) {
+            console.error('sendDirectMessage', error)
+            throw new Error('errors.unknown-error')
+        }
     }
 
     async sendGroupMessage(group: Partial<ChatGroup>, message: ChatMessage) {
