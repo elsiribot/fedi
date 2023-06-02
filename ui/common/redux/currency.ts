@@ -173,6 +173,10 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     if (selectedFiatCurrency === SupportedCurrency.CFA) {
         exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
     }
+    // Special case for CZK which is a fixed 23.5x the EUR price
+    if (selectedFiatCurrency === SupportedCurrency.CZK) {
+        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
+    }
 
     return exchangeRate
 }
