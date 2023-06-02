@@ -6,9 +6,9 @@ import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
-import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { ContentBlock } from './ContentBlock'
+import { FederationAvatar } from './FederationAvatar'
 import { Text } from './Text'
 
 export const PopupFederationOver: React.FC = () => {
@@ -21,13 +21,7 @@ export const PopupFederationOver: React.FC = () => {
     return (
         <ContentBlock>
             <Container>
-                <Avatar
-                    id={activeFederation.id}
-                    size="lg"
-                    shape="hexagon"
-                    name={activeFederation.name}
-                    holo
-                />
+                <FederationAvatar federation={activeFederation} size="lg" />
                 <Text variant="h2">{activeFederation.name}</Text>
                 <Ended>{t('feature.popup.ended')}</Ended>
                 <Text css={{ marginBottom: 24 }}>

@@ -15,6 +15,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Avatar } from '../Avatar'
+import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
 import { Text } from '../Text'
@@ -43,13 +44,7 @@ export const FederationSelector: React.FC = () => {
                     <FederationItem
                         active={fed.id === activeFederation.id}
                         onClick={() => handleSelectFederation(fed)}>
-                        <Avatar
-                            id={fed.id}
-                            size="sm"
-                            shape="hexagon"
-                            name={fed.name}
-                            holo
-                        />
+                        <FederationAvatar federation={fed} size="sm" />
                         <div>
                             <Text variant="caption" weight="bold">
                                 {fed.name}
@@ -83,13 +78,7 @@ export const FederationSelector: React.FC = () => {
                 open={isSelectorOpen}
                 onOpenChange={setIsSelectorOpen}>
                 <ActiveFederation>
-                    <Avatar
-                        id={activeFederation.id}
-                        size="sm"
-                        shape="hexagon"
-                        name={activeFederation.name}
-                        holo
-                    />
+                    <FederationAvatar federation={activeFederation} size="sm" />
                     <Text variant="caption" weight="bold">
                         {activeFederation.name}
                     </Text>
@@ -102,7 +91,11 @@ export const FederationSelector: React.FC = () => {
     )
 }
 
-const Container = styled('div', {})
+const Container = styled('div', {
+    '& > button': {
+        display: 'block',
+    },
+})
 
 const ActiveFederation = styled('div', {
     display: 'flex',

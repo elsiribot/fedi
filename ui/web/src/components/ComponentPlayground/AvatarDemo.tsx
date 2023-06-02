@@ -7,7 +7,7 @@ import { styled } from '../../styles'
 
 export const AvatarDemo: React.FC = () => {
     const sizes = ['lg', 'md', 'sm'] as const
-    const shapes = ['circle', 'hexagon'] as const
+    const shapes = ['circle', 'square'] as const
 
     return (
         <Container>
