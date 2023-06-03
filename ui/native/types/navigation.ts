@@ -32,6 +32,7 @@ export type MainNavigatorDrawerParamList = {
 export type TabsNavigatorParamList = {
     Chat: undefined
     Home: { offline: boolean }
+    Settings: undefined
 }
 export type RootStackParamList = {
     AddBroadcastAdmin: { group: Group }
@@ -83,7 +84,6 @@ export type RootStackParamList = {
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
     SendSuccess: { amount: MSats; unit: string }
-    Settings: undefined
     SitesBrowser: { site: Site }
     Splash: undefined
     StartPersonalBackup: undefined

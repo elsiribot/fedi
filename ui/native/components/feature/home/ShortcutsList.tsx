@@ -12,15 +12,7 @@ import { Screen, Shortcut, Site } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ShortcutTile from './ShortcutTile'
 
-const SCREEN_SHORTCUTS = [
-    new Screen({
-        title: 'Settings',
-        screenName: 'Settings',
-        icon: {
-            svg: 'Cog',
-        },
-    }),
-]
+const SCREEN_SHORTCUTS: Screen[] = []
 
 const ShortcutsList: React.FC<{}> = () => {
     const { theme } = useTheme()

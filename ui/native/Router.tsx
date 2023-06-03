@@ -9,7 +9,6 @@ import React from 'react'
 
 import { selectActiveFederation } from '@fedi/common/redux'
 
-import SettingsHeader from './components/feature/admin/SettingsHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
@@ -96,7 +95,6 @@ import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
-import Settings from './screens/Settings'
 import SitesBrowser from './screens/SitesBrowser'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupGuidance from './screens/SocialBackupGuidance'
@@ -201,19 +199,6 @@ const MainNavigator = () => {
                                 options={{
                                     headerShown: false,
                                 }}
-                            />
-                            {/* Settings */}
-                            <Stack.Screen
-                                name="Settings"
-                                component={Settings}
-                                options={() => ({
-                                    header: () => (
-                                        <>
-                                            <SelectedFederationHeader />
-                                            <SettingsHeader />
-                                        </>
-                                    ),
-                                })}
                             />
 
                             {/* Federation Onboarding */}
