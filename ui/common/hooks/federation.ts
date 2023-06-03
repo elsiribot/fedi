@@ -112,6 +112,6 @@ export function usePopupFederationInfo() {
         endsAtText:
             dateUtils.formatPopupFederationEndsAtTimestamp(endTimestamp),
         endsSoon: secondsLeft > 0 && secondsLeft <= 12 * 60 * 60,
-        ended: secondsLeft <= 0,
+        ended: secondsLeft < 0,
     }
 }
