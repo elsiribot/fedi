@@ -13,6 +13,7 @@ export const Images: ImagesMap = {
 }
 
 export const SiteImages: ImagesMap = {
+    'ai-beta': require('@fedi/common/assets/images/sites/ai-beta.png'),
     'bitcoinco': require('@fedi/common/assets/images/sites/bitcoinco.png'),
     'bitrefill': require('@fedi/common/assets/images/sites/bitrefill.png'),
     'btcmap': require('@fedi/common/assets/images/sites/btcmap.png'),
