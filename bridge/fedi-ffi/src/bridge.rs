@@ -348,20 +348,41 @@ impl Federation {
         let (ng, metadata) = client_builder
             .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, secret)
             .await?;
-        let federation = Self {
-            ng: Arc::new(ng),
+
+        // Pass username to contructor if one if found in backup metadata
+        let username = if let Ok(fedi_backup_metadata) =
+            metadata.to_json_deserialized::<FediBackupMetadata>()
+        {
+            fedi_backup_metadata.username
+        } else {
+            None
+        };
+
+        let federation = Self::new(Arc::new(ng), event_sink, task_group, username).await;
+
+        Ok(federation)
+    }
+
+    /// Constructor which starts a bunch of async tasks and ensures username is saved to db (e.g. after recovery)
+    pub async fn new(
+        ng: Arc<ClientNg>,
+        event_sink: EventSink,
+        task_group: TaskGroup,
+        username: Option<String>,
+    ) -> Self {
+        let mut federation = Self {
+            ng,
             event_sink,
             task_group,
         };
-
-        // Persist username to DB if one was found
-        if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
-            if let Some(username) = fedi_backup_metadata.username {
-                federation.set_username(username).await
-            };
-        }
-
-        Ok(federation)
+        // Save username to db if we found one
+        // We want to do this before we start the listeners which is why it's here
+        if let Some(username) = username {
+            federation.set_username(username).await
+        };
+        federation.subscribe_balance_updates().await;
+        federation.poll_balance().await;
+        federation
     }
 
     /// Instantiate Federation from FediConfig
@@ -375,11 +396,7 @@ impl Federation {
         let ng = client_builder
             .build::<Bip39RootSecretStrategy>(&mut task_group)
             .await?;
-        Ok(Self {
-            ng: Arc::new(ng),
-            event_sink,
-            task_group,
-        })
+        Ok(Self::new(Arc::new(ng), event_sink, task_group, None).await)
     }
 
     /// Download federation configs using a "connection string". Save client config to correct
@@ -607,6 +624,39 @@ impl Federation {
             })
             .await;
         Ok(())
+    }
+
+    /// Start background task to listen for balance updates and emit "federation" events when one is observed
+    async fn subscribe_balance_updates(&mut self) {
+        let federation = self.clone();
+        let client = self.ng.clone();
+        self.task_group
+            .spawn(
+                format!("{:?} balance subscription", federation.name()),
+                |_| async move {
+                    let mut updates = client.subscribe_balance_changes().await;
+                    while let Some(_) = updates.next().await {
+                        federation.send_federation_event().await;
+                    }
+                },
+            )
+            .await;
+    }
+
+    /// Send balance update every 5 seconds
+    async fn poll_balance(&mut self) {
+        let federation = self.clone();
+        self.task_group
+            .spawn(
+                format!("{:?} balance poller", federation.name()),
+                |_| async move {
+                    loop {
+                        federation.send_federation_event().await;
+                        fedimint_core::task::sleep(Duration::from_secs(5)).await;
+                    }
+                },
+            )
+            .await;
     }
 
     async fn override_active_gateway(&self) -> Result<()> {
@@ -928,27 +978,7 @@ impl Federation {
         dbtx.commit_tx().await;
         // notify UI
         if send_event {
-            // send transaction event
             self.send_transaction_event(&tx);
-            // send balance update in the background
-            match self.name() {
-                Some(name) => {
-                    let fed = self.clone();
-                    self.task_group
-                        .clone()
-                        .spawn(
-                            format!(
-                                "post transaction ({}) federation update for {}",
-                                tx.id, name
-                            ),
-                            |_| async move {
-                                fed.send_federation_event().await;
-                            },
-                        )
-                        .await;
-                }
-                None => warn!("federation name not set, failed to send transaction notification"),
-            };
         }
     }
 
