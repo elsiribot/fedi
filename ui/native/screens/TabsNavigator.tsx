@@ -10,6 +10,7 @@ import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
+import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
@@ -24,6 +25,7 @@ import {
 } from '../types/navigation'
 import ChatScreen from './ChatScreen'
 import Home from './Home'
+import Settings from './Settings'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
@@ -98,6 +100,8 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                     />
                                 )
                             }
+                        case 'Settings':
+                            return <Pressable {...props} />
                         default:
                             return null
                     }
@@ -123,6 +127,21 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                             return (
                                 <SvgImage
                                     name="Chat"
+                                    containerStyle={
+                                        styles(theme, insets)
+                                            .tabBarIconContainer
+                                    }
+                                    color={
+                                        focused
+                                            ? theme.colors.primary
+                                            : theme.colors.primaryLight
+                                    }
+                                />
+                            )
+                        case 'Settings':
+                            return (
+                                <SvgImage
+                                    name="Cog"
                                     containerStyle={
                                         styles(theme, insets)
                                             .tabBarIconContainer
@@ -174,6 +193,18 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         </>
                     ),
                     tabBarBadge: hasUnseenMessages ? '' : undefined,
+                })}
+            />
+            <Tab.Screen
+                name="Settings"
+                component={Settings}
+                options={() => ({
+                    header: () => (
+                        <>
+                            <SelectedFederationHeader />
+                            <SettingsHeader />
+                        </>
+                    ),
                 })}
             />
         </Tab.Navigator>

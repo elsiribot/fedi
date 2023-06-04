@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -41,17 +41,22 @@ import {
     useEnvironmentContext,
 } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import type { RootStackParamList } from '../types/navigation'
+import type {
+    RootStackParamList,
+    TabsNavigatorParamList,
+} from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
+export type Props = BottomTabScreenProps<
+    TabsNavigatorParamList & RootStackParamList,
+    'Settings'
+>
 
 const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { state: environmentState, dispatch: environmentDispatch } =
         useEnvironmentContext()
-    const { state: chatState, dispatch: chatDispatch } = useChatContext()
-    const { websocketIsHealthy } = chatState
+    const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
@@ -188,20 +193,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         <ScrollView contentContainerStyle={styles(theme).container}>
             {authenticatedMember && (
                 <View style={styles(theme).profileHeader}>
-                    <View style={styles(theme).actionsContainer}>
-                        {websocketIsHealthy && (
-                            <Pressable
-                                onPress={() =>
-                                    navigation.navigate('MemberQrCode')
-                                }
-                                hitSlop={5}>
-                                <SvgImage
-                                    name="Qr"
-                                    color={theme.colors.primary}
-                                />
-                            </Pressable>
-                        )}
-                    </View>
                     <View style={styles(theme).avatarContainer}>
                         <Avatar
                             id={authenticatedMember?.id || ''}
