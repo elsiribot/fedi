@@ -919,17 +919,6 @@ impl Federation {
         Ok(())
     }
 
-    /// Validate that string is valid ecash and signed by federation.
-    /// TODO: check that it's unspent in the federation.
-    pub async fn validate_ecash(&self, _ecash: TieredMulti<SpendableNote>) -> (bool, Amount) {
-        unimplemented!()
-    }
-
-    /// Generate on-chain receive address
-    pub async fn generate_address(&self) -> Address {
-        unimplemented!()
-    }
-
     /// Save transaction to DB
     /// `send_event` is whether to send event to react native, which might send push notifications
     pub async fn save_transaction(&self, tx: &Transaction, send_event: bool) {
