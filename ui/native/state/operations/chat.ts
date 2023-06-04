@@ -15,6 +15,7 @@ import xmlUtils, {
     GetRoomConfigQuery,
     GetRosterQuery,
     GroupChatMessage,
+    PublishNotificationTokenQuery,
     PublishPublicKeyQuery,
     SetMemberRoleQuery,
     SetPubsubNodeConfigQuery,
@@ -424,6 +425,34 @@ export const enterMucRoom = (
             xmppClient?.send(enterMucRoomPresence)
         } catch (error) {
             console.error('enterMucRoom', error)
+            reject(i18n.t('errors.unknown-error'))
+        }
+    })
+}
+
+export const publishNotificationToken = (
+    token: string,
+    xmppClient: Client | null,
+): Promise<boolean> => {
+    return new Promise(async (resolve, reject) => {
+        if (!xmppClient?.jid) return reject(i18n.t('errors.unknown-error'))
+        console.info('token', token)
+
+        try {
+            const { iqCaller } = xmppClient! as Client
+            const publishNotificationTokenQueryXml = xmlUtils.buildQuery(
+                new PublishNotificationTokenQuery({
+                    token,
+                    from: xmppClient!.jid!.toString(),
+                }),
+            )
+            const result = await iqCaller.request(
+                publishNotificationTokenQueryXml,
+            )
+            console.info('publishNotificationToken', result)
+            resolve(true)
+        } catch (error: any) {
+            console.error('publishNotificationToken', error)
             reject(i18n.t('errors.unknown-error'))
         }
     })

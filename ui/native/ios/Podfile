@@ -25,7 +25,14 @@ target 'FediReactNative' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+  
+  # for push notifications
+  pod 'FirebaseMessaging', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  $RNFirebaseAsStaticFramework = true
 
+  # for encrypted messaging
   pod 'OpenSSL-Universal', :modular_headers => true, :configurations => ['Release']
 
   target 'FediReactNativeTests' do

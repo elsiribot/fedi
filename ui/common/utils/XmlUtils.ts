@@ -6,7 +6,10 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { Key, Keypair } from '@fedi/common/types'
 
-import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants/xmpp'
+import {
+    XMPP_DEFAULT_PAGE_LIMIT,
+    XMPP_PUSH_SERVICE_MODULE,
+} from '../constants/xmpp'
 import { ArchiveQueryFilters, ArchiveQueryPagination } from '../types'
 import encryptionUtils from './EncryptionUtils'
 
@@ -260,6 +263,9 @@ type GetMessagesArgs = {
 type GetRoomConfigArgs = CommonXmppAttributes
 type GetRosterArgs = CommonXmppAttributes
 type GetPublicKeyArgs = CommonXmppAttributes
+interface PublishNotificationTokenArgs extends CommonXmppAttributes {
+    token: string
+}
 interface PublishPublicKeyArgs extends CommonXmppAttributes {
     pubkey: string
 }
@@ -521,6 +527,36 @@ export class PublishPublicKeyQuery extends XmppQuery {
         )
 
         return xml(this.tag, attributes, pubsubXml)
+    }
+}
+export class PublishNotificationTokenQuery extends XmppQuery {
+    // This publishes the user's Firebase Cloud Messagin token to the Prosody
+    // server so that the mod_cloud_notify module can send push notifications
+    // when the user is not connected to the websocket
+    // https://xmpp.org/extensions/xep-0357.html
+    static id = 'publishNotificationToken'
+    args: PublishNotificationTokenArgs
+    constructor(args: PublishNotificationTokenArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { token, from } = this.args
+        const fromJid: JID = jid(from!)
+
+        const attributes = {
+            id: `${PublishNotificationTokenQuery.id}-${uuidv4()}`,
+            from,
+            type: 'set',
+        }
+
+        const enableXml = xml('enable', {
+            xmlns: 'urn:xmpp:push:0',
+            jid: `push.${fromJid.domain}`,
+            node: token,
+        })
+
+        return xml(this.tag, attributes, enableXml)
     }
 }
 export class SetMemberRoleQuery extends XmppQuery {

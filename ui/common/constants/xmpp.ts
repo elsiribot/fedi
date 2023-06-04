@@ -13,3 +13,11 @@ export const XMPP_MESSAGE_TYPES = {
     CHAT: 'chat',
     HEADLINE: 'headline',
 } as const
+
+// Used to configure push notifications on XMPP server with mod_cloud_notify
+// this comes from the Firebase Cloud Messaging console
+// https://console.firebase.google.com/project/fedi-xmpp-chat-notifications/settings/cloudmessaging
+export const FIREBASE_SENDER_ID = `472796529807`
+// this should be the production URL listed here:
+// https://firebase.google.com/docs/cloud-messaging/xmpp-server-ref
+export const XMPP_PUSH_SERVICE_MODULE = `fediAlpha`

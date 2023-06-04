@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import messaging from '@react-native-firebase/messaging'
 import { Client, client, jid, xml } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import parse from '@xmpp/xml/lib/parse'
@@ -46,7 +47,7 @@ import {
 } from '../../constants'
 import { Group, Member, Message, XmppConnectionOptions } from '../../types'
 import { useAppDispatch, useAppSelector, usePrevious } from '../hooks'
-import { publishPublicKey } from '../operations/chat'
+import { publishNotificationToken, publishPublicKey } from '../operations/chat'
 
 export const DEFAULT_GROUPS: Group[] = [
     // FEDI_GENERAL_CHANNEL_GROUP,
@@ -1116,6 +1117,14 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         ) {
             const { publicKey } = activeChatEncryptionKeys as Keypair
             publishPublicKey(publicKey, state.xmppClient)
+
+            console.debug('messaging getToken')
+            messaging()
+                .getToken()
+                .then(token => {
+                    console.debug('token token', token)
+                    publishNotificationToken(token, state.xmppClient)
+                })
         }
     }, [
         activeChatEncryptionKeys,
