@@ -255,12 +255,10 @@ async fn addressOrInvoice(
 
 #[macro_rules_derive(rpc_method!)]
 async fn generateAddress(
-    bridge: Arc<Bridge>,
-    federation_id: FederationId,
+    _bridge: Arc<Bridge>,
+    _federation_id: FederationId,
 ) -> anyhow::Result<String> {
-    let federation = get_federation(&bridge, &federation_id).await?;
-    let address = federation.generate_address().await;
-    Ok(address.to_string())
+    bail!("On-chain wallet currently disabled")
 }
 
 #[macro_rules_derive(rpc_method!)]
