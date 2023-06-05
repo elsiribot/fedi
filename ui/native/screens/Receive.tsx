@@ -50,13 +50,13 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                 )
                 setInvoice(newInvoice)
             } catch (error) {
-                toast?.show('Failed to generate invoice', 3000)
+                toast?.show(t('errors.failed-to-generate-invoice'), 3000)
             }
         }
         if (generatingInvoice) {
             createNewInvoice()
         }
-    }, [toast, amount, generateInvoice, generatingInvoice, memo])
+    }, [t, toast, amount, generateInvoice, generatingInvoice, memo])
 
     useEffect(() => {
         if (invoice) {

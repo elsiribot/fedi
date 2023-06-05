@@ -106,6 +106,7 @@
         "chat-payment-failed": "Could not update that chat payment",
         "chat-message-render-error": "Encountered an error rendering this message",
         "chat-list-render-error": "Encountered an error rendering your chats",
+        "failed-to-generate-invoice": "Failed to generate invoice",
         "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",
