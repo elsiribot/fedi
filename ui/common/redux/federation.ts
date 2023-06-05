@@ -51,8 +51,8 @@ export const federationSlice = createSlice({
                           // this is needed to make sure metadata from bridge doesn't
                           // overwrite externally fetched metadata
                           meta: {
-                              ...federation.meta,
                               ...action.payload.meta,
+                              ...federation.meta,
                           },
                       }
                     : federation,
