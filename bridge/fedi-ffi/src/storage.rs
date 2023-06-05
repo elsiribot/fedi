@@ -5,6 +5,7 @@ use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, impl_db_lookup, impl_db_record};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
@@ -26,6 +27,7 @@ enum BridgeDbPrefix {
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
     FederationConnectInfo = 0xb3,
+    LastBackupTimestamp = 0xb4,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -70,4 +72,13 @@ impl fedimint_core::db::DatabaseRecord for FederationConnectInfo {
     const DB_PREFIX: u8 = BridgeDbPrefix::FederationConnectInfo as u8;
     type Key = Self;
     type Value = String;
+}
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct LastBackupTimestamp;
+
+impl fedimint_core::db::DatabaseRecord for LastBackupTimestamp {
+    const DB_PREFIX: u8 = BridgeDbPrefix::LastBackupTimestamp as u8;
+    type Key = Self;
+    type Value = SystemTime;
 }
