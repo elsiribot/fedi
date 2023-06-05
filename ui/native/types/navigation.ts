@@ -58,7 +58,7 @@ export type RootStackParamList = {
     FederationGreeting: undefined
     FederationWelcome: undefined
     FederationAcceptTerms: undefined
-    Initializing: { reset: boolean }
+    Initializing: undefined
     JoinGroup: undefined
     MemberQrCode: undefined
     NewMessage: undefined
@@ -66,6 +66,7 @@ export type RootStackParamList = {
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
+    PopupFederationEnded: undefined
     LocateSocialRecovery: undefined
     ReceiveSuccess: { tx: Transaction }
     Receive: undefined
@@ -100,5 +101,4 @@ export type RootStackParamList = {
     TabsNavigator: undefined
     Transactions: undefined
     DeveloperSettings: undefined
-    PopupFederationEnded: undefined
 }
