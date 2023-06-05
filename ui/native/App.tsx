@@ -3,7 +3,7 @@ import messaging from '@react-native-firebase/messaging'
 import { ThemeProvider } from '@rneui/themed'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Platform } from 'react-native'
+import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider as ReduxProvider } from 'react-redux'
@@ -100,10 +100,7 @@ const App = () => {
 
     useEffect(() => {
         const unsubscribe = messaging().onMessage(async remoteMessage => {
-            Alert.alert(
-                'A new FCM message arrived!',
-                JSON.stringify(remoteMessage),
-            )
+            console.info('push notification received', remoteMessage)
         })
 
         return unsubscribe
