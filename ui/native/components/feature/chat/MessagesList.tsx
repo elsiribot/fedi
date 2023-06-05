@@ -189,7 +189,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 removeClippedSubviews={false}
                 ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
                 onScroll={handleScroll}
-                inverted
+                inverted={messages.length > 0}
             />
             <Animated.View
                 style={[
