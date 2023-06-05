@@ -20,10 +20,12 @@ import {
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { refreshFederations, selectActiveFederation } from '@fedi/common/redux'
+import {
+    refreshFederationsMetadata,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
-import { fedimint } from '../bridge'
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
@@ -88,7 +90,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     appStateRef.current.match(/inactive|background/) &&
                     nextAppState === 'active'
                 ) {
-                    dispatch(refreshFederations(fedimint))
+                    dispatch(refreshFederationsMetadata())
                 }
                 appStateRef.current = nextAppState
             },
