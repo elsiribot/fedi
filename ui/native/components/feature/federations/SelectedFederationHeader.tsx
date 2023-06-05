@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 
-import { useAppSelector } from '../../../state/hooks'
+import { useAppSelector, usePrevious } from '../../../state/hooks'
 import {
     DrawerNavigationHook,
     DRAWER_NAVIGATION_ID,
@@ -21,6 +21,7 @@ const SelectedFederationHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const previousActiveFederation = usePrevious(activeFederation)
     const popupInfo = usePopupFederationInfo()
     const drawerNavigator = navigation.getParent(
         DRAWER_NAVIGATION_ID,
@@ -32,8 +33,10 @@ const SelectedFederationHeader: React.FC<{}> = () => {
 
     // Close the drawer when activeFederation changes
     useEffect(() => {
-        drawerNavigator.closeDrawer()
-    }, [drawerNavigator, activeFederation])
+        if (previousActiveFederation?.id !== activeFederation?.id) {
+            drawerNavigator.closeDrawer()
+        }
+    }, [drawerNavigator, activeFederation, previousActiveFederation?.id])
 
     return (
         <Header
