@@ -26,10 +26,9 @@ import { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
-const Initializing: React.FC<Props> = ({ route }: Props) => {
+const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const { reset } = route.params
     const { connectionOptions } = useChatContext().state
     const [usernameRequired, setUsernameRequired] = useState<boolean>(false)
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -172,7 +171,7 @@ const Initializing: React.FC<Props> = ({ route }: Props) => {
         if (!activeFederationId) {
             restoreState()
         }
-    }, [navigation, reset, dispatch, activeFederationId])
+    }, [navigation, dispatch, activeFederationId])
 
     return (
         <ImageBackground

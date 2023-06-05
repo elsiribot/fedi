@@ -17,6 +17,7 @@ import type {
 import amountUtils from '../utils/AmountUtils'
 import {
     fetchMetadataFromExternalUrl,
+    getFederationGroupChats,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
     getFederationSites,
@@ -51,8 +52,8 @@ export const federationSlice = createSlice({
                           // this is needed to make sure metadata from bridge doesn't
                           // overwrite externally fetched metadata
                           meta: {
-                              ...federation.meta,
                               ...action.payload.meta,
+                              ...federation.meta,
                           },
                       }
                     : federation,
@@ -150,7 +151,10 @@ export const joinFederation = createAsyncThunk<
 
         const federations = await fedimint.listFederations()
         if (federations.length > 0) {
-            dispatch(setFederations(federations))
+            const federationsWithMeta = await Promise.all(
+                federations.map(fetchMetadataFromExternalUrl),
+            )
+            dispatch(setFederations(federationsWithMeta))
             dispatch(setActiveFederationId(federation.id))
         } else {
             throw new Error('Bridge reported no federations')
@@ -301,4 +305,9 @@ export const selectReceivesDisabled = createSelector(
 export const selectFederationSites = createSelector(
     selectFederationMetadata,
     getFederationSites,
+)
+
+export const selectFederationGroupChats = createSelector(
+    selectFederationMetadata,
+    getFederationGroupChats,
 )

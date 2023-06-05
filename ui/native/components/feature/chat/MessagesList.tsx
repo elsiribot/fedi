@@ -51,7 +51,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     // Animate new message button in and out
     useEffect(() => {
         Animated.timing(animatedNewMessageBottom, {
-            toValue: hasNewMessage ? 90 : 0,
+            toValue: hasNewMessage ? 90 : -50,
             duration: 100,
             useNativeDriver: false,
             easing: Easing.linear,
@@ -189,7 +189,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 removeClippedSubviews={false}
                 ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
                 onScroll={handleScroll}
-                inverted
+                inverted={messages.length > 0}
             />
             <Animated.View
                 style={[
