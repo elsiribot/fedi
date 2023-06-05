@@ -16,19 +16,13 @@ export type Props = NativeStackScreenProps<
     'PopupFederationEnded'
 >
 
-const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
+const PopupFederationEnded: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
 
     const style = styles(theme)
-
-    // If the popup hasn't ended, return to home
-    if (!popupInfo?.ended) {
-        navigation.navigate('TabsNavigator')
-        return <View />
-    }
 
     return (
         <View style={styles(theme).container}>

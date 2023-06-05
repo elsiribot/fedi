@@ -1,11 +1,19 @@
 import { Theme, useTheme, Text, Overlay, Button } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Pressable, StyleProp, StyleSheet, ViewStyle, View } from 'react-native'
+import {
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    ViewStyle,
+    View,
+    Linking,
+} from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
 
+import { FALLBACK_TERMS_URL } from '../../../constants'
 import { useAppSelector } from '../../../state/hooks'
 import { FederationLogo } from '../../ui/FederationLogo'
 
@@ -79,11 +87,27 @@ export const PopupFederationCountdown: React.FC = () => {
                         />
                     </Text>
                     <Button
+                        // containerStyle={style.buttonContainer}
+                        // buttonStyle={style.button}
                         fullWidth
-                        titleStyle={{ width: '90%' }}
                         onPress={() => setIsOverlayVisible(false)}>
                         {t('phrases.i-understand')}
                     </Button>
+                    {activeFederation.meta?.tos_url && (
+                        <Button
+                            type="clear"
+                            fullWidth
+                            containerStyle={style.buttonContainer}
+                            buttonStyle={style.button}
+                            onPress={() =>
+                                Linking.openURL(
+                                    activeFederation.meta?.tos_url ||
+                                        FALLBACK_TERMS_URL,
+                                )
+                            }>
+                            {t('feature.onboarding.terms-and-conditions')}
+                        </Button>
+                    )}
                 </View>
             </Overlay>
         </>
@@ -107,6 +131,12 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.lightGrey,
             color: theme.colors.primary,
         },
+        button: {
+            backgroundColor: theme.colors.secondary,
+        },
+        buttonContainer: {
+            marginVertical: theme.spacing.sm,
+        },
         lightText: {
             color: theme.colors.secondary,
         },
@@ -119,8 +149,6 @@ const styles = (theme: Theme) =>
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            width: '90%',
-            maxWidth: 360,
             margin: 'auto',
         },
         overlaySpacing: {

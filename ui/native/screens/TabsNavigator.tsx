@@ -1,7 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -34,6 +35,7 @@ const Tab = createBottomTabNavigator<TabsNavigatorParamList>()
 const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const isFocused = useIsFocused()
     const insets = useSafeAreaInsets()
     const [offline, setOffline] = useState(false)
     const { toast } = useEnvironmentContext().state
@@ -58,16 +60,17 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         return !!lastMessage && lastMessage.id !== lastSeenMessageId
     }, [messages, lastSeenMessageId])
 
+    // If the popup federation has ended, redirect user to end screen.
+    useEffect(() => {
+        if (isFocused && popupInfo?.ended) {
+            navigation.navigate('PopupFederationEnded')
+        }
+    }, [isFocused, navigation, popupInfo])
+
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
     if (!activeFederation) {
         navigation.navigate('Splash')
-        return <View />
-    }
-
-    // If the popup federation has ended, redirect user to end screen.
-    if (popupInfo?.ended) {
-        navigation.navigate('PopupFederationEnded')
         return <View />
     }
 

@@ -11,6 +11,8 @@ export * from '@fedi/common/constants/bip39'
     -----
 */
 
+export const FALLBACK_TERMS_URL = `https://www.fedi.xyz/btcprague`
+
 // Regtest feds
 export const FEDERATION_ALPHA =
     '{"members":[[0,"wss://alpha.regtest.sirion.io"]]}'
