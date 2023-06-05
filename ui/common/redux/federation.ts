@@ -150,7 +150,10 @@ export const joinFederation = createAsyncThunk<
 
         const federations = await fedimint.listFederations()
         if (federations.length > 0) {
-            dispatch(setFederations(federations))
+            const federationsWithMeta = await Promise.all(
+                federations.map(fetchMetadataFromExternalUrl),
+            )
+            dispatch(setFederations(federationsWithMeta))
             dispatch(setActiveFederationId(federation.id))
         } else {
             throw new Error('Bridge reported no federations')
