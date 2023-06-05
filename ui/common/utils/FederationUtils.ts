@@ -62,6 +62,20 @@ export const makeChatServerOptions = (
     return options
 }
 
+export const getFederationMaxBalanceMsats = (
+    metadata: ClientConfigMetadata,
+): MSats | null => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.max_balance_msats)) {
+        // This should just be a number but client config meta only
+        // supports strings currently so will need to refactor
+        return Number(metadata?.max_balance_msats) as MSats
+    }
+    return null
+}
+
 export const getFederationMaxInvoiceMsats = (
     metadata: ClientConfigMetadata,
 ): MSats | null => {

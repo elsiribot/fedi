@@ -34,7 +34,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         if (amount === 0) {
             setAmountIsValid(false)
-        } else if (maxReceiveAmount && amount > maxReceiveAmount) {
+        } else if (maxReceiveAmount > -1 && amount > maxReceiveAmount) {
             setAmountIsValid(false)
         } else {
             setAmountIsValid(true)
@@ -68,7 +68,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }, [invoice, navigation])
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (maxReceiveAmount && updatedValue > maxReceiveAmount) {
+        if (maxReceiveAmount > -1 && updatedValue > maxReceiveAmount) {
             toast?.show(
                 t('feature.receive.maximum-invoice-amount', {
                     maxAmount: amountUtils.formatSats(maxReceiveAmount as Sats),

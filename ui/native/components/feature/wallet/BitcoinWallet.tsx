@@ -5,8 +5,12 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectReceivesDisabled,
+} from '@fedi/common/redux'
 
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -20,7 +24,9 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
+    const receivesDisabled = useAppSelector(selectReceivesDisabled)
 
     return (
         <Card
@@ -41,20 +47,48 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
             </View>
             <Balance balance={activeFederation!.balance} />
             <View style={styles(theme).buttonsGroupContainer}>
-                <Button
-                    title={
-                        <Text caption medium style={styles(theme).buttonTitle}>
-                            {t('words.request')}
-                        </Text>
-                    }
-                    onPress={() =>
-                        navigation.navigate(
-                            offline ? 'ReceiveOffline' : 'Receive',
-                        )
-                    }
-                    containerStyle={styles(theme).buttonContainer}
-                    buttonStyle={styles(theme).button}
-                />
+                {receivesDisabled ? (
+                    <Pressable
+                        style={styles(theme).buttonContainer}
+                        onPress={() => {
+                            toast?.show(
+                                t('errors.receives-have-been-disabled'),
+                                3000,
+                            )
+                        }}>
+                        <Button
+                            title={
+                                <Text
+                                    caption
+                                    medium
+                                    style={styles(theme).buttonTitle}>
+                                    {t('words.request')}
+                                </Text>
+                            }
+                            disabled
+                            buttonStyle={styles(theme).button}
+                        />
+                    </Pressable>
+                ) : (
+                    <Button
+                        title={
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).buttonTitle}>
+                                {t('words.request')}
+                            </Text>
+                        }
+                        onPress={() =>
+                            navigation.navigate(
+                                offline ? 'ReceiveOffline' : 'Receive',
+                            )
+                        }
+                        containerStyle={styles(theme).buttonContainer}
+                        buttonStyle={styles(theme).button}
+                    />
+                )}
+
                 <Button
                     title={
                         <Text caption medium style={styles(theme).buttonTitle}>

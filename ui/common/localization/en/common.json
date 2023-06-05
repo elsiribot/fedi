@@ -111,18 +111,19 @@
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
+        "invalid-character": "The following characters are not allowed: \" & ' / : < >",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
         "recovery-failed": "Recovery failed, please try again",
         "transaction-render-error": "Encountered an error rendering this transaction",
+        "receives-have-been-disabled": "Receives have been disabled for this federation",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
-        "invalid-character": "The following characters are not allowed: \" & ' / : < >",
-        "you-have-already-joined": "You have already joined this federation",
         "webln-canceled": "Canceled request",
         "webln-method-not-supported": "{{method}} is not supported",
         "webln-payment-rejected": "Payment rejected",
-        "webln-payment-request-rejected": "Payment request rejected"
+        "webln-payment-request-rejected": "Payment request rejected",
+        "you-have-already-joined": "You have already joined this federation"
     },
     "feature": {
         "backup": {
