@@ -16,6 +16,7 @@ import type {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
+    fetchMetadataFromExternalUrl,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
     getFederationSites,
@@ -45,7 +46,15 @@ export const federationSlice = createSlice({
         updateFederation(state, action: PayloadAction<FederationEvent>) {
             state.federations = state.federations.map(federation =>
                 action.payload.id === federation.id
-                    ? { ...federation, ...action.payload }
+                    ? {
+                          ...federation,
+                          // this is needed to make sure metadata from bridge doesn't
+                          // overwrite externally fetched metadata
+                          meta: {
+                              ...federation.meta,
+                              ...action.payload.meta,
+                          },
+                      }
                     : federation,
             )
         },
@@ -95,14 +104,33 @@ export const {
 
 /*** Async thunk actions */
 
+export const refreshFederationsMetadata = createAsyncThunk<
+    void,
+    void,
+    { state: CommonState }
+>(
+    'federation/refreshFederationsMetadata',
+    async (_, { getState, dispatch }) => {
+        const federations = getState().federation.federations
+        console.info('refreshFederationsMetadata')
+        const federationsWithMeta = await Promise.all(
+            federations.map(fetchMetadataFromExternalUrl),
+        )
+        dispatch(setFederations(federationsWithMeta))
+    },
+)
+
 export const refreshFederations = createAsyncThunk<
     Federation[],
     FedimintBridge,
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch }) => {
     const federations = await fedimint.listFederations()
-    console.debug('refreshFederations', 'federations', federations)
-    dispatch(setFederations(federations))
+    console.info('refreshFederations', 'federations', federations)
+    const federationsWithMeta = await Promise.all(
+        federations.map(fetchMetadataFromExternalUrl),
+    )
+    dispatch(setFederations(federationsWithMeta))
     return federations
 })
 
@@ -261,7 +289,8 @@ export const selectReceivesDisabled = createSelector(
             receivesDisabled = true
         }
         // Disable receives if balance exceeds maxBalanceMsats
-        if (balance >= maxBalanceAmount) {
+        const balanceSats = amountUtils.msatToSat(balance as MSats)
+        if (balanceSats >= maxBalanceAmount) {
             receivesDisabled = true
         }
 

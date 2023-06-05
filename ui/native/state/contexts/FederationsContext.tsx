@@ -7,10 +7,7 @@ import React, {
     useReducer,
 } from 'react'
 
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-} from '@fedi/common/redux'
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
@@ -61,7 +58,9 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
         initialState,
     )
 
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
@@ -76,30 +75,30 @@ function FederationsProvider(props: React.PropsWithChildren<{}>) {
 
     // Persist currently active federation
     useEffect(() => {
-        if (activeFederation) {
+        if (activeFederationId) {
             AsyncStorage.setItem(
                 ACTIVE_FEDERATION_ID_DB_KEY,
                 JSON.stringify({
                     activeFederation: {
-                        id: activeFederation.id,
+                        id: activeFederationId,
                     },
                 }),
             )
             if (authenticatedMember?.username) {
                 console.debug(
                     'FEDERATION_USERNAME_ID_DB_KEY',
-                    activeFederation.id,
+                    activeFederationId,
                     authenticatedMember?.username!,
                 )
                 AsyncStorage.mergeItem(
                     `${FEDERATION_USERNAME_ID_DB_KEY}`,
                     JSON.stringify({
-                        [activeFederation.id]: authenticatedMember?.username!,
+                        [activeFederationId]: authenticatedMember?.username!,
                     }),
                 )
             }
         }
-    }, [activeFederation, authenticatedMember?.username])
+    }, [activeFederationId, authenticatedMember?.username])
 
     // Persist authenticatedGuardian state
     useEffect(() => {

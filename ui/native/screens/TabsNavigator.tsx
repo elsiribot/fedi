@@ -2,13 +2,28 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, {
+    MutableRefObject,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import {
+    AppState,
+    AppStateStatus,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    refreshFederationsMetadata,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
@@ -18,7 +33,7 @@ import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -43,6 +58,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         useChatContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
+    const dispatch = useAppDispatch()
+    const appStateRef = useRef<AppStateStatus>(
+        AppState.currentState,
+    ) as MutableRefObject<AppStateStatus>
 
     const toggleOffline = () => {
         if (!offline) {
@@ -53,19 +72,38 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         setOffline(!offline)
     }
 
-    // Check if our last seen message doesn't line up with the last message
-    const hasUnseenMessages = useMemo(() => {
-        if (!messages.length) return false
-        const lastMessage = getLatestMessage(messages)
-        return !!lastMessage && lastMessage.id !== lastSeenMessageId
-    }, [messages, lastSeenMessageId])
-
     // If the popup federation has ended, redirect user to end screen.
     useEffect(() => {
         if (isFocused && popupInfo?.ended) {
             navigation.navigate('PopupFederationEnded')
         }
     }, [isFocused, navigation, popupInfo])
+
+    // This logic is needed refresh federation metadata
+    useEffect(() => {
+        // Subscribe to changes in AppState to detect when app goes from
+        // background to foreground
+        const subscription = AppState.addEventListener(
+            'change',
+            nextAppState => {
+                if (
+                    appStateRef.current.match(/inactive|background/) &&
+                    nextAppState === 'active'
+                ) {
+                    dispatch(refreshFederationsMetadata())
+                }
+                appStateRef.current = nextAppState
+            },
+        )
+        return () => subscription.remove()
+    }, [dispatch])
+
+    // Check if our last seen message doesn't line up with the last message
+    const hasUnseenMessages = useMemo(() => {
+        if (!messages.length) return false
+        const lastMessage = getLatestMessage(messages)
+        return !!lastMessage && lastMessage.id !== lastSeenMessageId
+    }, [messages, lastSeenMessageId])
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.

@@ -123,6 +123,10 @@ export enum SupportedFeature {
 }
 
 export interface ClientConfigMetadata {
+    // If this exists, we use it to download a JSON file that overrides
+    // te use of any other fields below
+    meta_external_url?: string
+    // these are support config fields that change app behavior per-federation
     chat_server_domain?: string
     default_currency?: SupportedCurrency
     welcome_message?: string
