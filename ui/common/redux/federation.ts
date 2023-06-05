@@ -17,6 +17,7 @@ import type {
 import amountUtils from '../utils/AmountUtils'
 import {
     fetchMetadataFromExternalUrl,
+    getFederationGroupChats,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
     getFederationSites,
@@ -304,4 +305,9 @@ export const selectReceivesDisabled = createSelector(
 export const selectFederationSites = createSelector(
     selectFederationMetadata,
     getFederationSites,
+)
+
+export const selectFederationGroupChats = createSelector(
+    selectFederationMetadata,
+    getFederationGroupChats,
 )

@@ -51,7 +51,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     // Animate new message button in and out
     useEffect(() => {
         Animated.timing(animatedNewMessageBottom, {
-            toValue: hasNewMessage ? 90 : 0,
+            toValue: hasNewMessage ? 90 : -50,
             duration: 100,
             useNativeDriver: false,
             easing: Easing.linear,

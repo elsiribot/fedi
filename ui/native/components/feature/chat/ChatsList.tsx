@@ -1,17 +1,24 @@
-import { useNavigation } from '@react-navigation/native'
+import { useIsFocused, useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { selectFederationGroupChats } from '@fedi/common/redux'
 import {
     getLatestMessageIdsForChats,
     jidToId,
     makePaymentText,
 } from '@fedi/common/utils/chat'
 
-import { useChatContext } from '../../../state/contexts/ChatContext'
+import {
+    addToGroups,
+    updateGroup,
+    useChatContext,
+} from '../../../state/contexts/ChatContext'
+import { useAppSelector } from '../../../state/hooks'
+import { useXmpp } from '../../../state/hooks/chat'
 import { Chat, ChatType, Group, Member, Message } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ChatTile from './ChatTile'
@@ -21,14 +28,58 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const ChatsList: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const isFocused = useIsFocused()
     const navigation = useNavigation<NavigationHook>()
+    const { state, dispatch } = useChatContext()
     const {
         groups,
         messages,
         membersSeen,
         authenticatedMember,
         lastReadMessageIds,
-    } = useChatContext().state
+    } = state
+    const { enterMucRoom, fetchMucRoomConfig } = useXmpp()
+    const defaultGroups = useAppSelector(selectFederationGroupChats)
+    const unjoinedDefaultGroups = defaultGroups.filter(dg => {
+        const memberHasJoinedGroup = groups.find(g => g.id === dg.id)
+        return !memberHasJoinedGroup
+    })
+
+    useEffect(() => {
+        if (isFocused) {
+            unjoinedDefaultGroups.forEach(g => {
+                const groupLink = Group.encodeInvitationLink(g.id)
+                const group = new Group({
+                    id: g.id,
+                    invitationCode: groupLink,
+                    messagePreview: t('feature.chat.click-to-join-group'),
+                })
+                enterMucRoom(group)
+                    .then((enteredGroup: Group) => {
+                        dispatch(addToGroups(enteredGroup))
+                        // fetch room config to see if name has changed
+                        return fetchMucRoomConfig(enteredGroup)
+                    })
+                    .then(configuredGroup => {
+                        dispatch(
+                            updateGroup(
+                                new Group({
+                                    ...group,
+                                    ...configuredGroup,
+                                }),
+                            ),
+                        )
+                    })
+            })
+        }
+    }, [
+        dispatch,
+        enterMucRoom,
+        fetchMucRoomConfig,
+        isFocused,
+        t,
+        unjoinedDefaultGroups,
+    ])
 
     // Assemble a map of which chats are unread
     const unreadChatMap = useMemo(() => {

@@ -1,6 +1,7 @@
 import { SITES } from '../constants/sites'
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
+    Chat,
     ClientConfigMetadata,
     Federation,
     MSats,
@@ -181,6 +182,23 @@ export const shouldShowOnchainDeposits = (
         return metadata.onchain_deposits_disabled === 'true' ? false : true
     }
     return true
+}
+
+export const getFederationGroupChats = (
+    metadata: ClientConfigMetadata,
+): Chat[] => {
+    if (metadata.default_group_chats) {
+        try {
+            // TODO: validate type matches Chat[]
+            return JSON.parse(metadata.default_group_chats)
+        } catch (err) {
+            console.warn(
+                'Failed to parse default groupchats',
+                metadata.default_group_chats,
+            )
+        }
+    }
+    return []
 }
 
 export const getFederationSites = (metadata: ClientConfigMetadata): Site[] => {

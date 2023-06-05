@@ -137,7 +137,7 @@ const styles = (theme: Theme) =>
         noticeText: {
             textAlign: 'center',
             padding: theme.spacing.xl,
-            color: theme.colors.primaryVeryLight,
+            color: theme.colors.primaryLight,
             width: '70%',
         },
     })
