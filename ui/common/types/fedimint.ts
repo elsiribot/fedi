@@ -146,7 +146,7 @@ export interface ClientConfigMetadata {
     // 4. Switch to number (unix epoch timestamp)
     /** Timestamp that popup federations will be completely disabled at */
     popup_end_timestamp?: string
-    // 5. Group[]
+    // 5. string[] - array of group IDs
     default_group_chats?: string
 }
 

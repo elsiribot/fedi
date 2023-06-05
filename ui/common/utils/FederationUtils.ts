@@ -186,10 +186,9 @@ export const shouldShowOnchainDeposits = (
 
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
-): Chat[] => {
+): string[] => {
     if (metadata.default_group_chats) {
         try {
-            // TODO: validate type matches Chat[]
             return JSON.parse(metadata.default_group_chats)
         } catch (err) {
             console.warn(

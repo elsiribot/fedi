@@ -39,18 +39,18 @@ const ChatsList: React.FC<{}> = () => {
         lastReadMessageIds,
     } = state
     const { enterMucRoom, fetchMucRoomConfig } = useXmpp()
-    const defaultGroups = useAppSelector(selectFederationGroupChats)
-    const unjoinedDefaultGroups = defaultGroups.filter(dg => {
-        const memberHasJoinedGroup = groups.find(g => g.id === dg.id)
+    const defaultGroupIds = useAppSelector(selectFederationGroupChats)
+    const unjoinedDefaultGroups = defaultGroupIds.filter(groupId => {
+        const memberHasJoinedGroup = groups.find(g => g.id === groupId)
         return !memberHasJoinedGroup
     })
 
     useEffect(() => {
         if (isFocused) {
-            unjoinedDefaultGroups.forEach(g => {
-                const groupLink = Group.encodeInvitationLink(g.id)
+            unjoinedDefaultGroups.forEach(groupId => {
+                const groupLink = Group.encodeInvitationLink(groupId)
                 const group = new Group({
-                    id: g.id,
+                    id: groupId,
                     invitationCode: groupLink,
                     messagePreview: t('feature.chat.click-to-join-group'),
                 })
