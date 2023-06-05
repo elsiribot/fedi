@@ -264,14 +264,14 @@
         "lastModified": 1685676176,
         "narHash": "sha256-P1ktFHkgoPaoBZQK5R88WnRbTyWUznEpSvyijsLNZog=",
         "ref": "rel-a05",
-        "rev": "e74ff94b5ffd91766ea619d45f0a75f169091cb5",
+        "rev": "254f7f88a1539d4ab3c95a1d3ad4c7ddf09d86cd",
         "revCount": 4281,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
         "ref": "rel-a05",
-        "rev": "e74ff94b5ffd91766ea619d45f0a75f169091cb5",
+        "rev": "254f7f88a1539d4ab3c95a1d3ad4c7ddf09d86cd",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }
