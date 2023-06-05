@@ -16,6 +16,7 @@ import type {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
+    fetchMetadataFromExternalUrl,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
     getFederationSites,
@@ -102,7 +103,10 @@ export const refreshFederations = createAsyncThunk<
 >('federation/refreshFederations', async (fedimint, { dispatch }) => {
     const federations = await fedimint.listFederations()
     console.debug('refreshFederations', 'federations', federations)
-    dispatch(setFederations(federations))
+    const federationsWithMeta = await Promise.all(
+        federations.map(fetchMetadataFromExternalUrl),
+    )
+    dispatch(setFederations(federationsWithMeta))
     return federations
 })
 
