@@ -152,7 +152,6 @@ const MainNavigator = () => {
                     <Stack.Screen
                         name="Initializing"
                         component={Initializing}
-                        initialParams={{ reset: false }}
                         options={{
                             headerShown: false,
                         }}

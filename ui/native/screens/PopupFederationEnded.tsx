@@ -1,14 +1,36 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Linking, StyleSheet, View } from 'react-native'
+import { Alert, Linking, StyleSheet, View } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    changeAuthenticatedGuardian,
+    leaveFederation,
+    resetFederationChatState,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 
+import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/ui/FederationLogo'
-import { useAppSelector } from '../state/hooks'
+import {
+    CHAT_MEMBERS_PERSISTENCE_KEY,
+    CHAT_MESSAGES_PERSISTENCE_KEY,
+    CHAT_GROUPS_PERSISTENCE_KEY,
+    ACTIVE_FEDERATION_ID_DB_KEY,
+    AUTHENTICATED_GUARDIAN_DB_KEY,
+} from '../constants'
+import {
+    DEFAULT_GROUPS,
+    receiveGroups,
+    receiveMembersSeen,
+    receiveMessages,
+    useChatContext,
+} from '../state/contexts/ChatContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -16,13 +38,103 @@ export type Props = NativeStackScreenProps<
     'PopupFederationEnded'
 >
 
-const PopupFederationEnded: React.FC<Props> = () => {
+const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { toast } = useEnvironmentContext().state
+    const { dispatch: chatDispatch } = useChatContext()
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
 
+    const dispatch = useAppDispatch()
     const style = styles(theme)
+
+    const resetChatState = useCallback(() => {
+        if (activeFederationId) {
+            dispatch(
+                resetFederationChatState({
+                    federationId: activeFederationId,
+                }),
+            )
+            chatDispatch(receiveMembersSeen([]))
+            chatDispatch(receiveMessages([]))
+            chatDispatch(receiveGroups(DEFAULT_GROUPS))
+            AsyncStorage.setItem(
+                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
+                JSON.stringify({ members: [] }),
+            )
+            AsyncStorage.setItem(
+                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
+                JSON.stringify({ messages: [] }),
+            )
+            AsyncStorage.setItem(
+                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
+                JSON.stringify({ groups: DEFAULT_GROUPS }),
+            )
+        }
+    }, [activeFederationId, chatDispatch, dispatch])
+
+    const resetGuardiansState = useCallback(() => {
+        dispatch(changeAuthenticatedGuardian(null))
+        AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
+    }, [dispatch])
+
+    // FIXME: this needs some kind of loading state
+    // TODO: this should be an thunkified action creator
+    const handleLeaveFederation = useCallback(async () => {
+        try {
+            if (activeFederationId) {
+                // FIXME: currently this specific order of operations fixes a
+                // bug where the username would get stuck in storage and when
+                // rejoining the federation, the user cannot create an new
+                // username with the fresh seed and the stored username fails
+                // to authenticate so chat ends up totally broken
+                // However it's not safe because if leaveFederation fails, then
+                // we are resetting state too early and could corrupt things
+                // Need to investigate further why running leaveFederation first
+                // causes this bug
+                resetChatState()
+                resetGuardiansState()
+                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
+                await dispatch(
+                    leaveFederation({
+                        fedimint,
+                        federationId: activeFederationId,
+                    }),
+                ).unwrap()
+                navigation.navigate('Initializing')
+            }
+        } catch (e) {
+            toast?.show('Failed to leave federation', 3000)
+            return
+        }
+    }, [
+        activeFederationId,
+        dispatch,
+        navigation,
+        resetChatState,
+        resetGuardiansState,
+        toast,
+    ])
+
+    const confirmLeaveFederation = () => {
+        Alert.alert(
+            t('feature.federations.leave-federation'),
+            t('feature.federations.leave-federation-confirmation'),
+            [
+                {
+                    text: t('words.no'),
+                },
+                {
+                    text: t('words.yes'),
+                    onPress: handleLeaveFederation,
+                },
+            ],
+        )
+    }
 
     return (
         <View style={styles(theme).container}>
@@ -60,6 +172,12 @@ const PopupFederationEnded: React.FC<Props> = () => {
                         containerStyle={styles(theme).button}
                     />
                 )}
+                <Button
+                    fullWidth
+                    title={t('feature.federations.leave-federation')}
+                    onPress={confirmLeaveFederation}
+                    containerStyle={styles(theme).button}
+                />
             </View>
         </View>
     )

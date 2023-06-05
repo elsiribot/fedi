@@ -101,7 +101,7 @@ export function usePopupFederationInfo() {
         updateTimeLeft()
 
         return () => clearTimeout(timeout)
-    }, [])
+    }, [endTimestamp])
 
     if (!endTimestamp) return null
 

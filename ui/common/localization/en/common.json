@@ -187,6 +187,7 @@
             "change-group-name": "Change group name",
             "chat-invite": "Chat invite",
             "changing-broadcast-not-supported": "Changing the broadcast setting is not yet supported. Please create a new group.",
+            "click-to-join-group": "Click to join this group",
             "confirm-add-admin-to-group": "Are you sure you want to add {{username}} as an admin? They will be able to send messages in this group.",
             "confirm-remove-admin-from-group": "Are you sure you want to remove {{username}} as an admin? They won't be able to send messages in this group but their previously sent messages will remain.",
             "copied-group-invite-code": "Copied group invite code",
