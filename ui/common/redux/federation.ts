@@ -289,7 +289,8 @@ export const selectReceivesDisabled = createSelector(
             receivesDisabled = true
         }
         // Disable receives if balance exceeds maxBalanceMsats
-        if (balance >= maxBalanceAmount) {
+        const balanceSats = amountUtils.msatToSat(balance as MSats)
+        if (balanceSats >= maxBalanceAmount) {
             receivesDisabled = true
         }
 
