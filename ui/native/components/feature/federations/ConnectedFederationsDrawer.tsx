@@ -36,7 +36,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     return (
         <View style={styles(theme).drawerItemLabel}>
-            <FederationLogo size={SvgImageSize.lg} />
+            <FederationLogo federation={federation} size={SvgImageSize.lg} />
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
                     {federation.name}

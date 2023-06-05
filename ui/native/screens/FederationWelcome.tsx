@@ -34,7 +34,10 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).innerCardContainer}>
-                    <FederationLogo size={SvgImageSize.xl} />
+                    <FederationLogo
+                        federation={activeFederation}
+                        size={SvgImageSize.xl}
+                    />
                     {/*refer to below image style for above image*/}
                     <Text h2 medium style={styles(theme).welcome}>
                         {t('feature.onboarding.welcome-to-federation')}

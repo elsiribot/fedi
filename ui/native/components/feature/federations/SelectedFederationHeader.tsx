@@ -43,7 +43,10 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                     <Pressable
                         style={styles(theme).federation}
                         onPress={openFederationsDrawer}>
-                        <FederationLogo size={20} />
+                        <FederationLogo
+                            federation={activeFederation}
+                            size={20}
+                        />
                         <Text bold caption style={styles(theme).federationName}>
                             {activeFederation?.name}
                         </Text>
