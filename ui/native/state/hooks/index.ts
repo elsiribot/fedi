@@ -79,6 +79,9 @@ export const useBtcFiatPrice = () => {
                     case SupportedCurrency.CFA:
                         currencySymbol = `CFA `
                         break
+                    case SupportedCurrency.CZK:
+                        currencySymbol = `CZK `
+                        break
                     default:
                         currencySymbol = `$`
                 }
