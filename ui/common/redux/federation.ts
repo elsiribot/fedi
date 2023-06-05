@@ -228,7 +228,7 @@ export const selectMaxReceiveAmount = createSelector(
         const maxInvoiceMsats =
             metadata && getFederationMaxInvoiceMsats(metadata)
 
-        if (maxInvoiceMsats === 0) return 0
+        if (maxInvoiceMsats === 0) return 0 as Sats
 
         return maxInvoiceMsats
             ? amountUtils.msatToSat(maxInvoiceMsats)
@@ -242,7 +242,7 @@ export const selectMaxBalanceAmount = createSelector(
         const maxBalanceMsats =
             metadata && getFederationMaxBalanceMsats(metadata)
 
-        if (maxBalanceMsats === 0) return 0
+        if (maxBalanceMsats === 0) return 0 as Sats
 
         return maxBalanceMsats
             ? amountUtils.msatToSat(maxBalanceMsats)
