@@ -85,6 +85,11 @@ const ChatsList: React.FC<{}> = () => {
     // Produce a set of direct chats from all direct messages
     const directChats: Chat[] = authenticatedMember?.username
         ? membersSeen.reduce((chatsResult: Chat[], m: Member) => {
+              // Don't show chat with myself
+              if (m.username === authenticatedMember.username) {
+                  return chatsResult
+              }
+
               const messagesWithMember = directMessages.filter(
                   dm =>
                       dm.sentBy?.username === m.username ||
