@@ -5,15 +5,15 @@ use fedimint_client::{
     backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret, sm::OperationId,
     ClientBuilder, ClientSecret, OperationLogEntry,
 };
-use fedimint_core::{config::FederationId, db::IDatabase, module::ApiRequestErased};
+use fedimint_core::{config::FederationId, db::IDatabase};
 use fedimint_ln_client::{
     db::LightningGatewayKey, network_to_currency, LightningClientExt, LightningClientGen,
     LightningClientModule, LightningMeta, LnPayState, LnReceiveState,
 };
 use fedimint_mint_client::{
-    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants, SpendableNote,
+    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants,
 };
-use fedimint_wallet_client::{WalletClientExt, WalletClientGen, WalletClientModule};
+use fedimint_wallet_client::{WalletClientExt, WalletClientGen};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -28,7 +28,7 @@ use crate::{
     },
     storage::{
         FederationConnectInfo, FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix,
-        Storage, XmppUsername,
+        LastBackupTimestamp, Storage, XmppUsername,
     },
     tx::{Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
     types::{
@@ -41,7 +41,7 @@ use crate::{
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::{
     secp256k1::{Message, PublicKey, Secp256k1},
-    Address, Network,
+    Network,
 };
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
@@ -63,6 +63,8 @@ pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
+// Backup twice per day
+pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
 
 #[derive(Serialize, Deserialize)]
 struct FediBackupMetadata {
@@ -382,6 +384,7 @@ impl Federation {
         };
         federation.subscribe_balance_updates().await;
         federation.poll_balance().await;
+        federation.poll_scheduled_backups().await;
         federation
     }
 
@@ -523,6 +526,46 @@ impl Federation {
         Ok(())
     }
 
+    /// Background task which does a backup with the federation twice per day
+    async fn poll_scheduled_backups(&mut self) {
+        let federation = self.clone();
+        self.task_group
+            .spawn(
+                format!("{:?} scheduled backups", federation.name()),
+                |_| async move {
+                    loop {
+                        if let Err(e) = federation.scheduled_backup().await {
+                            warn!("Error executing scheduled backup {e}");
+                        }
+                        // We check if a backup is due every 60 seconds
+                        fedimint_core::task::sleep(Duration::from_secs(60)).await;
+                    }
+                },
+            )
+            .await;
+    }
+
+    /// Execute a backup if one is due and username is present (according to db)
+    pub async fn scheduled_backup(&self) -> Result<()> {
+        let mut dbtx = self.dbtx().await;
+        let now = fedimint_core::time::now();
+        // Backup is due
+        if let Some(last_backup) = dbtx.get_value(&LastBackupTimestamp).await {
+            if now.duration_since(last_backup)? < BACKUP_FREQUENCY {
+                return Ok(());
+            }
+        };
+        // Username is present
+        if self.get_username().await.is_none() {
+            return Ok(());
+        }
+        self.backup().await?;
+        dbtx.insert_entry(&LastBackupTimestamp, &now).await;
+        dbtx.commit_tx().await;
+        info!("Finished periodic backup");
+        Ok(())
+    }
+
     /// Fetch balance
     pub async fn ng_balance(&self) -> fedimint_core::Amount {
         let (mint_client, _) = self
@@ -629,12 +672,11 @@ impl Federation {
     /// Start background task to listen for balance updates and emit "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
-        let client = self.ng.clone();
         self.task_group
             .spawn(
                 format!("{:?} balance subscription", federation.name()),
                 |_| async move {
-                    let mut updates = client.subscribe_balance_changes().await;
+                    let mut updates = federation.ng.subscribe_balance_changes().await;
                     while let Some(_) = updates.next().await {
                         federation.send_federation_event().await;
                     }
