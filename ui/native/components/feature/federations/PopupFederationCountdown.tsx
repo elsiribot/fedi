@@ -59,7 +59,10 @@ export const PopupFederationCountdown: React.FC = () => {
                 onBackdropPress={() => setIsOverlayVisible(false)}>
                 <View style={style.overlayContent}>
                     <View style={style.overlaySpacing}>
-                        <FederationLogo size={72} />
+                        <FederationLogo
+                            federation={activeFederation}
+                            size={72}
+                        />
                     </View>
                     <Text h2 style={style.overlaySpacing}>
                         {activeFederation.name}

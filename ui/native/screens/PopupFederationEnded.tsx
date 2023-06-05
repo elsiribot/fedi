@@ -34,7 +34,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
         <View style={styles(theme).container}>
             <View style={style.content}>
                 <View style={style.contentSpacing}>
-                    <FederationLogo size={72} />
+                    <FederationLogo federation={activeFederation} size={72} />
                 </View>
                 <Text h2 style={style.contentSpacing}>
                     {activeFederation?.name}

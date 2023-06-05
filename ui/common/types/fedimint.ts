@@ -118,6 +118,7 @@ export enum SupportedFeature {
     social_recovery_disabled = 'social_recovery_disabled',
     offline_wallet_disabled = 'offline_wallet_disabled',
     onchain_deposits_disabled = 'onchain_deposits_disabled',
+    max_balance_msats = 'max_balance_msats',
     max_invoice_msats = 'max_invoice_msats',
 }
 
@@ -135,6 +136,7 @@ export interface ClientConfigMetadata {
     onchain_deposits_disabled?: string
     // 2. switch to MSats (number)
     max_invoice_msats?: MsatsString
+    max_balance_msats?: MsatsString
     // 3. Site[]
     sites?: string
     // 4. Switch to number (unix epoch timestamp)

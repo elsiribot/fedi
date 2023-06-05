@@ -142,7 +142,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (maxReceiveAmount && updatedValue > maxReceiveAmount) {
+        if (maxReceiveAmount > -1 && updatedValue > maxReceiveAmount) {
             toast?.show(
                 t('feature.receive.maximum-invoice-amount', {
                     maxAmount: amountUtils.formatSats(maxReceiveAmount as Sats),

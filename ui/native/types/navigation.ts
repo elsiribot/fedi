@@ -57,6 +57,7 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
     FederationWelcome: undefined
+    FederationAcceptTerms: undefined
     Initializing: { reset: boolean }
     JoinGroup: undefined
     MemberQrCode: undefined

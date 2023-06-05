@@ -2,13 +2,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-    selectChatConnectionOptions,
-} from '@fedi/common/redux'
+import { selectActiveFederation } from '@fedi/common/redux'
 
 import { FederationLogo } from '../components/ui/FederationLogo'
 import HoloGradient from '../components/ui/HoloGradient'
@@ -25,16 +21,16 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     return (
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
-                <View style={styles(theme).innerCardContainer}>
-                    <FederationLogo size={SvgImageSize.xl} />
+                <ScrollView
+                    contentContainerStyle={styles(theme).innerCardContainer}>
+                    <FederationLogo
+                        federation={activeFederation}
+                        size={SvgImageSize.xl}
+                    />
                     {/*refer to below image style for above image*/}
                     <Text h2 medium style={styles(theme).welcome}>
                         {t('feature.onboarding.welcome-to-federation')}
@@ -66,14 +62,10 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                         </HoloGradient>
                     ) : (
                         <Text caption style={styles(theme).welcomeText}>
-                            {/*
-                        TODO: Is this welcome text customizable by the
-                        federation? If so, fetch from bridge
-                    */}
                             {t('feature.onboarding.welcome-instructions')}
                         </Text>
                     )}
-                </View>
+                </ScrollView>
             </Card>
             <View style={styles(theme).buttonsContainer}>
                 <Button
@@ -89,14 +81,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     title={t('feature.onboarding.join-new-member')}
                     onPress={() => {
-                        if (
-                            activeChatConnectionOptions &&
-                            authenticatedMember === null
-                        ) {
-                            navigation.navigate('CreateUsername')
-                        } else {
-                            navigation.navigate('TabsNavigator')
-                        }
+                        navigation.navigate('FederationAcceptTerms')
                     }}
                     containerStyle={styles(theme).button}
                 />
@@ -132,6 +117,7 @@ const styles = (theme: Theme) =>
             width: '100%',
             marginHorizontal: 0,
             padding: theme.spacing.xl,
+            maxHeight: '60%',
         },
         innerCardContainer: {
             alignItems: 'center',

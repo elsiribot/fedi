@@ -16,6 +16,7 @@ import type {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
+    getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
     getFederationSites,
 } from '../utils/FederationUtils'
@@ -208,19 +209,63 @@ export const selectFederationMetadata = createSelector(
     },
 )
 
+export const selectFederationBalance = createSelector(
+    selectActiveFederation,
+    activeFederation => {
+        return activeFederation ? activeFederation.balance : 0
+    },
+)
+
 // For now we set a safe default of 200K sats maximum unless otherwise
 // specified by the federation feature flags. At some points we probably
 // can remove this hard-coded value altogether
 const MAX_INVOICE_AMOUNT_SATS = 200000 as Sats
+const MAX_BALANCE_AMOUNT_SATS = 200000 as Sats
 
 export const selectMaxReceiveAmount = createSelector(
     selectFederationMetadata,
     metadata => {
         const maxInvoiceMsats =
             metadata && getFederationMaxInvoiceMsats(metadata)
+
+        if (maxInvoiceMsats === 0) return 0 as Sats
+
         return maxInvoiceMsats
             ? amountUtils.msatToSat(maxInvoiceMsats)
             : MAX_INVOICE_AMOUNT_SATS
+    },
+)
+
+export const selectMaxBalanceAmount = createSelector(
+    selectFederationMetadata,
+    metadata => {
+        const maxBalanceMsats =
+            metadata && getFederationMaxBalanceMsats(metadata)
+
+        if (maxBalanceMsats === 0) return 0 as Sats
+
+        return maxBalanceMsats
+            ? amountUtils.msatToSat(maxBalanceMsats)
+            : MAX_BALANCE_AMOUNT_SATS
+    },
+)
+
+export const selectReceivesDisabled = createSelector(
+    selectMaxReceiveAmount,
+    selectMaxBalanceAmount,
+    selectFederationBalance,
+    (maxReceiveAmount, maxBalanceAmount, balance) => {
+        let receivesDisabled = false
+        // Disable receives if maxInvoiceMsats is set to 0
+        if (maxReceiveAmount === 0) {
+            receivesDisabled = true
+        }
+        // Disable receives if balance exceeds maxBalanceMsats
+        if (balance >= maxBalanceAmount) {
+            receivesDisabled = true
+        }
+
+        return receivesDisabled
     },
 )
 

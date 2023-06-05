@@ -73,7 +73,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (maxReceiveAmount && updatedValue > maxReceiveAmount) {
+        if (maxReceiveAmount > -1 && updatedValue > maxReceiveAmount) {
             toast?.show(
                 t('feature.receive.maximum-invoice-amount', {
                     maxAmount: amountUtils.formatSats(maxReceiveAmount as Sats),
@@ -89,7 +89,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
     useEffect(() => {
         if (amount === 0) {
             setAmountIsValid(false)
-        } else if (maxReceiveAmount && amount > maxReceiveAmount) {
+        } else if (maxReceiveAmount > -1 && amount > maxReceiveAmount) {
             setAmountIsValid(false)
         } else {
             setAmountIsValid(true)

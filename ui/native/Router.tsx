@@ -64,6 +64,7 @@ import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
 import EditGroup from './screens/EditGroup'
 import Eula from './screens/Eula'
+import FederationAcceptTerms from './screens/FederationAcceptTerms'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
 import FederationWelcome from './screens/FederationWelcome'
@@ -207,6 +208,15 @@ const MainNavigator = () => {
                                 component={FederationWelcome}
                                 options={() => ({
                                     header: () => <SelectedFederationHeader />,
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationAcceptTerms"
+                                component={FederationAcceptTerms}
+                                options={() => ({
+                                    header: () => <Header backButton />,
                                     animation: 'fade',
                                     animationDuration: 300,
                                 })}
