@@ -2,12 +2,45 @@ import { SITES } from '../constants/sites'
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
+    Federation,
     MSats,
     Site,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
 } from '../types'
+
+export const fetchMetadataFromExternalUrl = async (
+    federation: Federation,
+): Promise<Federation> => {
+    let updatedMetadata = federation.meta
+    if (federation.meta?.meta_external_url) {
+        console.info(
+            'Fetching metadata from',
+            federation.meta.meta_external_url,
+        )
+        try {
+            const response = await fetch(federation.meta.meta_external_url)
+            const metaJson = await response.json()
+            console.info(
+                `Found metadata at ${federation.meta.meta_external_url}. Checking for matching federation key...`,
+                Object.keys(metaJson),
+            )
+            if (Object.keys(metaJson).includes(federation.id)) {
+                console.info(
+                    `Found federation key ${federation.id}. Overriding other meta fields with external data...`,
+                )
+                updatedMetadata = metaJson[federation.id]
+            }
+        } catch (error) {
+            console.error('Failed to fetch metadata from external url', error)
+        }
+    }
+    return {
+        ...federation,
+        meta: updatedMetadata,
+    }
+}
 
 export const getSupportedFeatures = (
     meta: ClientConfigMetadata,
