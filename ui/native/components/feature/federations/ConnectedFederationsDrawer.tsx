@@ -9,7 +9,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation, selectFederations } from '@fedi/common/redux'
+import { selectFederations } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
@@ -70,7 +70,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const drawerNavigation = props.navigation
     const mainNavigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const federations = useAppSelector(selectFederations)
 
     return (
@@ -88,10 +90,10 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             <FederationDrawerItemLabel federation={f} />
                         )}
                         style={styles(theme).drawerItem}
-                        focused={f.id === activeFederation?.id}
+                        focused={f.id === activeFederationId}
                         onPress={() => {
                             // Dismiss drawer if active federation is clicked
-                            if (f.id === activeFederation?.id) {
+                            if (f.id === activeFederationId) {
                                 return drawerNavigation.closeDrawer()
                             }
                             drawerNavigation.reset({
