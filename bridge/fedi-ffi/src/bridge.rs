@@ -535,7 +535,7 @@ impl Federation {
                 |_| async move {
                     loop {
                         if let Err(e) = federation.scheduled_backup().await {
-                            warn!("Error executing scheduled backup {e}");
+                            warn!("Error executing scheduled backup {e:?}");
                         }
                         // We check if a backup is due every 60 seconds
                         fedimint_core::task::sleep(Duration::from_secs(60)).await;
