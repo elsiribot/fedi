@@ -5,7 +5,7 @@ use fedimint_client::{
     backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret, sm::OperationId,
     ClientBuilder, ClientSecret, OperationLogEntry,
 };
-use fedimint_core::{config::FederationId, db::IDatabase};
+use fedimint_core::{config::FederationId, db::IDatabase, task::timeout};
 use fedimint_ln_client::{
     db::LightningGatewayKey, network_to_currency, LightningClientExt, LightningClientGen,
     LightningClientModule, LightningMeta, LnPayState, LnReceiveState,
@@ -65,6 +65,7 @@ pub const LNURL_CHILD_ID: ChildId = ChildId(11);
 pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
 // Backup twice per day
 pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
+const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
 
 #[derive(Serialize, Deserialize)]
 struct FediBackupMetadata {
@@ -826,22 +827,27 @@ impl Federation {
             .await?
             .into_stream();
 
-        while let Some(update) = updates.next().await {
-            match update {
-                LnPayState::Success { preimage } => {
-                    self.ng_save_outgoing_lightning_tx(&invoice).await;
-                    return Ok(PayInvoiceResponse { preimage });
-                }
-                LnPayState::Refunded { gateway_error } => {
-                    return Err(gateway_error.into());
-                }
-                _ => {}
-            };
-
-            info!("lightning update: {:?}", update);
+        match timeout(PAY_INVOICE_TIMEOUT, async {
+            while let Some(update) = updates.next().await {
+                match update {
+                    LnPayState::Success { preimage } => {
+                        self.ng_save_outgoing_lightning_tx(&invoice).await;
+                        return Ok(PayInvoiceResponse { preimage });
+                    }
+                    LnPayState::Refunded { gateway_error } => {
+                        return Err(gateway_error.into());
+                    }
+                    _ => {}
+                };
+                info!("lightning update: {:?}", update);
+            }
+            Err(anyhow!("lightning payment failed"))
+        })
+        .await
+        {
+            Ok(result) => result,
+            Err(_) => bail!("Lightning payment failed ... awaiting refund"),
         }
-
-        Err(anyhow!("lightning payment failed"))
     }
 
     pub async fn subscibe_to_ln_receive(
