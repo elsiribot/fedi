@@ -829,9 +829,10 @@ impl Federation {
 
         match timeout(PAY_INVOICE_TIMEOUT, async {
             while let Some(update) = updates.next().await {
+                self.ng_save_outgoing_lightning_tx(&invoice, Some(update.clone()))
+                    .await;
                 match update {
                     LnPayState::Success { preimage } => {
-                        self.ng_save_outgoing_lightning_tx(&invoice).await;
                         return Ok(PayInvoiceResponse { preimage });
                     }
                     LnPayState::Refunded { gateway_error } => {
@@ -916,14 +917,24 @@ impl Federation {
     }
 
     // FIXME: remove this
-    pub async fn ng_save_outgoing_lightning_tx(&self, invoice: &Invoice) {
+    pub async fn ng_save_outgoing_lightning_tx(
+        &self,
+        invoice: &Invoice,
+        ln_pay_state: Option<LnPayState>,
+    ) {
         let amount = fedimint_core::Amount::from_msats(
             invoice
                 .amount_milli_satoshis()
                 .expect("assuming we only receive payments for invoices with amount"),
         );
         let fee = None;
-        let tx = Transaction::lightning(TransactionDirection::Send, amount, fee, invoice.clone());
+        let tx = Transaction::lightning(
+            TransactionDirection::Send,
+            amount,
+            fee,
+            invoice.clone(),
+            ln_pay_state,
+        );
         self.save_transaction(&tx, true).await;
     }
 
@@ -935,8 +946,13 @@ impl Federation {
                 .expect("assuming we only receive payments for invoices with amount"),
         );
         let fee = None;
-        let tx =
-            Transaction::lightning(TransactionDirection::Receive, amount, fee, invoice.clone());
+        let tx = Transaction::lightning(
+            TransactionDirection::Receive,
+            amount,
+            fee,
+            invoice.clone(),
+            None,
+        );
         self.save_transaction(&tx, true).await;
     }
 

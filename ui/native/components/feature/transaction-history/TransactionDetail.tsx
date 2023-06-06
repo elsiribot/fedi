@@ -143,14 +143,14 @@ const TransactionDetail = ({
                         </Pressable>
                     </View>
                 )}
-                {txn.bitcoin && (
+                {txn.lnPayState && (
                     <View style={styles(theme).detailItem}>
-                        <Text>{`${t('phrases.transaction-id')}`}</Text>
+                        <Text>State</Text>
                         <Text>
-                            {stringUtils.truncateMiddleOfString(
-                                txn.bitcoin.txid,
-                                5,
-                            )}
+                            {txn.lnPayState.type === 'WaitingForRefund' &&
+                                `Refund in block ${txn.lnPayState.block_height}`}
+                            {txn.lnPayState.type !== 'WaitingForRefund' &&
+                                `${txn.lnPayState.type}`}
                         </Text>
                     </View>
                 )}

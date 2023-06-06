@@ -5,9 +5,11 @@ use fedimint_core::{
     db::DatabaseRecord,
     encoding::{Decodable, Encodable},
 };
+use fedimint_ln_client::{pay::GatewayPayError, LnPayState, LnReceiveState};
+use fedimint_mint_client::{ReissueExternalNotesState, SpendOOBState};
 use lightning_invoice::Invoice;
 use rand::Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::types::Amount;
@@ -45,25 +47,50 @@ pub struct LightningTransactionDetails {
 #[derive(Clone, Debug, Encodable, Decodable, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct BitcoinTransactionDetails {
-    #[ts(type = "string")]
-    pub address: Address,
-    #[ts(type = "string")]
-    pub txid: Txid,
-    /// Only defined for outgoing transactions
-    pub fee: Option<Amount>,
-    /// incoming transaction status
-    /// FIXME: this is something that should be present in the UI, but perhaps shouldn't be saved in the database?
-    pub incoming_status: Option<IncomingBitcoinTransactionStatus>,
-}
-
-#[derive(Clone, Debug, Encodable, Decodable, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
 pub struct OfflineTransactionDetails {
     // TODO: counterparty name???
     /// Whether the recipient has called `reissue` on these notes
     claimed: bool,
+}
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable)]
+#[serde(tag = "type")]
+pub enum MyLnPayState {
+    Created,
+    Canceled,
+    Funded,
+    WaitingForRefund {
+        block_height: u32,
+        gateway_error: GatewayPayError,
+    },
+    AwaitingChange,
+    Success {
+        preimage: String,
+    },
+    Refunded {
+        gateway_error: GatewayPayError,
+    },
+    Failed,
+}
+
+impl From<LnPayState> for MyLnPayState {
+    fn from(state: LnPayState) -> Self {
+        match state {
+            LnPayState::Created => Self::Created,
+            LnPayState::Canceled => Self::Canceled,
+            LnPayState::Funded => Self::Funded,
+            LnPayState::WaitingForRefund {
+                block_height,
+                gateway_error,
+            } => Self::WaitingForRefund {
+                block_height,
+                gateway_error,
+            },
+            LnPayState::AwaitingChange => Self::AwaitingChange,
+            LnPayState::Success { preimage } => Self::Success { preimage },
+            LnPayState::Refunded { gateway_error } => Self::Refunded { gateway_error },
+            LnPayState::Failed => Self::Failed,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Encodable, Decodable, Serialize, TS)]
@@ -78,7 +105,10 @@ pub struct Transaction {
     pub amount: Amount,
     pub notes: String,
     pub lightning: Option<LightningTransactionDetails>,
-    pub bitcoin: Option<BitcoinTransactionDetails>,
+    // HACK: this has been repurposed to transaction state
+    #[ts(type = "any")]
+    #[serde(rename = "lnPayState")]
+    pub bitcoin: Option<MyLnPayState>,
     pub offline: Option<OfflineTransactionDetails>,
 }
 
@@ -88,6 +118,7 @@ impl Transaction {
         amount: fedimint_core::Amount,
         fee: Option<fedimint_core::Amount>,
         invoice: Invoice,
+        ln_pay_state: Option<LnPayState>,
     ) -> Self {
         let notes = "".into(); // FIXME
         let id = invoice.payment_hash().to_string();
@@ -97,7 +128,7 @@ impl Transaction {
         });
         Self {
             lightning,
-            bitcoin: None,
+            bitcoin: ln_pay_state.map(|s| s.into()),
             offline: None,
             id,
             notes,
@@ -120,37 +151,6 @@ impl Transaction {
             offline,
             notes,
             id: id.to_string(),
-            direction,
-            amount: Amount(amount),
-            created_at: fedimint_core::time::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .expect("couldn't get utc timestamp") // FIXME: maybe just return 0?
-                .as_secs(),
-        }
-    }
-
-    pub fn bitcoin(
-        direction: TransactionDirection,
-        amount: fedimint_core::Amount,
-        fee: Option<fedimint_core::Amount>,
-        address: Address,
-        txid: Txid,
-        incoming_status: Option<IncomingBitcoinTransactionStatus>,
-    ) -> Self {
-        let notes = "".into(); // FIXME
-        let id = txid.to_string();
-        let bitcoin = Some(BitcoinTransactionDetails {
-            address,
-            txid,
-            fee: fee.map(Amount),
-            incoming_status,
-        });
-        Self {
-            lightning: None,
-            bitcoin,
-            offline: None,
-            notes,
-            id,
             direction,
             amount: Amount(amount),
             created_at: fedimint_core::time::now()

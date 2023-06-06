@@ -64,12 +64,25 @@ export interface OfflineTransactionDetails {
     claimed: boolean
 }
 
+export type LnPayState = 
+    { type: "Created" } |
+    { type: "Canceled" } |
+    { type: "Funded" } |
+    // skipped gateway_error
+    { type: "WaitingForRefund", block_height: number } |
+    { type: "AwaitingChange" } |
+    { type: "Success", "preimage": string } |
+    // skipped gateway_error
+    { type: "Refunded" } |
+    { type: "Failed" };
+
 export interface Transaction {
     id: string
     createdAt: number
     direction: TransactionDirection
     amount: MSats
     notes: string
+    lnPayState: LnPayState | null
     bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
     offline: OfflineTransactionDetails | null
