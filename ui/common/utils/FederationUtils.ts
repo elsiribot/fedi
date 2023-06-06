@@ -21,7 +21,9 @@ export const fetchMetadataFromExternalUrl = async (
             federation.meta.meta_external_url,
         )
         try {
-            const response = await fetch(federation.meta.meta_external_url)
+            const response = await fetch(federation.meta.meta_external_url, {
+                cache: 'no-cache',
+            })
             const metaJson = await response.json()
             console.info(
                 `Found metadata at ${federation.meta.meta_external_url}. Checking for matching federation key...`,
@@ -46,7 +48,7 @@ export const fetchMetadataFromExternalUrl = async (
 export const getSupportedFeatures = (
     meta: ClientConfigMetadata,
 ): SupportedFeature[] => {
-    const features = []
+    const features: SupportedFeature[] = []
 
     for (const feature in SupportedFeature) {
         if (Object.keys(meta).includes(feature)) {
