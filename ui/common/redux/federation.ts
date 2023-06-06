@@ -48,12 +48,12 @@ export const federationSlice = createSlice({
             state.federations = state.federations.map(federation =>
                 action.payload.id === federation.id
                     ? {
-                          ...federation,
+                          ...action.payload,
                           // this is needed to make sure metadata from bridge doesn't
                           // overwrite externally fetched metadata
                           meta: {
-                              ...action.payload.meta,
                               ...federation.meta,
+                              ...action.payload.meta,
                           },
                       }
                     : federation,
