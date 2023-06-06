@@ -181,7 +181,7 @@ export const shouldShowOnchainDeposits = (
         // supports strings currently so will need to refactor
         return metadata.onchain_deposits_disabled === 'true' ? false : true
     }
-    return true
+    return false
 }
 
 export const getFederationGroupChats = (
