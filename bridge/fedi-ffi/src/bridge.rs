@@ -30,7 +30,7 @@ use crate::{
         FederationConnectInfo, FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix,
         LastBackupTimestamp, Storage, XmppUsername,
     },
-    tx::{Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
+    tx::{MyLnPayState, Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
     types::{
         self, federation_to_fedimint_federation, FediConfig, LnurlSignedMessage,
         PayInvoiceResponse, XmppCredentials,
@@ -383,6 +383,7 @@ impl Federation {
         if let Some(username) = username {
             federation.set_username(username).await
         };
+        federation.subscribe_to_all_operations().await;
         federation.subscribe_balance_updates().await;
         federation.poll_balance().await;
         federation.poll_scheduled_backups().await;
@@ -738,14 +739,24 @@ impl Federation {
     /// Subscribe to updates on all active operations
     ///
     /// This currently doesn't have a way to filter out in-active operations ...
-    pub async fn subscribe_to_all_operation(&self) -> Result<()> {
-        // FIXME: paginate this ...
-        let operations = self.ng.get_operations(100).await;
-        for (log_key, _log_entry) in operations.iter() {
-            self.subscribe_to_operation(log_key.operation_id).await?;
+    pub async fn subscribe_to_all_operations(&self) {
+        let start = fedimint_core::time::now();
+        let operations = self.ng.get_operations(1000).await;
+        for (log_key, log_entry) in operations.iter() {
+            info!("log entry {log_entry:?}");
+            if log_entry.outcome::<serde_json::Value>().is_none() {
+                if let Err(e) = self.subscribe_to_operation(log_key.operation_id).await {
+                    warn!(
+                        "failed to subscribe to operation: {:?} {:?}",
+                        log_key.operation_id, e
+                    );
+                }
+            }
         }
-
-        Ok(())
+        info!(
+            "subscribe_to_all_operations took {:?}",
+            fedimint_core::time::now().duration_since(start)
+        );
     }
 
     /// Called after starting client or after spawning new state machine
@@ -768,7 +779,9 @@ impl Federation {
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
                             // FIXME: what happens if it fails?
-                            fed.subscibe_to_ln_pay(operation_id, invoice).await
+                            if let Err(e) = fed.subscibe_to_ln_pay(operation_id, invoice).await {
+                                warn!("subscribe_to_ln_pay error: {e:?}")
+                            }
                         })
                         .await;
                 }
@@ -778,7 +791,10 @@ impl Federation {
                         .clone()
                         .spawn("subscribe_to_ln_receive", move |_| async move {
                             // FIXME: what happens if it fails?
-                            fed.subscibe_to_ln_receive(operation_id, invoice).await
+                            if let Err(e) = fed.subscibe_to_ln_receive(operation_id, invoice).await
+                            {
+                                warn!("subscribe_to_ln_receive error: {e:?}")
+                            }
                         })
                         .await;
                 }
@@ -805,14 +821,13 @@ impl Federation {
             }
             // FIXME: should I return an error or just log something?
             _ => {
-                return Err(anyhow!(format!(
-                    "unknown operation type: {}",
+                tracing::debug!(
+                    "Can't subscribe to operation id: {}",
                     operation.operation_type()
-                )))
+                );
             }
         }
-        // match on operation kind, call the right listener (e.g. ecash or lightning etc)
-        // listeners emit events to frontend on every state transition
+
         Ok(())
     }
 
@@ -928,13 +943,22 @@ impl Federation {
                 .expect("assuming we only receive payments for invoices with amount"),
         );
         let fee = None;
-        let tx = Transaction::lightning(
-            TransactionDirection::Send,
-            amount,
-            fee,
-            invoice.clone(),
-            ln_pay_state,
-        );
+        let existing_tx = self
+            .get_transaction(invoice.payment_hash().to_string())
+            .await;
+        let tx = match existing_tx {
+            None => Transaction::lightning(
+                TransactionDirection::Send,
+                amount,
+                fee,
+                invoice.clone(),
+                ln_pay_state,
+            ),
+            Some(mut tx) => {
+                tx.bitcoin = ln_pay_state.map(|s| s.into());
+                tx
+            }
+        };
         self.save_transaction(&tx, true).await;
     }
 
@@ -1038,6 +1062,7 @@ impl Federation {
     pub async fn save_transaction(&self, tx: &Transaction, send_event: bool) {
         // TODO: need to expose the database
         let mut dbtx = self.dbtx().await;
+        tracing::info!("saving tx {:?}", tx.amount);
         dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx).await;
         dbtx.commit_tx().await;
         // notify UI
