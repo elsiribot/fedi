@@ -48,12 +48,15 @@ export const federationSlice = createSlice({
             state.federations = state.federations.map(federation =>
                 action.payload.id === federation.id
                     ? {
+                          ...federation,
                           ...action.payload,
-                          // this is needed to make sure metadata from bridge doesn't
-                          // overwrite externally fetched metadata
+                          // TOOD: this is needed to make sure metadata from bridge doesn't
+                          // overwrite externally fetched metadata, but still should
+                          // be refactored because the meta_external_url will never update
+                          // if it does need to be changed and fetch from somewhere else
                           meta: {
-                              ...federation.meta,
                               ...action.payload.meta,
+                              ...federation.meta,
                           },
                       }
                     : federation,
