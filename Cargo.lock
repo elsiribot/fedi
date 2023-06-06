@@ -1282,11 +1282,14 @@ dependencies = [
  "fedimint-wallet-client",
  "futures",
  "lightning-invoice",
+ "ln-gateway",
  "reqwest",
+ "rpassword",
  "serde",
  "serde_with",
  "tempfile",
  "tokio",
+ "tonic_lnd",
  "tracing",
 ]
 
