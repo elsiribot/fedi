@@ -143,6 +143,19 @@ const TransactionDetail = ({
                         </Pressable>
                     </View>
                 )}
+                {txn.lnPayState && (
+                    <View style={styles(theme).detailItem}>
+                        <Text>{t('words.status')}</Text>
+                        <Text>
+                            {txn.lnPayState.type === 'WaitingForRefund' &&
+                                t('feature.send.refund-in-block', {
+                                    block: txn.lnPayState.block_height,
+                                })}
+                            {txn.lnPayState.type !== 'WaitingForRefund' &&
+                                `${txn.lnPayState.type}`}
+                        </Text>
+                    </View>
+                )}
                 {txn.bitcoin && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
