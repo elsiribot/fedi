@@ -20,6 +20,36 @@ const options = {
 
 const compiledConvert = compile(options)
 
+// this component splits text that is too long to be rendered in 1 single
+// <Text> component though the precise limit is not clear, 153093 was the
+// experimental max value when trying to render text from a TOS page
+const MAX_RENDERABLE_CHARACTERS = 100000
+
+type TooMuchTextProps = {
+    content: string
+}
+
+const TooMuchText: React.FC<TooMuchTextProps> = ({
+    content,
+}: TooMuchTextProps) => {
+    const { theme } = useTheme()
+    const contentArray = []
+
+    for (let i = 0; i < content.length; i += MAX_RENDERABLE_CHARACTERS) {
+        contentArray.push(content.slice(i, i + MAX_RENDERABLE_CHARACTERS))
+    }
+
+    return (
+        <>
+            {contentArray.map((textChunk, index) => (
+                <Text key={index} caption style={styles(theme).content}>
+                    {textChunk}
+                </Text>
+            ))}
+        </>
+    )
+}
+
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'FederationAcceptTerms'
@@ -43,8 +73,10 @@ const FederationAcceptTerms: React.FC<Props> = ({ navigation }: Props) => {
                 .then(data => {
                     // Parse the HTML data
                     const text = compiledConvert(data)
-
                     setTermsContent(text)
+                })
+                .catch(error => {
+                    console.debug('error', error)
                 })
         }
     }, [activeFederation])
@@ -54,11 +86,11 @@ const FederationAcceptTerms: React.FC<Props> = ({ navigation }: Props) => {
             <Text h2 medium h2Style={styles(theme).title}>
                 {t('feature.onboarding.terms-and-conditions')}
             </Text>
+
             <ScrollView style={styles(theme).termsContainer}>
-                <Text caption style={styles(theme).content}>
-                    {termsContent}
-                </Text>
+                <TooMuchText content={termsContent} />
             </ScrollView>
+
             <View style={styles(theme).buttonsContainer}>
                 <Button
                     fullWidth
