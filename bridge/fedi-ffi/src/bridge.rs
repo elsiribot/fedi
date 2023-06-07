@@ -743,7 +743,6 @@ impl Federation {
         let start = fedimint_core::time::now();
         let operations = self.ng.get_operations(1000).await;
         for (log_key, log_entry) in operations.iter() {
-            info!("log entry {log_entry:?}");
             if log_entry.outcome::<serde_json::Value>().is_none() {
                 if let Err(e) = self.subscribe_to_operation(log_key.operation_id).await {
                     warn!(

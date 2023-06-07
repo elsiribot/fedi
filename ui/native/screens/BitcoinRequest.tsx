@@ -121,7 +121,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
 
     const transactionEventHandler = useCallback(
         (event: TransactionEvent) => {
-            console.info('transaction event: ', event)
             if (
                 event.transaction.lightning?.invoice === invoice.invoice ||
                 event.transaction.bitcoin?.address === onchainAddress
