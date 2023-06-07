@@ -326,7 +326,7 @@ pub async fn check_lnd_gateway(
         info!("Checking LND Gateways...");
         let execution_result = async {
             let now = fedimint_core::time::now();
-            const GET_GATEWAY_DATA_TIMEOUT: Duration = Duration::from_secs(5);
+            const GET_GATEWAY_DATA_TIMEOUT: Duration = Duration::from_secs(30);
             let gateway_data_results =
                 futures::future::join_all(gateway_clients.iter().map(|(url, client)| {
                     timeout(
@@ -454,7 +454,7 @@ pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Curs
             writeln!(w, "LND data:")?;
             for result in lnd_data_results {
                 match result {
-                    Ok(result) => {
+                    Ok(mut result) => {
                         writeln!(
                             w,
                             "  Ecash balance: {}",
@@ -466,6 +466,10 @@ pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Curs
                             result.synchronized_to_chain, result.synchronized_to_graph
                         )?;
                         writeln!(w, "Channels: active|inbound|outbound|alias")?;
+                        result.channels.sort_by(|a, b| {
+                            b.available_remote_balance()
+                                .cmp(&a.available_remote_balance())
+                        });
                         for channel in &result.channels {
                             writeln!(
                                 w,
