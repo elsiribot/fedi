@@ -9,6 +9,8 @@ export enum ChatType {
 }
 
 export enum ChatRole {
+    // This is the default role granted to a member entering a MUC room
+    // which determines their ability to send messages in a broadcast-only room
     visitor = 'visitor',
     participant = 'participant',
     moderator = 'moderator',

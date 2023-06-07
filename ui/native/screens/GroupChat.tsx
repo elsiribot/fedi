@@ -9,7 +9,6 @@ import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import { XMPP_MUC_ROLE_VISITOR } from '../constants'
 import {
     addToGroups,
     changeActiveChatId,
@@ -18,7 +17,7 @@ import {
 } from '../state/contexts/ChatContext'
 import { usePrevious } from '../state/hooks'
 import { useXmpp } from '../state/hooks/chat'
-import { Group, Member, Message } from '../types'
+import { ChatRole, Group, Member, Message } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
@@ -97,8 +96,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     // In a broadcast-only group, members cannot send messages if they have a
     // role of 'visitor'. The creator of the group has the role of 'owner'
     const blockMessageInput =
-        currentGroup.broadcastOnly &&
-        currentGroup.myRole === XMPP_MUC_ROLE_VISITOR
+        currentGroup.broadcastOnly && currentGroup.myRole === ChatRole.visitor
 
     return (
         <View style={styles(theme).container}>
