@@ -154,11 +154,8 @@ impl Bridge {
         connect_string: String,
     ) -> Result<Option<Arc<Federation>>> {
         let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
-        connect_cfg.url = override_localhost(&connect_cfg.url);
-        let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
-        let cfg: ClientConfig = api.download_client_config(&connect_cfg).await?;
         let federations = self.federations.lock().await;
-        let federation = federations.get(&cfg.federation_id).map(|fed| fed.clone());
+        let federation = federations.get(&connect_cfg.id).map(|fed| fed.clone());
         Ok(federation)
     }
 
