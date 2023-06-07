@@ -47,7 +47,12 @@ export function useAmountInput(
 
     const handleChangeSats = useCallback(
         (value: string) => {
-            const sats = clampSats(parseInt(value.replace(/,/g, ''), 10))
+            // can be 1,000 or 1.000
+            const thousandsSeparator = amountUtils.getThousandsSeparator()
+            // commas and periods require different regex
+            const escapeSeparator = thousandsSeparator === '.' ? '\\.' : ','
+            const regex = new RegExp(escapeSeparator, 'g')
+            const sats = clampSats(parseInt(value.replace(regex, ''), 10))
             const fiat = amountUtils.satToBtc(sats) * btcToFiatRateRef.current
             onChangeAmount && onChangeAmount(clampSats(sats))
             setSatsValue(Intl.NumberFormat().format(sats))
