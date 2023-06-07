@@ -444,7 +444,7 @@ pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Curs
             for result in gateway_data_results {
                 match result {
                     Ok(result) => {
-                        writeln!(w, "  Balance: {}", format_amount(result.balance))?;
+                        writeln!(w, "  Ecash balance: {}", format_amount(result.balance))?;
                     }
                     Err(e) => {
                         writeln!(w, "{e}")?;
@@ -457,7 +457,7 @@ pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Curs
                     Ok(mut result) => {
                         writeln!(
                             w,
-                            "  Ecash balance: {}",
+                            "  Wallet balance: {}",
                             format_amount(result.available_balance())
                         )?;
                         writeln!(
