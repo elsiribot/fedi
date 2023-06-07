@@ -55,6 +55,3 @@ export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
     pinned: true,
     messagePreview: i18n.t('feature.chat.money-changing-message-preview'),
 })
-// This is the default role granted to a member entering a MUC room
-// which determines their ability to send messages in a broadcast-only room
-export const XMPP_MUC_ROLE_VISITOR = 'visitor'

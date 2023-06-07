@@ -8,6 +8,7 @@ import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { ChatRole } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
@@ -79,13 +80,18 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         )
                     }}
                 />
-                <SettingsItem
-                    image={<SvgImage name="SpeakerPhone" />}
-                    label={t('feature.chat.broadcast-admin-settings')}
-                    onPress={() => {
-                        navigation.navigate('BroadcastAdminsList', { group })
-                    }}
-                />
+                {broadcastOnly && (
+                    <SettingsItem
+                        image={<SvgImage name="SpeakerPhone" />}
+                        label={t('feature.chat.broadcast-admin-settings')}
+                        disabled={group.myRole !== ChatRole.moderator}
+                        onPress={() => {
+                            navigation.navigate('BroadcastAdminsList', {
+                                group,
+                            })
+                        }}
+                    />
+                )}
             </View>
             <View>
                 <Text style={styles(theme).sectionTitle}>

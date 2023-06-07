@@ -50,7 +50,6 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'flex-start',
             paddingVertical: theme.spacing.sm,
-            height: '100%',
             width: '100%',
         },
         usernameText: {

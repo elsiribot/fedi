@@ -4,7 +4,7 @@ import { Client, jid } from '@xmpp/client'
 import XMPPError from '@xmpp/error'
 import { Element } from 'ltx'
 
-import { ChatMember, Key, Keypair } from '@fedi/common/types'
+import { ChatMember, ChatRole, Key, Keypair } from '@fedi/common/types'
 import xmlUtils, {
     AddToRosterQuery,
     EncryptedDirectChatMessage,
@@ -24,11 +24,7 @@ import xmlUtils, {
     XmppMemberRole,
 } from '@fedi/common/utils/XmlUtils'
 
-import {
-    DEFAULT_GROUP_NAME,
-    XMPP_MUC_ROLE_VISITOR,
-    XMPP_RESOURCE,
-} from '../../constants'
+import { DEFAULT_GROUP_NAME, XMPP_RESOURCE } from '../../constants'
 import i18n from '../../localization/i18n'
 import {
     ArchiveQueryFilters,
@@ -414,7 +410,7 @@ export const enterMucRoom = (
                                 new Group({
                                     ...group,
                                     // TODO: refactor this out to a group-role map in redux
-                                    myRole: role || XMPP_MUC_ROLE_VISITOR,
+                                    myRole: role || ChatRole.visitor,
                                 }),
                             )
                         }
