@@ -103,10 +103,10 @@ pub struct ChannelInfo {
 
 impl ChannelInfo {
     fn available_local_balance(&self) -> Amount {
-        self.local_balance - self.local_chan_reserve
+        self.local_balance.saturating_sub(self.local_chan_reserve)
     }
     fn available_remote_balance(&self) -> Amount {
-        self.remote_balance - self.remote_chan_reserve
+        self.remote_balance.saturating_sub(self.remote_chan_reserve)
     }
 }
 
@@ -184,7 +184,9 @@ pub struct LndData {
 
 impl LndData {
     fn available_balance(&self) -> Amount {
-        self.wallet_total_balance - self.wallet_locked_balance - self.wallet_reserved_balance
+        self.wallet_total_balance
+            .saturating_sub(self.wallet_locked_balance)
+            .saturating_sub(self.wallet_reserved_balance)
     }
 
     fn total_available_local_balance(&self) -> Amount {
