@@ -282,6 +282,7 @@
             "offline-send-warning": "On the next step, when the QR is presented, the sats will be removed from your wallet",
             "paste-payment-request": "Paste payment request",
             "paste-payment-request-instead": "Paste payment request instead",
+            "refund-in-block": "Refund in block {{block}}",
             "scan-qr-code": "Scan a Lightning QR Code",
             "send-bitcoin": "Send bitcoin",
             "send-bitcoin-offline": "Send bitcoin offline",
