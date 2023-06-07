@@ -81,7 +81,13 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                     title={t('feature.onboarding.join-returning-member')}
                     onPress={() => {
-                        navigation.navigate('ChooseRecoveryMethod')
+                        if (activeFederation?.meta?.tos_url) {
+                            navigation.navigate('FederationAcceptTerms', {
+                                nextScreen: 'ChooseRecoveryMethod',
+                            })
+                        } else {
+                            navigation.navigate('ChooseRecoveryMethod')
+                        }
                     }}
                     containerStyle={styles(theme).button}
                 />
@@ -90,7 +96,13 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     title={t('feature.onboarding.join-new-member')}
                     onPress={() => {
                         if (activeFederation?.meta?.tos_url) {
-                            navigation.navigate('FederationAcceptTerms')
+                            navigation.navigate('FederationAcceptTerms', {
+                                nextScreen:
+                                    activeChatConnectionOptions &&
+                                    authenticatedMember === null
+                                        ? 'CreateUsername'
+                                        : 'TabsNavigator',
+                            })
                         } else if (
                             activeChatConnectionOptions &&
                             authenticatedMember === null
