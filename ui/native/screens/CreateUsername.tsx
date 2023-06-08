@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
+import { authenticateChat } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -23,7 +23,9 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const [username, setUsername] = useState<string>('')
@@ -83,7 +85,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 await dispatch(
                     authenticateChat({
                         fedimint,
-                        federationId: activeFederation!.id,
+                        federationId: activeFederationId as string,
                         username,
                     }),
                 ).unwrap()
@@ -113,7 +115,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         t,
         username,
         xmppAuthInProgress,
-        activeFederation,
+        activeFederationId,
     ])
 
     const handleUsernameChange = (input: string) => {
