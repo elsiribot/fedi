@@ -31,6 +31,8 @@ use tonic_lnd::lnrpc::ListPeersRequest;
 
 use tracing::{info, log::warn};
 
+use crate::MonitorLndGatewaysLimitsArgs;
+
 /// How many results will be returned on response
 const LATEST_CHECKS_COUNT: usize = 6;
 /// Should be greater than `LATEST_CHECKS_COUNT`
@@ -41,6 +43,8 @@ const CHECK_INTERVAL_TIME: Duration = Duration::from_secs(15);
 #[derive(Debug, Clone, Serialize)]
 pub struct LndGatewaysCheckResponse {
     latest_checks: Vec<LndGatewaysCheck>,
+    alerts: Vec<String>,
+    status: LndGatewaysStatus,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -389,29 +393,143 @@ pub async fn check_lnd_gateway(
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+enum LndGatewaysStatus {
+    Ok,
+    Alert,
+}
+
 pub async fn get_state(
     axum::extract::State(state): axum::extract::State<Arc<RwLock<LndGatewaysState>>>,
+    limits: MonitorLndGatewaysLimitsArgs,
 ) -> (StatusCode, Json<LndGatewaysCheckResponse>) {
-    let check_state = state.read().await.clone();
-    let latest_checks = check_state
+    let state = state.read().await.clone();
+    let alerts = generate_alerts(&state, limits);
+    let latest_checks = state
         .checks
         .into_iter()
         .take(LATEST_CHECKS_COUNT)
         .collect::<Vec<_>>();
-    let check_response = LndGatewaysCheckResponse { latest_checks };
+    let status = if alerts.is_empty() {
+        LndGatewaysStatus::Ok
+    } else {
+        LndGatewaysStatus::Alert
+    };
+    let check_response = LndGatewaysCheckResponse {
+        latest_checks,
+        alerts,
+        status,
+    };
     (StatusCode::OK, Json(check_response))
 }
 
 pub async fn get_text(
     axum::extract::State(state): axum::extract::State<Arc<RwLock<LndGatewaysState>>>,
+    limits: MonitorLndGatewaysLimitsArgs,
 ) -> (StatusCode, String) {
-    match format_state(state.read().await.clone()) {
+    let state = state.read().await.clone();
+    let alerts = generate_alerts(&state, limits);
+    let (code, mut s) = match format_state(state) {
         Ok(cursor) => (
             StatusCode::OK,
             String::from_utf8(cursor.into_inner()).unwrap(),
         ),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("{e:?}")),
+    };
+    if !alerts.is_empty() {
+        s += "\n\nAlerts:\n";
+        for alert in alerts {
+            s += &format!("  {}\n", alert);
+        }
     }
+    (code, s)
+}
+
+fn generate_alerts(state: &LndGatewaysState, limits: MonitorLndGatewaysLimitsArgs) -> Vec<String> {
+    if state.checks.is_empty() {
+        return vec!["No checks yet".to_string()];
+    }
+    let mut results = vec![];
+
+    let check = state.checks.front().unwrap();
+    let last_check_interval = (Utc::now() - check.time).to_std().unwrap();
+    if last_check_interval > CHECK_INTERVAL_TIME * 2 {
+        results.push(format!(
+            "Last check is too late, it was {}s ago",
+            last_check_interval.as_secs()
+        ));
+    }
+    match &check.result {
+        LndGatewaysCheckResult::Success {
+            duration_ms,
+            gateway_data_results,
+            lnd_data_results,
+        } => {
+            if *duration_ms > CHECK_INTERVAL_TIME {
+                results.push(format!("Last check took too long, it took {duration_ms:?}"));
+            }
+            for result in gateway_data_results {
+                match result {
+                    Ok(gateway_data) => {
+                        if gateway_data.balance < limits.minimum_ecash_balance {
+                            results.push(format!(
+                                "Gateway has less than {} ecash: {}",
+                                format_amount(limits.minimum_ecash_balance),
+                                format_amount(gateway_data.balance)
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        results.push(format!("Error getting gateway data: {e:?}"));
+                    }
+                }
+            }
+            for result in lnd_data_results {
+                match result {
+                    Ok(lnd_data) => {
+                        if !lnd_data.synchronized_to_chain {
+                            results.push(format!("Lnd is not synchronized to chain"));
+                        }
+                        if !lnd_data.synchronized_to_graph {
+                            results.push(format!("Lnd is not synchronized to graph"));
+                        }
+                        if lnd_data.available_balance() < limits.minimum_lnd_balance {
+                            results.push(format!(
+                                "Lnd has less than {}: {}",
+                                format_amount(limits.minimum_lnd_balance),
+                                format_amount(lnd_data.available_balance())
+                            ));
+                        }
+                        if lnd_data.total_available_local_balance()
+                            < limits.minimum_outbound_capacity
+                        {
+                            results.push(format!(
+                                "Lnd has less than {} of outbound capacity: {}",
+                                format_amount(limits.minimum_outbound_capacity),
+                                format_amount(lnd_data.total_available_local_balance())
+                            ));
+                        }
+                        if lnd_data.total_available_remote_balance()
+                            < limits.minimum_inbound_capacity
+                        {
+                            results.push(format!(
+                                "Lnd has less than {} of inbound capacity: {}",
+                                format_amount(limits.minimum_inbound_capacity),
+                                format_amount(lnd_data.total_available_remote_balance())
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        results.push(format!("Error getting lnd data: {e:?}"));
+                    }
+                }
+            }
+        }
+        LndGatewaysCheckResult::Failure { error } => {
+            results.push(format!("Last check failed with error: {error:?}"))
+        }
+    }
+    results
 }
 
 fn with_separator(n: u64) -> String {
@@ -424,6 +542,7 @@ fn with_separator(n: u64) -> String {
         .unwrap()
         .join(",") // separator
 }
+
 fn format_amount(amount: Amount) -> String {
     format!("{} sats", with_separator(amount.msats / 1000))
 }
