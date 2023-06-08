@@ -125,6 +125,18 @@ struct MutinynetLoadTestArgs {
 }
 
 #[derive(Clone, Args)]
+pub struct MonitorLndGatewaysLimitsArgs {
+    #[clap(long, default_value = "0", help = "Amount in msats")]
+    pub minimum_ecash_balance: Amount,
+    #[clap(long, default_value = "0", help = "Amount in msats")]
+    pub minimum_lnd_balance: Amount,
+    #[clap(long, default_value = "0", help = "Amount in msats")]
+    pub minimum_inbound_capacity: Amount,
+    #[clap(long, default_value = "0", help = "Amount in msats")]
+    pub minimum_outbound_capacity: Amount,
+}
+
+#[derive(Clone, Args)]
 struct MonitorLndGatewaysArgs {
     #[clap(
         long,
@@ -146,6 +158,9 @@ struct MonitorLndGatewaysArgs {
         help = "Address to bind/listen to"
     )]
     bind: String,
+
+    #[clap(flatten)]
+    limits_args: MonitorLndGatewaysLimitsArgs,
 }
 
 #[tokio::main]
@@ -316,8 +331,20 @@ async fn monitor_lnd_gateways(args: MonitorLndGatewaysArgs) -> anyhow::Result<()
         Arc::clone(&state),
     ));
     let app = Router::new()
-        .route("/state", get(lnd_gw_monitoring::get_state))
-        .route("/text", get(lnd_gw_monitoring::get_text))
+        .route(
+            "/state",
+            get({
+                let limits = args.limits_args.clone();
+                |s| lnd_gw_monitoring::get_state(s, limits)
+            }),
+        )
+        .route(
+            "/text",
+            get({
+                let limits = args.limits_args.clone();
+                |s| lnd_gw_monitoring::get_text(s, limits)
+            }),
+        )
         .with_state(state);
 
     let addr = SocketAddr::from_str(&args.bind)?;
