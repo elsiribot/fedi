@@ -192,6 +192,7 @@ impl LndData {
     fn total_available_local_balance(&self) -> Amount {
         self.channels
             .iter()
+            .filter(|c| c.active)
             .map(|c| c.available_local_balance())
             .sum()
     }
@@ -199,6 +200,7 @@ impl LndData {
     fn total_available_remote_balance(&self) -> Amount {
         self.channels
             .iter()
+            .filter(|c| c.active)
             .map(|c| c.available_remote_balance())
             .sum()
     }
