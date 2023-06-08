@@ -36,7 +36,7 @@ const FederationAcceptTerms: React.FC<Props> = ({
                     onPress={url => Linking.openURL(url)}
                     linkStyle={styles(theme).linkText}>
                     <Text>
-                        {t('feature.onboarding.by-clicking-you-agree', {
+                        {t('feature.onboarding.by-clicking-i-accept', {
                             tos_url: activeFederation?.meta?.tos_url,
                         })}
                     </Text>

@@ -248,7 +248,8 @@
             "scan-federation-invite": "Scan a Federation Invite"
         },
         "onboarding": {
-            "by-clicking-you-agree": "By clicking 'I accept' you agree to the terms of service at {{tos_url}}",
+            "by-clicking-you-agree": "By clicking 'Join a Federation' you agree to the",
+            "by-clicking-i-accept": "By clicking 'I accept' you agree to the terms of service at {{tos_url}}",
             "community-first": "Community first",
             "continue-to-fedi": "Continue to Fedi",
             "create-username": "Create username",
