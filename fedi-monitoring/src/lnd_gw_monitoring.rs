@@ -39,6 +39,8 @@ const LATEST_CHECKS_COUNT: usize = 6;
 const MAX_CHECKS_TO_KEEP_ON_STATE: usize = 60;
 
 const CHECK_INTERVAL_TIME: Duration = Duration::from_secs(15);
+/// How many check should fail before considering alerting it
+const LATEST_CHECKS_REQUIRED_FAILURE: usize = 3;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LndGatewaysCheckResponse {
@@ -55,6 +57,7 @@ pub struct LndGatewaysState {
 #[derive(Debug, Clone, Serialize)]
 pub struct LndGatewaysCheck {
     result: LndGatewaysCheckResult,
+    alerts: Vec<String>,
     time: DateTime<Utc>,
 }
 
@@ -326,6 +329,7 @@ pub async fn check_lnd_gateway(
     gateway_clients: Vec<(Url, GatewayRpcClient)>,
     lnd_clients: Vec<(String, LndClient)>,
     state: Arc<RwLock<LndGatewaysState>>,
+    limits: MonitorLndGatewaysLimitsArgs,
 ) -> anyhow::Result<()> {
     let interval_time = CHECK_INTERVAL_TIME;
     loop {
@@ -380,12 +384,15 @@ pub async fn check_lnd_gateway(
                 }
             }
         };
+        let alerts = generate_alerts_for_result(&result, &limits);
         {
             let mut state = state.write().await;
-            state.checks.push_front(LndGatewaysCheck {
+            let check = LndGatewaysCheck {
                 result,
+                alerts,
                 time: fedimint_core::time::now().into(),
-            });
+            };
+            state.checks.push_front(check);
             state.checks.truncate(MAX_CHECKS_TO_KEEP_ON_STATE);
         }
         info!("Sleeping for {interval_time:?}");
@@ -401,10 +408,9 @@ enum LndGatewaysStatus {
 
 pub async fn get_state(
     axum::extract::State(state): axum::extract::State<Arc<RwLock<LndGatewaysState>>>,
-    limits: MonitorLndGatewaysLimitsArgs,
 ) -> (StatusCode, Json<LndGatewaysCheckResponse>) {
     let state = state.read().await.clone();
-    let alerts = generate_alerts(&state, limits);
+    let alerts = generate_alerts_for_state(&state);
     let latest_checks = state
         .checks
         .into_iter()
@@ -425,10 +431,9 @@ pub async fn get_state(
 
 pub async fn get_text(
     axum::extract::State(state): axum::extract::State<Arc<RwLock<LndGatewaysState>>>,
-    limits: MonitorLndGatewaysLimitsArgs,
 ) -> (StatusCode, String) {
     let state = state.read().await.clone();
-    let alerts = generate_alerts(&state, limits);
+    let alerts = generate_alerts_for_state(&state);
     let (code, mut s) = match format_state(state) {
         Ok(cursor) => (
             StatusCode::OK,
@@ -445,21 +450,41 @@ pub async fn get_text(
     (code, s)
 }
 
-fn generate_alerts(state: &LndGatewaysState, limits: MonitorLndGatewaysLimitsArgs) -> Vec<String> {
+fn generate_alerts_for_state(state: &LndGatewaysState) -> Vec<String> {
     if state.checks.is_empty() {
-        return vec!["No checks yet".to_string()];
+        return vec!["No check yet".to_string()];
     }
+    let latest = state.checks.front().unwrap();
     let mut results = vec![];
-
-    let check = state.checks.front().unwrap();
-    let last_check_interval = (Utc::now() - check.time).to_std().unwrap();
+    let last_check_interval = (Utc::now() - latest.time).to_std().unwrap();
     if last_check_interval > CHECK_INTERVAL_TIME * 2 {
         results.push(format!(
             "Last check is too late, it was {}s ago",
             last_check_interval.as_secs()
         ));
     }
-    match &check.result {
+    if state.checks.len() >= LATEST_CHECKS_REQUIRED_FAILURE
+        && state
+            .checks
+            .iter()
+            .take(LATEST_CHECKS_REQUIRED_FAILURE)
+            .all(|check| !check.alerts.is_empty())
+    {
+        results.push(format!(
+            "Last {LATEST_CHECKS_REQUIRED_FAILURE} checks failed"
+        ));
+        // Copy the alerts from the last check
+        results.extend(latest.alerts.clone());
+    }
+    results
+}
+
+fn generate_alerts_for_result(
+    check_result: &LndGatewaysCheckResult,
+    limits: &MonitorLndGatewaysLimitsArgs,
+) -> Vec<String> {
+    let mut results = vec![];
+    match check_result {
         LndGatewaysCheckResult::Success {
             duration_ms,
             gateway_data_results,

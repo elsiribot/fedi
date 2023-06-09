@@ -329,22 +329,11 @@ async fn monitor_lnd_gateways(args: MonitorLndGatewaysArgs) -> anyhow::Result<()
         gateway_clients,
         lnd_clients,
         Arc::clone(&state),
+        args.limits_args.clone(),
     ));
     let app = Router::new()
-        .route(
-            "/state",
-            get({
-                let limits = args.limits_args.clone();
-                |s| lnd_gw_monitoring::get_state(s, limits)
-            }),
-        )
-        .route(
-            "/text",
-            get({
-                let limits = args.limits_args.clone();
-                |s| lnd_gw_monitoring::get_text(s, limits)
-            }),
-        )
+        .route("/state", get(lnd_gw_monitoring::get_state))
+        .route("/text", get(lnd_gw_monitoring::get_text))
         .with_state(state);
 
     let addr = SocketAddr::from_str(&args.bind)?;
