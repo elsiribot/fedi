@@ -86,7 +86,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     authenticateChat({
                         fedimint,
                         federationId: activeFederationId as string,
-                        username,
+                        username: username.toLowerCase(),
                     }),
                 ).unwrap()
                 setXmppAuthInProgress(false)
@@ -122,7 +122,9 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
         if (!isValid) {
             toast?.show(t('errors.invalid-character'), 3000)
-        } else setUsername(input.toLowerCase())
+        } else {
+            setUsername(input)
+        }
     }
 
     return (
