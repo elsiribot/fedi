@@ -567,6 +567,23 @@ export const connectChat = createAsyncThunk<
 
         client.on('message', message => {
             dispatch(addChatMessage({ federationId, message }))
+            // Attempt to redeem payments immediately on receive
+            // TODO: Should we notify the user in some way?
+            if (
+                message.payment &&
+                message.payment.token &&
+                message.payment.recipient === authenticatedMember.id &&
+                message.payment.status === ChatPaymentStatus.accepted
+            ) {
+                dispatch(
+                    updateChatPayment({
+                        fedimint,
+                        federationId,
+                        messageId: message.id,
+                        action: 'receive',
+                    }),
+                )
+            }
         })
 
         client.on('memberSeen', member => {
