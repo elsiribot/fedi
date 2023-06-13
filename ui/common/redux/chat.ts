@@ -34,6 +34,7 @@ import {
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
     getFederationChatServerDomain,
+    getFederationGroupChats,
     makeChatServerOptions,
 } from '../utils/FederationUtils'
 import { XmppChatClientManager } from '../utils/XmppChatClient'
@@ -46,6 +47,7 @@ import { FedimintBridge } from '../utils/fedimint'
 import {
     checkXmppUser,
     decodeGroupInvitationLink,
+    encodeGroupInvitationLink,
     registerXmppUser,
 } from '../utils/xmpp'
 import { loadFromStorage } from './storage'
@@ -594,6 +596,20 @@ export const connectChat = createAsyncThunk<
             // "Enter" every group we have in state
             chatState.groups.forEach(group => {
                 client.enterGroup(group.id)
+            })
+
+            // Join every default chat group we don't have in state
+            const defaultGroupIds = getFederationGroupChats(federation.meta)
+            const unjoinedDefaultGroupIds = defaultGroupIds.filter(
+                chatId => !chatState.groups.find(g => g.id === chatId),
+            )
+            unjoinedDefaultGroupIds.forEach(groupId => {
+                dispatch(
+                    joinChatGroup({
+                        federationId,
+                        link: encodeGroupInvitationLink(groupId),
+                    }),
+                )
             })
 
             // Fix authenticatedMember if it has the wrong id or public key
