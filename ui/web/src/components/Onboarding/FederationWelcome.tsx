@@ -6,7 +6,6 @@ import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
-import { Avatar } from '../Avatar'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
 import { Redirect } from '../Redirect'
@@ -24,6 +23,13 @@ export const FederationWelcome: React.FC = () => {
 
     if (!activeFederation) {
         return <Redirect path="/onboarding" />
+    }
+
+    let joinHref = '/'
+    if (activeFederation.meta?.tos_url) {
+        joinHref = '/onboarding/terms'
+    } else if (isChatSupported) {
+        joinHref = '/onboarding/username'
     }
 
     return (
@@ -60,12 +66,10 @@ export const FederationWelcome: React.FC = () => {
                     width="full"
                     variant="tertiary"
                     href="/onboarding/recover">
-                    I am a returning member
+                    {t('feature.onboarding.join-returning-member')}
                 </Button>
-                <Button
-                    width="full"
-                    href={isChatSupported ? '/onboarding/username' : '/'}>
-                    Join as a new member
+                <Button width="full" href={joinHref}>
+                    {t('feature.onboarding.join-new-member')}
                 </Button>
             </OnboardingActions>
         </OnboardingContainer>
