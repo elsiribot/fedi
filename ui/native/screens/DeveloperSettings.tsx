@@ -3,15 +3,23 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 
 import {
     changeAuthenticatedGuardian,
+    removeCustomSite,
     resetAuthenticatedMember,
     resetFederationChatState,
     selectActiveFederation,
+    selectFederationCustomSites,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
@@ -26,7 +34,9 @@ import {
     SupportedCurrency,
 } from '@fedi/common/types'
 
+import { AddCustomSiteDialog } from '../components/feature/developer-settings/AddCustomSiteDialog'
 import CheckBox from '../components/ui/CheckBox'
+import SvgImage from '../components/ui/SvgImage'
 import {
     AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -60,7 +70,9 @@ const DeveloperSettings: React.FC<Props> = () => {
         i18n.language,
     )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
+    const [isAddingCustomSite, setIsAddingCustomSite] = useState<boolean>(false)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
+    const customSites = useAppSelector(selectFederationCustomSites)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -104,6 +116,15 @@ const DeveloperSettings: React.FC<Props> = () => {
             url: `file://${RNFS.DocumentDirectoryPath}/fedi.log`,
         })
     }
+
+    const removeSite = (siteId: string) => {
+        if (!activeFederation) return
+        reduxDispatch(
+            removeCustomSite({ federationId: activeFederation.id, siteId }),
+        )
+        toast?.show('Custom site removed', 3000)
+    }
+
     useEffect(() => {
         i18n.changeLanguage(selectedLanguage)
     }, [i18n, selectedLanguage])
@@ -120,6 +141,28 @@ const DeveloperSettings: React.FC<Props> = () => {
                     onPress={() => {
                         shareLogs()
                     }}
+                />
+            </SettingsSection>
+            <SettingsSection title="Custom sites">
+                {customSites.map(site => (
+                    <View key={site.id} style={styles(theme).site}>
+                        <View>
+                            <Text>{site.title}</Text>
+                            <Text small>{site.url}</Text>
+                        </View>
+                        <Pressable onPress={() => removeSite(site.id)}>
+                            <SvgImage name="Close" />
+                        </Pressable>
+                    </View>
+                ))}
+                <Button
+                    title={'Add custom site'}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => setIsAddingCustomSite(true)}
+                />
+                <AddCustomSiteDialog
+                    isVisible={isAddingCustomSite}
+                    onClose={() => setIsAddingCustomSite(false)}
                 />
             </SettingsSection>
             <SettingsSection title="Change your language">
@@ -427,6 +470,12 @@ const styles = (theme: Theme) =>
         },
         version: {
             marginBottom: theme.spacing.sm,
+        },
+        site: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: theme.spacing.md,
         },
     })
 
