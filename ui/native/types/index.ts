@@ -72,7 +72,7 @@ export class Site extends Shortcut {
     constructor(data: any) {
         super(data)
         this.icon = {
-            image: SiteImages[data.id],
+            image: SiteImages[data.id] || SiteImages.default,
         }
     }
 }
