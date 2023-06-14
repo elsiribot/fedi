@@ -13,6 +13,7 @@ import type {
     MSats,
     Sats,
     SeedWords,
+    Site,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -31,6 +32,7 @@ const initialState = {
     federations: [] as Federation[],
     activeFederationId: null as string | null,
     authenticatedGuardian: null as Guardian | null,
+    customSites: {} as Record<Federation['id'], Site[] | undefined>,
 }
 
 export type FederationState = typeof initialState
@@ -71,8 +73,27 @@ export const federationSlice = createSlice({
         ) {
             state.authenticatedGuardian = action.payload
         },
-        resetFederationsState() {
-            return { ...initialState }
+        addCustomSite(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                site: Site
+            }>,
+        ) {
+            const { federationId, site } = action.payload
+            const sites = state.customSites[federationId] || []
+            state.customSites[federationId] = [...sites, site]
+        },
+        removeCustomSite(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                siteId: Site['id']
+            }>,
+        ) {
+            const { federationId, siteId } = action.payload
+            const sites = state.customSites[federationId] || []
+            state.customSites[federationId] = sites.filter(s => s.id !== siteId)
         },
     },
     extraReducers: builder => {
@@ -92,6 +113,7 @@ export const federationSlice = createSlice({
             if (!action.payload) return
             state.activeFederationId = action.payload.activeFederationId
             state.authenticatedGuardian = action.payload.authenticatedGuardian
+            state.customSites = action.payload.customSites || {}
         })
     },
 })
@@ -103,7 +125,8 @@ export const {
     updateFederation,
     setActiveFederationId,
     changeAuthenticatedGuardian,
-    resetFederationsState,
+    addCustomSite,
+    removeCustomSite,
 } = federationSlice.actions
 
 /*** Async thunk actions */
@@ -251,6 +274,13 @@ export const selectFederationBalance = createSelector(
     },
 )
 
+export const selectFederationCustomSites = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+    return activeFederation
+        ? s.federation.customSites[activeFederation?.id] || []
+        : []
+}
+
 // For now we set a safe default of 200K sats maximum unless otherwise
 // specified by the federation feature flags. At some points we probably
 // can remove this hard-coded value altogether
@@ -306,8 +336,12 @@ export const selectReceivesDisabled = createSelector(
 )
 
 export const selectFederationSites = createSelector(
-    selectFederationMetadata,
-    getFederationSites,
+    selectActiveFederation,
+    selectFederationCustomSites,
+    (federation, customSites) => {
+        if (!federation) return []
+        return [...getFederationSites(federation.meta), ...customSites]
+    },
 )
 
 export const selectFederationGroupChats = createSelector(
