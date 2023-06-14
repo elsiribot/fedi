@@ -18,7 +18,6 @@ use fedimint_core::{
 use futures::TryFutureExt;
 use ln_gateway::rpc::rpc_client::GatewayRpcClient;
 use prometheus::{Encoder, Opts, Registry, TextEncoder};
-use reqwest::Url;
 use serde::Serialize;
 use serde_with::{serde_as, DurationMilliSeconds};
 use tonic_lnd::lnrpc::GetInfoRequest;
@@ -140,13 +139,13 @@ impl ChannelInfo {
                 channel
                     .local_constraints
                     .map(|c| c.chan_reserve_sat)
-                    .unwrap_or_default() as u64,
+                    .unwrap_or_default(),
             ),
             remote_chan_reserve: Amount::from_sats(
                 channel
                     .remote_constraints
                     .map(|c| c.chan_reserve_sat)
-                    .unwrap_or_default() as u64,
+                    .unwrap_or_default(),
             ),
         }
     }
@@ -244,9 +243,7 @@ async fn get_lnd_data(client: LndClient) -> anyhow::Result<LndData> {
         ..Default::default()
     });
     let mut c4 = client.clone();
-    let wallet_balance_response = c4.lightning().wallet_balance(WalletBalanceRequest {
-        ..Default::default()
-    });
+    let wallet_balance_response = c4.lightning().wallet_balance(WalletBalanceRequest {});
     let (channels_response, info_response, peers_response, wallet_balance_response) =
         futures::future::join4(
             channels_response,
@@ -328,7 +325,7 @@ async fn get_lnd_data(client: LndClient) -> anyhow::Result<LndData> {
 
 pub async fn check_lnd_gateway(
     federation_id: FederationId,
-    gateway_clients: Vec<(Url, GatewayRpcClient)>,
+    gateway_clients: Vec<(String, GatewayRpcClient)>,
     lnd_clients: Vec<(String, LndClient)>,
     state: Arc<RwLock<LndGatewaysState>>,
     limits: MonitorLndGatewaysLimitsArgs,
@@ -340,45 +337,45 @@ pub async fn check_lnd_gateway(
             let now = fedimint_core::time::now();
             const GET_GATEWAY_DATA_TIMEOUT: Duration = Duration::from_secs(30);
             let gateway_data_results =
-                futures::future::join_all(gateway_clients.iter().map(|(url, client)| {
+                futures::future::join_all(gateway_clients.iter().map(|(alias, client)| {
                     timeout(
                         GET_GATEWAY_DATA_TIMEOUT,
                         get_gateway_data(client, federation_id),
                     )
                     .map_err(|_e| {
                         anyhow::anyhow!(
-                            "Timed out while getting gateway data from {:?}",
-                            url.to_string()
+                            "Timed out while getting gateway data from {}",
+                            alias.clone()
                         )
                     })
                     .and_then(futures::future::ready)
                     .map_err(|e| format!("{e:?}"))
                     .map_ok_or_else(
                         {
-                            let url = url.to_string();
-                            |e| (url, Err(e))
+                            let alias = alias.clone();
+                            |e| (alias, Err(e))
                         },
-                        |data| (url.to_string(), Ok(data)),
+                        |data| (alias.clone(), Ok(data)),
                     )
                 }));
             const GET_LND_DATA_TIMEOUT: Duration = Duration::from_secs(30);
             let lnd_data_results =
-                futures::future::join_all(lnd_clients.iter().map(|(url, client)| {
+                futures::future::join_all(lnd_clients.iter().map(|(alias, client)| {
                     timeout(GET_LND_DATA_TIMEOUT, get_lnd_data(client.clone()))
                         .map_err(|_e| {
                             anyhow::anyhow!(
                                 "Timed out while getting lnd data from {:?}",
-                                url.clone()
+                                alias.clone()
                             )
                         })
                         .and_then(futures::future::ready)
                         .map_err(|e| format!("{e:?}"))
                         .map_ok_or_else(
                             {
-                                let url = url.to_string();
-                                |e| (url, Err(e))
+                                let alias = alias.clone();
+                                |e| (alias, Err(e))
                             },
-                            |data| (url.to_string(), Ok(data)),
+                            |data| (alias.clone(), Ok(data)),
                         )
                 }));
             let (gateway_data_results, lnd_data_results) =
@@ -429,25 +426,25 @@ fn set_metrics_for_check(check: &LndGatewaysCheck, metrics: &mut PrometheusMetri
             gateway_data_results,
             lnd_data_results,
         } => {
-            for (url, result) in gateway_data_results {
+            for (alias, result) in gateway_data_results {
                 let gateway_ecash_balance_sats = result
                     .as_ref()
                     .map(|result| result.balance.msats / 1000)
                     .unwrap_or_default();
                 metrics
                     .gateway_ecash_balance_sats
-                    .with_label_values(&[url.as_ref()])
+                    .with_label_values(&[alias.as_ref()])
                     .set(gateway_ecash_balance_sats);
             }
 
-            for (url, result) in lnd_data_results {
+            for (alias, result) in lnd_data_results {
                 let available_wallet_balance_sats = result
                     .as_ref()
                     .map(|result| result.available_balance().msats / 1000)
                     .unwrap_or_default();
                 metrics
                     .available_wallet_balance_sats
-                    .with_label_values(&[url.as_ref()])
+                    .with_label_values(&[alias.as_ref()])
                     .set(available_wallet_balance_sats);
                 let available_inbound_liquidy_sats = result
                     .as_ref()
@@ -455,7 +452,7 @@ fn set_metrics_for_check(check: &LndGatewaysCheck, metrics: &mut PrometheusMetri
                     .unwrap_or_default();
                 metrics
                     .available_inbound_liquidy_sats
-                    .with_label_values(&[url.as_ref()])
+                    .with_label_values(&[alias.as_ref()])
                     .set(available_inbound_liquidy_sats);
                 let available_outbound_liquidy_sats = result
                     .as_ref()
@@ -463,8 +460,24 @@ fn set_metrics_for_check(check: &LndGatewaysCheck, metrics: &mut PrometheusMetri
                     .unwrap_or_default();
                 metrics
                     .available_outbound_liquidy_sats
-                    .with_label_values(&[url.as_ref()])
+                    .with_label_values(&[alias.as_ref()])
                     .set(available_outbound_liquidy_sats);
+                let synchronized_to_chain = result
+                    .as_ref()
+                    .map(|result| result.synchronized_to_chain)
+                    .unwrap_or_default();
+                metrics
+                    .synchronized_to_chain
+                    .with_label_values(&[alias.as_ref()])
+                    .set(if synchronized_to_chain { 1 } else { 0 });
+                let synchronized_to_graph = result
+                    .as_ref()
+                    .map(|result| result.synchronized_to_graph)
+                    .unwrap_or_default();
+                metrics
+                    .synchronized_to_graph
+                    .with_label_values(&[alias.as_ref()])
+                    .set(if synchronized_to_graph { 1 } else { 0 });
             }
         }
         LndGatewaysCheckResult::Failure { error } => {
@@ -518,7 +531,7 @@ pub async fn get_text(
     if !alerts.is_empty() {
         s += "\n\nAlerts:\n";
         for alert in alerts {
-            s += &format!("  {}\n", alert);
+            s += &format!("  {alert}\n");
         }
     }
     (code, s)
@@ -550,6 +563,8 @@ pub struct PrometheusMetrics {
     available_inbound_liquidy_sats: U64IntGaugeVec,
     available_outbound_liquidy_sats: U64IntGaugeVec,
     available_wallet_balance_sats: U64IntGaugeVec,
+    synchronized_to_chain: U64IntGaugeVec,
+    synchronized_to_graph: U64IntGaugeVec,
 }
 
 impl PrometheusMetrics {
@@ -587,6 +602,16 @@ impl PrometheusMetrics {
             &["node"],
         )?;
         registry.register(Box::new(available_wallet_balance_sats.clone()))?;
+        let synchronized_to_chain = U64IntGaugeVec::new(
+            Opts::new("synchronized_to_chain", "Synchronized to chain"),
+            &["node"],
+        )?;
+        registry.register(Box::new(synchronized_to_chain.clone()))?;
+        let synchronized_to_graph = U64IntGaugeVec::new(
+            Opts::new("synchronized_to_graph", "Synchronized to graph"),
+            &["node"],
+        )?;
+        registry.register(Box::new(synchronized_to_graph.clone()))?;
 
         Ok(Self {
             registry,
@@ -594,6 +619,8 @@ impl PrometheusMetrics {
             available_inbound_liquidy_sats,
             available_outbound_liquidy_sats,
             available_wallet_balance_sats,
+            synchronized_to_chain,
+            synchronized_to_graph,
         })
     }
 }
@@ -647,7 +674,7 @@ fn generate_alerts_for_result(
             if *duration_ms > CHECK_INTERVAL_TIME {
                 results.push(format!("Last check took too long, it took {duration_ms:?}"));
             }
-            for (_url, result) in gateway_data_results {
+            for (_alias, result) in gateway_data_results {
                 match result {
                     Ok(gateway_data) => {
                         if gateway_data.balance < limits.minimum_ecash_balance {
@@ -663,14 +690,14 @@ fn generate_alerts_for_result(
                     }
                 }
             }
-            for (_url, result) in lnd_data_results {
+            for (_alias, result) in lnd_data_results {
                 match result {
                     Ok(lnd_data) => {
                         if !lnd_data.synchronized_to_chain {
-                            results.push(format!("Lnd is not synchronized to chain"));
+                            results.push("Lnd is not synchronized to chain".into());
                         }
                         if !lnd_data.synchronized_to_graph {
-                            results.push(format!("Lnd is not synchronized to graph"));
+                            results.push("Lnd is not synchronized to graph".into());
                         }
                         if lnd_data.available_balance() < limits.minimum_lnd_balance {
                             results.push(format!(
@@ -741,7 +768,7 @@ pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Curs
             lnd_data_results,
         } => {
             writeln!(w, "Gateway data:")?;
-            for (_url, result) in gateway_data_results {
+            for (_alias, result) in gateway_data_results {
                 match result {
                     Ok(result) => {
                         writeln!(w, "  Ecash balance: {}", format_amount(result.balance))?;
@@ -752,7 +779,7 @@ pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Curs
                 }
             }
             writeln!(w, "LND data:")?;
-            for (_url, result) in lnd_data_results {
+            for (_alias, result) in lnd_data_results {
                 match result {
                     Ok(mut result) => {
                         writeln!(

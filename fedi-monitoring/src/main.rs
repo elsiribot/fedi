@@ -140,12 +140,12 @@ pub struct MonitorLndGatewaysLimitsArgs {
 struct MonitorLndGatewaysArgs {
     #[clap(
         long,
-        help = "Can be called multiple times with: <rpc_addr>,<macaroon>,<tls_cert>"
+        help = "Can be called multiple times with: <node_alias>,<rpc_addr>,<macaroon>,<tls_cert>"
     )]
     lnd_confs: Vec<String>,
     #[clap(
         long,
-        help = "Can be called multiple times with: <gateway_address>,<password>"
+        help = "Can be called multiple times with: <gateway_alias>,<gateway_address>,<password>"
     )]
     gateway_confs: Vec<String>,
 
@@ -295,32 +295,37 @@ async fn run_mutinynet_load_test(args: MutinynetLoadTestArgs) -> anyhow::Result<
 async fn monitor_lnd_gateways(args: MonitorLndGatewaysArgs) -> anyhow::Result<()> {
     let mut lnd_clients = vec![];
     for lnd_conf in args.lnd_confs {
-        let params = lnd_conf.split(",").collect::<Vec<_>>();
-        if params.len() != 3 {
+        let params = lnd_conf.split(',').collect::<Vec<_>>();
+        if params.len() != 4 {
             bail!(
-                "Invalid lnd conf: {lnd_conf:?}, expected format: <rpc_addr>,<macaroon>,<tls_cert>"
+                "Invalid lnd conf: {lnd_conf:?}, expected format: <node_alias>,<rpc_addr>,<macaroon>,<tls_cert>"
             )
         }
-        let (lnd_rpc_addr, lnd_macaroon, lnd_tls_cert) = (
-            params[0].to_string(),
+        let (node_alias, lnd_rpc_addr, lnd_macaroon, lnd_tls_cert) = (
+            params[0].trim().to_string(),
             params[1].to_string(),
             params[2].to_string(),
+            params[3].to_string(),
         );
-        info!("Processing lnd: {lnd_rpc_addr}");
+        info!("Processing lnd: {node_alias} {lnd_rpc_addr}");
         let client = tonic_lnd::connect(lnd_rpc_addr.clone(), lnd_tls_cert, lnd_macaroon).await?;
-        lnd_clients.push((lnd_rpc_addr, client));
+        lnd_clients.push((node_alias, client));
     }
     let mut gateway_clients = vec![];
     for gateway_conf in args.gateway_confs {
-        let params = gateway_conf.split(",").collect::<Vec<_>>();
-        if params.len() != 2 {
-            bail!("Invalid gateway conf: {gateway_conf:?}, expected format: <address>,<password>")
+        let params = gateway_conf.split(',').collect::<Vec<_>>();
+        if params.len() != 3 {
+            bail!("Invalid gateway conf: {gateway_conf:?}, expected format: <gateway_alias>,<address>,<password>")
         }
-        let (gateway_address, gateway_password) = (Url::from_str(params[0])?, params[1].trim());
-        info!("Processing gateway: {gateway_address}");
+        let (gateway_alias, gateway_address, gateway_password) = (
+            params[0].trim().to_string(),
+            Url::from_str(params[1])?,
+            params[2].trim(),
+        );
+        info!("Processing gateway: {gateway_alias} {gateway_address}");
         let client =
             GatewayRpcClient::new(gateway_address.clone(), source_password(gateway_password));
-        gateway_clients.push((gateway_address, client));
+        gateway_clients.push((gateway_alias, client));
     }
 
     let state = Arc::new(RwLock::new(LndGatewaysState::default()));

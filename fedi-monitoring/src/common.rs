@@ -36,14 +36,15 @@ pub async fn refill_cli_wallet_if_needed(
     notes_amount_required: Amount,
     minimum_amount_refill: Amount,
 ) -> anyhow::Result<()> {
-    Ok(if cli_get_total_amount().await? < notes_amount_required {
+    if cli_get_total_amount().await? < notes_amount_required {
         let amount_to_refill = max(notes_amount_required, minimum_amount_refill);
         info!("Not enough funds in the cli wallet. Refilling with {amount_to_refill}");
         cli_refill_wallet_with_mutinynet_faucet(amount_to_refill).await?;
         if cli_get_total_amount().await? < notes_amount_required {
             bail!("Not enough funds in the cli wallet. Refilling didn't help")
         }
-    })
+    }
+    Ok(())
 }
 
 pub async fn cli_refill_wallet_with_mutinynet_faucet(amount: Amount) -> anyhow::Result<Amount> {
