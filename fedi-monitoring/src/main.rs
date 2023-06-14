@@ -334,6 +334,7 @@ async fn monitor_lnd_gateways(args: MonitorLndGatewaysArgs) -> anyhow::Result<()
     let app = Router::new()
         .route("/state", get(lnd_gw_monitoring::get_state))
         .route("/text", get(lnd_gw_monitoring::get_text))
+        .route("/metrics", get(lnd_gw_monitoring::get_metrics))
         .with_state(state);
 
     let addr = SocketAddr::from_str(&args.bind)?;
