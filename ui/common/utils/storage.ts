@@ -94,7 +94,7 @@ export function hasStorageStateChanged(
         keysetsToCheck.push(['chat', activeFederationId, 'lastSeenMessageId'])
     }
 
-    for (let keysToCheck of keysetsToCheck) {
+    for (const keysToCheck of keysetsToCheck) {
         if (get(oldState, keysToCheck) !== get(newState, keysToCheck)) {
             return true
         }

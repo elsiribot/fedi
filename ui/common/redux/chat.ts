@@ -50,7 +50,7 @@ import {
 } from '../utils/xmpp'
 import { loadFromStorage } from './storage'
 
-type FederationPayloadAction<T = {}> = PayloadAction<
+type FederationPayloadAction<T = object> = PayloadAction<
     { federationId: string } & T
 >
 
@@ -305,7 +305,7 @@ export const chatSlice = createSlice({
                 lastSeenMessageId: messageId,
             }
         },
-        resetAuthenticatedMember(state, action: FederationPayloadAction<{}>) {
+        resetAuthenticatedMember(state, action: FederationPayloadAction) {
             const { federationId } = action.payload
             const federation = getFederationChatState(state, federationId)
             state[federationId] = {
@@ -587,7 +587,7 @@ export const connectChat = createAsyncThunk<
             // Publish public key
             client
                 .publishPublicKey(encryptionKeys.publicKey)
-                .catch(err => console.error('Failed to publish public key'))
+                .catch(() => console.error('Failed to publish public key'))
 
             // Fetch chat history
             dispatch(fetchChatHistory({ federationId }))
@@ -645,7 +645,8 @@ export const fetchChatHistory = createAsyncThunk<
         getState().chat[federationId]?.lastFetchedMessageId || null
 
     // Keep requesting until we're totally caught up
-    while (true) {
+    let caughtUp = false
+    while (!caughtUp) {
         const nextLastFetchedMessageId = await client.fetchMessageHistory(
             null,
             {
@@ -657,6 +658,7 @@ export const fetchChatHistory = createAsyncThunk<
             !nextLastFetchedMessageId ||
             nextLastFetchedMessageId === lastFetchedMessageId
         ) {
+            caughtUp = true
             break
         }
         lastFetchedMessageId = nextLastFetchedMessageId
@@ -677,7 +679,7 @@ export const fetchChatMember = createAsyncThunk<
     ChatMember,
     { federationId: string; memberId: string },
     { state: CommonState }
->('chat/fetchChatMember', async ({ federationId, memberId }, { getState }) => {
+>('chat/fetchChatMember', async ({ federationId, memberId }) => {
     const client = xmppChatClientManager.getClient(federationId)
     const pubkey = await client.fetchMemberPublicKey(memberId)
     if (pubkey) {
@@ -891,7 +893,7 @@ export const updateChatPayment = createAsyncThunk<
         )
 
         // Update payment depending on action
-        let paymentUpdates: Partial<ChatPayment> = {
+        const paymentUpdates: Partial<ChatPayment> = {
             updatedAt: makePaymentUpdatedAt(payment),
         }
         switch (action) {
@@ -901,10 +903,13 @@ export const updateChatPayment = createAsyncThunk<
 
                 try {
                     await fedimint.receiveEcash(token, federationId)
-                } catch (err: any) {
+                } catch (err) {
                     if (
                         err &&
-                        err.message.includes('already reissued these notes')
+                        (err as Error).message &&
+                        (err as Error).message.includes(
+                            'already reissued these notes',
+                        )
                     ) {
                         // No-op if we already claimed, just mark it as paid
                     } else {

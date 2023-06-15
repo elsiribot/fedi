@@ -2,7 +2,7 @@ class InvoiceUtils {
     // temporary function until decodeInvoice is available from FFI module
     getAmountFromInvoice = (invoice: string) => {
         const part = invoice.split('lnbcrt')[1]
-        var prefixLocation = part.search(/\D/g)
+        const prefixLocation = part.search(/\D/g)
         const amount = part.substring(0, prefixLocation)
         const prefix = part.substring(prefixLocation, prefixLocation + 1)
         const multiplier =

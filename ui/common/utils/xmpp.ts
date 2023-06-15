@@ -154,7 +154,7 @@ export function decodeDirectChatLink(link: string): string {
     const afterPrefix = link.split('fedi:member:')[1]
     if (!afterPrefix) throw new Error('feature.chat.invalid-member')
 
-    let memberId = afterPrefix.slice(0, -3)
+    const memberId = afterPrefix.slice(0, -3)
 
     if (!memberId) throw new Error('feature.chat.invalid-member')
 

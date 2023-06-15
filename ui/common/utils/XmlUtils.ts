@@ -6,10 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { Key, Keypair } from '@fedi/common/types'
 
-import {
-    XMPP_DEFAULT_PAGE_LIMIT,
-    XMPP_PUSH_SERVICE_MODULE,
-} from '../constants/xmpp'
+import { XMPP_DEFAULT_PAGE_LIMIT } from '../constants/xmpp'
 import { ArchiveQueryFilters, ArchiveQueryPagination } from '../types'
 import encryptionUtils from './EncryptionUtils'
 
@@ -225,7 +222,7 @@ export class EnterMucRoomPresence extends XmppPresence {
     }
     build = (): Element => {
         const { from, toGroup } = this.args
-        const fromJid: JID = jid(from!)
+        const fromJid: JID = jid(from as string)
         const memberNickname = fromJid.local
         const attributes = {
             from,
@@ -459,7 +456,7 @@ export class GetPublicKeyQuery extends XmppQuery {
     }
     build = (): Element => {
         const { from, to } = this.args
-        const toJid: JID = jid(to!)
+        const toJid: JID = jid(to as string)
         const nodeService = toJid.bare().toString()
         const nodeId = `${toJid.local}:::pubkey`
 
@@ -498,7 +495,7 @@ export class PublishPublicKeyQuery extends XmppQuery {
     }
     build = (): Element => {
         const { pubkey, from } = this.args
-        const fromJid: JID = jid(from!)
+        const fromJid: JID = jid(from as string)
         const nodeId = `${fromJid.local}:::pubkey`
 
         const attributes = {
@@ -542,7 +539,7 @@ export class PublishNotificationTokenQuery extends XmppQuery {
     }
     build = (): Element => {
         const { token, from } = this.args
-        const fromJid: JID = jid(from!)
+        const fromJid: JID = jid(from as string)
 
         const attributes = {
             id: `${PublishNotificationTokenQuery.id}-${uuidv4()}`,
@@ -600,7 +597,7 @@ export class SetPubsubNodeConfigQuery extends XmppQuery {
     }
     build = (): Element => {
         const { from } = this.args
-        const fromJid: JID = jid(from!)
+        const fromJid: JID = jid(from as string)
         const nodeService = fromJid.bare().toString()
         const nodeId = `${fromJid.local}:::pubkey`
 

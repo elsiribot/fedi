@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, DeepPartial } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 
 import { CommonState } from '.'
 import type { LatestStoredState, StorageApi } from '../types'
@@ -24,7 +24,7 @@ export const storageSlice = createSlice({
     initialState,
     reducers: {},
     extraReducers: builder => {
-        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
+        builder.addCase(loadFromStorage.fulfilled, state => {
             state.hasLoaded = true
         })
         builder.addCase(saveToStorage.fulfilled, state => {
@@ -35,7 +35,7 @@ export const storageSlice = createSlice({
 
 /*** Basic actions ***/
 
-export const {} = storageSlice.actions
+// export const {} = storageSlice.actions
 
 /*** Async thunk actions ***/
 
