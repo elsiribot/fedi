@@ -5,7 +5,6 @@ import CopyIcon from '@fedi/common/assets/svgs/copy.svg'
 
 import { useToast } from '../hooks'
 import { styled } from '../styles'
-import { Button } from './Button'
 import { Icon } from './Icon'
 import { Input } from './Input'
 import { Text } from './Text'
@@ -24,6 +23,7 @@ export const CopyInput: React.FC<Props> = ({ value, label, onCopyMessage }) => {
         try {
             navigator.clipboard.writeText(value)
             if (onCopyMessage) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 showToast({ content: t(onCopyMessage as any) })
             }
         } catch (err) {

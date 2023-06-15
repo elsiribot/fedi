@@ -19,10 +19,9 @@ import { makePaymentText } from '@fedi/common/utils/chat'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
-import { styled, theme } from '../styles'
+import { styled } from '../styles'
 import { Button } from './Button'
 import { CircularLoader } from './CircularLoader'
-import { HoloLoader } from './HoloLoader'
 import { Icon } from './Icon'
 
 interface Props {

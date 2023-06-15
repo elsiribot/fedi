@@ -1,5 +1,5 @@
 declare module '*.svg' {
     import { FunctionComponent, SVGAttributes } from 'react'
-    const value: React.FunctionComponent<React.SVGAttributes<SVGElement>>
+    const value: FunctionComponent<SVGAttributes<SVGElement>>
     export = value
 }

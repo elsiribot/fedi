@@ -9,7 +9,7 @@ export const ToastDemo: React.FC = () => {
     const [content, setContent] = useState(
         'Failed to toast, requires at least one toaster to be available.',
     )
-    const { showToast, closeToast } = useToast()
+    const { showToast } = useToast()
 
     return (
         <Container>

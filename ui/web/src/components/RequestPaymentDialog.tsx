@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
@@ -84,7 +84,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         if (!isRequesting || !activeFederationId) return
 
         let canceled = false
-        let promise: Promise<any> | undefined
+        let promise: Promise<unknown> | undefined
 
         if (isLightning && !lightningInvoice) {
             promise = fedimint
@@ -288,14 +288,6 @@ const NoteInput = styled('input', {
     '&[readonly]': {
         cursor: 'default',
     },
-})
-
-const Loading = styled('div', {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    aspectRatio: '1 / 1',
-    opacity: 0.25,
 })
 
 const QRContainer = styled('div', {

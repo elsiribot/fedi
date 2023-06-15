@@ -135,6 +135,7 @@ function AdminPage() {
                 {menu.map(group => (
                     <MenuGroup key={group.name}>
                         <MenuGroupName>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                             <Text>{t(group.name as any)}</Text>
                         </MenuGroupName>
                         <MenuGroupItems>
@@ -153,6 +154,7 @@ function AdminPage() {
                                                 : item.onClick
                                         }>
                                         <Icon icon={item.icon} />
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         <Text>{t(item.name as any)}</Text>
                                         <Icon icon={ChevronRightIcon} />
                                     </MenuItem>

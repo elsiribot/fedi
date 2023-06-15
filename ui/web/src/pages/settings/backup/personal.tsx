@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import EditIcon from '@fedi/common/assets/svgs/edit.svg'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../../components/Button'
 import { Checkbox } from '../../../components/Checkbox'
 import { ContentBlock } from '../../../components/ContentBlock'
-import { Icon } from '../../../components/Icon'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
 import { useAppSelector, useToast } from '../../../hooks'

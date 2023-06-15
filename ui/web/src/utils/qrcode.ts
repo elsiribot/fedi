@@ -85,12 +85,12 @@ export function renderStyledQrSvg(qrData: QRCode) {
  * Removes the center modules for placing logo.
  */
 function removeModules(matrix: QRCode['modules']) {
-    let size = matrix.size
+    const size = matrix.size
 
     const finderPatternModules = size - 7
     const centerModules = (size - 7 * 3) / 2 + 7
 
-    let pos = [
+    const pos = [
         // top-left
         [0, 0],
         // top-right
@@ -102,8 +102,8 @@ function removeModules(matrix: QRCode['modules']) {
     ]
 
     for (let i = 0; i < pos.length; i++) {
-        let row = pos[i][0]
-        let col = pos[i][1]
+        const row = pos[i][0]
+        const col = pos[i][1]
 
         for (let r = -1; r <= 7; r++) {
             if (row + r <= -1 || size <= row + r) continue

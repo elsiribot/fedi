@@ -70,15 +70,6 @@ const Info = styled('div', {
     gap: 8,
 })
 
-const Action = styled('div', {
-    maxWidth: 320,
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 24,
-})
-
 const Terms = styled('div', {
     maxWidth: 220,
 

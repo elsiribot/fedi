@@ -11,7 +11,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
 import { ChatConversation } from './ChatConversation'

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { joinFederation } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'

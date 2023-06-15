@@ -15,7 +15,6 @@ export const FormDemo: React.FC = () => {
     const [radioGroupValue, setRadioGroupValue] = useState('one')
 
     const [inputOneValue, setInputOneValue] = useState('')
-    const [inputTwoValue, setInputTwoValue] = useState('')
 
     const groupOptions = [
         {
