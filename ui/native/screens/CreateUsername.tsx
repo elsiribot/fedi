@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 
 import { authenticateChat } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -97,7 +98,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
             } catch (error: unknown) {
                 if ((error as Error).message) {
                     setXmppAuthInProgress(false)
-                    const errorMessage = t((error as Error).message)
+                    const errorMessage = formatErrorMessage(t, error)
                     console.info(errorMessage)
                     toast?.show(errorMessage, 3000)
                 } else {

@@ -8,6 +8,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
 import { joinFederation } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
@@ -57,11 +58,15 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
                         )
                     ) {
                         toast?.show(t('errors.please-force-quit-the-app'), 5000)
-                    } else if (typedError?.message?.startsWith('errors.')) {
-                        // This catches an error
-                        toast?.show(t(typedError.message), 5000)
                     } else {
-                        toast?.show(t('errors.failed-to-join-federation'), 5000)
+                        toast?.show(
+                            formatErrorMessage(
+                                t,
+                                typedError,
+                                'errors.failed-to-join-federation',
+                            ),
+                            5000,
+                        )
                     }
                 }
                 setIsJoining(false)
