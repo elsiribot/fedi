@@ -35,19 +35,20 @@ export const Template: React.FC<Props> = ({ children }) => {
     return (
         <Container>
             {!hideSideNavigation && <Navigation />}
-            <Content
-                centered={hideControls}
-                fullWidth={isFullWidthPage}
-                fullScreen={isFullScreenPage}>
+            <Content>
                 {!hideControls && (
                     <FederationControls>
                         <FederationSelector />
                         <PopupFederationCountdown />
                     </FederationControls>
                 )}
-                <ErrorBoundary fallback={() => <PageError />}>
-                    {isPopupOver ? <PopupFederationOver /> : children}
-                </ErrorBoundary>
+                <Main
+                    fullScreen={isFullScreenPage || isFullWidthPage}
+                    centered={hideControls}>
+                    <ErrorBoundary fallback={() => <PageError />}>
+                        {isPopupOver ? <PopupFederationOver /> : children}
+                    </ErrorBoundary>
+                </Main>
             </Content>
         </Container>
     )
@@ -56,6 +57,11 @@ export const Template: React.FC<Props> = ({ children }) => {
 const Container = styled('div', {
     display: 'flex',
     minHeight: '100vh',
+
+    '@supports (height: 100dvh)': {
+        minHeight: '100dvh',
+    },
+
     '@supports (min-height: -webkit-fill-available)': {
         minHeight: '-webkit-fill-available',
     },
@@ -64,6 +70,11 @@ const Container = styled('div', {
         height: '100vh',
         maxHeight: '100vh',
         flexDirection: 'column-reverse',
+
+        '@supports (height: 100dvh)': {
+            height: '100dvh',
+            maxHeight: '100dvh',
+        },
 
         '@supports (height: -webkit-fill-available)': {
             height: '-webkit-fill-available',
@@ -75,21 +86,51 @@ const Container = styled('div', {
     },
 })
 
-const Content = styled('main', {
+const Content = styled('div', {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 48,
-    padding: 48,
-    overflow: 'auto',
+    minHeight: 0,
+    '--template-padding': '48px',
 
     '@md': {
-        padding: 36,
-        gap: 36,
+        '--template-padding': '36px',
     },
 
     '@sm': {
+        '--template-padding': '24px',
+        background: theme.colors.white,
+    },
+
+    '@xs': {
+        '--template-padding': '16px',
+    },
+
+    variants: {
+        fullScreen: {
+            true: {
+                '@sm': {
+                    padding: 0,
+                },
+            },
+        },
+    },
+})
+
+const Main = styled('main', {
+    flex: 1,
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    minHeight: 0,
+    gap: `var(--template-padding)`,
+    padding: '0 var(--template-padding) var(--template-padding)',
+    overflow: 'auto',
+
+    '@sm': {
+        padding: '0 var(--template-padding)',
         background: theme.colors.white,
     },
 
@@ -97,13 +138,6 @@ const Content = styled('main', {
         centered: {
             true: {
                 justifyContent: 'center',
-            },
-        },
-        fullWidth: {
-            true: {
-                '@sm': {
-                    padding: '36px 0 0',
-                },
             },
         },
         fullScreen: {
@@ -119,5 +153,13 @@ const Content = styled('main', {
 const FederationControls = styled('div', {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    padding: 'var(--template-padding) 8px',
     gap: 4,
+
+    '@sm': {
+        padding: '16px 8px',
+        borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+    },
 })

@@ -77,7 +77,14 @@ export const FederationSelector: React.FC = () => {
                 open={isSelectorOpen}
                 onOpenChange={setIsSelectorOpen}>
                 <ActiveFederation>
-                    <FederationAvatar federation={activeFederation} size="sm" />
+                    <FederationAvatar
+                        federation={activeFederation}
+                        size="sm"
+                        css={{
+                            width: 'var(--avatar-size)',
+                            height: 'var(--avatar-size)',
+                        }}
+                    />
                     <Text variant="caption" weight="bold">
                         {activeFederation.name}
                     </Text>
@@ -100,6 +107,11 @@ const ActiveFederation = styled('div', {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
+    '--avatar-size': '32px',
+
+    '@sm': {
+        '--avatar-size': '20px',
+    },
 })
 
 const IconWrapper = styled('div', {

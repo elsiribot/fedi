@@ -14,7 +14,6 @@ import { useAppSelector } from '../../hooks'
 import { keyframes, styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { NotificationDot } from '../NotificationDot'
-import { Text } from '../Text'
 
 export const Navigation: React.FC = () => {
     const router = useRouter()
@@ -66,9 +65,7 @@ export const Navigation: React.FC = () => {
                             <NotificationDot visible={nav.hasNotification}>
                                 <Icon icon={nav.icon} />
                             </NotificationDot>
-                            <Text variant="body" weight="medium">
-                                {t(nav.name)}
-                            </Text>
+                            <NavLabel>{t(nav.name)}</NavLabel>
                         </Link>
                     </NavItem>
                 ))}
@@ -98,6 +95,7 @@ const Container = styled('nav', {
     '@md': {
         width: '100%',
         padding: 0,
+        borderTop: `1px solid ${theme.colors.extraLightGrey}`,
         animation: 'none',
     },
 })
@@ -150,13 +148,31 @@ const NavItem = styled('li', {
         color: 'inherit',
     },
 
+    '& svg': {
+        display: 'block',
+    },
+
     '@md': {
         justifyContent: 'center',
 
         '& a': {
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: 16,
+            gap: 4,
+            padding: 12,
+        },
+    },
+
+    '@xs': {
+        '& a': {
+            gap: 2,
+            padding: 8,
+            fontSize: theme.fontSizes.caption,
+        },
+
+        '& svg': {
+            width: 20,
+            height: 20,
         },
     },
 
@@ -166,5 +182,14 @@ const NavItem = styled('li', {
                 color: theme.colors.primary,
             },
         },
+    },
+})
+
+const NavLabel = styled('div', {
+    fontSize: theme.fontSizes.body,
+    fontWeight: theme.fontWeights.medium,
+
+    '@sm': {
+        fontSize: theme.fontSizes.caption,
     },
 })
