@@ -2,7 +2,7 @@
 // be fairly immutable, but if you simply want to add a new key, just make
 // it optional?: value.
 import { Chat, ChatGroup, ChatMember, ChatMessage } from './chat'
-import { Federation, Guardian, SupportedCurrency } from './fedimint'
+import { Federation, Guardian, FediMod, SupportedCurrency } from './fedimint'
 
 export interface StoredStateV0 {
     version: 0 // Not a real version, just implemented for demonstrative purposes
@@ -49,6 +49,7 @@ export interface StoredStateV3 extends Omit<StoredStateV2, 'version' | 'chat'> {
           }
         | undefined
     >
+    customFediMods?: Record<Federation['id'], FediMod[] | undefined>
 }
 
 /*** Union of all past shapes of stored state ***/

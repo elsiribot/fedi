@@ -4,7 +4,7 @@ import { ImageSourcePropType } from 'react-native'
 
 import { MSats, Invoice } from '@fedi/common/types'
 
-import { SiteImages } from '../assets/images'
+import { FediModImages } from '../assets/images'
 import { DEFAULT_GROUP_NAME } from '../constants'
 import i18n from '../localization/i18n'
 import { RootStackParamList } from './navigation'
@@ -65,14 +65,14 @@ export class Shortcut extends Base {
     type: ShortcutType
     color?: string
 }
-export class Site extends Shortcut {
+export class FediMod extends Shortcut {
     id: string
     type = ShortcutType.site
     url: string
     constructor(data: any) {
         super(data)
         this.icon = {
-            image: SiteImages[data.id],
+            image: FediModImages[data.id] || FediModImages.default,
         }
     }
 }

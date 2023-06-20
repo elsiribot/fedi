@@ -3,26 +3,38 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 
 import {
     changeAuthenticatedGuardian,
+    removeCustomFediMod,
     resetAuthenticatedMember,
     resetFederationChatState,
     selectActiveFederation,
+    selectFederationCustomFediMods,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
 } from '@fedi/common/redux'
-import { changeSelectedFiatCurrency } from '@fedi/common/redux/currency'
+import {
+    changeSelectedFiatCurrency,
+    selectCurrency,
+} from '@fedi/common/redux/currency'
 import {
     Guardian,
     LightningGateway,
     SupportedCurrency,
 } from '@fedi/common/types'
 
+import { AddCustomFediModDialog } from '../components/feature/developer-settings/AddCustomFediModDialog'
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
 import {
@@ -40,7 +52,6 @@ import {
 } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
-import { useXmpp } from '../state/hooks/chat'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -54,16 +65,15 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { listGateways, switchGateway } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { dispatch: chatContextDispatch } = useChatContext()
-    const { sendTestXml } = useXmpp()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>(
         i18n.language,
     )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
-    const [guardianIndex] = useState<number>(0)
-    const selectedFiatCurrency = useAppSelector(
-        s => s.currency.selectedFiatCurrency,
-    )
+    const [isAddingCustomFediMod, setIsAddingCustomFediMod] =
+        useState<boolean>(false)
+    const selectedFiatCurrency = useAppSelector(selectCurrency)
+    const customFediMods = useAppSelector(selectFederationCustomFediMods)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -107,32 +117,56 @@ const DeveloperSettings: React.FC<Props> = () => {
             url: `file://${RNFS.DocumentDirectoryPath}/fedi.log`,
         })
     }
+
+    const removeFediMod = (siteId: string) => {
+        if (!activeFederation) return
+        reduxDispatch(
+            removeCustomFediMod({ federationId: activeFederation.id, siteId }),
+        )
+        toast?.show('Custom site removed', 3000)
+    }
+
     useEffect(() => {
         i18n.changeLanguage(selectedLanguage)
     }, [i18n, selectedLanguage])
 
-    useEffect(() => {}, [guardianIndex])
-
     if (isLoading) return <ActivityIndicator />
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
-            <Text>Change your lightning gateway</Text>
-            {gateways.map((gw: LightningGateway, index: number) => (
-                <View key={gw.nodePubKey}>
-                    <CheckBox
-                        key={index}
-                        title={
-                            <Text style={styles(theme).checkboxText}>
-                                {gw.api}
-                            </Text>
-                        }
-                        checked={gw.active}
-                        onPress={() => handleSelectGateway(gw)}
-                    />
-                </View>
-            ))}
-            <Text>Change your language</Text>
-            <View>
+            <SettingsSection title="App info">
+                <Text
+                    style={styles(theme).version}>{`Version ${version}`}</Text>
+                <Button
+                    title="Share logs"
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        shareLogs()
+                    }}
+                />
+            </SettingsSection>
+            <SettingsSection title="Custom sites">
+                {customFediMods.map(fediMod => (
+                    <View key={fediMod.id} style={styles(theme).fediMod}>
+                        <View>
+                            <Text>{fediMod.title}</Text>
+                            <Text small>{fediMod.url}</Text>
+                        </View>
+                        <Pressable onPress={() => removeFediMod(fediMod.id)}>
+                            <SvgImage name="Close" />
+                        </Pressable>
+                    </View>
+                ))}
+                <Button
+                    title={'Add custom site'}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => setIsAddingCustomFediMod(true)}
+                />
+                <AddCustomFediModDialog
+                    isVisible={isAddingCustomFediMod}
+                    onClose={() => setIsAddingCustomFediMod(false)}
+                />
+            </SettingsSection>
+            <SettingsSection title="Change your language">
                 <CheckBox
                     title={
                         <Text style={styles(theme).checkboxText}>
@@ -141,6 +175,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedLanguage === 'en'}
                     onPress={() => setSelectedLanguage('en')}
+                    containerStyle={styles(theme).checkboxContainer}
                 />
                 <CheckBox
                     title={
@@ -150,6 +185,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedLanguage === 'es'}
                     onPress={() => setSelectedLanguage('es')}
+                    containerStyle={styles(theme).checkboxContainer}
                 />
                 <CheckBox
                     title={
@@ -159,10 +195,10 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedLanguage === 'fr'}
                     onPress={() => setSelectedLanguage('fr')}
+                    containerStyle={styles(theme).checkboxContainer}
                 />
-            </View>
-            <Text>Change your currency</Text>
-            <View>
+            </SettingsSection>
+            <SettingsSection title="Change your currency">
                 <CheckBox
                     title={
                         <Text style={styles(theme).checkboxText}>{'USD'}</Text>
@@ -173,6 +209,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                             changeSelectedFiatCurrency(SupportedCurrency.USD),
                         )
                     }
+                    containerStyle={styles(theme).checkboxContainer}
                 />
                 <CheckBox
                     title={
@@ -184,6 +221,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                             changeSelectedFiatCurrency(SupportedCurrency.EUR),
                         )
                     }
+                    containerStyle={styles(theme).checkboxContainer}
                 />
                 <CheckBox
                     title={
@@ -195,118 +233,29 @@ const DeveloperSettings: React.FC<Props> = () => {
                             changeSelectedFiatCurrency(SupportedCurrency.CFA),
                         )
                     }
+                    containerStyle={styles(theme).checkboxContainer}
                 />
-            </View>
-            <Button
-                size="sm"
-                title={'Delete all groups, messages, & members seen'}
-                onPress={() => {
-                    if (activeFederation) {
-                        reduxDispatch(
-                            resetFederationChatState({
-                                federationId: activeFederation.id,
-                            }),
-                        )
-                        AsyncStorage.setItem(
-                            `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                            JSON.stringify({ groups: [] }),
-                        )
-                        AsyncStorage.setItem(
-                            `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                            JSON.stringify({ members: [] }),
-                        )
-                        AsyncStorage.setItem(
-                            `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
-                            JSON.stringify({ messages: [] }),
-                        )
-                    }
-                }}
-            />
-            <Button
-                size="sm"
-                title={'Delete all groups'}
-                onPress={() => {
-                    if (activeFederation) {
-                        chatContextDispatch(receiveGroups([]))
-                        reduxDispatch(
-                            setChatGroups({
-                                federationId: activeFederation.id,
-                                groups: [],
-                            }),
-                        )
-                        AsyncStorage.setItem(
-                            `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                            JSON.stringify({ groups: [] }),
-                        )
-                    }
-                }}
-            />
-            <Button
-                size="sm"
-                title={'Delete all messages'}
-                onPress={() => {
-                    if (activeFederation) {
-                        chatContextDispatch(receiveMessages([]))
-                        reduxDispatch(
-                            setChatMessages({
-                                federationId: activeFederation.id,
-                                messages: [],
-                            }),
-                        )
-                        AsyncStorage.setItem(
-                            `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
-                            JSON.stringify({ messages: [] }),
-                        )
-                    }
-                }}
-            />
-            <Button
-                size="sm"
-                title={'Delete all members seen'}
-                onPress={() => {
-                    if (activeFederation) {
-                        chatContextDispatch(receiveMembersSeen([]))
-                        reduxDispatch(
-                            setChatMembersSeen({
-                                federationId: activeFederation.id,
-                                membersSeen: [],
-                            }),
-                        )
-                        AsyncStorage.setItem(
-                            `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                            JSON.stringify({ members: [] }),
-                        )
-                    }
-                }}
-            />
-            <Button
-                size="sm"
-                title="Reset username"
-                onPress={() => {
-                    reduxDispatch(
-                        resetAuthenticatedMember({
-                            federationId: activeFederation?.id!,
-                        }),
-                    )
-                }}
-            />
-            <Button
-                size="sm"
-                disabled
-                title="Send XML"
-                onPress={() => {
-                    sendTestXml()
-                }}
-            />
-            <Button
-                size="sm"
-                title="Share logs"
-                onPress={() => {
-                    shareLogs()
-                }}
-            />
-            <View style={styles(theme).guardians}>
-                <Text>{'Select a node to simulate Guardian Mode'}</Text>
+            </SettingsSection>
+            <SettingsSection title="Change your lightning gateway">
+                {gateways.map((gw: LightningGateway, index: number) => (
+                    <View key={gw.nodePubKey}>
+                        <CheckBox
+                            key={index}
+                            title={
+                                <Text
+                                    style={styles(theme).checkboxText}
+                                    numberOfLines={1}>
+                                    {gw.api}
+                                </Text>
+                            }
+                            checked={gw.active}
+                            onPress={() => handleSelectGateway(gw)}
+                            containerStyle={styles(theme).checkboxContainer}
+                        />
+                    </View>
+                ))}
+            </SettingsSection>
+            <SettingsSection title="Select a node to simulate Guardian Mode">
                 <CheckBox
                     title={
                         <Text
@@ -320,15 +269,12 @@ const DeveloperSettings: React.FC<Props> = () => {
                             {authenticatedGuardian == null ? 'None' : 'Reset'}
                         </Text>
                     }
-                    checked={authenticatedGuardian == null}
-                    checkedIcon={<SvgImage name="CheckboxUnchecked" />}
-                    uncheckedIcon={<SvgImage name="CheckboxUnchecked" />}
-                    checkedColor={theme.colors.lightGrey}
-                    uncheckedColor={theme.colors.red}
+                    checked={!authenticatedGuardian}
                     onPress={() => {
                         reduxDispatch(changeAuthenticatedGuardian(null))
                         AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
+                    containerStyle={styles(theme).checkboxContainer}
                 />
                 {activeFederation &&
                     Object.entries(activeFederation.nodes).map(entry => {
@@ -352,6 +298,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                                         changeAuthenticatedGuardian(guardian),
                                     )
                                 }}
+                                containerStyle={styles(theme).checkboxContainer}
                             />
                         )
                     })}
@@ -376,22 +323,142 @@ const DeveloperSettings: React.FC<Props> = () => {
                         />
                     </View>
                 )}
-            </View>
-            <Text style={styles(theme).version}>{`v${version}`}</Text>
+            </SettingsSection>
+            <SettingsSection title="Danger zone">
+                <Button
+                    title={'Delete all groups, messages, & members seen'}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        if (activeFederation) {
+                            reduxDispatch(
+                                resetFederationChatState({
+                                    federationId: activeFederation.id,
+                                }),
+                            )
+                            AsyncStorage.setItem(
+                                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                                JSON.stringify({ groups: [] }),
+                            )
+                            AsyncStorage.setItem(
+                                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                                JSON.stringify({ members: [] }),
+                            )
+                            AsyncStorage.setItem(
+                                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                                JSON.stringify({ messages: [] }),
+                            )
+                        }
+                    }}
+                />
+                <Button
+                    title={'Delete all groups'}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        if (activeFederation) {
+                            chatContextDispatch(receiveGroups([]))
+                            reduxDispatch(
+                                setChatGroups({
+                                    federationId: activeFederation.id,
+                                    groups: [],
+                                }),
+                            )
+                            AsyncStorage.setItem(
+                                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                                JSON.stringify({ groups: [] }),
+                            )
+                        }
+                    }}
+                />
+                <Button
+                    title={'Delete all messages'}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        if (activeFederation) {
+                            chatContextDispatch(receiveMessages([]))
+                            reduxDispatch(
+                                setChatMessages({
+                                    federationId: activeFederation.id,
+                                    messages: [],
+                                }),
+                            )
+                            AsyncStorage.setItem(
+                                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
+                                JSON.stringify({ messages: [] }),
+                            )
+                        }
+                    }}
+                />
+                <Button
+                    title={'Delete all members seen'}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        if (activeFederation) {
+                            chatContextDispatch(receiveMembersSeen([]))
+                            reduxDispatch(
+                                setChatMembersSeen({
+                                    federationId: activeFederation.id,
+                                    membersSeen: [],
+                                }),
+                            )
+                            AsyncStorage.setItem(
+                                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
+                                JSON.stringify({ members: [] }),
+                            )
+                        }
+                    }}
+                />
+                <Button
+                    title="Reset username"
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        reduxDispatch(
+                            resetAuthenticatedMember({
+                                federationId: activeFederation?.id!,
+                            }),
+                        )
+                    }}
+                />
+            </SettingsSection>
         </ScrollView>
+    )
+}
+
+const SettingsSection: React.FC<{
+    title: React.ReactNode
+    children: React.ReactNode
+}> = ({ title, children }) => {
+    const { theme } = useTheme()
+    return (
+        <View style={styles(theme).section}>
+            <Text caption style={styles(theme).sectionTitle}>
+                {title}
+            </Text>
+            <View>{children}</View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            alignItems: 'center',
-            justifyContent: 'center',
             padding: theme.spacing.xl,
+        },
+        section: {
+            paddingBottom: theme.spacing.lg,
+        },
+        sectionTitle: {
+            marginBottom: theme.spacing.md,
+        },
+        checkboxContainer: {
+            margin: 0,
+            paddingHorizontal: 0,
         },
         checkboxText: {
             paddingHorizontal: theme.spacing.md,
             textAlign: 'left',
+        },
+        buttonContainer: {
+            marginBottom: theme.spacing.md,
         },
         guardians: {
             paddingTop: theme.spacing.lg,
@@ -403,7 +470,13 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         version: {
-            alignSelf: 'flex-end',
+            marginBottom: theme.spacing.sm,
+        },
+        fediMod: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: theme.spacing.md,
         },
     })
 

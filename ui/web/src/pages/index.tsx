@@ -5,7 +5,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
-import { SiteTiles } from '../components/SiteTiles'
+import { FediModTiles } from '../components/FediModTiles'
 import { Text } from '../components/Text'
 import { styled } from '../styles'
 
@@ -20,7 +20,7 @@ function HomePage() {
             <ContentInner>
                 <BitcoinWallet />
                 <ErrorBoundary fallback={null}>
-                    <SiteTiles />
+                    <FediModTiles />
                 </ErrorBoundary>
             </ContentInner>
         </ContentBlock>

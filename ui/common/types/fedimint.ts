@@ -64,17 +64,17 @@ export interface OfflineTransactionDetails {
     claimed: boolean
 }
 
-export type LnPayState = 
-    { type: "Created" } |
-    { type: "Canceled" } |
-    { type: "Funded" } |
+export type LnPayState =
+    | { type: 'Created' }
+    | { type: 'Canceled' }
+    | { type: 'Funded' }
     // skipped gateway_error
-    { type: "WaitingForRefund", block_height: number } |
-    { type: "AwaitingChange" } |
-    { type: "Success", "preimage": string } |
+    | { type: 'WaitingForRefund'; block_height: number }
+    | { type: 'AwaitingChange' }
+    | { type: 'Success'; preimage: string }
     // skipped gateway_error
-    { type: "Refunded" } |
-    { type: "Failed" };
+    | { type: 'Refunded' }
+    | { type: 'Failed' }
 
 export interface Transaction {
     id: string
@@ -154,7 +154,7 @@ export interface ClientConfigMetadata {
     // 2. switch to MSats (number)
     max_invoice_msats?: MsatsString
     max_balance_msats?: MsatsString
-    // 3. Site[]
+    // 3. FediMod[]
     sites?: string
     // 4. Switch to number (unix epoch timestamp)
     /** Timestamp that popup federations will be completely disabled at */
@@ -183,7 +183,7 @@ export interface Federation {
 
 export type SeedWords = string[]
 
-export interface Site {
+export interface FediMod {
     id: string
     title: string
     url: string

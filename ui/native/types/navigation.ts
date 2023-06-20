@@ -4,7 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import { Transaction } from '@fedi/common/types'
 
-import { BtcLnUri, Group, Member, MSats, Site } from '.'
+import { BtcLnUri, Group, Member, MSats, FediMod } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
@@ -86,7 +86,7 @@ export type RootStackParamList = {
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
     SendSuccess: { amount: MSats; unit: string }
-    SitesBrowser: { site: Site }
+    SitesBrowser: { site: FediMod }
     Splash: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined

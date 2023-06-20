@@ -1,42 +1,42 @@
 import Image from 'next/image'
 import React from 'react'
 
-import { selectFederationSites } from '@fedi/common/redux'
+import { selectFederationFediMods } from '@fedi/common/redux'
 
 import { SITE_IMAGES } from '../constants/siteimages'
 import { useAppSelector } from '../hooks'
-import { styled, theme } from '../styles'
+import { styled } from '../styles'
 import { Text } from './Text'
 
-export const SiteTiles: React.FC = () => {
-    const sites = useAppSelector(selectFederationSites)
+export const FediModTiles: React.FC = () => {
+    const fediMods = useAppSelector(selectFederationFediMods)
 
     return (
         <Container>
-            {sites.map(site => {
+            {fediMods.map(site => {
                 const image = SITE_IMAGES[site.id]
                 return (
-                    <SiteTile
+                    <FediModTile
                         key={site.id}
                         href={site.url}
                         target="_blank"
                         rel="noopener noreferrer">
                         {image ? (
-                            <SiteIcon
+                            <FediModIcon
                                 src={image}
                                 alt=""
                                 width={48}
                                 height={48}
                             />
                         ) : (
-                            <SiteIcon as="div" />
+                            <FediModIcon as="div" />
                         )}
-                        <SiteTitle>
+                        <FediModTitle>
                             <Text variant="small" ellipsize>
                                 {site.title}
                             </Text>
-                        </SiteTitle>
-                    </SiteTile>
+                        </FediModTitle>
+                    </FediModTile>
                 )
             })}
         </Container>
@@ -58,7 +58,7 @@ const Container = styled('div', {
     },
 })
 
-const SiteTile = styled('a', {
+const FediModTile = styled('a', {
     display: 'inline-flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -78,13 +78,13 @@ const SiteTile = styled('a', {
     },
 })
 
-const SiteIcon = styled(Image, {
+const FediModIcon = styled(Image, {
     width: 48,
     height: 48,
     borderRadius: 12,
 })
 
-const SiteTitle = styled('div', {
+const FediModTitle = styled('div', {
     maxWidth: '100%',
     minWidth: 0,
 })

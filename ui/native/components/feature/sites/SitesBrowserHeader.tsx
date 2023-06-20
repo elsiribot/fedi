@@ -4,7 +4,7 @@ import React, { MutableRefObject } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import WebView from 'react-native-webview'
 
-import { Site } from '@fedi/common/types'
+import { FediMod } from '@fedi/common/types'
 
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
@@ -12,7 +12,7 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type SitesBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
-    site: Site
+    site: FediMod
 }
 
 const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({

@@ -13,6 +13,7 @@ import type {
     MSats,
     Sats,
     SeedWords,
+    FediMod,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -20,7 +21,7 @@ import {
     getFederationGroupChats,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
-    getFederationSites,
+    getFederationFediMods,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
@@ -31,6 +32,7 @@ const initialState = {
     federations: [] as Federation[],
     activeFederationId: null as string | null,
     authenticatedGuardian: null as Guardian | null,
+    customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
 }
 
 export type FederationState = typeof initialState
@@ -71,8 +73,29 @@ export const federationSlice = createSlice({
         ) {
             state.authenticatedGuardian = action.payload
         },
-        resetFederationsState() {
-            return { ...initialState }
+        addCustomFediMod(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                site: FediMod
+            }>,
+        ) {
+            const { federationId, site } = action.payload
+            const sites = state.customFediMods[federationId] || []
+            state.customFediMods[federationId] = [...sites, site]
+        },
+        removeCustomFediMod(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                siteId: FediMod['id']
+            }>,
+        ) {
+            const { federationId, siteId } = action.payload
+            const sites = state.customFediMods[federationId] || []
+            state.customFediMods[federationId] = sites.filter(
+                s => s.id !== siteId,
+            )
         },
     },
     extraReducers: builder => {
@@ -92,6 +115,7 @@ export const federationSlice = createSlice({
             if (!action.payload) return
             state.activeFederationId = action.payload.activeFederationId
             state.authenticatedGuardian = action.payload.authenticatedGuardian
+            state.customFediMods = action.payload.customFediMods || {}
         })
     },
 })
@@ -103,7 +127,8 @@ export const {
     updateFederation,
     setActiveFederationId,
     changeAuthenticatedGuardian,
-    resetFederationsState,
+    addCustomFediMod,
+    removeCustomFediMod,
 } = federationSlice.actions
 
 /*** Async thunk actions */
@@ -251,6 +276,13 @@ export const selectFederationBalance = createSelector(
     },
 )
 
+export const selectFederationCustomFediMods = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+    return activeFederation
+        ? s.federation.customFediMods[activeFederation?.id] || []
+        : []
+}
+
 // For now we set a safe default of 200K sats maximum unless otherwise
 // specified by the federation feature flags. At some points we probably
 // can remove this hard-coded value altogether
@@ -305,9 +337,13 @@ export const selectReceivesDisabled = createSelector(
     },
 )
 
-export const selectFederationSites = createSelector(
-    selectFederationMetadata,
-    getFederationSites,
+export const selectFederationFediMods = createSelector(
+    selectActiveFederation,
+    selectFederationCustomFediMods,
+    (federation, customFediMods) => {
+        if (!federation) return []
+        return [...getFederationFediMods(federation.meta), ...customFediMods]
+    },
 )
 
 export const selectFederationGroupChats = createSelector(

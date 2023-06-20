@@ -12,7 +12,7 @@ export const Images: ImagesMap = {
     IllustrationWorld: require('@fedi/common/assets/images/illustration-world.png'),
 }
 
-export const SiteImages: ImagesMap = {
+export const FediModImages: ImagesMap = {
     'ai-beta': require('@fedi/common/assets/images/sites/ai-beta.png'),
     'bitcoinco': require('@fedi/common/assets/images/sites/bitcoinco.png'),
     'bitrefill': require('@fedi/common/assets/images/sites/bitrefill.png'),
@@ -21,6 +21,7 @@ export const SiteImages: ImagesMap = {
     'btcprague-useful': require('@fedi/common/assets/images/sites/btcprague-useful.png'),
     'btcprague-speakers': require('@fedi/common/assets/images/sites/btcprague-speakers.png'),
     'btcprague-side-events': require('@fedi/common/assets/images/sites/btcprague-side-events.png'),
+    'default': require('@fedi/common/assets/images/sites/default.png'),
     'fedi-community': require('@fedi/common/assets/images/sites/fedi-community.png'),
     'fedifeedback': require('@fedi/common/assets/images/sites/fedifeedback.png'),
     'geyser': require('@fedi/common/assets/images/sites/geyser.png'),

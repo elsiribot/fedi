@@ -5,7 +5,7 @@ import {
     ClientConfigMetadata,
     Federation,
     MSats,
-    Site,
+    FediMod,
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
@@ -202,10 +202,12 @@ export const getFederationGroupChats = (
     return []
 }
 
-export const getFederationSites = (metadata: ClientConfigMetadata): Site[] => {
+export const getFederationFediMods = (
+    metadata: ClientConfigMetadata,
+): FediMod[] => {
     if (metadata.sites) {
         try {
-            // TODO: validate type matches Site[]
+            // TODO: validate type matches FediMod[]
             return JSON.parse(metadata.sites)
         } catch (err) {
             console.warn(
