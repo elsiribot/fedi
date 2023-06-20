@@ -214,6 +214,9 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="FederationAcceptTerms"
                                 component={FederationAcceptTerms}
+                                initialParams={{
+                                    nextScreen: 'ChooseRecoveryMethod',
+                                }}
                                 options={() => ({
                                     header: () => <Header backButton />,
                                     animation: 'fade',

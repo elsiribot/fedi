@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
+import { authenticateChat } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -23,7 +23,9 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const [username, setUsername] = useState<string>('')
@@ -83,8 +85,8 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 await dispatch(
                     authenticateChat({
                         fedimint,
-                        federationId: activeFederation!.id,
-                        username,
+                        federationId: activeFederationId as string,
+                        username: username.toLowerCase(),
                     }),
                 ).unwrap()
                 setXmppAuthInProgress(false)
@@ -113,14 +115,16 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         t,
         username,
         xmppAuthInProgress,
-        activeFederation,
+        activeFederationId,
     ])
 
     const handleUsernameChange = (input: string) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
         if (!isValid) {
             toast?.show(t('errors.invalid-character'), 3000)
-        } else setUsername(input.toLowerCase())
+        } else {
+            setUsername(input)
+        }
     }
 
     return (

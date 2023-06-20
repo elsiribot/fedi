@@ -1,77 +1,54 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import { compile } from 'html-to-text'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { Linking, StyleSheet, View } from 'react-native'
+import Hyperlink from 'react-native-hyperlink'
 
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-    selectChatConnectionOptions,
-} from '@fedi/common/redux'
+import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../state/hooks'
+import { navigate } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
-
-const options = {
-    wordwrap: 130,
-}
-
-const compiledConvert = compile(options)
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'FederationAcceptTerms'
 >
 
-const FederationAcceptTerms: React.FC<Props> = ({ navigation }: Props) => {
+const FederationAcceptTerms: React.FC<Props> = ({
+    navigation,
+    route,
+}: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { nextScreen } = route.params
     const activeFederation = useAppSelector(selectActiveFederation)
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    // Define a new state variable to hold the fetched terms content
-    const [termsContent, setTermsContent] = useState<string>('')
-
-    useEffect(() => {
-        if (activeFederation?.meta.tos_url) {
-            fetch(activeFederation?.meta.tos_url)
-                .then(response => response.text())
-                .then(data => {
-                    // Parse the HTML data
-                    const text = compiledConvert(data)
-
-                    setTermsContent(text)
-                })
-        }
-    }, [activeFederation])
 
     return (
         <View style={styles(theme).container}>
             <Text h2 medium h2Style={styles(theme).title}>
                 {t('feature.onboarding.terms-and-conditions')}
             </Text>
-            <ScrollView style={styles(theme).termsContainer}>
-                <Text caption style={styles(theme).content}>
-                    {termsContent}
-                </Text>
-            </ScrollView>
+
+            <View style={styles(theme).guidance}>
+                <Hyperlink
+                    onPress={url => Linking.openURL(url)}
+                    linkStyle={styles(theme).linkText}>
+                    <Text>
+                        {t('feature.onboarding.by-clicking-i-accept', {
+                            tos_url: activeFederation?.meta?.tos_url,
+                        })}
+                    </Text>
+                </Hyperlink>
+            </View>
+
             <View style={styles(theme).buttonsContainer}>
                 <Button
                     fullWidth
                     title={t('feature.onboarding.i-accept')}
                     onPress={() => {
-                        if (
-                            activeChatConnectionOptions &&
-                            authenticatedMember === null
-                        ) {
-                            navigation.navigate('CreateUsername')
-                        } else {
-                            navigation.navigate('TabsNavigator')
-                        }
+                        navigation.dispatch(navigate(nextScreen))
                     }}
                     containerStyle={styles(theme).button}
                 />
@@ -102,9 +79,12 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             paddingTop: theme.spacing.md,
-            marginTop: 'auto',
             width: '100%',
             alignItems: 'center',
+        },
+        guidance: {
+            marginTop: 'auto',
+            marginBottom: theme.spacing.lg,
         },
         termsContainer: {
             width: '100%',
@@ -113,6 +93,9 @@ const styles = (theme: Theme) =>
             marginBottom: theme.spacing.lg,
             textAlign: 'left',
             alignSelf: 'flex-start',
+        },
+        linkText: {
+            color: theme.colors.link,
         },
         content: {
             textAlign: 'left',
