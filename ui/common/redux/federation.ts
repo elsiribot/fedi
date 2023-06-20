@@ -52,7 +52,7 @@ export const federationSlice = createSlice({
                     ? {
                           ...federation,
                           ...action.payload,
-                          // TOOD: this is needed to make sure metadata from bridge doesn't
+                          // TODO: this is needed to make sure metadata from bridge doesn't
                           // overwrite externally fetched metadata, but still should
                           // be refactored because the meta_external_url will never update
                           // if it does need to be changed and fetch from somewhere else
