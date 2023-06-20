@@ -1,6 +1,6 @@
-import type { Site } from '../types/fedimint'
+import type { FediMod } from '../types/fedimint'
 
-export const SITES: Site[] = [
+export const SITES: FediMod[] = [
     // TODO: Show only for regtest federations
     // shouldn't be used on mainnet
     // {

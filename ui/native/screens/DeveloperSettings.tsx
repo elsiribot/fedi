@@ -15,11 +15,11 @@ import Share from 'react-native-share'
 
 import {
     changeAuthenticatedGuardian,
-    removeCustomSite,
+    removeCustomFediMod,
     resetAuthenticatedMember,
     resetFederationChatState,
     selectActiveFederation,
-    selectFederationCustomSites,
+    selectFederationCustomFediMods,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
@@ -34,7 +34,7 @@ import {
     SupportedCurrency,
 } from '@fedi/common/types'
 
-import { AddCustomSiteDialog } from '../components/feature/developer-settings/AddCustomSiteDialog'
+import { AddCustomFediModDialog } from '../components/feature/developer-settings/AddCustomFediModDialog'
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
 import {
@@ -70,9 +70,10 @@ const DeveloperSettings: React.FC<Props> = () => {
         i18n.language,
     )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
-    const [isAddingCustomSite, setIsAddingCustomSite] = useState<boolean>(false)
+    const [isAddingCustomFediMod, setIsAddingCustomFediMod] =
+        useState<boolean>(false)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const customSites = useAppSelector(selectFederationCustomSites)
+    const customFediMods = useAppSelector(selectFederationCustomFediMods)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -117,10 +118,10 @@ const DeveloperSettings: React.FC<Props> = () => {
         })
     }
 
-    const removeSite = (siteId: string) => {
+    const removeFediMod = (siteId: string) => {
         if (!activeFederation) return
         reduxDispatch(
-            removeCustomSite({ federationId: activeFederation.id, siteId }),
+            removeCustomFediMod({ federationId: activeFederation.id, siteId }),
         )
         toast?.show('Custom site removed', 3000)
     }
@@ -144,13 +145,13 @@ const DeveloperSettings: React.FC<Props> = () => {
                 />
             </SettingsSection>
             <SettingsSection title="Custom sites">
-                {customSites.map(site => (
-                    <View key={site.id} style={styles(theme).site}>
+                {customFediMods.map(fediMod => (
+                    <View key={fediMod.id} style={styles(theme).fediMod}>
                         <View>
-                            <Text>{site.title}</Text>
-                            <Text small>{site.url}</Text>
+                            <Text>{fediMod.title}</Text>
+                            <Text small>{fediMod.url}</Text>
                         </View>
-                        <Pressable onPress={() => removeSite(site.id)}>
+                        <Pressable onPress={() => removeFediMod(fediMod.id)}>
                             <SvgImage name="Close" />
                         </Pressable>
                     </View>
@@ -158,11 +159,11 @@ const DeveloperSettings: React.FC<Props> = () => {
                 <Button
                     title={'Add custom site'}
                     containerStyle={styles(theme).buttonContainer}
-                    onPress={() => setIsAddingCustomSite(true)}
+                    onPress={() => setIsAddingCustomFediMod(true)}
                 />
-                <AddCustomSiteDialog
-                    isVisible={isAddingCustomSite}
-                    onClose={() => setIsAddingCustomSite(false)}
+                <AddCustomFediModDialog
+                    isVisible={isAddingCustomFediMod}
+                    onClose={() => setIsAddingCustomFediMod(false)}
                 />
             </SettingsSection>
             <SettingsSection title="Change your language">
@@ -471,7 +472,7 @@ const styles = (theme: Theme) =>
         version: {
             marginBottom: theme.spacing.sm,
         },
-        site: {
+        fediMod: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',

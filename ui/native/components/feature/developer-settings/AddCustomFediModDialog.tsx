@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useDispatch } from 'react-redux'
 
-import { addCustomSite, selectActiveFederation } from '@fedi/common/redux'
+import { addCustomFediMod, selectActiveFederation } from '@fedi/common/redux'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
@@ -13,7 +13,7 @@ interface Props {
     onClose: () => void
 }
 
-export const AddCustomSiteDialog: React.FC<Props> = ({
+export const AddCustomFediModDialog: React.FC<Props> = ({
     isVisible,
     onClose,
 }) => {
@@ -33,7 +33,7 @@ export const AddCustomSiteDialog: React.FC<Props> = ({
     const handleSubmit = () => {
         if (!federationId) return
         dispatch(
-            addCustomSite({
+            addCustomFediMod({
                 federationId,
                 site: {
                     id: `custom-${Date.now()}`,

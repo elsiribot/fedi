@@ -4,11 +4,11 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { Linking, StyleSheet, View } from 'react-native'
 
-import { selectFederationSites } from '@fedi/common/redux'
+import { selectFederationFediMods } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { navigate } from '../../../state/navigation'
-import { Screen, Shortcut, Site } from '../../../types'
+import { Screen, Shortcut, FediMod } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ShortcutTile from './ShortcutTile'
 
@@ -17,15 +17,15 @@ const SCREEN_SHORTCUTS: Screen[] = []
 const ShortcutsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const sites = useAppSelector(selectFederationSites)
+    const fediMods = useAppSelector(selectFederationFediMods)
 
-    const onSelectSite = (shortcut: Shortcut) => {
-        const site = shortcut as Site
+    const onSelectFediMod = (shortcut: Shortcut) => {
+        const fediMod = shortcut as FediMod
         // Handle telegram links natively
-        if (site.url.includes('https://t.me')) {
-            Linking.openURL(site.url)
+        if (fediMod.url.includes('https://t.me')) {
+            Linking.openURL(fediMod.url)
         } else {
-            navigation.navigate('SitesBrowser', { site })
+            navigation.navigate('SitesBrowser', { site: fediMod })
         }
     }
 
@@ -34,14 +34,14 @@ const ShortcutsList: React.FC<{}> = () => {
         navigation.dispatch(navigate(screen.screenName))
     }
 
-    const renderSiteShortcuts = () => {
-        const sitesShortcuts = sites.map(s => new Site(s))
-        return sitesShortcuts.map((s: Site, i: number) => {
+    const renderFediModShortcuts = () => {
+        const fediModShortcuts = fediMods.map(s => new FediMod(s))
+        return fediModShortcuts.map((s: FediMod, i: number) => {
             return (
                 <ShortcutTile
                     key={`site-s-${i}`}
                     shortcut={s}
-                    onSelect={onSelectSite}
+                    onSelect={onSelectFediMod}
                 />
             )
         })
@@ -63,7 +63,7 @@ const ShortcutsList: React.FC<{}> = () => {
     // while also left-justifying rows with 1 or 2 tiles so we just
     // make sure to fill the remaining space with invisible elements
     const renderBuffers = () => {
-        const totalShortcuts = sites.length + SCREEN_SHORTCUTS.length
+        const totalShortcuts = fediMods.length + SCREEN_SHORTCUTS.length
         const bufferCount = 3 - (totalShortcuts % 3)
 
         return new Array(bufferCount).fill('').map((b, i) => {
@@ -75,7 +75,7 @@ const ShortcutsList: React.FC<{}> = () => {
         <View style={styles(theme).container}>
             <View style={styles(theme).listContainer}>
                 {renderScreenShortcuts()}
-                {renderSiteShortcuts()}
+                {renderFediModShortcuts()}
                 {renderBuffers()}
             </View>
         </View>

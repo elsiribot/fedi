@@ -22,7 +22,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
-        customSites: state.federation.customSites,
+        customFediMods: state.federation.customFediMods,
         chat: Object.entries(state.chat).reduce<LatestStoredState['chat']>(
             (stored, [federationId, chatState]) => {
                 if (chatState) {
@@ -74,7 +74,7 @@ export function hasStorageStateChanged(
         ['environment', 'language'],
         ['federation', 'activeFederationId'],
         ['federation', 'authenticatedGuardian'],
-        ['federation', 'customSites'],
+        ['federation', 'customFediMods'],
     ]
 
     // Only check current federation's chat state

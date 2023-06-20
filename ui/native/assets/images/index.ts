@@ -12,7 +12,7 @@ export const Images: ImagesMap = {
     IllustrationWorld: require('@fedi/common/assets/images/illustration-world.png'),
 }
 
-export const SiteImages: ImagesMap = {
+export const FediModImages: ImagesMap = {
     'ai-beta': require('@fedi/common/assets/images/sites/ai-beta.png'),
     'bitcoinco': require('@fedi/common/assets/images/sites/bitcoinco.png'),
     'bitrefill': require('@fedi/common/assets/images/sites/bitrefill.png'),
