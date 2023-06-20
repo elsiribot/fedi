@@ -42,7 +42,9 @@ export function initializeWebStore() {
 }
 
 // Handle hot-reloading reducers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 if (process.env.NODE_ENV !== 'production' && (module as any)?.hot) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(module as any).hot.accept('@fedi/common/redux', () =>
         store.replaceReducer(reducer),
     )

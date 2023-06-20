@@ -50,8 +50,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                     }
                 } catch (e) {
                     console.error("couldn't download video", e)
-                    // FIXME: internationalize
-                    toast?.show(t('download-failed'), 3000)
+                    toast?.show(t('feature.recovery.download-failed'), 3000)
                 }
             } catch (e) {
                 // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"

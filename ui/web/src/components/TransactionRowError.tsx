@@ -10,7 +10,7 @@ import { Icon } from './Icon'
 import { Text } from './Text'
 
 interface Props {
-    error: Error
+    error: unknown
     transaction: unknown
 }
 

@@ -128,9 +128,7 @@ const TransactionDetail = ({
                             onPress={() => {
                                 Clipboard.setString(txn.lightning?.invoice!)
                                 toast?.show(
-                                    t(
-                                        'feature.wallet.copied-lightning-request',
-                                    ),
+                                    t('phrases.copied-lightning-request'),
                                 )
                             }}>
                             <Text>

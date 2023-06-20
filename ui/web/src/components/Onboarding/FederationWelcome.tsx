@@ -6,7 +6,6 @@ import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
-import { Avatar } from '../Avatar'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
 import { Redirect } from '../Redirect'

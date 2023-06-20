@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { keyframes, styled, theme } from '../styles'
+import { styled, theme } from '../styles'
 
 interface Props {
     maxWidth?: number

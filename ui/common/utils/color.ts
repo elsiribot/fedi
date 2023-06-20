@@ -23,7 +23,7 @@ const IDENTITY_COLOR_PAIRS: [string, string][] = [
 export function getIdentityColors(id: string | number) {
     id = id.toString()
     let index = 0
-    for (var i = 0; i < id.length; i++) {
+    for (let i = 0; i < id.length; i++) {
         index += id.charCodeAt(i)
     }
     return IDENTITY_COLOR_PAIRS[index % IDENTITY_COLOR_PAIRS.length]

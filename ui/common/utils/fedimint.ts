@@ -125,7 +125,7 @@ export class FedimintBridge {
         return this.rpc<XmppCredentials>('xmppCredentials', { federationId })
     }
 
-    async backupXmppUsername(username: String, federationId: string) {
+    async backupXmppUsername(username: string, federationId: string) {
         return this.rpc('backupXmppUsername', { username, federationId })
     }
 
@@ -236,9 +236,9 @@ export class FedimintBridge {
 
     /*** BRIDGE EVENTS ***/
 
-    private listeners = new Map<string, Array<(data: any) => void>>()
+    private listeners = new Map<string, Array<(data: unknown) => void>>()
 
-    emit(eventType: string, data: any) {
+    emit(eventType: string, data: unknown) {
         const listeners = this.listeners.get(eventType) || []
         listeners.forEach(listener => listener(data))
     }
@@ -250,7 +250,10 @@ export class FedimintBridge {
         eventType: K,
         listener: (data: FedimintBridgeEventMap[K]) => void,
     ): () => void
-    addListener(eventType: string, listener: (data: any) => void): () => void {
+    addListener(
+        eventType: string,
+        listener: (data: unknown) => void,
+    ): () => void {
         const listeners = this.listeners.get(eventType) || []
         this.listeners.set(eventType, [...listeners, listener])
 

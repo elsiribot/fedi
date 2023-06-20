@@ -9,7 +9,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
-import { styled, theme } from '../styles'
+import { styled } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
@@ -107,7 +107,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             await fedimint.payInvoice(invoice.invoice, activeFederationId)
             setHasSent(true)
             setTimeout(() => onOpenChange(false), 2500)
-        } catch (err: any) {
+        } catch (err) {
             setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
         setIsSending(false)

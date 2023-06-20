@@ -18,7 +18,7 @@ async function fedimintRpc<Type = void>(
     const jsonPayload = JSON.stringify(payload)
     const json: string = await new Promise(resolve => {
         callbackId++
-        callbacks.set(callbackId, (res: any) => resolve(res))
+        callbacks.set(callbackId, (res: unknown) => resolve(res as string))
         worker.postMessage({ token: callbackId, method, data: jsonPayload })
     })
 
@@ -76,5 +76,6 @@ export async function initializeBridge() {
 
 // Expose bridge API to window for testing in development
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(window as any).fedimint = fedimint
 }

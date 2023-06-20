@@ -23,7 +23,7 @@ export const makePaymentText = (
     paymentAmount: MSats | undefined,
     paymentMemo: string | undefined,
 ): string => {
-    let previewStringParams = {
+    const previewStringParams = {
         name: messageSentBy,
         amount: amountUtils.formatNumber(
             amountUtils.msatToSat(paymentAmount as MSats),

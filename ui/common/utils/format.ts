@@ -1,23 +1,29 @@
+import { TFunction } from 'i18next'
+
 /**
  * Attempts to turn an unknown error object into a user-readable message.
  * The message can either be plaintext, or a translation key which will
  * be translated.
  */
-export function formatErrorMessage(
-    t: (msg: string, defaultMsg: string) => string,
+export function formatErrorMessage<T extends TFunction>(
+    t: T,
     err: unknown,
-    defaultMessage: string,
+    defaultMessage = 'errors.unknown-error',
 ) {
-    if (!err) return t(defaultMessage, defaultMessage)
+    if (!err) return t(defaultMessage as Parameters<T>[0], defaultMessage)
     if (typeof err === 'string') {
-        return t(err, err)
+        return t(err as Parameters<T>[0], err)
     }
     if (
+        err &&
         typeof err === 'object' &&
         'message' in err &&
-        typeof err.message === 'string'
+        typeof (err as Error).message === 'string'
     ) {
-        return t(err.message, err.message)
+        return t(
+            (err as Error).message as Parameters<T>[0],
+            (err as Error).message,
+        )
     }
     return defaultMessage
 }

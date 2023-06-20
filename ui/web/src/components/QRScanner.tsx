@@ -30,7 +30,7 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
     const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
     const qrScannerRef = useRef<QrScanner | null>(null)
     const [mediaError, setMediaError] = useState<string>()
-    const [_frames, setFrames] = useState<FrameState | null>(null)
+    const [, setFrames] = useState<FrameState | null>(null)
     const [progress, setProgress] = useState(0)
     const [isLoading, setIsLoading] = useState(true)
 

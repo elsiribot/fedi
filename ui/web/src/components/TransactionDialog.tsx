@@ -14,7 +14,6 @@ import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { Dialog } from './Dialog'
 import { Icon } from './Icon'
-import { IconButton } from './IconButton'
 import { Text } from './Text'
 
 interface Props {

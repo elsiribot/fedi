@@ -42,7 +42,7 @@ export const showToast = createAsyncThunk<
     void,
     ToastArgs,
     { state: CommonState }
->('toast/showToast', async (toastArgs, { dispatch, getState }) => {
+>('toast/showToast', async (toastArgs, { dispatch }) => {
     const toast: Toast = {
         key: Date.now().toString(),
         duration: 3000,

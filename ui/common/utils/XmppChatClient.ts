@@ -152,7 +152,7 @@ export class XmppChatClient {
     }
 
     async fetchMemberPublicKey(memberId: string) {
-        return new Promise<string>(async (resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             try {
                 const { iqCaller, jid } = this.getQueryProperties()
 
@@ -185,8 +185,8 @@ export class XmppChatClient {
                         to: memberId,
                     }),
                 )
-                await iqCaller.request(getPubkeyQueryXml)
-            } catch (error: any) {
+                iqCaller.request(getPubkeyQueryXml)
+            } catch (error) {
                 console.error('fetchMemberPublicKey', error)
                 reject(new Error('errors.unknown-error'))
             }
@@ -210,7 +210,7 @@ export class XmppChatClient {
                 }),
             )
             await iqCaller.request(setPubsubNodeConfigQueryXml)
-        } catch (error: any) {
+        } catch (error) {
             console.error('publishPublicKey', error)
             throw new Error('errors.unknown-error')
         }
@@ -396,7 +396,7 @@ export class XmppChatClient {
     }
 
     async sendGroupMessage(group: Partial<ChatGroup>, message: ChatMessage) {
-        return new Promise<void>(async (resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             try {
                 const { jid } = this.getQueryProperties()
                 const fromJid = jid.toString()
@@ -433,7 +433,7 @@ export class XmppChatClient {
                 }
                 this.xmpp.on('stanza', onStanzaReceived)
 
-                await this.xmpp.send(groupChatMessageXml)
+                this.xmpp.send(groupChatMessageXml)
             } catch (error) {
                 console.error('sendGroupMessage', error)
                 reject(new Error('errors.unknown-error'))
@@ -684,7 +684,7 @@ export class XmppChatClient {
                     encrypted.getChildText('backup-payload')
             }
             const decryptedPayload = encryptionUtils.decryptMessage(
-                encryptedPayloadContents!,
+                encryptedPayloadContents as string,
                 { hex: senderPublicKey },
                 privateKey,
             )
@@ -712,6 +712,7 @@ export class XmppChatClient {
         return { parsedMessage, action }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private formatIncomingMessage(rawMessage: any): ChatMessage {
         const formatIncomingEntity = (
             sentEntity:
@@ -732,7 +733,9 @@ export class XmppChatClient {
             throw new Error('Incoming message missing sentBy')
         }
 
-        let payment = rawMessage.payment ? { ...rawMessage.payment } : undefined
+        const payment = rawMessage.payment
+            ? { ...rawMessage.payment }
+            : undefined
         if (payment?.recipient) {
             payment.recipient = formatIncomingEntity(payment.recipient)
         }
@@ -757,6 +760,7 @@ export class XmppChatClient {
             }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const outgoing: any = {
             ...message,
             sentBy: idToJidMember(message.sentBy),
@@ -814,7 +818,7 @@ export class XmppChatClientManager {
     }
 
     async destroyClient(federationId: string) {
-        let client = this.clients[federationId]
+        const client = this.clients[federationId]
         if (client) {
             client.removeAllListeners()
             await client.stop()

@@ -14,7 +14,6 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
-import { Avatar } from '../Avatar'
 import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'

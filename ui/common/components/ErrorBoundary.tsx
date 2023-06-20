@@ -2,7 +2,7 @@ import React from 'react'
 
 interface ErrorBoundaryState {
     didCatch: boolean
-    error: any
+    error: unknown
 }
 
 const initialState: ErrorBoundaryState = {
@@ -11,7 +11,7 @@ const initialState: ErrorBoundaryState = {
 }
 
 export interface ErrorFallbackProps {
-    error: any
+    error: unknown
     resetErrorBoundary: () => void
 }
 

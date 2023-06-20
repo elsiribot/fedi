@@ -198,8 +198,8 @@ class AmountUtils {
         fiat: string,
         options: { locale?: string | string[] } = {},
     ): number => {
-        var thousandSeparator = this.getThousandsSeparator(options)
-        var decimalSeparator = this.getDecimalSeparator(options)
+        const thousandSeparator = this.getThousandsSeparator(options)
+        const decimalSeparator = this.getDecimalSeparator(options)
         return parseFloat(
             fiat
                 .replace(new RegExp('\\' + thousandSeparator, 'g'), '')

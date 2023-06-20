@@ -196,7 +196,7 @@ export interface FediMod {
  */
 
 export type GuardianApproval = {
-    guardianName: String
+    guardianName: string
     approved: boolean
 }
 

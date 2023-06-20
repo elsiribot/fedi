@@ -1,7 +1,12 @@
 module.exports = {
     root: true,
-    extends: ['prettier', '../.eslintrc.js'],
+    extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended',
+        'prettier',
+        '../.eslintrc.js',
+    ],
     parser: '@typescript-eslint/parser',
     plugins: ['@typescript-eslint'],
-    ignorePatterns: ['dist'],
+    ignorePatterns: ['dist', 'wasm/*.js'],
 }

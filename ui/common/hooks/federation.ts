@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { selectActiveFederation } from '../redux'
 import { SupportedFeature } from '../types'

@@ -198,15 +198,15 @@ describe('buildQuery: GetMessagesQuery', () => {
 
         const id = generatedXml.getAttr('id')
         const type = generatedXml.getAttr('type')
-        const queryElement = generatedXml.getChild('query')!
-        const setElement = queryElement.getChild('set')!
+        const queryElement = generatedXml.getChild('query')
+        const setElement = queryElement?.getChild('set')
 
         expect(id).toContain(GetMessagesQuery.id)
         expect(type).toEqual('set')
-        expect(setElement.getAttr('xmlns')).toEqual(
+        expect(setElement?.getAttr('xmlns')).toEqual(
             'http://jabber.org/protocol/rsm',
         )
-        expect(setElement.getChildText('max')).toEqual(
+        expect(setElement?.getChildText('max')).toEqual(
             XMPP_DEFAULT_PAGE_LIMIT.toString(),
         )
     })
@@ -228,37 +228,41 @@ describe('buildQuery: GetMessagesQuery', () => {
 
             const id = generatedXml.getAttr('id')
             const type = generatedXml.getAttr('type')
-            const queryElement = generatedXml.getChild('query')!
-            const xElement = queryElement.getChild('x')!
-            const fieldFormElement = xElement.getChildByAttr(
+            const queryElement = generatedXml.getChild('query')
+            const xElement = queryElement?.getChild('x')
+            const fieldFormElement = xElement?.getChildByAttr(
                 'var',
                 'FORM_TYPE',
-            )!
-            const fieldWithElement = xElement.getChildByAttr('var', 'with')!
-            const setElement = queryElement.getChild('set')!
+            )
+            const fieldWithElement = xElement?.getChildByAttr('var', 'with')
+            const setElement = queryElement?.getChild('set')
 
             expect(id).toContain(GetMessagesQuery.id)
             expect(type).toEqual('set')
-            expect(queryElement.getAttr('xmlns')).toEqual('urn:xmpp:mam:2')
-            expect(queryElement.getAttr('queryid')).toEqual(GetMessagesQuery.id)
-            expect(xElement.getAttr('xmlns')).toEqual('jabber:x:data')
-            expect(xElement.getAttr('type')).toEqual('submit')
-            expect(fieldFormElement.getAttr('type')).toEqual('hidden')
-            expect(fieldFormElement.getChildText('value')).toEqual(
+            expect(queryElement?.getAttr('xmlns')).toEqual('urn:xmpp:mam:2')
+            expect(queryElement?.getAttr('queryid')).toEqual(
+                GetMessagesQuery.id,
+            )
+            expect(xElement?.getAttr('xmlns')).toEqual('jabber:x:data')
+            expect(xElement?.getAttr('type')).toEqual('submit')
+            expect(fieldFormElement?.getAttr('type')).toEqual('hidden')
+            expect(fieldFormElement?.getChildText('value')).toEqual(
                 'urn:xmpp:mam:2',
             )
-            expect(fieldWithElement.getChildText('value')).toEqual(
+            expect(fieldWithElement?.getChildText('value')).toEqual(
                 filters.withJid,
             )
-            expect(setElement.getAttr('xmlns')).toEqual(
+            expect(setElement?.getAttr('xmlns')).toEqual(
                 'http://jabber.org/protocol/rsm',
             )
-            expect(setElement.getChildText('after')).toEqual(pagination.after)
+            expect(setElement?.getChildText('after')).toEqual(pagination.after)
 
             if (paginationLimit) {
-                expect(setElement.getChildText('max')).toEqual(pagination.limit)
+                expect(setElement?.getChildText('max')).toEqual(
+                    pagination.limit,
+                )
             } else {
-                expect(setElement.getChildText('max')).toEqual(
+                expect(setElement?.getChildText('max')).toEqual(
                     XMPP_DEFAULT_PAGE_LIMIT.toString(),
                 )
             }

@@ -1,5 +1,5 @@
 import orderBy from 'lodash/orderBy'
-import React, { use, useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'

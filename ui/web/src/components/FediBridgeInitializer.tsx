@@ -15,7 +15,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
-import { keyframes, styled, theme } from '../styles'
+import { keyframes, styled } from '../styles'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 

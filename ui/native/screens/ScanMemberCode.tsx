@@ -32,7 +32,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                 console.info('fedi chat member detected', input)
                 // TODO: show chat unavailable
                 if (!connectionOptions) {
-                    return toast?.show(t('feature.chat.chat-unavailable'), 3000)
+                    return toast?.show(t('errors.chat-unavailable'), 3000)
                 }
                 const memberId = decodeDirectChatLink(input)
                 const memberJid = jid(

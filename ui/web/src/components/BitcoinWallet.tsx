@@ -136,13 +136,3 @@ const Buttons = styled('div', {
         flexDirection: 'column',
     },
 })
-
-const CURRENCIES = {
-    bitcoin: {
-        name: 'words.bitcoin',
-        icon: BitcoinIcon,
-        color: theme.colors.orange,
-        textColor: theme.colors.white,
-        unit: 'sats',
-    },
-} as const

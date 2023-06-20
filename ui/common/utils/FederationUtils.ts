@@ -1,7 +1,6 @@
 import { SITES } from '../constants/sites'
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
-    Chat,
     ClientConfigMetadata,
     Federation,
     MSats,
@@ -85,17 +84,14 @@ export const getFederationChatServerDomain = (
 }
 
 export const makeChatServerOptions = (
-    chatServerDomain: string,
+    domain: string,
 ): XmppConnectionOptions => {
-    let domain = chatServerDomain
-    const options = {
+    return {
         domain,
         mucDomain: `muc.${domain}`,
         resource: XMPP_RESOURCE,
         service: `wss://${domain}/xmpp-websocket`,
     }
-
-    return options
 }
 
 export const getFederationMaxBalanceMsats = (
