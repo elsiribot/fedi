@@ -25,6 +25,13 @@ export const FederationWelcome: React.FC = () => {
         return <Redirect path="/onboarding" />
     }
 
+    let joinHref = '/'
+    if (activeFederation.meta?.tos_url) {
+        joinHref = '/onboarding/terms'
+    } else if (isChatSupported) {
+        joinHref = '/onboarding/username'
+    }
+
     return (
         <OnboardingContainer>
             <OnboardingContent>
@@ -59,12 +66,10 @@ export const FederationWelcome: React.FC = () => {
                     width="full"
                     variant="tertiary"
                     href="/onboarding/recover">
-                    I am a returning member
+                    {t('feature.onboarding.join-returning-member')}
                 </Button>
-                <Button
-                    width="full"
-                    href={isChatSupported ? '/onboarding/username' : '/'}>
-                    Join as a new member
+                <Button width="full" href={joinHref}>
+                    {t('feature.onboarding.join-new-member')}
                 </Button>
             </OnboardingActions>
         </OnboardingContainer>
