@@ -8,6 +8,7 @@ import Hyperlink from 'react-native-hyperlink'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../state/hooks'
+import { navigate } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -21,8 +22,7 @@ const FederationAcceptTerms: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { params } = route
-    const nextScreen: keyof RootStackParamList = params.nextScreen
+    const { nextScreen } = route.params
     const activeFederation = useAppSelector(selectActiveFederation)
 
     return (
@@ -48,7 +48,7 @@ const FederationAcceptTerms: React.FC<Props> = ({
                     fullWidth
                     title={t('feature.onboarding.i-accept')}
                     onPress={() => {
-                        navigation.navigate(nextScreen)
+                        navigation.dispatch(navigate(nextScreen))
                     }}
                     containerStyle={styles(theme).button}
                 />
