@@ -25,7 +25,7 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const isSmall = useMediaQuery(config.media.sm)
 
     return (
-        <ContentBlock maxWidth={840} padding={0}>
+        <ContentBlock css={{ maxWidth: 840, padding: 0 }}>
             <Layout>
                 <Sidebar isHidden={isShowingContent}>
                     <SidebarHeader>

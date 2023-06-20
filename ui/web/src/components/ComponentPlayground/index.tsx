@@ -46,7 +46,7 @@ export const ComponentPlayground: React.FC = () => {
     return (
         <>
             {demos.map(demo => (
-                <ContentBlock key={demo.title} maxWidth={1120}>
+                <ContentBlock key={demo.title} css={{ maxWidth: 1120 }}>
                     <Title>
                         <Text variant="h1">{demo.title}</Text>
                     </Title>
