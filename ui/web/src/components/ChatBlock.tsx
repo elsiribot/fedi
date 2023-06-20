@@ -5,12 +5,13 @@ import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectOrderedChatList } from '@fedi/common/redux'
 
-import { useAppSelector } from '../hooks'
-import { styled, theme } from '../styles'
+import { useAppSelector, useMediaQuery } from '../hooks'
+import { config, styled, theme } from '../styles'
 import { Button } from './Button'
 import { ChatListItem } from './ChatListItem'
 import { ContentBlock } from './ContentBlock'
 import { Icon } from './Icon'
+import { ShadowScroller } from './ShadowScroller'
 import { Text } from './Text'
 
 interface Props {
@@ -21,13 +22,16 @@ interface Props {
 export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const { t } = useTranslation()
     const chats = useAppSelector(selectOrderedChatList)
+    const isSmall = useMediaQuery(config.media.sm)
 
     return (
         <ContentBlock maxWidth={840} padding={0}>
             <Layout>
                 <Sidebar isHidden={isShowingContent}>
                     <SidebarHeader>
-                        <Text variant="h2">{t('words.chat')}</Text>
+                        <Text variant={isSmall ? 'h1' : 'h2'}>
+                            {t('words.chat')}
+                        </Text>
                         <Button size="sm" variant="outline" href="/chat/new">
                             {t('feature.chat.new-chat')}
                         </Button>
@@ -105,12 +109,11 @@ const SidebarHeader = styled('div', {
     padding: '8px 16px',
 })
 
-const SidebarList = styled('div', {
+const SidebarList = styled(ShadowScroller, {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
-    overflow: 'auto',
 })
 
 const Content = styled('div', {
