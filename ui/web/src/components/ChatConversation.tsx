@@ -19,6 +19,7 @@ import { ChatAvatar } from './ChatAvatar'
 import { ChatMessageCollection } from './ChatMessageCollection'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
+import * as Layout from './Layout'
 import { Text } from './Text'
 
 interface Props {
@@ -90,32 +91,36 @@ export const ChatConversation: React.FC<Props> = ({
     )
 
     return (
-        <Container>
-            <Header>
-                <BackButton>
-                    <IconButton
-                        size="md"
-                        icon={ChevronLeftIcon}
-                        onClick={() => back()}
-                    />
-                </BackButton>
-                <ChatAvatar chat={chat} />
-                <Text weight="medium" css={{ flex: 1 }}>
-                    {name}
-                </Text>
+        <Layout.Root>
+            <Layout.Header padded>
+                <HeaderInfo>
+                    <BackButton>
+                        <IconButton
+                            size="md"
+                            icon={ChevronLeftIcon}
+                            onClick={() => back()}
+                        />
+                    </BackButton>
+                    <ChatAvatar chat={chat} size="sm" />
+                    <Text weight="medium" css={{ flex: 1 }}>
+                        {name}
+                    </Text>
+                </HeaderInfo>
                 {headerActions && (
                     <HeaderActions>{headerActions}</HeaderActions>
                 )}
-            </Header>
-            <Messages>
-                {messageCollections.map(collection => (
-                    <ChatMessageCollection
-                        key={collection[0][0].id}
-                        collection={collection}
-                        showUsernames={type === ChatType.group}
-                    />
-                ))}
-            </Messages>
+            </Layout.Header>
+            <Layout.Content fullWidth>
+                <Messages>
+                    {messageCollections.map(collection => (
+                        <ChatMessageCollection
+                            key={collection[0][0].id}
+                            collection={collection}
+                            showUsernames={type === ChatType.group}
+                        />
+                    ))}
+                </Messages>
+            </Layout.Content>
             <Actions onSubmit={handleSend}>
                 {inputActions && <InputActions>{inputActions}</InputActions>}
                 <Input
@@ -136,21 +141,14 @@ export const ChatConversation: React.FC<Props> = ({
                     <Icon icon={SendArrowUpCircleIcon} />
                 </SendButton>
             </Actions>
-        </Container>
+        </Layout.Root>
     )
 }
 
-const Container = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-})
-
-const Header = styled('div', {
+const HeaderInfo = styled('div', {
     display: 'flex',
     alignItems: 'center',
-    padding: '12px 16px',
-    gap: 12,
+    gap: 8,
     flexShrink: 0,
 })
 
@@ -171,9 +169,9 @@ const HeaderActions = styled('div', {
 const Messages = styled('div', {
     flex: 1,
     minHeight: 0,
-    padding: '16px 24px',
     display: 'flex',
     flexDirection: 'column-reverse',
+    padding: 16,
     overflow: 'auto',
 })
 

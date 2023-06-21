@@ -11,13 +11,12 @@ export const ContentBlock: React.FC<Props> = ({ children, css }) => {
     return <Container css={css}>{children}</Container>
 }
 
-export const ContentBlockHeader = styled('div')
-
-export const ContentBlockBody = styled('div')
-
 const Container = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
     width: '100%',
     maxWidth: 600,
+    flexShrink: 0,
     padding: '64px 72px',
     background: theme.colors.white,
     borderRadius: 20,
@@ -30,7 +29,7 @@ const Container = styled('div', {
     },
 
     '@sm': {
-        height: '100%',
+        flex: 1,
         padding: 0,
         borderRadius: 0,
         boxShadow: 'none',

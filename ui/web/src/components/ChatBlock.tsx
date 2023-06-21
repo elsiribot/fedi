@@ -5,13 +5,13 @@ import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectOrderedChatList } from '@fedi/common/redux'
 
-import { useAppSelector, useMediaQuery } from '../hooks'
-import { config, styled, theme } from '../styles'
+import * as Layout from '../components/Layout'
+import { useAppSelector } from '../hooks'
+import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { ChatListItem } from './ChatListItem'
 import { ContentBlock } from './ContentBlock'
 import { Icon } from './Icon'
-import { ShadowScroller } from './ShadowScroller'
 import { Text } from './Text'
 
 interface Props {
@@ -22,27 +22,33 @@ interface Props {
 export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const { t } = useTranslation()
     const chats = useAppSelector(selectOrderedChatList)
-    const isSmall = useMediaQuery(config.media.sm)
 
     return (
         <ContentBlock css={{ maxWidth: 840, padding: 0 }}>
-            <Layout>
+            <Container>
                 <Sidebar isHidden={isShowingContent}>
-                    <SidebarHeader>
-                        <Text variant={isSmall ? 'h1' : 'h2'}>
-                            {t('words.chat')}
-                        </Text>
-                        <Button size="sm" variant="outline" href="/chat/new">
-                            {t('feature.chat.new-chat')}
-                        </Button>
-                    </SidebarHeader>
-                    <SidebarList>
-                        {chats.map(chat => (
-                            <ErrorBoundary key={chat.id} fallback={null}>
-                                <ChatListItem chat={chat} />
-                            </ErrorBoundary>
-                        ))}
-                    </SidebarList>
+                    <Layout.Root>
+                        <SidebarHeader>
+                            <Layout.Title small>{t('words.chat')}</Layout.Title>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                href="/chat/new">
+                                {t('feature.chat.new-chat')}
+                            </Button>
+                        </SidebarHeader>
+                        <Layout.Content fullWidth>
+                            <SidebarList>
+                                {chats.map(chat => (
+                                    <ErrorBoundary
+                                        key={chat.id}
+                                        fallback={null}>
+                                        <ChatListItem chat={chat} />
+                                    </ErrorBoundary>
+                                ))}
+                            </SidebarList>
+                        </Layout.Content>
+                    </Layout.Root>
                 </Sidebar>
                 <Content isShowing={isShowingContent}>
                     <ErrorBoundary
@@ -57,12 +63,12 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                         {children}
                     </ErrorBoundary>
                 </Content>
-            </Layout>
+            </Container>
         </ContentBlock>
     )
 }
 
-const Layout = styled('div', {
+const Container = styled('div', {
     position: 'relative',
     display: 'flex',
     minHeight: 300,
@@ -83,7 +89,7 @@ const Sidebar = styled('div', {
     flexShrink: 0,
     flexDirection: 'column',
     width: 280,
-    borderRight: `1px solid ${theme.colors.lightGrey}`,
+    borderRight: `1px solid ${theme.colors.extraLightGrey}`,
 
     '@sm': {
         width: '100%',
@@ -101,15 +107,18 @@ const Sidebar = styled('div', {
     },
 })
 
-const SidebarHeader = styled('div', {
+const SidebarHeader = styled(Layout.Header, {
     display: 'flex',
-    height: 72,
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '8px 16px',
+
+    '@sm': {
+        padding: '16px 16px',
+    },
 })
 
-const SidebarList = styled(ShadowScroller, {
+const SidebarList = styled('div', {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
@@ -118,6 +127,8 @@ const SidebarList = styled(ShadowScroller, {
 
 const Content = styled('div', {
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
     overflow: 'hidden',
 
     '@sm': {

@@ -22,6 +22,7 @@ import { ContentBlock } from '../../components/ContentBlock'
 import { Icon } from '../../components/Icon'
 import { IconProps } from '../../components/Icon'
 import { InviteMemberDialog } from '../../components/InviteMemberDialog'
+import * as Layout from '../../components/Layout'
 import { Text } from '../../components/Text'
 import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
@@ -122,48 +123,66 @@ function AdminPage() {
 
     return (
         <ContentBlock>
-            <Title>
-                <Text variant="h1">{t('words.settings')}</Text>
-            </Title>
-            {member && (
-                <MemberDetails>
-                    <Avatar id={member.id} name={member.username} />
-                    <Text variant="h2">{member.username}</Text>
-                </MemberDetails>
-            )}
-            <Menu>
-                {menu.map(group => (
-                    <MenuGroup key={group.name}>
-                        <MenuGroupName>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            <Text>{t(group.name as any)}</Text>
-                        </MenuGroupName>
-                        <MenuGroupItems>
-                            {group.items.map(item => {
-                                const linkProps = item.href
-                                    ? { as: Link, href: item.href }
-                                    : undefined
-                                return (
-                                    <MenuItem
-                                        {...linkProps}
-                                        key={item.name}
-                                        disabled={item.disabled}
-                                        onClick={
-                                            item.disabled
-                                                ? undefined
-                                                : item.onClick
-                                        }>
-                                        <Icon icon={item.icon} />
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>{t('words.settings')}</Layout.Title>
+                </Layout.Header>
+                <Layout.Content>
+                    <div>
+                        {member && (
+                            <MemberDetails>
+                                <Avatar id={member.id} name={member.username} />
+                                <Text variant="h2">{member.username}</Text>
+                            </MemberDetails>
+                        )}
+                        <Menu>
+                            {menu.map(group => (
+                                <MenuGroup key={group.name}>
+                                    <MenuGroupName>
                                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                        <Text>{t(item.name as any)}</Text>
-                                        <Icon icon={ChevronRightIcon} />
-                                    </MenuItem>
-                                )
-                            })}
-                        </MenuGroupItems>
-                    </MenuGroup>
-                ))}
-            </Menu>
+                                        <Text>{t(group.name as any)}</Text>
+                                    </MenuGroupName>
+                                    <MenuGroupItems>
+                                        {group.items.map(item => {
+                                            const linkProps = item.href
+                                                ? { as: Link, href: item.href }
+                                                : undefined
+                                            return (
+                                                <MenuItem
+                                                    {...linkProps}
+                                                    key={item.name}
+                                                    disabled={item.disabled}
+                                                    onClick={
+                                                        item.disabled
+                                                            ? undefined
+                                                            : item.onClick
+                                                    }>
+                                                    <>
+                                                        <Icon
+                                                            icon={item.icon}
+                                                        />
+                                                        <Text>
+                                                            {t(
+                                                                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                                                                item.name as any,
+                                                            )}
+                                                        </Text>
+                                                        <Icon
+                                                            icon={
+                                                                ChevronRightIcon
+                                                            }
+                                                        />
+                                                    </>
+                                                </MenuItem>
+                                            )
+                                        })}
+                                    </MenuGroupItems>
+                                </MenuGroup>
+                            ))}
+                        </Menu>
+                    </div>
+                </Layout.Content>
+            </Layout.Root>
 
             <InviteMemberDialog
                 open={isInvitingMember}
@@ -185,10 +204,6 @@ function AdminPage() {
     )
 }
 
-const Title = styled('div', {
-    marginBottom: 16,
-})
-
 const MemberDetails = styled('div', {
     display: 'flex',
     flexDirection: 'column',
@@ -201,6 +216,7 @@ const Menu = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
+    padding: 8,
 })
 
 const MenuGroup = styled('div', {})

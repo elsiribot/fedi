@@ -72,7 +72,7 @@ const Root = styled(RadixAvatar.Root, {
             xs: {
                 width: 20,
                 height: 20,
-                fontSize: 10,
+                fontSize: 8,
             },
             sm: {
                 width: 32,

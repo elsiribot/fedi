@@ -39,7 +39,7 @@ export const {
         fontWeights: fediTheme.fontWeights,
     },
     media: {
-        xs: '(max-width: 380px)',
+        xs: '(max-width: 359px)',
         sm: '(max-width: 600px)',
         md: '(max-width: 980px)',
         lg: '(max-width: 1280px)',

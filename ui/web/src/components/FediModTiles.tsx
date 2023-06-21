@@ -47,7 +47,7 @@ const Container = styled('div', {
     display: 'grid',
     gridTemplateColumns: 'repeat(5, 1fr)',
     alignItems: 'end',
-    margin: '0 -16px',
+    justifyContent: 'space-between',
 
     '@sm': {
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -85,6 +85,7 @@ const FediModIcon = styled(Image, {
 })
 
 const FediModTitle = styled('div', {
+    margin: '0 -16px',
     maxWidth: '100%',
     minWidth: 0,
 })

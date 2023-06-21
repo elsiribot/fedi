@@ -55,8 +55,8 @@ export const PersonalRecovery: React.FC = () => {
     if (!activeFederation) return <Redirect path="/onboarding" />
 
     return (
-        <OnboardingContainer fullWidth>
-            <OnboardingContent>
+        <OnboardingContainer>
+            <OnboardingContent fullWidth>
                 <Content>
                     <Text variant="h1">
                         {t('feature.recovery.personal-recovery')}

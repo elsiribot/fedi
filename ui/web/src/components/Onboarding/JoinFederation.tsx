@@ -105,6 +105,7 @@ export const JoinFederation: React.FC = () => {
 }
 
 const AccessIcon = styled('div', {
+    flex: 'none',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',

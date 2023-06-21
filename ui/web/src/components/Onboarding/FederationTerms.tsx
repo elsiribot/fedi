@@ -21,22 +21,16 @@ export const FederationTerms: React.FC = () => {
     const isChatSupported = useIsChatSupported()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
 
-    const tosUrl = activeFederation?.meta?.tos_url
+    // const tosUrl = activeFederation?.meta?.tos_url
+    const tosUrl = 'https://fedi.xyz/btcprague'
 
     if (!tosUrl) {
         return <Redirect path="/onboarding/welcome" />
     }
 
-    let joinLink = '/'
-    if (activeFederation.meta?.tos_url) {
-        joinLink = '/onboarding/terms'
-    } else if (isChatSupported) {
-        joinLink = '/onboarding/username'
-    }
-
     return (
-        <OnboardingContainer fullWidth>
-            <OnboardingContent css={{ width: '100%' }}>
+        <OnboardingContainer>
+            <OnboardingContent fullWidth>
                 <Text variant="h2" weight="medium" css={{ marginBottom: 16 }}>
                     {t('feature.onboarding.terms-and-conditions')}
                 </Text>

@@ -37,12 +37,14 @@ export const globalStyles = globalCss({
         fontSize: theme.fontSizes.body,
         fontFamily: theme.fonts.body,
         color: theme.colors.primary,
+        overscrollBehavior: 'none',
     },
     body: {
         lineHeight: 1.5,
         '-webkit-font-smoothing': 'antialiased',
         holoGradient: '100',
         backgroundAttachment: 'fixed',
+        scrollbarGutter: 'stable both-edges',
     },
     'img, picture, video, canvas, svg': {
         display: 'block',
@@ -78,18 +80,5 @@ export const globalStyles = globalCss({
     '#__next': {
         height: '100%',
         isolation: 'isolate',
-    },
-
-    // Custom scrollbars
-    '*::-webkit-scrollbar': {
-        width: '12px',
-    },
-    '*::-webkit-scrollbar-track': {
-        background: theme.colors.white,
-    },
-    '*::-webkit-scrollbar-thumb': {
-        backgroundColor: theme.colors.lightGrey,
-        borderRadius: '6px',
-        border: `3px solid ${theme.colors.white}`,
     },
 })

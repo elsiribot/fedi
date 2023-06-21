@@ -13,6 +13,7 @@ import { LightningGateway } from '@fedi/common/types'
 import { Button } from '../../components/Button'
 import { ContentBlock } from '../../components/ContentBlock'
 import { Input } from '../../components/Input'
+import * as Layout from '../../components/Layout'
 import { RadioGroup } from '../../components/RadioGroup'
 import { Text } from '../../components/Text'
 import { useAppDispatch, useAppSelector } from '../../hooks'
@@ -134,54 +135,63 @@ function DeveloperPage() {
 
     return (
         <ContentBlock>
-            <Settings>
-                <Text variant="h1">Developer settings</Text>
-                <Setting>
-                    <Text>Lightning gateway</Text>
-                    <RadioGroup
-                        options={gatewayOptions}
-                        value={activeGatewayPubKey}
-                        onChange={handleSelectGateway}
-                    />
-                </Setting>
-                <Setting>
-                    <Text>Simulate guardian mode</Text>
-                    <RadioGroup
-                        options={guardianOptions}
-                        value={authenticatedGuardian?.url || ''}
-                        onChange={handleSelectGuardian}
-                    />
-                    {authenticatedGuardian && (
-                        <>
-                            <Input
-                                label="Password"
-                                value={guardianPassword}
-                                onChange={ev =>
-                                    setGuardianPassword(ev.currentTarget.value)
-                                }
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>Developer Settings</Layout.Title>
+                </Layout.Header>
+                <Layout.Content>
+                    <Settings>
+                        <Setting>
+                            <Text>Lightning gateway</Text>
+                            <RadioGroup
+                                options={gatewayOptions}
+                                value={activeGatewayPubKey}
+                                onChange={handleSelectGateway}
                             />
-                            <Button onClick={handleSaveGuardianPassword}>
-                                Save password
+                        </Setting>
+                        <Setting>
+                            <Text>Simulate guardian mode</Text>
+                            <RadioGroup
+                                options={guardianOptions}
+                                value={authenticatedGuardian?.url || ''}
+                                onChange={handleSelectGuardian}
+                            />
+                            {authenticatedGuardian && (
+                                <>
+                                    <Input
+                                        label="Password"
+                                        value={guardianPassword}
+                                        onChange={ev =>
+                                            setGuardianPassword(
+                                                ev.currentTarget.value,
+                                            )
+                                        }
+                                    />
+                                    <Button
+                                        onClick={handleSaveGuardianPassword}>
+                                        Save password
+                                    </Button>
+                                </>
+                            )}
+                        </Setting>
+                        <Setting>
+                            <Text>Chat storage</Text>
+                            <Button variant="outline" onClick={deleteMessages}>
+                                Delete messages
                             </Button>
-                        </>
-                    )}
-                </Setting>
-                <Setting>
-                    <Text>Chat storage</Text>
-                    <Button variant="outline" onClick={deleteMessages}>
-                        Delete messages
-                    </Button>
-                    <Button variant="outline" onClick={deleteGroups}>
-                        Delete groups
-                    </Button>
-                    <Button variant="outline" onClick={deleteMembers}>
-                        Delete members
-                    </Button>
-                    <Button onClick={deleteAllChatData}>
-                        Delete all chat data
-                    </Button>
-                </Setting>
-            </Settings>
+                            <Button variant="outline" onClick={deleteGroups}>
+                                Delete groups
+                            </Button>
+                            <Button variant="outline" onClick={deleteMembers}>
+                                Delete members
+                            </Button>
+                            <Button onClick={deleteAllChatData}>
+                                Delete all chat data
+                            </Button>
+                        </Setting>
+                    </Settings>
+                </Layout.Content>
+            </Layout.Root>
         </ContentBlock>
     )
 }

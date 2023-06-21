@@ -38,9 +38,14 @@ export const Onboarding: React.FC<Props> = ({ step }) => {
 }
 
 const Container = styled('div', {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    minHeight: '50vh',
+    minHeight: '60vh',
     textAlign: 'center',
+
+    '@media (min-height: 1080px)': {
+        minHeight: 640,
+    },
 })

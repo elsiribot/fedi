@@ -63,6 +63,10 @@ const Title = styled('div', {
     paddingBottom: 8,
     marginBottom: 24,
 
+    '@sm': {
+        padding: '8px 24px',
+    },
+
     '&:after': {
         content: '',
         position: 'absolute',
@@ -76,4 +80,8 @@ const Title = styled('div', {
 
 const DemoContent = styled('div', {
     marginTop: 20,
+
+    '@sm': {
+        padding: 16,
+    },
 })

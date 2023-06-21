@@ -95,12 +95,14 @@ const Container = styled('nav', {
     padding: 32,
     background: theme.colors.white,
     animation: `${containerSlideIn} 200ms ease`,
+    boxShadow: '0 0 17px rgba(1, 153, 176, 0.1)',
 
     '@md': {
         width: '100%',
         padding: 0,
         borderTop: `1px solid ${theme.colors.extraLightGrey}`,
         animation: 'none',
+        boxShadow: 'none',
     },
 })
 

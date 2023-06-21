@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useImperativeHandle } from 'react'
+import React, { useState, useEffect, useImperativeHandle } from 'react'
 
 import { styled, theme } from '../styles'
 
@@ -8,35 +8,51 @@ export const ShadowScroller = React.forwardRef<
 >(({ children, ...props }, forwardedRef) => {
     const [canScrollDown, setCanScrollDown] = useState(false)
     const [canScrollUp, setCanScrollUp] = useState(false)
-    const containerRef = useRef<HTMLDivElement | null>(null)
+    const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null)
 
-    useImperativeHandle(forwardedRef, () => containerRef.current!)
+    useImperativeHandle<HTMLDivElement | null, HTMLDivElement | null>(
+        forwardedRef,
+        () => containerEl,
+    )
 
     // Update context with scroll state
-    const containerEl = containerRef.current
     useEffect(() => {
         if (!containerEl) return
         const contentEl = containerEl.childNodes[0] as HTMLElement
+        const isReverse =
+            getComputedStyle(contentEl).flexDirection === 'column-reverse'
         const checkContentScroll = () => {
-            setCanScrollDown(
-                contentEl.scrollHeight - contentEl.scrollTop >
-                    contentEl.clientHeight + 5,
-            )
-            setCanScrollUp(contentEl.scrollTop - 5 > 0)
+            const padding = 5
+            if (isReverse) {
+                setCanScrollDown(contentEl.scrollTop + padding < 0)
+                setCanScrollUp(
+                    contentEl.scrollHeight + contentEl.scrollTop >
+                        contentEl.clientHeight + padding,
+                )
+            } else {
+                setCanScrollDown(
+                    contentEl.scrollHeight - contentEl.scrollTop >
+                        contentEl.clientHeight + padding,
+                )
+                setCanScrollUp(contentEl.scrollTop - padding > 0)
+            }
         }
 
+        const resizeObserver = new ResizeObserver(checkContentScroll)
+
         contentEl.addEventListener('scroll', checkContentScroll)
-        window.addEventListener('resize', checkContentScroll)
+        resizeObserver.observe(contentEl)
+        checkContentScroll()
 
         return () => {
             contentEl.removeEventListener('scroll', checkContentScroll)
-            window.removeEventListener('resize', checkContentScroll)
+            resizeObserver.disconnect()
         }
     }, [containerEl])
 
     return (
-        <Container ref={containerRef} {...props}>
-            <Inner>{children}</Inner>
+        <Container ref={setContainerEl} {...props}>
+            {children}
             <Shadow position="top" visible={canScrollUp} />
             <Shadow position="bottom" visible={canScrollDown} />
         </Container>
@@ -47,11 +63,6 @@ ShadowScroller.displayName = 'ShadowScroller'
 const Container = styled('div', {
     position: 'relative',
     overflow: 'hidden',
-})
-
-const Inner = styled('div', {
-    height: '100%',
-    overflow: 'auto',
 })
 
 const Shadow = styled('div', {

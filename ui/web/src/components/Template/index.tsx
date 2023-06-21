@@ -22,12 +22,11 @@ export const Template: React.FC<Props> = ({ children }) => {
     const popupInfo = usePopupFederationInfo()
 
     // TODO: Move these out of template and into some better configuration management
-    const isFullWidthPage = router.pathname.startsWith('/chat')
-    const isFullScreenPage =
+    const isOnboardingPage = router.pathname.startsWith('/onboarding')
+    const isChatPage =
         router.asPath.startsWith('/chat/group') ||
         router.asPath.startsWith('/chat/member')
-    const hideControls =
-        router.pathname.startsWith('/onboarding') || (isSm && isFullScreenPage)
+    const hideControls = isOnboardingPage || (isSm && isChatPage)
 
     const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
     const hideSideNavigation = hideControls || isPopupOver
@@ -42,9 +41,7 @@ export const Template: React.FC<Props> = ({ children }) => {
                         <PopupFederationCountdown />
                     </FederationControls>
                 )}
-                <Main
-                    fullScreen={isFullScreenPage || isFullWidthPage}
-                    centered={hideControls}>
+                <Main centered={hideControls}>
                     <ErrorBoundary fallback={() => <PageError />}>
                         {isPopupOver ? <PopupFederationOver /> : children}
                     </ErrorBoundary>
@@ -92,6 +89,7 @@ const Content = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     minHeight: 0,
+    overflow: 'auto',
     '--template-padding': '48px',
 
     '@md': {
@@ -99,22 +97,13 @@ const Content = styled('div', {
     },
 
     '@sm': {
-        '--template-padding': '24px',
+        overflow: 'visible',
         background: theme.colors.white,
+        '--template-padding': '24px',
     },
 
     '@xs': {
         '--template-padding': '16px',
-    },
-
-    variants: {
-        fullScreen: {
-            true: {
-                '@sm': {
-                    padding: 0,
-                },
-            },
-        },
     },
 })
 
@@ -124,24 +113,21 @@ const Main = styled('main', {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    minHeight: 0,
     gap: `var(--template-padding)`,
     padding: '0 var(--template-padding) var(--template-padding)',
-    overflow: 'auto',
 
     '@sm': {
-        padding: '0 var(--template-padding)',
+        padding: '0',
+        minHeight: 0,
         background: theme.colors.white,
     },
 
     variants: {
         centered: {
             true: {
+                paddingTop: 'var(--template-padding)',
                 justifyContent: 'center',
-            },
-        },
-        fullScreen: {
-            true: {
+
                 '@sm': {
                     padding: 0,
                 },
