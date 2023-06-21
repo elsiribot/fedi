@@ -53,23 +53,27 @@ export const Navigation: React.FC = () => {
 
     return (
         <Container>
-            <Logo>
-                <Link href="/">
-                    <FediLogo />
-                </Link>
-            </Logo>
-            <Nav>
-                {navLinks.map(nav => (
-                    <NavItem key={nav.path} isActive={getIsActive(nav.path)}>
-                        <Link href={nav.path}>
-                            <NotificationDot visible={nav.hasNotification}>
-                                <Icon icon={nav.icon} />
-                            </NotificationDot>
-                            <NavLabel>{t(nav.name)}</NavLabel>
-                        </Link>
-                    </NavItem>
-                ))}
-            </Nav>
+            <Inner>
+                <Logo>
+                    <Link href="/">
+                        <FediLogo />
+                    </Link>
+                </Logo>
+                <Nav>
+                    {navLinks.map(nav => (
+                        <NavItem
+                            key={nav.path}
+                            isActive={getIsActive(nav.path)}>
+                            <Link href={nav.path}>
+                                <NotificationDot visible={nav.hasNotification}>
+                                    <Icon icon={nav.icon} />
+                                </NotificationDot>
+                                <NavLabel>{t(nav.name)}</NavLabel>
+                            </Link>
+                        </NavItem>
+                    ))}
+                </Nav>
+            </Inner>
         </Container>
     )
 }
@@ -97,6 +101,16 @@ const Container = styled('nav', {
         padding: 0,
         borderTop: `1px solid ${theme.colors.extraLightGrey}`,
         animation: 'none',
+    },
+})
+
+const Inner = styled('div', {
+    position: 'sticky',
+    top: 32,
+
+    '@md': {
+        position: 'relative',
+        top: 'auto',
     },
 })
 
