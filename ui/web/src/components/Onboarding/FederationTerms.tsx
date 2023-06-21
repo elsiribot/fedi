@@ -27,13 +27,6 @@ export const FederationTerms: React.FC = () => {
         return <Redirect path="/onboarding/welcome" />
     }
 
-    let joinLink = '/'
-    if (activeFederation.meta?.tos_url) {
-        joinLink = '/onboarding/terms'
-    } else if (isChatSupported) {
-        joinLink = '/onboarding/username'
-    }
-
     return (
         <OnboardingContainer fullWidth>
             <OnboardingContent css={{ width: '100%' }}>
