@@ -10,9 +10,6 @@ on:
       - .github/workflows/vercel-prod.yml
       - ui/web/**
       - ui/common/**
-defaults:
-  run:
-    working-directory: ui/web
 jobs:
   Deploy-Production:
     runs-on: buildjet-4vcpu-ubuntu-2204
