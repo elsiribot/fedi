@@ -80,7 +80,8 @@ const Container = styled('div', {
     },
 
     '@sm': {
-        height: '100%',
+        height: 'auto',
+        flex: 1,
     },
 })
 

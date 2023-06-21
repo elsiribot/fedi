@@ -71,17 +71,14 @@ export const Content = styled(ShadowScroller, {
         '-webkit-overflow-scrolling': 'touch',
     },
 
-    '@sm': {
-        '& > *:first-child': {
-            padding: '0 16px 16px',
-        },
-    },
-
     variants: {
         fullWidth: {
-            true: {
-                '& > *:first-child': {
-                    padding: 0,
+            true: {},
+            false: {
+                '@sm': {
+                    '& > *:first-child': {
+                        padding: '0 16px 16px',
+                    },
                 },
             },
         },
@@ -95,6 +92,10 @@ export const Content = styled(ShadowScroller, {
                 },
             },
         },
+    },
+    defaultVariants: {
+        fullWidth: false,
+        centered: false,
     },
 })
 

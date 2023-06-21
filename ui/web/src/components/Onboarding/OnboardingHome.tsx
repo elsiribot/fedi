@@ -57,8 +57,8 @@ export const OnboardingHome: React.FC = () => {
 const IllustrationWrapper = styled('div', {
     position: 'relative',
     aspectRatio: '1 / 1',
-    maxWidth: '50vmin',
-    maxHeight: '50vmin',
+    maxWidth: '70vmin',
+    maxHeight: '70vmin',
     marginBottom: 24,
 
     '@xs': {
