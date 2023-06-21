@@ -12,13 +12,13 @@ export interface AvatarProps {
     src?: string
     name?: string
     icon?: React.FunctionComponent<React.SVGAttributes<SVGElement>>
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'xs' | 'sm' | 'md' | 'lg'
     shape?: 'circle' | 'square'
     holo?: boolean
     css?: CSSProp
 }
 
-const iconSizes = { lg: 'md', md: 'sm', sm: 'xs' } as const
+const iconSizes = { lg: 'md', md: 'sm', sm: 'xs', xs: 12 } as const
 
 export const Avatar: React.FC<AvatarProps> = ({
     id,
@@ -69,6 +69,11 @@ const Root = styled(RadixAvatar.Root, {
 
     variants: {
         size: {
+            xs: {
+                width: 20,
+                height: 20,
+                fontSize: 10,
+            },
             sm: {
                 width: 32,
                 height: 32,

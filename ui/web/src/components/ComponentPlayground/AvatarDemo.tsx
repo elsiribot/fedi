@@ -6,7 +6,7 @@ import { Avatar } from '../../components/Avatar'
 import { styled } from '../../styles'
 
 export const AvatarDemo: React.FC = () => {
-    const sizes = ['lg', 'md', 'sm'] as const
+    const sizes = ['lg', 'md', 'sm', 'xs'] as const
     const shapes = ['circle', 'square'] as const
 
     return (
