@@ -48,16 +48,6 @@ export const Title = styled('h1', {
     },
 })
 
-// export const Content: React.FC<
-//     React.ComponentPropsWithoutRef<typeof ContentElement>
-// > = ({ children, ...props }) => {
-//     return (
-//         <ContentOuter {...props}>
-//             <ContentInner>{children}</ContentInner>
-//         </ContentOuter>
-//     )
-// }
-
 export const Content = styled(ShadowScroller, {
     flex: 1,
     width: '100%',
