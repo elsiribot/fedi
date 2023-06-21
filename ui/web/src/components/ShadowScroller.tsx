@@ -48,7 +48,7 @@ export const ShadowScroller = React.forwardRef<
             contentEl.removeEventListener('scroll', checkContentScroll)
             resizeObserver.disconnect()
         }
-    }, [containerEl])
+    }, [containerEl, children])
 
     return (
         <Container ref={setContainerEl} {...props}>
