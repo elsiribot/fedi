@@ -21,8 +21,7 @@ export const FederationTerms: React.FC = () => {
     const isChatSupported = useIsChatSupported()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
 
-    // const tosUrl = activeFederation?.meta?.tos_url
-    const tosUrl = 'https://fedi.xyz/btcprague'
+    const tosUrl = activeFederation?.meta?.tos_url
 
     if (!tosUrl) {
         return <Redirect path="/onboarding/welcome" />

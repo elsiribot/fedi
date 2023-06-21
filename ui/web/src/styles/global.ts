@@ -44,7 +44,6 @@ export const globalStyles = globalCss({
         '-webkit-font-smoothing': 'antialiased',
         holoGradient: '100',
         backgroundAttachment: 'fixed',
-        scrollbarGutter: 'stable both-edges',
     },
     'img, picture, video, canvas, svg': {
         display: 'block',

@@ -15,7 +15,7 @@ export const ShadowScroller = React.forwardRef<
         () => containerEl,
     )
 
-    // Update context with scroll state
+    // Bind listeners to things that would change scroll states, update on changes
     useEffect(() => {
         if (!containerEl) return
         const contentEl = containerEl.childNodes[0] as HTMLElement
