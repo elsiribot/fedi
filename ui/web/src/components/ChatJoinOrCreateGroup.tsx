@@ -12,7 +12,12 @@ import {
 import { ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import {
+    useAppDispatch,
+    useAppSelector,
+    useIsTouchScreen,
+    useToast,
+} from '../hooks'
 import { styled } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
@@ -35,6 +40,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         t('feature.chat.new-group'),
     )
     const [isSavingGroup, setIsSavingGroup] = useState(false)
+    const isTouchScreen = useIsTouchScreen()
 
     useEffect(() => {
         if (!federationId) return
@@ -145,7 +151,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                         onChange={ev =>
                             setJoinGroupLink(ev.currentTarget.value)
                         }
-                        autoFocus
+                        autoFocus={!isTouchScreen}
                     />
                 )}
                 <Buttons>

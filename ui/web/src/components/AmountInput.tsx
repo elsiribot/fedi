@@ -85,6 +85,7 @@ export const AmountInput: React.FC<Props> = ({
                     <input
                         readOnly={!isFiat || readOnly}
                         value={fiatValue}
+                        inputMode="decimal"
                         onChange={ev =>
                             handleChangeFiat(ev.currentTarget.value)
                         }
