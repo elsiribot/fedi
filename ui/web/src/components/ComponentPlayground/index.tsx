@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Text } from '../../components/Text'
-import { styled } from '../../styles'
+import { styled, theme } from '../../styles'
 import { ContentBlock } from '../ContentBlock'
 import { AvatarDemo } from './AvatarDemo'
 import { ButtonDemo } from './ButtonDemo'
@@ -44,18 +44,28 @@ export const ComponentPlayground: React.FC = () => {
     ]
 
     return (
-        <>
+        <Container>
             {demos.map(demo => (
-                <ContentBlock key={demo.title} css={{ maxWidth: 1120 }}>
+                <ContentBlock
+                    key={demo.title}
+                    css={{ maxWidth: 1120, flex: 'none' }}>
                     <Title>
                         <Text variant="h1">{demo.title}</Text>
                     </Title>
                     <DemoContent>{demo.content}</DemoContent>
                 </ContentBlock>
             ))}
-        </>
+        </Container>
     )
 }
+
+const Container = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    width: '100%',
+    overflow: 'auto',
+})
 
 const Title = styled('div', {
     position: 'relative',
@@ -79,6 +89,7 @@ const Title = styled('div', {
 })
 
 const DemoContent = styled('div', {
+    flexShrink: 0,
     marginTop: 20,
 
     '@sm': {

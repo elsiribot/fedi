@@ -154,4 +154,8 @@ const Viewport = styled(RadixToast.Viewport, {
         left: '50%',
         transform: 'translateX(-50%)',
     },
+
+    '@xs': {
+        width: 'calc(100% - 24px)',
+    },
 })

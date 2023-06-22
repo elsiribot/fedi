@@ -102,7 +102,6 @@ function PersonalBackupPage() {
 const Content = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
     gap: 16,
 })
 
