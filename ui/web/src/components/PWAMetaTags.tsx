@@ -26,21 +26,21 @@ export const PWAMetaTags: React.FC = () => {
 
             {/* iOS app icons */}
             <link
-                rel="apple-apple-icon"
+                rel="apple-touch-icon"
                 href="/assets/icons/apple-icon-iphone.png"
             />
             <link
-                rel="apple-apple-icon"
+                rel="apple-touch-icon"
                 sizes="152x152"
                 href="/assets/icons/apple-icon-ipad.png"
             />
             <link
-                rel="apple-apple-icon"
+                rel="apple-touch-icon"
                 sizes="180x180"
                 href="/assets/icons/apple-icon-iphone-retina.png"
             />
             <link
-                rel="apple-apple-icon"
+                rel="apple-touch-icon"
                 sizes="167x167"
                 href="/assets/icons/apple-icon-ipad-retina.png"
             />
