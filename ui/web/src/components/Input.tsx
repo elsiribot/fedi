@@ -10,6 +10,7 @@ interface CustomProps {
     placeholder?: string
     disabled?: boolean
     width?: 'auto' | 'full'
+    textOverflow?: 'clip' | 'ellipsis'
     adornment?: React.ReactNode
 }
 
@@ -111,6 +112,7 @@ const InputWrap = styled('div', {
 
 const TextInput = styled('input', {
     flex: 1,
+    minWidth: 60,
     height: '100%',
     padding: 12,
     border: 'none',
@@ -125,5 +127,16 @@ const TextInput = styled('input', {
     },
     '&::placeholder': {
         color: theme.colors.grey,
+    },
+
+    variants: {
+        textOverflow: {
+            clip: {
+                textOverflow: 'clip',
+            },
+            ellipsis: {
+                textOverflow: 'ellipsis',
+            },
+        },
     },
 })

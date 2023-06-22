@@ -35,6 +35,7 @@ export const CopyInput: React.FC<Props> = ({ value, label, onCopyMessage }) => {
         <Input
             value={value}
             label={label}
+            textOverflow="ellipsis"
             adornment={
                 <CopyButton onClick={handleCopy}>
                     <Icon icon={CopyIcon} />
@@ -53,4 +54,8 @@ const CopyButton = styled('button', {
     alignItems: 'center',
     paddingRight: 12,
     gap: 4,
+
+    '& svg': {
+        flexShrink: 0,
+    },
 })

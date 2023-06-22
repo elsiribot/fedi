@@ -105,6 +105,15 @@ const Content = styled(RadixDialog.Content, {
     overflow: 'hidden',
     animation: `${contentShow} 150ms ease`,
 
+    '@sm': {
+        padding: 24,
+    },
+
+    '@xs': {
+        padding: 16,
+        borderRadius: 16,
+    },
+
     variants: {
         size: {
             sm: {
