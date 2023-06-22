@@ -194,6 +194,7 @@ const Inner = styled('div', {
 
 const ScanWrap = styled('div', {
     maxWidth: 280,
+    width: '100%',
 })
 
 const Buttons = styled('div', {
