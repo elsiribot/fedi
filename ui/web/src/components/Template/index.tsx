@@ -79,7 +79,11 @@ const Container = styled('div', {
     },
 
     '@standalone': {
-        borderTop: `1px solid ${theme.colors.keyboardGrey}`,
+        borderTop: `1px solid ${theme.colors.extraLightGrey}`,
+
+        '@sm': {
+            borderTop: 'none',
+        },
     },
 })
 

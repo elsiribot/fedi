@@ -100,7 +100,7 @@ export const Actions = styled('div', {
     gap: 16,
 
     '@sm': {
-        padding: '24px 24px 32px',
+        padding: '24px 24px 24px',
     },
 
     '@xs': {

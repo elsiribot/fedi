@@ -192,6 +192,19 @@ const NavItem = styled('li', {
         },
     },
 
+    '@standalone': {
+        '@sm': {
+            '& a': {
+                paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+            },
+        },
+        '@xs': {
+            '& a': {
+                paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+            },
+        },
+    },
+
     variants: {
         isActive: {
             true: {

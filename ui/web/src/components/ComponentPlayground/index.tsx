@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Text } from '../../components/Text'
-import { styled, theme } from '../../styles'
+import { styled } from '../../styles'
 import { ContentBlock } from '../ContentBlock'
 import { AvatarDemo } from './AvatarDemo'
 import { ButtonDemo } from './ButtonDemo'

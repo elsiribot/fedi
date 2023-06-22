@@ -16,3 +16,10 @@ export const useAutosizeTextArea = (
         }
     }, [textAreaRef, value])
 }
+
+export const useIsTouchScreen = () => {
+    return (
+        'ontouchstart' in window ||
+        ('maxTouchPoints' in navigator && navigator.maxTouchPoints > 0)
+    )
+}

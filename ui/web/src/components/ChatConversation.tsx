@@ -13,7 +13,12 @@ import {
 } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 
-import { useToast, useAutosizeTextArea, useAppSelector } from '../hooks'
+import {
+    useToast,
+    useAutosizeTextArea,
+    useAppSelector,
+    useIsTouchScreen,
+} from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatMessageCollection } from './ChatMessageCollection'
@@ -48,6 +53,7 @@ export const ChatConversation: React.FC<Props> = ({
     const role = useAppSelector(s => selectChatGroupRole(s, id))
     const [value, setValue] = useState('')
     const [isSending, setIsSending] = useState(false)
+    const isTouchScreen = useIsTouchScreen()
     const inputRef = useRef<HTMLTextAreaElement>(null)
     useAutosizeTextArea(inputRef.current, value)
 
@@ -132,7 +138,7 @@ export const ChatConversation: React.FC<Props> = ({
                             ? 'feature.chat.broadcast-only-notice'
                             : 'words.message',
                     )}
-                    autoFocus
+                    autoFocus={!isTouchScreen}
                     rows={1}
                     onKeyDown={handleInputKeyDown}
                     disabled={isSending || isReadOnly}
@@ -181,6 +187,12 @@ const Actions = styled('form', {
     flexShrink: 0,
     padding: 8,
     borderTop: `1px solid ${theme.colors.lightGrey}`,
+
+    '@standalone': {
+        '@sm': {
+            paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+        },
+    },
 })
 
 const InputActions = styled('div', {
