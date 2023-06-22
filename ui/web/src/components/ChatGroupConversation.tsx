@@ -70,7 +70,9 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     }, [t, dispatch, showErrorToast, federationId, group])
 
     if (!group) {
-        return <ChatEmptyState>No group found</ChatEmptyState>
+        return (
+            <ChatEmptyState>{t('feature.chat.group-not-found')}</ChatEmptyState>
+        )
     }
 
     const link = group ? encodeGroupInvitationLink(group.id) : ''
