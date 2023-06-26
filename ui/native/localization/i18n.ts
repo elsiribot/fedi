@@ -1,11 +1,11 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import * as RNLocalize from 'react-native-localize'
+import { findBestLanguageTag } from 'react-native-localize'
 
 import { resources } from '@fedi/common/localization'
 
 const supportedLngs = Object.keys(resources)
-const bestLanguage = RNLocalize.findBestAvailableLanguage(supportedLngs)
+const bestLanguage = findBestLanguageTag(supportedLngs)
 
 i18n.use(initReactI18next) // passes i18n down to react-i18next
     .init({
