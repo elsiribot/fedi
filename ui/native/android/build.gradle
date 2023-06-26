@@ -18,6 +18,8 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        // Required for fedi-android
+        mavenLocal()
     }
     dependencies {
         classpath("com.android.tools.build:gradle")
@@ -35,6 +37,8 @@ allprojects {
         maven {
             // Required for Detox e2e testing framework
             url("$rootDir/../../node_modules/detox/Detox-android")
+            // Required for fedi-android
+            mavenLocal()
         }
     }
 }
