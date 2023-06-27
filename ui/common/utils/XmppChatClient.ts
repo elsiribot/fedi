@@ -185,7 +185,7 @@ export class XmppChatClient {
                         to: memberId,
                     }),
                 )
-                iqCaller.request(getPubkeyQueryXml)
+                iqCaller.request(getPubkeyQueryXml).catch(reject)
             } catch (error) {
                 console.error('fetchMemberPublicKey', error)
                 reject(new Error('errors.unknown-error'))
@@ -270,7 +270,7 @@ export class XmppChatClient {
                 }
                 this.xmpp.on('stanza', onStanzaReceived)
 
-                this.xmpp.send(enterMucRoomPresence)
+                this.xmpp.send(enterMucRoomPresence).catch(reject)
             } catch (err) {
                 console.error('enterGroup', err)
                 reject(new Error('errors.unknown-error'))
@@ -433,7 +433,7 @@ export class XmppChatClient {
                 }
                 this.xmpp.on('stanza', onStanzaReceived)
 
-                this.xmpp.send(groupChatMessageXml)
+                this.xmpp.send(groupChatMessageXml).catch(reject)
             } catch (error) {
                 console.error('sendGroupMessage', error)
                 reject(new Error('errors.unknown-error'))

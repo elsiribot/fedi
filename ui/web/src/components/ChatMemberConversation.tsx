@@ -1,4 +1,6 @@
+import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
@@ -14,17 +16,21 @@ import { ChatType } from '@fedi/common/types'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
+import { Button } from './Button'
 import { ChatConversation } from './ChatConversation'
 import { ChatEmptyState } from './ChatEmptyState'
 import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { HoloLoader } from './HoloLoader'
 import { IconButton } from './IconButton'
+import { Text } from './Text'
 
 interface Props {
     memberId: string
 }
 
 export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
+    const { t } = useTranslation()
+    const { back } = useRouter()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederation)?.id
     const member = useAppSelector(s => selectChatMember(s, memberId))
@@ -69,8 +75,12 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     } else if (!member) {
         return (
             <ChatEmptyState>
-                Could not find a member with the username &lsquo;
-                {memberId.split('@')[0]}&rsquo;
+                <Text>
+                    {t('feature.chat.member-not-found', {
+                        username: memberId.split('@')[0],
+                    })}
+                </Text>
+                <Button onClick={() => back()}>{t('phrases.go-back')}</Button>
             </ChatEmptyState>
         )
     }
