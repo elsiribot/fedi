@@ -9,6 +9,7 @@ import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { ContentBlock } from './ContentBlock'
 import { FederationAvatar } from './FederationAvatar'
+import * as Layout from './Layout'
 import { Text } from './Text'
 
 export const PopupFederationOver: React.FC = () => {
@@ -20,27 +21,36 @@ export const PopupFederationOver: React.FC = () => {
 
     return (
         <ContentBlock>
-            <Container>
-                <FederationAvatar federation={activeFederation} size="lg" />
-                <Text variant="h2">{activeFederation.name}</Text>
-                <Ended>{t('feature.popup.ended')}</Ended>
-                <Text css={{ marginBottom: 24 }}>
-                    <Trans
-                        t={t}
-                        i18nKey="feature.popup.ended-description"
-                        values={{ date: popupInfo.endsAtText }}
-                        components={{ bold: <strong /> }}
-                    />
-                </Text>
+            <Layout.Root>
+                <Layout.Content centered>
+                    <Container>
+                        <FederationAvatar
+                            federation={activeFederation}
+                            size="lg"
+                        />
+                        <Text variant="h2">{activeFederation.name}</Text>
+                        <Ended>{t('feature.popup.ended')}</Ended>
+                        <Text css={{ marginBottom: 24 }}>
+                            <Trans
+                                t={t}
+                                i18nKey="feature.popup.ended-description"
+                                values={{ date: popupInfo.endsAtText }}
+                                components={{ bold: <strong /> }}
+                            />
+                        </Text>
+                    </Container>
+                </Layout.Content>
                 {activeFederation.meta?.tos_url && (
-                    <Button
-                        width="full"
-                        variant="secondary"
-                        href={activeFederation.meta.tos_url}>
-                        {t('phrases.terms-and-conditions')}
-                    </Button>
+                    <Layout.Actions>
+                        <Button
+                            width="full"
+                            variant="secondary"
+                            href={activeFederation.meta.tos_url}>
+                            {t('phrases.terms-and-conditions')}
+                        </Button>
+                    </Layout.Actions>
                 )}
-            </Container>
+            </Layout.Root>
         </ContentBlock>
     )
 }
