@@ -50,7 +50,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
                         <SvgImage
-                            name="Done"
+                            name="Check"
                             size={SvgImageSize.xs}
                             color={theme.colors.secondary}
                         />
