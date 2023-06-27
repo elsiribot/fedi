@@ -1,7 +1,8 @@
 import { create as createQrCode } from 'qrcode'
 import React, { useEffect, useState } from 'react'
 
-import { keyframes, styled, theme } from '../styles'
+import { useMediaQuery } from '../hooks'
+import { config, keyframes, styled, theme } from '../styles'
 import { renderStyledQrSvg } from '../utils/qrcode'
 import { HoloLoader } from './HoloLoader'
 
@@ -12,14 +13,21 @@ interface Props {
 export const QRCode: React.FC<Props> = ({ data }) => {
     const [qrSvgs, setQrSvgs] = useState<string[] | null>(null)
     const [activeFrame, setActiveFrame] = useState(0)
+    const isXs = useMediaQuery(config.media.xs)
 
     useEffect(() => {
         if (!data) return
         const dataArr = Array.isArray(data) ? data : [data]
-        const svgs = dataArr.map(d => renderStyledQrSvg(createQrCode(d)))
+        const svgs = dataArr.map(d => {
+            const qrData = createQrCode(d)
+            return renderStyledQrSvg(qrData, {
+                moduleShape: isXs ? 'square' : 'dot',
+                hideLogo: isXs,
+            })
+        })
         setQrSvgs(svgs)
         setActiveFrame(0)
-    }, [data])
+    }, [data, isXs])
 
     useEffect(() => {
         if (!qrSvgs || qrSvgs.length < 2) return
@@ -72,6 +80,14 @@ const Inner = styled('div', {
 
     '> *': {
         animation: `${fadeIn} 100ms ease`,
+    },
+
+    '@sm': {
+        padding: 16,
+    },
+
+    '@xs': {
+        padding: 12,
     },
 
     variants: {

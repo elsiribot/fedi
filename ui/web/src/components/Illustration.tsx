@@ -14,7 +14,8 @@ export const Illustration: React.FC<ImageProps> = props => {
 
 const Container = styled('div', {
     position: 'relative',
-    height: 'auto',
+    height: '100%',
+    width: '100%',
 
     '&:after': {
         content: '',
@@ -26,5 +27,10 @@ const Container = styled('div', {
         holoGradient: '900',
         borderRadius: '100%',
         filter: 'blur(10px)',
+    },
+
+    '& img': {
+        height: '100%',
+        width: '100%',
     },
 })

@@ -14,7 +14,6 @@ import { useAppSelector } from '../../hooks'
 import { keyframes, styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { NotificationDot } from '../NotificationDot'
-import { Text } from '../Text'
 
 export const Navigation: React.FC = () => {
     const router = useRouter()
@@ -54,25 +53,27 @@ export const Navigation: React.FC = () => {
 
     return (
         <Container>
-            <Logo>
-                <Link href="/">
-                    <FediLogo />
-                </Link>
-            </Logo>
-            <Nav>
-                {navLinks.map(nav => (
-                    <NavItem key={nav.path} isActive={getIsActive(nav.path)}>
-                        <Link href={nav.path}>
-                            <NotificationDot visible={nav.hasNotification}>
-                                <Icon icon={nav.icon} />
-                            </NotificationDot>
-                            <Text variant="body" weight="medium">
-                                {t(nav.name)}
-                            </Text>
-                        </Link>
-                    </NavItem>
-                ))}
-            </Nav>
+            <Inner>
+                <Logo>
+                    <Link href="/">
+                        <FediLogo />
+                    </Link>
+                </Logo>
+                <Nav>
+                    {navLinks.map(nav => (
+                        <NavItem
+                            key={nav.path}
+                            isActive={getIsActive(nav.path)}>
+                            <Link href={nav.path}>
+                                <NotificationDot visible={nav.hasNotification}>
+                                    <Icon icon={nav.icon} />
+                                </NotificationDot>
+                                <NavLabel>{t(nav.name)}</NavLabel>
+                            </Link>
+                        </NavItem>
+                    ))}
+                </Nav>
+            </Inner>
         </Container>
     )
 }
@@ -94,11 +95,24 @@ const Container = styled('nav', {
     padding: 32,
     background: theme.colors.white,
     animation: `${containerSlideIn} 200ms ease`,
+    boxShadow: '0 0 17px rgba(1, 153, 176, 0.1)',
 
     '@md': {
         width: '100%',
         padding: 0,
+        borderTop: `1px solid ${theme.colors.extraLightGrey}`,
         animation: 'none',
+        boxShadow: 'none',
+    },
+})
+
+const Inner = styled('div', {
+    position: 'sticky',
+    top: 32,
+
+    '@md': {
+        position: 'relative',
+        top: 'auto',
     },
 })
 
@@ -150,13 +164,44 @@ const NavItem = styled('li', {
         color: 'inherit',
     },
 
+    '& svg': {
+        display: 'block',
+    },
+
     '@md': {
         justifyContent: 'center',
 
         '& a': {
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: 16,
+            gap: 4,
+            padding: 12,
+        },
+    },
+
+    '@xs': {
+        '& a': {
+            gap: 2,
+            padding: 8,
+            fontSize: theme.fontSizes.caption,
+        },
+
+        '& svg': {
+            width: 20,
+            height: 20,
+        },
+    },
+
+    '@standalone': {
+        '@sm': {
+            '& a': {
+                paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+            },
+        },
+        '@xs': {
+            '& a': {
+                paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+            },
         },
     },
 
@@ -166,5 +211,14 @@ const NavItem = styled('li', {
                 color: theme.colors.primary,
             },
         },
+    },
+})
+
+const NavLabel = styled('div', {
+    fontSize: theme.fontSizes.body,
+    fontWeight: theme.fontWeights.medium,
+
+    '@sm': {
+        fontSize: theme.fontSizes.caption,
     },
 })

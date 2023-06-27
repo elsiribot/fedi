@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { Icon } from './Icon'
+import { ShadowScroller } from './ShadowScroller'
 import { Text } from './Text'
 
 interface Props {
@@ -46,44 +47,46 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
                     onChange={ev => setQuery(ev.currentTarget.value)}
                 />
             </SearchHeader>
-            <SearchResults>
-                <SearchButton onClick={onClickNewGroup}>
-                    <Icon icon={RoomIcon} />
-                    <Text weight="medium">
-                        {t('feature.chat.create-or-join-a-new-group')}
-                    </Text>
-                </SearchButton>
-                <div>
-                    <SearchHeading>{t('words.members')}</SearchHeading>
-                    {searchedMembers.map(member => (
-                        <SearchButton
-                            as={Link}
-                            key={member.id}
-                            href={`/chat/member/${member.id}`}>
-                            <Avatar
-                                id={member.id}
-                                size="md"
-                                name={member.username}
-                            />
-                            <Text variant="caption" weight="bold">
-                                {member.username}
-                            </Text>
-                        </SearchButton>
-                    ))}
-                    {query && !isExactMatch && connectionOptions && (
-                        <SearchButton
-                            as={Link}
-                            href={`/chat/member/${query}@${connectionOptions.domain}`}>
-                            <Icon icon={SocialPeopleIcon} />
-                            <Text weight="medium">
-                                {t('feature.chat.send-a-message-to', {
-                                    name: query,
-                                })}
-                            </Text>
-                        </SearchButton>
-                    )}
-                </div>
-            </SearchResults>
+            <ShadowScroller>
+                <SearchResults>
+                    <SearchButton onClick={onClickNewGroup}>
+                        <Icon icon={RoomIcon} />
+                        <Text weight="medium">
+                            {t('feature.chat.create-or-join-a-new-group')}
+                        </Text>
+                    </SearchButton>
+                    <div>
+                        <SearchHeading>{t('words.members')}</SearchHeading>
+                        {searchedMembers.map(member => (
+                            <SearchButton
+                                as={Link}
+                                key={member.id}
+                                href={`/chat/member/${member.id}`}>
+                                <Avatar
+                                    id={member.id}
+                                    size="md"
+                                    name={member.username}
+                                />
+                                <Text variant="caption" weight="bold">
+                                    {member.username}
+                                </Text>
+                            </SearchButton>
+                        ))}
+                        {query && !isExactMatch && connectionOptions && (
+                            <SearchButton
+                                as={Link}
+                                href={`/chat/member/${query}@${connectionOptions.domain}`}>
+                                <Icon icon={SocialPeopleIcon} />
+                                <Text weight="medium">
+                                    {t('feature.chat.send-a-message-to', {
+                                        name: query,
+                                    })}
+                                </Text>
+                            </SearchButton>
+                        )}
+                    </div>
+                </SearchResults>
+            </ShadowScroller>
         </Container>
     )
 }
@@ -99,7 +102,11 @@ const SearchHeader = styled('div', {
     display: 'flex',
     alignItems: 'center',
     padding: 24,
-    borderBottom: `1px solid ${theme.colors.lightGrey}`,
+    borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+
+    '@sm': {
+        padding: '16px 24px',
+    },
 })
 
 const SearchPrefix = styled('div', {
@@ -119,8 +126,8 @@ const SearchInput = styled('input', {
 })
 
 const SearchResults = styled('div', {
-    flex: 1,
-    minHeight: 0,
+    height: '100%',
+    padding: '8px 0',
     overflow: 'auto',
 })
 

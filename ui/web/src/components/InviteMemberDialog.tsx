@@ -24,7 +24,7 @@ export const InviteMemberDialog: React.FC<Props> = props => {
     return (
         <Dialog title={t('feature.federations.federation-invite')} {...props}>
             <Content>
-                <QRCode data={connectInfo} />
+                <QRCode data={connectInfo.toUpperCase()} />
                 <CopyInput
                     value={connectInfo}
                     onCopyMessage={t(

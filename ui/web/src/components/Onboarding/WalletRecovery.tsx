@@ -9,6 +9,7 @@ import { ActionCard } from '../../components/ActionCard'
 import { Button } from '../../components/Button'
 import { Text } from '../../components/Text'
 import { useAppSelector } from '../../hooks'
+import { styled } from '../../styles'
 import { Redirect } from '../Redirect'
 import { OnboardingContainer, OnboardingContent } from './components'
 
@@ -19,31 +20,40 @@ export const WalletRecovery: React.FC = () => {
     if (!activeFederation) return <Redirect path="/onboarding" />
 
     return (
-        <OnboardingContainer fullWidth>
-            <OnboardingContent gap="md">
+        <OnboardingContainer>
+            <OnboardingContent gap="md" fullWidth>
                 <Text variant="h1">{t('feature.recovery.choose-method')}</Text>
-                <ActionCard
-                    icon={WordListIcon}
-                    title={t('feature.recovery.personal-recovery')}
-                    description={t(
-                        'feature.recovery.personal-recovery-instructions',
-                        { federation: activeFederation?.name },
-                    )}
-                    action={
-                        <Button href="/onboarding/recover/personal">
-                            {t('feature.recovery.start-personal-recovery')}
-                        </Button>
-                    }
-                />
-                <ActionCard
-                    icon={SocialPeopleIcon}
-                    title={t('feature.recovery.social-recovery')}
-                    description={t(
-                        'feature.recovery.social-recovery-instructions',
-                    )}
-                    action={<Button disabled>Coming soon</Button>}
-                />
+                <Cards>
+                    <ActionCard
+                        icon={WordListIcon}
+                        title={t('feature.recovery.personal-recovery')}
+                        description={t(
+                            'feature.recovery.personal-recovery-instructions',
+                            { federation: activeFederation?.name },
+                        )}
+                        action={
+                            <Button href="/onboarding/recover/personal">
+                                {t('feature.recovery.start-personal-recovery')}
+                            </Button>
+                        }
+                    />
+                    <ActionCard
+                        icon={SocialPeopleIcon}
+                        title={t('feature.recovery.social-recovery')}
+                        description={t(
+                            'feature.recovery.social-recovery-instructions',
+                        )}
+                        action={<Button disabled>Coming soon</Button>}
+                    />
+                </Cards>
             </OnboardingContent>
         </OnboardingContainer>
     )
 }
+
+const Cards = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: 360,
+    gap: 16,
+})

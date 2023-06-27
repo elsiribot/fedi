@@ -8,6 +8,7 @@ import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../../components/Button'
 import { ContentBlock } from '../../../components/ContentBlock'
+import * as Layout from '../../../components/Layout'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
 import { useAppDispatch, useAppSelector, useToast } from '../../../hooks'
@@ -51,21 +52,27 @@ function PersonalRecoverPage() {
 
     return (
         <ContentBlock>
-            <Text variant="h1">{t('feature.recovery.personal-recovery')}</Text>
-            <Content>
-                <Text>
-                    {t('feature.recovery.personal-recovery-instructions', {
-                        federation: activeFederation?.name,
-                    })}
-                </Text>
-                <RecoverySeedWords words={words} onChangeWords={setWords} />
-                <Button
-                    onClick={handleRecovery}
-                    disabled={!isValid}
-                    loading={isRecovering}>
-                    {t('feature.recovery.recover-wallet')}
-                </Button>
-            </Content>
+            <Layout.Header>
+                <Layout.Title>
+                    {t('feature.recovery.personal-recovery')}
+                </Layout.Title>
+            </Layout.Header>
+            <Layout.Content>
+                <Content>
+                    <Text>
+                        {t('feature.recovery.personal-recovery-instructions', {
+                            federation: activeFederation?.name,
+                        })}
+                    </Text>
+                    <RecoverySeedWords words={words} onChangeWords={setWords} />
+                    <Button
+                        onClick={handleRecovery}
+                        disabled={!isValid}
+                        loading={isRecovering}>
+                        {t('feature.recovery.recover-wallet')}
+                    </Button>
+                </Content>
+            </Layout.Content>
         </ContentBlock>
     )
 }

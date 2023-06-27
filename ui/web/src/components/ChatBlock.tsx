@@ -5,6 +5,7 @@ import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectOrderedChatList } from '@fedi/common/redux'
 
+import * as Layout from '../components/Layout'
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
@@ -23,22 +24,31 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const chats = useAppSelector(selectOrderedChatList)
 
     return (
-        <ContentBlock maxWidth={840} padding={0}>
-            <Layout>
+        <ContentBlock css={{ maxWidth: 840, padding: 0 }}>
+            <Container>
                 <Sidebar isHidden={isShowingContent}>
-                    <SidebarHeader>
-                        <Text variant="h2">{t('words.chat')}</Text>
-                        <Button size="sm" variant="outline" href="/chat/new">
-                            {t('feature.chat.new-chat')}
-                        </Button>
-                    </SidebarHeader>
-                    <SidebarList>
-                        {chats.map(chat => (
-                            <ErrorBoundary key={chat.id} fallback={null}>
-                                <ChatListItem chat={chat} />
-                            </ErrorBoundary>
-                        ))}
-                    </SidebarList>
+                    <Layout.Root>
+                        <SidebarHeader>
+                            <Layout.Title small>{t('words.chat')}</Layout.Title>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                href="/chat/new">
+                                {t('feature.chat.new-chat')}
+                            </Button>
+                        </SidebarHeader>
+                        <Layout.Content fullWidth>
+                            <SidebarList>
+                                {chats.map(chat => (
+                                    <ErrorBoundary
+                                        key={chat.id}
+                                        fallback={null}>
+                                        <ChatListItem chat={chat} />
+                                    </ErrorBoundary>
+                                ))}
+                            </SidebarList>
+                        </Layout.Content>
+                    </Layout.Root>
                 </Sidebar>
                 <Content isShowing={isShowingContent}>
                     <ErrorBoundary
@@ -53,12 +63,12 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                         {children}
                     </ErrorBoundary>
                 </Content>
-            </Layout>
+            </Container>
         </ContentBlock>
     )
 }
 
-const Layout = styled('div', {
+const Container = styled('div', {
     position: 'relative',
     display: 'flex',
     minHeight: 300,
@@ -70,7 +80,8 @@ const Layout = styled('div', {
     },
 
     '@sm': {
-        height: '100%',
+        height: 'auto',
+        flex: 1,
     },
 })
 
@@ -79,7 +90,7 @@ const Sidebar = styled('div', {
     flexShrink: 0,
     flexDirection: 'column',
     width: 280,
-    borderRight: `1px solid ${theme.colors.lightGrey}`,
+    borderRight: `1px solid ${theme.colors.extraLightGrey}`,
 
     '@sm': {
         width: '100%',
@@ -97,12 +108,15 @@ const Sidebar = styled('div', {
     },
 })
 
-const SidebarHeader = styled('div', {
+const SidebarHeader = styled(Layout.Header, {
     display: 'flex',
-    height: 72,
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '8px 16px',
+
+    '@sm': {
+        padding: '16px 16px',
+    },
 })
 
 const SidebarList = styled('div', {
@@ -110,11 +124,12 @@ const SidebarList = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
-    overflow: 'auto',
 })
 
 const Content = styled('div', {
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
     overflow: 'hidden',
 
     '@sm': {

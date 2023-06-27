@@ -73,6 +73,10 @@ const Container = styled('button', {
     '&:hover, &:focus': {
         background: 'rgba(0, 0, 0, 0.04)',
     },
+
+    '@sm': {
+        borderRadius: 0,
+    },
 })
 
 const IconWrap = styled('div', {

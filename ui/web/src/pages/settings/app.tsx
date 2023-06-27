@@ -10,6 +10,7 @@ import {
 import { SupportedCurrency } from '@fedi/common/types'
 
 import { ContentBlock } from '../../components/ContentBlock'
+import * as Layout from '../../components/Layout'
 import { RadioGroup } from '../../components/RadioGroup'
 import { Text } from '../../components/Text'
 import { useAppDispatch, useAppSelector } from '../../hooks'
@@ -51,38 +52,45 @@ function AppSettings() {
 
     return (
         <ContentBlock>
-            <Title>
-                <Text variant="h1">{t('phrases.app-settings-security')}</Text>
-            </Title>
-            <Settings>
-                <Setting>
-                    <Text>{t('words.language')}</Text>
-                    <RadioGroup
-                        options={languageOptions}
-                        value={language || i18n.language}
-                        onChange={value => {
-                            dispatch(changeLanguage({ language: value, i18n }))
-                        }}
-                    />
-                </Setting>
-                <Setting>
-                    <Text>{t('words.currency')}</Text>
-                    <RadioGroup
-                        options={currencyOptions}
-                        value={currency}
-                        onChange={value =>
-                            dispatch(changeSelectedFiatCurrency(value))
-                        }
-                    />
-                </Setting>
-            </Settings>
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>
+                        {t('phrases.app-settings-security')}
+                    </Layout.Title>
+                </Layout.Header>
+                <Layout.Content>
+                    <Settings>
+                        <Setting>
+                            <Text>{t('words.language')}</Text>
+                            <RadioGroup
+                                options={languageOptions}
+                                value={language || i18n.language}
+                                onChange={value => {
+                                    dispatch(
+                                        changeLanguage({
+                                            language: value,
+                                            i18n,
+                                        }),
+                                    )
+                                }}
+                            />
+                        </Setting>
+                        <Setting>
+                            <Text>{t('words.currency')}</Text>
+                            <RadioGroup
+                                options={currencyOptions}
+                                value={currency}
+                                onChange={value =>
+                                    dispatch(changeSelectedFiatCurrency(value))
+                                }
+                            />
+                        </Setting>
+                    </Settings>
+                </Layout.Content>
+            </Layout.Root>
         </ContentBlock>
     )
 }
-
-const Title = styled('div', {
-    marginBottom: 16,
-})
 
 const Settings = styled('div', {
     display: 'flex',

@@ -12,8 +12,8 @@ import {
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppDispatch, useAppSelector } from '../../hooks'
-import { styled, theme } from '../../styles'
+import { useAppDispatch, useAppSelector, useMediaQuery } from '../../hooks'
+import { config, styled, theme } from '../../styles'
 import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
@@ -25,6 +25,7 @@ export const FederationSelector: React.FC = () => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const federations = useAppSelector(selectFederations)
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)
+    const isSmall = useMediaQuery(config.media.sm)
 
     const handleSelectFederation = useCallback(
         (fed: Federation) => {
@@ -77,7 +78,10 @@ export const FederationSelector: React.FC = () => {
                 open={isSelectorOpen}
                 onOpenChange={setIsSelectorOpen}>
                 <ActiveFederation>
-                    <FederationAvatar federation={activeFederation} size="sm" />
+                    <FederationAvatar
+                        federation={activeFederation}
+                        size={isSmall ? 'xs' : 'sm'}
+                    />
                     <Text variant="caption" weight="bold">
                         {activeFederation.name}
                     </Text>

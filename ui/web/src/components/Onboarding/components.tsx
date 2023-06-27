@@ -1,30 +1,44 @@
-import { styled } from '../../styles'
+import React from 'react'
 
-export const OnboardingContainer = styled('div', {
+import { styled } from '../../styles'
+import * as Layout from '../Layout'
+
+export const OnboardingContainer = styled(Layout.Root, {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    gap: 48,
     alignItems: 'center',
-    height: '100%',
     width: '100%',
-    maxWidth: 330,
-
-    variants: {
-        fullWidth: {
-            true: {
-                maxWidth: 'none',
-            },
-        },
-    },
 })
 
-export const OnboardingContent = styled('div', {
+export const OnboardingContent: React.FC<
+    React.ComponentProps<typeof OnboardingContentInner> &
+        React.ComponentProps<typeof OnboardingContentScroll>
+> = props => {
+    return (
+        <Layout.Content>
+            <OnboardingContentScroll>
+                <OnboardingContentInner {...props} />
+            </OnboardingContentScroll>
+        </Layout.Content>
+    )
+}
+
+const OnboardingContentScroll = styled('div', {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+})
+
+const OnboardingContentInner = styled('div', {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    maxWidth: 340,
+    paddingTop: 16,
 
     variants: {
         justify: {
@@ -43,6 +57,12 @@ export const OnboardingContent = styled('div', {
                 gap: 16,
             },
         },
+        fullWidth: {
+            true: {
+                width: '100%',
+                maxWidth: 'none',
+            },
+        },
     },
     defaultVariants: {
         justify: 'center',
@@ -50,11 +70,7 @@ export const OnboardingContent = styled('div', {
     },
 })
 
-export const OnboardingActions = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 320,
+export const OnboardingActions = styled(Layout.Actions, {
+    maxWidth: 340,
     gap: 16,
 })

@@ -7,34 +7,44 @@ import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 import { ActionCard } from '../../../components/ActionCard'
 import { Button } from '../../../components/Button'
 import { ContentBlock } from '../../../components/ContentBlock'
-import { Text } from '../../../components/Text'
+import * as Layout from '../../../components/Layout'
 import { styled } from '../../../styles'
 
 function BackupPage() {
     const { t } = useTranslation()
     return (
         <ContentBlock>
-            <Text variant="h1">{t('feature.backup.choose-method')}</Text>
-            <ActionCards>
-                <ActionCard
-                    icon={WordListIcon}
-                    title={t('feature.backup.personal-backup')}
-                    description={t(
-                        'feature.backup.personal-backup-instructions',
-                    )}
-                    action={
-                        <Button href="/settings/backup/personal">
-                            {t('feature.backup.start-personal-backup')}
-                        </Button>
-                    }
-                />
-                <ActionCard
-                    icon={SocialPeopleIcon}
-                    title={t('feature.backup.social-backup')}
-                    description={t('feature.backup.social-backup-instructions')}
-                    action={<Button disabled>Coming soon</Button>}
-                />
-            </ActionCards>
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>
+                        {t('feature.backup.choose-method')}
+                    </Layout.Title>
+                </Layout.Header>
+                <Layout.Content>
+                    <ActionCards>
+                        <ActionCard
+                            icon={WordListIcon}
+                            title={t('feature.backup.personal-backup')}
+                            description={t(
+                                'feature.backup.personal-backup-instructions',
+                            )}
+                            action={
+                                <Button href="/settings/backup/personal">
+                                    {t('feature.backup.start-personal-backup')}
+                                </Button>
+                            }
+                        />
+                        <ActionCard
+                            icon={SocialPeopleIcon}
+                            title={t('feature.backup.social-backup')}
+                            description={t(
+                                'feature.backup.social-backup-instructions',
+                            )}
+                            action={<Button disabled>Coming soon</Button>}
+                        />
+                    </ActionCards>
+                </Layout.Content>
+            </Layout.Root>
         </ContentBlock>
     )
 }

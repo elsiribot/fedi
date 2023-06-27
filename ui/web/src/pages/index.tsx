@@ -6,7 +6,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
-import { Text } from '../components/Text'
+import * as Layout from '../components/Layout'
 import { styled } from '../styles'
 
 function HomePage() {
@@ -14,22 +14,22 @@ function HomePage() {
 
     return (
         <ContentBlock>
-            <Title>
-                <Text variant="h1">{t('words.home')}</Text>
-            </Title>
-            <ContentInner>
-                <BitcoinWallet />
-                <ErrorBoundary fallback={null}>
-                    <FediModTiles />
-                </ErrorBoundary>
-            </ContentInner>
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>{t('words.home')}</Layout.Title>
+                </Layout.Header>
+                <Layout.Content>
+                    <ContentInner>
+                        <BitcoinWallet />
+                        <ErrorBoundary fallback={null}>
+                            <FediModTiles />
+                        </ErrorBoundary>
+                    </ContentInner>
+                </Layout.Content>
+            </Layout.Root>
         </ContentBlock>
     )
 }
-
-const Title = styled('div', {
-    marginBottom: 16,
-})
 
 const ContentInner = styled('div', {
     display: 'flex',

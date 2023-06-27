@@ -8,7 +8,7 @@ import { Transaction } from '@fedi/common/types'
 
 import { ContentBlock } from '../components/ContentBlock'
 import { HoloLoader } from '../components/HoloLoader'
-import { Text } from '../components/Text'
+import * as Layout from '../components/Layout'
 import { TransactionDialog } from '../components/TransactionDialog'
 import { TransactionRow } from '../components/TransactionRow'
 import { TransactionRowError } from '../components/TransactionRowError'
@@ -77,10 +77,14 @@ const TransactionsPage: React.FC = () => {
 
     return (
         <ContentBlock>
-            <Title>
-                <Text variant="h1">{t('words.transactions')}</Text>
-            </Title>
-            {content}
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>{t('words.transactions')}</Layout.Title>
+                </Layout.Header>
+                <Layout.Content centered={isLoading} fullWidth>
+                    {content}
+                </Layout.Content>
+            </Layout.Root>
             <TransactionDialog
                 open={!!selectedTransaction}
                 transaction={selectedTransaction}
@@ -90,10 +94,6 @@ const TransactionsPage: React.FC = () => {
         </ContentBlock>
     )
 }
-
-const Title = styled('div', {
-    marginBottom: 16,
-})
 
 const Loading = styled('div', {
     padding: '48px 16px 16px',
@@ -109,10 +109,12 @@ const EmptyState = styled('div', {
     fontSize: theme.fontSizes.h2,
     border: `1px dashed ${theme.colors.lightGrey}`,
     borderRadius: 16,
+
+    '@sm': {
+        margin: '0 16px',
+    },
 })
 
-const TransactionsList = styled('div', {
-    margin: '0 -16px',
-})
+const TransactionsList = styled('div')
 
 export default TransactionsPage

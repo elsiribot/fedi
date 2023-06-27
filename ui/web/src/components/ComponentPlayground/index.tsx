@@ -44,24 +44,38 @@ export const ComponentPlayground: React.FC = () => {
     ]
 
     return (
-        <>
+        <Container>
             {demos.map(demo => (
-                <ContentBlock key={demo.title} maxWidth={1120}>
+                <ContentBlock
+                    key={demo.title}
+                    css={{ maxWidth: 1120, flex: 'none' }}>
                     <Title>
                         <Text variant="h1">{demo.title}</Text>
                     </Title>
                     <DemoContent>{demo.content}</DemoContent>
                 </ContentBlock>
             ))}
-        </>
+        </Container>
     )
 }
+
+const Container = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    width: '100%',
+    overflow: 'auto',
+})
 
 const Title = styled('div', {
     position: 'relative',
     width: '100%',
     paddingBottom: 8,
     marginBottom: 24,
+
+    '@sm': {
+        padding: '8px 24px',
+    },
 
     '&:after': {
         content: '',
@@ -75,5 +89,10 @@ const Title = styled('div', {
 })
 
 const DemoContent = styled('div', {
+    flexShrink: 0,
     marginTop: 20,
+
+    '@sm': {
+        padding: 16,
+    },
 })

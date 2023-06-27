@@ -131,18 +131,21 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
     )
 }
 
+const padding = 4
 const Container = styled('div', {
     position: 'relative',
     width: '100%',
     aspectRatio: '1 / 1',
-    padding: 4,
+    padding,
     holoGradient: '900',
     borderRadius: 20,
 })
 
 const Video = styled('video', {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    inset: padding,
+    width: `calc(100% - ${padding * 2}px)`,
+    height: `calc(100% - ${padding * 2}px)`,
     borderRadius: 16,
     background: theme.colors.white,
     objectFit: 'cover',

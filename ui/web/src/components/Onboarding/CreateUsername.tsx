@@ -67,6 +67,7 @@ export const CreateUsername: React.FC = () => {
                         value={username}
                         onChange={ev => setUsername(ev.currentTarget.value)}
                         autoFocus
+                        autoCapitalize="off"
                     />
                 </InputWrapper>
             </OnboardingContent>

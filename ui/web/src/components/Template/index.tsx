@@ -22,12 +22,11 @@ export const Template: React.FC<Props> = ({ children }) => {
     const popupInfo = usePopupFederationInfo()
 
     // TODO: Move these out of template and into some better configuration management
-    const isFullWidthPage = router.pathname.startsWith('/chat')
-    const isFullScreenPage =
+    const isOnboardingPage = router.pathname.startsWith('/onboarding')
+    const isChatPage =
         router.asPath.startsWith('/chat/group') ||
         router.asPath.startsWith('/chat/member')
-    const hideControls =
-        router.pathname.startsWith('/onboarding') || (isSm && isFullScreenPage)
+    const hideControls = isOnboardingPage || (isSm && isChatPage)
 
     const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
     const hideSideNavigation = hideControls || isPopupOver
@@ -35,19 +34,18 @@ export const Template: React.FC<Props> = ({ children }) => {
     return (
         <Container>
             {!hideSideNavigation && <Navigation />}
-            <Content
-                centered={hideControls}
-                fullWidth={isFullWidthPage}
-                fullScreen={isFullScreenPage}>
+            <Content>
                 {!hideControls && (
                     <FederationControls>
                         <FederationSelector />
                         <PopupFederationCountdown />
                     </FederationControls>
                 )}
-                <ErrorBoundary fallback={() => <PageError />}>
-                    {isPopupOver ? <PopupFederationOver /> : children}
-                </ErrorBoundary>
+                <Main centered={hideControls}>
+                    <ErrorBoundary fallback={() => <PageError />}>
+                        {isPopupOver ? <PopupFederationOver /> : children}
+                    </ErrorBoundary>
+                </Main>
             </Content>
         </Container>
     )
@@ -56,6 +54,11 @@ export const Template: React.FC<Props> = ({ children }) => {
 const Container = styled('div', {
     display: 'flex',
     minHeight: '100vh',
+
+    '@supports (height: 100dvh)': {
+        minHeight: '100dvh',
+    },
+
     '@supports (min-height: -webkit-fill-available)': {
         minHeight: '-webkit-fill-available',
     },
@@ -65,49 +68,70 @@ const Container = styled('div', {
         maxHeight: '100vh',
         flexDirection: 'column-reverse',
 
+        '@supports (height: 100dvh)': {
+            height: '100dvh',
+            maxHeight: '100dvh',
+        },
+
         '@supports (height: -webkit-fill-available)': {
             height: '-webkit-fill-available',
         },
     },
 
     '@standalone': {
-        borderTop: `1px solid ${theme.colors.keyboardGrey}`,
+        borderTop: `1px solid ${theme.colors.extraLightGrey}`,
+
+        '@sm': {
+            borderTop: 'none',
+        },
     },
 })
 
-const Content = styled('main', {
+const Content = styled('div', {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 48,
-    padding: 48,
+    minHeight: 0,
     overflow: 'auto',
+    '--template-padding': '48px',
 
     '@md': {
-        padding: 36,
-        gap: 36,
+        '--template-padding': '36px',
     },
 
     '@sm': {
+        overflow: 'visible',
+        background: theme.colors.white,
+        '--template-padding': '24px',
+    },
+
+    '@xs': {
+        '--template-padding': '16px',
+    },
+})
+
+const Main = styled('main', {
+    flex: 1,
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: `var(--template-padding)`,
+    padding: '0 var(--template-padding) var(--template-padding)',
+
+    '@sm': {
+        padding: '0',
+        minHeight: 0,
         background: theme.colors.white,
     },
 
     variants: {
         centered: {
             true: {
+                paddingTop: 'var(--template-padding)',
                 justifyContent: 'center',
-            },
-        },
-        fullWidth: {
-            true: {
-                '@sm': {
-                    padding: '36px 0 0',
-                },
-            },
-        },
-        fullScreen: {
-            true: {
+
                 '@sm': {
                     padding: 0,
                 },
@@ -119,5 +143,13 @@ const Content = styled('main', {
 const FederationControls = styled('div', {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    padding: 'var(--template-padding) 8px',
     gap: 4,
+
+    '@sm': {
+        padding: '16px 8px',
+        borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+    },
 })

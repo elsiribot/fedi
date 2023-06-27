@@ -28,8 +28,8 @@ export const FederationTerms: React.FC = () => {
     }
 
     return (
-        <OnboardingContainer fullWidth>
-            <OnboardingContent css={{ width: '100%' }}>
+        <OnboardingContainer>
+            <OnboardingContent fullWidth>
                 <Text variant="h2" weight="medium" css={{ marginBottom: 16 }}>
                     {t('feature.onboarding.terms-and-conditions')}
                 </Text>

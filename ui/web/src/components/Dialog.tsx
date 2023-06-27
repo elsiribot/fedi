@@ -83,6 +83,14 @@ const Overlay = styled(RadixDialog.Overlay, {
     overflow: 'auto',
     background: theme.colors.primary80,
     animation: `${overlayShow} 150ms ease`,
+
+    '@sm': {
+        padding: 24,
+        alignItems: 'flex-start',
+    },
+    '@xs': {
+        padding: 16,
+    },
 })
 
 const contentShow = keyframes({
@@ -104,6 +112,16 @@ const Content = styled(RadixDialog.Content, {
     background: theme.colors.white,
     overflow: 'hidden',
     animation: `${contentShow} 150ms ease`,
+
+    '@sm': {
+        padding: 24,
+        width: '100%',
+    },
+
+    '@xs': {
+        padding: 16,
+        borderRadius: 16,
+    },
 
     variants: {
         size: {

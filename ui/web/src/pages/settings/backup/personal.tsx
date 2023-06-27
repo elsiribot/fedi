@@ -7,6 +7,7 @@ import { SeedWords } from '@fedi/common/types'
 import { Button } from '../../../components/Button'
 import { Checkbox } from '../../../components/Checkbox'
 import { ContentBlock } from '../../../components/ContentBlock'
+import * as Layout from '../../../components/Layout'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
 import { useAppSelector, useToast } from '../../../hooks'
@@ -38,45 +39,62 @@ function PersonalBackupPage() {
 
     return (
         <ContentBlock>
-            <Text variant="h1">{t('feature.backup.personal-backup')}</Text>
-            <Content>
+            <Layout.Root>
+                <Layout.Header>
+                    <Layout.Title>
+                        {t('feature.backup.personal-backup')}
+                    </Layout.Title>
+                </Layout.Header>
                 {isShowingWords ? (
-                    <>
-                        <Text>
-                            {t('feature.backup.recovery-words-instructions')}
-                        </Text>
-                        <RecoverySeedWords words={words} readOnly />
-                        <Button width="full" href="/" onClick={handleFinish}>
-                            {t('words.done')}
-                        </Button>
-                    </>
+                    <Layout.Content>
+                        <Content>
+                            <Text>
+                                {t(
+                                    'feature.backup.recovery-words-instructions',
+                                )}
+                            </Text>
+                            <RecoverySeedWords words={words} readOnly />
+                            <Button
+                                width="full"
+                                href="/"
+                                onClick={handleFinish}>
+                                {t('words.done')}
+                            </Button>
+                        </Content>
+                    </Layout.Content>
                 ) : (
                     <>
-                        <Checkbox
-                            label={t(
-                                'feature.backup.personal-backup-guidance-check-1',
-                            )}
-                            checked={hasCheckedGuidance1}
-                            onChange={setHasCheckedGuidance1}
-                        />
-                        <Checkbox
-                            label={t(
-                                'feature.backup.personal-backup-guidance-check-2',
-                            )}
-                            checked={hasCheckedGuidance2}
-                            onChange={setHasCheckedGuidance2}
-                        />
-                        <Button
-                            width="full"
-                            disabled={
-                                !hasCheckedGuidance1 || !hasCheckedGuidance2
-                            }
-                            onClick={() => setIsShowingWords(true)}>
-                            {t('words.continue')}
-                        </Button>
+                        <Layout.Content>
+                            <Content>
+                                <Checkbox
+                                    label={t(
+                                        'feature.backup.personal-backup-guidance-check-1',
+                                    )}
+                                    checked={hasCheckedGuidance1}
+                                    onChange={setHasCheckedGuidance1}
+                                />
+                                <Checkbox
+                                    label={t(
+                                        'feature.backup.personal-backup-guidance-check-2',
+                                    )}
+                                    checked={hasCheckedGuidance2}
+                                    onChange={setHasCheckedGuidance2}
+                                />
+                            </Content>
+                        </Layout.Content>
+                        <Layout.Actions>
+                            <Button
+                                width="full"
+                                disabled={
+                                    !hasCheckedGuidance1 || !hasCheckedGuidance2
+                                }
+                                onClick={() => setIsShowingWords(true)}>
+                                {t('words.continue')}
+                            </Button>
+                        </Layout.Actions>
                     </>
                 )}
-            </Content>
+            </Layout.Root>
         </ContentBlock>
     )
 }
@@ -84,10 +102,7 @@ function PersonalBackupPage() {
 const Content = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
     gap: 16,
-    marginTop: 16,
 })
 
 export default PersonalBackupPage
