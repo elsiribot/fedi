@@ -1,18 +1,11 @@
-<svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g clip-path="url(#clip0_878_1600)">
-    <path
-      d="M2.66666 16.6666L3.74999 13.4166C2.81369 12.0318 2.47498 10.3919 2.79684 8.80182C3.11869 7.21173 4.07921 5.77963 5.4998 4.7718C6.92038 3.76397 8.70437 3.24898 10.5201 3.3226C12.3358 3.39622 14.0596 4.05343 15.3711 5.17204C16.6825 6.29064 17.4924 7.79452 17.65 9.40406C17.8077 11.0136 17.3024 12.6193 16.2282 13.9225C15.154 15.2258 13.5839 16.1379 11.8098 16.4894C10.0358 16.8408 8.17849 16.6077 6.58332 15.8332L2.66666 16.6666"
-      stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M10.1667 10V10.0083" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-      stroke-linejoin="round" />
-    <path d="M6.83331 10V10.0083" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-      stroke-linejoin="round" />
-    <path d="M13.5 10V10.0083" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-      stroke-linejoin="round" />
-  </g>
-  <defs>
-    <clipPath id="clip0_878_1600">
-      <rect width="20" height="20" fill="white" transform="translate(0.166656)" />
-    </clipPath>
-  </defs>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M3 20L4.3 16.1C3.17644 14.4383 2.76999 12.4704 3.15622 10.5623C3.54244 8.65421 4.69506 6.93569 6.39977 5.72629C8.10447 4.51689 10.2453 3.89892 12.4241 3.98726C14.6029 4.0756 16.6715 4.86425 18.2453 6.20658C19.819 7.5489 20.7909 9.35356 20.9801 11.285C21.1693 13.2164 20.563 15.1432 19.2739 16.7071C17.9848 18.271 16.1007 19.3656 13.9718 19.7874C11.8429 20.2091 9.6142 19.9293 7.7 19L3 20"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M12 12V12.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+    stroke-linejoin="round" />
+  <path d="M8 12V12.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+    stroke-linejoin="round" />
+  <path d="M16 12V12.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+    stroke-linejoin="round" />
 </svg>
