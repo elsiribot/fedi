@@ -152,7 +152,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         case 'Home':
                             return (
                                 <SvgImage
-                                    name="Home"
+                                    name={focused ? 'HomeFilled' : 'Home'}
                                     containerStyle={
                                         styles(theme, insets)
                                             .tabBarIconContainer
@@ -167,7 +167,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         case 'Chat':
                             return (
                                 <SvgImage
-                                    name="Chat"
+                                    name={focused ? 'ChatFilled' : 'Chat'}
                                     containerStyle={
                                         styles(theme, insets)
                                             .tabBarIconContainer
@@ -182,7 +182,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         case 'Settings':
                             return (
                                 <SvgImage
-                                    name="Cog"
+                                    name={focused ? 'CogFilled' : 'Cog'}
                                     containerStyle={
                                         styles(theme, insets)
                                             .tabBarIconContainer
