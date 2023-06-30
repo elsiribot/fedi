@@ -4,7 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import { Transaction } from '@fedi/common/types'
 
-import { BtcLnUri, Group, Member, MSats, FediMod } from '.'
+import { BtcLnUri, MSats, FediMod } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
@@ -35,10 +35,10 @@ export type TabsNavigatorParamList = {
     Settings: undefined
 }
 export type RootStackParamList = {
-    AddBroadcastAdmin: { group: Group }
-    BroadcastAdminsList: { group: Group }
+    AddBroadcastAdmin: { groupId: string }
+    BroadcastAdminsList: { groupId: string }
     BitcoinRequest: { uri: string }
-    ChatWallet: { recipient: Member }
+    ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
@@ -51,8 +51,8 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     CreateGroup: undefined
     CreateUsername: undefined
-    DirectChat: { member: Member }
-    EditGroup: { group: Group }
+    DirectChat: { memberId: string }
+    EditGroup: { groupId: string }
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
@@ -74,9 +74,9 @@ export type RootStackParamList = {
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
-    GroupChat: { group: Group }
-    GroupAdmin: { group: Group }
-    GroupInvite: { group: Group }
+    GroupChat: { groupId: string }
+    GroupAdmin: { groupId: string }
+    GroupInvite: { groupId: string }
     ScanFederationCode: undefined
     ScanMemberCode: undefined
     ScanSocialRecoveryCode: undefined

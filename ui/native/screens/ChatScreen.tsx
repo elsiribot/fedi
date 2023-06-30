@@ -6,17 +6,19 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import {
+    fetchChatMembers,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
 import {
     changeIsOnChatScreen,
-    changeLastFetchedMessageId,
     useChatContext,
 } from '../state/contexts/ChatContext'
-import { useXmpp } from '../state/hooks/chat'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
-import { ArchiveQueryPagination } from '../types'
 import {
     NavigationHook,
     RootStackParamList,
@@ -33,61 +35,38 @@ const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const isFocused = useIsFocused()
-    const { fetchMessagesFromArchive, fetchRoster } = useXmpp()
-    const { state, dispatch } = useChatContext()
-    const { websocketIsHealthy, lastFetchedMessageId, connectionOptions } =
-        state
+    const { state, dispatch: chatContextDispatch } = useChatContext()
+    const { websocketIsHealthy } = state
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const activeChatConnectionOptions = useAppSelector(
+        selectChatConnectionOptions,
+    )
 
     // Navigate back to home screen if this federation doesn't support chat
     useEffect(() => {
-        if (!connectionOptions) {
+        if (!activeChatConnectionOptions) {
             navigation.dispatch(reset('TabsNavigator'))
         }
-    }, [connectionOptions, navigation])
+    }, [activeChatConnectionOptions, navigation])
 
     useEffect(() => {
-        if (websocketIsHealthy) {
-            // Here we fetch any messages we may have missed while offline
-            // 20 at a time with pagination
-            // TODO: optimize by only fetching messages sent after the last received timestamp
-            const pagination: ArchiveQueryPagination = {
-                limit: '20',
-            }
-            if (lastFetchedMessageId) {
-                pagination.after = lastFetchedMessageId
-            }
-            fetchMessagesFromArchive(null, pagination)
-                .then(messageId => {
-                    if (messageId) {
-                        dispatch(changeLastFetchedMessageId(messageId))
-                    }
-                })
-                .catch(err => {
-                    console.error(err)
-                })
-        }
-    }, [
-        dispatch,
-        websocketIsHealthy,
-        fetchMessagesFromArchive,
-        lastFetchedMessageId,
-    ])
-
-    useEffect(() => {
-        if (websocketIsHealthy) {
+        if (websocketIsHealthy && activeFederationId) {
             // Here we fetch the roster and store the results in local storage
-            fetchRoster()
+            dispatch(fetchChatMembers({ federationId: activeFederationId }))
         }
-    }, [websocketIsHealthy, fetchRoster])
+    }, [activeFederationId, dispatch, websocketIsHealthy])
 
     // Set that we're looking at chat on mount, unset on dismount
     useEffect(() => {
         if (!isFocused) return
-        dispatch(changeIsOnChatScreen(true))
+        chatContextDispatch(changeIsOnChatScreen(true))
         return () => {
-            dispatch(changeIsOnChatScreen(false))
+            chatContextDispatch(changeIsOnChatScreen(false))
         }
-    }, [isFocused, dispatch])
+    }, [isFocused, chatContextDispatch])
 
     return (
         <View style={styles(theme).container}>

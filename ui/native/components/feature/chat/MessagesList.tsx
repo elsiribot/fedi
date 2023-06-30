@@ -16,18 +16,18 @@ import {
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { ChatMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
-import { Message } from '../../../types'
 import Avatar from '../../ui/Avatar'
 import EmptyGroupNotice from './EmptyGroupNotice'
 import MessageItem from './MessageItem'
 import { MessageItemError } from './MessageItemError'
 
 type MessagesListProps = {
-    messages: Message[][][]
+    messages: ChatMessage[][][]
     multiUserChat?: boolean
 }
 
@@ -77,10 +77,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
         lastScrolledMessageIdRef.current = lastMessage.id
 
         // If we sent it, or we're already at the bottom, scroll without asking
-        if (
-            lastMessage.sentBy?.username === myName ||
-            isScrolledToBottomRef.current
-        ) {
+        if (lastMessage.sentBy === myName || isScrolledToBottomRef.current) {
             scrollToEnd()
         }
         // Otherwise, mark that we have new messages
@@ -101,7 +98,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
         [],
     )
 
-    const renderTimeGroup: ListRenderItem<Message[][]> = ({ item }) => {
+    const renderTimeGroup: ListRenderItem<ChatMessage[][]> = ({ item }) => {
         // Grab the earliest timestamp (last message in the last message group)
         const sentAt =
             item[item.length - 1][item[item.length - 1].length - 1]?.sentAt
@@ -118,7 +115,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                     {item.map(msgs => {
                         if (!msgs.length) return null
                         const sentBy = msgs[0].sentBy
-                        const sentByName = sentBy?.username || ''
+                        const sentByName = sentBy || ''
                         const sentByMe = sentByName && sentByName === myName
                         return (
                             <View style={style.senderGroup} key={msgs[0].id}>
@@ -136,7 +133,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                                     navigation.navigate(
                                                         'DirectChat',
                                                         {
-                                                            member: sentBy,
+                                                            memberId: sentBy,
                                                         },
                                                     )
                                                 }
@@ -144,7 +141,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                             <Avatar
                                                 id={
                                                     sentBy
-                                                        ? jidToId(sentBy.jid)
+                                                        ? jidToId(sentBy)
                                                         : ''
                                                 }
                                                 name={sentByName}

@@ -3,18 +3,20 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { jidToId } from '@fedi/common/utils/chat'
+import { selectChatMember } from '@fedi/common/redux'
 
 import { Props as ChatWalletProps } from '../../../screens/ChatWallet'
+import { useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
 
 type ChatWalletRouteProp = ChatWalletProps['route']
 
-const GroupHeader: React.FC<{}> = () => {
+const ChatWalletHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const route = useRoute<ChatWalletRouteProp>()
-    const { recipient } = route.params
+    const { recipientId } = route.params
+    const chatMember = useAppSelector(s => selectChatMember(s, recipientId))
 
     return (
         <Header
@@ -23,11 +25,11 @@ const GroupHeader: React.FC<{}> = () => {
             headerCenter={
                 <View style={styles(theme).recipientContainer}>
                     <Avatar
-                        id={jidToId(recipient.jid)}
-                        name={recipient.username}
+                        id={chatMember?.id || ''}
+                        name={chatMember?.username || ''}
                     />
                     <Text bold style={styles(theme).recipientText}>
-                        {recipient.username}
+                        {chatMember?.username || ''}
                     </Text>
                 </View>
             }
@@ -51,4 +53,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default GroupHeader
+export default ChatWalletHeader

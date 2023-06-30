@@ -6,12 +6,13 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { joinChatGroup } from '@fedi/common/redux'
+import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
+
 import { Images } from '../assets/images'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { addToGroups, useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useXmpp } from '../state/hooks/chat'
-import { Group } from '../types'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>
@@ -21,38 +22,49 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { group } = route.params
-    const { dispatch } = useChatContext()
+    const { groupId } = route.params
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
-    const { enterMucRoom } = useXmpp()
+    const groupInvitationLink = encodeGroupInvitationLink(groupId)
 
     useEffect(() => {
-        enterMucRoom(group).then((enteredGroup: Group) => {
-            dispatch(addToGroups(enteredGroup))
-        })
-    }, [dispatch, enterMucRoom, group])
+        const handleJoinGroup = async () => {
+            try {
+                await dispatch(
+                    joinChatGroup({
+                        federationId: activeFederationId as string,
+                        link: groupId,
+                    }),
+                ).unwrap()
+            } catch (error) {}
+        }
+        handleJoinGroup()
+    }, [activeFederationId, dispatch, groupId])
 
     const copyToClipboard = () => {
-        Clipboard.setString(group.invitationCode as string)
+        Clipboard.setString(groupInvitationLink as string)
         toast?.show(t('feature.chat.copied-group-invite-code'))
     }
 
     const viewGroup = () => {
-        navigation.navigate('GroupChat', { group })
+        navigation.navigate('GroupChat', { groupId })
     }
 
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).qrCodeContainer}>
                 <QRCode
-                    value={group.invitationCode}
+                    value={groupInvitationLink}
                     size={QR_CODE_SIZE}
                     logo={Images.FediQrLogo}
                 />
             </View>
             <View style={styles(theme).copyInviteLinkContainer}>
                 <Text style={styles(theme).inviteLinkText} numberOfLines={1}>
-                    {group.invitationCode}
+                    {groupInvitationLink}
                 </Text>
                 <TouchableOpacity
                     style={styles(theme).copyButtonContainer}

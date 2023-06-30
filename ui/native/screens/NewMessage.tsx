@@ -1,17 +1,25 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import { jid } from '@xmpp/client'
+import { jid as makeJid } from '@xmpp/client'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import {
+    fetchChatMembers,
+    selectAllChatMembers,
+    selectAuthenticatedMember,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
+
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import { useChatContext } from '../state/contexts/ChatContext'
-import { useDebouncedEffect } from '../state/hooks'
-import { useXmpp } from '../state/hooks/chat'
-import { Member } from '../types'
+import {
+    useAppDispatch,
+    useAppSelector,
+    useDebouncedEffect,
+} from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
@@ -20,9 +28,13 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
-    const { fetchRoster } = useXmpp()
-    const { membersSeen, authenticatedMember, connectionOptions } =
-        useChatContext().state
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
+    const membersSeen = useAppSelector(selectAllChatMembers)
     const [usernameFilter, setUsernameFilter] = useState<string>('')
 
     // filter out members if usernameFilter has text to filter with
@@ -33,10 +45,14 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     useDebouncedEffect(
         () => {
             if (usernameFilter.length > 1 && authenticatedMember) {
-                fetchRoster()
+                dispatch(
+                    fetchChatMembers({
+                        federationId: activeFederationId as string,
+                    }),
+                )
             }
         },
-        [usernameFilter, authenticatedMember, fetchRoster],
+        [usernameFilter, authenticatedMember],
         500,
     )
 
@@ -89,13 +105,13 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={async () => {
                             if (connectionOptions) {
                                 const { domain, resource } = connectionOptions
-                                const newMember = new Member({
-                                    jid: jid(
-                                        `${usernameFilter}@${domain}/${resource}`,
-                                    ),
-                                })
+                                const newMemberJid = makeJid(
+                                    usernameFilter,
+                                    domain as string,
+                                    resource,
+                                )
                                 navigation.replace('DirectChat', {
-                                    member: newMember,
+                                    memberId: newMemberJid.toString(),
                                 })
                             }
                         }}>

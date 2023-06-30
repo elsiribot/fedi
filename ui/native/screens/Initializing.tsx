@@ -11,6 +11,7 @@ import {
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectChatConnectionOptions,
     setActiveFederationId,
 } from '@fedi/common/redux'
 
@@ -20,7 +21,6 @@ import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
 } from '../constants'
-import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -29,9 +29,9 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const { connectionOptions } = useChatContext().state
     const [usernameRequired, setUsernameRequired] = useState<boolean>(false)
     const activeFederation = useAppSelector(selectActiveFederation)
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
     const dispatch = useAppDispatch()

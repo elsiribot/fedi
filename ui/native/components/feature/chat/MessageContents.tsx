@@ -10,7 +10,8 @@ import {
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
-import { Group } from '../../../types'
+import { decodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
+
 import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
 
 type MessageContentsProps = {
@@ -79,11 +80,11 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                 {messageElements.map((m: string, i: number) => {
                     const isGroupCode = m.startsWith('fedi:group:')
                     if (isGroupCode) {
-                        const group: Group = Group.decodeInvitationLink(m)
+                        const groupId = decodeGroupInvitationLink(m)
                         return (
                             <EmbeddedJoinGroupButton
                                 key={`mi-t-${i}`}
-                                group={group}
+                                groupId={groupId}
                             />
                         )
                     } else if (m) {

@@ -1,6 +1,5 @@
 import { CommonActions } from '@react-navigation/native'
 
-import { Group } from '../types'
 import { RootStackParamList } from '../types/navigation'
 
 export function navigate(
@@ -47,16 +46,16 @@ export function resetAfterSocialRecovery() {
     }
 }
 
-export function resetAfterGroupNameUpdate(group: Group) {
+export function resetAfterGroupNameUpdate(groupId: string) {
     return {
         ...CommonActions.reset({
             index: 2,
             routes: [
                 { name: 'TabsNavigator', params: { screen: 'Chat' } },
-                { name: 'GroupChat', params: { group } },
+                { name: 'GroupChat', params: { groupId } },
                 {
                     name: 'GroupAdmin',
-                    params: { group },
+                    params: { groupId },
                 },
             ],
         }),

@@ -3,12 +3,13 @@ import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
-import { Member } from '../../../types'
+import { ChatMember } from '@fedi/common/types'
+
 import { NavigationHook } from '../../../types/navigation'
 import MemberItem from './MemberItem'
 
 type MembersListProps = {
-    members: Member[]
+    members: ChatMember[]
 }
 
 const MembersList: React.FC<MembersListProps> = ({
@@ -17,11 +18,11 @@ const MembersList: React.FC<MembersListProps> = ({
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
-    const openDirectChat = (member: Member) => {
-        navigation.navigate('DirectChat', { member })
+    const openDirectChat = (member: ChatMember) => {
+        navigation.navigate('DirectChat', { memberId: member.id })
     }
 
-    const renderMember: ListRenderItem<Member> = ({ item }) => {
+    const renderMember: ListRenderItem<ChatMember> = ({ item }) => {
         return <MemberItem member={item} selectMember={openDirectChat} />
     }
 
@@ -29,7 +30,7 @@ const MembersList: React.FC<MembersListProps> = ({
         <FlatList
             data={members}
             renderItem={renderMember}
-            keyExtractor={(item: Member) => `${item.jid.toString()}`}
+            keyExtractor={(item: ChatMember) => `${item.id}`}
             style={styles(theme).container}
         />
     )

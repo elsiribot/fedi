@@ -4,15 +4,15 @@ import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { ChatMessage } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
-import { Message } from '../../../types'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import MessageContents from './MessageContents'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
-    message: Message
+    message: ChatMessage
     last?: boolean
 }
 
@@ -25,7 +25,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     const { sentBy, payment } = message
 
-    const sentByMe = sentBy?.username === authenticatedMember?.username
+    const sentByMe = sentBy === authenticatedMember?.username
 
     let bubbleGradient: LinearGradientProps | undefined
     const bubbleContainerStyles: StyleProp<ViewStyle | TextStyle>[] = [

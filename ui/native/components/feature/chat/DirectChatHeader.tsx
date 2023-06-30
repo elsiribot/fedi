@@ -3,8 +3,9 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { jidToId } from '@fedi/common/utils/chat'
+import { selectChatMember } from '@fedi/common/redux'
 
+import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
 import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
@@ -15,7 +16,8 @@ type DirectChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 const DirectChatHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const route = useRoute<DirectChatRouteProp>()
-    const { member } = route.params
+    const { memberId } = route.params
+    const member = useAppSelector(s => selectChatMember(s, memberId))
 
     return (
         <Header
@@ -30,12 +32,15 @@ const DirectChatHeader: React.FC<{}> = () => {
                         // TODO: implement admin settings for 1on1 chat
                         // navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <Avatar id={jidToId(member.jid)} name={member.username} />
+                    <Avatar
+                        id={member?.id || ''}
+                        name={member?.username || ''}
+                    />
                     <Text
                         bold
                         numberOfLines={1}
                         style={styles(theme).memberText}>
-                        {member.username}
+                        {member?.username || ''}
                     </Text>
                 </Pressable>
             }

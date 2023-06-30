@@ -135,7 +135,7 @@ export const useXmpp = () => {
                 }
                 if (toMember) {
                     return sendDirectMessage(
-                        toMember as Member,
+                        toMember,
                         message,
                         xmppClient,
                         withEncryptionKeys,

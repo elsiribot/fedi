@@ -15,7 +15,7 @@ const GroupInviteHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupAdminRouteProp>()
-    const { group } = route.params
+    const { groupId } = route.params
 
     return (
         <Header
@@ -41,9 +41,7 @@ const GroupInviteHeader: React.FC<{}> = () => {
             headerRight={
                 <Pressable
                     onPress={() => {
-                        // TODO: implement EditGroup
-                        console.info('TODO: implement EditGroup', group)
-                        // navigation.navigate('EditGroup', { group })
+                        navigation.navigate('EditGroup', { groupId })
                     }}
                     disabled
                     style={{

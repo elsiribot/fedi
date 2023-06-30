@@ -30,7 +30,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<DirectChatRouteProp>()
-    const { member } = route.params
+    const { memberId } = route.params
     const { toast } = useEnvironmentContext().state
     const { websocketIsHealthy } = useChatContext().state
     const [messageText, setMessageText] = useState<string>('')
@@ -69,7 +69,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     : {},
             ]}>
             {/* in-chat payments only available for DirectChat */}
-            {member && (
+            {memberId && (
                 <Pressable
                     onPress={() => {
                         if (websocketIsHealthy === false) {
@@ -80,7 +80,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             return
                         }
                         navigation.navigate('ChatWallet', {
-                            recipient: member,
+                            recipientId: memberId,
                         })
                     }}>
                     <SvgImage

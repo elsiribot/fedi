@@ -15,7 +15,7 @@ const EmptyGroupNotice: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupChatRouteProp>()
-    const { group } = route.params
+    const { groupId } = route.params
 
     return (
         <View style={styles(theme).container}>
@@ -38,7 +38,7 @@ const EmptyGroupNotice: React.FC<{}> = () => {
             <Button
                 containerStyle={styles(theme).button}
                 title={t('feature.chat.invite-to-group')}
-                onPress={() => navigation.navigate('GroupInvite', { group })}
+                onPress={() => navigation.navigate('GroupInvite', { groupId })}
             />
         </View>
     )

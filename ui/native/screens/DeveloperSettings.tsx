@@ -44,12 +44,6 @@ import {
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
 import { version } from '../package.json'
-import {
-    receiveGroups,
-    receiveMembersSeen,
-    receiveMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
@@ -64,7 +58,6 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { t, i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
     const { toast } = useEnvironmentContext().state
-    const { dispatch: chatContextDispatch } = useChatContext()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>(
         i18n.language,
@@ -358,7 +351,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
                         if (activeFederation) {
-                            chatContextDispatch(receiveGroups([]))
                             reduxDispatch(
                                 setChatGroups({
                                     federationId: activeFederation.id,
@@ -377,7 +369,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
                         if (activeFederation) {
-                            chatContextDispatch(receiveMessages([]))
                             reduxDispatch(
                                 setChatMessages({
                                     federationId: activeFederation.id,
@@ -396,7 +387,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
                         if (activeFederation) {
-                            chatContextDispatch(receiveMembersSeen([]))
                             reduxDispatch(
                                 setChatMembersSeen({
                                     federationId: activeFederation.id,

@@ -2,14 +2,14 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { ReactNode } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import { ChatMember } from '@fedi/common/types'
 import { jidToId } from '@fedi/common/utils/chat'
 
-import { Member } from '../../../types'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 
 type MemberItemProps = {
-    member: Member
-    selectMember: (member: Member) => void
+    member: ChatMember
+    selectMember: (member: ChatMember) => void
     actionIcon?: ReactNode
 }
 
@@ -27,7 +27,7 @@ const MemberItem: React.FC<MemberItemProps> = ({
                 selectMember(member)
             }}>
             <Avatar
-                id={jidToId(member.jid)}
+                id={jidToId(member.id)}
                 name={member.username}
                 size={AvatarSize.md}
             />

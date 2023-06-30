@@ -5,43 +5,51 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { fetchGroupConfig } from '@fedi/common/redux'
+import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
+
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useXmpp } from '../../../state/hooks/chat'
-import { Group } from '../../../types'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
-    group: Group
+    groupId: string
 }
 
-const EmbeddedJoinGroupButton: React.FC<Props> = ({ group }: Props) => {
+const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const navigation = useNavigation<NavigationHook>()
-    const { fetchMucRoomConfig } = useXmpp()
+    const dispatch = useAppDispatch()
+    const federationId = useAppSelector(s => s.federation.activeFederationId)
     const { toast } = useEnvironmentContext().state
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [groupName, setGroupName] = useState<string>('')
 
     const copyToClipboard = () => {
-        Clipboard.setString(group.invitationCode as string)
+        const invitationLink = encodeGroupInvitationLink(groupId)
+        Clipboard.setString(invitationLink as string)
         toast?.show(t('feature.chat.copied-group-invite-code'), 3000)
     }
 
     useEffect(() => {
-        if (group.id) {
-            fetchMucRoomConfig(group).then(groupConfig => {
+        const refreshGroupName = async () => {
+            if (federationId && groupId) {
+                const groupConfig = await dispatch(
+                    fetchGroupConfig({ federationId, groupId }),
+                ).unwrap()
                 setGroupName(groupConfig.name as string)
-            })
+            }
         }
-    }, [fetchMucRoomConfig, group])
+        refreshGroupName()
+    }, [dispatch, federationId, groupId])
 
     return (
         <Button
             size="sm"
             color={theme.colors.secondary}
             containerStyle={styles(theme).container}
-            onPress={() => navigation.navigate('GroupChat', { group })}
+            onPress={() => navigation.navigate('GroupChat', { groupId })}
             onLongPress={copyToClipboard}
             title={
                 <View style={styles(theme).contents}>
