@@ -37,6 +37,7 @@ import {
     getFederationGroupChats,
     makeChatServerOptions,
 } from '../utils/FederationUtils'
+import { XmppMemberRole } from '../utils/XmlUtils'
 import { XmppChatClientManager } from '../utils/XmppChatClient'
 import {
     getChatInfoFromMessage,
@@ -726,6 +727,15 @@ export const fetchChatMember = createAsyncThunk<
     }
 })
 
+export const fetchGroupConfig = createAsyncThunk<
+    Pick<ChatGroup, 'name' | 'broadcastOnly'>,
+    { federationId: string; groupId: string }
+>('chat/fetchGroupConfig', async ({ federationId, groupId }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    const group = await client.fetchGroupConfig(groupId)
+    return group
+})
+
 export const joinChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; link: string }
@@ -764,6 +774,60 @@ export const configureChatGroup = createAsyncThunk<
             ...group,
             name: groupName,
         }
+    },
+)
+
+export const addAdminToChatGroup = createAsyncThunk<
+    void,
+    { federationId: string; groupId: string; memberId: string },
+    { state: CommonState }
+>(
+    'chat/addAdminToGroup',
+    async ({ federationId, groupId, memberId }, { getState }) => {
+        const chatState = getState().chat[federationId]
+        const group = chatState?.groups.find(g => g.id === groupId)
+        if (!group) throw new Error('No group found with that ID')
+
+        const member = chatState?.membersSeen.find(m => m.id === memberId)
+        if (!member) throw new Error('No member found with that ID')
+
+        const client = xmppChatClientManager.getClient(federationId)
+        await client.addAdminToGroup(groupId, member)
+    },
+)
+
+export const fetchChatGroupMembersList = createAsyncThunk<
+    ChatMember[],
+    { federationId: string; groupId: string; role: XmppMemberRole },
+    { state: CommonState }
+>(
+    'chat/fetchChatGroupMembersList',
+    async ({ federationId, groupId, role }, { getState }) => {
+        const chatState = getState().chat[federationId]
+        const group = chatState?.groups.find(g => g.id === groupId)
+        if (!group) throw new Error('No group found with that ID')
+
+        const client = xmppChatClientManager.getClient(federationId)
+        return client.fetchGroupMembersList(groupId, role)
+    },
+)
+
+export const removeAdminFromChatGroup = createAsyncThunk<
+    void,
+    { federationId: string; groupId: string; memberId: string },
+    { state: CommonState }
+>(
+    'chat/removeAdminFromChatGroup',
+    async ({ federationId, groupId, memberId }, { getState }) => {
+        const chatState = getState().chat[federationId]
+        const group = chatState?.groups.find(g => g.id === groupId)
+        if (!group) throw new Error('No group found with that ID')
+
+        const member = chatState?.membersSeen.find(m => m.id === memberId)
+        if (!member) throw new Error('No member found with that ID')
+
+        const client = xmppChatClientManager.getClient(federationId)
+        await client.removeAdminFromGroup(groupId, member)
     },
 )
 
