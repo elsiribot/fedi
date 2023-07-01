@@ -18,6 +18,7 @@ const DirectChatHeader: React.FC<{}> = () => {
     const route = useRoute<DirectChatRouteProp>()
     const { memberId } = route.params
     const member = useAppSelector(s => selectChatMember(s, memberId))
+    const username = member?.username || memberId.split('@')[0] || ''
 
     return (
         <Header
@@ -32,15 +33,12 @@ const DirectChatHeader: React.FC<{}> = () => {
                         // TODO: implement admin settings for 1on1 chat
                         // navigation.navigate('GroupAdmin', { group })
                     }}>
-                    <Avatar
-                        id={member?.id || ''}
-                        name={member?.username || ''}
-                    />
+                    <Avatar id={member?.id || ''} name={username} />
                     <Text
                         bold
                         numberOfLines={1}
                         style={styles(theme).memberText}>
-                        {member?.username || ''}
+                        {username}
                     </Text>
                 </Pressable>
             }
