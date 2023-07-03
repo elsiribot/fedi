@@ -105,6 +105,7 @@
         "chat-unavailable": "This federation does not have a chat server.",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "chat-payment-failed": "Could not update that chat payment",
+        "chat-member-not-found": "Could not find this user",
         "chat-message-render-error": "Encountered an error rendering this message",
         "chat-list-render-error": "Encountered an error rendering your chats",
         "failed-to-generate-invoice": "Failed to generate invoice",

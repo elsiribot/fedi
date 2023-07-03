@@ -11,9 +11,12 @@ import {
     View,
 } from 'react-native'
 
+import { selectChatMember } from '@fedi/common/redux'
+
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { useChatContext } from '../../../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -31,6 +34,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<DirectChatRouteProp>()
     const { memberId } = route.params
+    const member = useAppSelector(s => selectChatMember(s, memberId))
     const { toast } = useEnvironmentContext().state
     const { websocketIsHealthy } = useChatContext().state
     const [messageText, setMessageText] = useState<string>('')
@@ -72,10 +76,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
             {memberId && (
                 <Pressable
                     onPress={() => {
+                        if (!member) {
+                            toast?.show(t('errors.chat-member-not-found'), 4000)
+                            return
+                        }
                         if (websocketIsHealthy === false) {
                             toast?.show(
                                 t('errors.chat-connection-unhealthy'),
-                                5000,
+                                4000,
                             )
                             return
                         }
@@ -91,7 +99,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         }}
                         size={SvgImageSize.md}
                         color={
-                            websocketIsHealthy
+                            websocketIsHealthy && member
                                 ? theme.colors.primary
                                 : theme.colors.primaryVeryLight
                         }
