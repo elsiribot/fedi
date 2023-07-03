@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useMemo } from 'react'
@@ -29,6 +30,7 @@ const GroupChat: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { dispatch: chatContextDispatch } = useChatContext()
     const { groupId } = route.params
+    const isFocused = useIsFocused()
     const federationId = useAppSelector(
         s => s.federation.activeFederationId,
     ) as string
@@ -51,9 +53,10 @@ const GroupChat: React.FC<Props> = ({ route }: Props) => {
 
     // Set active chat while we're on this screen
     useEffect(() => {
+        if (!isFocused) return
         chatContextDispatch(changeActiveChatId(groupId))
         return () => chatContextDispatch(changeActiveChatId(null))
-    }, [chatContextDispatch, groupId])
+    }, [chatContextDispatch, groupId, isFocused])
 
     const handleSend = async (messageText: string) => {
         await dispatch(
