@@ -7,6 +7,7 @@ import { ImageBackground, StyleSheet } from 'react-native'
 
 import {
     changeAuthenticatedGuardian,
+    connectChat,
     refreshChatCredentials,
     refreshFederations,
     selectActiveFederation,
@@ -57,6 +58,13 @@ const Initializing: React.FC<Props> = () => {
                         federationId: activeFederationId!,
                     }),
                 ).unwrap()
+
+                dispatch(
+                    connectChat({
+                        fedimint,
+                        federationId: activeFederationId!,
+                    }),
+                )
 
                 return navigation.replace('TabsNavigator')
             } else {
