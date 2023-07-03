@@ -3,9 +3,12 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ChatFilledIcon from '@fedi/common/assets/svgs/chat-filled.svg'
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
+import CogFilledIcon from '@fedi/common/assets/svgs/cog-filled.svg'
 import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import HomeFilledIcon from '@fedi/common/assets/svgs/home-filled.svg'
 import HomeIcon from '@fedi/common/assets/svgs/home.svg'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { selectHasUnseenMessages } from '@fedi/common/redux'
@@ -32,6 +35,7 @@ export const Navigation: React.FC = () => {
             name: 'words.home' as const,
             path: '/',
             icon: HomeIcon,
+            activeIcon: HomeFilledIcon,
             available: true,
             hasNotification: false,
         },
@@ -39,6 +43,7 @@ export const Navigation: React.FC = () => {
             name: 'words.chat' as const,
             path: '/chat',
             icon: ChatIcon,
+            activeIcon: ChatFilledIcon,
             available: isChatSupported,
             hasNotification: hasUnseenMessages,
         },
@@ -46,6 +51,7 @@ export const Navigation: React.FC = () => {
             name: 'words.settings' as const,
             path: '/settings',
             icon: CogIcon,
+            activeIcon: CogFilledIcon,
             available: true,
             hasNotification: false,
         },
@@ -60,18 +66,26 @@ export const Navigation: React.FC = () => {
                     </Link>
                 </Logo>
                 <Nav>
-                    {navLinks.map(nav => (
-                        <NavItem
-                            key={nav.path}
-                            isActive={getIsActive(nav.path)}>
-                            <Link href={nav.path}>
-                                <NotificationDot visible={nav.hasNotification}>
-                                    <Icon icon={nav.icon} />
-                                </NotificationDot>
-                                <NavLabel>{t(nav.name)}</NavLabel>
-                            </Link>
-                        </NavItem>
-                    ))}
+                    {navLinks.map(nav => {
+                        const isActive = getIsActive(nav.path)
+                        return (
+                            <NavItem key={nav.path} isActive={isActive}>
+                                <Link href={nav.path}>
+                                    <NotificationDot
+                                        visible={nav.hasNotification}>
+                                        <Icon
+                                            icon={
+                                                isActive
+                                                    ? nav.activeIcon
+                                                    : nav.icon
+                                            }
+                                        />
+                                    </NotificationDot>
+                                    <NavLabel>{t(nav.name)}</NavLabel>
+                                </Link>
+                            </NavItem>
+                        )
+                    })}
                 </Nav>
             </Inner>
         </Container>
