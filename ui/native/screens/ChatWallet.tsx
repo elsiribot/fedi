@@ -58,8 +58,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                         payment,
                     }),
                 )
-                // TODO: make sure this happens in redux
-                // dispatch(addToMembersSeen(recipient))
                 // go back to DirectChat to show sent payment
                 navigation.goBack()
             } catch (error) {

@@ -1,6 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import { jid as makeJid } from '@xmpp/client'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -104,14 +103,9 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                         style={styles(theme, insets).createGroupContainer}
                         onPress={async () => {
                             if (connectionOptions) {
-                                const { domain, resource } = connectionOptions
-                                const newMemberJid = makeJid(
-                                    usernameFilter,
-                                    domain as string,
-                                    resource,
-                                )
+                                const { domain } = connectionOptions
                                 navigation.replace('DirectChat', {
-                                    memberId: newMemberJid.toString(),
+                                    memberId: `${usernameFilter}@${domain}`,
                                 })
                             }
                         }}>

@@ -77,15 +77,8 @@ export const makeMessageGroups = <T extends ChatMessageLike>(
             message.sentAt &&
             Math.abs(lastMessage.sentAt - message.sentAt) <= 600
         ) {
-            // TODO: Consolidate to a single format for sentBy
             let isSameSender = false
             if (lastMessage.sentBy === message.sentBy) {
-                isSameSender = true
-            } else if (
-                (lastMessage.sentBy as { username: string })?.username &&
-                (lastMessage.sentBy as { username: string })?.username ===
-                    (message.sentBy as { username: string }).username
-            ) {
                 isSameSender = true
             }
 

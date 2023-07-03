@@ -25,7 +25,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     const { sentBy, payment } = message
 
-    const sentByMe = sentBy === authenticatedMember?.username
+    const sentByMe = sentBy === authenticatedMember?.id
 
     let bubbleGradient: LinearGradientProps | undefined
     const bubbleContainerStyles: StyleProp<ViewStyle | TextStyle>[] = [

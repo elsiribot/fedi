@@ -1,6 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import { jid as makeJid } from '@xmpp/client'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
@@ -15,7 +14,6 @@ import {
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import { XMPP_RESOURCE } from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -38,14 +36,10 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                     return toast?.show(t('errors.chat-unavailable'), 3000)
                 }
                 const memberUsername = decodeDirectChatLink(input)
-                const memberJid = makeJid(
-                    memberUsername,
-                    connectionOptions.domain as string,
-                    XMPP_RESOURCE,
-                )
+                const { domain } = connectionOptions
 
                 navigation.replace('DirectChat', {
-                    memberId: memberJid.toString(),
+                    memberId: `${memberUsername}@${domain}`,
                 })
             } else if (input.startsWith('fedi:group:')) {
                 console.info('fedi chat group detected', input)

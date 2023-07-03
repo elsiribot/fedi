@@ -276,7 +276,7 @@ export class XmppChatClient {
             )
             console.info('publishNotificationToken', result)
         } catch (error) {
-            console.error('publishPublicKey', error)
+            console.error('publishNotificationToken', error)
             throw new Error('errors.unknown-error')
         }
     }

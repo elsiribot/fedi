@@ -46,7 +46,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
 
     const style = styles(theme)
-    const myName = authenticatedMember?.username || ''
+    const myName = authenticatedMember?.id || ''
 
     // Animate new message button in and out
     useEffect(() => {
