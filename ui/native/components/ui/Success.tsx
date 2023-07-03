@@ -59,7 +59,7 @@ const Success: React.FC<SuccessProps> = ({
             style={styles(theme).container}>
             <View style={styles(theme).detailsContainer}>
                 <SvgImage
-                    name="Done"
+                    name="Check"
                     svgProps={{
                         height: theme.sizes.md,
                         width: theme.sizes.md,
