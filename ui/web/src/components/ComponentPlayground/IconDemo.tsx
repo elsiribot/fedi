@@ -11,15 +11,11 @@ import chevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import closeIcon from '@fedi/common/assets/svgs/close.svg'
 import cogIcon from '@fedi/common/assets/svgs/cog.svg'
 import copyIcon from '@fedi/common/assets/svgs/copy.svg'
-import doneIcon from '@fedi/common/assets/svgs/done.svg'
-import editBlackIcon from '@fedi/common/assets/svgs/edit-black.svg'
 import editIcon from '@fedi/common/assets/svgs/edit.svg'
 import errorIcon from '@fedi/common/assets/svgs/error.svg'
 import federationIcon from '@fedi/common/assets/svgs/federation.svg'
 import fediFileIcon from '@fedi/common/assets/svgs/fedi-file.svg'
 import fediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
-import fediQRLogoIcon from '@fedi/common/assets/svgs/fedi-qr-logo.svg'
-import fedimintIcon from '@fedi/common/assets/svgs/fedimint.svg'
 import globeIcon from '@fedi/common/assets/svgs/globe.svg'
 import googleDriveIcon from '@fedi/common/assets/svgs/google-drive.svg'
 import homeIcon from '@fedi/common/assets/svgs/home.svg'
@@ -34,6 +30,7 @@ import photoIcon from '@fedi/common/assets/svgs/photo.svg'
 import pinIcon from '@fedi/common/assets/svgs/pin.svg'
 import playIcon from '@fedi/common/assets/svgs/play.svg'
 import plusIcon from '@fedi/common/assets/svgs/plus.svg'
+import qrIcon from '@fedi/common/assets/svgs/qr.svg'
 import recoveryIcon from '@fedi/common/assets/svgs/recovery.svg'
 import roomIcon from '@fedi/common/assets/svgs/room.svg'
 import scanIcon from '@fedi/common/assets/svgs/scan.svg'
@@ -62,15 +59,11 @@ const icons = [
     { name: 'close', icon: closeIcon },
     { name: 'cog', icon: cogIcon },
     { name: 'copy', icon: copyIcon },
-    { name: 'done', icon: doneIcon },
-    { name: 'editBlack', icon: editBlackIcon },
     { name: 'edit', icon: editIcon },
     { name: 'error', icon: errorIcon },
     { name: 'federation', icon: federationIcon },
     { name: 'fediFile', icon: fediFileIcon },
     { name: 'fediLogo', icon: fediLogoIcon },
-    { name: 'fediQRLogo', icon: fediQRLogoIcon },
-    { name: 'fedimint', icon: fedimintIcon },
     { name: 'globe', icon: globeIcon },
     { name: 'googleDrive', icon: googleDriveIcon },
     { name: 'home', icon: homeIcon },
@@ -85,6 +78,7 @@ const icons = [
     { name: 'pin', icon: pinIcon },
     { name: 'play', icon: playIcon },
     { name: 'plus', icon: plusIcon },
+    { name: 'qr', icon: qrIcon },
     { name: 'recovery', icon: recoveryIcon },
     { name: 'room', icon: roomIcon },
     { name: 'scan', icon: scanIcon },

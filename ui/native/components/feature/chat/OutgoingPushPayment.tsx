@@ -23,7 +23,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
             <View style={styles(theme).actionsContainer}>
                 <View style={styles(theme).statusContainer}>
                     <SvgImage
-                        name="Done"
+                        name="Check"
                         size={SvgImageSize.xs}
                         color={theme.colors.secondary}
                     />

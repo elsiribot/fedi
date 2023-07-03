@@ -127,7 +127,7 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
             return (
                 <View style={styles(theme).statusContainer}>
                     <SvgImage
-                        name="Done"
+                        name="Check"
                         size={SvgImageSize.xs}
                         color={theme.colors.secondary}
                     />
