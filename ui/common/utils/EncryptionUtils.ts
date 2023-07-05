@@ -1,5 +1,5 @@
 import { Buffer } from 'buffer'
-import { createHash } from 'crypto'
+import sha256 from 'crypto-js/sha256'
 import { box, randomBytes } from 'tweetnacl'
 import {
     decodeUTF8,
@@ -15,10 +15,7 @@ class EncryptionUtils {
     static bytes = (hex: string): Uint8Array => Buffer.from(hex, 'hex')
     generateDeterministicKeyPair = (seed: string): Keypair => {
         // Hash the keypair seed and use it to derive a keypair
-        const hash = createHash('sha256')
-        hash.update(seed)
-        const hashedSeed = new Uint8Array(hash.digest())
-        const keyPair = box.keyPair.fromSecretKey(hashedSeed)
+        const keyPair = box.keyPair.fromSecretKey(this.sha256(seed))
 
         // Extract the public and private keys
         const publicKeyHex = Buffer.from(keyPair.publicKey).toString('hex')
@@ -79,6 +76,29 @@ class EncryptionUtils {
         const base64DecryptedMessage = encodeUTF8(decrypted)
 
         return base64DecryptedMessage
+    }
+    private sha256 = (message: string): Uint8Array => {
+        const wordArray = sha256(message)
+        // Convert crypto-js WordArray to standard Uint8Array
+        // Taken from https://github.com/brix/crypto-js/issues/274#issuecomment-600039187
+        const l = wordArray.sigBytes
+        const words = wordArray.words
+        const result = new Uint8Array(l)
+        let i = 0
+        let j = 0
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            if (i == l) break
+            const w = words[j++]
+            result[i++] = (w & 0xff000000) >>> 24
+            if (i == l) break
+            result[i++] = (w & 0x00ff0000) >>> 16
+            if (i == l) break
+            result[i++] = (w & 0x0000ff00) >>> 8
+            if (i == l) break
+            result[i++] = w & 0x000000ff
+        }
+        return result
     }
 }
 

@@ -25,4 +25,8 @@ const withPwa = require('next-pwa')({
     customWorkerDir: 'src/worker',
 })
 
-module.exports = withPwa(nextConfig)
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+    enabled: process.env.ANALYZE_BUILD,
+})
+
+module.exports = withBundleAnalyzer(withPwa(nextConfig))

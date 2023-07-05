@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
+        "build:analyze": "ANALYZE_BUILD=1 next build",
         "start": "next start",
         "lint": "next lint",
         "test": "echo 'No tests yet!'",
@@ -37,6 +38,7 @@
         "react-redux": "^8.0.5"
     },
     "devDependencies": {
+        "@next/bundle-analyzer": "^13.4.5",
         "@svgr/webpack": "^7.0.0",
         "@trivago/prettier-plugin-sort-imports": "^4.1.1",
         "@types/qrcode": "^1.5.0",
