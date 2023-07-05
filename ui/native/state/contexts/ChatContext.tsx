@@ -215,8 +215,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     useEffect(() => {
         if (chatClientStatus && chatClientStatus === 'online') {
             dispatch(changeWebsocketIsHealthy(true))
-        } else {
-            dispatch(changeWebsocketIsHealthy(false))
         }
     }, [chatClientStatus])
 
