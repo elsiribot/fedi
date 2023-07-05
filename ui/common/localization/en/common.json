@@ -387,6 +387,10 @@
             "ending-description": "This pop-up federation <bold>will end {{date}}</bold>. All balances left in the federation after {{date}} will be donated to Haima Ostrava, Clinic of Children's Medicine Department of Pediatric Hematology and Hemato-oncology.",
             "ended": "Ended",
             "ended-description": "This pop-up Federation <bold>ended {{date}}</bold>. Leftover balances were donated to a charitable cause."
+        },
+        "qr": {
+            "unrecognized": "Unrecognized data format",
+            "unsupported-lnurl": "Unsupported LNURL type '{{type}}'"
         }
     }
 }

@@ -1,4 +1,5 @@
 import { validate as validateBitcoinAddress } from 'bitcoin-address-validation'
+import { TFunction } from 'i18next'
 import { getParams as getLnurlParams } from 'js-lnurl'
 import { parse as queryStringParse } from 'querystring'
 
@@ -27,16 +28,17 @@ import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
  * Returns a structured object that identifies the type of data,
  * and formatted keys for the data where available.
  */
-export function parseQrData(
+export function parseQrData<T extends TFunction>(
     raw: string,
     fedimint: FedimintBridge,
+    t: T,
 ): Promise<AnyQRData> {
     return new Promise(resolve => {
         // Run all parsers simultaneously.
         const parserPromises = [
             parseBolt11(raw, fedimint),
             parseBolt12(raw),
-            parseLnurl(raw),
+            parseLnurl(raw, t),
             parseBitcoinAddress(raw),
             parseBip21(raw, fedimint),
             parseFediUri(raw),
@@ -67,7 +69,7 @@ export function parseQrData(
             if (!resolved) {
                 resolve({
                     type: QRDataType.Unknown,
-                    data: { message: 'Unrecognized data format' },
+                    data: { message: t('feature.qr.unrecognized') },
                 })
             }
         })
@@ -81,6 +83,7 @@ export function parseQrData(
  */
 async function parseLnurl(
     raw: string,
+    t: TFunction,
 ): Promise<
     | QRDataLnurlAuth
     | QRDataLnurlPay
@@ -104,68 +107,71 @@ async function parseLnurl(
         }
     }
 
-    if (lnurlParamPromise) {
-        try {
-            const params = await lnurlParamPromise
-            if (!('tag' in params)) {
-                // If the Lnurl
-                // Parse certain error types for special handling.
-                if (params.status === 'ERROR') {
-                    if (params.reason.includes('Invalid URL')) {
-                        // Ignore this and try to parse using things below.
-                    }
-                    return {
-                        type: QRDataType.Unknown,
-                        data: { message: params.reason },
-                    }
+    if (!lnurlParamPromise) return
+
+    try {
+        const params = await lnurlParamPromise
+        if (!('tag' in params)) {
+            // If the Lnurl
+            // Parse certain error types for special handling.
+            if (params.status === 'ERROR') {
+                if (params.reason.includes('Invalid URL')) {
+                    // Ignore this and try to parse using things below.
                 }
-            } else if (params.tag === 'payRequest') {
-                return {
-                    type: QRDataType.LnurlPay,
-                    data: {
-                        domain: params.domain,
-                        callback: params.callback,
-                        metadata: params.decodedMetadata,
-                        minSendable: params.minSendable,
-                        maxSendable: params.maxSendable,
-                    },
-                }
-            } else if (params.tag === 'withdrawRequest') {
-                return {
-                    type: QRDataType.LnurlWithdraw,
-                    data: {
-                        domain: params.domain,
-                        callback: params.callback,
-                        k1: params.k1,
-                        defaultDescription: params.defaultDescription,
-                        minWithdrawable: params.minWithdrawable,
-                        maxWithdrawable: params.maxWithdrawable,
-                    },
-                }
-            } else if (params.tag === 'login') {
-                return {
-                    type: QRDataType.LnurlAuth,
-                    data: {
-                        domain: params.domain,
-                        callback: params.callback,
-                        k1: params.k1,
-                        // TODO: https://github.com/nbd-wtf/js-lnurl/issues/9
-                        // action: params.action,
-                    },
-                }
-            } else {
-                console.warn('parseLnurl unsupported LNURL params', params)
                 return {
                     type: QRDataType.Unknown,
-                    data: {
-                        message: `Unsupported LNURL type "${params.tag}"`,
-                    },
+                    // TODO: i18n?
+                    data: { message: params.reason },
                 }
             }
-        } catch (err) {
-            console.warn('parseLnurl error', err)
-            /* no-op */
+        } else if (params.tag === 'payRequest') {
+            return {
+                type: QRDataType.LnurlPay,
+                data: {
+                    domain: params.domain,
+                    callback: params.callback,
+                    metadata: params.decodedMetadata,
+                    minSendable: params.minSendable,
+                    maxSendable: params.maxSendable,
+                },
+            }
+        } else if (params.tag === 'withdrawRequest') {
+            return {
+                type: QRDataType.LnurlWithdraw,
+                data: {
+                    domain: params.domain,
+                    callback: params.callback,
+                    k1: params.k1,
+                    defaultDescription: params.defaultDescription,
+                    minWithdrawable: params.minWithdrawable,
+                    maxWithdrawable: params.maxWithdrawable,
+                },
+            }
+        } else if (params.tag === 'login') {
+            return {
+                type: QRDataType.LnurlAuth,
+                data: {
+                    domain: params.domain,
+                    callback: params.callback,
+                    k1: params.k1,
+                    // TODO: https://github.com/nbd-wtf/js-lnurl/issues/9
+                    // action: params.action,
+                },
+            }
+        } else {
+            console.warn('parseLnurl unsupported LNURL params', params)
+            return {
+                type: QRDataType.Unknown,
+                data: {
+                    message: t('feature.qr.unsupported-lnurl', {
+                        type: params.tag,
+                    }),
+                },
+            }
         }
+    } catch (err) {
+        console.warn('parseLnurl error', err)
+        /* no-op, other parsers will be attempted */
     }
 }
 
