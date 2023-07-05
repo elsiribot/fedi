@@ -1,18 +1,8 @@
-import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 
-import { Chat, ChatType, MSats } from '@fedi/common/types'
+import { Chat, ChatMessage, ChatType, MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-
-// TODO: Remove me in place of ChatMessage when we have full reduxification
-interface ChatMessageLike {
-    id?: string
-    sentAt?: number
-    sentBy?: string | { jid: JID; username: string }
-    sentTo?: string | { jid: JID; username: string }
-    sentIn?: string | { id: string }
-}
 
 export const makePaymentText = (
     t: TFunction,
@@ -48,12 +38,6 @@ export const makePaymentText = (
     return ''
 }
 
-export const jidToId = (jid: JID | string) => {
-    // Remove resource, leave local + domain
-    const jidString = jid.toString()
-    return jidString.split('/')[0]
-}
-
 /**
  * Given a list of messages, organize the messages in a nested list of "grouped"
  * messages. The groups are organized as follows:
@@ -61,7 +45,7 @@ export const jidToId = (jid: JID | string) => {
  * - The middle list is messages sent back-to-back by the same user in that time frame.
  * - The inner-most lists are the list of messages by that user.
  */
-export const makeMessageGroups = <T extends ChatMessageLike>(
+export const makeMessageGroups = <T extends ChatMessage>(
     messages: T[],
     sortOrder: 'desc' | 'asc',
 ): T[][][] => {
@@ -104,7 +88,7 @@ export const makeMessageGroups = <T extends ChatMessageLike>(
 /**
  * Given a message, return its chat ID and the type of chat (direct or group).
  */
-export const getChatInfoFromMessage = <T extends ChatMessageLike>(
+export const getChatInfoFromMessage = <T extends ChatMessage>(
     message: T,
     myId: string,
 ) => {
@@ -114,15 +98,10 @@ export const getChatInfoFromMessage = <T extends ChatMessageLike>(
 
     if (sentIn) {
         type = ChatType.group
-        id = typeof sentIn === 'string' ? sentIn : sentIn.id
+        id = sentIn
     } else if (sentTo && sentBy) {
         type = ChatType.direct
-        // Chat "id" is who it's with, determine based on if we or they sent
-        const sentToId =
-            typeof sentTo === 'string' ? sentTo : jidToId(sentTo.jid)
-        const sentById =
-            typeof sentBy === 'string' ? sentBy : jidToId(sentBy.jid)
-        id = sentBy === myId ? sentToId : sentById
+        id = sentBy === myId ? sentTo : sentBy
     } else {
         throw new Error('Message has no sentIn, or sentTo & sentBy')
     }
@@ -133,7 +112,7 @@ export const getChatInfoFromMessage = <T extends ChatMessageLike>(
 /**
  * Given a list of messages, return the latest in the list.
  */
-export const getLatestMessage = <T extends ChatMessageLike>(
+export const getLatestMessage = <T extends ChatMessage>(
     messages: T[],
 ): T | null => {
     return (
@@ -149,7 +128,7 @@ export const getLatestMessage = <T extends ChatMessageLike>(
  * Given a list of messages, return a map keyed by the chat ID and with a value
  * of the latest message ID in that chat.
  */
-export const getLatestMessageIdsForChats = <T extends ChatMessageLike>(
+export const getLatestMessageIdsForChats = <T extends ChatMessage>(
     messages: T[],
     myId: string,
 ) => {
