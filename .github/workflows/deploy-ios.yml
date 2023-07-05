@@ -48,7 +48,7 @@ jobs:
                   rm -rf ./tmp
 
             - name: Install Fastlane
-              run: cd android && bundle install && cd ..
+              run: cd ios && bundle install && cd ..
 
             - name: Execute fastlane beta lane for CI
               env:
