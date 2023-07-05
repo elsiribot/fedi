@@ -25,14 +25,14 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
     const messageSentBy = sentBy || ''
     const messageSentTo = sentTo || ''
     const paymentRecipient = payment?.recipient || ''
-    const me = authenticatedMember?.username || ''
+    const me = authenticatedMember?.id || ''
 
     const paymentText = makePaymentText(
         t,
-        messageSentBy,
-        messageSentTo,
-        me,
-        paymentRecipient,
+        messageSentBy.split('@')[0],
+        messageSentTo.split('@')[0],
+        me.split('@')[0],
+        paymentRecipient.split('@')[0],
         payment?.amount,
         payment?.memo,
     )

@@ -1,3 +1,4 @@
+import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 
@@ -36,6 +37,12 @@ export const makePaymentText = (
     }
 
     return ''
+}
+
+export const jidToId = (jid: JID | string) => {
+    // Remove resource, leave local + domain
+    const jidString = jid.toString()
+    return jidString.split('/')[0]
 }
 
 /**
