@@ -9,7 +9,7 @@ defaults:
 jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
-        runs-on: macos-latest
+        runs-on: self-hosted
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
