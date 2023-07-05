@@ -32,7 +32,7 @@ jobs:
 
             - name: Build bridge
               run: |
-                  npm run build-bridge-ios
+                  yarn build-bridge-ios
 
             - name: Install Node dependencies
               run: yarn install
