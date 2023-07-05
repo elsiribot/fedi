@@ -15,8 +15,21 @@ yarn install
 
 ## Running commands
 
-You can either run commands by `cd`ing into the correct directory and running
-them there, or you can use `yarn workspace` to target the project.
+Running commands in the `ui/` directory will run those commands in all directories.
+This is the most convenient way to develop on the UI, ensuring that any changes
+made to any package is considered across any package that may be using it.
+
+```bash
+# Starts development servers for web and native, compilation watcher for common
+yarn dev
+
+# Lints all packages
+yarn lint
+```
+
+Alternatively, you can either run individual package commands by `cd`ing into the
+correct directory and running them there, or you can use `yarn workspace` to target
+a specific package.
 
 ```bash
 # Doing this...

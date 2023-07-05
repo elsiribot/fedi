@@ -1,5 +1,4 @@
 {
-    "name": "@fedi/client",
     "version": "1.0.0",
     "private": true,
     "engines": {
@@ -13,11 +12,16 @@
         ]
     },
     "scripts": {
-        "lint": "yarn workspace @fedi/common lint && yarn workspace @fedi/native lint && yarn workspace @fedi/web lint",
-        "format": "yarn workspace @fedi/common format && yarn workspace @fedi/native format && yarn workspace @fedi/web format",
-        "test": "yarn workspace @fedi/common test && yarn workspace @fedi/native test && yarn workspace @fedi/web test"
+        "build": "turbo run build",
+        "dev": "turbo run dev",
+        "dev:web": "turbo run dev --parallel --filter=web...",
+        "dev:native": "turbo run dev --parallel --filter=native...",
+        "lint": "turbo run lint",
+        "format": "turbo run format",
+        "test": "turbo run test"
     },
     "devDependencies": {
-        "syncpack": "^9.8.4"
+        "syncpack": "^9.8.4",
+        "turbo": "^1.10.7"
     }
 }
