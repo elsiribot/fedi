@@ -35,7 +35,7 @@ jobs:
                   npm run build-bridge-ios
 
             - name: Install Node dependencies
-              run: npm ci --cache .npm
+              run: yarn install
 
             - name: Install pods
               run: cd ios && pod install && cd ..
