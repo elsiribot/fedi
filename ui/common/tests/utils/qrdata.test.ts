@@ -1,4 +1,5 @@
 import { bech32 } from 'bech32'
+import { t } from 'i18next'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
@@ -301,7 +302,7 @@ describe('parseQrData', () => {
         it(`parses ${testCase.type} from ${truncate(
             testCase.input,
         )}`, async () => {
-            const parsed = await parseQrData(testCase.input, fedimint)
+            const parsed = await parseQrData(testCase.input, fedimint, t)
             expect(parsed.type).toEqual(testCase.type)
             // expect(parsed.data).toEqual(testCase.data)
         })
