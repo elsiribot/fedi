@@ -24,7 +24,7 @@ use crate::common::{
 const AMOUNT_TO_REMINT: Amount = Amount::from_msats(1024);
 const AMOUNT_TO_PAY: Amount = Amount::from_msats(1000);
 /// Minimum amount to get from faucet
-const MINIMUM_AMOUNT_TO_REFILL: Amount = Amount::from_msats(1_000_000);
+const MINIMUM_AMOUNT_TO_REFILL: Amount = Amount::from_msats(1_000);
 
 /// How many results will be returned on response
 const LATEST_CHECKS_COUNT: usize = 12;
