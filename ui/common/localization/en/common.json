@@ -388,7 +388,7 @@
             "ended": "Ended",
             "ended-description": "This pop-up Federation <bold>ended {{date}}</bold>. Leftover balances were donated to a charitable cause."
         },
-        "qr": {
+        "parser": {
             "unrecognized": "Unrecognized data format",
             "unsupported-lnurl": "Unsupported LNURL type '{{type}}'"
         }

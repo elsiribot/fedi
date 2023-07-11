@@ -5,34 +5,34 @@ import { parse as queryStringParse } from 'querystring'
 
 import { Btc } from '../types'
 import {
-    AnyQRData,
-    QRDataBip21,
-    QRDataBitcoinAddress,
-    QRDataBolt11,
-    QRDataBolt12,
-    QRDataFederationInvite,
-    QRDataFediChatGroup,
-    QRDataFediChatMember,
-    QRDataFedimintEcash,
-    QRDataLnurlAuth,
-    QRDataLnurlPay,
-    QRDataLnurlWithdraw,
-    QRDataType,
-    QRDataUnknown,
-} from '../types/qrdata'
+    AnyParsedData,
+    ParserDataType,
+    ParsedBip21,
+    ParsedBitcoinAddress,
+    ParsedBolt11,
+    ParsedBolt12,
+    ParsedFederationInvite,
+    ParsedFediChatGroup,
+    ParsedFediChatMember,
+    ParsedFedimintEcash,
+    ParsedLnurlAuth,
+    ParsedLnurlPay,
+    ParsedLnurlWithdraw,
+    ParsedUnknownData,
+} from '../types/parser'
 import { FedimintBridge } from './fedimint'
 import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
 
 /**
- * Parses any data that would be shared as a QR code, URI, NFC etc.
- * Returns a structured object that identifies the type of data,
- * and formatted keys for the data where available.
+ * Parses any data that would the user would input via QR code, copy / paste etc.
+ * Returns a structured object that identifies the type of data, and formatted
+ * keys for the data where available.
  */
-export function parseQrData<T extends TFunction>(
+export function parseUserInput<T extends TFunction>(
     raw: string,
     fedimint: FedimintBridge,
     t: T,
-): Promise<AnyQRData> {
+): Promise<AnyParsedData> {
     return new Promise(resolve => {
         // Run all parsers simultaneously.
         const parserPromises = [
@@ -68,8 +68,8 @@ export function parseQrData<T extends TFunction>(
         Promise.all(parserPromises).then(() => {
             if (!resolved) {
                 resolve({
-                    type: QRDataType.Unknown,
-                    data: { message: t('feature.qr.unrecognized') },
+                    type: ParserDataType.Unknown,
+                    data: { message: t('feature.parser.unrecognized') },
                 })
             }
         })
@@ -85,10 +85,10 @@ async function parseLnurl(
     raw: string,
     t: TFunction,
 ): Promise<
-    | QRDataLnurlAuth
-    | QRDataLnurlPay
-    | QRDataLnurlWithdraw
-    | QRDataUnknown
+    | ParsedLnurlAuth
+    | ParsedLnurlPay
+    | ParsedLnurlWithdraw
+    | ParsedUnknownData
     | undefined
 > {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
@@ -119,14 +119,14 @@ async function parseLnurl(
                     // Ignore this and try to parse using things below.
                 }
                 return {
-                    type: QRDataType.Unknown,
+                    type: ParserDataType.Unknown,
                     // TODO: i18n?
                     data: { message: params.reason },
                 }
             }
         } else if (params.tag === 'payRequest') {
             return {
-                type: QRDataType.LnurlPay,
+                type: ParserDataType.LnurlPay,
                 data: {
                     domain: params.domain,
                     callback: params.callback,
@@ -137,7 +137,7 @@ async function parseLnurl(
             }
         } else if (params.tag === 'withdrawRequest') {
             return {
-                type: QRDataType.LnurlWithdraw,
+                type: ParserDataType.LnurlWithdraw,
                 data: {
                     domain: params.domain,
                     callback: params.callback,
@@ -149,7 +149,7 @@ async function parseLnurl(
             }
         } else if (params.tag === 'login') {
             return {
-                type: QRDataType.LnurlAuth,
+                type: ParserDataType.LnurlAuth,
                 data: {
                     domain: params.domain,
                     callback: params.callback,
@@ -161,9 +161,9 @@ async function parseLnurl(
         } else {
             console.warn('parseLnurl unsupported LNURL params', params)
             return {
-                type: QRDataType.Unknown,
+                type: ParserDataType.Unknown,
                 data: {
-                    message: t('feature.qr.unsupported-lnurl', {
+                    message: t('feature.parser.unsupported-lnurl', {
                         type: params.tag,
                     }),
                 },
@@ -182,7 +182,7 @@ async function parseLnurl(
 async function parseBolt11(
     raw: string,
     fedimint: FedimintBridge,
-): Promise<QRDataBolt11 | undefined> {
+): Promise<ParsedBolt11 | undefined> {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
 
     // Quick detection of BOLT 11, but ignore BOLT 12 and LNURL.
@@ -198,7 +198,7 @@ async function parseBolt11(
         const decoded = await fedimint.decodeInvoice(lnRaw)
 
         return {
-            type: QRDataType.Bolt11,
+            type: ParserDataType.Bolt11,
             data: {
                 bolt11: lnRaw,
                 ...decoded,
@@ -215,10 +215,10 @@ async function parseBolt11(
  * actually parsed from the invoice.
  * BOLT 12 docs: https://bolt12.org/
  */
-function parseBolt12(raw: string): QRDataBolt12 | undefined {
+function parseBolt12(raw: string): ParsedBolt12 | undefined {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
     if (lnRaw.startsWith('lno1')) {
-        return { type: QRDataType.Bolt12, data: null }
+        return { type: ParserDataType.Bolt12, data: null }
     }
 }
 
@@ -226,10 +226,10 @@ function parseBolt12(raw: string): QRDataBolt12 | undefined {
  * Parse any kind of on-chain address. Only handles raw addresses, URIs are
  * handled by BIP 21.
  */
-function parseBitcoinAddress(raw: string): QRDataBitcoinAddress | undefined {
+function parseBitcoinAddress(raw: string): ParsedBitcoinAddress | undefined {
     if (validateBitcoinAddress(raw)) {
         return {
-            type: QRDataType.BitcoinAddress,
+            type: ParserDataType.BitcoinAddress,
             data: { address: raw },
         }
     }
@@ -243,7 +243,7 @@ function parseBitcoinAddress(raw: string): QRDataBitcoinAddress | undefined {
 async function parseBip21(
     raw: string,
     fedimint: FedimintBridge,
-): Promise<QRDataBip21 | undefined> {
+): Promise<ParsedBip21 | undefined> {
     // Only consider things that start with URIs, otherwise it's handled by parseBitcoinAddress.
     if (!raw.toLowerCase().startsWith('bitcoin:')) return
 
@@ -266,7 +266,7 @@ async function parseBip21(
     const bolt11 = param('lightning')
 
     // Decode lightning invoice if present
-    let lightning: QRDataBolt11['data'] | undefined
+    let lightning: ParsedBolt11['data'] | undefined
     if (bolt11) {
         try {
             lightning = {
@@ -279,7 +279,7 @@ async function parseBip21(
     }
 
     return {
-        type: QRDataType.Bip21,
+        type: ParserDataType.Bip21,
         data: {
             address: btcAddress,
             amount: amount ? (parseFloat(amount) as Btc) : undefined,
@@ -292,7 +292,7 @@ async function parseBip21(
 
 function parseFediUri(
     raw: string,
-): QRDataFediChatGroup | QRDataFediChatMember | undefined {
+): ParsedFediChatGroup | ParsedFediChatMember | undefined {
     if (!raw.toLowerCase().startsWith('fedi:')) {
         return
     }
@@ -301,7 +301,7 @@ function parseFediUri(
     try {
         const id = decodeDirectChatLink(raw)
         return {
-            type: QRDataType.FediChatMember,
+            type: ParserDataType.FediChatMember,
             data: { id },
         }
     } catch {
@@ -312,7 +312,7 @@ function parseFediUri(
     try {
         const id = decodeGroupInvitationLink(raw)
         return {
-            type: QRDataType.FediChatGroup,
+            type: ParserDataType.FediChatGroup,
             data: { id },
         }
     } catch {
@@ -320,21 +320,21 @@ function parseFediUri(
     }
 }
 
-function parseFedimintInvite(raw: string): QRDataFederationInvite | undefined {
+function parseFedimintInvite(raw: string): ParsedFederationInvite | undefined {
     // Federation invite code
     // TODO: Proper bech32 validation
     // TODO: Use future bridge method for fetching federation info https://github.com/fedibtc/fedi/issues/1380
     // TODO: Consider standard URI prefix?
     if (raw.toLowerCase().startsWith('fed1')) {
-        return { type: QRDataType.FedimintInvite, data: { invite: raw } }
+        return { type: ParserDataType.FedimintInvite, data: { invite: raw } }
     }
 }
 
-function parseFedimintEcash(raw: string): QRDataFedimintEcash | undefined {
+function parseFedimintEcash(raw: string): ParsedFedimintEcash | undefined {
     // Fedimint ecash
     // TODO: Proper validation
     if (raw.startsWith('AAAAAAAA')) {
-        return { type: QRDataType.FedimintEcash, data: null }
+        return { type: ParserDataType.FedimintEcash, data: null }
     }
 }
 

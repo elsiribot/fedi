@@ -4,9 +4,9 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { Invoice, MSats } from '../../types'
-import { QRDataType } from '../../types/qrdata'
+import { ParserDataType } from '../../types/parser'
 import { FedimintBridge } from '../../utils/fedimint'
-import { parseQrData } from '../../utils/qrdata'
+import { parseUserInput } from '../../utils/parser'
 
 // Constants
 const simpleBolt11 =
@@ -66,7 +66,7 @@ const lnurlPayParams = {
     maxSendable: 1000000,
 }
 
-describe('parseQrData', () => {
+describe('parseUserInput', () => {
     // --- Mock API for LNURLs ---
     const server = setupServer(
         rest.get(`${lnurlOrigin}/pay`, (_req, res, ctx) => {
@@ -106,27 +106,27 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: simpleBolt11,
-        type: QRDataType.Bolt11,
+        type: ParserDataType.Bolt11,
         data: simpleBolt11Data,
     })
     testCases.push({
         input: simpleBolt11.toUpperCase(),
-        type: QRDataType.Bolt11,
+        type: ParserDataType.Bolt11,
         data: simpleBolt11Data,
     })
     testCases.push({
         input: `lightning:${simpleBolt11}`,
-        type: QRDataType.Bolt11,
+        type: ParserDataType.Bolt11,
         data: simpleBolt11Data,
     })
     testCases.push({
         input: `lightning://${simpleBolt11}`,
-        type: QRDataType.Bolt11,
+        type: ParserDataType.Bolt11,
         data: simpleBolt11Data,
     })
     testCases.push({
         input: complexBolt11,
-        type: QRDataType.Bolt11,
+        type: ParserDataType.Bolt11,
         data: complexBolt11Data,
     })
 
@@ -135,22 +135,22 @@ describe('parseQrData', () => {
     const simpleBolt12 = `lno1pg257enxv4ezqcneype82um50ynhxgrwdajx293pqglnyxw6q0hzngfdusg8umzuxe8kquuz7pjl90ldj8wadwgs0xlmc`
     testCases.push({
         input: simpleBolt12,
-        type: QRDataType.Bolt12,
+        type: ParserDataType.Bolt12,
         data: null,
     })
     testCases.push({
         input: simpleBolt12.toUpperCase(),
-        type: QRDataType.Bolt12,
+        type: ParserDataType.Bolt12,
         data: null,
     })
     testCases.push({
         input: `lightning:${simpleBolt12}`,
-        type: QRDataType.Bolt12,
+        type: ParserDataType.Bolt12,
         data: null,
     })
     testCases.push({
         input: `lightning://${simpleBolt12}`,
-        type: QRDataType.Bolt12,
+        type: ParserDataType.Bolt12,
         data: null,
     })
 
@@ -158,31 +158,31 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: encodeLnurl(lnurlPayUrl),
-        type: QRDataType.LnurlPay,
+        type: ParserDataType.LnurlPay,
     })
     testCases.push({
         input: encodeLnurl(lnurlPayUrl).toUpperCase(),
-        type: QRDataType.LnurlPay,
+        type: ParserDataType.LnurlPay,
     })
     testCases.push({
         input: `lightning:${encodeLnurl(lnurlPayUrl)}`,
-        type: QRDataType.LnurlPay,
+        type: ParserDataType.LnurlPay,
     })
     testCases.push({
         input: lnurlPayUrl.replace('https', 'lnurlp'),
-        type: QRDataType.LnurlPay,
+        type: ParserDataType.LnurlPay,
     })
     testCases.push({
         input: LnurlWithdrawUrl.replace('https', 'lnurlw'),
-        type: QRDataType.LnurlWithdraw,
+        type: ParserDataType.LnurlWithdraw,
     })
     testCases.push({
         input: lnurlAuthUrl.replace('https', 'keyauth'),
-        type: QRDataType.LnurlAuth,
+        type: ParserDataType.LnurlAuth,
     })
     testCases.push({
         input: lnurlAddress,
-        type: QRDataType.LnurlPay,
+        type: ParserDataType.LnurlPay,
     })
 
     // --- Bitcoin address ---
@@ -195,22 +195,22 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: p2pkhAddress,
-        type: QRDataType.BitcoinAddress,
+        type: ParserDataType.BitcoinAddress,
         data: { address: p2pkhAddress },
     })
     testCases.push({
         input: p2shAddress,
-        type: QRDataType.BitcoinAddress,
+        type: ParserDataType.BitcoinAddress,
         data: { address: p2shAddress },
     })
     testCases.push({
         input: p2wpkhAddress,
-        type: QRDataType.BitcoinAddress,
+        type: ParserDataType.BitcoinAddress,
         data: { address: p2wpkhAddress },
     })
     testCases.push({
         input: p2trAddress,
-        type: QRDataType.BitcoinAddress,
+        type: ParserDataType.BitcoinAddress,
         data: { address: p2trAddress },
     })
 
@@ -218,17 +218,17 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: `bitcoin:${p2wpkhAddress}`,
-        type: QRDataType.Bip21,
+        type: ParserDataType.Bip21,
         data: {},
     })
     testCases.push({
         input: `bitcoin://${p2wpkhAddress}`,
-        type: QRDataType.Bip21,
+        type: ParserDataType.Bip21,
         data: {},
     })
     testCases.push({
         input: `bitcoin:${p2wpkhAddress}?amount=1.5&label=Example%20Merchant&message=Purchase%20at%20Example%20Merchant`,
-        type: QRDataType.Bip21,
+        type: ParserDataType.Bip21,
         data: {
             address: p2wpkhAddress,
             amount: 1.5,
@@ -238,7 +238,7 @@ describe('parseQrData', () => {
     })
     testCases.push({
         input: `bitcoin:${p2wpkhAddress}?lightning=${simpleBolt11}`,
-        type: QRDataType.Bip21,
+        type: ParserDataType.Bip21,
         data: {
             address: p2wpkhAddress,
             lightning: {},
@@ -249,7 +249,7 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: `fed11jpr3lgm8tuhcky2r3g287tgk9du7dd7kr95fptdsmkca7cwcvyu0lyqeh0e6rgp4u0shxsfaxycpwqpfwaehxw309askcurgvyhx6at5d9h8jmn9wsknqvfwv3jhvtnxv4jxjcn5vvhxxmmd9udpnpn49yg9w98dejw9u76hmm9`,
-        type: QRDataType.FedimintInvite,
+        type: ParserDataType.FedimintInvite,
         data: null,
     })
 
@@ -257,7 +257,7 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: `AAAAAAAAAAUAAAAAAAAAEAAAAAAAAAABytv3ApZWgVAEsPVB/wSW7xGwEWAyXNWZnw1MZMWBBsuYhk+hrVdUAn5fOpAupYeaJ1saucJeD5t/5dIFYKYU5KY/G6aRf8cJVqfLZ3DWDbbo2VNbALxflAzR3YYOopF49G5hUC2oYattZdjM2uEtRQAAAAAAAAEAAAAAAAAAAAE6qbWNeYV/DSx5tpJz4dG3NOmT4+KY6+DmI1+bUV75VaKPsoT629eC4HQolANvFF4VLd7SOphWotT1l3WST9jJIhbvKqmyHmLMSvVVld/czTlP9LM/O2tFS6KM8SMDvxsU+PlV6ZNeIeXq1Fz1QdMmAAAAAAAAAgAAAAAAAAAAAVEMS56MnlPEm/Y0/Cn5KXjQsC8/vMfhN+E/Y4tvWfebtxVHtKPk7dhJqC3P8mR0M6cw5qyTXq4vuDN3GVWQMh1oOMAveatU88IUuno5sz2jDTX0M8bJ2ujQHKKNXwMaafQMDiWpoa8jRhv3jKpIUREAAAAAAAAEAAAAAAAAAAABPvyMsEtqen8ZCoSJ28QyELg6fxNINzdLeKHU0pLv532rjLwME41b9aFevg3+HEblxlMWyc0F1DnO0doaX0of2hv2hs1bPFXyMLPlinxfpcjRE/mylF0D7Ogm8oBHXhxQohr6Bzi4fE2iYF3/gW3mXQAAAAAAACAAAAAAAAAAAAGmwrUa8fH8xbftLJQM4HhRDsRJjOTWgOIpLSDO0i6OsIqMBqxQRBiJ9DH9ji2skiQ5s0DEKpnDQcMsvCUpIJs+6UhERT/lFzqZiqfGK4ljDkG3GkNU9kPMrL7LfW1KGtDvj5+I1hO+kKoANDfPxi66`,
-        type: QRDataType.FedimintEcash,
+        type: ParserDataType.FedimintEcash,
         data: null,
     })
 
@@ -265,12 +265,12 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: `fedi:member:user@xmpp.com:::`,
-        type: QRDataType.FediChatMember,
+        type: ParserDataType.FediChatMember,
         data: { id: 'user@xmpp.com' },
     })
     testCases.push({
         input: `fedi:group:12345:::`,
-        type: QRDataType.FediChatGroup,
+        type: ParserDataType.FediChatGroup,
         data: { id: '12345' },
     })
 
@@ -278,7 +278,7 @@ describe('parseQrData', () => {
 
     testCases.push({
         input: 'this is random text',
-        type: QRDataType.Unknown,
+        type: ParserDataType.Unknown,
         data: {},
     })
 
@@ -302,7 +302,7 @@ describe('parseQrData', () => {
         it(`parses ${testCase.type} from ${truncate(
             testCase.input,
         )}`, async () => {
-            const parsed = await parseQrData(testCase.input, fedimint, t)
+            const parsed = await parseUserInput(testCase.input, fedimint, t)
             expect(parsed.type).toEqual(testCase.type)
             // expect(parsed.data).toEqual(testCase.data)
         })
