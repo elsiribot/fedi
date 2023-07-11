@@ -21,7 +21,6 @@ if [ "$FEDI_EMULATOR" != "1" ]; then
     mkdir -p fedi-android/lib/src/main/jniLibs/armeabi-v7a
     cp ../target/armv7-linux-androideabi/release/libfediffi.so fedi-android/lib/src/main/jniLibs/armeabi-v7a/libfediffi.so
 fi
-
 # build android lib with ffi-bindgen inside nix
 cd fedi-ffi
 nix develop --ignore-environment .#cross --command cargo run --package ffi-bindgen -- --language kotlin --out-dir ../fedi-android/lib/src/main/kotlin
@@ -29,5 +28,5 @@ cd ..
 
 # publish android live to local maven
 cd fedi-android
-./gradlew publishToMavenLocal
+nix develop .#cross --command ./gradlew publishToMavenLocal
 cd ..
