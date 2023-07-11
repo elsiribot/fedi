@@ -3,13 +3,31 @@
 # exit on failure
 set -e
 
-# make sure we've installed targets
-rustup target add x86_64-linux-android
-rustup target add aarch64-linux-android
-rustup target add armv7-linux-androideabi
+# build the bridge inside nix
+nix develop .#cross --command cargo build --release -p fedi-ffi --target aarch64-linux-android
 
-# build maven package
+if [ "$FEDI_EMULATOR" != "1" ]; then
+    nix develop .#cross --command cargo build --release -p fedi-ffi --target x86_64-linux-android
+    nix develop .#cross --command cargo build --release -p fedi-ffi --target armv7-linux-androideabi
+fi
+
+# copy bridge outputs to where ffi-bindgen expects them
+mkdir -p fedi-android/lib/src/main/jniLibs/arm64-v8a
+cp ../target/aarch64-linux-android/release/libfediffi.so fedi-android/lib/src/main/jniLibs/arm64-v8a/libfediffi.so
+
+if [ "$FEDI_EMULATOR" != "1" ]; then
+    mkdir -p fedi-android/lib/src/main/jniLibs/x86_64
+    cp ../target/x86_64-linux-android/release/libfediffi.so fedi-android/lib/src/main/jniLibs/x86_64/libfediffi.so
+    mkdir -p fedi-android/lib/src/main/jniLibs/armeabi-v7a
+    cp ../target/armv7-linux-androideabi/release/libfediffi.so fedi-android/lib/src/main/jniLibs/armeabi-v7a/libfediffi.so
+fi
+
+# build android lib with ffi-bindgen inside nix
+cd fedi-ffi
+nix develop --ignore-environment .#cross --command cargo run --package ffi-bindgen -- --language kotlin --out-dir ../fedi-android/lib/src/main/kotlin
+cd ..
+
+# publish android live to local maven
 cd fedi-android
-./gradlew buildAndroidLib
 ./gradlew publishToMavenLocal
 cd ..

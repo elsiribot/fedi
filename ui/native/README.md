@@ -28,8 +28,6 @@ yarn run start
 
 The [Rust bridge](https://github.com/fedibtc/fedi-react-native/tree/master/bridge) gets built automatically by the `npm run android` and `npm run ios` commands, but as a first run try building it independently with `npm run build-bridge-android` and `npm run build-bridge-ios`. You can build these in parallel with separate terminals.
 
-If you would like to build the bridge in Nix, export `FEDI_NIX=1` before running this. At this point only Android is supported.
-
 ```
 # builds ios
 yarn run build-bridge-ios

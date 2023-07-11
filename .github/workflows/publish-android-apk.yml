@@ -49,8 +49,6 @@ jobs:
                   node-version: '16.18.X'
 
             - name: Build bridge
-              env:
-                  FEDI_NIX: 1
               run: |
                   yarn build-bridge-android
 
