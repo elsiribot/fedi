@@ -101,3 +101,7 @@ yarn run android -- --deviceid=<deviceid>
 ```
 xcrun xctrace list devices
 ```
+
+### Cannot connect to development server
+
+On an Android simulator, if the app installs but cannot connect to the Metro packaging server (usually running on port 8081) try running `adb reverse tcp:8081 tcp:8081` to resolve the problem. (see [this guide](https://reactnative.dev/docs/running-on-device?platform=android#method-1-using-adb-reverse-recommended) for details)
