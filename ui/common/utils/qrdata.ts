@@ -338,6 +338,10 @@ function parseFedimintEcash(raw: string): QRDataFedimintEcash | undefined {
     }
 }
 
+/**
+ * Removes the protocol from the front of a string. Supports both
+ * `protocol:` and `protocol://` formats, case insensitive.
+ */
 function stripProtocol(raw: string, protocol: string) {
     return raw.replace(new RegExp(`^${protocol}:\\/?\\/?`, 'i'), '')
 }

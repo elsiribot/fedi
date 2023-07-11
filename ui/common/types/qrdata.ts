@@ -26,6 +26,7 @@ export type QRDataBolt11 = QRData<
     { bolt11: string } & Invoice
 >
 
+// No data since we don't yet support bolt 12, so no point in fully parsing.
 export type QRDataBolt12 = QRData<QRDataType.Bolt12>
 
 export type QRDataLnurlPay = QRData<
