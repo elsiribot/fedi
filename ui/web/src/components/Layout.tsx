@@ -108,11 +108,13 @@ export const Actions = styled('div', {
     },
 
     '@standalone': {
-        '@sm': {
-            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
-        },
-        '@xs': {
-            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+        '.hide-navigation &': {
+            '@sm': {
+                paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+            },
+            '@xs': {
+                paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            },
         },
     },
 })

@@ -30,11 +30,11 @@ export const Template: React.FC<Props> = ({ children }) => {
 
     const isPopupOver =
         !isOnboardingPage && !!popupInfo && popupInfo.secondsLeft <= 0
-    const hideSideNavigation = hideControls || isPopupOver
+    const hideNavigation = hideControls || isPopupOver
 
     return (
-        <Container>
-            {!hideSideNavigation && <Navigation />}
+        <Container className={hideNavigation ? 'hide-navigation' : ''}>
+            {!hideNavigation && <Navigation />}
             <Content>
                 {!hideControls && (
                     <FederationControls>
