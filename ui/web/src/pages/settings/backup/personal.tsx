@@ -46,22 +46,26 @@ function PersonalBackupPage() {
                     </Layout.Title>
                 </Layout.Header>
                 {isShowingWords ? (
-                    <Layout.Content>
-                        <Content>
-                            <Text>
-                                {t(
-                                    'feature.backup.recovery-words-instructions',
-                                )}
-                            </Text>
-                            <RecoverySeedWords words={words} readOnly />
+                    <>
+                        <Layout.Content>
+                            <Content>
+                                <Text>
+                                    {t(
+                                        'feature.backup.recovery-words-instructions',
+                                    )}
+                                </Text>
+                                <RecoverySeedWords words={words} readOnly />
+                            </Content>
+                        </Layout.Content>
+                        <Layout.Actions>
                             <Button
                                 width="full"
                                 href="/"
                                 onClick={handleFinish}>
                                 {t('words.done')}
                             </Button>
-                        </Content>
-                    </Layout.Content>
+                        </Layout.Actions>
+                    </>
                 ) : (
                     <>
                         <Layout.Content>

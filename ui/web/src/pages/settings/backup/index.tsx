@@ -54,7 +54,6 @@ const ActionCards = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 16,
-    marginTop: 16,
 })
 
 export default BackupPage
