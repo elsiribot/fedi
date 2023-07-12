@@ -28,7 +28,8 @@ export const Template: React.FC<Props> = ({ children }) => {
         router.asPath.startsWith('/chat/member')
     const hideControls = isOnboardingPage || (isSm && isChatPage)
 
-    const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
+    const isPopupOver =
+        !isOnboardingPage && !!popupInfo && popupInfo.secondsLeft <= 0
     const hideSideNavigation = hideControls || isPopupOver
 
     return (

@@ -209,12 +209,12 @@ const NavItem = styled('li', {
     '@standalone': {
         '@sm': {
             '& a': {
-                paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+                paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
             },
         },
         '@xs': {
             '& a': {
-                paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+                paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
             },
         },
     },
