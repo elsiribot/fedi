@@ -1,32 +1,54 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
+import React, {
+    MutableRefObject,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import {
     RequestInvoiceArgs,
+    RequestInvoiceResponse,
     RejectionError,
     UnsupportedMethodError,
+    SendPaymentResponse,
 } from 'webln'
 
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
+import { Invoice, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
 import SitesBrowserHeader from '../components/feature/sites/SitesBrowserHeader'
+import AmountInput from '../components/ui/AmountInput'
 import CustomOverlay, {
     CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge, useBtcFiatPrice } from '../state/hooks'
-import { MSats, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
+
+type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
+type FediModResolver<T> = (value: T | PromiseLike<T>) => void
+
+const parseSats = (sats: string | number): Sats => {
+    if (typeof sats === 'string') {
+        return Number.parseInt(sats, 10) as Sats
+    } else if (typeof sats === 'number') {
+        return sats as Sats
+    } else {
+        return 0 as Sats
+    }
+}
 
 const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { site } = route.params
@@ -37,6 +59,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const { toast } = useEnvironmentContext().state
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
+    // const [webLnSupported, setWebLnSupported] = useState<boolean>(false)
     const [jsInjected, setJsInjected] = useState<boolean>(false)
     const [jwt, setJwt] = useState<string | null>(null)
     const [showOverlay, setShowOverlay] = useState<boolean>(false)
@@ -46,10 +69,218 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             title: '',
             message: '',
             description: '',
+            body: null,
             buttons: [],
         })
+    const overlayResolveRef = useRef<
+        FediModResolver<FediModResponse> | undefined
+    >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
     const overlayRejectRef = useRef<(reason: Error) => void>()
     const { lnurlGetToken } = useBridge()
+
+    const [requestInvoiceArgs, setRequestInvoiceArgs] =
+        useState<RequestInvoiceArgs | null>(null)
+    const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
+    const [amountRequested, setAmountRequested] = useState<Sats>(0 as Sats)
+    const [readyToResolve, setReadyToResolve] = useState<boolean>(false)
+
+    // Overlay components for makeInvoice UX
+    const rejectMakeInvoiceButton = useMemo(
+        () => ({
+            text: t('words.reject'),
+            onPress: () => {
+                if (overlayRejectRef.current) {
+                    overlayRejectRef.current(
+                        new RejectionError(
+                            t('errors.webln-payment-request-rejected'),
+                        ),
+                    )
+                    setShowOverlay(false)
+                }
+            },
+        }),
+        [t],
+    )
+    const acceptMakeInvoiceButton = useMemo(
+        () => ({
+            primary: true,
+            disabled: !readyToResolve,
+            text: t('words.accept'),
+            onPress: async () => {
+                if (readyToResolve) {
+                    try {
+                        setLoading(true)
+                        const invoice = await generateInvoice(
+                            amountUtils.satToMsat(amountRequested),
+                            requestInvoiceArgs?.defaultMemo || '',
+                        )
+                        if (overlayResolveRef.current) {
+                            overlayResolveRef.current({
+                                paymentRequest: invoice,
+                            })
+                        }
+                    } catch (error) {
+                        toast?.show((error as Error).message, 3000)
+                        if (overlayRejectRef.current) {
+                            overlayRejectRef.current(error as Error)
+                        }
+                    }
+                    setLoading(false)
+                    setShowOverlay(false)
+                } else {
+                    console.error('nothing')
+                }
+            },
+        }),
+        [
+            amountRequested,
+            generateInvoice,
+            readyToResolve,
+            requestInvoiceArgs?.defaultMemo,
+            t,
+            toast,
+        ],
+    )
+    const fixedInvoiceContents = useMemo(
+        () => ({
+            title: `${t('feature.sites.wants-to-pay-you', {
+                site: site.title,
+            })}`,
+            message: `${amountUtils.formatNumber(amountRequested)} ${t(
+                'words.sats',
+            ).toUpperCase()}`,
+            description: `${convertSatsToFormattedFiat(amountRequested)}`,
+            buttons: [rejectMakeInvoiceButton, acceptMakeInvoiceButton],
+        }),
+        [
+            t,
+            site.title,
+            amountRequested,
+            convertSatsToFormattedFiat,
+            rejectMakeInvoiceButton,
+            acceptMakeInvoiceButton,
+        ],
+    )
+    const dynamicInvoiceContents = useMemo(
+        () => ({
+            title: `${t('feature.sites.enter-amount-to-withdraw', {
+                site: site.title,
+            })}`,
+            description: requestInvoiceArgs?.defaultMemo || '',
+            body: (
+                <AmountInput
+                    amount={amountRequested}
+                    minimumAmount={requestInvoiceArgs?.minimumAmount as Sats}
+                    maximumAmount={requestInvoiceArgs?.maximumAmount as Sats}
+                    onChangeAmount={(changedAmount: Sats) => {
+                        setAmountRequested(changedAmount)
+                        // enforce min/max here?
+                        setReadyToResolve(true)
+                    }}
+                />
+            ),
+            buttons: [rejectMakeInvoiceButton, acceptMakeInvoiceButton],
+        }),
+        [
+            acceptMakeInvoiceButton,
+            amountRequested,
+            rejectMakeInvoiceButton,
+            requestInvoiceArgs?.defaultMemo,
+            requestInvoiceArgs?.maximumAmount,
+            requestInvoiceArgs?.minimumAmount,
+            site.title,
+            t,
+        ],
+    )
+
+    // Overlay components for sendPayment UX
+    const rejectSendPaymentButton = useMemo(
+        () => ({
+            text: t('words.reject'),
+            onPress: () => {
+                if (overlayRejectRef.current) {
+                    overlayRejectRef.current(
+                        new RejectionError(t('errors.webln-payment-rejected')),
+                    )
+                    setShowOverlay(false)
+                }
+            },
+        }),
+        [t],
+    )
+    const acceptSendPaymentButton = useMemo(
+        () => ({
+            primary: true,
+            text: t('words.accept'),
+            onPress: async () => {
+                if (invoiceToPay?.invoice && readyToResolve) {
+                    try {
+                        setLoading(true)
+                        const { preimage } = await payInvoice(
+                            invoiceToPay?.invoice,
+                        )
+                        if (overlayResolveRef.current) {
+                            overlayResolveRef.current({
+                                preimage,
+                            })
+                            setShowOverlay(false)
+                        }
+                    } catch (error) {
+                        console.error('sendPayment failed', error)
+                        toast?.show(t('errors.failed-to-pay-invoice'), 3000)
+                        if (overlayRejectRef.current) {
+                            overlayRejectRef.current(error as Error)
+                        }
+                    }
+                    setLoading(false)
+                    setShowOverlay(false)
+                }
+            },
+        }),
+        [payInvoice, invoiceToPay, readyToResolve, t, toast],
+    )
+    const paymentRequestContents = useMemo(() => {
+        const amountSats = invoiceToPay
+            ? amountUtils.msatToSat(invoiceToPay.amount)
+            : (0 as Sats)
+
+        return {
+            title: t('feature.sites.payment-request', {
+                site: site.title,
+            }),
+            message: `${amountUtils.formatNumber(amountSats)} ${t(
+                'words.sats',
+            ).toUpperCase()}`,
+            description: `${convertSatsToFormattedFiat(amountSats)}`,
+            buttons: [rejectSendPaymentButton, acceptSendPaymentButton],
+        }
+    }, [
+        acceptSendPaymentButton,
+        convertSatsToFormattedFiat,
+        invoiceToPay,
+        rejectSendPaymentButton,
+        site.title,
+        t,
+    ])
+
+    useEffect(() => {
+        if (requestInvoiceArgs?.amount) {
+            setOverlayContents(fixedInvoiceContents)
+        } else if (requestInvoiceArgs) {
+            setOverlayContents(dynamicInvoiceContents)
+        }
+    }, [
+        amountRequested,
+        dynamicInvoiceContents,
+        fixedInvoiceContents,
+        requestInvoiceArgs,
+    ])
+
+    useEffect(() => {
+        if (invoiceToPay) {
+            setOverlayContents(paymentRequestContents)
+        }
+    }, [paymentRequestContents, invoiceToPay])
 
     useEffect(() => {
         if (overlayContents.title) {
@@ -60,17 +291,35 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     // Reset overlay content when hidden
     useEffect(() => {
         if (showOverlay === false) {
+            overlayResolveRef.current = undefined
+            overlayRejectRef.current = undefined
+            setAmountRequested(0 as Sats)
+            setInvoiceToPay(null)
+            setRequestInvoiceArgs(null)
             setOverlayContents({
                 title: '',
                 message: '',
+                description: '',
+                body: null,
                 buttons: [],
             })
         }
     }, [showOverlay])
 
+    useEffect(() => {
+        if (requestInvoiceArgs?.amount) {
+            setAmountRequested(parseSats(requestInvoiceArgs.amount))
+            setReadyToResolve(true)
+        } else if (requestInvoiceArgs?.defaultAmount) {
+            setAmountRequested(parseSats(requestInvoiceArgs.defaultAmount))
+            setReadyToResolve(true)
+        }
+    }, [requestInvoiceArgs])
+
     const onMessage = onMessageHandler(webview, {
         enable: async () => {
             /* no-op */
+            console.info('webln enabled')
         },
         getInfo: async () => {
             const alias = authenticatedMember?.username || ''
@@ -87,141 +336,58 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             return { node: { alias, pubkey } }
         },
         makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
-            // FIXME: copied from blixt
-            let amount: Sats
-            let description = ''
-            if (typeof data === 'string') {
-                amount = Number.parseInt(data, 10) as Sats
-            } else if (typeof data === 'number') {
-                amount = data as Sats
-            } else {
-                if (typeof data.amount === 'string') {
-                    amount = Number.parseInt(data.amount, 10) as Sats
-                } else if (typeof data.amount === 'number') {
-                    amount = data.amount as Sats
-                } else if (typeof data.maximumAmount === 'string') {
-                    amount = Number.parseInt(data.maximumAmount, 10) as Sats
-                } else if (typeof data.maximumAmount === 'number') {
-                    amount = data.maximumAmount as Sats
-                } else {
-                    amount = 0 as Sats
-                }
-                description = data.defaultMemo || ''
-            }
-
+            // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
+                setReadyToResolve(false)
+                // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
-                setOverlayContents({
-                    title: t('feature.sites.wants-to-pay-you', {
-                        site: site.title,
-                    }),
-                    message: `${amountUtils.formatNumber(amount)} ${t(
-                        'words.sats',
-                    ).toUpperCase()}`,
-                    description: `${convertSatsToFormattedFiat(amount)}`,
-                    buttons: [
-                        {
-                            text: t('words.reject'),
-                            onPress: () => {
-                                reject(
-                                    new RejectionError(
-                                        t(
-                                            'errors.webln-payment-request-rejected',
-                                        ),
-                                    ),
-                                )
-                                setShowOverlay(false)
-                            },
-                        },
-                        {
-                            primary: true,
-                            text: t('words.accept'),
-                            onPress: async () => {
-                                try {
-                                    setLoading(true)
-                                    const invoice = await generateInvoice(
-                                        amountUtils.satToMsat(amount),
-                                        description,
-                                    )
-                                    resolve({
-                                        paymentRequest: invoice,
-                                    })
-                                } catch (error) {
-                                    toast?.show((error as Error).message, 3000)
-                                    reject(error)
-                                }
-                                setLoading(false)
-                                setShowOverlay(false)
-                            },
-                        },
-                    ],
-                })
+                overlayResolveRef.current =
+                    resolve as FediModResolver<FediModResponse>
+
+                // TODO: Consider removing this since seeing a string or number
+                // is not strictly WebLN-compliant but inferring an amount might
+                // be convenient
+                if (typeof data === 'string' || typeof data === 'number') {
+                    setAmountRequested(parseSats(data))
+                    setReadyToResolve(true)
+                } else {
+                    // Handle WebLN-compliant payload
+                    setRequestInvoiceArgs(data as RequestInvoiceArgs)
+                }
             })
         },
-        sendPayment: async (paymentRequest: string) => {
-            var invoice
+        sendPayment: async (data: string) => {
+            console.info('webln:sendPayment', data)
+            let invoice: Invoice
             try {
-                invoice = await fedimint.decodeInvoice(paymentRequest)
+                invoice = await fedimint.decodeInvoice(data)
             } catch (error) {
+                console.error('sendPayment', 'error', error)
                 toast?.show(t('phrases.failed-to-decode-invoice'), 3000)
                 throw Error(t('phrases.failed-to-decode-invoice'))
             }
-            const amountSats = amountUtils.msatToSat(invoice.amount)
-
-            if (activeFederation!.balance < invoice.amount) {
-                const message = t('errors.insufficient-balance', {
-                    balance: `${amountUtils.msatToSat(
-                        activeFederation?.balance as MSats,
-                    )} SATS`,
-                })
-                toast?.show(message, 5000)
-                throw Error(message)
-            }
-
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
+                setReadyToResolve(false)
+
+                // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
-                setOverlayContents({
-                    title: t('feature.sites.payment-request', {
-                        site: site.title,
-                    }),
-                    message: `${amountUtils.formatNumber(amountSats)} ${t(
-                        'words.sats',
-                    ).toUpperCase()}`,
-                    description: `${convertSatsToFormattedFiat(amountSats)}`,
-                    buttons: [
-                        {
-                            text: t('words.reject'),
-                            onPress: () => {
-                                setShowOverlay(false)
-                                reject(
-                                    new RejectionError(
-                                        t('errors.webln-payment-rejected'),
-                                    ),
-                                )
-                            },
-                        },
-                        {
-                            primary: true,
-                            text: t('words.accept'),
-                            onPress: async () => {
-                                try {
-                                    setLoading(true)
-                                    const { preimage } = await payInvoice(
-                                        paymentRequest,
-                                    )
-                                    setShowOverlay(false)
-                                    resolve({ preimage })
-                                } catch (error) {
-                                    console.error('pay failed', error)
-                                    toast?.show((error as Error).message, 3000)
-                                    reject(error)
-                                }
-                                setLoading(false)
-                            },
-                        },
-                    ],
-                })
+                overlayResolveRef.current =
+                    resolve as FediModResolver<FediModResponse>
+
+                // TODO: Hoist this to respect balance changes
+                if (activeFederation!.balance < invoice.amount) {
+                    const message = t('errors.insufficient-balance', {
+                        balance: `${amountUtils.msatToSat(
+                            activeFederation?.balance as MSats,
+                        )} SATS`,
+                    })
+                    toast?.show(message, 5000)
+                    reject(new Error(message))
+                } else {
+                    setInvoiceToPay(invoice)
+                    setReadyToResolve(true)
+                }
             })
         },
         signMessage: async () => {
@@ -246,8 +412,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
         // Non-WebLN
         // Called when an a-tag containing a `lightning:` uri is found on a page
-        foundInvoice: async (paymentRequest: string) => {
-            if (paymentRequest.toLowerCase().startsWith('lnurl')) {
+        foundInvoice: async (data: string) => {
+            if (data.toLowerCase().startsWith('lnurl')) {
                 setOverlayContents({
                     title: t('feature.sites.login-to'),
                     message: `${site.title}`,
@@ -265,9 +431,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             onPress: async () => {
                                 try {
                                     setLoading(true)
-                                    const token = await lnurlGetToken(
-                                        paymentRequest,
-                                    )
+                                    const token = await lnurlGetToken(data)
                                     setJwt(token)
                                     console.info(
                                         'FIXLN-URL auth successful',
@@ -295,11 +459,14 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     if (uri.includes('https://faucet.mutinynet.dev.fedibtc.com')) {
         uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
     }
-    console.info('uri: ', uri)
 
     return (
         <View style={styles.container}>
-            <SitesBrowserHeader webViewRef={webview} site={site} />
+            <SitesBrowserHeader
+                webViewRef={webview}
+                site={site}
+                // webLnSupported={webLnSupported}
+            />
             <WebView
                 ref={webview}
                 source={{ uri }}
@@ -323,6 +490,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                             new RejectionError(t('errors.webln-canceled')),
                         )
                         overlayRejectRef.current = undefined
+                        overlayResolveRef.current = undefined
                     }
                 }}
                 contents={overlayContents}

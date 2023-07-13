@@ -13,52 +13,66 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 type SitesBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
     site: FediMod
+    webLnSupported?: boolean
 }
 
 const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
     webViewRef,
     site,
+    webLnSupported = true,
 }) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const style = styles(theme)
 
     return (
         <Header
             containerStyle={{ borderBottomColor: theme.colors.lightGrey }}
             headerLeft={
-                <View style={styles(theme).arrowsContainer}>
+                <View style={style.horizontalContainer}>
                     <Pressable
                         onPress={() => webViewRef.current.goBack()}
                         hitSlop={10}
-                        style={styles(theme).arrow}>
+                        style={style.arrow}>
                         <SvgImage size={SvgImageSize.sm} name="ChevronLeft" />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
                         hitSlop={10}
-                        style={[styles(theme).arrow, styles(theme).rightArrow]}>
+                        style={[style.arrow, style.rightArrow]}>
                         <SvgImage size={SvgImageSize.sm} name="ChevronRight" />
                     </Pressable>
                 </View>
             }
             headerCenter={
-                <View style={styles(theme).titleContainer}>
+                <View style={style.titleContainer}>
                     <Text
                         caption
                         medium
                         numberOfLines={1}
-                        style={styles(theme).titleText}>
+                        style={style.titleText}>
                         {site.title}
                     </Text>
                 </View>
             }
             headerRight={
-                <Pressable
-                    style={styles(theme).close}
-                    hitSlop={10}
-                    onPress={() => navigation.goBack()}>
-                    <SvgImage size={SvgImageSize.md} name="Close" />
-                </Pressable>
+                <View style={style.horizontalContainer}>
+                    <Pressable
+                        style={[
+                            style.webln,
+                            webLnSupported ? style.inactive : {},
+                        ]}
+                        hitSlop={10}
+                        onPress={() => console.info('webln')}>
+                        <SvgImage size={SvgImageSize.sm} name="Wallet" />
+                    </Pressable>
+                    <Pressable
+                        style={style.close}
+                        hitSlop={10}
+                        onPress={() => navigation.goBack()}>
+                        <SvgImage size={SvgImageSize.md} name="Close" />
+                    </Pressable>
+                </View>
             }
         />
     )
@@ -66,8 +80,9 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        arrowsContainer: {
+        horizontalContainer: {
             flexDirection: 'row',
+            alignItems: 'center',
         },
         arrow: {
             paddingVertical: theme.spacing.lg,
@@ -83,6 +98,13 @@ const styles = (theme: Theme) =>
             width: '100%',
             textAlign: 'center',
             lineHeight: 24,
+        },
+        webln: {
+            paddingVertical: theme.spacing.md,
+            opacity: 0,
+        },
+        inactive: {
+            opacity: 0.5,
         },
         close: {
             paddingVertical: theme.spacing.md,

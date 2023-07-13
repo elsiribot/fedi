@@ -107,6 +107,7 @@
         "chat-message-render-error": "Encountered an error rendering this message",
         "chat-list-render-error": "Encountered an error rendering your chats",
         "failed-to-generate-invoice": "Failed to generate invoice",
+        "failed-to-pay-invoice": "Failed to pay invoice",
         "failed-to-join-federation": "Failed to join federation",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-federation-code": "Invalid federation code",
@@ -375,6 +376,7 @@
             "you-received": "You received"
         },
         "sites": {
+            "enter-amount-to-withdraw": "Enter an amount to withdraw from {{site}}",
             "wants-to-pay-you": "{{site}} wants to pay you",
             "boost-this-post": "Boost this post on {{site}}?",
             "login-to": "Login to",

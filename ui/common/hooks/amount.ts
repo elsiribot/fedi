@@ -18,6 +18,8 @@ import { useUpdatingRef } from './util'
 export function useAmountInput(
     amount: Sats,
     onChangeAmount?: (amount: Sats) => void,
+    minimumAmount?: Sats | null,
+    maximumAmount?: Sats | null,
 ) {
     const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
     const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
@@ -57,13 +59,22 @@ export function useAmountInput(
             const regex = new RegExp(escapeSeparator, 'g')
             const sats = clampSats(parseInt(value.replace(regex, ''), 10))
             const fiat = amountUtils.satToBtc(sats) * btcToFiatRateRef.current
+            if (minimumAmount && sats < minimumAmount) return
+            if (maximumAmount && sats > maximumAmount) return
             onChangeAmount && onChangeAmount(clampSats(sats))
             setSatsValue(Intl.NumberFormat().format(sats))
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
             )
         },
-        [clampSats, onChangeAmount, currency, btcToFiatRateRef],
+        [
+            clampSats,
+            onChangeAmount,
+            currency,
+            btcToFiatRateRef,
+            minimumAmount,
+            maximumAmount,
+        ],
     )
 
     const handleChangeFiat = useCallback(
@@ -87,13 +98,22 @@ export function useAmountInput(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
 
+            if (minimumAmount && sats < minimumAmount) return
+            if (maximumAmount && sats > maximumAmount) return
             onChangeAmount && onChangeAmount(sats)
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
-        [clampSats, btcToFiatRateRef, onChangeAmount, currency],
+        [
+            clampSats,
+            btcToFiatRateRef,
+            onChangeAmount,
+            currency,
+            minimumAmount,
+            maximumAmount,
+        ],
     )
 
     const currencySymbol = useMemo(
