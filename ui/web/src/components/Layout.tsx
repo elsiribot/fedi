@@ -106,4 +106,15 @@ export const Actions = styled('div', {
     '@xs': {
         padding: 16,
     },
+
+    '@standalone': {
+        '.hide-navigation &': {
+            '@sm': {
+                paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+            },
+            '@xs': {
+                paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            },
+        },
+    },
 })
