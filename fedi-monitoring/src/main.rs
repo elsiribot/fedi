@@ -1,6 +1,6 @@
 use std::{cmp::max, net::SocketAddr, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use axum::{routing::get, Router};
 
 use clap::{arg, Args, Parser, Subcommand};
@@ -225,7 +225,13 @@ async fn run_mutinynet_load_test(args: MutinynetLoadTestArgs) -> anyhow::Result<
     let notes_amount_required =
         Amount::from_msats(max(amount_required_by_reissue, amount_required_by_invoices));
     // Check if there is enough funds in the wallet
-    refill_cli_wallet_if_needed(notes_amount_required, args.minimum_amount_refill).await?;
+    const REFILL_WALLET_TIMEOUT: Duration = Duration::from_secs(60);
+    timeout(
+        REFILL_WALLET_TIMEOUT,
+        refill_cli_wallet_if_needed(notes_amount_required, args.minimum_amount_refill),
+    )
+    .await
+    .context("Timeout while refilling the wallet")??;
     let invoices_output_file_name = tempfile::NamedTempFile::new()?;
     let mut invoices_output_file =
         tokio::io::BufWriter::new(tokio::fs::File::create(&invoices_output_file_name).await?);
