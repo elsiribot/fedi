@@ -34,7 +34,14 @@ export type ParsedLnurlPay = ParsedData<
     {
         domain: string
         callback: string
+        /** Array of raw metadata arrays, [0] is mimeType and [1] is content */
         metadata: string[][]
+        /** Short description parsed from metadata, should fit one line */
+        description?: string
+        /** Long description parsed from metadata, may contain line breaks */
+        longDescription?: string
+        /** Base64 PNG or JPEG thumbnail */
+        thumbnail?: string
         maxSendable?: number
         minSendable?: number
     }

@@ -125,6 +125,15 @@ async function parseLnurl(
                 }
             }
         } else if (params.tag === 'payRequest') {
+            const description = params.decodedMetadata.find(
+                m => m[0] === 'text/plain',
+            )?.[1]
+            const longDescription = params.decodedMetadata.find(
+                m => m[0] === 'text/long-desc',
+            )?.[1]
+            const thumbnail = params.decodedMetadata.find(m =>
+                m[0].startsWith('image/'),
+            )?.[1]
             return {
                 type: ParserDataType.LnurlPay,
                 data: {
@@ -133,6 +142,9 @@ async function parseLnurl(
                     metadata: params.decodedMetadata,
                     minSendable: params.minSendable,
                     maxSendable: params.maxSendable,
+                    description,
+                    longDescription,
+                    thumbnail,
                 },
             }
         } else if (params.tag === 'withdrawRequest') {
