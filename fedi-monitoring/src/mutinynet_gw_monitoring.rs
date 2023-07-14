@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc, time::Duration};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use axum::{http::StatusCode, Json};
 use bitcoin::secp256k1;
 use chrono::{DateTime, Utc};
@@ -97,8 +97,13 @@ pub async fn check_mutinynet(
             if summary.total_amount() <= AMOUNT_TO_REMINT {
                 info!("Not enough funds in in-memory wallet, getting more");
                 let notes_amount_required = AMOUNT_TO_REMINT;
-                refill_cli_wallet_if_needed(notes_amount_required, MINIMUM_AMOUNT_TO_REFILL)
-                    .await?;
+                const REFILL_WALLET_TIMEOUT: Duration = Duration::from_secs(60);
+                timeout(
+                    REFILL_WALLET_TIMEOUT,
+                    refill_cli_wallet_if_needed(notes_amount_required, MINIMUM_AMOUNT_TO_REFILL),
+                )
+                .await
+                .context("Timeout while refilling the wallet")??;
                 let notes =
                     try_cli_get_notes(&notes_amount_required, RETRIES_ON_OPERATIONS).await?;
                 info!("Reissuing notes");
