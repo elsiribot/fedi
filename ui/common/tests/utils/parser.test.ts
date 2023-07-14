@@ -238,10 +238,10 @@ describe('parseUserInput', () => {
     })
     testCases.push({
         input: `bitcoin:${p2wpkhAddress}?lightning=${simpleBolt11}`,
-        type: ParserDataType.Bip21,
+        type: ParserDataType.Bolt11,
         data: {
-            address: p2wpkhAddress,
-            lightning: {},
+            ...simpleBolt11Data,
+            fallbackAddress: p2wpkhAddress,
         },
     })
 

@@ -243,7 +243,7 @@ function parseBitcoinAddress(raw: string): ParsedBitcoinAddress | undefined {
 async function parseBip21(
     raw: string,
     fedimint: FedimintBridge,
-): Promise<ParsedBip21 | undefined> {
+): Promise<ParsedBip21 | ParsedBolt11 | undefined> {
     // Only consider things that start with URIs, otherwise it's handled by parseBitcoinAddress.
     if (!raw.toLowerCase().startsWith('bitcoin:')) return
 
@@ -265,16 +265,20 @@ async function parseBip21(
     const message = param('message')
     const bolt11 = param('lightning')
 
-    // Decode lightning invoice if present
-    let lightning: ParsedBolt11['data'] | undefined
+    // If lightning invoice is present, return this as a bolt11 rather than a bip21
     if (bolt11) {
         try {
-            lightning = {
-                bolt11,
-                ...(await fedimint.decodeInvoice(bolt11)),
+            const invoice = await fedimint.decodeInvoice(bolt11)
+            return {
+                type: ParserDataType.Bolt11,
+                data: {
+                    bolt11,
+                    fallbackAddress: btcAddress,
+                    ...invoice,
+                },
             }
         } catch (err) {
-            /* no-op, don't assign `lightning` */
+            /* no-op, return bip21 as-is */
         }
     }
 
@@ -285,7 +289,6 @@ async function parseBip21(
             amount: amount ? (parseFloat(amount) as Btc) : undefined,
             label,
             message,
-            lightning,
         },
     }
 }

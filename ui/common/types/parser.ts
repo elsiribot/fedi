@@ -23,7 +23,7 @@ interface ParsedData<T extends string, D = null> {
 
 export type ParsedBolt11 = ParsedData<
     ParserDataType.Bolt11,
-    { bolt11: string } & Invoice
+    { bolt11: string; fallbackAddress?: string } & Invoice
 >
 
 // No data since we don't yet support bolt 12, so no point in fully parsing.
@@ -76,7 +76,6 @@ export type ParsedBip21 = ParsedData<
         amount?: Btc
         label?: string
         message?: string
-        lightning?: ParsedBolt11['data']
     }
 >
 
