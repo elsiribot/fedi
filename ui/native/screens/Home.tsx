@@ -49,20 +49,6 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'flex-start',
         },
-        sitesContainer: {
-            flex: 1,
-            width: '88%',
-            marginVertical: theme.spacing.xl,
-        },
-        sitesTitle: {
-            color: theme.colors.primaryLight,
-            marginBottom: theme.spacing.lg,
-        },
-        sitesListContainer: {
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-        },
         cardContainer: {
             backgroundColor: theme.colors.orange,
             borderRadius: theme.borders.defaultRadius,

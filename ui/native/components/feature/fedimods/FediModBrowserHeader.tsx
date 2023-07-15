@@ -10,15 +10,15 @@ import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
-type SitesBrowserHeaderProps = {
+type FediModBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
-    site: FediMod
+    fediMod: FediMod
     webLnSupported?: boolean
 }
 
-const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
+const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     webViewRef,
-    site,
+    fediMod,
     webLnSupported = true,
 }) => {
     const { theme } = useTheme()
@@ -51,7 +51,7 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
                         medium
                         numberOfLines={1}
                         style={style.titleText}>
-                        {site.title}
+                        {fediMod.title}
                     </Text>
                 </View>
             }
@@ -111,4 +111,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default SitesBrowserHeader
+export default FediModBrowserHeader

@@ -25,7 +25,7 @@ const ShortcutsList: React.FC<{}> = () => {
         if (fediMod.url.includes('https://t.me')) {
             Linking.openURL(fediMod.url)
         } else {
-            navigation.navigate('SitesBrowser', { site: fediMod })
+            navigation.navigate('FediModBrowser', { fediMod })
         }
     }
 
@@ -39,7 +39,7 @@ const ShortcutsList: React.FC<{}> = () => {
         return fediModShortcuts.map((s: FediMod, i: number) => {
             return (
                 <ShortcutTile
-                    key={`site-s-${i}`}
+                    key={`fediMod-s-${i}`}
                     shortcut={s}
                     onSelect={onSelectFediMod}
                 />

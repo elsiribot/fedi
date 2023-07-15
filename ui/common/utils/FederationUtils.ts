@@ -1,4 +1,5 @@
-import { SITES } from '../constants/sites'
+import { DEFAULT_FEDIMODS } from '@fedi/common/constants/fedimods'
+
 import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
@@ -207,10 +208,10 @@ export const getFederationFediMods = (
             return JSON.parse(metadata.sites)
         } catch (err) {
             console.warn(
-                'Failed to parse federation sites, falling back to defaults',
+                'Failed to parse federation fedimods, falling back to defaults',
                 metadata.sites,
             )
         }
     }
-    return SITES
+    return DEFAULT_FEDIMODS
 }

@@ -77,24 +77,24 @@ export const federationSlice = createSlice({
             state,
             action: PayloadAction<{
                 federationId: Federation['id']
-                site: FediMod
+                fediMod: FediMod
             }>,
         ) {
-            const { federationId, site } = action.payload
-            const sites = state.customFediMods[federationId] || []
-            state.customFediMods[federationId] = [...sites, site]
+            const { federationId, fediMod } = action.payload
+            const fediMods = state.customFediMods[federationId] || []
+            state.customFediMods[federationId] = [...fediMods, fediMod]
         },
         removeCustomFediMod(
             state,
             action: PayloadAction<{
                 federationId: Federation['id']
-                siteId: FediMod['id']
+                fediModId: FediMod['id']
             }>,
         ) {
-            const { federationId, siteId } = action.payload
-            const sites = state.customFediMods[federationId] || []
-            state.customFediMods[federationId] = sites.filter(
-                s => s.id !== siteId,
+            const { federationId, fediModId } = action.payload
+            const fediMods = state.customFediMods[federationId] || []
+            state.customFediMods[federationId] = fediMods.filter(
+                f => f.id !== fediModId,
             )
         },
     },

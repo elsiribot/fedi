@@ -26,7 +26,7 @@ import { Invoice, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
-import SitesBrowserHeader from '../components/feature/sites/SitesBrowserHeader'
+import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
 import AmountInput from '../components/ui/AmountInput'
 import CustomOverlay, {
     CustomOverlayContents,
@@ -35,7 +35,7 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge, useBtcFiatPrice } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'SitesBrowser'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 
 type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
@@ -50,8 +50,8 @@ const parseSats = (sats: string | number): Sats => {
     }
 }
 
-const SitesBrowser: React.FC<Props> = ({ route }) => {
-    const { site } = route.params
+const FediModBrowser: React.FC<Props> = ({ route }) => {
+    const { fediMod } = route.params
     const { generateInvoice, payInvoice, listGateways } = useBridge()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -141,8 +141,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     )
     const fixedInvoiceContents = useMemo(
         () => ({
-            title: `${t('feature.sites.wants-to-pay-you', {
-                site: site.title,
+            title: `${t('feature.fedimods.wants-to-pay-you', {
+                fediMod: fediMod.title,
             })}`,
             message: `${amountUtils.formatNumber(amountRequested)} ${t(
                 'words.sats',
@@ -152,7 +152,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         }),
         [
             t,
-            site.title,
+            fediMod.title,
             amountRequested,
             convertSatsToFormattedFiat,
             rejectMakeInvoiceButton,
@@ -161,8 +161,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     )
     const dynamicInvoiceContents = useMemo(
         () => ({
-            title: `${t('feature.sites.enter-amount-to-withdraw', {
-                site: site.title,
+            title: `${t('feature.fedimods.enter-amount-to-withdraw', {
+                fediMod: fediMod.title,
             })}`,
             description: requestInvoiceArgs?.defaultMemo || '',
             body: (
@@ -185,7 +185,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             requestInvoiceArgs?.defaultMemo,
             requestInvoiceArgs?.maximumAmount,
             requestInvoiceArgs?.minimumAmount,
-            site.title,
+            fediMod.title,
             t,
         ],
     )
@@ -242,8 +242,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             : (0 as Sats)
 
         return {
-            title: t('feature.sites.payment-request', {
-                site: site.title,
+            title: t('feature.fedimods.payment-request', {
+                fediMod: fediMod.title,
             }),
             message: `${amountUtils.formatNumber(amountSats)} ${t(
                 'words.sats',
@@ -256,7 +256,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         convertSatsToFormattedFiat,
         invoiceToPay,
         rejectSendPaymentButton,
-        site.title,
+        fediMod.title,
         t,
     ])
 
@@ -408,8 +408,8 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         foundInvoice: async (data: string) => {
             if (data.toLowerCase().startsWith('lnurl')) {
                 setOverlayContents({
-                    title: t('feature.sites.login-to'),
-                    message: `${site.title}`,
+                    title: t('feature.fedimods.login-to'),
+                    message: `${fediMod.title}`,
                     buttons: [
                         {
                             text: t('words.no'),
@@ -432,7 +432,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                                     )
                                 } catch (e) {
                                     toast?.show(
-                                        t('feature.sites.login-failed'),
+                                        t('feature.fedimods.login-failed'),
                                         3000,
                                     )
                                 }
@@ -447,7 +447,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     })
 
     // FIXME: properly url-encode this
-    let uri = jwt ? `${site.url}?token=${jwt}` : site.url
+    let uri = jwt ? `${fediMod.url}?token=${jwt}` : fediMod.url
     // TODO: Remove me after alpha, just to get webln working on faucet.
     if (uri.includes('https://faucet.mutinynet.dev.fedibtc.com')) {
         uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
@@ -455,9 +455,9 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
 
     return (
         <View style={styles.container}>
-            <SitesBrowserHeader
+            <FediModBrowserHeader
                 webViewRef={webview}
-                site={site}
+                fediMod={fediMod}
                 // webLnSupported={webLnSupported}
             />
             <WebView
@@ -499,4 +499,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default SitesBrowser
+export default FediModBrowser

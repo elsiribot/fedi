@@ -50,7 +50,6 @@
         "send": "Envoyer",
         "sent": "Envoyé",
         "share": "Partager",
-        "sites": "Sites",
         "skip": "Passer",
         "status": "Statut",
         "time": "Temps",
@@ -320,13 +319,12 @@
             "receive-bitcoin-offline": "Recevoir des bitcoins hors ligne",
             "you-received": "Vous avez reçu"
         },
-        "sites": {
-            "wants-to-pay-you": "{{site}} souhaite vous payer",
-            "boost-this-post": "Booster ce post sur {{site}}?",
+        "fedimods": {
+            "wants-to-pay-you": "{{fedimod}} souhaite vous payer",
+            "boost-this-post": "Booster ce post sur {{fedimod}}?",
             "login-to": "Se connecter à",
             "login-failed": "Échec de la connexion",
-            "payment-request": "Demande de paiement de {{site}}",
-            "bitcoin-sites-fedi-wallet": "Sites Bitcoin compatibles avec votre portefeuille Fedi"
+            "payment-request": "Demande de paiement de {{fedimod}}"
         }
     }
 }

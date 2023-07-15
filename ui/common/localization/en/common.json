@@ -18,6 +18,7 @@
         "federation": "Federation",
         "federations": "Federations",
         "fedimint": "Fedimint",
+        "fedimods": "FediMods",
         "fee": "Fee",
         "general": "General",
         "group": "Group",
@@ -49,11 +50,11 @@
         "retry": "Retry",
         "remaining": "remaining",
         "sats": "sats",
+        "save": "Save",
         "send": "Send",
         "sent": "Sent",
         "settings": "Settings",
         "share": "Share",
-        "sites": "Sites",
         "skip": "Skip",
         "status": "Status",
         "time": "Time",
@@ -375,14 +376,19 @@
             "receive-bitcoin-offline": "Receive bitcoin offline",
             "you-received": "You received"
         },
-        "sites": {
-            "enter-amount-to-withdraw": "Enter an amount to withdraw from {{site}}",
-            "wants-to-pay-you": "{{site}} wants to pay you",
-            "boost-this-post": "Boost this post on {{site}}?",
+        "fedimods": {
+            "add-custom-fedimod": "Add custom FediMod",
+            "custom-fedimods": "Custom FediMods",
+            "custom-fedimod-added": "Custom FediMod added",
+            "custom-fedimod-removed": "Custom FediMod removed",
+            "fedimod-title": "FediMod Title",
+            "fedimod-url": "FediMod URL",
+            "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fedimod}}",
+            "wants-to-pay-you": "{{fedimod}} wants to pay you",
+            "boost-this-post": "Boost this post on {{fedimod}}?",
             "login-to": "Login to",
             "login-failed": "Login failed",
-            "payment-request": "Payment request from {{site}}",
-            "bitcoin-sites-fedi-wallet": "Bitcoin sites that work with your Fedi wallet"
+            "payment-request": "Payment request from {{fedimod}}"
         },
         "popup": {
             "ending-in": "Ending in <bold>{{time}}</bold>",

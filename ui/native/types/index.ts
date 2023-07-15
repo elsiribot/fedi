@@ -50,7 +50,7 @@ export class BtcLnUri extends Base {
 }
 
 export enum ShortcutType {
-    site = 'site',
+    fediMod = 'fediMod',
     screen = 'screen',
 }
 export type ShortcutIcon = {
@@ -67,7 +67,7 @@ export class Shortcut extends Base {
 }
 export class FediMod extends Shortcut {
     id: string
-    type = ShortcutType.site
+    type = ShortcutType.fediMod
     url: string
     constructor(data: any) {
         super(data)

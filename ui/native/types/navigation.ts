@@ -86,7 +86,7 @@ export type RootStackParamList = {
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
     SendSuccess: { amount: MSats; unit: string }
-    SitesBrowser: { site: FediMod }
+    FediModBrowser: { fediMod: FediMod }
     Splash: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined
