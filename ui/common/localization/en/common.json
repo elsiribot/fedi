@@ -383,13 +383,13 @@
             "custom-fedimod-removed": "Custom Fedi Mod removed",
             "fedimod-title": "Fedi Mod Title",
             "fedimod-url": "Fedi Mod URL",
-            "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fedimod}}",
+            "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fediMod}}",
             "enter-valid-url": "Please enter a valid url (http:// or https://)",
-            "wants-to-pay-you": "{{fedimod}} wants to pay you",
-            "boost-this-post": "Boost this post on {{fedimod}}?",
+            "wants-to-pay-you": "{{fediMod}} wants to pay you",
+            "boost-this-post": "Boost this post on {{fediMod}}?",
             "login-to": "Login to",
             "login-failed": "Login failed",
-            "payment-request": "Payment request from {{fedimod}}"
+            "payment-request": "Payment request from {{fediMod}}"
         },
         "popup": {
             "ending-in": "Ending in <bold>{{time}}</bold>",
