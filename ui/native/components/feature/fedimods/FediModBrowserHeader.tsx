@@ -19,7 +19,7 @@ type FediModBrowserHeaderProps = {
 const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     webViewRef,
     fediMod,
-    webLnSupported = true,
+    webLnSupported = false,
 }) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
