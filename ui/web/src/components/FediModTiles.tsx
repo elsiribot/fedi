@@ -45,7 +45,7 @@ export const FediModTiles: React.FC = () => {
 
 const Container = styled('div', {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(4, 1fr)',
     alignItems: 'end',
     justifyContent: 'space-between',
 
