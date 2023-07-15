@@ -50,15 +50,6 @@ const AmountInput: React.FC<Props> = ({
         }
     }, [])
 
-    useEffect(() => {
-        setInterval(() => {
-            console.debug(
-                'inputRef.current?.isFocused()',
-                inputRef.current?.isFocused(),
-            )
-        }, 1000)
-    }, [])
-
     return (
         <Pressable
             style={styles(theme).container}
