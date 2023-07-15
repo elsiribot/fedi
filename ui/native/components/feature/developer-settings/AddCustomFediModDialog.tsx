@@ -34,6 +34,10 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
 
     const handleSubmit = () => {
         if (!federationId) return
+        if (!url.startsWith('http')) {
+            toast?.show(t('feature.fedimods.enter-valid-url'), 3000)
+            return
+        }
         dispatch(
             addCustomFediMod({
                 federationId,
@@ -66,6 +70,14 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                     placeholder={t('feature.fedimods.fedimod-url')}
                     value={url}
                     onChangeText={setUrl}
+                    onBlur={() => {
+                        if (
+                            !url.startsWith('https://') &&
+                            !url.startsWith('http://')
+                        ) {
+                            setUrl(`https://${url}`)
+                        }
+                    }}
                     autoCapitalize={'none'}
                     autoCorrect={false}
                 />
