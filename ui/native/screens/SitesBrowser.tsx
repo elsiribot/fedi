@@ -82,7 +82,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         useState<RequestInvoiceArgs | null>(null)
     const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
     const [amountRequested, setAmountRequested] = useState<Sats>(0 as Sats)
-    const [readyToResolve, setReadyToResolve] = useState<boolean>(false)
 
     // Overlay components for makeInvoice UX
     const rejectMakeInvoiceButton = useMemo(
@@ -104,10 +103,10 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
     const acceptMakeInvoiceButton = useMemo(
         () => ({
             primary: true,
-            disabled: !readyToResolve,
+            disabled: amountRequested === 0,
             text: t('words.accept'),
             onPress: async () => {
-                if (readyToResolve) {
+                if (amountRequested > 0) {
                     try {
                         setLoading(true)
                         const invoice = await generateInvoice(
@@ -135,7 +134,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         [
             amountRequested,
             generateInvoice,
-            readyToResolve,
             requestInvoiceArgs?.defaultMemo,
             t,
             toast,
@@ -175,7 +173,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     onChangeAmount={(changedAmount: Sats) => {
                         setAmountRequested(changedAmount)
                         // enforce min/max here?
-                        setReadyToResolve(true)
                     }}
                 />
             ),
@@ -213,7 +210,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             primary: true,
             text: t('words.accept'),
             onPress: async () => {
-                if (invoiceToPay?.invoice && readyToResolve) {
+                if (invoiceToPay?.invoice) {
                     try {
                         setLoading(true)
                         const { preimage } = await payInvoice(
@@ -237,7 +234,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 }
             },
         }),
-        [payInvoice, invoiceToPay, readyToResolve, t, toast],
+        [payInvoice, invoiceToPay, t, toast],
     )
     const paymentRequestContents = useMemo(() => {
         const amountSats = invoiceToPay
@@ -263,6 +260,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         t,
     ])
 
+    // opens overlay for makeInvoice UX
     useEffect(() => {
         if (requestInvoiceArgs?.amount) {
             setOverlayContents(fixedInvoiceContents)
@@ -276,6 +274,7 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         requestInvoiceArgs,
     ])
 
+    // opens overlay for sendPayment UX
     useEffect(() => {
         if (invoiceToPay) {
             setOverlayContents(paymentRequestContents)
@@ -306,13 +305,12 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         }
     }, [showOverlay])
 
+    // Makes sure a parse amount  invoice for makeInvoice UX
     useEffect(() => {
         if (requestInvoiceArgs?.amount) {
             setAmountRequested(parseSats(requestInvoiceArgs.amount))
-            setReadyToResolve(true)
         } else if (requestInvoiceArgs?.defaultAmount) {
             setAmountRequested(parseSats(requestInvoiceArgs.defaultAmount))
-            setReadyToResolve(true)
         }
     }, [requestInvoiceArgs])
 
@@ -338,7 +336,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
         makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
-                setReadyToResolve(false)
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -349,7 +346,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                 // be convenient
                 if (typeof data === 'string' || typeof data === 'number') {
                     setAmountRequested(parseSats(data))
-                    setReadyToResolve(true)
                 } else {
                     // Handle WebLN-compliant payload
                     setRequestInvoiceArgs(data as RequestInvoiceArgs)
@@ -368,8 +364,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
-                setReadyToResolve(false)
-
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -386,7 +380,6 @@ const SitesBrowser: React.FC<Props> = ({ route }) => {
                     reject(new Error(message))
                 } else {
                     setInvoiceToPay(invoice)
-                    setReadyToResolve(true)
                 }
             })
         },
