@@ -60,7 +60,7 @@ export const Button: React.FC<Props> = ({
                 : (onClick as React.MouseEventHandler<HTMLElement>),
     }
 
-    if ('href' in props) {
+    if ('href' in props && props.href !== undefined) {
         if (typeof props.href === 'string' && props.href.startsWith('http')) {
             return (
                 <ButtonBase
