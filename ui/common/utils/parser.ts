@@ -3,7 +3,7 @@ import { TFunction } from 'i18next'
 import { getParams as getLnurlParams } from 'js-lnurl'
 import { parse as queryStringParse } from 'querystring'
 
-import { Btc } from '../types'
+import { Btc, MSats } from '../types'
 import {
     AnyParsedData,
     ParserDataType,
@@ -140,8 +140,8 @@ async function parseLnurl(
                     domain: params.domain,
                     callback: params.callback,
                     metadata: params.decodedMetadata,
-                    minSendable: params.minSendable,
-                    maxSendable: params.maxSendable,
+                    minSendable: params.minSendable as MSats | undefined,
+                    maxSendable: params.maxSendable as MSats | undefined,
                     description,
                     longDescription,
                     thumbnail,
@@ -349,7 +349,7 @@ function parseFedimintEcash(raw: string): ParsedFedimintEcash | undefined {
     // Fedimint ecash
     // TODO: Proper validation
     if (raw.startsWith('AAAAAAAA')) {
-        return { type: ParserDataType.FedimintEcash, data: null }
+        return { type: ParserDataType.FedimintEcash, data: { token: raw } }
     }
 }
 

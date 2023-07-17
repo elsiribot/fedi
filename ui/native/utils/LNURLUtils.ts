@@ -2,6 +2,9 @@ import { bech32 } from 'bech32'
 
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
+/**
+ * @deprecated use common/utils/parser.ts and common/utils/lnurl.ts instead
+ */
 class LNURLUtils {
     static DECODE_LENGTH_LIMIT: number = 4096
 

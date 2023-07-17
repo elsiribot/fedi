@@ -1,5 +1,5 @@
 import { Invoice } from './fedimint'
-import { Btc } from './units'
+import { Btc, MSats } from './units'
 
 export enum ParserDataType {
     Bolt11 = 'lightning:bolt11',
@@ -42,8 +42,8 @@ export type ParsedLnurlPay = ParsedData<
         longDescription?: string
         /** Base64 PNG or JPEG thumbnail */
         thumbnail?: string
-        maxSendable?: number
-        minSendable?: number
+        maxSendable?: MSats
+        minSendable?: MSats
     }
 >
 
@@ -86,7 +86,12 @@ export type ParsedBip21 = ParsedData<
     }
 >
 
-export type ParsedFedimintEcash = ParsedData<ParserDataType.FedimintEcash, null>
+export type ParsedFedimintEcash = ParsedData<
+    ParserDataType.FedimintEcash,
+    {
+        token: string
+    }
+>
 
 export type ParsedFederationInvite = ParsedData<
     ParserDataType.FedimintInvite,
