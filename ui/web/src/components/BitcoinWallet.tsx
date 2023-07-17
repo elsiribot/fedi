@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -21,11 +22,10 @@ import { Text } from './Text'
 
 export const BitcoinWallet: React.FC = () => {
     const { t } = useTranslation()
+    const { pathname, push } = useRouter()
     const balance = useAppSelector(selectActiveFederation)?.balance
     const btcToFiatRate = useAppSelector(selectBtcExchangeRate)
     const currency = useAppSelector(selectCurrency)
-    const [isRequestingOpen, setIsRequestingOpen] = useState(false)
-    const [isSendingOpen, setIsSendingOpen] = useState(false)
 
     const isBalanceLoading = typeof balance !== 'number'
     const isPriceLoading = isBalanceLoading || !btcToFiatRate
@@ -65,23 +65,23 @@ export const BitcoinWallet: React.FC = () => {
                 <Button
                     variant="secondary"
                     width="full"
-                    onClick={() => setIsRequestingOpen(true)}>
+                    onClick={() => push('/request')}>
                     {t('words.request')}
                 </Button>
                 <Button
                     variant="secondary"
                     width="full"
-                    onClick={() => setIsSendingOpen(true)}>
+                    onClick={() => push('/send')}>
                     {t('words.send')}
                 </Button>
             </Buttons>
             <RequestPaymentDialog
-                open={isRequestingOpen}
-                onOpenChange={setIsRequestingOpen}
+                open={pathname === '/request'}
+                onOpenChange={() => push('/')}
             />
             <SendPaymentDialog
-                open={isSendingOpen}
-                onOpenChange={setIsSendingOpen}
+                open={pathname === '/send'}
+                onOpenChange={() => push('/')}
             />
         </Container>
     )
