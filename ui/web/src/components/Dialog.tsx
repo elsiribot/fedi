@@ -43,21 +43,25 @@ export const Dialog: React.FC<Props> = ({
                         onEscapeKeyDown={handleCloseTrigger}
                         onPointerDownOutside={handleCloseTrigger}
                         onInteractOutside={handleCloseTrigger}>
-                        {title && (
-                            <Title>
-                                <Text variant="body" weight="bold">
-                                    {title}
-                                </Text>
-                            </Title>
+                        {(title || description) && (
+                            <Header>
+                                {title && (
+                                    <Title>
+                                        <Text variant="body" weight="bold">
+                                            {title}
+                                        </Text>
+                                    </Title>
+                                )}
+                                {description && (
+                                    <Description>
+                                        <Text variant="caption" weight="medium">
+                                            {description}
+                                        </Text>
+                                    </Description>
+                                )}
+                            </Header>
                         )}
-                        {description && (
-                            <Description>
-                                <Text variant="caption" weight="medium">
-                                    {description}
-                                </Text>
-                            </Description>
-                        )}
-                        {children}
+                        <Main>{children}</Main>
                         {!disableClose && (
                             <CloseButton>
                                 <Icon icon={CloseIcon} />
@@ -85,11 +89,9 @@ const Overlay = styled(RadixDialog.Overlay, {
     animation: `${overlayShow} 150ms ease`,
 
     '@sm': {
-        padding: 24,
+        padding: 0,
         alignItems: 'flex-start',
-    },
-    '@xs': {
-        padding: 16,
+        background: theme.colors.secondary,
     },
 })
 
@@ -106,6 +108,8 @@ const contentShow = keyframes({
 
 const Content = styled(RadixDialog.Content, {
     position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
     padding: 32,
     borderRadius: 20,
     width: '90vw',
@@ -116,11 +120,13 @@ const Content = styled(RadixDialog.Content, {
     '@sm': {
         padding: 24,
         width: '100%',
+        height: '100%',
+        borderRadius: 0,
+        maxWidth: 'none !important',
     },
 
     '@xs': {
         padding: 16,
-        borderRadius: 16,
     },
 
     variants: {
@@ -141,6 +147,12 @@ const Content = styled(RadixDialog.Content, {
     },
 })
 
+const Header = styled('div', {
+    '@sm': {
+        textAlign: 'center',
+    },
+})
+
 const Title = styled(RadixDialog.Title, {
     marginBottom: 8,
 })
@@ -148,6 +160,12 @@ const Title = styled(RadixDialog.Title, {
 const Description = styled(RadixDialog.Description, {
     color: theme.colors.darkGrey,
     marginBottom: 20,
+})
+
+const Main = styled('div', {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
 })
 
 const CloseButton = styled(RadixDialog.Close, {
@@ -162,5 +180,10 @@ const CloseButton = styled(RadixDialog.Close, {
 
     '&:hover, &:focus': {
         opacity: 1,
+    },
+
+    '@sm': {
+        top: 18,
+        right: 18,
     },
 })
