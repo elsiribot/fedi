@@ -2,6 +2,9 @@
 
 echo "Run with 'source ./scripts/build.sh [fed_size] [dir]"
 
+# make sure nothing is running
+pkill -9 fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet || true
+
 # allow for overriding arguments
 export FM_FED_SIZE=${1:-4}
 
@@ -32,9 +35,6 @@ cd $SRC_DIR || exit 1
 
 # Compile binaries in a way that nix can cache
 cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p ln-gateway
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p gateway-cli
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p devimint
 export PATH="$PWD/target/${CARGO_PROFILE:-debug}:$PATH"
 
 # Function for killing processes stored in FM_PID_FILE in reverse-order they were created in

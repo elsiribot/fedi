@@ -1,19 +1,17 @@
 import type {
-    AddressOrInvoice,
-    Federation,
+    Transaction,
     FedimintBridgeEventMap,
+    Federation,
     Invoice,
+    XmppCredentials,
+    RecoveredUsername,
+    SeedWords,
+    MSats,
+    Sats,
     LightningGateway,
     LnurlSignedMessage,
-    MSats,
-    RecoveredUsername,
-    Sats,
-    SeedWords,
     SocialRecoveryEvent,
     SocialRecoveryQrCode,
-    Transaction,
-    ValidateEcashResponse,
-    XmppCredentials,
 } from '../types'
 
 export class FedimintBridge {
@@ -42,8 +40,8 @@ export class FedimintBridge {
         })
     }
 
-    async joinFederation(connectString: string) {
-        return this.rpc<Federation>('joinFederation', { connectString })
+    async joinFederation(inviteCode: string) {
+        return this.rpc<Federation>('joinFederation', { inviteCode })
     }
 
     async leaveFederation(federationId: string) {
@@ -68,13 +66,6 @@ export class FedimintBridge {
 
     async decodeInvoice(invoice: string) {
         return this.rpc<Invoice>('decodeInvoice', { invoice })
-    }
-
-    async addressOrInvoice(input: string, federationId: string) {
-        return this.rpc<AddressOrInvoice>('addressOrInvoice', {
-            federationId,
-            input,
-        })
     }
 
     async payInvoice(invoice: string, federationId: string) {
@@ -108,14 +99,14 @@ export class FedimintBridge {
     }
 
     async validateEcash(ecash: string, federationId: string) {
-        return this.rpc<ValidateEcashResponse>('validateEcash', {
+        return this.rpc<MSats>('validateEcash', {
             federationId,
             ecash,
         })
     }
 
-    async lnurlSignMessage(message: string, federationId: string) {
-        return this.rpc<LnurlSignedMessage>('lnurlSignMessage', {
+    async signLnurlMessage(message: string, federationId: string) {
+        return this.rpc<LnurlSignedMessage>('signLnurlMessage', {
             message,
             federationId,
         })
@@ -144,10 +135,10 @@ export class FedimintBridge {
         return this.rpc<LightningGateway[]>('listGateways', { federationId })
     }
 
-    async switchGateway(nodePubkey: string, federationId: string) {
+    async switchGateway(gatewayId: string, federationId: string) {
         return this.rpc('switchGateway', {
             federationId,
-            nodePubkey,
+            gatewayId,
         })
     }
 

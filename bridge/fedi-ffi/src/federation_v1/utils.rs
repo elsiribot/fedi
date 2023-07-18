@@ -1,3 +1,4 @@
+// TODO: make a "shared utils" file
 use bitcoin::Network;
 use lightning_invoice::Currency;
 
@@ -9,4 +10,8 @@ pub fn display_currency(currency: Currency) -> String {
         Currency::Signet => Network::Signet.to_string(),
         Currency::Simnet => "Simnet".to_string(),
     }
+}
+
+pub fn required_threashold_of(n: usize) -> usize {
+    n - ((n - 1) / 3)
 }

@@ -75,8 +75,16 @@ format:
   cargo fmt --all
   nixpkgs-fmt $(echo **.nix)
 
-test-bridge testcase="":
-  ./scripts/test-bridge.sh "{{testcase}}"
+# FIXME: maybe we should just run the fixtures using the v0 nix shell,
+# but us the normal environment to run `cargo test`
+test-bridge-v0 testcase="":
+   nix develop .#v0 --command ./scripts/test-bridge-v0.sh "{{testcase}}"
+
+test-bridge-v1 testcase="":
+  ./scripts/test-bridge-v1.sh "{{testcase}}"
+
+test-bridge-all testcase="":
+  ./scripts/test-bridge-all.sh
 
 # start mprocs with a dev federation setup
 mprocs:
@@ -126,3 +134,7 @@ run-dev-ui mode="default":
 # installs the xcodes tool and installs a version of Xcode.app
 install-xcode:
   ./scripts/install-xcode.sh
+
+# (TEMPORARY) builds APK for a variant of the android app (Fedi Bravo) that can connect to old prague-era federations AND new ones tracking fedimint master
+build-bravo-apk:
+  ./scripts/build-bravo-apk.sh

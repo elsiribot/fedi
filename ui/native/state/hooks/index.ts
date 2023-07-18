@@ -92,12 +92,6 @@ export const useBridge = () => {
     )
 
     return {
-        addressOrInvoice: useCallback(
-            (input: string) => {
-                return fedimint.addressOrInvoice(input, activeFederationId!)
-            },
-            [activeFederationId],
-        ),
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {
                 return fedimint.approveSocialRecoveryRequest(

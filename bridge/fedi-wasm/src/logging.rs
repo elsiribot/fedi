@@ -41,14 +41,15 @@ impl<'a, T: 'a + Write> MakeWriter<'a> for MemMakeWriter<T> {
 
 pub fn init() {
     set_panic_hook();
-    tracing_subscriber::fmt()
-        .json()
-        .with_env_filter(tracing_subscriber::EnvFilter::new(
-            "info,fediffi=debug,fedimint_client=trace,fedimint_core::api=trace",
-        ))
-        .with_writer(MemMakeWriter(LOG_BUFFER.with(Arc::clone)))
-        .without_time()
-        .init();
+    tracing_wasm::set_as_global_default();
+    // tracing_subscriber::fmt()
+    //     .json()
+    //     .with_env_filter(tracing_subscriber::EnvFilter::new(
+    //         "info,fediffi=debug,fedimint_client=trace,fedimint_core::api=trace",
+    //     ))
+    //     .with_writer(MemMakeWriter(LOG_BUFFER.with(Arc::clone)))
+    //     .without_time()
+    //     .init();
 }
 
 #[wasm_bindgen]

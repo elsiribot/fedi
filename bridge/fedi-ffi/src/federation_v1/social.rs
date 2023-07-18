@@ -11,7 +11,7 @@ use fedi_social_client::common::{
     VerificationDocument,
 };
 use fedi_social_client::config::FediSocialClientConfig;
-use fedimint_core::api::{DynFederationApi, FederationApiExt, FederationResult, IFederationApi};
+use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IFederationApi};
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
@@ -99,7 +99,8 @@ pub struct SocialBackup {
 
     pub config: fedi_social_client::config::FediSocialClientConfig,
 
-    pub api: DynFederationApi,
+    // FIXME: this needs to change
+    pub api: DynModuleApi,
 }
 
 impl SocialBackup {
@@ -185,7 +186,7 @@ impl SocialBackup {
 }
 
 /// The state of recovery, that can be serialized and stored
-#[derive(Encodable, Decodable, Clone, Debug)]
+#[derive(Encodable, Decodable, Clone, Debug, Serialize, Deserialize)]
 pub struct SocialRecoveryState {
     signing_sk: SerdeEncodable<secp256k1::SecretKey>,
     encryption_key: [u8; 32],
@@ -213,7 +214,7 @@ pub struct SocialRecovery {
     state: SocialRecoveryState,
     config: FediSocialClientConfig,
     module_id: ModuleInstanceId,
-    api: DynFederationApi,
+    api: DynModuleApi,
 }
 
 impl SocialRecovery {
@@ -221,7 +222,7 @@ impl SocialRecovery {
     pub fn new_start(
         module_id: ModuleInstanceId,
         config: FediSocialClientConfig,
-        api: DynFederationApi,
+        api: DynModuleApi,
         recovery_file: RecoveryFile,
     ) -> anyhow::Result<Self> {
         recovery_file.verification_document.verify_integrity()?;
@@ -239,7 +240,7 @@ impl SocialRecovery {
     pub fn new_continue(
         module_id: ModuleInstanceId,
         config: FediSocialClientConfig,
-        api: DynFederationApi,
+        api: DynModuleApi,
         state: SocialRecoveryState,
     ) -> Self {
         Self {
@@ -306,14 +307,14 @@ impl SocialRecovery {
             .api
             .request_raw(
                 peer_id,
-                &format!("module_{}_decryption_share", self.module_id),
+                // &format!("module_{}_decryption_share", self.module_id),
+                "decryption_share",
                 &[ApiRequestErased::new(
-                    &(self
-                        .state
+                    self.state
                         .signing_sk
                         .0
                         .x_only_public_key(secp256k1::SECP256K1)
-                        .0),
+                        .0,
                 )
                 .to_json()],
             )
@@ -379,11 +380,11 @@ impl SocialRecovery {
 pub struct SocialVerification {
     peer_id: PeerId,
     module_id: ModuleInstanceId,
-    api: DynFederationApi,
+    api: DynModuleApi,
 }
 
 impl SocialVerification {
-    pub fn new(module_id: ModuleInstanceId, api: DynFederationApi, peer_id: PeerId) -> Self {
+    pub fn new(module_id: ModuleInstanceId, api: DynModuleApi, peer_id: PeerId) -> Self {
         Self {
             peer_id,
             api,
@@ -399,8 +400,9 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("module_{}_get_verification", self.module_id),
-                &[ApiRequestErased::new(&(id)).to_json()],
+                // &format!("module_{}_get_verification", self.module_id),
+                "get_verification",
+                &[ApiRequestErased::new(id).to_json()],
             )
             .await?;
 
@@ -418,8 +420,8 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("module_{}_approve_recovery", self.module_id),
-                &[ApiRequestErased::new(&(id, admin_password)).to_json()],
+                "approve_recovery",
+                &[ApiRequestErased::new((id, admin_password)).to_json()],
             )
             .await?;
 
@@ -458,8 +460,10 @@ where
         module_id: ModuleInstanceId,
         request: &SignedBackupRequest,
     ) -> FederationResult<()> {
+        tracing::info!("social_backup() {:?}", module_id);
         self.request_current_consensus(
-            format!("module_{module_id}_backup"),
+            // format!("module_{module_id}_backup"),
+            "backup".into(),
             ApiRequestErased::new(request),
         )
         .await
@@ -470,10 +474,8 @@ where
         module_id: ModuleInstanceId,
         request: &SignedRecoveryRequest,
     ) -> FederationResult<()> {
-        self.request_current_consensus(
-            format!("module_{module_id}_recover"),
-            ApiRequestErased::new(request),
-        )
-        .await
+        tracing::info!("social_recovery() {:?}", module_id);
+        self.request_current_consensus("recover".into(), ApiRequestErased::new(request))
+            .await
     }
 }

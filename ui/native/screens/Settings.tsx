@@ -191,7 +191,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         label={t('feature.federations.invite-members')}
                         onPress={() => {
                             navigation.navigate('FederationInvite', {
-                                inviteLink: activeFederation.connectInfo,
+                                inviteLink: activeFederation.inviteCode,
                             })
                         }}
                     />

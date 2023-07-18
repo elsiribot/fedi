@@ -14,7 +14,7 @@ use tracing::metadata::LevelFilter;
 use tracing_serde::AsSerde;
 use tracing_subscriber::{layer::SubscriberExt, prelude::*, EnvFilter, Layer};
 
-use crate::event::{Event, EventSink, TypedEventExt};
+use super::event::{Event, EventSink, TypedEventExt};
 
 pub struct ReactNativeLayer(pub EventSink);
 

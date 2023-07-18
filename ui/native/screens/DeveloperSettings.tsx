@@ -97,7 +97,8 @@ const DeveloperSettings: React.FC<Props> = () => {
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
-            await switchGateway(gateway.nodePubKey)
+            // v0 federation gateways use nodePubKey, v1 use gatewayId which isn't present for v0
+            await switchGateway(gateway.gatewayId || gateway.nodePubKey)
         } catch (e) {
             toast?.show('Failed to switch gateway', 3000)
         }
@@ -315,7 +316,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                         const guardian: Guardian = {
                             ...node,
                             peerId: id,
-                            password: `${id + 1}${id + 1}${id + 1}${id + 1}`,
+                            password: 'admin-pass',
                         }
                         return (
                             <CheckBox

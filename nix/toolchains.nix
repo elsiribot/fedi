@@ -48,9 +48,19 @@ let
       emulator
       ndk-bundle
       ndk-23-1-7779620
+      ndk-24-0-8215888
       cmake-3-22-1
+      cmake-3-18-1
       patcher-v4
       tools
+      # justin's emulator hacks
+      build-tools-31-0-0
+      platforms-android-32
+      system-images-android-32-google-apis-arm64-v8a
+      # ] ++ lib.optionals (!stdenv.isAarch64) [
+      #   system-images-android-32-google-apis-x86-64
+      # ] ++ lib.optionals (stdenv.isAarch64) [
+      #   system-images-android-32-google-apis-arm64-v8a
     ]);
 
   # The following hack makes fedimint compile on android:
@@ -185,59 +195,22 @@ let
     "rustfmt"
   ]);
 
-  cargoWasm32Hack = pkgs.writeShellScriptBin
-    "cargo"
-    ''
-      if grep -q "wasm32-unknown-unknown" <<< "$@" || [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-unknown" ] ; then
-        >&2 echo "Patching your wasm32 build"
-
-        export CARGO_PROFILE_RELEASE_DEBUG=0
-        export CARGO_PROFILE_RELEASE_LTO=fat
-        export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
-        export CARGO_PROFILE_RELEASE_OPT_LEVEL=z
-        export CARGO_PROFILE_RELEASE_PANIC=abort
-        export CARGO_PROFILE_RELEASE_STRING=1
-
-        # Use `Cargo.wasm32.lock` in place of the normal `Cargo.lock`
-        root="$(${fenix.packages.${system}.stable.cargo}/bin/cargo metadata --no-deps --format-version 1 | jq -r '.workspace_root')"
-        cp "$root/Cargo.lock" "$root/Cargo.native.lock"
-        cp "$root/Cargo.wasm32.lock" "$root/Cargo.lock"
-
-        # Restore files back to their place on exit
-        function restore() {
-          cp "$root/Cargo.lock" "$root/Cargo.wasm32.lock"
-          cp "$root/Cargo.native.lock" "$root/Cargo.lock"
-        }
-        trap restore EXIT
-
-        ${fenix.packages.${system}.stable.cargo}/bin/cargo \
-          --config 'patch.crates-io.ring.git="https://github.com/fedibtc/ring"' \
-          --config 'patch.crates-io.ring.rev="ef36b9371e0ec5d465db024bb15930c5dc499dbd"' \
-          "$@"
-      else
-        exec ${fenix.packages.${system}.stable.cargo}/bin/cargo "$@"
-      fi
-    '';
-
   fenixToolchainCrossAll = with fenix.packages.${system}; combine ([
-    # HACK: We need to conditionally (only for wasm32) patch `ring`
-    # and cargo can't do it natively, so we wrap `cargo` binary into
-    # our own wrapper.
-    cargoWasm32Hack
+    stable.cargo
     stable.rustc
   ] ++ (lib.attrsets.mapAttrsToList
     (attr: target: targets.${target.name}.stable.rust-std)
     crossTargets));
 
   fenixToolchainCrossWasm = with fenix.packages.${system}; combine ([
-    cargoWasm32Hack
+    stable.cargo
     stable.rustc
     targets.wasm32-unknown-unknown.stable.rust-std
   ]);
 
   fenixToolchainCross = builtins.mapAttrs
     (attr: target: with fenix.packages.${system}; combine [
-      cargoWasm32Hack
+      stable.cargo
       stable.rustc
       targets.${target.name}.stable.rust-std
     ])

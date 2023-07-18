@@ -103,8 +103,8 @@ android {
         applicationId "com.fedi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 216
-        versionName "1.12.28"
+        versionCode 196
+        versionName "1.13.0"
     }
 
     packagingOptions {
@@ -164,6 +164,10 @@ android {
         bitcoinekasi {
             dimension "env"
             applicationIdSuffix ".bitcoinekasi"
+        }
+        bravo {
+            dimension "env"
+            applicationIdSuffix ".bravo"
         }
         production {
             dimension "env"

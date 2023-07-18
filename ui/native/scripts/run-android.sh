@@ -11,4 +11,4 @@ echo "-----------------"
 yarn build-bridge-android
 
 # launch android production flavor in debug mode
-nix develop .#cross --command npx react-native run-android --active-arch-only --mode=ProductionDebug --verbose
+nix develop .#cross --command npx react-native run-android --active-arch-only --variant=ProductionDebug --verbose

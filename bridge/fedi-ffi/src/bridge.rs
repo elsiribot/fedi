@@ -1,233 +1,421 @@
-use std::{collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration};
+use crate::error::ErrorCode;
+use crate::types::MultiClientConfig;
 
-use fedi_social_client::{common::VerificationDocument, FediSocialClientGen, RecoveryId};
-use fedimint_client::{
-    backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret, sm::OperationId,
-    ClientBuilder, ClientSecret, OperationLogEntry,
+use super::event::{EventSink, SocialRecoveryEvent};
+use super::federation_v1::social::RecoveryFile;
+use super::federation_v1::FederationV1;
+use super::storage::{FediFile, Storage};
+use super::types::{
+    multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
+    RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
+    RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval, SocialRecoveryQr,
 };
-use fedimint_core::{
-    config::FederationId,
-    db::{DatabaseValue, IDatabase},
-    task::timeout,
-};
-use fedimint_ln_client::{
-    db::LightningGatewayKey, network_to_currency, LightningClientExt, LightningClientGen,
-    LightningClientModule, LightningMeta, LnPayState, LnReceiveState,
-};
-use fedimint_mint_client::{
-    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants,
-};
-use fedimint_wallet_client::{WalletClientExt, WalletClientGen};
-use serde::{Deserialize, Serialize};
-use url::Url;
-
-use crate::{
-    error::ErrorCode,
-    event::{Event, TypedEventExt},
-    recovery::{
-        SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
-    },
-    social::{
-        RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryState, SocialVerification,
-        UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
-    },
-    storage::{
-        FederationConnectInfo, FediClientConfigKey, JoinedFederation, JoinedFederationsPrefix,
-        LastBackupTimestamp, Storage, XmppUsername,
-    },
-    tx::{MyLnPayState, Transaction, TransactionDirection, TransactionKey, TransactionKeyPrefix},
-    types::{
-        self, federation_to_fedimint_federation, FediConfig, LnurlSignedMessage,
-        PayInvoiceResponse, XmppCredentials,
-    },
-    utils::display_currency,
-    EventSink,
-};
-use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::{
-    secp256k1::{Message, PublicKey, Secp256k1},
-    Network, XOnlyPublicKey,
-};
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
-use fedimint_core::{config::ClientConfig, Amount, PeerId, TieredMulti};
-use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
-use fedimint_derive_secret::{ChildId, DerivableSecret};
-use futures::StreamExt;
+use super::{federation_v0::FederationV0, translate::Translate};
+use anyhow::{anyhow, bail, Result};
+use bitcoin::secp256k1::{Message, PublicKey};
+use fedi_social_client::RecoveryId;
+use fedimint_core::config::FederationId;
+use fedimint_core::task::TaskGroup;
+use fedimint_core::{Amount, PeerId};
+use fedimint_mint_client::MintClientExt;
+use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
+use futures::future::join_all;
 use lightning_invoice::Invoice;
-
+use std::path::PathBuf;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::error;
+use tracing::info;
 
-// Client NG
-use fedimint_client::Client as ClientNg;
+// FIXME: federation-specific filename
+pub const RECOVERY_FILENAME: &str = "backup.fedi";
+pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
-// const GAP_LIMIT: usize = 100;
-pub const XMPP_CHILD_ID: ChildId = ChildId(10);
-pub const XMPP_PASSWORD: ChildId = ChildId(0);
-pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
-pub const LNURL_CHILD_ID: ChildId = ChildId(11);
-pub const NOSTR_CHILD_ID: ChildId = ChildId(12);
-pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
-// Backup twice per day
-pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
-const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
-
-#[derive(Serialize, Deserialize)]
-struct FediBackupMetadata {
-    username: Option<String>,
+pub enum MultiFederation {
+    V0(FederationV0),
+    V1(FederationV1),
 }
 
-impl FediBackupMetadata {
-    fn new(username: Option<String>) -> Self {
-        Self { username }
+impl MultiFederation {
+    async fn from_config(
+        federation_id: &RpcFederationId,
+        config: MultiClientConfig,
+        storage: &Storage,
+        event_sink: &EventSink,
+        fedi_file: Arc<FediFile>,
+    ) -> Result<Self> {
+        match config {
+            MultiClientConfig::V0(config) => Ok(Self::V0(
+                FederationV0::from_config(
+                    config,
+                    storage
+                        .federation_idb_v0(&federation_id.0.translate())
+                        .await?,
+                    event_sink.clone(),
+                    fedimint_core_v0::task::TaskGroup::new(),
+                    fedi_file,
+                )
+                .await?,
+            )),
+            MultiClientConfig::V1(config) => Ok(Self::V1(
+                FederationV1::from_config(
+                    config,
+                    storage.federation_idb(&federation_id.0).await?,
+                    event_sink.clone(),
+                    fedimint_core::task::TaskGroup::new(),
+                    fedi_file,
+                )
+                .await?,
+            )),
+        }
     }
-}
 
-/// override 127.0.0.1 if we're on android or ios
-pub fn override_localhost(url: &Url) -> Url {
-    let fedi_localhost: Option<&'static str> = option_env!("FEDI_LOCALHOST");
-    if let Some(fedi_localhost) = fedi_localhost {
-        let url = Url::from_str(&url.to_string().replace("127.0.0.1", fedi_localhost)).unwrap();
-        info!("override localhost {:?}", url);
-        url
-    } else {
-        url.clone()
+    pub fn federation_id(&self) -> FederationId {
+        match self {
+            Self::V0(multi) => multi.federation_id().translate(),
+            Self::V1(multi) => multi.federation_id(),
+        }
     }
-}
 
-fn required_threashold_of(n: usize) -> usize {
-    n - ((n - 1) / 3)
-}
+    pub async fn generate_invoice(
+        &self,
+        amount: RpcAmount,
+        description: String,
+        expiry_time: Option<u64>,
+    ) -> Result<RpcInvoice> {
+        match self {
+            Self::V0(multi) => {
+                multi
+                    .generate_invoice(amount, description, expiry_time)
+                    .await
+            }
+            Self::V1(multi) => {
+                multi
+                    .generate_invoice(amount, description, expiry_time)
+                    .await
+            }
+        }
+    }
 
-/// Load federations from storage
-async fn load_federations(
-    storage: &Storage,
-    event_sink: EventSink,
-    task_group: &TaskGroup,
-) -> anyhow::Result<Vec<Federation>> {
-    let db = storage.global_db().await?;
-    let mut dbtx = db.begin_transaction().await;
-    let joined = dbtx
-        .find_by_prefix(&JoinedFederationsPrefix)
-        .await
-        .collect::<Vec<_>>()
-        .await;
-    let iter = joined.iter().map(|(federation_id, _)| async {
-        let subgroup = task_group.make_subgroup().await;
-        Federation::from_db(
-            storage.federation_db(&federation_id.0).await?,
-            event_sink.clone(),
-            subgroup,
-        )
-        .await
-    });
-    futures::future::try_join_all(iter).await
+    pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<RpcPayInvoiceResponse> {
+        match self {
+            Self::V0(v0) => v0.pay_invoice(invoice).await,
+            Self::V1(v1) => v1.pay_invoice(invoice).await,
+        }
+    }
+
+    pub async fn list_gateways(&self) -> Result<Vec<RpcLightningGateway>> {
+        match self {
+            Self::V0(v0) => v0.list_gateways().await.map(|gws| {
+                gws.into_iter()
+                    .map(|gw| RpcLightningGateway::V0(gw))
+                    .collect()
+            }),
+            Self::V1(v1) => v1.list_gateways().await.map(|gws| {
+                gws.into_iter()
+                    .map(|gw| RpcLightningGateway::V1(gw))
+                    .collect()
+            }),
+        }
+    }
+
+    pub async fn switch_gateway(&self, gateway_id: &PublicKey) -> Result<()> {
+        match self {
+            Self::V0(v0) => v0.switch_gateway(gateway_id).await,
+            Self::V1(v1) => v1.switch_gateway(gateway_id).await,
+        }
+    }
+
+    pub async fn get_balance(&self) -> Amount {
+        match self {
+            Self::V0(v0) => v0.get_balance().await.translate(),
+            Self::V1(v1) => v1.get_balance().await,
+        }
+    }
+
+    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
+        match self {
+            Self::V0(v0) => v0.receive_ecash(ecash).await.translate(),
+            Self::V1(v1) => v1.receive_ecash(ecash).await,
+        }
+    }
+
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
+        match self {
+            Self::V0(v0) => v0.generate_ecash(amount.translate()).await.translate(),
+            Self::V1(v1) => v1.generate_ecash(amount).await,
+        }
+    }
+
+    pub async fn get_mnemonic_words(&self) -> Vec<String> {
+        match self {
+            Self::V0(v0) => v0.get_mnemonic_words().await,
+            Self::V1(v1) => v1.get_mnemonic_words().await,
+        }
+    }
+
+    pub async fn backup(&self) -> Result<()> {
+        match self {
+            Self::V0(v0) => v0.backup().await,
+            Self::V1(v1) => v1.backup().await,
+        }
+    }
+
+    pub async fn get_xmpp_username(&self) -> Option<String> {
+        match self {
+            Self::V0(v0) => {
+                v0.fedi_file
+                    .get_xmpp_username(v0.federation_id().translate())
+                    .await
+            }
+            Self::V1(v1) => v1.fedi_file.get_xmpp_username(v1.federation_id()).await,
+        }
+    }
+
+    pub async fn save_xmpp_username(&self, username: &String) {
+        match self {
+            Self::V0(v0) => v0
+                .fedi_file
+                .save_xmpp_username(v0.federation_id().translate(), username)
+                .await
+                .expect("fixme"),
+            Self::V1(v1) => v1
+                .fedi_file
+                .save_xmpp_username(v1.federation_id(), username)
+                .await
+                .expect("fixme"),
+        }
+    }
+
+    pub async fn await_restore_finished(&self) -> Result<()> {
+        match self {
+            Self::V0(v0) => v0.client.await_restore_finished().await,
+            Self::V1(v1) => v1.client.await_restore_finished().await,
+        }
+    }
+
+    pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.upload_backup_file(video_file).await,
+        }
+    }
+
+    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.start_social_recovery(recovery_file).await,
+        }
+    }
+
+    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.social_recovery_qr().await,
+        }
+    }
+
+    pub async fn download_verification_doc(
+        &self,
+        recovery_id: RecoveryId,
+    ) -> Result<Option<Vec<u8>>> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.download_verification_doc(&recovery_id).await,
+        }
+    }
+
+    pub async fn approve_social_recovery_request(
+        &self,
+        recovery_id: &RecoveryId,
+        peer_id: PeerId,
+        password: &str,
+    ) -> Result<()> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => {
+                v1.approve_social_recovery_request(recovery_id, peer_id, password)
+                    .await
+            }
+        }
+    }
+
+    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.social_recovery_approvals().await,
+        }
+    }
+
+    pub async fn social_recovery_combine_shares(&self) -> Result<bip39::Mnemonic> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.social_recovery_combine_shares().await,
+        }
+    }
+
+    pub async fn delete_social_recovery_state_and_id(&self) -> Result<()> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V1(v1) => v1.delete_social_recovery_state_and_id().await,
+        }
+    }
+
+    pub async fn sign_lnurl_message(&self, message: &Message) -> RpcSignedLnurlMessage {
+        match self {
+            Self::V0(v0) => v0.sign_lnurl_message(message).await,
+            Self::V1(v1) => v1.sign_lnurl_message(message).await,
+        }
+    }
+
+    pub async fn get_xmpp_credentials(&self) -> RpcXmppCredentials {
+        match self {
+            Self::V0(v0) => v0.get_xmpp_credentials().await,
+            Self::V1(v1) => v1.get_xmpp_credentials().await,
+        }
+    }
 }
 
 /// This is instantiated once as a global. When RPC commands come in, this struct is used as a router to look up the federation and handle the RPC command using it.
 pub struct Bridge {
     pub storage: Storage,
-    pub federations: Arc<Mutex<HashMap<FederationId, Arc<Federation>>>>,
+    pub federations: Arc<Mutex<HashMap<FederationId, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
+    // FIXME: which version should this be? should we have one of both?
     pub task_group: TaskGroup,
+    pub fedi_file: Arc<FediFile>,
 }
 
 impl Bridge {
-    pub async fn new(storage: Storage, event_sink: EventSink) -> anyhow::Result<Self> {
-        // load federations from disk
+    pub async fn new(storage: Storage, event_sink: EventSink) -> Result<Self> {
         let task_group = TaskGroup::new();
-        let mut federations_map = HashMap::new();
-        let federations_vec = load_federations(&storage, event_sink.clone(), &task_group).await?;
-
-        for federation in federations_vec.into_iter() {
-            info!("bridge loading {:?}", federation.federation_id());
-            federations_map.insert(federation.federation_id(), Arc::new(federation));
-        }
-
+        let fedi_file = Arc::new(FediFile::read(storage.clone()).await?);
+        let federations = Self::load_federations(&storage, &event_sink, &fedi_file).await?;
         let bridge = Self {
             storage,
-            federations: Arc::new(Mutex::new(federations_map)),
+            federations: Arc::new(Mutex::new(federations)),
             task_group,
             event_sink,
+            fedi_file,
         };
         Ok(bridge)
     }
 
-    /// Check if we've already joined a federation corresponding to a connection string
-    pub async fn already_joined_federation(
-        &self,
-        connect_string: String,
-    ) -> Result<Option<Arc<Federation>>> {
-        let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
-        let federations = self.federations.lock().await;
-        let federation = federations.get(&connect_cfg.id).map(|fed| fed.clone());
-        Ok(federation)
+    /// Load federations from storage
+    async fn load_federations(
+        storage: &Storage,
+        event_sink: &EventSink,
+        fedi_file: &Arc<FediFile>,
+    ) -> Result<HashMap<FederationId, Arc<MultiFederation>>> {
+        let guard = fedi_file.info.lock().await;
+        let joined = (*guard)
+            .clone()
+            .federations
+            .into_iter()
+            .map(|(federation_id, info)| (federation_id, info.client_config));
+        let iter = joined
+            .into_iter()
+            .map(|(federation_id, multi_config)| async move {
+                let multi = MultiFederation::from_config(
+                    &federation_id,
+                    multi_config,
+                    storage,
+                    event_sink,
+                    fedi_file.clone(),
+                )
+                .await?;
+                // FIXME
+                Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
+                    federation_id.0,
+                    Arc::new(multi),
+                ))
+            });
+        let pairs = futures::future::try_join_all(iter).await?;
+        Ok(HashMap::from_iter(pairs))
     }
 
-    /// Joins federation from connection string
+    /// Joins federation from invite code
     ///
     /// Federation ID saved to global database, new rocksdb database created for it, and it is saved to local hashmap by ID
-    pub async fn join_federation(&self, connect_string: String) -> Result<Arc<Federation>> {
-        // If we've already joined, return the federation we have and skip joining
-        if let Some(federation) = self
-            .already_joined_federation(connect_string.clone())
-            .await?
-        {
-            return Ok(federation);
+    pub async fn join_federation(&self, invite_code: String) -> Result<RpcFederation> {
+        // FIXME: this is kinda unreliable
+        match self.join_federation_v1(invite_code.clone()).await {
+            Ok(multi) => {
+                info!("Joined v1 federation");
+                return Ok(multi_federation_to_rpc_federation(&*multi).await);
+            }
+            Err(e) => {
+                error!("failed to join federation {e:?}");
+            }
         }
-        let federation = Federation::join(
-            connect_string,
+        match self.join_federation_v0(invite_code.clone()).await {
+            Ok(multi) => {
+                info!("Joined v0 federation");
+                return Ok(multi_federation_to_rpc_federation(&*multi).await);
+            }
+            Err(e) => {
+                error!("failed to join federation {e:?}");
+            }
+        }
+        bail!("failed to join")
+    }
+
+    async fn join_federation_v1(&self, invite_code: String) -> Result<Arc<MultiFederation>> {
+        let federation = FederationV1::join(
+            invite_code.clone(),
             &self.storage,
             self.event_sink.clone(),
             self.task_group.make_subgroup().await,
+            self.fedi_file.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();
-        {
-            let global_db = self.storage.global_db().await?;
-            let mut dbtx = global_db.begin_transaction().await;
-            dbtx.insert_entry(&JoinedFederation(federation_id), &())
-                .await;
-            dbtx.commit_tx().await;
-            info!("joined {federation_id} in global database")
-        }
         let mut federations = self.federations.lock().await;
-        if !federations.contains_key(&federation_id) {
-            federations.insert(federation_id, Arc::new(federation.clone()));
-        };
-        Ok(Arc::new(federation))
+        let multi = Arc::new(MultiFederation::V1(federation));
+        federations
+            .entry(federation_id)
+            .or_insert_with(|| multi.clone());
+        Ok(multi)
+    }
+
+    async fn join_federation_v0(&self, invite_code: String) -> Result<Arc<MultiFederation>> {
+        let federation = FederationV0::join(
+            invite_code,
+            &self.storage,
+            self.event_sink.clone(),
+            fedimint_core_v0::task::TaskGroup::new(),
+            self.fedi_file.clone(),
+        )
+        .await?;
+        let federation_id = federation.federation_id();
+        let mut federations = self.federations.lock().await;
+        let multi = Arc::new(MultiFederation::V0(federation));
+        federations
+            .entry(federation_id.translate())
+            .or_insert_with(|| multi.clone());
+        Ok(multi)
     }
 
     /// Look up federation by id from in-memory hashmap
-    pub async fn get_federation(&self, federation_id: &FederationId) -> Option<Arc<Federation>> {
+    pub async fn get_multi(&self, federation_id: &FederationId) -> Result<Arc<MultiFederation>> {
         let lock = self.federations.lock().await;
-        lock.get(federation_id).map(|federation| federation.clone())
+        lock.get(federation_id)
+            .cloned()
+            .ok_or_else(|| anyhow!("Federation not found"))
     }
 
-    /// Deletes federation client database and config
-    ///
-    /// FIXME: global db transaction might fail causing us to get into inconsistent state
-    pub async fn leave_federation(&self, federation_id: &FederationId) -> anyhow::Result<()> {
-        // shut down state machines
-        {
-            let federation = self
-                .get_federation(federation_id)
-                .await
-                .context(ErrorCode::FederationNotFound)?;
-            federation
-                .task_group
-                .clone()
-                .shutdown_join_all(Some(Duration::from_secs(10)))
-                .await?;
-        }
+    pub async fn list_federations(&self) -> Vec<RpcFederation> {
+        let lock = self.federations.lock().await;
+        join_all(lock.clone().into_iter().map(|(_, multi)| async move {
+            multi_federation_to_rpc_federation(&multi.clone()).await
+        }))
+        .await
+    }
 
-        // delete federation from global db
-        let global_db = self.storage.global_db().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.remove_entry(&JoinedFederation(federation_id.clone()))
-            .await;
-        dbtx.commit_tx().await;
+    pub async fn leave_federation(&self, federation_id: &FederationId) -> Result<()> {
+        // TODO: shutdown task groups
+        // Remove from FediFile
+        self.fedi_file.leave_federation(*federation_id).await?;
 
         // Remove from bridge state
         {
@@ -241,1189 +429,255 @@ impl Bridge {
         Ok(())
     }
 
-    /// Restore state of a joined federation from a mnemonic
-    pub async fn restore_federation(
+    pub async fn generate_invoice(
         &self,
-        federation_id: FederationId,
-        mnemonic: bip39::Mnemonic,
-    ) -> anyhow::Result<Arc<Federation>> {
-        let mut federations = self.federations.lock().await;
-        let (config, event_sink, client) = match federations.remove(&federation_id) {
-            Some(federation) => {
-                if federation.ng_balance().await > fedimint_core::Amount::from_sats(100) {
-                    bail!("Cannot restore from backup if current balance exceeds 100 sats")
-                }
-                // wipe database
-                info!("wiping database");
-                federation.ng.wipe_state().await?;
-                let config = federation.get_config().await?;
-                let event_sink = federation.event_sink.clone();
-                federation
-                    .task_group
-                    .clone()
-                    .shutdown_join_all(Some(Duration::from_secs(10)))
-                    .await?;
-                let client: ClientNg = federation.ng.as_ref().clone();
-                drop(federation);
-                (config, event_sink, client)
-            }
-            None => bail!("Cannot restore a federation we haven't joined"),
-        };
-
-        let federation = Federation::from_mnemonic(
-            mnemonic,
-            config,
-            client,
-            event_sink,
-            self.task_group.make_subgroup().await,
-        )
-        .await?;
-
-        let federation_arc = Arc::new(federation);
-        federations.insert(federation_id, federation_arc.clone());
-
-        // FIXME: where to do this?
-        federation_arc.ng.await_restore_finished().await?;
-
-        Ok(federation_arc)
-    }
-}
-
-/// Federation is a wrapper of "client ng" to assist with handling RPC commands
-#[derive(Clone)]
-pub struct Federation {
-    pub ng: Arc<ClientNg>,
-    pub event_sink: EventSink,
-    pub task_group: TaskGroup,
-}
-
-impl Federation {
-    /// Instantiate Federation from a federation-specific database
-    pub async fn from_db(
-        db: Box<dyn IDatabase>,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-    ) -> anyhow::Result<Self> {
-        let dbtx = db.begin_transaction().await;
-        let notifications = Default::default();
-        let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
-        let config = dbtx
-            .get_value(&FediClientConfigKey)
-            .await
-            .context("config not present in db")?
-            .to_string();
-        let fedi_config: FediConfig = serde_json::from_str(&config).context("invalid config")?;
-        dbtx.commit_tx().await;
-        Self::from_config(fedi_config, db, event_sink, task_group).await
-    }
-
-    /// Instantiate Federation from FediConfig
-    fn build_client_builder(config: FediConfig, db: Box<dyn IDatabase>) -> ClientBuilder {
-        let mut client_builder = ClientBuilder::default();
-        client_builder.with_module(MintClientGen);
-        client_builder.with_module(LightningClientGen);
-        client_builder.with_module(WalletClientGen);
-        client_builder.with_module(FediSocialClientGen);
-        client_builder.with_primary_module(1);
-        client_builder.with_config(config.client_config.clone());
-        client_builder.with_dyn_database(db);
-        client_builder
-    }
-
-    /// Instantiate Federation from FediConfig
-    fn build_client_builder_from_client(config: FediConfig, client: ClientNg) -> ClientBuilder {
-        let mut client_builder = ClientBuilder::default();
-        client_builder.with_module(MintClientGen);
-        client_builder.with_module(LightningClientGen);
-        client_builder.with_module(WalletClientGen);
-        client_builder.with_module(FediSocialClientGen);
-        client_builder.with_primary_module(1);
-        client_builder.with_config(config.client_config.clone());
-        client_builder.with_old_client_database(client);
-        client_builder
-    }
-
-    /// Instantiate Federation by recovering mnemonic
-    pub async fn from_mnemonic(
-        mnemonic: bip39::Mnemonic,
-        config: FediConfig,
-        client: ClientNg,
-        event_sink: EventSink,
-        mut task_group: TaskGroup,
-    ) -> anyhow::Result<Self> {
-        let client_builder = Self::build_client_builder_from_client(config.clone(), client);
-        // TODO: do something with this metadata
-        let secret = ClientSecret::<Bip39RootSecretStrategy>::new(mnemonic);
-        let (ng, metadata) = client_builder
-            .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, secret)
-            .await?;
-
-        // Pass username to contructor if one if found in backup metadata
-        let username = if let Ok(fedi_backup_metadata) =
-            metadata.to_json_deserialized::<FediBackupMetadata>()
-        {
-            fedi_backup_metadata.username
-        } else {
-            None
-        };
-
-        let federation = Self::new(Arc::new(ng), event_sink, task_group, username).await;
-
-        Ok(federation)
-    }
-
-    /// Constructor which starts a bunch of async tasks and ensures username is saved to db (e.g. after recovery)
-    pub async fn new(
-        ng: Arc<ClientNg>,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-        username: Option<String>,
-    ) -> Self {
-        let mut federation = Self {
-            ng,
-            event_sink,
-            task_group,
-        };
-        // Save username to db if we found one
-        // We want to do this before we start the listeners which is why it's here
-        if let Some(username) = username {
-            federation.set_username(username).await
-        };
-        federation.subscribe_to_all_operations().await;
-        federation.subscribe_balance_updates().await;
-        federation.poll_balance().await;
-        federation.poll_scheduled_backups().await;
-        federation
-    }
-
-    /// Instantiate Federation from FediConfig
-    pub async fn from_config(
-        config: FediConfig,
-        db: Box<dyn IDatabase>,
-        event_sink: EventSink,
-        mut task_group: TaskGroup,
-    ) -> anyhow::Result<Self> {
-        let client_builder = Self::build_client_builder(config.clone(), db);
-        let ng = client_builder
-            .build::<Bip39RootSecretStrategy>(&mut task_group)
-            .await?;
-        Ok(Self::new(Arc::new(ng), event_sink, task_group, None).await)
-    }
-
-    /// Download federation configs using a "connection string". Save client config to correct
-    /// database with Storage.
-    pub async fn join(
-        connect_string: String,
-        storage: &Storage,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-    ) -> Result<Self> {
-        // Download federation config
-        let mut connect_cfg: WsClientConnectInfo = WsClientConnectInfo::from_str(&connect_string)?;
-        connect_cfg.url = override_localhost(&connect_cfg.url);
-        let api = WsFederationApi::from_connect_info(&[connect_cfg.clone()]);
-        let mut client_config: ClientConfig = api.download_client_config(&connect_cfg).await?;
-
-        // hack for local testing
-        client_config.api_endpoints = client_config
-            .api_endpoints
-            .into_iter()
-            .map(|(peer_id, mut peer_url)| {
-                peer_url.url = override_localhost(&peer_url.url);
-                (peer_id, peer_url)
-            })
-            .collect();
-
-        let fedi_config = FediConfig { client_config };
-        let federation_id: FederationId = fedi_config.client_config.federation_id.clone();
-
-        // Save config to db
-        let dyn_db = storage.federation_db(&federation_id).await?;
-        let dbtx = dyn_db.begin_transaction().await;
-        let notifications = Default::default();
-        let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
-        {
-            tracing::info!("saving config and join code");
-            dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
-                .await;
-            dbtx.insert_entry(&FederationConnectInfo, &connect_string)
-                .await;
-            dbtx.commit_tx().await;
-            tracing::info!("saved config");
-        }
-        // TODO: delete the database if failed
-
-        tracing::info!("loading client");
-        Self::from_config(fedi_config, dyn_db, event_sink, task_group).await
-    }
-
-    /// Fetch config from database
-    pub async fn get_config(&self) -> Result<FediConfig> {
-        let config = self
-            .dbtx()
-            .await
-            .get_value(&FediClientConfigKey)
-            .await
-            .context("config not present in db")?
-            .to_string();
-        let fedi_config: FediConfig = serde_json::from_str(&config).context("invalid config")?;
-        Ok(fedi_config)
-    }
-
-    // Fetch which network we're using
-    pub fn get_network(&self) -> Network {
-        self.ng.get_network()
-    }
-
-    /// Fetch connect info we used to join this federation from the database
-    pub async fn get_connect_info(&self) -> Result<String> {
-        let connect_info = self
-            .dbtx()
-            .await
-            .get_value(&FederationConnectInfo)
-            .await
-            .context("join code not present in db")?
-            .to_string();
-        Ok(connect_info)
-    }
-
-    /// Get federation name
-    fn name(&self) -> Option<String> {
-        self.ng.get_meta("federation_name")
-    }
-
-    /// Get federation ID
-    pub fn federation_id(&self) -> FederationId {
-        self.ng.federation_id()
-    }
-
-    /// Create database transaction
-    pub async fn dbtx(&self) -> DatabaseTransaction<'_> {
-        self.ng.db().begin_transaction().await
-    }
-
-    /// Get client root secret
-    async fn root_secret(&self) -> DerivableSecret {
-        get_client_root_secret::<Bip39RootSecretStrategy>(self.ng.db()).await
-    }
-
-    /// Fetch mnemonic from database
-    pub async fn get_mnemonic(&self) -> bip39::Mnemonic {
-        self.ng
-            .root_secret_encoding::<Bip39RootSecretStrategy>()
-            .await
-    }
-
-    /// Fetch mnemonic from database as vec of strings
-    pub async fn get_mnemonic_words(&self) -> Vec<String> {
-        self.get_mnemonic()
-            .await
-            .word_iter()
-            .map(|s| s.to_string())
-            .collect()
-    }
-
-    /// backup all state and username as metadata with the federation
-    pub async fn backup(&self) -> Result<()> {
-        let backup = FediBackupMetadata::new(self.get_username().await);
-        let username = self.get_username().await;
-        info!("backupz: {username:?}");
-        self.ng
-            .backup_to_federation(Metadata::from_json_serialized(backup))
-            .await?;
-        Ok(())
-    }
-
-    /// Background task which does a backup with the federation twice per day
-    async fn poll_scheduled_backups(&mut self) {
-        let federation = self.clone();
-        self.task_group
-            .spawn(
-                format!("{:?} scheduled backups", federation.name()),
-                |_| async move {
-                    loop {
-                        if let Err(e) = federation.scheduled_backup().await {
-                            warn!("Error executing scheduled backup {e:?}");
-                        }
-                        // We check if a backup is due every 60 seconds
-                        fedimint_core::task::sleep(Duration::from_secs(60)).await;
-                    }
-                },
-            )
-            .await;
-    }
-
-    /// Execute a backup if one is due and username is present (according to db)
-    pub async fn scheduled_backup(&self) -> Result<()> {
-        let mut dbtx = self.dbtx().await;
-        let now = fedimint_core::time::now();
-        // Backup is due
-        if let Some(last_backup) = dbtx.get_value(&LastBackupTimestamp).await {
-            if now.duration_since(last_backup)? < BACKUP_FREQUENCY {
-                return Ok(());
-            }
-        };
-        // Username is present
-        if self.get_username().await.is_none() {
-            return Ok(());
-        }
-        self.backup().await?;
-        dbtx.insert_entry(&LastBackupTimestamp, &now).await;
-        dbtx.commit_tx().await;
-        info!("Finished periodic backup");
-        Ok(())
-    }
-
-    /// Fetch balance
-    pub async fn ng_balance(&self) -> fedimint_core::Amount {
-        let (mint_client, _) = self
-            .ng
-            .get_first_module::<MintClientModule>(&fedimint_mint_client::KIND);
-        let summary = mint_client
-            .get_wallet_summary(&mut self.ng.db().begin_transaction().await.with_module_prefix(1))
-            .await;
-        summary.total_amount()
-    }
-
-    /// Receive ecash
-    pub async fn ng_receive_ecash(
-        &self,
-        ecash: TieredMulti<fedimint_mint_client::SpendableNote>,
-    ) -> Result<Amount> {
-        let amount = ecash.total_amount();
-        // TODO: include metadata as 2nd argument
-        let operation_id = self.ng.reissue_external_notes(ecash, ()).await?;
-        // not saving operation id
-        let mut updates = self
-            .ng
-            .subscribe_reissue_external_notes_updates(operation_id)
-            .await
-            .unwrap()
-            .into_stream();
-
-        // TODO: run in background
-        // TODO: spawn again on startup
-        while let Some(update) = updates.next().await {
-            if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
-                return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
-            }
-
-            info!("Update: {:?}", update);
-        }
-        self.ng_save_incoming_ecash_tx(amount).await;
-        Ok(amount)
-    }
-
-    /// Generate ecash
-    pub async fn ng_generate_ecash(
-        &self,
-        amount: Amount,
-    ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
-        let (_, notes) = self.ng.spend_notes(amount, ONE_YEAR, ()).await?;
-        let amount = notes.total_amount();
-        self.ng_save_outgoing_ecash_tx(amount).await;
-        Ok(notes)
-    }
-
-    /// Generate lightning invoice
-    pub async fn ng_generate_invoice(
-        &self,
-        amount: fedimint_core::Amount,
+        federation_id: RpcFederationId,
+        amount: RpcAmount,
         description: String,
-        expiry_time: Option<u64>,
-    ) -> Result<(OperationId, Invoice)> {
-        let (operation_id, invoice) = self
-            .ng
-            .create_bolt11_invoice(amount, description, expiry_time)
-            .await?;
-
-        self.ng_subscribe_invoice(operation_id.clone(), invoice.clone())
-            .await?;
-
-        Ok((operation_id, invoice))
-    }
-
-    /// Subscribe to state updates for a given lightning invoice
-    pub async fn ng_subscribe_invoice(
-        &self,
-        operation_id: OperationId,
-        invoice: Invoice, // TODO: fetch the invoice from the db
-    ) -> Result<()> {
-        let fed = self.clone();
-        self.task_group
-            .clone()
-            .spawn("await invoice", move |_| async move {
-                let mut updates = fed
-                    .ng
-                    .subscribe_to_ln_receive_updates(operation_id)
-                    .await
-                    .unwrap() // FIXME
-                    .into_stream();
-                while let Some(update) = updates.next().await {
-                    info!("Update: {:?}", update);
-                    match update {
-                        LnReceiveState::Claimed => {
-                            fed.ng_save_incoming_lightning_tx(&invoice).await;
-                        }
-                        LnReceiveState::Canceled { reason } => {
-                            // FIXME: handle this
-                            error!("Failed to claim incoming contract: {reason}");
-                        }
-                        _ => {}
-                    }
-                }
-            })
-            .await;
-        Ok(())
-    }
-
-    /// Start background task to listen for balance updates and emit "federation" events when one is observed
-    async fn subscribe_balance_updates(&mut self) {
-        let federation = self.clone();
-        self.task_group
-            .spawn(
-                format!("{:?} balance subscription", federation.name()),
-                |_| async move {
-                    let mut updates = federation.ng.subscribe_balance_changes().await;
-                    while let Some(_) = updates.next().await {
-                        federation.send_federation_event().await;
-                    }
-                },
-            )
-            .await;
-    }
-
-    /// Send balance update every 5 seconds
-    async fn poll_balance(&mut self) {
-        let federation = self.clone();
-        self.task_group
-            .spawn(
-                format!("{:?} balance poller", federation.name()),
-                |_| async move {
-                    loop {
-                        federation.send_federation_event().await;
-                        fedimint_core::task::sleep(Duration::from_secs(5)).await;
-                    }
-                },
-            )
-            .await;
-    }
-
-    async fn override_active_gateway(&self) -> Result<()> {
-        let (_lightning, instance) = self
-            .ng
-            .get_first_module::<LightningClientModule>(&fedimint_ln_client::KIND);
-        let mut dbtx = instance.db.begin_transaction().await;
-
-        let mut gateway = self.ng.select_active_gateway().await?;
-        gateway.api = override_localhost(&gateway.api);
-        dbtx.insert_entry(&LightningGatewayKey, &gateway).await;
-        dbtx.commit_tx().await;
-
-        Ok(())
-    }
-
-    /// Pay lightning invoice
-    pub async fn ng_pay_invoice(&self, invoice: &Invoice) -> Result<PayInvoiceResponse> {
-        self.override_active_gateway().await?;
-
-        self.can_pay_invoice(invoice).await?;
-
-        let federation_id = self.federation_id();
-        let operation_id = self
-            .ng
-            .pay_bolt11_invoice(federation_id, invoice.to_owned())
-            .await?;
-
-        let response = self
-            .subscibe_to_ln_pay(operation_id, invoice.clone())
-            .await?;
-
-        return Ok(response);
-    }
-
-    /// Subscribe to updates on all active operations
-    ///
-    /// This currently doesn't have a way to filter out in-active operations ...
-    pub async fn subscribe_to_all_operations(&self) {
-        let start = fedimint_core::time::now();
-        let operations = self.ng.get_operations(1000).await;
-        for (log_key, log_entry) in operations.iter() {
-            if log_entry.outcome::<serde_json::Value>().is_none() {
-                if let Err(e) = self.subscribe_to_operation(log_key.operation_id).await {
-                    warn!(
-                        "failed to subscribe to operation: {:?} {:?}",
-                        log_key.operation_id, e
-                    );
-                }
-            }
-        }
-        info!(
-            "subscribe_to_all_operations took {:?}",
-            fedimint_core::time::now().duration_since(start)
-        );
-    }
-
-    /// Called after starting client or after spawning new state machine
-    pub async fn subscribe_to_operation(&self, operation_id: OperationId) -> Result<()> {
-        // get operation
-        let operation = self
-            .ng
-            .get_operation(operation_id)
+    ) -> Result<RpcInvoice> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        // FIXME: add this to RPC interface
+        let expiry_time = None;
+        multi
+            .generate_invoice(amount, description, expiry_time)
             .await
-            .ok_or(anyhow::anyhow!("Operation not found"))?;
-        // let ln_op = LightningCommonGen::KIND.as_str();
-        // let wallet_op = WalletCommonGen::KIND.as_str();
-        // let mint_op = WalletCommonGen::KIND.as_str();
-        match operation.operation_type() {
-            // FIXME: dont' hard-code "ln" / "mint"
-            "ln" => match operation.meta() {
-                LightningMeta::Pay { invoice, .. } => {
-                    let fed = self.clone();
-                    self.task_group
-                        .clone()
-                        .spawn("subscribe_to_ln_pay", move |_| async move {
-                            // FIXME: what happens if it fails?
-                            if let Err(e) = fed.subscibe_to_ln_pay(operation_id, invoice).await {
-                                warn!("subscribe_to_ln_pay error: {e:?}")
-                            }
-                        })
-                        .await;
-                }
-                LightningMeta::Receive { invoice, .. } => {
-                    let fed = self.clone();
-                    self.task_group
-                        .clone()
-                        .spawn("subscribe_to_ln_receive", move |_| async move {
-                            // FIXME: what happens if it fails?
-                            if let Err(e) = fed.subscibe_to_ln_receive(operation_id, invoice).await
-                            {
-                                warn!("subscribe_to_ln_receive error: {e:?}")
-                            }
-                        })
-                        .await;
-                }
-            },
-            "mint" => {
-                let meta = operation.meta::<MintMeta>();
-                match meta.variant {
-                    MintMetaVariants::SpendOOB { .. } => {
-                        debug!("can't subscribe to mint spend updates");
-                        ()
-                    }
-                    MintMetaVariants::Reissuance { .. } => {
-                        let fed = self.clone();
-                        self.task_group
-                            .clone()
-                            .spawn("subscribe_to_ecash_reissue", move |_| async move {
-                                // FIXME: what happens if it fails?
-                                fed.subscribe_to_ecash_reissue(operation_id, meta.amount)
-                                    .await
-                            })
-                            .await;
-                    }
-                }
-            }
-            // FIXME: should I return an error or just log something?
-            _ => {
-                tracing::debug!(
-                    "Can't subscribe to operation id: {}",
-                    operation.operation_type()
-                );
-            }
-        }
-
-        Ok(())
     }
 
-    pub async fn subscibe_to_ln_pay(
+    pub async fn pay_invoice(
         &self,
-        operation_id: OperationId,
-        invoice: Invoice,
-    ) -> Result<PayInvoiceResponse> {
-        let mut updates = self
-            .ng
-            .subscribe_ln_pay_updates(operation_id)
-            .await?
-            .into_stream();
-
-        match timeout(PAY_INVOICE_TIMEOUT, async {
-            while let Some(update) = updates.next().await {
-                self.ng_save_outgoing_lightning_tx(&invoice, Some(update.clone()))
-                    .await;
-                match update {
-                    LnPayState::Success { preimage } => {
-                        return Ok(PayInvoiceResponse { preimage });
-                    }
-                    LnPayState::Refunded { gateway_error } => {
-                        return Err(gateway_error.into());
-                    }
-                    _ => {}
-                };
-                info!("lightning update: {:?}", update);
-            }
-            Err(anyhow!("lightning payment failed"))
-        })
-        .await
-        {
-            Ok(result) => result,
-            Err(_) => bail!("Lightning payment failed ... awaiting refund"),
-        }
-    }
-
-    pub async fn subscibe_to_ln_receive(
-        &self,
-        operation_id: OperationId,
-        invoice: Invoice, // TODO: fetch the invoice from the db
-    ) -> Result<()> {
-        let mut updates = self
-            .ng
-            .subscribe_to_ln_receive_updates(operation_id)
-            .await
-            .expect("failed to subscribe to updates")
-            .into_stream();
-        while let Some(update) = updates.next().await {
-            info!("Update: {:?}", update);
-            match update {
-                LnReceiveState::Claimed => {
-                    self.ng_save_incoming_lightning_tx(&invoice).await;
-                }
-                LnReceiveState::Canceled { .. } => {
-                    // TODO: send message that it failed, save to db
-                    // return Err(reason.into());
-                }
-                _ => {}
-            }
-        }
-        Ok(())
-    }
-
-    pub async fn subscribe_to_ecash_reissue(
-        &self,
-        operation_id: OperationId,
-        amount: Amount,
-    ) -> Result<()> {
-        let mut updates = self
-            .ng
-            .subscribe_reissue_external_notes_updates(operation_id)
-            .await?
-            .into_stream();
-
-        while let Some(update) = updates.next().await {
-            if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
-                // FIXME: save a failed transaction to the database
-                return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
-            }
-
-            info!("Update: {:?}", update);
-        }
-        self.ng_save_incoming_ecash_tx(amount).await;
-
-        Ok(())
-    }
-
-    /// Switch active lightning gateway
-    pub async fn ng_switch_gateway(&self, pubkey: PublicKey) -> Result<()> {
-        self.ng.set_active_gateway(&pubkey).await?;
-        Ok(())
-    }
-
-    /// Fetch operation history. This isn't really used yet.
-    pub async fn ng_history(
-        &self,
-    ) -> Result<Vec<(ChronologicalOperationLogKey, OperationLogEntry)>> {
-        let ops = self.ng.get_operations(100).await;
-        Ok(ops)
-    }
-
-    // FIXME: remove this
-    pub async fn ng_save_outgoing_lightning_tx(
-        &self,
+        federation_id: RpcFederationId,
         invoice: &Invoice,
-        ln_pay_state: Option<LnPayState>,
-    ) {
-        let amount = fedimint_core::Amount::from_msats(
-            invoice
-                .amount_milli_satoshis()
-                .expect("assuming we only receive payments for invoices with amount"),
-        );
-        let fee = None;
-        let existing_tx = self
-            .get_transaction(invoice.payment_hash().to_string())
-            .await;
-        let tx = match existing_tx {
-            None => Transaction::lightning(
-                TransactionDirection::Send,
-                amount,
-                fee,
-                invoice.clone(),
-                ln_pay_state,
-            ),
-            Some(mut tx) => {
-                tx.bitcoin = ln_pay_state.map(|s| s.into());
-                tx
+    ) -> Result<RpcPayInvoiceResponse> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.pay_invoice(invoice).await
+    }
+
+    pub async fn list_gateways(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<Vec<RpcLightningGateway>> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.list_gateways().await
+    }
+
+    pub async fn switch_gateway(
+        &self,
+        federation_id: RpcFederationId,
+        gateway_id: RpcPublicKey,
+    ) -> Result<()> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.switch_gateway(&gateway_id.0).await
+    }
+
+    pub async fn receive_ecash(
+        &self,
+        federation_id: RpcFederationId,
+        ecash: String,
+    ) -> Result<RpcAmount> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.receive_ecash(ecash).await.map(RpcAmount)
+    }
+
+    pub async fn generate_ecash(
+        &self,
+        federation_id: RpcFederationId,
+        amount: RpcAmount,
+    ) -> Result<String> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.generate_ecash(amount.0).await
+    }
+
+    pub async fn get_mnemonic_words(&self, federation_id: RpcFederationId) -> Result<Vec<String>> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        Ok(multi.get_mnemonic_words().await)
+    }
+
+    pub async fn recover_from_mnemonic(
+        &self,
+        federation_id: RpcFederationId,
+        mnemonic: Vec<String>,
+    ) -> Result<Option<String>> {
+        // Check if we can recover this federation
+        let old_multi = self.get_multi(&federation_id.0).await?;
+        if old_multi.get_balance().await > fedimint_core::Amount::from_sats(100) {
+            bail!("Cannot restore from backup if current balance exceeds 100 sats")
+        }
+
+        // Recover the federation
+        let mnemonic: bip39::Mnemonic = mnemonic.join(" ").parse()?;
+        let new_multi = match &*old_multi {
+            MultiFederation::V0(v0) => {
+                let old_client = v0.prepare_for_recovery().await?;
+                drop(v0); // Release rocksdb
+                drop(old_multi); // Release rocksdb
+                MultiFederation::V0(
+                    FederationV0::from_mnemonic(
+                        mnemonic,
+                        old_client,
+                        self.event_sink.clone(),
+                        // FIXME: I think the bridge needs to maintain old and new task groups ...
+                        fedimint_core_v0::task::TaskGroup::new(),
+                        self.fedi_file.clone(),
+                    )
+                    .await?,
+                )
+            }
+            MultiFederation::V1(v1) => {
+                let old_client = v1.prepare_for_recovery().await?;
+                drop(v1); // Release rocksdb
+                drop(old_multi); // Release rocksdb
+                MultiFederation::V1(
+                    FederationV1::from_mnemonic(
+                        mnemonic,
+                        old_client,
+                        self.event_sink.clone(),
+                        self.task_group.make_subgroup().await,
+                        self.fedi_file.clone(),
+                    )
+                    .await?,
+                )
             }
         };
-        self.save_transaction(&tx, true).await;
+        let new_multi = Arc::new(new_multi);
+        let mut federations = self.federations.lock().await;
+        federations.insert(federation_id.0, new_multi.clone());
+
+        // Wait for recovery to finish
+        new_multi.await_restore_finished().await?;
+
+        // Return recovered username
+        // TODO: should probably return FediBackupMetadata instead
+        let username = new_multi.get_xmpp_username().await;
+        Ok(username)
     }
 
-    // FIXME: remove this
-    pub async fn ng_save_incoming_lightning_tx(&self, invoice: &Invoice) {
-        let amount = fedimint_core::Amount::from_msats(
-            invoice
-                .amount_milli_satoshis()
-                .expect("assuming we only receive payments for invoices with amount"),
-        );
-        let fee = None;
-        let tx = Transaction::lightning(
-            TransactionDirection::Receive,
-            amount,
-            fee,
-            invoice.clone(),
-            None,
-        );
-        self.save_transaction(&tx, true).await;
-    }
-
-    // FIXME: remove this
-    pub async fn ng_save_outgoing_ecash_tx(&self, amount: fedimint_core::Amount) {
-        let tx = Transaction::offline(TransactionDirection::Send, amount);
-        self.save_transaction(&tx, true).await;
-    }
-
-    // FIXME: remove this
-    pub async fn ng_save_incoming_ecash_tx(&self, amount: fedimint_core::Amount) {
-        let tx = Transaction::offline(TransactionDirection::Receive, amount);
-        self.save_transaction(&tx, true).await;
-    }
-
-    //
-    // Authentication & cryptography
-    //
-
-    pub async fn get_username(&self) -> Option<String> {
-        self.dbtx().await.get_value(&XmppUsername).await
-    }
-
-    pub async fn set_username(&self, username: String) {
-        let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&XmppUsername, &username).await;
-        dbtx.commit_tx().await;
-    }
-
-    /// Get Nostr Public key for a specific federation
-    pub async fn get_nostr_pub_key(&self) -> XOnlyPublicKey {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret().await;
-        let nostr_secret = root_secret.child_key(NOSTR_CHILD_ID);
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let nostr_pubkey = nostr_keypair.x_only_public_key();
-        nostr_pubkey.0
-    }
-
-    pub async fn sign_nostr_event(&self, event_hash: String) -> String {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret().await;
-        let nostr_secret = root_secret.child_key(NOSTR_CHILD_ID);
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let data = &hex::decode(event_hash).unwrap();
-        let message = Message::from_slice(data).unwrap();
-        let sig = secp.sign_schnorr(&message, &nostr_keypair);
-        hex::encode(sig.to_bytes())
-    }
-
-    /// Sign LNURL message using a key derived from client secret
-    /// TODO: use different key per "site"
-    pub async fn sign_lnurl_message(&self, msg: &Message) -> LnurlSignedMessage {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret().await;
-        let lnurl_secret = root_secret.child_key(LNURL_CHILD_ID);
-        let lnurl_keypair = lnurl_secret.to_secp_key(&secp);
-        let lnurl_pubkey = lnurl_keypair.public_key();
-        let signature = secp.sign_ecdsa(msg, &lnurl_keypair.secret_key());
-        LnurlSignedMessage {
-            signature,
-            pubkey: types::PublicKey(lnurl_pubkey),
-        }
-    }
-
-    /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
-    /// after recovering wallet.
-    pub async fn xmpp_credentials(&self) -> XmppCredentials {
-        let root_secret = self.root_secret().await;
-        let xmpp_secret = root_secret.child_key(XMPP_CHILD_ID);
-        let password_bytes: [u8; 16] = xmpp_secret.child_key(XMPP_PASSWORD).to_random_bytes();
-        let keypair_seed_bytes: [u8; 32] =
-            xmpp_secret.child_key(XMPP_KEYPAIR_SEED).to_random_bytes();
-        let username = self.get_username().await;
-
-        XmppCredentials {
-            password: hex::encode(&password_bytes),
-            keypair_seed: hex::encode(&keypair_seed_bytes),
-            username,
-        }
-    }
-
-    /// Check whether lightning invoice is safe to pay
-    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
-        // Has an amount
-        if invoice.amount_milli_satoshis().is_none() {
-            return Err(anyhow!("Invoice is missing amount"));
-        }
-
-        // Same network
-        if network_to_currency(self.get_network()) != invoice.currency() {
-            return Err(anyhow!(format!(
-                "Invoice is for wrong network. Expected {}, got {}",
-                self.get_network(),
-                display_currency(invoice.currency())
-            )));
-        }
-
-        Ok(())
-    }
-
-    /// Save transaction to DB
-    /// `send_event` is whether to send event to react native, which might send push notifications
-    pub async fn save_transaction(&self, tx: &Transaction, send_event: bool) {
-        // TODO: need to expose the database
-        let mut dbtx = self.dbtx().await;
-        tracing::info!("saving tx {:?}", tx.amount);
-        dbtx.insert_entry(&TransactionKey(tx.id.clone()), tx).await;
-        dbtx.commit_tx().await;
-        // notify UI
-        if send_event {
-            self.send_transaction_event(&tx);
-        }
-    }
-
-    /// Get transaction from DB
-    pub async fn get_transaction(&self, id: String) -> Option<Transaction> {
-        self.dbtx().await.get_value(&TransactionKey(id)).await
-    }
-
-    /// Update "notes" on existing transaction record in the DB
-    /// FIXME: improve this "id" arg
-    pub async fn update_transaction_notes(&self, id: String, notes: String) -> Result<()> {
-        match self.get_transaction(id).await {
-            Some(mut tx) => {
-                tx.notes = notes;
-                self.save_transaction(&tx, false).await;
-                Ok(())
-            }
-            None => Err(anyhow!("Transaction not found")),
-        }
-    }
-
-    /// Return all transactions in DB
-    pub async fn list_transactions(&self) -> Vec<Transaction> {
-        let mut transactions: Vec<Transaction> = self
-            .dbtx()
-            .await
-            .find_by_prefix(&TransactionKeyPrefix)
-            .await
-            .map(|res| res.1)
-            .collect()
-            .await;
-        // Sort by timestamp, descending
-        transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        transactions
-    }
-
-    //
-    // Events
-    //
-
-    /// Send whenever the balance or social recovery state changes
-    pub async fn send_federation_event(&self) {
-        // FIXME: should handle this result
-        let fedimint_federation =
-            match federation_to_fedimint_federation(&Arc::new(self.clone())).await {
-                Ok(fedimint_federation) => fedimint_federation,
-                Err(e) => {
-                    warn!("Failed to send 'federation' event {:?}", e);
-                    return;
-                }
-            };
-        let event = Event::federation(fedimint_federation).await;
-        self.event_sink.typed_event(&event);
-    }
-
-    /// Notify React Native that we've observed new or updated transaction
-    fn send_transaction_event(&self, tx: &Transaction) {
-        let event = Event::transaction(self.federation_id(), tx.clone());
-        self.event_sink.typed_event(&event);
-    }
-
-    /// Generate social recovery secret from root secret
-    pub fn social_recovery_secret_static(root_secret: &DerivableSecret) -> DerivableSecret {
-        assert_eq!(root_secret.level(), 0);
-        root_secret.child_key(SOCIAL_RECOVERY_SECRET_CHILD_ID)
-    }
-
-    // Create social backup client
-    pub async fn social_backup(&self) -> Result<SocialBackup> {
-        let (module_id, cfg) = self
-            .get_config()
-            .await?
-            .client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        Ok(SocialBackup {
-            module_secret: Self::social_recovery_secret_static(&self.root_secret().await),
-            module_id,
-            config: cfg,
-            api: self.ng.dyn_api(),
-        })
-    }
-
-    /// Start social recovery session
-    pub async fn social_recovery_start(
+    pub async fn upload_backup_file(
         &self,
-        recovery_file: RecoveryFile,
-    ) -> anyhow::Result<SocialRecovery> {
-        let (module_id, cfg) = self
-            .get_config()
-            .await?
-            .client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        SocialRecovery::new_start(module_id, cfg, self.ng.dyn_api(), recovery_file)
-    }
-
-    /// Continue social recovery session
-    pub async fn social_recovery_continue_inner(
-        &self,
-        prev_state: SocialRecoveryState,
-    ) -> Result<SocialRecovery> {
-        let (module_id, cfg) = self
-            .get_config()
-            .await?
-            .client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        Ok(SocialRecovery::new_continue(
-            module_id,
-            cfg,
-            self.ng.dyn_api(),
-            prev_state,
-        ))
-    }
-
-    /// Attempt to continue a previous social recovery session by loading state from DB
-    pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
-        let mut dbtx = self.dbtx().await;
-        let state = dbtx
-            .get_value(&SocialRecoveryStateKey(self.federation_id()))
-            .await
-            .ok_or(anyhow!("no active recovery session"))?;
-        Ok(self.social_recovery_continue_inner(state).await?)
-    }
-
-    /// Get social verification client for a guardian
-    pub async fn social_verification(&self, peer_id: PeerId) -> Result<SocialVerification> {
-        let (module_id, _cfg) = self
-            .get_config()
-            .await?
-            .client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        Ok(SocialVerification::new(
-            module_id,
-            self.ng.dyn_api(),
-            peer_id,
-        ))
-    }
-
-    /// Upload social recovery recovery file to federation given a recovery video
-    pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
-        let verification_doc = VerificationDocument::from_raw(&video_file);
-
-        let seed_words = self.get_mnemonic_words().await;
-        let seed_string = seed_words.join(" ");
-        let seed_phrase = UserSeedPhrase::from(seed_string);
-
-        let backup_client = self.social_backup().await?;
-        let recovery_file =
-            backup_client.prepare_recovery_file(verification_doc.clone(), seed_phrase.clone());
-        backup_client
-            .upload_backup_to_federation(&recovery_file)
+        federation_id: RpcFederationId,
+        video_file_path: PathBuf,
+    ) -> Result<PathBuf> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        let storage = self.storage.clone();
+        let video_file = storage.read_file(&video_file_path).await?;
+        let recovery_file = multi.upload_backup_file(video_file).await?;
+        storage
+            .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
             .await?;
-        Ok(recovery_file.to_bytes())
+        Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
     }
 
-    /// Save social recovery session state to the DB
-    pub async fn social_recovery_save(
+    pub async fn validate_recovery_file(
         &self,
-        recovery_client: &SocialRecovery,
-        dbtx: &mut DatabaseTransaction<'_>,
-    ) {
-        // FIXME: should I pass dbtx from outside?
-        dbtx.insert_entry(
-            &SocialRecoveryStateKey(self.federation_id()),
-            recovery_client.state(),
-        )
-        .await;
+        federation_id: RpcFederationId,
+        recovery_file_path: PathBuf,
+    ) -> Result<bool> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        let recovery_file_bytes = self.storage.read_file(&recovery_file_path).await?;
+        let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
+        multi.start_social_recovery(&recovery_file).await?;
+        let valid = RecoveryFile::from_bytes(&recovery_file_bytes).is_ok();
+        Ok(valid)
     }
 
-    /// Get social recovery Id from the DB. This is used to generate the recovery QR.
-    pub async fn get_social_recovery_id(&self) -> Option<types::RecoveryId> {
-        self.dbtx()
-            .await
-            .get_value(&SocialRecoveryIdKey(self.federation_id()))
-            .await
-            .map(types::RecoveryId)
+    pub async fn recovery_qr(&self, federation_id: RpcFederationId) -> Result<SocialRecoveryQr> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
+        let recovery_file_bytes = self.storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
+        let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
+        // Upload verification document if none exists.
+        multi.start_social_recovery(&recovery_file).await?;
+        multi.social_recovery_qr().await
     }
 
-    /// Save social recovery ID to the DB. This is used to generate the recovery QR.
-    pub async fn save_social_recovery_id(
+    pub async fn social_recovery_approvals(
         &self,
-        recovery_id: &RecoveryId,
-        dbtx: &mut DatabaseTransaction<'_>,
-    ) {
-        dbtx.insert_entry(&SocialRecoveryIdKey(self.federation_id()), &recovery_id)
-            .await;
-    }
-
-    /// Start a new social recovery session if one doesn't exist already
-    /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
-    /// Also won't be able to do simulataneous recoveries in 2 federations.
-    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
-        let mut dbtx = self.dbtx().await;
-        let recovery_client = match self.social_recovery_continue().await {
-            Ok(recovery_client) => recovery_client,
-            Err(_) => {
-                let recovery_client = self.social_recovery_start(recovery_file.clone()).await?;
-                self.social_recovery_save(&recovery_client, &mut dbtx).await;
-                recovery_client
-            }
+        federation_id: RpcFederationId,
+    ) -> Result<SocialRecoveryEvent> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        let (approvals, remaining) = multi.social_recovery_approvals().await?;
+        let result = SocialRecoveryEvent {
+            federation_id,
+            approvals,
+            remaining,
         };
-        // If we don't have a social recovery ID in the database, create one
-        if self.get_social_recovery_id().await.is_none() {
-            tracing::info!("saving social recovery id");
-            let verification_request = recovery_client
-                .create_verification_request(recovery_file.verification_document.clone())?;
-            recovery_client
-                .upload_verification_request(&verification_request)
-                .await
-                .context("upload verification request")?;
-            let recovery_id = verification_request.recovery_id();
-            self.save_social_recovery_id(&recovery_id, &mut dbtx).await;
-        }
-        dbtx.commit_tx().await;
-        self.send_federation_event().await;
-        Ok(())
+        Ok(result)
     }
 
-    /// Produce social recovery QR
-    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
-        // Return social recovery QR
-        tracing::info!("looking up recovery id for qr");
-        let recovery_id = self
-            .get_social_recovery_id()
-            .await
-            .ok_or(anyhow!("No recovery ID found"))?;
-        Ok(SocialRecoveryQr { recovery_id })
-    }
-
-    /// Download social recovery video to `data_dir`
-    pub async fn social_recovery_download_verification_doc(
+    pub async fn download_verification_doc(
         &self,
-        recovery_id: &RecoveryId,
-    ) -> Result<Option<Vec<u8>>> {
-        tracing::info!("downloading verificaiton doc {}", recovery_id);
-        // FIXME: maybe shouldn't download from only one peer?
-        let verification_client = self.social_verification(PeerId::from(0)).await?;
-        let verification_doc = verification_client
-            .download_verification_doc(*recovery_id)
-            .await?;
+        federation_id: RpcFederationId,
+        recovery_id: RpcRecoveryId,
+    ) -> Result<Option<PathBuf>> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        let verification_doc = multi.download_verification_doc(recovery_id.0).await?;
         if let Some(verification_doc) = verification_doc {
-            tracing::info!("downloaded verification doc");
-            return Ok(Some(verification_doc.to_raw()?));
-        };
-        tracing::info!("no verificaiton doc found");
-
-        Ok(None)
+            self.storage
+                .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
+                .await?;
+            tracing::info!("saved verificaiton doc");
+            Ok(Some(
+                self.storage.platform_path(VERIFICATION_FILENAME.as_ref()),
+            ))
+        } else {
+            Ok(None)
+        }
     }
 
-    /// Approve social recovery request
     pub async fn approve_social_recovery_request(
         &self,
-        recovery_id: &RecoveryId,
-        peer_id: PeerId,
-        password: &str,
+        federation_id: RpcFederationId,
+        recovery_id: RpcRecoveryId,
+        peer_id: RpcPeerId,
+        password: String,
     ) -> Result<()> {
-        tracing::info!("approve social recovery {} {}", peer_id, password);
-        let verification_client = self.social_verification(peer_id).await?;
-        verification_client
-            .approve_recovery(*recovery_id, password)
-            .await?;
-        Ok(())
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi
+            .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
+            .await
     }
 
-    /// Get a list of the state of all social recoveries from all guardians
-    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
-        let mut recovery_client = self.social_recovery_continue().await?;
-        let guardian_peer_ids: Vec<(String, PeerId)> = self
-            .get_config()
+    pub async fn complete_social_recovery(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<Option<String>> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        let mnemonic = multi
+            .social_recovery_combine_shares()
             .await?
-            .client_config
-            .api_endpoints
-            .into_iter()
-            .map(|(peer_id, endpoint)| (endpoint.name.clone(), peer_id))
+            .word_iter()
+            .map(|s| s.to_string())
             .collect();
-        let mut approvals = vec![];
-        for (guardian_name, peer_id) in guardian_peer_ids {
-            let approved = recovery_client
-                .get_decryption_share_from(peer_id)
-                .await
-                .unwrap_or_else(|_| {
-                    debug!("failed to get decryption share from peer {}", peer_id);
-                    false
-                });
-            approvals.push(SocialRecoveryApproval {
-                guardian_name,
-                approved,
-            });
-        }
-
-        // calculate approvals remaining
-        let approvals_required = required_threashold_of(approvals.len());
-        let num_approvals = approvals.iter().filter(|a| a.approved).count();
-        let remaining = approvals_required.saturating_sub(num_approvals);
-
-        // Save progress to DB
-        let mut dbtx = self.dbtx().await;
-        self.social_recovery_save(&recovery_client, &mut dbtx).await;
-        dbtx.commit_tx().await;
-
-        Ok((approvals, remaining))
+        let username = self
+            .recover_from_mnemonic(federation_id.into(), mnemonic)
+            .await?;
+        multi.delete_social_recovery_state_and_id().await?;
+        Ok(username)
     }
 
-    /// Attempt to recovery mnemonic from recovery shares available for download from the federation
-    pub async fn social_recovery_combine_shares(&self) -> Result<bip39::Mnemonic> {
-        let recovery_client = self.social_recovery_continue().await?;
-        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
-        let mnemonic = bip39::Mnemonic::parse(seed_phrase.0)?;
-        Ok(mnemonic)
+    pub async fn sign_lnurl_message(
+        &self,
+        federation_id: RpcFederationId,
+        message: Message,
+    ) -> Result<RpcSignedLnurlMessage> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        Ok(multi.sign_lnurl_message(&message).await)
     }
 
-    /// Delete all social recovery state from DB
-    pub async fn delete_social_recovery_state_and_id(&self) {
-        let mut dbtx = self.dbtx().await;
-        dbtx.remove_entry(&SocialRecoveryStateKey(self.federation_id()))
-            .await;
-        dbtx.remove_entry(&SocialRecoveryIdKey(self.federation_id()))
-            .await;
-        // TODO: delete the verification file?
-        dbtx.commit_tx().await;
+    pub async fn xmpp_credentials(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<RpcXmppCredentials> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        Ok(multi.get_xmpp_credentials().await)
+    }
+
+    pub async fn backup_xmpp_username(
+        &self,
+        federation_id: RpcFederationId,
+        username: String,
+    ) -> Result<()> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.save_xmpp_username(&username).await;
+        multi.backup().await
     }
 }

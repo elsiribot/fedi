@@ -12,17 +12,16 @@ use anyhow::{anyhow, bail, Context};
 use bitcoin::secp256k1;
 
 use fedimint_client::{
-    module::IPrimaryClientModule, secret::PlainRootSecretStrategy, sm::OperationId,
-    transaction::TransactionBuilder, Client, ClientBuilder,
+    secret::PlainRootSecretStrategy, sm::OperationId, transaction::TransactionBuilder, Client,
+    ClientBuilder,
 };
 use fedimint_core::{
     config::ClientConfig,
     core::IntoDynInstance,
     module::{CommonModuleGen, __reexports::serde_json},
-    task::TaskGroup,
     Amount, OutPoint, TieredMulti, TieredSummary,
 };
-use fedimint_ln_client::{LightningClientExt, LightningClientGen, LnPayState};
+use fedimint_ln_client::{LightningClientExt, LightningClientGen, LnPayState, PayType};
 use fedimint_mint_client::{
     parse_ecash, MintClientExt, MintClientGen, MintClientModule, MintCommonGen, SpendableNote,
 };
@@ -210,16 +209,17 @@ pub async fn cli_wait_invoice(invoice: &Invoice) -> anyhow::Result<String> {
     Ok(txid)
 }
 
-pub async fn build_client(cfg: &ClientConfig, tg: &mut TaskGroup) -> anyhow::Result<Client> {
+pub async fn build_client(cfg: &ClientConfig) -> anyhow::Result<Client> {
     let mut client_builder = ClientBuilder::default();
     client_builder.with_module(MintClientGen);
     client_builder.with_module(LightningClientGen);
-    client_builder.with_module(WalletClientGen);
+    // FIXME: do we want to inject bitcoin client at all?
+    client_builder.with_module(WalletClientGen(None));
     client_builder.with_primary_module(1);
     client_builder.with_config(cfg.clone());
     let db = fedimint_core::db::mem_impl::MemDatabase::new();
     client_builder.with_database(db);
-    let client = client_builder.build::<PlainRootSecretStrategy>(tg).await?;
+    let client = client_builder.build::<PlainRootSecretStrategy>().await?;
     Ok(client)
 }
 
@@ -259,7 +259,7 @@ pub async fn remint_denomination(
             out_idx: i as u64,
         };
         mint_client
-            .await_primary_module_output_finalized(operation_id, out_point)
+            .await_output_finalized(operation_id, out_point)
             .await?;
     }
     Ok(())
@@ -279,7 +279,7 @@ pub async fn reissue_notes(
 ) -> anyhow::Result<()> {
     let operation_id = client.reissue_external_notes(notes, ()).await?;
     let mut updates = client
-        .subscribe_reissue_external_notes_updates(operation_id)
+        .subscribe_reissue_external_notes(operation_id)
         .await?
         .into_stream();
     while let Some(update) = updates.next().await {
@@ -291,13 +291,10 @@ pub async fn reissue_notes(
 }
 
 pub async fn gateway_pay_invoice(client: &Client, invoice: Invoice) -> anyhow::Result<()> {
-    let operation_id = client
-        .pay_bolt11_invoice(client.federation_id(), invoice)
-        .await?;
-    let mut updates = client
-        .subscribe_ln_pay_updates(operation_id)
-        .await?
-        .into_stream();
+    let (PayType::Lightning(operation_id), _) = client.pay_bolt11_invoice(invoice).await? else {
+        bail!("invoice is an external invoice")
+    };
+    let mut updates = client.subscribe_ln_pay(operation_id).await?.into_stream();
     while let Some(update) = updates.next().await {
         info!("LnPayState update: {:?}", update);
         match update {

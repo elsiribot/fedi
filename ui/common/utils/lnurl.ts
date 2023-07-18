@@ -16,7 +16,7 @@ export async function lnurlAuth(
     federationId: string,
     lnurlData: ParsedLnurlAuth['data'],
 ) {
-    const { signature, pubkey } = await fedimint.lnurlSignMessage(
+    const { signature, pubkey } = await fedimint.signLnurlMessage(
         lnurlData.k1,
         federationId,
     )

@@ -54,7 +54,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     style={styles(theme).iconImage}
                     onPress={() => {
                         navigation.navigate('FederationInvite', {
-                            inviteLink: federation.connectInfo,
+                            inviteLink: federation.inviteCode,
                         })
                     }}>
                     <SvgImage name="Qr" />

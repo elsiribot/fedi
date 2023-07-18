@@ -63,7 +63,8 @@ jobs:
               run: nix build -L .#fedi-monitoring
 
             - name: Test bridge
-              run: nix build -L .#testBridge
+              # TODO: turn this into a nix derivation
+              run: ./scripts/test-bridge-all.sh
 
     build-android:
         name: 'Build - android'

@@ -1,19 +1,47 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 if [[ -z "${IN_NIX_SHELL:-}" ]]; then
-  echo "It is recommended to run this command from a Nix dev shell. Use 'nix develop' first"
-  sleep 3
+  echo "Run "nix develop" first"
+  exit 1
 fi
 
-# Flag to enable verbose build output from depndent processes (disabled by default)
-export FM_VERBOSE_OUTPUT=0
+FM_TEST_DIR="$TMP/fm-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 4 || true)"
+export FM_TEST_DIR
+export FM_FED_SIZE=4
+export FM_PID_FILE="$FM_TEST_DIR/.pid"
+export FM_LOGS_DIR="$FM_TEST_DIR/logs"
 
-source scripts/build.sh
+mkdir $FM_TEST_DIR
+mkdir $FM_LOGS_DIR
+touch $FM_PID_FILE
 
-devimint dev-fed 2>/dev/null &
+# FIXME: use build.sh???
+cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
+export PATH=$PWD/target/debug:$PATH
+
+# Flag to have devimint use binaries in specific folder, e.g. "../fedimint/target/debug"
+if [ -n "$DEVIMINT_BIN" ]; then
+  export PATH=$DEVIMINT_BIN:$PATH
+fi
+
+# social recovery module needs this
+export FM_ADMIN_PASSWORD=admin-pass
+
+devimint dev-fed &> $FM_LOGS_DIR/devimint-outer.log &
 echo $! >> $FM_PID_FILE
-eval "$(devimint env)"
+
+
+# Function for killing processes stored in FM_PID_FILE in reverse-order they were created in
+function kill_fedimint_processes {
+  echo "Killing fedimint processes"
+  PIDS=$(cat $FM_PID_FILE | sed '1!G;h;$!d') # sed reverses order
+  if [ -n "$PIDS" ]
+  then
+    kill $PIDS 2>/dev/null
+  fi
+  rm -f $FM_PID_FILE
+}
+
+trap kill_fedimint_processes EXIT
 
 mprocs -c misc/mprocs.yaml

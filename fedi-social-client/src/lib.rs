@@ -7,10 +7,11 @@ use fedimint_client::module::gen::ClientModuleGen;
 use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
+use fedimint_core::api::{DynGlobalApi, DynModuleApi};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::ExtendsCommonModuleGen;
+use fedimint_core::module::{ApiVersion, ExtendsCommonModuleGen, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
 
 #[derive(Debug, Clone)]
@@ -23,14 +24,22 @@ impl ExtendsCommonModuleGen for FediSocialClientGen {
 #[apply(async_trait_maybe_send!)]
 impl ClientModuleGen for FediSocialClientGen {
     type Module = FediSocialClientModule;
-    type Config = FediSocialClientConfig;
 
+    fn supported_api_versions(&self) -> MultiApiVersion {
+        MultiApiVersion::try_from_iter([ApiVersion { major: 0, minor: 0 }])
+            .expect("no version conficts")
+    }
+
+    // FIXME: use some of these things like
     async fn init(
         &self,
-        _cfg: Self::Config,
+        _cfg: FediSocialClientConfig,
         _db: Database,
+        _api_version: ApiVersion,
         _module_root_secret: DerivableSecret,
         _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
+        _api: DynGlobalApi,
+        _module_api: DynModuleApi,
     ) -> anyhow::Result<Self::Module> {
         Ok(FediSocialClientModule {})
     }
@@ -44,9 +53,7 @@ impl ClientModule for FediSocialClientModule {
     type ModuleStateMachineContext = ();
     type States = FediSocialClientStates;
 
-    fn context(&self) -> Self::ModuleStateMachineContext {
-        ()
-    }
+    fn context(&self) -> Self::ModuleStateMachineContext {}
 
     fn input_amount(
         &self,

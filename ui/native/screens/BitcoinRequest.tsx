@@ -14,6 +14,7 @@ import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector, useBridge } from '../state/hooks'
+import { reset } from '../state/navigation'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -83,6 +84,10 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             setRequestType(BitcoinOrLightning.lightning)
             const getDecodedInvoice = async () => {
                 try {
+                    console.info(
+                        'decoding invoice',
+                        JSON.stringify(decodedUri.body),
+                    )
                     const decoded = await fedimint.decodeInvoice(
                         decodedUri.body,
                     )
@@ -140,6 +145,18 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         )
         return unsubscribe
     }, [transactionEventHandler])
+
+    // FIXME: flesh this out
+    const transactionV2EventHandler = useCallback(() => {
+        navigation.dispatch(reset('TabsNavigator'))
+    }, [navigation])
+    useEffect(() => {
+        const unsubscribe = fedimint.addListener(
+            'transactionV2',
+            transactionV2EventHandler,
+        )
+        return unsubscribe
+    }, [transactionV2EventHandler])
 
     const showOnchainDeposits =
         activeFederationMetadata &&

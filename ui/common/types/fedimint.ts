@@ -13,9 +13,8 @@ export interface TransactionEvent {
     transaction: Transaction
 }
 
-export interface ValidateEcashResponse {
-    amount: MSats
-    valid: boolean
+export interface TransactionV2Event {
+    federationId: string
 }
 
 export interface LnurlSignedMessage {
@@ -32,8 +31,8 @@ export interface Invoice {
 }
 
 export interface LightningGateway {
-    mintPubKey: string
     nodePubKey: string
+    gatewayId: null | string
     api: string
     active: boolean
 }
@@ -86,11 +85,6 @@ export interface Transaction {
     bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
     offline: OfflineTransactionDetails | null
-}
-
-export enum AddressOrInvoice {
-    address = 'address',
-    invoice = 'invoice',
 }
 
 export interface SocialRecoveryQrCode {
@@ -180,7 +174,7 @@ export enum Network {
 export interface Federation {
     id: string
     name: string
-    connectInfo: string
+    inviteCode: string
     nodes: NodeMap
     balance: MSats
     socialRecoveryActive: boolean
@@ -228,16 +222,11 @@ export type SocialRecoveryEvent = {
     remaining: number
 }
 
-export type RecoveryFileCreationEvent =
-    | { type: 'progress'; percentComplete: number }
-    | { type: 'failed'; errorCode: string }
-    | { type: 'complete' }
-
 // Map of event type name -> event data
 export interface FedimintBridgeEventMap {
     log: LogEvent
     federation: FederationEvent
     transaction: TransactionEvent
     socialRecovery: SocialRecoveryEvent
-    recoveryFileCreation: RecoveryFileCreationEvent
+    transactionV2: TransactionV2Event
 }

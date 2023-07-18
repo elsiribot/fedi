@@ -9,13 +9,17 @@
     };
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=rel-a05&rev=c4feb8d487b604dce68082df12bb5fc862421784";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-0&rev=7a3dfeebcbf11b860859212eedc14597c0d57d75";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "github:dpc/fedimint?rev=505c9cc809efc4133ff204a938da6b7c9455ddd4"; # https://github.com/fedimint/fedimint/pull/2546
+      # TODO: we can probably use upstream commit for this?
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-0&rev=7a3dfeebcbf11b860859212eedc14597c0d57d75";
     };
-
+    # Fedi at consensus version 0. This is used to test bridge against old federations
+    fedi-v0 = {
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=master&rev=3502c58bdf37e9abf32615d3ba14b1a109922554";
+    };
     android-nixpkgs = {
       url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
       inputs.nixpkgs.follows = "nixpkgs";
@@ -26,7 +30,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0 }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
@@ -66,7 +70,6 @@
             dirs = [
               "Cargo.toml"
               "Cargo.lock"
-              "Cargo.wasm32.lock"
               ".cargo"
               "bridge"
               "fedimintd"
@@ -127,7 +130,6 @@
 
           fedi-wasm = craneLibBuildCross."wasm32-unknown-unknown".pkgsBuild {
             name = "fedi-wasm";
-            cargoLock = ./Cargo.wasm32.lock;
             pkgs = {
               fedi-wasm = { };
             };
@@ -144,7 +146,12 @@
         };
 
         # rust packages outputs with git hash replaced
-        rustPackagesFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackages;
+        rustPackagesFinal = builtins.mapAttrs
+          (name: package: fmLib.replaceGitHash {
+            # FIXME: don't hard-code this. But I don't know how to get it from craneLib
+            inherit name package; placeholder = "11234569abcdef7afa1d2683a099c7af48a523c1";
+          })
+          rustPackages;
 
         # this symlinks binaries needed to run xcode-specific commands assuming
         # xcode is already installed on the machine (can't be nixified normally)
@@ -210,12 +217,13 @@
         });
       in
       {
-        packages = {
-          # straight from Fedimint, without any modifications
-          gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
-          fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
-          dbtool-pkgs = fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs;
-        } // rustPackagesFinal;
+        packages =
+          {
+            # straight from Fedimint, without any modifications
+            gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
+            fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
+            dbtool-pkgs = fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs;
+          } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {
           default = crossDevShell;
@@ -260,6 +268,12 @@
               export LC_ALL=en_US.UTF-8
               export LANG=en_US.UTF-8
             '';
+          });
+          v0 = fedi-v0.devShells.${system}.default.overrideAttrs (prev: {
+            nativeBuildInputs = [
+              fedi-v0.packages.${system}.fedi-fedimint-pkgs
+            ]
+            ++ prev.nativeBuildInputs;
           });
         };
       });
