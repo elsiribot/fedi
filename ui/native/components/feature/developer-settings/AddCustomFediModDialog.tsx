@@ -34,22 +34,28 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
 
     const handleSubmit = () => {
         if (!federationId) return
-        if (!url.startsWith('http')) {
+        try {
+            let validUrl = new URL(url).toString()
+            if (validUrl.startsWith('http')) {
+                dispatch(
+                    addCustomFediMod({
+                        federationId,
+                        fediMod: {
+                            id: `custom-${Date.now()}`,
+                            title,
+                            url: validUrl,
+                        },
+                    }),
+                )
+                toast?.show(t('feature.fedimods.custom-fedimod-added'), 3000)
+                onClose()
+            } else {
+                throw new Error('Invalid protocol')
+            }
+        } catch (e) {
+            console.error(e)
             toast?.show(t('feature.fedimods.enter-valid-url'), 3000)
-            return
         }
-        dispatch(
-            addCustomFediMod({
-                federationId,
-                fediMod: {
-                    id: `custom-${Date.now()}`,
-                    title,
-                    url,
-                },
-            }),
-        )
-        toast?.show(t('feature.fedimods.custom-fedimod-added'), 3000)
-        onClose()
     }
 
     const style = styles(theme)
@@ -69,13 +75,26 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                 <Input
                     placeholder={t('feature.fedimods.fedimod-url')}
                     value={url}
-                    onChangeText={setUrl}
-                    onBlur={() => {
+                    onChangeText={text => {
+                        let trimmedText = text.trim()
+
+                        // Check if the user only entered a protocol
                         if (
-                            !url.startsWith('https://') &&
-                            !url.startsWith('http://')
+                            trimmedText === 'https://' ||
+                            trimmedText === 'http://'
                         ) {
-                            setUrl(`https://${url}`)
+                            setUrl('')
+                            return
+                        }
+
+                        // Add 'https://' if no protocol is specified
+                        if (
+                            !trimmedText.startsWith('https://') &&
+                            !trimmedText.startsWith('http://')
+                        ) {
+                            setUrl(`https://${trimmedText}`)
+                        } else {
+                            setUrl(trimmedText)
                         }
                     }}
                     autoCapitalize={'none'}
