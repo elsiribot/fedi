@@ -42,10 +42,20 @@ export function useAmountInput(
         ),
     )
 
-    const clampSats = useCallback((value: number) => {
-        if (Number.isNaN(value)) return 0 as Sats
-        return Math.round(Math.max(0, value)) as Sats
-    }, [])
+    const clampSats = useCallback(
+        (value: number, min?: number | null, max?: number | null) => {
+            if (Number.isNaN(value)) return 0 as Sats
+            let clamped = Math.round(Math.max(0, value))
+            if (min && clamped < min) {
+                clamped = Math.round(Math.max(0, min))
+            }
+            if (max && clamped > max) {
+                clamped = Math.round(Math.min(max, Number.MAX_SAFE_INTEGER))
+            }
+            return clamped as Sats
+        },
+        [],
+    )
 
     const handleChangeSats = useCallback(
         (value: string) => {
@@ -57,11 +67,13 @@ export function useAmountInput(
                 escapeSeparator = '\\.'
             }
             const regex = new RegExp(escapeSeparator, 'g')
-            const sats = clampSats(parseInt(value.replace(regex, ''), 10))
+            const sats = clampSats(
+                parseInt(value.replace(regex, ''), 10),
+                minimumAmount,
+                maximumAmount,
+            )
             const fiat = amountUtils.satToBtc(sats) * btcToFiatRateRef.current
-            if (minimumAmount && sats < minimumAmount) return
-            if (maximumAmount && sats > maximumAmount) return
-            onChangeAmount && onChangeAmount(clampSats(sats))
+            onChangeAmount && onChangeAmount(sats)
             setSatsValue(Intl.NumberFormat().format(sats))
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
