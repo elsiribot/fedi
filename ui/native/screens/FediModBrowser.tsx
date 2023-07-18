@@ -319,19 +319,25 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             /* no-op */
             console.info('webln enabled')
         },
-        getInfo: async () => {
-            const alias = authenticatedMember?.username || ''
-            let pubkey = ''
-            try {
-                const gateways = await listGateways()
-                const gateway = gateways.find(g => g.active) || gateways[0]
-                if (gateway) {
-                    pubkey = gateway.nodePubKey
+        getInfo: () => {
+            return new Promise(async (resolve, reject) => {
+                const alias = authenticatedMember?.username || ''
+                let pubkey = ''
+                try {
+                    const gateways = await listGateways()
+                    const gateway = gateways.find(g => g.active) || gateways[0]
+                    if (gateway) {
+                        pubkey = gateway.nodePubKey
+                    }
+                    resolve({ node: { alias, pubkey } })
+                } catch (err) {
+                    console.warn(
+                        'Failed to list gateways for webln getInfo',
+                        err,
+                    )
+                    reject('No lightning gateways found for this user')
                 }
-            } catch (err) {
-                console.warn('Failed to list gateways for webln getInfo', err)
-            }
-            return { node: { alias, pubkey } }
+            })
         },
         makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
             // Wait for user to interact with alert
