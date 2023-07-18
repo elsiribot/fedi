@@ -29,7 +29,7 @@ export type CustomOverlayContents = {
 type CustomOverlayProps = {
     onBackdropPress?: () => void
     show?: boolean
-    contents: CustomOverlayContents | null
+    contents: CustomOverlayContents
     loading?: boolean
 }
 
@@ -49,7 +49,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
         description = null,
         body = null,
         buttons = [],
-    } = contents as CustomOverlayContents
+    } = contents
 
     // Animate overlay in and out
     useEffect(() => {
