@@ -279,9 +279,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             onPress: async () => {
                 try {
                     setLoading(true)
-                    const token = await lnurlGetToken(lnurlData)
-                    setJwt(token)
-                    console.info('FIXLN-URL auth successful', token)
+                    if (lnurlData) {
+                        const token = await lnurlGetToken(lnurlData)
+                        setJwt(token)
+                        console.info('LNURL auth successful', token)
+                    } else {
+                        throw new Error('No LNURL-Auth data found')
+                    }
                 } catch (e) {
                     toast?.show(t('feature.fedimods.login-failed'), 3000)
                 }
@@ -477,11 +481,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
 
     return (
         <View style={styles.container}>
-            <FediModBrowserHeader
-                webViewRef={webview}
-                fediMod={fediMod}
-                // webLnSupported={webLnSupported}
-            />
+            <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
             <WebView
                 ref={webview}
                 source={{ uri }}
