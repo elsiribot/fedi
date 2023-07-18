@@ -389,7 +389,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                         'Failed to list gateways for webln getInfo',
                         err,
                     )
-                    reject('No lightning gateways found for this user')
+                    reject(t('errors.no-lightning-gateways'))
                 }
             })
         },

@@ -114,6 +114,7 @@
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "invalid-character": "The following characters are not allowed: \" & ' / : < >",
+        "no-lightning-gateways": "No lightning gateways found for this user",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
         "recovery-failed": "Recovery failed, please try again",
