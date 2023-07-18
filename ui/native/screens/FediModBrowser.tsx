@@ -327,13 +327,15 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         }
     }, [lnurlData, loginRequestContents])
 
+    // Show the overlay after contents have been set
     useEffect(() => {
         if (overlayContents.title) {
             setShowOverlay(true)
         }
     }, [overlayContents])
 
-    // Reset overlay content when hidden
+    // Reset unused state and clear overlay contents after it has
+    // been hidden from view
     useEffect(() => {
         if (showOverlay === false) {
             overlayResolveRef.current = undefined
@@ -341,6 +343,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             setAmountRequested(0 as Sats)
             setInvoiceToPay(null)
             setRequestInvoiceArgs(null)
+            setLnurlData('')
             setOverlayContents({
                 title: '',
                 message: '',
@@ -360,6 +363,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         }
     }, [requestInvoiceArgs])
 
+    // Handle all messages coming from a WebLN-enabled site
     const onMessage = onMessageHandler(webview, {
         enable: async () => {
             /* no-op */
