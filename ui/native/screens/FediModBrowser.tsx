@@ -82,6 +82,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         useState<RequestInvoiceArgs | null>(null)
     const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
     const [amountRequested, setAmountRequested] = useState<Sats>(0 as Sats)
+    const [lnurlData, setLnurlData] = useState<string>('')
 
     // Overlay components for makeInvoice UX
     const rejectMakeInvoiceButton = useMemo(
@@ -260,6 +261,44 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         t,
     ])
 
+    // Overlay components for LNURL-Auth UX
+    const denyLoginButton = useMemo(
+        () => ({
+            text: t('words.no'),
+            onPress: () => {
+                console.error('Login denied')
+                setShowOverlay(false)
+            },
+        }),
+        [t],
+    )
+    const allowLoginButton = useMemo(
+        () => ({
+            primary: true,
+            text: t('words.yes'),
+            onPress: async () => {
+                try {
+                    setLoading(true)
+                    const token = await lnurlGetToken(lnurlData)
+                    setJwt(token)
+                    console.info('FIXLN-URL auth successful', token)
+                } catch (e) {
+                    toast?.show(t('feature.fedimods.login-failed'), 3000)
+                }
+                setLoading(false)
+                setShowOverlay(false)
+            },
+        }),
+        [t, lnurlGetToken, lnurlData, toast],
+    )
+    const loginRequestContents = useMemo(() => {
+        return {
+            title: t('feature.fedimods.login-to'),
+            message: `${fediMod.title}`,
+            buttons: [denyLoginButton, allowLoginButton],
+        }
+    }, [allowLoginButton, denyLoginButton, fediMod.title, t])
+
     // opens overlay for makeInvoice UX
     useEffect(() => {
         if (requestInvoiceArgs?.amount) {
@@ -280,6 +319,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             setOverlayContents(paymentRequestContents)
         }
     }, [paymentRequestContents, invoiceToPay])
+
+    // opens overlay for LNURL-Auth login UX
+    useEffect(() => {
+        if (lnurlData) {
+            setOverlayContents(loginRequestContents)
+        }
+    }, [lnurlData, loginRequestContents])
 
     useEffect(() => {
         if (overlayContents.title) {
@@ -305,7 +351,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         }
     }, [showOverlay])
 
-    // Makes sure a parse amount  invoice for makeInvoice UX
+    // Makes sure to parse invoice amount for makeInvoice UX
     useEffect(() => {
         if (requestInvoiceArgs?.amount) {
             setAmountRequested(parseSats(requestInvoiceArgs.amount))
@@ -413,41 +459,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         // Called when an a-tag containing a `lightning:` uri is found on a page
         foundInvoice: async (data: string) => {
             if (data.toLowerCase().startsWith('lnurl')) {
-                setOverlayContents({
-                    title: t('feature.fedimods.login-to'),
-                    message: `${fediMod.title}`,
-                    buttons: [
-                        {
-                            text: t('words.no'),
-                            onPress: () => {
-                                console.error('Login denied')
-                                setShowOverlay(false)
-                            },
-                        },
-                        {
-                            primary: true,
-                            text: t('words.yes'),
-                            onPress: async () => {
-                                try {
-                                    setLoading(true)
-                                    const token = await lnurlGetToken(data)
-                                    setJwt(token)
-                                    console.info(
-                                        'FIXLN-URL auth successful',
-                                        token,
-                                    )
-                                } catch (e) {
-                                    toast?.show(
-                                        t('feature.fedimods.login-failed'),
-                                        3000,
-                                    )
-                                }
-                                setLoading(false)
-                                setShowOverlay(false)
-                            },
-                        },
-                    ],
-                })
+                setLnurlData(data)
             }
         },
     })
