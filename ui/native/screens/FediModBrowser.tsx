@@ -405,7 +405,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 // is not strictly WebLN-compliant but inferring an amount might
                 // be convenient
                 if (typeof data === 'string' || typeof data === 'number') {
-                    setAmountRequested(parseSats(data))
+                    setRequestInvoiceArgs({ amount: data })
                 } else {
                     // Handle WebLN-compliant payload
                     setRequestInvoiceArgs(data as RequestInvoiceArgs)
