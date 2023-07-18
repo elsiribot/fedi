@@ -1,7 +1,7 @@
 import { validate as validateBitcoinAddress } from 'bitcoin-address-validation'
 import { TFunction } from 'i18next'
 import { getParams as getLnurlParams } from 'js-lnurl'
-import { parse as queryStringParse } from 'querystring'
+import qs from 'query-string'
 
 import { Btc, MSats } from '../types'
 import {
@@ -155,8 +155,12 @@ async function parseLnurl(
                     callback: params.callback,
                     k1: params.k1,
                     defaultDescription: params.defaultDescription,
-                    minWithdrawable: params.minWithdrawable,
-                    maxWithdrawable: params.maxWithdrawable,
+                    minWithdrawable: params.minWithdrawable as
+                        | MSats
+                        | undefined,
+                    maxWithdrawable: params.maxWithdrawable as
+                        | MSats
+                        | undefined,
                 },
             }
         } else if (params.tag === 'login') {
@@ -211,10 +215,7 @@ async function parseBolt11(
 
         return {
             type: ParserDataType.Bolt11,
-            data: {
-                bolt11: lnRaw,
-                ...decoded,
-            },
+            data: decoded,
         }
     } catch (err) {
         console.warn('parseBolt11 error', err)
@@ -267,10 +268,11 @@ async function parseBip21(
     }
 
     // Parse query params on BIP 21
-    const queryParams = queryStringParse(btcRaw.split('?')[1] || '')
+    const queryParams = qs.parse(btcRaw.split('?')[1] || '')
     const param = (key: string): string | undefined => {
-        const value = queryParams[key]
-        return value ? (Array.isArray(value) ? value[0] : value) : undefined
+        const qp = queryParams[key]
+        const value = qp ? (Array.isArray(qp) ? qp[0] : qp) : null
+        return value === null ? undefined : value
     }
     const amount = param('amount')
     const label = param('label')
@@ -284,7 +286,6 @@ async function parseBip21(
             return {
                 type: ParserDataType.Bolt11,
                 data: {
-                    bolt11,
                     fallbackAddress: btcAddress,
                     ...invoice,
                 },

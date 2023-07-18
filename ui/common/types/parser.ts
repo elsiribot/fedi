@@ -23,7 +23,7 @@ interface ParsedData<T extends string, D = null> {
 
 export type ParsedBolt11 = ParsedData<
     ParserDataType.Bolt11,
-    { bolt11: string; fallbackAddress?: string } & Invoice
+    Invoice & { fallbackAddress?: string }
 >
 
 // No data since we don't yet support bolt 12, so no point in fully parsing.
@@ -54,8 +54,8 @@ export type ParsedLnurlWithdraw = ParsedData<
         callback: string
         k1: string
         defaultDescription?: string
-        minWithdrawable?: number
-        maxWithdrawable?: number
+        minWithdrawable?: MSats
+        maxWithdrawable?: MSats
     }
 >
 
