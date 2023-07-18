@@ -13,13 +13,11 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 type FediModBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
     fediMod: FediMod
-    webLnSupported?: boolean
 }
 
 const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     webViewRef,
     fediMod,
-    webLnSupported = false,
 }) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
@@ -56,23 +54,12 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                 </View>
             }
             headerRight={
-                <View style={style.horizontalContainer}>
-                    <Pressable
-                        style={[
-                            style.webln,
-                            webLnSupported ? style.inactive : {},
-                        ]}
-                        hitSlop={10}
-                        onPress={() => console.info('webln')}>
-                        <SvgImage size={SvgImageSize.sm} name="Wallet" />
-                    </Pressable>
-                    <Pressable
-                        style={style.close}
-                        hitSlop={10}
-                        onPress={() => navigation.goBack()}>
-                        <SvgImage size={SvgImageSize.md} name="Close" />
-                    </Pressable>
-                </View>
+                <Pressable
+                    style={style.close}
+                    hitSlop={10}
+                    onPress={() => navigation.goBack()}>
+                    <SvgImage size={SvgImageSize.md} name="Close" />
+                </Pressable>
             }
         />
     )
