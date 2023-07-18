@@ -424,11 +424,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
-                // Save these refs to we can resolve / reject elsewhere
-                overlayRejectRef.current = reject
-                overlayResolveRef.current =
-                    resolve as FediModResolver<FediModResponse>
-
                 // TODO: Hoist this to respect balance changes
                 if (activeFederation!.balance < invoice.amount) {
                     const message = t('errors.insufficient-balance', {
@@ -439,6 +434,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     toast?.show(message, 5000)
                     reject(new Error(message))
                 } else {
+                    // Save these refs to we can resolve / reject elsewhere
+                    overlayRejectRef.current = reject
+                    overlayResolveRef.current =
+                        resolve as FediModResolver<FediModResponse>
                     setInvoiceToPay(invoice)
                 }
             })
