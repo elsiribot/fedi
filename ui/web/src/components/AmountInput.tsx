@@ -99,6 +99,7 @@ export const AmountInput: React.FC<Props> = ({
 
 const Container = styled('div', {
     position: 'relative',
+    width: '100%',
     height: 'calc(var(--container-height) + var(--error-height))',
     transition: 'height 200ms ease',
 })

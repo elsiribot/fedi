@@ -14,7 +14,10 @@ import {
 } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
+import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
+import { useRouteState } from '../context/RouteStateContext'
 import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
@@ -40,13 +43,19 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
-    const [amount, setAmount] = useState(0 as Sats)
-    const [note, setNote] = useState('')
-    const [isRequesting, setIsRequesting] = useState(false)
+    const lnurlw = useRouteState('/request')
+    const [amount, setAmount] = useState(
+        lnurlw?.data.maxWithdrawable
+            ? amountUtils.msatToSat(lnurlw.data.maxWithdrawable)
+            : (0 as Sats),
+    )
+    const [note, setNote] = useState(lnurlw?.data.defaultDescription || '')
+    const [wantsInvoice, setWantsInvoice] = useState(false)
     const [isLightning, setIsLightning] = useState(true)
     const [lightningInvoice, setLightningInvoice] = useState<string>()
     const [bitcoinUrl, setBitcoinUrl] = useState<string>()
     const [generateError, setGenerateError] = useState<string>()
+    const [isWithdrawing, setIsWithdrawing] = useState(false)
     const [isReceivingOffline, setIsReceivingOffline] = useState(false)
     const [receivedTransaction, setReceivedTransaction] =
         useState<Transaction>()
@@ -58,12 +67,17 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     // Reset on close, focus input on open
     useEffect(() => {
         if (!open) {
-            setAmount(0 as Sats)
-            setNote('')
-            setIsRequesting(false)
+            setAmount(
+                lnurlw?.data.maxWithdrawable
+                    ? amountUtils.msatToSat(lnurlw.data.maxWithdrawable)
+                    : (0 as Sats),
+            )
+            setNote(lnurlw?.data.defaultDescription || '')
+            setWantsInvoice(false)
             setLightningInvoice(undefined)
             setBitcoinUrl(undefined)
             setGenerateError(undefined)
+            setIsWithdrawing(false)
             setIsReceivingOffline(false)
             setReceivedTransaction(undefined)
         } else {
@@ -71,7 +85,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 containerRef.current?.querySelector('input')?.focus(),
             )
         }
-    }, [open])
+    }, [open, lnurlw])
 
     // Reset invoices on federation change, amount change, or note change
     useEffect(() => {
@@ -81,7 +95,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     // Generate fresh invoice / address on any change to it
     useEffect(() => {
-        if (!isRequesting || !activeFederationId) return
+        if (!wantsInvoice || !activeFederationId) return
 
         let canceled = false
         let promise: Promise<unknown> | undefined
@@ -111,21 +125,24 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         if (promise) {
             setGenerateError(undefined)
             promise.catch(err => {
-                setGenerateError(err.message || err.toString())
-                setIsRequesting(false)
+                setGenerateError(
+                    formatErrorMessage(t, err, 'error.unknown-error'),
+                )
+                setWantsInvoice(false)
             })
             return () => {
                 canceled = true
             }
         }
     }, [
-        isRequesting,
+        wantsInvoice,
         amount,
         note,
         isLightning,
         lightningInvoice,
         bitcoinUrl,
         activeFederationId,
+        t,
     ])
 
     // Watch for incoming payments when we're rendering a lightning invoice
@@ -145,6 +162,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                     .toLowerCase()
                     .includes(bitcoin?.address.toLowerCase())
             if (wasLnPayment || wasBitcoinPayment) {
+                setIsWithdrawing(false)
                 setReceivedTransaction(event.transaction)
                 setTimeout(() => {
                     onOpenChangeRef.current(false)
@@ -153,6 +171,24 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         })
         return () => unsubscribe()
     }, [lightningInvoice, bitcoinUrl, onOpenChangeRef])
+
+    const handleLnurlWithdraw = async () => {
+        setIsWithdrawing(true)
+        try {
+            if (!activeFederationId || !lnurlw) throw new Error()
+            const invoice = await lnurlWithdraw(
+                fedimint,
+                activeFederationId,
+                lnurlw['data'],
+                amountUtils.satToMsat(amount),
+                note,
+            )
+            setLightningInvoice(invoice)
+        } catch (err) {
+            setGenerateError(formatErrorMessage(t, err, 'error.unknown-error'))
+            setIsWithdrawing(false)
+        }
+    }
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
     const lightningUrl = lightningInvoice ? `lightning:${lightningInvoice}` : ''
@@ -163,7 +199,9 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                   maxAmount: amountUtils.formatSats(maxReceiveAmount),
               })
             : generateError
-    const showNote = !!note || !isRequesting
+    const showNote = !!note || !wantsInvoice
+    const showOfflineReceive = isOfflineWalletSupported && !lnurlw
+    const amountSats = amountUtils.formatSats(amount)
 
     let content: React.ReactNode
     if (isReceivingOffline) {
@@ -189,40 +227,52 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         />
                     </RequestTypeToggle>
                 )}
-                <AmountInput
-                    amount={amount}
-                    error={error}
-                    onChangeAmount={setAmount}
-                    readOnly={isRequesting}
-                />
-                {showNote && (
-                    <NoteInput
-                        value={note}
-                        placeholder={qrData ? '' : t('phrases.add-note')}
-                        onChange={ev => setNote(ev.currentTarget.value)}
-                        readOnly={isRequesting}
+                <Center>
+                    <AmountInput
+                        amount={amount}
+                        error={error}
+                        onChangeAmount={setAmount}
+                        readOnly={wantsInvoice}
                     />
-                )}
-                {isRequesting ? (
-                    <QRContainer>
-                        <QRCode data={qrData} />
-                        <CopyInput
-                            value={copyData || ''}
-                            onCopyMessage={t(
-                                'feature.receive.copied-payment-code',
-                            )}
+                    {showNote && (
+                        <NoteInput
+                            value={note}
+                            placeholder={qrData ? '' : t('phrases.add-note')}
+                            onChange={ev => setNote(ev.currentTarget.value)}
+                            readOnly={wantsInvoice}
                         />
-                    </QRContainer>
-                ) : (
+                    )}
+                    {wantsInvoice && (
+                        <QRContainer>
+                            <QRCode data={qrData} />
+                            <CopyInput
+                                value={copyData || ''}
+                                onCopyMessage={t(
+                                    'feature.receive.copied-payment-code',
+                                )}
+                            />
+                        </QRContainer>
+                    )}
+                </Center>
+                {!wantsInvoice && (
                     <Buttons>
                         <Button
                             width="full"
-                            onClick={() => setIsRequesting(true)}
-                            loading={isRequesting}>
-                            {t('words.request')}{' '}
-                            {amountUtils.formatNumber(amount)} {t('words.sats')}
+                            onClick={() =>
+                                lnurlw
+                                    ? handleLnurlWithdraw()
+                                    : setWantsInvoice(true)
+                            }
+                            loading={isWithdrawing}>
+                            {lnurlw
+                                ? t('feature.receive.withdraw-from-domain', {
+                                      domain: lnurlw.data.domain,
+                                  })
+                                : t('feature.receive.request-sats', {
+                                      amount: amountSats,
+                                  })}
                         </Button>
-                        {isOfflineWalletSupported && (
+                        {showOfflineReceive && (
                             <Button onClick={() => setIsReceivingOffline(true)}>
                                 {t('feature.receive.receive-bitcoin-offline')}
                             </Button>
@@ -257,6 +307,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 }
 
 const Container = styled('div', {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     paddingTop: 24,
@@ -276,6 +327,15 @@ const RequestTypeToggle = styled('button', {
     },
 })
 
+const Center = styled('div', {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+})
+
 const NoteInput = styled('input', {
     padding: 8,
     textAlign: 'center',
@@ -293,6 +353,7 @@ const NoteInput = styled('input', {
 const QRContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
     gap: 16,
 })
 

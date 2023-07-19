@@ -6,6 +6,7 @@ import { FediBridgeInitializer } from '../components/FediBridgeInitializer'
 import { PWAMetaTags } from '../components/PWAMetaTags'
 import { Template } from '../components/Template'
 import { ToastManager } from '../components/ToastManager'
+import { RouteStateProvider } from '../context/RouteStateContext'
 import { store, initializeWebStore } from '../state/store'
 import { globalStyles } from '../styles'
 
@@ -21,12 +22,14 @@ const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
         <>
             <PWAMetaTags />
             <ReduxProvider store={store}>
-                <FediBridgeInitializer>
-                    <Template>
-                        <Component {...pageProps} />
-                    </Template>
-                    <ToastManager />
-                </FediBridgeInitializer>
+                <RouteStateProvider>
+                    <FediBridgeInitializer>
+                        <Template>
+                            <Component {...pageProps} />
+                        </Template>
+                        <ToastManager />
+                    </FediBridgeInitializer>
+                </RouteStateProvider>
             </ReduxProvider>
         </>
     )

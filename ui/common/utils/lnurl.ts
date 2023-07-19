@@ -1,4 +1,4 @@
-import { ParsedLnurlAuth } from '../types'
+import { MSats, ParsedLnurlAuth, ParsedLnurlWithdraw } from '../types'
 import { FedimintBridge } from './fedimint'
 
 /**
@@ -15,12 +15,48 @@ export async function lnurlAuth(
         lnurlData.k1,
         federationId,
     )
-    const callbackUrl = new URL(`${lnurlData.callback}`)
+    const callbackUrl = new URL(lnurlData.callback)
     callbackUrl.searchParams.set('sig', signature)
     callbackUrl.searchParams.set('key', pubkey)
 
+    return lnurlCallback(callbackUrl)
+}
+
+/**
+ * Given a federation, parsed lnurl withdraw data, and an amount, generate an
+ * invoice and submit a withdraw request. Promise resolves when the server
+ * responds, not when the payment has been made, so you should listen for
+ * the payment on the fedimint bridge side after calling this.
+ */
+export async function lnurlWithdraw(
+    fedimint: FedimintBridge,
+    federationId: string,
+    lnurlData: ParsedLnurlWithdraw['data'],
+    amount: MSats,
+    note?: string,
+) {
+    const invoice = await fedimint.generateInvoice(
+        amount,
+        note || '',
+        federationId,
+    )
+
+    const callbackUrl = new URL(lnurlData.callback)
+    callbackUrl.searchParams.set('k1', lnurlData.k1)
+    callbackUrl.searchParams.set('pr', invoice)
+
+    await lnurlCallback(callbackUrl)
+    return invoice
+}
+
+/**
+ * Submit a fetch request to an LNURL callback. Resolves if the result is OK,
+ * throws if the response is anything but that.
+ */
+async function lnurlCallback(callbackUrl: URL | string) {
     const res = await fetch(callbackUrl.toString()).then(r => r.json())
-    if (res.status === 'OK') {
+    const status = res.status || res['STATUS']
+    if (status.toLowerCase() === 'ok') {
         return
     } else {
         throw new Error(res.reason || 'errors.unknown-error')
