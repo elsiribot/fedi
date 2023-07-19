@@ -8,11 +8,16 @@ import { ButtonDemo } from './ButtonDemo'
 import { DialogDemo } from './DialogDemo'
 import { FormDemo } from './FormDemo'
 import { IconDemo } from './IconDemo'
+import { OmniInputDemo } from './OmniInputDemo'
 import { TextDemo } from './TextDemo'
 import { ToastDemo } from './ToastDemo'
 
 export const ComponentPlayground: React.FC = () => {
     const demos = [
+        {
+            title: 'Omni Input',
+            content: <OmniInputDemo />,
+        },
         {
             title: 'Text',
             content: <TextDemo />,
