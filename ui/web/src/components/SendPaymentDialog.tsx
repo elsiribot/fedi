@@ -1,24 +1,29 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import OfflineIcon from '@fedi/common/assets/svgs/offline.svg'
 import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
+import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { Invoice } from '@fedi/common/types'
+import { ParserDataType } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppSelector, useToast } from '../hooks'
+import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
-import { Input } from './Input'
-import { QRScanner } from './QRScanner'
-import { ScanResult } from './QRScanner'
+import { OmniInput } from './OmniInput'
 import { SendOffline } from './SendOffline'
 import { Text } from './Text'
+
+const expectedInputTypes = [
+    ParserDataType.Bolt11,
+    ParserDataType.LnurlPay,
+] as const
 
 interface Props {
     open: boolean
@@ -29,11 +34,19 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const { t } = useTranslation()
     const balance = useAppSelector(selectActiveFederation)?.balance
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
-    const toast = useToast()
-    const [invoiceValue, setInvoiceValue] = useState('')
-    const [invoice, setInvoice] = useState<Invoice>()
-    const [wantsDecoding, setWantsDecoding] = useState(false)
-    const [isScanning, setIsScanning] = useState(false)
+    const {
+        isReadyToPay,
+        exactAmount,
+        // TODO: Pass to AmountInput to validate amounts
+        // minimumInputAmount,
+        // maximumInputAmount,
+        description,
+        inputAmount,
+        setInputAmount,
+        handleOmniInput,
+        handleOmniSend,
+        resetOmniPaymentState,
+    } = useOmniPaymentState(fedimint, activeFederationId)
     const [isSendingOffline, setIsSendingOffline] = useState(false)
     const [isCloseDisabled, setIsCloseDisabled] = useState(false)
     const [isSending, setIsSending] = useState(false)
@@ -42,92 +55,52 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const containerRef = useRef<HTMLDivElement | null>(null)
     const isOfflineWalletSupported = useIsOfflineWalletSupported()
 
+    // Reset modal on close and open
     useEffect(() => {
         if (!open) {
-            setInvoice(undefined)
-            setInvoiceValue('')
-            setWantsDecoding(false)
-            setIsScanning(false)
             setIsSendingOffline(false)
             setIsCloseDisabled(false)
             setIsSending(false)
             setHasSent(false)
             setSendError(undefined)
+            resetOmniPaymentState()
         } else {
             requestAnimationFrame(() =>
                 containerRef.current?.querySelector('input')?.focus(),
             )
         }
-    }, [open])
-
-    const decodeInvoice = useCallback(
-        async (invoiceStr: string) => {
-            try {
-                const normalizedInvoice = invoiceStr.split(':').pop()?.trim()
-                if (!normalizedInvoice) throw new Error('Invalid invoice')
-                const decoded = await fedimint.decodeInvoice(normalizedInvoice)
-                setInvoice(decoded)
-            } catch (err) {
-                toast.showErrorToast(err, 'errors.unknown-error')
-                setWantsDecoding(false)
-            }
-        },
-        [toast],
-    )
-
-    // Decode invoice after half second of not typing
-    useEffect(() => {
-        if (!invoiceValue || !wantsDecoding) return
-        const timeout = setTimeout(() => {
-            decodeInvoice(invoiceValue)
-        }, 500)
-        return () => clearTimeout(timeout)
-    }, [invoiceValue, wantsDecoding, decodeInvoice])
-
-    const handleChangeInvoice = useCallback(
-        (ev: React.ChangeEvent<HTMLInputElement>) => {
-            const value = ev.currentTarget.value.trim()
-            setInvoiceValue(value)
-            setWantsDecoding(!!value)
-        },
-        [],
-    )
-
-    const handleScan = useCallback(
-        async (result: ScanResult) => {
-            decodeInvoice(result.data)
-        },
-        [decodeInvoice],
-    )
+    }, [open, resetOmniPaymentState])
 
     const handleSend = useCallback(async () => {
-        if (!invoice || !activeFederationId) return
         setIsSending(true)
         try {
-            await fedimint.payInvoice(invoice.invoice, activeFederationId)
+            await handleOmniSend(inputAmount)
             setHasSent(true)
             setTimeout(() => onOpenChange(false), 2500)
         } catch (err) {
             setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
         setIsSending(false)
-    }, [invoice, activeFederationId, onOpenChange, t])
+    }, [inputAmount, onOpenChange, t])
 
     if (typeof balance !== 'number') return null
 
     let content: React.ReactNode
     let dialogStatusProps: DialogStatusProps | undefined
-    if (invoice) {
-        const sats = amountUtils.msatToSat(invoice.amount)
-        const satsFmt = amountUtils.formatSats(sats)
+    if (isReadyToPay) {
+        const satsFmt = inputAmount ? amountUtils.formatSats(inputAmount) : ''
         content = (
             <>
                 <InvoiceContainer>
-                    <AmountInput amount={sats} readOnly />
-                    {invoice.description && (
+                    <AmountInput
+                        amount={inputAmount}
+                        onChangeAmount={setInputAmount}
+                        readOnly={!!exactAmount}
+                    />
+                    {description && (
                         <InvoiceDescription>
                             <Text variant="caption" weight="medium">
-                                &quot;{invoice.description}&quot;
+                                &quot;{description}&quot;
                             </Text>
                         </InvoiceDescription>
                     )}
@@ -159,15 +132,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 )} ${satsFmt} ${t('words.sats')}...`,
             }
         }
-    } else if (isScanning) {
-        content = (
-            <>
-                <QRScanner onScan={handleScan} />
-                <Button onClick={() => setIsScanning(false)}>
-                    {t('feature.send.paste-payment-request')}
-                </Button>
-            </>
-        )
     } else if (isSendingOffline) {
         content = (
             <SendOffline
@@ -178,28 +142,37 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     } else {
         content = (
             <>
-                <Input
-                    label={t('feature.send.paste-payment-request')}
-                    value={invoiceValue}
-                    placeholder="lnbc..."
-                    onChange={handleChangeInvoice}
-                    disabled={isScanning || wantsDecoding}
+                <OmniInput
+                    inputLabel={t('feature.send.enter-payment-request')}
+                    inputPlaceholder="lnbc..."
+                    expectedInputTypes={expectedInputTypes}
+                    onExpectedInput={handleOmniInput}
+                    onUnexpectedSuccess={() => onOpenChange(false)}
+                    customActions={
+                        isOfflineWalletSupported
+                            ? [
+                                  {
+                                      label: t(
+                                          'feature.send.send-bitcoin-offline',
+                                      ),
+                                      icon: OfflineIcon,
+                                      onClick: () => setIsSendingOffline(true),
+                                  },
+                              ]
+                            : undefined
+                    }
                 />
-                <Button onClick={() => setIsScanning(true)}>
-                    {t('feature.send.scan-qr-code')}
-                </Button>
-                {isOfflineWalletSupported && (
-                    <Button onClick={() => setIsSendingOffline(true)}>
-                        {t('feature.send.send-to-offline-user')}
-                    </Button>
-                )}
             </>
         )
     }
 
     return (
         <Dialog
-            title={t('feature.send.send-bitcoin')}
+            title={t(
+                isSendingOffline
+                    ? 'feature.send.send-bitcoin-offline'
+                    : 'feature.send.send-bitcoin',
+            )}
             description={`${t('words.balance')}: ${amountUtils.formatNumber(
                 amountUtils.msatToSat(balance),
             )} ${t('words.sats')}`}
@@ -215,12 +188,19 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
 }
 
 const Container = styled('div', {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
 })
 
 const InvoiceContainer = styled('div', {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
     padding: '32px 0',
 })
 
