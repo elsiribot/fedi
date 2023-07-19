@@ -224,6 +224,12 @@ const Confirmation = styled('div', {
         borderTopLeftRadius: 16,
         animation: `${confirmationSlideUp} 200ms ease 200ms both`,
     },
+
+    '@standalone': {
+        '@sm': {
+            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+        },
+    },
 })
 
 const ConfirmationActions = styled('div', {
