@@ -9,6 +9,7 @@ import {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
+import { lnurlPay } from '../utils/lnurl'
 
 const expectedOmniInputTypes = [
     ParserDataType.Bolt11,
@@ -78,22 +79,18 @@ export function useOmniPaymentState(
             if (!federationId) {
                 throw new Error('Must have a federation ID to send')
             }
-            if (!invoice && !lnurlPayment) {
+            if (invoice) {
+                return fedimint.payInvoice(invoice.invoice, federationId)
+            } else if (lnurlPayment) {
+                return lnurlPay(
+                    fedimint,
+                    federationId,
+                    lnurlPayment,
+                    amountUtils.satToMsat(amount),
+                )
+            } else {
                 throw new Error('Requires invoice or lnurl payment to send')
             }
-
-            let bolt11 = ''
-            if (invoice) {
-                bolt11 = invoice.invoice
-            } else if (lnurlPayment) {
-                const url = new URL(lnurlPayment.callback)
-                url.searchParams.set('amount', amount.toString())
-                bolt11 = await fetch(url)
-                    .then(r => r.json())
-                    .then(r => r.pr)
-            }
-            // TODO: Pass amount to `payInvoice` once it's supported, otherwise zero-amount BOLT-11 don't work
-            return fedimint.payInvoice(bolt11, federationId)
         },
         [invoice, lnurlPayment, federationId],
     )

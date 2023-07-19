@@ -1,4 +1,9 @@
-import { MSats, ParsedLnurlAuth, ParsedLnurlWithdraw } from '../types'
+import {
+    MSats,
+    ParsedLnurlAuth,
+    ParsedLnurlPay,
+    ParsedLnurlWithdraw,
+} from '../types'
 import { FedimintBridge } from './fedimint'
 
 /**
@@ -20,6 +25,28 @@ export async function lnurlAuth(
     callbackUrl.searchParams.set('key', pubkey)
 
     return lnurlCallback(callbackUrl)
+}
+
+/**
+ * Given a federation, parsed lnurl pay data, and an amount, pay an invoice
+ * provided by an LNURL callback.
+ */
+export async function lnurlPay(
+    fedimint: FedimintBridge,
+    federationId: string,
+    lnurlData: ParsedLnurlPay['data'],
+    amount: MSats,
+) {
+    const callbackUrl = new URL(lnurlData.callback)
+    callbackUrl.searchParams.set('amount', amount.toString())
+
+    // Don't use lnurlCallback, success does not have `status: 'OK'`
+    const res = await fetch(callbackUrl.toString()).then(r => r.json())
+    if (!res.pr || res.status === 'ERROR') {
+        throw new Error(res.reason || 'errors.unknown-error')
+    }
+
+    return fedimint.payInvoice(res.pr, federationId)
 }
 
 /**

@@ -9,6 +9,7 @@ import { ParserDataType } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
+import { useRouteState } from '../context/RouteStateContext'
 import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
@@ -34,6 +35,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const { t } = useTranslation()
     const balance = useAppSelector(selectActiveFederation)?.balance
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const sendRouteState = useRouteState('/send')
     const {
         isReadyToPay,
         exactAmount,
@@ -71,6 +73,12 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         }
     }, [open, resetOmniPaymentState])
 
+    // If we were sent here with route state, feed it to the omni input
+    useEffect(() => {
+        if (!open || !sendRouteState) return
+        handleOmniInput(sendRouteState)
+    }, [open, sendRouteState, handleOmniInput])
+
     const handleSend = useCallback(async () => {
         setIsSending(true)
         try {
@@ -81,7 +89,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
         setIsSending(false)
-    }, [inputAmount, onOpenChange, t])
+    }, [handleOmniSend, inputAmount, onOpenChange, t])
 
     if (typeof balance !== 'number') return null
 
