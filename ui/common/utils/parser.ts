@@ -99,7 +99,7 @@ async function parseLnurl(
     // in one place.
     if (lnRaw.startsWith('lnurl') || lnRaw.startsWith('keyauth')) {
         lnurlParamPromise = getLnurlParams(lnRaw)
-    } else if (lnRaw.match(/^[^@]+@[^@]+\.[^@]+$/)) {
+    } else if (lnRaw.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
         const [username, domain] = lnRaw.split('@')
         if (username && domain) {
             const url = `https://${domain}/.well-known/lnurlp/${username}`
