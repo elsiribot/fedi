@@ -23,6 +23,8 @@ const Container = styled('div', {
     boxShadow:
         '0px 7px 11px rgba(1, 153, 176, 0.06), 0px 16px 40px rgba(112, 153, 176, 0.16)',
     overflow: 'hidden',
+    // Fixes an issue with Safari and resizing the block
+    transform: `translate3d(0, 0, 0)`,
 
     '@md': {
         padding: 48,
