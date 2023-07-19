@@ -112,7 +112,7 @@ export type ParsedFediChatGroup = ParsedData<
 
 export type ParsedUnknownData = ParsedData<
     ParserDataType.Unknown,
-    { message: string }
+    { message?: string }
 >
 
 export type AnyParsedData =

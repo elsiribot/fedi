@@ -69,7 +69,7 @@ export function parseUserInput<T extends TFunction>(
             if (!resolved) {
                 resolve({
                     type: ParserDataType.Unknown,
-                    data: { message: t('feature.parser.unrecognized') },
+                    data: {},
                 })
             }
         })
