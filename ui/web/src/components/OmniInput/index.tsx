@@ -50,11 +50,9 @@ export function OmniInput<
     const toast = useToast()
     const [isScanning, setIsScanning] = useState(false)
     const [isParsing, setIsParsing] = useState(false)
-    // const [isActionsExpanded, setIsActionsExpanded] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
     const [value, setValue] = useState('')
-    const [successMessage, setSuccessMessage] = useState<string>()
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const { customActions, inputPlaceholder, onUnexpectedSuccess } = props

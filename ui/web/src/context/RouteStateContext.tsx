@@ -90,7 +90,7 @@ export const RouteStateProvider: React.FC<Props> = ({ children }) => {
 export const useRouteStateContext = () => useContext(RouteStateContext)
 
 export const useRouteState = <Route extends keyof RouteStateByPath>(
-    route: Route,
+    _: Route,
 ): RouteStateByPath[Route] | undefined => {
     const { routeState } = useContext(RouteStateContext)
     return routeState as RouteStateByPath[Route] | undefined
