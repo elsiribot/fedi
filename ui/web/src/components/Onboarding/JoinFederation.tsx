@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
@@ -10,6 +10,7 @@ import {
     getFederationPreview,
 } from '@fedi/common/utils/FederationUtils'
 
+import { useRouteState } from '../../context/RouteStateContext'
 import { useAppDispatch, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
@@ -26,6 +27,7 @@ import {
 
 export const JoinFederation: React.FC = () => {
     const dispatch = useAppDispatch()
+    const routeState = useRouteState('/onboarding/join')
     const { t } = useTranslation()
     const { push } = useRouter()
     const { showErrorToast } = useToast()
@@ -49,6 +51,12 @@ export const JoinFederation: React.FC = () => {
         },
         [showErrorToast],
     )
+
+    // If they came here with route state, paste the code for them
+    useEffect(() => {
+        if (!routeState) return
+        handleCode(routeState.data.invite)
+    }, [routeState, handleCode])
 
     const handlePaste = useCallback(() => {
         const code = prompt(t('feature.federations.paste-federation-code'))
