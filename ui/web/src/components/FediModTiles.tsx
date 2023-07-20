@@ -3,7 +3,7 @@ import React from 'react'
 
 import { selectFederationFediMods } from '@fedi/common/redux'
 
-import { SITE_IMAGES } from '../constants/siteimages'
+import { FEDIMOD_IMAGES } from '../constants/fedimodimages'
 import { useAppSelector } from '../hooks'
 import { styled } from '../styles'
 import { Text } from './Text'
@@ -13,12 +13,12 @@ export const FediModTiles: React.FC = () => {
 
     return (
         <Container>
-            {fediMods.map(site => {
-                const image = SITE_IMAGES[site.id]
+            {fediMods.map(fediMod => {
+                const image = FEDIMOD_IMAGES[fediMod.id]
                 return (
                     <FediModTile
-                        key={site.id}
-                        href={site.url}
+                        key={fediMod.id}
+                        href={fediMod.url}
                         target="_blank"
                         rel="noopener noreferrer">
                         {image ? (
@@ -33,7 +33,7 @@ export const FediModTiles: React.FC = () => {
                         )}
                         <FediModTitle>
                             <Text variant="small" ellipsize>
-                                {site.title}
+                                {fediMod.title}
                             </Text>
                         </FediModTitle>
                     </FediModTile>

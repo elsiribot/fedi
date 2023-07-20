@@ -11,6 +11,7 @@ import {
     resetFederationChatState,
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectFederationCustomFediMods,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
@@ -69,6 +70,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
+    const customFediMods = useAppSelector(selectFederationCustomFediMods)
 
     const resetChatState = useCallback(() => {
         if (activeFederationId) {
@@ -269,7 +271,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         {t('words.general')}
                     </Text>
                 </Pressable>
-                {environmentState.developerMode && (
+                {(environmentState.developerMode ||
+                    customFediMods.length > 0) && (
                     <SettingsItem
                         image={<SvgImage name="FediLogoIcon" />}
                         label={'Developer Settings'}

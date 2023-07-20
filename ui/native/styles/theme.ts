@@ -169,7 +169,7 @@ const theme = createTheme({
     borders: {
         defaultRadius: 16,
         qrCodeRadius: 20,
-        siteTileRadius: 12,
+        fediModTileRadius: 12,
         progressBarRadius: 4,
     },
     styles: {

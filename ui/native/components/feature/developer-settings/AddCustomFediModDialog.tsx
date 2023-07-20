@@ -1,5 +1,6 @@
 import { Button, Dialog, Input, Text, useTheme, Theme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { useDispatch } from 'react-redux'
 
@@ -18,6 +19,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
     onClose,
 }) => {
     const dispatch = useDispatch()
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const federationId = useAppSelector(selectActiveFederation)?.id
@@ -32,18 +34,28 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
 
     const handleSubmit = () => {
         if (!federationId) return
-        dispatch(
-            addCustomFediMod({
-                federationId,
-                site: {
-                    id: `custom-${Date.now()}`,
-                    title,
-                    url,
-                },
-            }),
-        )
-        toast?.show('Custom site added', 3000)
-        onClose()
+        try {
+            let validUrl = new URL(url).toString()
+            if (validUrl.startsWith('http')) {
+                dispatch(
+                    addCustomFediMod({
+                        federationId,
+                        fediMod: {
+                            id: `custom-${Date.now()}`,
+                            title,
+                            url: validUrl,
+                        },
+                    }),
+                )
+                toast?.show(t('feature.fedimods.custom-fedimod-added'), 3000)
+                onClose()
+            } else {
+                throw new Error('Invalid protocol')
+            }
+        } catch (e) {
+            console.error(e)
+            toast?.show(t('feature.fedimods.enter-valid-url'), 3000)
+        }
     }
 
     const style = styles(theme)
@@ -53,22 +65,43 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
         <Dialog isVisible={isVisible} onBackdropPress={onClose}>
             <View style={style.container}>
                 <Text h2 style={style.title}>
-                    Add custom site
+                    {t('feature.fedimods.add-custom-fedimod')}
                 </Text>
                 <Input
-                    placeholder="Site title"
+                    placeholder={t('feature.fedimods.fedimod-title')}
                     value={title}
                     onChangeText={setTitle}
                 />
                 <Input
-                    placeholder="Site URL"
+                    placeholder={t('feature.fedimods.fedimod-url')}
                     value={url}
-                    onChangeText={setUrl}
+                    onChangeText={text => {
+                        let trimmedText = text.trim()
+
+                        // Check if the user only entered a protocol
+                        if (
+                            trimmedText === 'https://' ||
+                            trimmedText === 'http://'
+                        ) {
+                            setUrl('')
+                            return
+                        }
+
+                        // Add 'https://' if no protocol is specified
+                        if (
+                            !trimmedText.startsWith('https://') &&
+                            !trimmedText.startsWith('http://')
+                        ) {
+                            setUrl(`https://${trimmedText}`)
+                        } else {
+                            setUrl(trimmedText)
+                        }
+                    }}
                     autoCapitalize={'none'}
                     autoCorrect={false}
                 />
                 <Button disabled={!isValid} onPress={handleSubmit}>
-                    Save
+                    {t('words.save')}
                 </Button>
             </View>
         </Dialog>

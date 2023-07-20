@@ -9,23 +9,27 @@ import {
     LayoutChangeEvent,
 } from 'react-native'
 
+import KeyboardAwareWrapper from './KeyboardAwareWrapper'
+
 type CustomOverlayButton = {
     text: string
     primary?: boolean
+    disabled?: boolean
     onPress: () => void
 }
 
 export type CustomOverlayContents = {
     title: string
-    message: string
-    description?: string
-    buttons: CustomOverlayButton[]
+    message?: string | null
+    description?: string | null
+    body?: React.ReactNode | null
+    buttons?: CustomOverlayButton[]
 }
 
 type CustomOverlayProps = {
     onBackdropPress?: () => void
     show?: boolean
-    contents: CustomOverlayContents | null
+    contents: CustomOverlayContents
     loading?: boolean
 }
 
@@ -39,8 +43,13 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
     const [overlayHeight, setOverlayHeight] = useState(0)
     const animatedTranslateY = useRef(new Animated.Value(0)).current
 
-    const { title, message, description, buttons } =
-        contents as CustomOverlayContents
+    const {
+        title,
+        message = null,
+        description = null,
+        body = null,
+        buttons = [],
+    } = contents
 
     // Animate overlay in and out
     useEffect(() => {
@@ -87,7 +96,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                             : theme.colors.primary,
                     }}
                     loading={loading ? button.primary : false}
-                    disabled={loading ? !button.primary : false}
+                    disabled={loading ? true : button.disabled}
                     onPress={button.onPress}
                 />
             )
@@ -106,20 +115,27 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     ...styles(theme).overlayContents,
                     transform: [{ translateY: animatedTranslateY }],
                 }}>
-                <Text medium style={styles(theme).overlayTitle}>
-                    {title}
-                </Text>
-                <Text h1 h1Style={styles(theme).overlayText}>
-                    {message}
-                </Text>
-                {description && (
-                    <Text style={styles(theme).overlayDescription}>
-                        {description}
+                <KeyboardAwareWrapper>
+                    <Text medium style={styles(theme).overlayTitle}>
+                        {title}
                     </Text>
-                )}
-                <View style={styles(theme).overlayButtonView}>
-                    {renderButtons()}
-                </View>
+                    {message && (
+                        <Text h1 h1Style={styles(theme).overlayText}>
+                            {message}
+                        </Text>
+                    )}
+                    {description && (
+                        <Text style={styles(theme).overlayDescription}>
+                            {description}
+                        </Text>
+                    )}
+                    {body}
+                    {buttons?.length > 0 && (
+                        <View style={styles(theme).overlayButtonView}>
+                            {renderButtons()}
+                        </View>
+                    )}
+                </KeyboardAwareWrapper>
             </Animated.View>
         </Overlay>
     )
@@ -141,7 +157,8 @@ const styles = (theme: Theme) =>
             position: 'relative',
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            paddingTop: theme.spacing.xl,
+            paddingVertical: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.md,
             backgroundColor: theme.colors.white,
             ...Platform.select({
                 android: {
@@ -168,7 +185,7 @@ const styles = (theme: Theme) =>
         overlayButtonView: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            margin: theme.spacing.sm,
+            marginVertical: theme.spacing.sm,
         },
         buttonContainer: {
             marginVertical: theme.spacing.lg,

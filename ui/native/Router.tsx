@@ -68,6 +68,7 @@ import FederationAcceptTerms from './screens/FederationAcceptTerms'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
 import FederationWelcome from './screens/FederationWelcome'
+import FediModBrowser from './screens/FediModBrowser'
 import GroupAdmin from './screens/GroupAdmin'
 import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
@@ -96,7 +97,6 @@ import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
-import SitesBrowser from './screens/SitesBrowser'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
@@ -192,10 +192,10 @@ const MainNavigator = () => {
                                     headerShown: false,
                                 })}
                             />
-                            {/* Sites */}
+                            {/* FediMods */}
                             <Stack.Screen
-                                name="SitesBrowser"
-                                component={SitesBrowser}
+                                name="FediModBrowser"
+                                component={FediModBrowser}
                                 options={{
                                     headerShown: false,
                                 }}

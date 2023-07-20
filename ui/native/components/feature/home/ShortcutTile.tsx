@@ -39,8 +39,8 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
             style={styles(theme).container}
             onPress={() => onSelect(shortcut)}>
             <View>{renderIcon()}</View>
-            <View style={styles(theme).siteTitle}>
-                <Text caption medium style={styles(theme).siteTitleText}>
+            <View style={styles(theme).title}>
+                <Text caption medium style={styles(theme).titleText}>
                     {shortcut.title}
                 </Text>
             </View>
@@ -59,25 +59,25 @@ const styles = (theme: Theme) =>
             width: theme.sizes.lg,
             height: theme.sizes.lg,
             overflow: 'hidden',
-            borderRadius: theme.borders.siteTileRadius,
+            borderRadius: theme.borders.fediModTileRadius,
             marginBottom: theme.spacing.xs,
         },
         iconSvg: {
             width: theme.sizes.lg,
             height: theme.sizes.lg,
-            borderRadius: theme.borders.siteTileRadius,
+            borderRadius: theme.borders.fediModTileRadius,
             backgroundColor: theme.colors.primary,
             marginBottom: theme.spacing.xs,
             alignItems: 'center',
             justifyContent: 'center',
         },
-        siteTitle: {
+        title: {
             flexDirection: 'row',
             justifyContent: 'flex-start',
             alignItems: 'center',
             paddingBottom: theme.spacing.xs,
         },
-        siteTitleText: {
+        titleText: {
             textAlign: 'center',
             paddingRight: theme.spacing.xs,
         },

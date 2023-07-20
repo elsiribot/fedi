@@ -61,7 +61,7 @@ export type Props = NativeStackScreenProps<
 
 const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
-    const { i18n } = useTranslation()
+    const { t, i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { dispatch: chatContextDispatch } = useChatContext()
@@ -118,12 +118,15 @@ const DeveloperSettings: React.FC<Props> = () => {
         })
     }
 
-    const removeFediMod = (siteId: string) => {
+    const removeFediMod = (fediModId: string) => {
         if (!activeFederation) return
         reduxDispatch(
-            removeCustomFediMod({ federationId: activeFederation.id, siteId }),
+            removeCustomFediMod({
+                federationId: activeFederation.id,
+                fediModId,
+            }),
         )
-        toast?.show('Custom site removed', 3000)
+        toast?.show(t('feature.fedimods.custom-fedimod-removed'), 3000)
     }
 
     useEffect(() => {
@@ -144,7 +147,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }}
                 />
             </SettingsSection>
-            <SettingsSection title="Custom sites">
+            <SettingsSection title={t('feature.fedimods.custom-fedimods')}>
                 {customFediMods.map(fediMod => (
                     <View key={fediMod.id} style={styles(theme).fediMod}>
                         <View>
@@ -157,7 +160,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     </View>
                 ))}
                 <Button
-                    title={'Add custom site'}
+                    title={t('feature.fedimods.add-custom-fedimod')}
                     containerStyle={styles(theme).buttonContainer}
                     onPress={() => setIsAddingCustomFediMod(true)}
                 />

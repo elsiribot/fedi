@@ -36,7 +36,6 @@
         "send": "Enviar",
         "sent": "Enviado",
         "share": "Compartir",
-        "sites": "Sitios",
         "skip": "Saltar",
         "status": "Estado",
         "time": "Hora",
@@ -230,9 +229,9 @@
             "receive-bitcoin-offline": "Recibir bitcoin sin conexión",
             "you-received": "Has recibido"
         },
-        "site": {
-            "wants-to-pay-you": "{{site}} quiere pagarte",
-            "boost-this-post": "Mejorar esta publicación de {{site}}?",
+        "fedimods": {
+            "wants-to-pay-you": "{{fedimod}} quiere pagarte",
+            "boost-this-post": "Mejorar esta publicación de {{fedimod}}?",
             "login-to": "Iniciar sesión en"
         }
     }

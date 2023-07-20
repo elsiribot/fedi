@@ -11,10 +11,17 @@ import SvgImage from './SvgImage'
 
 export type Props = {
     amount: Sats
+    minimumAmount?: Sats | null
+    maximumAmount?: Sats | null
     onChangeAmount?: (amount: Sats) => void
 }
 
-const AmountInput: React.FC<Props> = ({ amount, onChangeAmount }) => {
+const AmountInput: React.FC<Props> = ({
+    amount,
+    minimumAmount,
+    maximumAmount,
+    onChangeAmount,
+}) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const {
@@ -26,7 +33,7 @@ const AmountInput: React.FC<Props> = ({ amount, onChangeAmount }) => {
         handleChangeSats,
         currency,
         currencySymbol,
-    } = useAmountInput(amount, onChangeAmount)
+    } = useAmountInput(amount, onChangeAmount, minimumAmount, maximumAmount)
     const inputRef = useRef<TextInput>(null)
 
     // For some reason the TextInput inside InvisibleInput does not
@@ -46,7 +53,10 @@ const AmountInput: React.FC<Props> = ({ amount, onChangeAmount }) => {
     return (
         <Pressable
             style={styles(theme).container}
-            onPress={() => inputRef?.current?.focus()}>
+            onPress={() => {
+                console.debug('inputRef?.current?.focus()')
+                inputRef?.current?.focus()
+            }}>
             {isFiat ? (
                 <InvisibleInput
                     inputRef={inputRef as RefObject<TextInput>}

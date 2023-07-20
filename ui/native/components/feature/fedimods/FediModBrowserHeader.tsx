@@ -10,51 +10,52 @@ import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
-type SitesBrowserHeaderProps = {
+type FediModBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
-    site: FediMod
+    fediMod: FediMod
 }
 
-const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
+const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     webViewRef,
-    site,
+    fediMod,
 }) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const style = styles(theme)
 
     return (
         <Header
             containerStyle={{ borderBottomColor: theme.colors.lightGrey }}
             headerLeft={
-                <View style={styles(theme).arrowsContainer}>
+                <View style={style.horizontalContainer}>
                     <Pressable
                         onPress={() => webViewRef.current.goBack()}
                         hitSlop={10}
-                        style={styles(theme).arrow}>
+                        style={style.arrow}>
                         <SvgImage size={SvgImageSize.sm} name="ChevronLeft" />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
                         hitSlop={10}
-                        style={[styles(theme).arrow, styles(theme).rightArrow]}>
+                        style={[style.arrow, style.rightArrow]}>
                         <SvgImage size={SvgImageSize.sm} name="ChevronRight" />
                     </Pressable>
                 </View>
             }
             headerCenter={
-                <View style={styles(theme).titleContainer}>
+                <View style={style.titleContainer}>
                     <Text
                         caption
                         medium
                         numberOfLines={1}
-                        style={styles(theme).titleText}>
-                        {site.title}
+                        style={style.titleText}>
+                        {fediMod.title}
                     </Text>
                 </View>
             }
             headerRight={
                 <Pressable
-                    style={styles(theme).close}
+                    style={style.close}
                     hitSlop={10}
                     onPress={() => navigation.goBack()}>
                     <SvgImage size={SvgImageSize.md} name="Close" />
@@ -66,8 +67,9 @@ const SitesBrowserHeader: React.FC<SitesBrowserHeaderProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        arrowsContainer: {
+        horizontalContainer: {
             flexDirection: 'row',
+            alignItems: 'center',
         },
         arrow: {
             paddingVertical: theme.spacing.lg,
@@ -84,9 +86,16 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
             lineHeight: 24,
         },
+        webln: {
+            paddingVertical: theme.spacing.md,
+            opacity: 0,
+        },
+        inactive: {
+            opacity: 0.5,
+        },
         close: {
             paddingVertical: theme.spacing.md,
         },
     })
 
-export default SitesBrowserHeader
+export default FediModBrowserHeader
