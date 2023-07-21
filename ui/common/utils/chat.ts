@@ -146,8 +146,8 @@ export const getLatestMessage = <T extends ChatMessage>(
  * Given a list of messages, return a map keyed by the chat ID and with a value
  * of the latest message ID in that chat.
  */
-export const getLatestMessageIdsForChats = <T extends ChatMessage>(
-    messages: T[],
+export const getLatestMessageIdsForChats = (
+    messages: ChatMessage[],
     myId: string,
 ) => {
     const sortedMessages = orderBy(messages, 'sentAt', 'desc')
