@@ -11,11 +11,7 @@ import isEqual from 'lodash/isEqual'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
 
-import {
-    CommonState,
-    selectActiveFederation,
-    selectFederationMetadata,
-} from '.'
+import { CommonState, selectFederationMetadata } from '.'
 import {
     Chat,
     ChatMessage,
@@ -1093,7 +1089,7 @@ async function getOrFetchCredentials(
 /*** Selectors ***/
 
 const selectFederationChatState = (s: CommonState) =>
-    getFederationChatState(s.chat, selectActiveFederation(s)?.id || '')
+    getFederationChatState(s.chat, s.federation.activeFederationId || '')
 
 export const selectChatCredentials = (s: CommonState) =>
     selectFederationChatState(s).credentials
@@ -1311,8 +1307,8 @@ export const selectChatGroupRole = createSelector(
  * XMPP messages, otherwise return null.
  */
 export const selectChatXmppClient = (s: CommonState) => {
-    const activeFederation = selectActiveFederation(s)
+    const activeFederationId = s.federation.activeFederationId
     const status = selectChatClientStatus(s)
-    if (!activeFederation || status !== 'online') return null
-    return xmppChatClientManager.getClient(activeFederation.id)
+    if (!activeFederationId || status !== 'online') return null
+    return xmppChatClientManager.getClient(activeFederationId)
 }
