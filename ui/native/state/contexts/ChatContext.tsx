@@ -16,17 +16,9 @@ import { AppState as RNAppState, AppStateStatus } from 'react-native'
 import {
     connectChat,
     disconnectChat,
-    selectAllChatMessages,
-    selectAuthenticatedMember,
     selectChatClientStatus,
-    selectChatLastReadMessageIds,
     selectChatXmppClient,
-    setLastReadMessageId,
 } from '@fedi/common/redux'
-import {
-    getChatInfoFromMessage,
-    getLatestMessage,
-} from '@fedi/common/utils/chat'
 
 import { fedimint } from '../../bridge'
 import { useAppDispatch, useAppSelector } from '../hooks'
@@ -34,11 +26,9 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 // Define the structure of this Context and its initial state
 interface ChatContextState {
     websocketIsHealthy: boolean
-    activeChatId: string | null
 }
 const initialState: ChatContextState = {
     websocketIsHealthy: false,
-    activeChatId: null,
 }
 
 // Define actions that can change the state within this Context
@@ -67,12 +57,6 @@ export function changeWebsocketIsHealthy(healthy: boolean): Action {
         payload: healthy,
     }
 }
-export function changeActiveChatId(activeChatId: string | null): Action {
-    return {
-        type: ActionType.CHANGE_ACTIVE_CHAT_ID,
-        payload: activeChatId,
-    }
-}
 export function resetChatState(): Action {
     return {
         type: ActionType.RESET_CHAT_STATE,
@@ -89,11 +73,6 @@ export function reducer(
             return {
                 ...state,
                 websocketIsHealthy: action.payload,
-            }
-        case ActionType.CHANGE_ACTIVE_CHAT_ID:
-            return {
-                ...state,
-                activeChatId: action.payload,
             }
         case ActionType.RESET_CHAT_STATE:
             return { ...initialState }
@@ -114,9 +93,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const lastReadMessageIds = useAppSelector(selectChatLastReadMessageIds)
-    const messages = useAppSelector(selectAllChatMessages)
     const chatClientStatus = useAppSelector(selectChatClientStatus)
 
     const xmppClient = useAppSelector(selectChatXmppClient)
@@ -204,42 +180,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             dispatch(changeWebsocketIsHealthy(true))
         }
     }, [chatClientStatus])
-
-    // While actively in a chat, update last read when it doesn't match
-    useEffect(() => {
-        if (!activeFederationId || !messages.length) return
-
-        const chatId = state.activeChatId
-        if (!chatId) return
-
-        const myId = authenticatedMember?.id
-        if (!myId) return
-
-        const activeChatMessages = messages.filter(
-            m => getChatInfoFromMessage(m, myId)?.id === chatId,
-        )
-        const latestMessageInActiveChat = getLatestMessage(activeChatMessages)
-        if (
-            !latestMessageInActiveChat?.id ||
-            lastReadMessageIds[chatId] === latestMessageInActiveChat.id
-        )
-            return
-
-        reduxDispatch(
-            setLastReadMessageId({
-                federationId: activeFederationId,
-                messageId: latestMessageInActiveChat.id,
-                chatId,
-            }),
-        )
-    }, [
-        activeFederationId,
-        authenticatedMember?.id,
-        lastReadMessageIds,
-        messages,
-        reduxDispatch,
-        state.activeChatId,
-    ])
 
     // useMemo makes sure the Provider only re-renders when
     // there is a state change. Some state from redux is also added in.

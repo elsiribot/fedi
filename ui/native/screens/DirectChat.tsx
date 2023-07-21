@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
     fetchChatMember,
     selectChatClientStatus,
@@ -17,10 +18,6 @@ import { makeMessageGroups } from '@fedi/common/utils/chat'
 import { fedimint } from '../bridge'
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import {
-    changeActiveChatId,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -36,7 +33,6 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
-    const { dispatch: chatContextDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
@@ -57,13 +53,12 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         })
     }, [activeFederationId, dispatch, isChatOnline, member, memberId])
 
-    useEffect(() => {
-        if (!isFocused) return
-        chatContextDispatch(changeActiveChatId(memberId))
-        return () => {
-            chatContextDispatch(changeActiveChatId(null))
-        }
-    }, [chatContextDispatch, isFocused, memberId])
+    // Use this hook only if the screen is in focus
+    useUpdateLastMessageRead(
+        memberId,
+        messageCollections[0]?.[0]?.[0],
+        isFocused !== true,
+    )
 
     const handleSend = useCallback(
         async (messageText: string) => {

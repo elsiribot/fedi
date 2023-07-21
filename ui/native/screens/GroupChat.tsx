@@ -1,10 +1,11 @@
 import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
     selectChatGroup,
     selectChatGroupRole,
@@ -16,10 +17,6 @@ import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import {
-    changeActiveChatId,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -28,7 +25,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 const GroupChat: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { dispatch: chatContextDispatch } = useChatContext()
     const { groupId } = route.params
     const isFocused = useIsFocused()
     const federationId = useAppSelector(
@@ -51,12 +47,12 @@ const GroupChat: React.FC<Props> = ({ route }: Props) => {
     //     ...
     // }, [])
 
-    // Set active chat while we're on this screen
-    useEffect(() => {
-        if (!isFocused) return
-        chatContextDispatch(changeActiveChatId(groupId))
-        return () => chatContextDispatch(changeActiveChatId(null))
-    }, [chatContextDispatch, groupId, isFocused])
+    // Use this hook only if the screen is in focus
+    useUpdateLastMessageRead(
+        groupId,
+        messageCollections[0]?.[0]?.[0],
+        isFocused !== true,
+    )
 
     const handleSend = async (messageText: string) => {
         await dispatch(
