@@ -27,15 +27,7 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
 
     let previewMessage = latestMessage?.content
     if (latestMessage?.payment) {
-        previewMessage = makePaymentText(
-            t,
-            latestMessage.sentBy.split('@')[0],
-            latestMessage.sentTo?.split('@')[0] || '',
-            authenticatedMember?.username || '',
-            latestMessage.payment.recipient?.split('@')[0],
-            latestMessage.payment.amount,
-            latestMessage.payment.memo,
-        )
+        previewMessage = makePaymentText(t, latestMessage, authenticatedMember)
     }
 
     return (

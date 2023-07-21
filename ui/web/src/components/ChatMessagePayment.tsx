@@ -101,15 +101,7 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
     }, [handleDispatchPaymentUpdate])
 
     let extra: React.ReactNode = null
-    const messageText = makePaymentText(
-        t,
-        message.sentBy.split('@')[0],
-        message.sentTo?.split('@')[0] || '',
-        authenticatedMember?.username || '',
-        payment.recipient?.split('@')[0],
-        payment.amount,
-        payment.memo,
-    )
+    const messageText = makePaymentText(t, message, authenticatedMember)
 
     if (payment.status === ChatPaymentStatus.paid) {
         extra = (

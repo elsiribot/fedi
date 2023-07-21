@@ -20,22 +20,14 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const { sentTo, sentBy, payment } = message
+    const { sentTo, payment } = message
 
-    const messageSentBy = sentBy || ''
     const messageSentTo = sentTo || ''
     const paymentRecipient = payment?.recipient || ''
     const me = authenticatedMember?.id || ''
 
-    const paymentText = makePaymentText(
-        t,
-        messageSentBy.split('@')[0],
-        messageSentTo.split('@')[0],
-        me.split('@')[0],
-        paymentRecipient.split('@')[0],
-        payment?.amount,
-        payment?.memo,
-    )
+    const paymentText = makePaymentText(t, message, authenticatedMember)
+
     if (messageSentTo === me && paymentRecipient === me) {
         return (
             <IncomingPushPayment

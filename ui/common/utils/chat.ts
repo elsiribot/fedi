@@ -2,18 +2,29 @@ import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 
-import { Chat, ChatMessage, ChatType, MSats } from '@fedi/common/types'
+import {
+    Chat,
+    ChatMember,
+    ChatMessage,
+    ChatType,
+    MSats,
+} from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 export const makePaymentText = (
     t: TFunction,
-    messageSentBy: string,
-    messageSentTo: string,
-    me: string,
-    paymentRecipient: string | undefined,
-    paymentAmount: MSats | undefined,
-    paymentMemo: string | undefined,
+    message: ChatMessage,
+    authenticatedMember: ChatMember | null,
 ): string => {
+    const { sentBy, sentTo, payment } = message
+    const messageSentBy: string = sentBy.split('@')[0]
+    const messageSentTo: string = sentTo?.split('@')[0] || ''
+    const me: string = authenticatedMember?.username || ''
+    const paymentRecipient: string | undefined =
+        payment?.recipient?.split('@')[0]
+    const paymentAmount: MSats | undefined = payment?.amount
+    const paymentMemo: string | undefined = payment?.memo
+
     const previewStringParams = {
         name: messageSentBy,
         amount: amountUtils.formatNumber(
