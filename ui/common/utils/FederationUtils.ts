@@ -1,3 +1,5 @@
+import { bech32m } from 'bech32'
+
 import { DEFAULT_FEDIMODS } from '@fedi/common/constants/fedimods'
 
 import { XMPP_RESOURCE } from '../constants/xmpp'
@@ -9,6 +11,7 @@ import {
     SupportedCurrency,
     SupportedFeature,
     XmppConnectionOptions,
+    FederationPreview,
 } from '../types'
 
 export const fetchMetadataFromExternalUrl = async (
@@ -214,4 +217,94 @@ export const getFederationFediMods = (
         }
     }
     return DEFAULT_FEDIMODS
+}
+
+/**
+ * Fetch information about a federation without using the bridge wasm. This
+ * allows us to fetch federation info before the bridge is loaded.
+ */
+export async function getFederationPreview(
+    connectionCode: string,
+): Promise<FederationPreview> {
+    // See https://github.com/fedimint/fedimint/blob/e477569968b525a903aaae9aac0c87c914cd0cc2/fedimint-core/src/api.rs#L700-L730
+    // for Rust-side implementation of connection codes.
+    const { words } = bech32m.decode(connectionCode, Number.MAX_SAFE_INTEGER)
+    const bytes = bech32m.fromWords(words)
+    // First 48 bytes are the 32-bit encoded pubkey, which we don't need
+    // const pubkeyBytes = bytes.slice(0, 48)
+    // The next 2 bytes are the length of the URL
+    const urlLenBytes = bytes.slice(48, 50)
+    const urlLen = new DataView(new Uint8Array(urlLenBytes).buffer).getUint16(0)
+    // The next `urlLen` bytes are the URL, UTF-16 encoded
+    const url = String.fromCharCode(...bytes.slice(50, 50 + urlLen))
+    // The remaining bytes are the download token, which we do not need to decode.
+    // const downloadTokenBytes = bytes.slice(50 + urlLen)
+
+    // Open a websocket to the URL we just pulled out. The Fedimint API is a
+    // JSON RPC websocket. Rather than pull in a whole library for this, we'll
+    // just do it manually since this is the only communication we do with the
+    // federation outside of WASM.
+    return new Promise((resolve, reject) => {
+        try {
+            const ws = new WebSocket(url)
+            let id: FederationPreview['id']
+            let name: FederationPreview['name']
+            let meta: FederationPreview['meta']
+            let consensusVersion: FederationPreview['consensusVersion']
+            let apiVersion: FederationPreview['apiVersion']
+            ws.addEventListener('error', () => {
+                reject()
+            })
+            // Immediately send messages on open, responses come in message listener
+            ws.addEventListener('open', () => {
+                ws.send(
+                    JSON.stringify({
+                        id: 0,
+                        jsonrpc: '2.0',
+                        method: 'config',
+                        params: [{ auth: null, params: connectionCode }],
+                    }),
+                )
+                ws.send(
+                    JSON.stringify({
+                        id: 1,
+                        jsonrpc: '2.0',
+                        method: 'version',
+                        params: [{ auth: null, params: null }],
+                    }),
+                )
+            })
+            // Listen for responses on open. Once we get all messages back,
+            // resolve with data.If any of them fail, reject the promise.
+            ws.addEventListener('message', ev => {
+                const data = JSON.parse(ev.data)
+                if (data.error) {
+                    return reject(new Error(data.error.message))
+                }
+                if (data.id === 0) {
+                    id = data.result.client_config.federation_id
+                    name =
+                        data.result.client_config.meta.federation_name ||
+                        'Unnamed federation'
+                    meta = data.result.client_config.meta
+                }
+                if (data.id === 1) {
+                    consensusVersion = data.result.core.consensus
+                    apiVersion = data.result.core.api[0]
+                }
+                if (consensusVersion !== undefined && apiVersion && meta) {
+                    resolve({
+                        id,
+                        name,
+                        meta,
+                        connectionCode,
+                        consensusVersion,
+                        apiVersion,
+                    })
+                }
+            })
+        } catch (err) {
+            reject(err)
+        }
+    })
 }

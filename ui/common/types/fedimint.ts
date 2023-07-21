@@ -191,6 +191,20 @@ export interface FediMod {
     color?: string
 }
 
+export interface FederationApiVersion {
+    major: number
+    minor: number
+}
+
+export interface FederationPreview {
+    id: Federation['id']
+    name: Federation['name']
+    meta: Federation['meta']
+    connectionCode: string
+    consensusVersion: number
+    apiVersion: FederationApiVersion
+}
+
 /*
  * Mocked-out social backup and recovery events
  */
