@@ -3,7 +3,6 @@ import React, { ReactNode } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { ChatMember } from '@fedi/common/types'
-import { jidToId } from '@fedi/common/utils/chat'
 
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 
@@ -27,7 +26,7 @@ const MemberItem: React.FC<MemberItemProps> = ({
                 selectMember(member)
             }}>
             <Avatar
-                id={jidToId(member.id)}
+                id={member.id}
                 name={member.username}
                 size={AvatarSize.md}
             />

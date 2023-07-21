@@ -30,7 +30,7 @@ const MembersList: React.FC<MembersListProps> = ({
         <FlatList
             data={members}
             renderItem={renderMember}
-            keyExtractor={(item: ChatMember) => `${item.id}`}
+            keyExtractor={item => `${item.id}`}
             style={styles(theme).container}
         />
     )

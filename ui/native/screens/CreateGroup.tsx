@@ -31,7 +31,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             if (!activeFederationId || !xmppClient)
                 throw new Error('errors.chat-unavailable')
             setCreatingGroup(true)
-            const groupId = await xmppClient?.generateUniqueGroupId()
+            const groupId = await xmppClient.generateUniqueGroupId()
 
             const newGroup = await dispatch(
                 createChatGroup({
