@@ -207,16 +207,14 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     // This effect publishes the device's FCM token to the XMPP server
     // so it can receive push notifications
     useEffect(() => {
-        if (xmppClient) {
-            console.debug('messaging.getToken')
+        if (xmppClient && chatClientStatus && chatClientStatus === 'online') {
             messaging()
                 .getToken()
                 .then(token => {
-                    console.debug('token', token)
                     xmppClient.publishNotificationToken(token)
                 })
         }
-    }, [xmppClient])
+    }, [chatClientStatus, xmppClient])
 
     useEffect(() => {
         if (chatClientStatus && chatClientStatus === 'online') {
