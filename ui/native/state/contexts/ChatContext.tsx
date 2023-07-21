@@ -14,6 +14,7 @@ import React, {
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
 
 import {
+    connectChat,
     disconnectChat,
     selectAllChatMessages,
     selectAuthenticatedMember,
@@ -30,6 +31,7 @@ import {
     getLatestMessage,
 } from '@fedi/common/utils/chat'
 
+import { fedimint } from '../../bridge'
 import { useAppDispatch, useAppSelector } from '../hooks'
 
 // Define the structure of this Context and its initial state
