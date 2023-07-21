@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 import {
     fetchChatMembers,
     selectChatConnectionOptions,
@@ -13,10 +14,7 @@ import {
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
-import {
-    changeIsOnChatScreen,
-    useChatContext,
-} from '../state/contexts/ChatContext'
+import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
 import {
@@ -35,7 +33,7 @@ const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const isFocused = useIsFocused()
-    const { state, dispatch: chatContextDispatch } = useChatContext()
+    const { state } = useChatContext()
     const { websocketIsHealthy } = state
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(
@@ -59,14 +57,8 @@ const ChatScreen: React.FC<Props> = () => {
         }
     }, [activeFederationId, dispatch, websocketIsHealthy])
 
-    // Set that we're looking at chat on mount, unset on dismount
-    useEffect(() => {
-        if (!isFocused) return
-        chatContextDispatch(changeIsOnChatScreen(true))
-        return () => {
-            chatContextDispatch(changeIsOnChatScreen(false))
-        }
-    }, [isFocused, chatContextDispatch])
+    // Use this hook only if the screen is in focus
+    useUpdateLastMessageSeen(isFocused !== true)
 
     return (
         <View style={styles(theme).container}>

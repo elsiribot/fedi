@@ -52,14 +52,18 @@ export function useChatMemberSearch(members: ChatMember[]) {
 /**
  * Automatically dispatch an update to the last message seen while a component
  * using this hook is mounted.
+ *
+ * the pauseUpdates param is used by the native app since components remain
+ * mounted even when the screen is not in focus. the navigation library
+ * returns isFocused = false for any screen using this hook and we can pause it
  */
-export function useUpdateLastMessageSeen() {
+export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
     const latestMessage = useCommonSelector(selectLatestChatMessage)
 
     useEffect(() => {
-        if (!latestMessage || !federationId) return
+        if (!latestMessage || !federationId || pauseUpdates) return
         dispatch(
             setLastSeenMessageId({
                 federationId,

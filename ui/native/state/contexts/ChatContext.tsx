@@ -20,11 +20,8 @@ import {
     selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatLastReadMessageIds,
-    selectChatLastSeenMessageId,
     selectChatXmppClient,
-    selectLatestChatMessage,
     setLastReadMessageId,
-    setLastSeenMessageId,
 } from '@fedi/common/redux'
 import {
     getChatInfoFromMessage,
@@ -37,19 +34,16 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 // Define the structure of this Context and its initial state
 interface ChatContextState {
     websocketIsHealthy: boolean
-    isOnChatScreen: boolean
     activeChatId: string | null
 }
 const initialState: ChatContextState = {
     websocketIsHealthy: false,
-    isOnChatScreen: false,
     activeChatId: null,
 }
 
 // Define actions that can change the state within this Context
 enum ActionType {
     CHANGE_WEBSOCKET_IS_HEALTHY = 'CHANGE_WEBSOCKET_IS_HEALTHY',
-    CHANGE_IS_ON_CHAT_SCREEN = 'CHANGE_IS_ON_CHAT_SCREEN',
     CHANGE_ACTIVE_CHAT_ID = 'CHANGE_ACTIVE_CHAT_ID',
     RESET_CHAT_STATE = 'RESET_CHAT_STATE',
 }
@@ -71,12 +65,6 @@ export function changeWebsocketIsHealthy(healthy: boolean): Action {
     return {
         type: ActionType.CHANGE_WEBSOCKET_IS_HEALTHY,
         payload: healthy,
-    }
-}
-export function changeIsOnChatScreen(isOnChatScreen: boolean): Action {
-    return {
-        type: ActionType.CHANGE_IS_ON_CHAT_SCREEN,
-        payload: isOnChatScreen,
     }
 }
 export function changeActiveChatId(activeChatId: string | null): Action {
@@ -101,11 +89,6 @@ export function reducer(
             return {
                 ...state,
                 websocketIsHealthy: action.payload,
-            }
-        case ActionType.CHANGE_IS_ON_CHAT_SCREEN:
-            return {
-                ...state,
-                isOnChatScreen: action.payload,
             }
         case ActionType.CHANGE_ACTIVE_CHAT_ID:
             return {
@@ -132,9 +115,7 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
         s => s.federation.activeFederationId,
     )
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const latestMessage = useAppSelector(selectLatestChatMessage)
     const lastReadMessageIds = useAppSelector(selectChatLastReadMessageIds)
-    const lastSeenMessageId = useAppSelector(selectChatLastSeenMessageId)
     const messages = useAppSelector(selectAllChatMessages)
     const chatClientStatus = useAppSelector(selectChatClientStatus)
 
@@ -223,26 +204,6 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             dispatch(changeWebsocketIsHealthy(true))
         }
     }, [chatClientStatus])
-
-    // While on chat screen, update last seen when it doesn't match
-    const { isOnChatScreen } = state
-    useEffect(() => {
-        if (!isOnChatScreen || !activeFederationId || !messages.length) return
-        if (!latestMessage?.id || latestMessage.id === lastSeenMessageId) return
-        reduxDispatch(
-            setLastSeenMessageId({
-                federationId: activeFederationId,
-                messageId: latestMessage.id,
-            }),
-        )
-    }, [
-        activeFederationId,
-        isOnChatScreen,
-        lastSeenMessageId,
-        latestMessage,
-        messages.length,
-        reduxDispatch,
-    ])
 
     // While actively in a chat, update last read when it doesn't match
     useEffect(() => {
