@@ -7,7 +7,7 @@ import { Federation } from '@fedi/common/types'
 import { Avatar, AvatarProps } from './Avatar'
 
 type Props = Omit<AvatarProps, 'id' | 'shape' | 'name'> & {
-    federation: Federation
+    federation: Pick<Federation, 'id' | 'name'>
 }
 
 export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {
