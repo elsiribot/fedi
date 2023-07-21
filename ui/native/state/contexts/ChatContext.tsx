@@ -146,12 +146,18 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             // Sometimes we send a presence message and do not
             // get a response which may mean the stream cannot
             // be resumed so we need to stop and rebuild the client
-            let reconnectTimer = setTimeout(() => {
+            let reconnectTimer = setTimeout(async () => {
                 console.info(
                     'no response from XMPP server after 3s, rebuilding XMPP client',
                 )
-                reduxDispatch(
+                await reduxDispatch(
                     disconnectChat({
+                        federationId: activeFederationId as string,
+                    }),
+                ).unwrap()
+                reduxDispatch(
+                    connectChat({
+                        fedimint,
                         federationId: activeFederationId as string,
                     }),
                 )
