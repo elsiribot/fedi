@@ -45,7 +45,7 @@ const ChatsList: React.FC<{}> = () => {
             style={styles(theme).container}
             data={chats}
             renderItem={renderChat}
-            keyExtractor={(item: ChatWithLatestMessage) => `${item.id}`}
+            keyExtractor={item => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content
             // for fixed-size list items
             getItemLayout={(data, index) => ({

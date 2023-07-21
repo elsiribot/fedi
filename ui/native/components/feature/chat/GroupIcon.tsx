@@ -11,7 +11,7 @@ type GroupIconProps = {
 }
 
 const GroupIcon = ({ chat, size = AvatarSize.md }: GroupIconProps) => {
-    const defaultGroupIcon = (chat as ChatGroup).broadcastOnly
+    const defaultGroupIcon = chat.broadcastOnly
         ? 'SpeakerPhone'
         : 'SocialPeople'
 
