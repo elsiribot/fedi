@@ -7,8 +7,6 @@ import React, {
     useCallback,
     useContext,
     useEffect,
-    useMemo,
-    useReducer,
     useRef,
 } from 'react'
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
@@ -18,73 +16,15 @@ import {
     disconnectChat,
     selectChatClientStatus,
     selectChatXmppClient,
+    setWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../../bridge'
 import { useAppDispatch, useAppSelector } from '../hooks'
 
-// Define the structure of this Context and its initial state
-interface ChatContextState {
-    websocketIsHealthy: boolean
-}
-const initialState: ChatContextState = {
-    websocketIsHealthy: false,
-}
-
-// Define actions that can change the state within this Context
-enum ActionType {
-    CHANGE_WEBSOCKET_IS_HEALTHY = 'CHANGE_WEBSOCKET_IS_HEALTHY',
-    CHANGE_ACTIVE_CHAT_ID = 'CHANGE_ACTIVE_CHAT_ID',
-    RESET_CHAT_STATE = 'RESET_CHAT_STATE',
-}
-export interface Action {
-    type: ActionType
-    payload?: any
-}
-
-// Wrap with state and dispatch fields and create the Context
-type BaseContext = {
-    state: ChatContextState
-    dispatch: React.Dispatch<Action>
-}
-export const ChatContext = createContext({} as BaseContext)
-
-// Export action creators as convenience functions to trigger state changes
-
-export function changeWebsocketIsHealthy(healthy: boolean): Action {
-    return {
-        type: ActionType.CHANGE_WEBSOCKET_IS_HEALTHY,
-        payload: healthy,
-    }
-}
-export function resetChatState(): Action {
-    return {
-        type: ActionType.RESET_CHAT_STATE,
-    }
-}
-
-// Implement the reducer with actions and state changes
-export function reducer(
-    state: ChatContextState,
-    action: Action,
-): ChatContextState {
-    switch (action.type) {
-        case ActionType.CHANGE_WEBSOCKET_IS_HEALTHY:
-            return {
-                ...state,
-                websocketIsHealthy: action.payload,
-            }
-        case ActionType.RESET_CHAT_STATE:
-            return { ...initialState }
-        default:
-            return state
-    }
-}
+export const ChatContext = createContext({})
 
 function ChatProvider(props: React.PropsWithChildren<{}>) {
-    const [state, dispatch] = useReducer<
-        React.Reducer<ChatContextState, Action>
-    >(reducer, initialState)
     const appStateRef = useRef<AppStateStatus>(
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
@@ -100,7 +40,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     const resumeXmppStream = useCallback(() => {
         console.info('resuming xmpp stream after coming back into foreground')
         try {
-            dispatch(changeWebsocketIsHealthy(false))
+            reduxDispatch(
+                setWebsocketIsHealthy({
+                    federationId: activeFederationId as string,
+                    healthy: false,
+                }),
+            )
 
             // Sometimes we send a presence message and do not
             // get a response which may mean the stream cannot
@@ -125,7 +70,12 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
             // the stream has been resumed successfully so we can clear
             // the reconnectTimer and cleanup the listener
             const onStanzaReceived = async (_: Element) => {
-                dispatch(changeWebsocketIsHealthy(true))
+                reduxDispatch(
+                    setWebsocketIsHealthy({
+                        federationId: activeFederationId as string,
+                        healthy: true,
+                    }),
+                )
                 xmppClient?.xmpp.removeListener('stanza', onStanzaReceived)
                 console.info(
                     'XMPP server responded, do not rebuild XMPP client',
@@ -176,22 +126,21 @@ function ChatProvider(props: React.PropsWithChildren<{}>) {
     }, [chatClientStatus, xmppClient])
 
     useEffect(() => {
-        if (chatClientStatus && chatClientStatus === 'online') {
-            dispatch(changeWebsocketIsHealthy(true))
+        if (
+            activeFederationId &&
+            chatClientStatus &&
+            chatClientStatus === 'online'
+        ) {
+            reduxDispatch(
+                setWebsocketIsHealthy({
+                    federationId: activeFederationId,
+                    healthy: true,
+                }),
+            )
         }
-    }, [chatClientStatus])
+    }, [activeFederationId, chatClientStatus, reduxDispatch])
 
-    // useMemo makes sure the Provider only re-renders when
-    // there is a state change. Some state from redux is also added in.
-    const providerValue = useMemo(
-        () => ({
-            state,
-            dispatch,
-        }),
-        [state, dispatch],
-    )
-
-    return <ChatContext.Provider value={providerValue} {...props} />
+    return <ChatContext.Provider value={{}} {...props} />
 }
 
 function useChatContext() {
