@@ -70,7 +70,7 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
                 messageId: latestMessage.id,
             }),
         )
-    }, [dispatch, latestMessage, federationId])
+    }, [dispatch, federationId, latestMessage, pauseUpdates])
 }
 
 /**
@@ -93,5 +93,5 @@ export function useUpdateLastMessageRead(
     useEffect(() => {
         if (!federationId || !messageId || pauseUpdates) return
         dispatch(setLastReadMessageId({ federationId, chatId, messageId }))
-    }, [dispatch, federationId, latestMessage, chatId, messageId])
+    }, [dispatch, chatId, federationId, latestMessage, messageId, pauseUpdates])
 }
