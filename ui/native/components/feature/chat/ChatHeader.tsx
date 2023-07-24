@@ -8,10 +8,10 @@ import {
     connectChat,
     disconnectChat,
     selectChatXmppClient,
+    selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../../../bridge'
-import { useChatContext } from '../../../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -22,9 +22,8 @@ const ChatHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { state } = useChatContext()
     const { toast } = useEnvironmentContext().state
-    const { websocketIsHealthy } = state
+    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const xmppClient = useAppSelector(selectChatXmppClient)
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,

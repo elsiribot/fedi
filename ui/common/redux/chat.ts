@@ -74,6 +74,7 @@ const initialFederationChatState = {
     lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
     lastSeenMessageId: null as string | null,
     encryptionKeys: null as Keypair | null,
+    websocketIsHealthy: false as boolean,
 }
 type FederationChatState = typeof initialFederationChatState
 
@@ -308,6 +309,17 @@ export const chatSlice = createSlice({
                 lastSeenMessageId: messageId,
             }
         },
+        setWebsocketIsHealthy(
+            state,
+            action: FederationPayloadAction<{ healthy: boolean }>,
+        ) {
+            const { federationId, healthy } = action.payload
+            const chatState = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...chatState,
+                websocketIsHealthy: healthy,
+            }
+        },
         resetAuthenticatedMember(state, action: FederationPayloadAction) {
             const { federationId } = action.payload
             const federation = getFederationChatState(state, federationId)
@@ -440,6 +452,7 @@ export const {
     setLastFetchedMessageId,
     setLastReadMessageId,
     setLastSeenMessageId,
+    setWebsocketIsHealthy,
     resetAuthenticatedMember,
     resetFederationChatState,
     resetChatState,
@@ -1124,6 +1137,9 @@ export const selectChatLastReadMessageIds = (s: CommonState) =>
 
 export const selectChatLastSeenMessageId = (s: CommonState) =>
     selectFederationChatState(s).lastSeenMessageId
+
+export const selectWebsocketIsHealthy = (s: CommonState) =>
+    selectFederationChatState(s).websocketIsHealthy
 
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {

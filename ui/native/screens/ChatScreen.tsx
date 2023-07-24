@@ -10,11 +10,11 @@ import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 import {
     fetchChatMembers,
     selectChatConnectionOptions,
+    selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import SvgImage from '../components/ui/SvgImage'
-import { useChatContext } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
 import {
@@ -33,8 +33,7 @@ const ChatScreen: React.FC<Props> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const isFocused = useIsFocused()
-    const { state } = useChatContext()
-    const { websocketIsHealthy } = state
+    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,

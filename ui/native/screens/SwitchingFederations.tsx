@@ -7,13 +7,10 @@ import {
     disconnectChat,
     selectActiveFederation,
     setActiveFederationId,
+    setWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
 import HoloLoader from '../components/ui/HoloLoader'
-import {
-    changeWebsocketIsHealthy,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { MainNavigatorDrawerParamList } from '../types/navigation'
 
@@ -28,7 +25,6 @@ const SwitchingFederations: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { federationId } = route.params
-    const { dispatch: chatContextDispatch } = useChatContext()
     const dispatch = useAppDispatch()
 
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -40,7 +36,12 @@ const SwitchingFederations: React.FC<Props> = ({
             previousActiveFederation &&
             federationId !== previousActiveFederation?.id
         ) {
-            chatContextDispatch(changeWebsocketIsHealthy(false))
+            dispatch(
+                setWebsocketIsHealthy({
+                    federationId: previousActiveFederation?.id,
+                    healthy: false,
+                }),
+            )
             dispatch(
                 disconnectChat({
                     federationId: previousActiveFederation?.id,
@@ -52,13 +53,7 @@ const SwitchingFederations: React.FC<Props> = ({
                 routes: [{ name: 'MainNavigator' }],
             })
         }
-    }, [
-        chatContextDispatch,
-        dispatch,
-        federationId,
-        navigation,
-        previousActiveFederation,
-    ])
+    }, [dispatch, federationId, navigation, previousActiveFederation])
 
     return (
         <View style={styles(theme).container}>
