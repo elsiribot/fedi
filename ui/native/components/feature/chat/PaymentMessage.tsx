@@ -1,42 +1,33 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { ChatMessage } from '@fedi/common/types'
 import { makePaymentText } from '@fedi/common/utils/chat'
 
-import { useChatContext } from '../../../state/contexts/ChatContext'
-import { Message } from '../../../types'
+import { useAppSelector } from '../../../state/hooks'
 import IncomingPullPayment from './IncomingPullPayment'
 import IncomingPushPayment from './IncomingPushPayment'
 import OutgoingPullPayment from './OutgoingPullPayment'
 import OutgoingPushPayment from './OutgoingPushPayment'
 
 type PaymentMessageProps = {
-    message: Message
+    message: ChatMessage
 }
 
 const PaymentMessage: React.FC<PaymentMessageProps> = ({
     message,
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
-    const {
-        state: { authenticatedMember },
-    } = useChatContext()
-    const { sentTo, sentBy, payment } = message
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const { sentTo, payment } = message
 
-    const messageSentBy = sentBy?.username || ''
-    const messageSentTo = sentTo?.username || ''
-    const paymentRecipient = payment?.recipient?.username || ''
-    const me = authenticatedMember?.username || ''
+    const messageSentTo = sentTo || ''
+    const paymentRecipient = payment?.recipient || ''
+    const me = authenticatedMember?.id || ''
 
-    const paymentText = makePaymentText(
-        t,
-        messageSentBy,
-        messageSentTo,
-        me,
-        paymentRecipient,
-        payment?.amount,
-        payment?.memo,
-    )
+    const paymentText = makePaymentText(t, message, authenticatedMember)
+
     if (messageSentTo === me && paymentRecipient === me) {
         return (
             <IncomingPushPayment

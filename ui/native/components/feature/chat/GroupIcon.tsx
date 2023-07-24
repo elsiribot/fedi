@@ -1,17 +1,17 @@
 import React from 'react'
 
-import { Chat, Group } from '../../../types'
+import { ChatGroup } from '@fedi/common/types'
+
 import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
-import type { SvgImageName } from '../../ui/SvgImage'
 
 type GroupIconProps = {
-    chat: Chat
+    chat: ChatGroup
     size?: AvatarSize
 }
 
 const GroupIcon = ({ chat, size = AvatarSize.md }: GroupIconProps) => {
-    const defaultGroupIcon = (chat as Group).broadcastOnly
+    const defaultGroupIcon = chat.broadcastOnly
         ? 'SpeakerPhone'
         : 'SocialPeople'
 
@@ -19,7 +19,7 @@ const GroupIcon = ({ chat, size = AvatarSize.md }: GroupIconProps) => {
         <Avatar
             id={chat.id}
             name={chat.name || ''}
-            icon={(chat.icon as SvgImageName) || defaultGroupIcon}
+            icon={defaultGroupIcon}
             size={size}
         />
     )

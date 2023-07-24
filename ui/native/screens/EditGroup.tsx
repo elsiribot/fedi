@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { configureChatGroup, selectChatGroup } from '@fedi/common/redux'
+
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { DEFAULT_GROUP_NAME } from '../constants'
-import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { usePrevious } from '../state/hooks'
-import { useXmpp } from '../state/hooks/chat'
+import { useAppDispatch, useAppSelector, usePrevious } from '../state/hooks'
 import { resetAfterGroupNameUpdate } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -21,15 +21,19 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { group } = route.params
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const { groupId } = route.params
+    const group = useAppSelector(s => selectChatGroup(s, groupId))
     const [groupName, setGroupName] = useState<string>(
-        group.name || DEFAULT_GROUP_NAME,
+        group?.name || DEFAULT_GROUP_NAME,
     )
     const [editingGroupName, setEditingGroupName] = useState<boolean>(false)
-    const { groups } = useChatContext().state
     const { toast } = useEnvironmentContext().state
-    const { changeMucRoomName } = useXmpp()
-    const currentGroup = groups.find(g => g.id === group.id)
+
+    const currentGroup = group
     const previousGroup = usePrevious(currentGroup)
 
     const handleSubmit = async () => {
@@ -38,15 +42,32 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
 
     useEffect(() => {
         const handleEditGroupName = async () => {
-            changeMucRoomName(group, groupName)?.catch(error => {
+            try {
+                if (!activeFederationId || !group) return
+                await dispatch(
+                    configureChatGroup({
+                        federationId: activeFederationId as string,
+                        groupId,
+                        groupName: groupName,
+                    }),
+                ).unwrap()
+            } catch (error) {
                 toast?.show(error as string, 3000)
-                setEditingGroupName(false)
-            })
+            }
+            setEditingGroupName(false)
         }
         if (editingGroupName === true) {
             handleEditGroupName()
         }
-    }, [changeMucRoomName, editingGroupName, group, groupName, toast])
+    }, [
+        activeFederationId,
+        dispatch,
+        editingGroupName,
+        group,
+        groupId,
+        groupName,
+        toast,
+    ])
 
     useEffect(() => {
         if (
@@ -55,7 +76,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
             currentGroup?.name !== previousGroup?.name
         ) {
             setEditingGroupName(false)
-            navigation.dispatch(resetAfterGroupNameUpdate(currentGroup))
+            navigation.dispatch(resetAfterGroupNameUpdate(currentGroup.id))
         }
     }, [currentGroup, previousGroup, navigation])
 

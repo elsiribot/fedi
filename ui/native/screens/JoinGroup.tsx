@@ -7,11 +7,12 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
+import { decodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
+
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { Group } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'JoinGroup'>
@@ -26,8 +27,9 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (input.startsWith('fedi:group:')) {
                 console.info('fedi chat group detected', input)
+                const groupId = decodeGroupInvitationLink(input)
                 navigation.replace('GroupChat', {
-                    group: Group.decodeInvitationLink(input),
+                    groupId,
                 })
             } else {
                 toast?.show(t('feature.chat.invalid-group'), 3000)

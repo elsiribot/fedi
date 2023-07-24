@@ -4,27 +4,21 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import uuid from 'react-native-uuid'
 
 import {
     selectActiveFederation,
-    selectChatEncryptionKeys,
+    selectAuthenticatedMember,
     selectMaxReceiveAmount,
+    sendDirectMessage,
 } from '@fedi/common/redux'
-import { Keypair, MSats } from '@fedi/common/types'
+import { ChatPayment, ChatPaymentStatus, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
+import { fedimint } from '../bridge'
 import AmountInput from '../components/ui/AmountInput'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import {
-    addToMembersSeen,
-    addToMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector, useBridge } from '../state/hooks'
-import { useXmpp } from '../state/hooks/chat'
-import { Member, Message, Payment, PaymentStatus, Sats } from '../types'
+import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
@@ -33,48 +27,38 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
-    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
     const [confirmingSend, setConfirmingSend] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [sendingEcash, setSendingEcash] = useState<boolean>(false)
     const [amount, setAmount] = useState<Sats>(0 as Sats)
     const { generateEcash } = useBridge()
-    const { sendDirectMessage } = useXmpp()
     const { toast } = useEnvironmentContext().state
-    const { state, dispatch } = useChatContext()
-    const { recipient } = route.params
+    const { recipientId } = route.params
 
     useEffect(() => {
         const generateAndSendEcash = async () => {
             try {
                 const millis = amountUtils.satToMsat(Number(amount) as Sats)
                 const ecash = await generateEcash(millis as MSats)
-                const messageWithEcash = new Message({
-                    id: uuid.v4(),
-                    content: 'fedi:payment-request:',
-                    sentBy: new Member({
-                        jid: state.xmppClient!.jid,
+                const payment: ChatPayment = {
+                    amount: millis,
+                    recipient: recipientId,
+                    status: ChatPaymentStatus.accepted,
+                    token: ecash,
+                }
+                dispatch(
+                    sendDirectMessage({
+                        fedimint,
+                        federationId: activeFederation?.id as string,
+                        recipientId: recipientId,
+                        payment,
                     }),
-                    sentTo: recipient,
-                    sentAt: Date.now() / 1000,
-                    payment: new Payment({
-                        amount: millis,
-                        recipient: recipient,
-                        updatedAt: Date.now() / 1000,
-                        status: PaymentStatus.accepted,
-                        token: ecash,
-                    }),
-                })
-                const withEncryptionKeys = activeChatEncryptionKeys as Keypair
-                sendDirectMessage(
-                    recipient,
-                    messageWithEcash,
-                    withEncryptionKeys,
                 )
-                dispatch(addToMessages(messageWithEcash))
-                dispatch(addToMembersSeen(recipient))
+                // go back to DirectChat to show sent payment
                 navigation.goBack()
             } catch (error) {
                 console.error(error)
@@ -86,15 +70,13 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             generateAndSendEcash()
         }
     }, [
-        activeChatEncryptionKeys,
+        activeFederation?.id,
         amount,
         dispatch,
         generateEcash,
         navigation,
-        recipient,
-        sendDirectMessage,
+        recipientId,
         sendingEcash,
-        state.xmppClient,
         t,
         toast,
     ])
@@ -103,26 +85,20 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         try {
             setIsLoading(true)
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
-            const me = new Member({
-                jid: state.xmppClient!.jid,
-            })
-            const ecashRequest = new Message({
-                id: uuid.v4(),
-                content: 'fedi:payment-request:',
-                sentBy: me,
-                sentTo: recipient,
-                sentAt: Date.now() / 1000,
-                payment: new Payment({
-                    amount: millis,
-                    recipient: me,
-                    status: PaymentStatus.requested,
-                    updatedAt: Date.now() / 1000,
+            const payment: ChatPayment = {
+                amount: millis,
+                // I am the recipient since this is a pull payment
+                recipient: authenticatedMember?.id,
+                status: ChatPaymentStatus.requested,
+            }
+            dispatch(
+                sendDirectMessage({
+                    fedimint,
+                    federationId: activeFederation?.id as string,
+                    recipientId: recipientId,
+                    payment,
                 }),
-            })
-            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
-            sendDirectMessage(recipient, ecashRequest, withEncryptionKeys)
-            dispatch(addToMessages(ecashRequest))
-            dispatch(addToMembersSeen(recipient))
+            )
             setIsLoading(false)
             navigation.goBack()
         } catch (error) {

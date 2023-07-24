@@ -4,10 +4,13 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
+import { selectChatGroup, selectChatGroupRole } from '@fedi/common/redux'
+
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useAppSelector } from '../state/hooks'
 import { ChatRole } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -17,9 +20,11 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const { group } = route.params
+    const { groupId } = route.params
+    const group = useAppSelector(s => selectChatGroup(s, groupId))
+    const myRole = useAppSelector(s => selectChatGroupRole(s, groupId))
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
-        group.broadcastOnly || false,
+        group?.broadcastOnly || false,
     )
 
     return (
@@ -32,7 +37,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     <SvgImage name="Room" size={SvgImageSize.md} />
                 </ImageBackground>
                 <Text h2 style={styles(theme).groupNameText}>
-                    {group.name}
+                    {group?.name || ''}
                 </Text>
             </View>
             <View style={styles(theme).sectionContainer}>
@@ -50,7 +55,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     label={t('feature.chat.invite-to-group')}
                     onPress={() => {
                         navigation.navigate('GroupInvite', {
-                            group,
+                            groupId,
                         })
                     }}
                 />
@@ -84,10 +89,10 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     <SettingsItem
                         image={<SvgImage name="SpeakerPhone" />}
                         label={t('feature.chat.broadcast-admin-settings')}
-                        disabled={group.myRole !== ChatRole.moderator}
+                        disabled={myRole !== ChatRole.moderator}
                         onPress={() => {
                             navigation.navigate('BroadcastAdminsList', {
-                                group,
+                                groupId,
                             })
                         }}
                     />

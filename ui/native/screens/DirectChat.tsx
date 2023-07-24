@@ -1,112 +1,89 @@
+import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import uuid from 'react-native-uuid'
 
-import { selectChatEncryptionKeys } from '@fedi/common/redux'
-import { Keypair } from '@fedi/common/types'
-import { jidToId, makeMessageGroups } from '@fedi/common/utils/chat'
+import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
+import {
+    fetchChatMember,
+    selectChatClientStatus,
+    selectChatMember,
+    selectChatMessages,
+    sendDirectMessage,
+} from '@fedi/common/redux'
+import { makeMessageGroups } from '@fedi/common/utils/chat'
 
+import { fedimint } from '../bridge'
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import {
-    addToMembersSeen,
-    addToMessages,
-    changeActiveChatId,
-    useChatContext,
-} from '../state/contexts/ChatContext'
-import { useAppSelector } from '../state/hooks'
-import { useXmpp } from '../state/hooks/chat'
-import { Member, Message } from '../types'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 
-const DirectChat: React.FC<Props> = ({ navigation, route }: Props) => {
+const DirectChat: React.FC<Props> = ({ route }: Props) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
-    const { member } = route.params
-    const activeChatEncryptionKeys = useAppSelector(selectChatEncryptionKeys)
-    const { state, dispatch } = useChatContext()
-    const { getPublicKeyFor, sendDirectMessage } = useXmpp()
-    const { member: currentMember } = route.params
+    const { memberId } = route.params
+    const isFocused = useIsFocused()
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const { toast } = useEnvironmentContext().state
+    const messages = useAppSelector(s => selectChatMessages(s, memberId))
+    const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
+    const member = useAppSelector(s => selectChatMember(s, memberId))
 
+    const messageCollections = useMemo(
+        () => makeMessageGroups(messages, 'desc'),
+        [messages],
+    )
+
+    // If we don't have info about this member, attempt to fetch a pubkey for them
     useEffect(() => {
-        // If we don't have this member's pubkey, check membersSeen
-        // or fetch it from chat server
-        if (currentMember && !currentMember.publicKeyHex) {
-            // Check if we have seen this member before
-            const storedMember = state.membersSeen.find(
-                (m: Member) => m.username === currentMember.username,
-            )
-            // If we have seen this member and have their pubkey
-            // update the route.params with storedMember
-            if (storedMember && storedMember.publicKeyHex) {
-                navigation.setParams({
-                    member: storedMember,
-                })
-            } else {
-                // otherwsie , getPublicKeyFor will update state.membersSeen
-                // with pubkey
-                getPublicKeyFor(currentMember)
-            }
-        }
-    }, [currentMember, getPublicKeyFor, navigation, state.membersSeen])
-
-    // Set active chat while we're on this screen
-    useEffect(() => {
-        dispatch(changeActiveChatId(jidToId(member.jid)))
-        return () => {
-            dispatch(changeActiveChatId(null))
-        }
-    }, [dispatch, member.jid])
-
-    const sendMessage = (messageText: string) => {
-        try {
-            // Make sure we have the member's pubkey before trying to send
-            if (!currentMember.publicKeyHex) {
-                return
-            }
-            const newMessage = new Message({
-                id: uuid.v4(),
-                content: messageText,
-                sentAt: Date.now() / 1000,
-                sentBy: new Member({
-                    jid: state.xmppClient?.jid,
-                }),
-                sentTo: currentMember,
-            })
-
-            const withEncryptionKeys = activeChatEncryptionKeys as Keypair
-            sendDirectMessage(currentMember, newMessage, withEncryptionKeys)
-            dispatch(addToMessages(newMessage))
-            dispatch(addToMembersSeen(currentMember))
-        } catch (error) {
-            console.error('sendMessage', error)
-        }
-    }
-
-    const groupedMessages = useMemo(() => {
-        // Filter to messages with this member
-        const messagesWithMember = state.messages.filter(m => {
-            if (
-                (m.sentBy?.username === member.username ||
-                    m.sentTo?.username === member.username) &&
-                // filter out groupchat messages
-                !m.sentIn
-            ) {
-                return true
-            }
+        if (member || !activeFederationId || !isChatOnline) return
+        dispatch(
+            fetchChatMember({ federationId: activeFederationId, memberId }),
+        ).catch(() => {
+            /* no-op */
         })
+    }, [activeFederationId, dispatch, isChatOnline, member, memberId])
 
-        // Group by timestamp / sender
-        return makeMessageGroups(messagesWithMember, 'desc')
-    }, [state.messages, member.username])
+    // Use this hook only if the screen is in focus
+    useUpdateLastMessageRead(
+        memberId,
+        messageCollections[0]?.[0]?.[0],
+        isFocused !== true,
+    )
+
+    const handleSend = useCallback(
+        async (messageText: string) => {
+            // If the memberId is not stored, then we have failed to fetch the pubkey
+            // and cannot send messages
+            if (member) {
+                await dispatch(
+                    sendDirectMessage({
+                        fedimint,
+                        federationId: activeFederationId as string,
+                        recipientId: memberId,
+                        content: messageText,
+                    }),
+                ).unwrap()
+            } else {
+                toast?.show(t('errors.chat-member-not-found'), 4000)
+            }
+        },
+        [activeFederationId, dispatch, member, memberId, t, toast],
+    )
 
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={groupedMessages} />
-            <MessageInput onMessageSubmitted={sendMessage} />
+            <MessagesList messages={messageCollections} />
+            <MessageInput onMessageSubmitted={handleSend} />
         </View>
     )
 }

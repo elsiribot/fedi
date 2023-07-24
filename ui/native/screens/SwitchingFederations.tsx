@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import {
+    disconnectChat,
     selectActiveFederation,
     setActiveFederationId,
 } from '@fedi/common/redux'
@@ -11,7 +12,6 @@ import {
 import HoloLoader from '../components/ui/HoloLoader'
 import {
     changeWebsocketIsHealthy,
-    resetXmppClient,
     useChatContext,
 } from '../state/contexts/ChatContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -28,8 +28,8 @@ const SwitchingFederations: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { federationId } = route.params
-    const { dispatch } = useChatContext()
-    const reduxDispatch = useAppDispatch()
+    const { dispatch: chatContextDispatch } = useChatContext()
+    const dispatch = useAppDispatch()
 
     const activeFederation = useAppSelector(selectActiveFederation)
     const previousActiveFederation = activeFederation
@@ -40,20 +40,24 @@ const SwitchingFederations: React.FC<Props> = ({
             previousActiveFederation &&
             federationId !== previousActiveFederation?.id
         ) {
-            dispatch(changeWebsocketIsHealthy(false))
-            dispatch(resetXmppClient())
-            reduxDispatch(setActiveFederationId(federationId))
+            chatContextDispatch(changeWebsocketIsHealthy(false))
+            dispatch(
+                disconnectChat({
+                    federationId: previousActiveFederation?.id,
+                }),
+            )
+            dispatch(setActiveFederationId(federationId))
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'MainNavigator' }],
             })
         }
     }, [
+        chatContextDispatch,
         dispatch,
         federationId,
-        previousActiveFederation,
-        reduxDispatch,
         navigation,
+        previousActiveFederation,
     ])
 
     return (

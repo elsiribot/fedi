@@ -16,19 +16,9 @@ import {
 import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/ui/FederationLogo'
 import {
-    CHAT_MEMBERS_PERSISTENCE_KEY,
-    CHAT_MESSAGES_PERSISTENCE_KEY,
-    CHAT_GROUPS_PERSISTENCE_KEY,
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
 } from '../constants'
-import {
-    DEFAULT_GROUPS,
-    receiveGroups,
-    receiveMembersSeen,
-    receiveMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -42,7 +32,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const { dispatch: chatDispatch } = useChatContext()
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
     const activeFederationId = useAppSelector(
@@ -59,23 +48,8 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                     federationId: activeFederationId,
                 }),
             )
-            chatDispatch(receiveMembersSeen([]))
-            chatDispatch(receiveMessages([]))
-            chatDispatch(receiveGroups(DEFAULT_GROUPS))
-            AsyncStorage.setItem(
-                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ members: [] }),
-            )
-            AsyncStorage.setItem(
-                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ messages: [] }),
-            )
-            AsyncStorage.setItem(
-                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ groups: DEFAULT_GROUPS }),
-            )
         }
-    }, [activeFederationId, chatDispatch, dispatch])
+    }, [activeFederationId, dispatch])
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))

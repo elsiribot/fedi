@@ -1,25 +1,24 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
-import { Keypair } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
-import { makePaymentUpdatedAt } from '@fedi/common/utils/chat'
-
+import { selectActiveFederation, updateChatPayment } from '@fedi/common/redux'
 import {
-    updateMessage,
-    useChatContext,
-} from '../../../state/contexts/ChatContext'
+    ChatMessage,
+    ChatPayment,
+    ChatPaymentStatus,
+    MSats,
+} from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+
+import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useAppSelector, useBridge } from '../../../state/hooks'
-import { useXmpp } from '../../../state/hooks/chat'
-import { Member, Message, MSats, Payment, PaymentStatus } from '../../../types'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPaymentActionsProps = {
-    message: Message
+    message: ChatMessage
     onReject: () => void
     onPay: () => void
     paymentProcessing: boolean
@@ -46,7 +45,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
         )
 
         switch (payment?.status!) {
-            case PaymentStatus.paid:
+            case ChatPaymentStatus.paid:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
                         <SvgImage
@@ -60,7 +59,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                     </View>
                 )
                 break
-            case PaymentStatus.rejected:
+            case ChatPaymentStatus.rejected:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
                         <Text medium caption style={styles(theme).statusText}>
@@ -69,7 +68,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                     </View>
                 )
                 break
-            case PaymentStatus.canceled:
+            case ChatPaymentStatus.canceled:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
                         <Text medium caption style={styles(theme).statusText}>
@@ -78,7 +77,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
                     </View>
                 )
                 break
-            case PaymentStatus.requested:
+            case ChatPaymentStatus.requested:
                 paymentStatus = (
                     <>
                         <Button
@@ -124,8 +123,8 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
 }
 
 type IncomingPullPaymentProps = {
-    message: Message
-    outgoingPayment?: Payment
+    message: ChatMessage
+    outgoingPayment?: ChatPayment
     text: string
 }
 
@@ -135,38 +134,24 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
 }: IncomingPullPaymentProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { generateEcash } = useBridge()
-    const { sendDirectMessage } = useXmpp()
+    const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const {
-        dispatch,
-        state: { encryptionKeys },
-    } = useChatContext()
     const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
-    const [generatedEcashToken, setGeneratedEcashToken] = useState<string>('')
 
-    const rejectPaymentRequest = () => {
+    const rejectPaymentRequest = async () => {
         try {
-            const rejectedPaymentMessage = new Message({
-                ...message,
-                payment: {
-                    ...message.payment,
-                    updatedAt: makePaymentUpdatedAt(message.payment),
-                    status: PaymentStatus.rejected,
-                },
-            })
-            const withEncryptionKeys = encryptionKeys as Keypair
-            const updatePayment = true
-            sendDirectMessage(
-                message.sentBy as Member,
-                rejectedPaymentMessage,
-                withEncryptionKeys,
-                updatePayment,
-            )
-            dispatch(updateMessage(rejectedPaymentMessage))
+            await dispatch(
+                updateChatPayment({
+                    fedimint,
+                    federationId: activeFederation?.id as string,
+                    messageId: message.id,
+                    action: 'reject',
+                }),
+            ).unwrap()
         } catch (error) {
             console.error(error)
+            toast?.show('errors.chat-payment-failed')
         }
     }
 
@@ -183,102 +168,23 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
                 }),
                 5000,
             )
-            throw new Error('errors.insufficient-balance')
         } else {
             setPaymentProcessing(true)
-        }
-    }
-
-    // When paymentProcessing begins, we generate and send ecash
-    useEffect(() => {
-        const generateAndSendEcash = async () => {
             try {
-                const ecash = await generateEcash(
-                    message.payment?.amount as MSats,
-                )
-                setGeneratedEcashToken(ecash)
-            } catch (error) {
-                console.error(error)
-                toast?.show(t('errors.unknown-error'), 3000)
-                // Reset the action buttons here to try again
-                setPaymentProcessing(false)
+                await dispatch(
+                    updateChatPayment({
+                        fedimint,
+                        federationId: activeFederation?.id as string,
+                        messageId: message.id,
+                        action: 'pay',
+                    }),
+                ).unwrap()
+            } catch (err) {
+                toast?.show('errors.chat-payment-failed')
             }
-        }
-
-        if (paymentProcessing === true) {
-            generateAndSendEcash()
-        }
-    }, [
-        dispatch,
-        generateEcash,
-        paymentProcessing,
-        message.payment?.amount,
-        toast,
-        t,
-    ])
-
-    useEffect(() => {
-        const prepareAndSendPayment = async () => {
-            try {
-                const acceptedPaymentMessage = new Message({
-                    ...message,
-                    payment: {
-                        ...message.payment,
-                        // sender of the payment request should be the recipient
-                        // here...  need to refactor for sender-initiated payments
-                        recipient: message.sentBy,
-                        updatedAt: makePaymentUpdatedAt(message.payment),
-                        status: PaymentStatus.accepted,
-                        token: generatedEcashToken,
-                    },
-                })
-                setGeneratedEcashToken('')
-                dispatch(updateMessage(acceptedPaymentMessage))
-                const withEncryptionKeys = encryptionKeys as Keypair
-                const updatePayment = true
-                sendDirectMessage(
-                    message.sentBy as Member,
-                    acceptedPaymentMessage,
-                    withEncryptionKeys,
-                    updatePayment,
-                )
-                // Once the token has been generated and sent in a message
-                // we wait for the recipient to redeem the ecash and send
-                // back a message with the payment.status set to 'paid'
-                //
-                // however, if the recipient is not online, we set a 5s timeout
-                // here so that we at least show the sender a pending state
-                // which should update to paid in the useEffect below
-                // as soon as we get the confirmation message...
-                setTimeout(() => {
-                    setPaymentProcessing(false)
-                }, 5000)
-            } catch (error) {
-                console.error(error)
-            }
-        }
-        if (generatedEcashToken) {
-            prepareAndSendPayment()
-        }
-    }, [
-        dispatch,
-        generatedEcashToken,
-        message,
-        sendDirectMessage,
-        encryptionKeys,
-    ])
-
-    useEffect(() => {
-        if (message.payment?.status === PaymentStatus.paid) {
             setPaymentProcessing(false)
         }
-    }, [message.payment?.status])
-
-    // TODO: if a payment has a token & a Rebroadcast a payment
-    // useEffect(() => {
-    //     if (payment?.token && payment?.status === PaymentStatus.accepted) {
-    //     }
-    // }, [])
+    }
 
     return (
         <View style={styles(theme).container}>

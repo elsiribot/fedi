@@ -1,13 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { createChatGroup, selectChatXmppClient } from '@fedi/common/redux'
+
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useXmpp } from '../state/hooks/chat'
-import { Group } from '../types'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
@@ -15,59 +16,44 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const xmppClient = useAppSelector(selectChatXmppClient)
     const [groupName, setGroupName] = useState<string>('')
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
-    const { enterMucRoom, getUniqueGroupId } = useXmpp()
     const { toast } = useEnvironmentContext().state
-
-    const handleSubmit = async () => {
-        if (groupName) {
-            setCreatingGroup(true)
-        }
-    }
 
     const handleCreateGroup = useCallback(async () => {
         try {
-            const groupId = await getUniqueGroupId()
-            const groupLink = Group.encodeInvitationLink(groupId)
-            const group = new Group({
-                id: groupId,
-                name: groupName,
-                invitationCode: groupLink,
-                broadcastOnly,
-            })
-            const enteredGroup = await enterMucRoom(group)
-            console.info('group created', enteredGroup)
-            navigation.replace('GroupChat', { group })
+            if (!activeFederationId || !xmppClient)
+                throw new Error('errors.chat-unavailable')
+            setCreatingGroup(true)
+            const groupId = await xmppClient.generateUniqueGroupId()
+
+            const newGroup = await dispatch(
+                createChatGroup({
+                    federationId: activeFederationId,
+                    id: groupId,
+                    name: groupName,
+                }),
+            ).unwrap()
+            console.info('group created', newGroup)
+            navigation.replace('GroupChat', { groupId })
         } catch (error) {
-            console.error(error)
             console.error('group create failed', error)
             toast?.show(error as string, 3000)
         }
         setCreatingGroup(false)
-    }, [
-        broadcastOnly,
-        enterMucRoom,
-        getUniqueGroupId,
-        groupName,
-        navigation,
-        toast,
-    ])
+    }, [activeFederationId, dispatch, groupName, navigation, toast, xmppClient])
 
-    useEffect(() => {
-        if (creatingGroup === true) {
+    const handleSubmit = async () => {
+        if (groupName) {
             handleCreateGroup()
         }
-    }, [
-        creatingGroup,
-        enterMucRoom,
-        getUniqueGroupId,
-        groupName,
-        handleCreateGroup,
-        navigation,
-        toast,
-    ])
+    }
 
     return (
         <View style={styles(theme).container}>

@@ -1,125 +1,83 @@
+import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import uuid from 'react-native-uuid'
 
+import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
+import {
+    selectChatGroup,
+    selectChatGroupRole,
+    selectChatMessages,
+    sendGroupMessage,
+} from '@fedi/common/redux'
+import { ChatRole } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import {
-    addToGroups,
-    changeActiveChatId,
-    updateGroup,
-    useChatContext,
-} from '../state/contexts/ChatContext'
-import { usePrevious } from '../state/hooks'
-import { useXmpp } from '../state/hooks/chat'
-import { ChatRole, Group, Member, Message } from '../types'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
-const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
+const GroupChat: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { state, dispatch } = useChatContext()
-    const { enterMucRoom, fetchMucRoomConfig, sendGroupMessage } = useXmpp()
-    const { group: currentGroup } = route.params
-    const previousGroup = usePrevious(currentGroup)
+    const { groupId } = route.params
+    const isFocused = useIsFocused()
+    const federationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    ) as string
+    const group = useAppSelector(s => selectChatGroup(s, groupId))
+    const currentGroup = group
+    const myRole = useAppSelector(s => selectChatGroupRole(s, groupId))
+    const messages = useAppSelector(s => selectChatMessages(s, groupId))
+    const dispatch = useAppDispatch()
 
-    const groupedMessages = useMemo(() => {
-        // Filter to messages with this group
-        const messagesInGroup = state.messages.filter(
-            m => m.sentIn?.id === currentGroup?.id,
-        )
+    const messageCollections = useMemo(
+        () => makeMessageGroups(messages, 'desc'),
+        [messages],
+    )
 
-        // Group by timestamp / sender
-        return makeMessageGroups(messagesInGroup, 'desc')
-    }, [state.messages, currentGroup?.id])
+    // TODO: Should we still try to enter the group on this screen
+    // even if we auto-enter all groups when coming online?
+    // useEffect(() => {
+    //     ...
+    // }, [])
 
-    // TODO: Refactor useEffects and route param to use Redux selectors
-    useEffect(() => {
-        // announce presence + add to state.groups
-        enterMucRoom(currentGroup)
-            .then((enteredGroup: Group) => {
-                dispatch(addToGroups(enteredGroup))
-                // fetch room config to see if name has changed
-                return fetchMucRoomConfig(enteredGroup)
-            })
-            .then(configuredGroup => {
-                dispatch(
-                    updateGroup(
-                        new Group({
-                            ...currentGroup,
-                            ...configuredGroup,
-                        }),
-                    ),
-                )
-            })
-        // TODO: some new messages will be received automatically after
-        // enterMucRoom is called but we should check archive here
-        // to make sure we get them all
-    }, [currentGroup, dispatch, enterMucRoom, fetchMucRoomConfig])
+    // Use this hook only if the screen is in focus
+    useUpdateLastMessageRead(
+        groupId,
+        messageCollections[0]?.[0]?.[0],
+        isFocused !== true,
+    )
 
-    // update route param if name has changed
-    useEffect(() => {
-        // fetchMucRoomConfig will update state.groups if name has changed
-        const storedGroup = state.groups.find(g => g.id === currentGroup.id)
-        if (
-            storedGroup &&
-            storedGroup?.name &&
-            previousGroup?.name &&
-            (storedGroup?.name !== previousGroup?.name ||
-                storedGroup?.broadcastOnly !== previousGroup?.broadcastOnly)
-        ) {
-            navigation.setParams({
-                group: storedGroup,
-            })
-        }
-    }, [
-        currentGroup,
-        previousGroup?.name,
-        navigation,
-        state.groups,
-        previousGroup?.broadcastOnly,
-    ])
-
-    // Set active chat while we're on this screen
-    useEffect(() => {
-        dispatch(changeActiveChatId(currentGroup.id))
-        return () => dispatch(changeActiveChatId(null))
-    }, [dispatch, currentGroup.id])
+    const handleSend = async (messageText: string) => {
+        await dispatch(
+            sendGroupMessage({
+                federationId,
+                groupId,
+                content: messageText,
+            }),
+        ).unwrap()
+    }
 
     // In a broadcast-only group, members cannot send messages if they have a
     // role of 'visitor'. The creator of the group has the role of 'owner'
     const blockMessageInput =
-        currentGroup.broadcastOnly && currentGroup.myRole === ChatRole.visitor
+        currentGroup?.broadcastOnly && myRole === ChatRole.visitor
 
     return (
         <View style={styles(theme).container}>
-            <MessagesList messages={groupedMessages} multiUserChat />
+            <MessagesList messages={messageCollections} multiUserChat />
             {blockMessageInput ? (
                 <Text style={styles(theme).noticeText}>
                     {t('feature.chat.broadcast-only-notice')}
                 </Text>
             ) : (
-                <MessageInput
-                    onMessageSubmitted={messageText => {
-                        const newMessage = new Message({
-                            id: uuid.v4(),
-                            content: messageText,
-                            sentAt: Date.now() / 1000,
-                            sentBy: new Member({
-                                jid: state.xmppClient!.jid,
-                            }),
-                            sentIn: currentGroup,
-                        })
-                        sendGroupMessage(currentGroup, newMessage)
-                    }}
-                />
+                <MessageInput onMessageSubmitted={handleSend} />
             )}
         </View>
     )

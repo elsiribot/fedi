@@ -3,26 +3,33 @@ import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { jidToId } from '@fedi/common/utils/chat'
+import { makePaymentText } from '@fedi/common/utils/chat'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { Chat, ChatType, Group } from '../../../types'
+import { useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
-    chat: Chat
-    unread?: boolean
-    selectChat: (chat: Chat) => void
+    chat: ChatWithLatestMessage
+    selectChat: (chat: ChatWithLatestMessage) => void
 }
 
-const ChatTile = ({ chat, unread, selectChat }: ChatTileProps) => {
+const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
     const { theme } = useTheme()
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
-    const previewTextWeight = unread ? { medium: true } : {}
+    const { latestMessage, hasNewMessages } = chat
+    const previewTextWeight = hasNewMessages ? { medium: true } : {}
+
+    let previewMessage = latestMessage?.content
+    if (latestMessage?.payment) {
+        previewMessage = makePaymentText(t, latestMessage, authenticatedMember)
+    }
 
     return (
         <Pressable
@@ -32,28 +39,17 @@ const ChatTile = ({ chat, unread, selectChat }: ChatTileProps) => {
                 <View
                     style={[
                         styles(theme).unreadIndicator,
-                        unread ? { opacity: 1 } : { opacity: 0 },
+                        hasNewMessages ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
                     {chat.type === ChatType.direct ? (
                         <View style={styles(theme).directIconContainer}>
-                            {chat.members && chat.members[0]?.username ? (
-                                <Avatar
-                                    id={jidToId(chat.members[0].jid)}
-                                    name={chat.members[0].username}
-                                    size={AvatarSize.md}
-                                />
-                            ) : (
-                                <SvgImage
-                                    name={
-                                        (chat as Group).broadcastOnly
-                                            ? 'SpeakerPhone'
-                                            : 'SocialPeople'
-                                    }
-                                    size={SvgImageSize.lg}
-                                />
-                            )}
+                            <Avatar
+                                id={chat.id || ''}
+                                name={chat.name || '?'}
+                                size={AvatarSize.md}
+                            />
                         </View>
                     ) : (
                         <GroupIcon chat={chat} />
@@ -68,22 +64,22 @@ const ChatTile = ({ chat, unread, selectChat }: ChatTileProps) => {
                         bold>
                         {chat.name || DEFAULT_GROUP_NAME}
                     </Text>
-                    {chat.lastReceivedTimestamp && (
+                    {latestMessage?.sentAt && (
                         <Text small style={styles(theme).timestamp}>
                             {dateUtils.formatChatTileTimestamp(
-                                chat.lastReceivedTimestamp!,
+                                latestMessage?.sentAt,
                             )}
                         </Text>
                     )}
                 </View>
                 <View style={styles(theme).bottomRow}>
-                    {chat.messagePreview ? (
+                    {previewMessage ? (
                         <Text
                             caption
                             style={styles(theme).messagePreview}
                             numberOfLines={1}
                             {...previewTextWeight}>
-                            {chat.messagePreview}
+                            {previewMessage}
                         </Text>
                     ) : (
                         <Text
@@ -95,13 +91,14 @@ const ChatTile = ({ chat, unread, selectChat }: ChatTileProps) => {
                         </Text>
                     )}
 
-                    {chat.pinned && (
+                    {/* TODO: Implement pinned chat groups */}
+                    {/* {chat.pinned && (
                         <SvgImage
                             name="Pin"
                             size={SvgImageSize.xs}
                             containerStyle={styles(theme).pinIcon}
                         />
-                    )}
+                    )} */}
                 </View>
             </View>
         </Pressable>

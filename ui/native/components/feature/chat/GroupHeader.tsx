@@ -4,6 +4,10 @@ import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
+import { selectChatGroup } from '@fedi/common/redux'
+import { ChatGroup } from '@fedi/common/types'
+
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 import { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
@@ -16,9 +20,10 @@ const GroupHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupChatRouteProp>()
-    const { group } = route.params
+    const { groupId } = route.params
+    const group = useAppSelector(s => selectChatGroup(s, groupId))
 
-    const headerText = group.name || t('feature.chat.new-group')
+    const headerText = group?.name || t('feature.chat.new-group')
 
     return (
         <Header
@@ -31,9 +36,9 @@ const GroupHeader: React.FC<{}> = () => {
                     disabled={group === undefined}
                     style={styles(theme).groupNameContainer}
                     onPress={() => {
-                        navigation.navigate('GroupAdmin', { group })
+                        navigation.navigate('GroupAdmin', { groupId })
                     }}>
-                    <GroupIcon chat={group} size={AvatarSize.sm} />
+                    <GroupIcon chat={group as ChatGroup} size={AvatarSize.sm} />
                     <Text
                         bold
                         numberOfLines={1}

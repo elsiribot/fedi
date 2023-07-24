@@ -3,22 +3,16 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import type { ValidateEcashResponse } from '@fedi/common/types'
-import { Keypair } from '@fedi/common/types'
-import { makePaymentUpdatedAt } from '@fedi/common/utils/chat'
+import { updateChatPayment } from '@fedi/common/redux'
+import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
 
-import {
-    updateMessage,
-    useChatContext,
-} from '../../../state/contexts/ChatContext'
-import { useBridge } from '../../../state/hooks'
-import { useXmpp } from '../../../state/hooks/chat'
-import { Member, Message, Payment, PaymentStatus } from '../../../types'
+import { fedimint } from '../../../bridge'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPushPaymentProps = {
-    message: Message
-    incomingPayment?: Payment
+    message: ChatMessage
+    incomingPayment?: ChatPayment
     text: string
 }
 
@@ -28,102 +22,42 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
 }: IncomingPushPaymentProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { receiveEcash, validateEcash } = useBridge()
-    const { sendDirectMessage } = useXmpp()
-    const {
-        dispatch,
-        state: { encryptionKeys },
-    } = useChatContext()
-    const [broadcastingUpdate, setBroadcastingUpdate] = useState<boolean>(false)
-    // const [tokenWasSpent, setTokenWasSpent] = useState<boolean>(false)
-    const [validatingToken, setValidatingToken] = useState<boolean>(false)
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
     const [processingRedemption, setProcessingRedemption] =
-        useState<ValidateEcashResponse | null>(null)
-    const { payment, sentBy } = message
-
-    // When paymentProcessing begins, ...
-    useEffect(() => {
-        if (broadcastingUpdate) {
-            setBroadcastingUpdate(false)
-            const acceptedPaymentMessage = new Message({
-                ...message,
-                payment: {
-                    ...payment,
-                    updatedAt: makePaymentUpdatedAt(payment),
-                    status: PaymentStatus.paid,
-                    token: null,
-                },
-            })
-            const withEncryptionKeys = encryptionKeys as Keypair
-            const updatePayment = true
-            sendDirectMessage(
-                sentBy as Member,
-                acceptedPaymentMessage,
-                withEncryptionKeys,
-                updatePayment,
-            )
-            dispatch(updateMessage(acceptedPaymentMessage))
-        }
-    }, [
-        broadcastingUpdate,
-        dispatch,
-        message,
-        payment,
-        sendDirectMessage,
-        sentBy,
-        encryptionKeys,
-    ])
-
-    useEffect(() => {
-        const redeemEcash = async () => {
-            try {
-                setProcessingRedemption(null)
-                await receiveEcash(payment?.token!)
-                setBroadcastingUpdate(true)
-            } catch (error) {
-                console.error('receiveEcash', error)
-                // setTokenWasSpent(true)
-            }
-        }
-        if (processingRedemption !== null && payment?.token) {
-            redeemEcash()
-        }
-    }, [payment?.token, processingRedemption, receiveEcash])
-
-    // TODO: Handle if a token is already spent
-    // useEffect(() => {
-    //     if (tokenWasSpent === true) {
-    //         updateAndBroadcastSpentPayment()
-    //     }
-    // }, [tokenWasSpent])
-
-    useEffect(() => {
-        const checkForSpentToken = async (ecash: string) => {
-            try {
-                const result = await validateEcash(ecash)
-                if (result.valid) {
-                    setProcessingRedemption(result)
-                } else {
-                    // TODO: Handle invalid ecash tokens
-                }
-            } catch (error) {
-                console.error('validateEcash', error)
-            }
-        }
-        if (payment?.token && validatingToken === true) {
-            checkForSpentToken(payment?.token!)
-        }
-    }, [validatingToken, payment?.token, validateEcash])
+        useState<boolean>(false)
+    const { payment } = message
 
     // Check for valid ecash if found in incoming message
     useEffect(() => {
-        if (payment?.token && payment?.status !== PaymentStatus.paid) {
-            setValidatingToken(true)
+        const dispatchPaymentUpdate = async () => {
+            try {
+                setProcessingRedemption(true)
+                await dispatch(
+                    updateChatPayment({
+                        fedimint,
+                        federationId: activeFederationId as string,
+                        messageId: message.id,
+                        action: 'receive',
+                    }),
+                ).unwrap()
+            } catch (error) {
+                console.error('dispatchPaymentUpdate', error)
+            }
+            setProcessingRedemption(false)
         }
-    }, [payment?.token, payment?.status])
+        if (payment?.token) {
+            dispatchPaymentUpdate()
+        }
+    }, [activeFederationId, dispatch, message.id, payment?.token])
 
     const renderPaymentStatus = () => {
-        if (payment?.status === PaymentStatus.paid) {
+        if (
+            processingRedemption === false &&
+            payment?.status === ChatPaymentStatus.paid
+        ) {
             return (
                 <View style={styles(theme).statusContainer}>
                     <SvgImage

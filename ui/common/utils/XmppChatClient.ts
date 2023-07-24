@@ -27,15 +27,19 @@ import encryptionUtils from './EncryptionUtils'
 import xmlUtils, {
     EncryptedDirectChatMessage,
     EnterMucRoomPresence,
+    GetMembersListQuery,
     GetMessagesQuery,
     GetPublicKeyQuery,
     GetRoomConfigQuery,
     GetRosterQuery,
     GroupChatMessage,
+    PublishNotificationTokenQuery,
     PublishPublicKeyQuery,
+    SetMemberRoleQuery,
     SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
+    XmppMemberRole,
 } from './XmlUtils'
 import { jidToId } from './chat'
 
@@ -82,6 +86,48 @@ export class XmppChatClient {
             await this.xmpp.stop()
         } catch (err) {
             console.warn(`Encountered error when stopping xmpp client`, err)
+        }
+    }
+
+    async fetchGroupMembersList(
+        groupId: string,
+        role: XmppMemberRole,
+    ): Promise<ChatMember[]> {
+        try {
+            const { iqCaller, jid } = this.getQueryProperties()
+            const membersListQueryXml = xmlUtils.buildQuery(
+                new GetMembersListQuery({
+                    from: jid.toString(),
+                    to: `${groupId}@muc.${jid.getDomain()}`,
+                    role,
+                }),
+            )
+            const result = await iqCaller.request(membersListQueryXml)
+            console.debug('fetchGroupMembersList', result)
+            let members: ChatMember[] = []
+            if (result.getChild('query')) {
+                const memberItems = result
+                    .getChild('query')
+                    ?.getChildren('item')
+
+                if (memberItems) {
+                    members = memberItems.map(i => {
+                        const username: string = i.getAttr('nick')
+                        const memberJid: string = i.getAttr('jid')
+                        const id: string = memberJid.split(
+                            `/${XMPP_RESOURCE}`,
+                        )[0]
+                        return {
+                            id,
+                            username,
+                        } as ChatMember
+                    })
+                }
+            }
+            console.debug('members', members)
+            return members
+        } catch (error) {
+            throw new Error('errors.unknown-error')
         }
     }
 
@@ -212,6 +258,47 @@ export class XmppChatClient {
             await iqCaller.request(setPubsubNodeConfigQueryXml)
         } catch (error) {
             console.error('publishPublicKey', error)
+            throw new Error('errors.unknown-error')
+        }
+    }
+
+    async publishNotificationToken(token: string) {
+        try {
+            const { iqCaller, jid } = this.getQueryProperties()
+            const publishNotificationTokenQueryXml = xmlUtils.buildQuery(
+                new PublishNotificationTokenQuery({
+                    token,
+                    from: jid.toString(),
+                }),
+            )
+            const result = await iqCaller.request(
+                publishNotificationTokenQueryXml,
+            )
+            console.info('publishNotificationToken', result)
+        } catch (error) {
+            console.error('publishNotificationToken', error)
+            throw new Error('errors.unknown-error')
+        }
+    }
+
+    async addAdminToGroup(
+        groupId: string,
+        member: ChatMember,
+    ): Promise<ChatMember> {
+        try {
+            const { iqCaller, jid } = this.getQueryProperties()
+            const grantVoiceQueryXml = xmlUtils.buildQuery(
+                new SetMemberRoleQuery({
+                    from: jid.toString(),
+                    to: `${groupId}@muc.${jid.getDomain()}`,
+                    username: member.username,
+                    role: XmppMemberRole.participant,
+                }),
+            )
+            await iqCaller.request(grantVoiceQueryXml)
+            return member
+        } catch (error) {
+            console.error('addAdminToGroup', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -362,6 +449,28 @@ export class XmppChatClient {
             return { name, broadcastOnly: !!moderated }
         } catch (error) {
             console.error('fetchMucRoomConfig', error)
+            throw new Error('errors.unknown-error')
+        }
+    }
+
+    async removeAdminFromGroup(
+        groupId: string,
+        member: ChatMember,
+    ): Promise<ChatMember> {
+        try {
+            const { iqCaller, jid } = this.getQueryProperties()
+            const revokeVoiceQueryXml = xmlUtils.buildQuery(
+                new SetMemberRoleQuery({
+                    from: jid.toString(),
+                    to: `${groupId}@muc.${jid.getDomain()}`,
+                    username: member.username,
+                    role: XmppMemberRole.visitor,
+                }),
+            )
+            await iqCaller.request(revokeVoiceQueryXml)
+            return member
+        } catch (error) {
+            console.error('removeAdminFromGroup', error)
             throw new Error('errors.unknown-error')
         }
     }

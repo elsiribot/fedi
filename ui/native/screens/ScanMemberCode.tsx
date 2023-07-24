@@ -1,20 +1,21 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import { jid } from '@xmpp/client'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
-import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
+import { selectChatConnectionOptions } from '@fedi/common/redux'
+import {
+    decodeDirectChatLink,
+    decodeGroupInvitationLink,
+} from '@fedi/common/utils/xmpp'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import { XMPP_RESOURCE } from '../constants'
-import { useChatContext } from '../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { Group, Member } from '../types'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ScanMemberCode'>
@@ -24,7 +25,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const { connectionOptions } = useChatContext().state
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
 
     const handleUserInput = useCallback(
         async (input: string) => {
@@ -34,20 +35,17 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                 if (!connectionOptions) {
                     return toast?.show(t('errors.chat-unavailable'), 3000)
                 }
-                const memberId = decodeDirectChatLink(input)
-                const memberJid = jid(
-                    memberId,
-                    connectionOptions.domain as string,
-                    XMPP_RESOURCE,
-                )
+                const memberUsername = decodeDirectChatLink(input)
+                const { domain } = connectionOptions
 
                 navigation.replace('DirectChat', {
-                    member: new Member({ jid: memberJid }),
+                    memberId: `${memberUsername}@${domain}`,
                 })
             } else if (input.startsWith('fedi:group:')) {
                 console.info('fedi chat group detected', input)
+                const groupId = decodeGroupInvitationLink(input)
                 navigation.replace('GroupChat', {
-                    group: Group.decodeInvitationLink(input),
+                    groupId,
                 })
             } else {
                 toast?.show(t('feature.chat.invalid-member'), 3000)

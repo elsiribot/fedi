@@ -26,17 +26,7 @@ import SvgImage from '../components/ui/SvgImage'
 import {
     ACTIVE_FEDERATION_ID_DB_KEY,
     AUTHENTICATED_GUARDIAN_DB_KEY,
-    CHAT_GROUPS_PERSISTENCE_KEY,
-    CHAT_MEMBERS_PERSISTENCE_KEY,
-    CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
-import {
-    DEFAULT_GROUPS,
-    receiveGroups,
-    receiveMembersSeen,
-    receiveMessages,
-    useChatContext,
-} from '../state/contexts/ChatContext'
 import {
     changeDeveloperMode,
     useEnvironmentContext,
@@ -57,7 +47,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { state: environmentState, dispatch: environmentDispatch } =
         useEnvironmentContext()
-    const { dispatch: chatDispatch } = useChatContext()
     const { toast } = useEnvironmentContext().state
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
@@ -79,23 +68,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     federationId: activeFederationId,
                 }),
             )
-            chatDispatch(receiveMembersSeen([]))
-            chatDispatch(receiveMessages([]))
-            chatDispatch(receiveGroups(DEFAULT_GROUPS))
-            AsyncStorage.setItem(
-                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ members: [] }),
-            )
-            AsyncStorage.setItem(
-                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ messages: [] }),
-            )
-            AsyncStorage.setItem(
-                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederationId}`,
-                JSON.stringify({ groups: DEFAULT_GROUPS }),
-            )
         }
-    }, [activeFederationId, chatDispatch, dispatch])
+    }, [activeFederationId, dispatch])
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
