@@ -84,5 +84,5 @@ export function useUpdateLastMessageRead(
     useEffect(() => {
         if (!federationId || !messageId) return
         dispatch(setLastReadMessageId({ federationId, chatId, messageId }))
-    }, [dispatch, federationId, latestMessage])
+    }, [dispatch, federationId, latestMessage, chatId, messageId])
 }
