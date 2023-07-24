@@ -11,7 +11,11 @@ import isEqual from 'lodash/isEqual'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
 
-import { CommonState, selectFederationMetadata } from '.'
+import {
+    CommonState,
+    selectActiveFederation,
+    selectFederationMetadata,
+} from '.'
 import {
     Chat,
     ChatMessage,
@@ -1089,7 +1093,7 @@ async function getOrFetchCredentials(
 /*** Selectors ***/
 
 const selectFederationChatState = (s: CommonState) =>
-    getFederationChatState(s.chat, s.federation.activeFederationId || '')
+    getFederationChatState(s.chat, selectActiveFederation(s)?.id || '')
 
 export const selectChatCredentials = (s: CommonState) =>
     selectFederationChatState(s).credentials
