@@ -4,6 +4,7 @@ import {
     createSlice,
     PayloadAction,
 } from '@reduxjs/toolkit'
+import isEqual from 'lodash/isEqual'
 
 import { authenticateChat, CommonState } from '.'
 import type {
@@ -47,22 +48,25 @@ export const federationSlice = createSlice({
             state.federations = action.payload
         },
         updateFederation(state, action: PayloadAction<FederationEvent>) {
-            state.federations = state.federations.map(federation =>
-                action.payload.id === federation.id
-                    ? {
-                          ...federation,
-                          ...action.payload,
-                          // TODO: this is needed to make sure metadata from bridge doesn't
-                          // overwrite externally fetched metadata, but still should
-                          // be refactored because the meta_external_url will never update
-                          // if it does need to be changed and fetch from somewhere else
-                          meta: {
-                              ...action.payload.meta,
-                              ...federation.meta,
-                          },
-                      }
-                    : federation,
-            )
+            state.federations = state.federations.map(federation => {
+                if (action.payload.id !== federation.id) return federation
+
+                const updatedFederation = {
+                    ...federation,
+                    ...action.payload,
+                    // TODO: this is needed to make sure metadata from bridge doesn't
+                    // overwrite externally fetched metadata, but still should
+                    // be refactored because the meta_external_url will never update
+                    // if it does need to be changed and fetch from somewhere else
+                    meta: {
+                        ...action.payload.meta,
+                        ...federation.meta,
+                    },
+                }
+                return isEqual(federation, updatedFederation)
+                    ? federation
+                    : updatedFederation
+            })
         },
         setActiveFederationId(state, action: PayloadAction<string | null>) {
             state.activeFederationId = action.payload
