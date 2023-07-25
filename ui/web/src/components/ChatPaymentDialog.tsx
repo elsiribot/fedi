@@ -144,7 +144,14 @@ const Balance = styled('div', {
 })
 
 const AmountContainer = styled('div', {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
     padding: `60px 0`,
+
+    '@sm': {
+        padding: '32px 0',
+    },
 })
 
 const Actions = styled('div', {
@@ -155,6 +162,5 @@ const Actions = styled('div', {
 
     '> *': {
         flex: 1,
-        maxWidth: 160,
     },
 })

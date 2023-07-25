@@ -104,14 +104,16 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                         amount={inputAmount}
                         onChangeAmount={setInputAmount}
                         readOnly={!!exactAmount}
+                        extraInput={
+                            description ? (
+                                <InvoiceDescription>
+                                    <Text variant="caption" weight="medium">
+                                        &quot;{description}&quot;
+                                    </Text>
+                                </InvoiceDescription>
+                            ) : undefined
+                        }
                     />
-                    {description && (
-                        <InvoiceDescription>
-                            <Text variant="caption" weight="medium">
-                                &quot;{description}&quot;
-                            </Text>
-                        </InvoiceDescription>
-                    )}
                 </InvoiceContainer>
                 <Button onClick={handleSend}>
                     {t('words.send')} {satsFmt} {t('words.sats')}

@@ -101,7 +101,10 @@ export const SendOffline: React.FC<Props> = ({
 }
 
 const AmountContainer = styled('div', {
-    padding: '30px 0',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '32px 0',
 })
 
 const HelpText = styled('div', {

@@ -20,7 +20,7 @@ import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { useRouteState } from '../context/RouteStateContext'
 import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
-import { styled, theme } from '../styles'
+import { config, styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { CopyInput } from './CopyInput'
@@ -64,7 +64,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const isOfflineWalletSupported = useIsOfflineWalletSupported()
     const isOnchainSupported = useIsOnchainDepositSupported()
 
-    // Reset on close, focus input on open
+    // Reset on close, focus input on desktop open
     useEffect(() => {
         if (!open) {
             setAmount(
@@ -81,9 +81,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             setIsReceivingOffline(false)
             setReceivedTransaction(undefined)
         } else {
-            requestAnimationFrame(() =>
-                containerRef.current?.querySelector('input')?.focus(),
-            )
+            if (!window.matchMedia(config.media.sm).matches) {
+                requestAnimationFrame(() =>
+                    containerRef.current?.querySelector('input')?.focus(),
+                )
+            }
         }
     }, [open, lnurlw])
 
@@ -233,15 +235,21 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         error={error}
                         onChangeAmount={setAmount}
                         readOnly={wantsInvoice}
+                        extraInput={
+                            showNote ? (
+                                <NoteInput
+                                    value={note}
+                                    placeholder={
+                                        qrData ? '' : t('phrases.add-note')
+                                    }
+                                    onChange={ev =>
+                                        setNote(ev.currentTarget.value)
+                                    }
+                                    readOnly={wantsInvoice}
+                                />
+                            ) : undefined
+                        }
                     />
-                    {showNote && (
-                        <NoteInput
-                            value={note}
-                            placeholder={qrData ? '' : t('phrases.add-note')}
-                            onChange={ev => setNote(ev.currentTarget.value)}
-                            readOnly={wantsInvoice}
-                        />
-                    )}
                     {wantsInvoice && (
                         <QRContainer>
                             <QRCode data={qrData} />
@@ -312,6 +320,7 @@ const Container = styled('div', {
     flexDirection: 'column',
     paddingTop: 24,
     gap: 24,
+    minHeight: 0,
 })
 
 const RequestTypeToggle = styled('button', {
@@ -333,10 +342,13 @@ const Center = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'auto',
+    minHeight: 0,
     gap: 24,
 })
 
 const NoteInput = styled('input', {
+    width: '100%',
     padding: 8,
     textAlign: 'center',
     fontSize: theme.fontSizes.caption,
