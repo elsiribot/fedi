@@ -59,20 +59,25 @@ export function useOmniPaymentState(
     const [lnurlPayment, setLnurlPayment] = useState<ParsedLnurlPay['data']>()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
 
-    const handleOmniInput = useCallback(async (input: ExpectedInputData) => {
-        if (input.type === ParserDataType.Bolt11) {
-            const decoded = await fedimint.decodeInvoice(input.data.invoice)
-            setInvoice(decoded)
-            if (decoded.amount) {
-                setInputAmount(amountUtils.msatToSat(decoded.amount))
+    const handleOmniInput = useCallback(
+        async (input: ExpectedInputData) => {
+            if (input.type === ParserDataType.Bolt11) {
+                const decoded = await fedimint.decodeInvoice(input.data.invoice)
+                setInvoice(decoded)
+                if (decoded.amount) {
+                    setInputAmount(amountUtils.msatToSat(decoded.amount))
+                }
+            } else if (input.type === ParserDataType.LnurlPay) {
+                setLnurlPayment(input.data)
+                if (input.data.minSendable) {
+                    setInputAmount(
+                        amountUtils.msatToSat(input.data.minSendable),
+                    )
+                }
             }
-        } else if (input.type === ParserDataType.LnurlPay) {
-            setLnurlPayment(input.data)
-            if (input.data.minSendable) {
-                setInputAmount(amountUtils.msatToSat(input.data.minSendable))
-            }
-        }
-    }, [])
+        },
+        [fedimint],
+    )
 
     const handleOmniSend = useCallback(
         async (amount: Sats) => {
@@ -92,7 +97,7 @@ export function useOmniPaymentState(
                 throw new Error('Requires invoice or lnurl payment to send')
             }
         },
-        [invoice, lnurlPayment, federationId],
+        [invoice, lnurlPayment, federationId, fedimint],
     )
 
     const resetOmniPaymentState = useCallback(() => {
