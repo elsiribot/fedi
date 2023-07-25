@@ -136,6 +136,7 @@ export enum SupportedFeature {
 }
 
 export interface ClientConfigMetadata {
+    federation_name?: string
     // If this exists, we use it to download a JSON file that overrides
     // te use of any other fields below
     meta_external_url?: string

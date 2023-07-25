@@ -14,38 +14,54 @@ import {
     FederationPreview,
 } from '../types'
 
-export const fetchMetadataFromExternalUrl = async (
-    federation: Federation,
-): Promise<Federation> => {
-    let updatedMetadata = federation.meta
-    if (federation.meta?.meta_external_url) {
+const fetchMetadataFromExternalUrl = async (
+    federation: Pick<Federation, 'meta' | 'id'>,
+): Promise<Federation['meta']> => {
+    const externalUrl = federation.meta?.meta_external_url
+    if (!externalUrl) {
+        return federation.meta
+    }
+
+    console.info('Fetching metadata from', externalUrl)
+    try {
+        const response = await fetch(externalUrl, {
+            cache: 'no-cache',
+        })
+        const metaJson = await response.json()
         console.info(
-            'Fetching metadata from',
-            federation.meta.meta_external_url,
+            `Found metadata at ${externalUrl}. Checking for matching federation key...`,
+            Object.keys(metaJson),
         )
-        try {
-            const response = await fetch(federation.meta.meta_external_url, {
-                cache: 'no-cache',
-            })
-            const metaJson = await response.json()
+        if (metaJson[federation.id]) {
             console.info(
-                `Found metadata at ${federation.meta.meta_external_url}. Checking for matching federation key...`,
-                Object.keys(metaJson),
+                `Found federation key ${federation.id}. Overriding other meta fields with external data...`,
             )
-            if (Object.keys(metaJson).includes(federation.id)) {
-                console.info(
-                    `Found federation key ${federation.id}. Overriding other meta fields with external data...`,
-                )
-                updatedMetadata = metaJson[federation.id]
-            }
-        } catch (error) {
-            console.error('Failed to fetch metadata from external url', error)
+            return metaJson[federation.id]
         }
+    } catch (error) {
+        console.error('Failed to fetch metadata from external url', error)
     }
-    return {
-        ...federation,
-        meta: updatedMetadata,
-    }
+
+    return federation.meta
+}
+
+/**
+ * Given a list of federations, return the federations with their meta fields
+ * updated from
+ */
+export const applyExternalMetadataToFederations = (
+    federations: Federation[],
+) => {
+    return Promise.all(
+        federations.map(async federation => {
+            const meta = await fetchMetadataFromExternalUrl(federation)
+            return {
+                ...federation,
+                name: meta.federation_name || federation.name,
+                meta,
+            }
+        }),
+    )
 }
 
 export const getSupportedFeatures = (
@@ -276,17 +292,21 @@ export async function getFederationPreview(
             })
             // Listen for responses on open. Once we get all messages back,
             // resolve with data.If any of them fail, reject the promise.
-            ws.addEventListener('message', ev => {
+            ws.addEventListener('message', async ev => {
                 const data = JSON.parse(ev.data)
                 if (data.error) {
                     return reject(new Error(data.error.message))
                 }
                 if (data.id === 0) {
                     id = data.result.client_config.federation_id
+                    meta = await fetchMetadataFromExternalUrl({
+                        id,
+                        meta: data.result.client_config.meta,
+                    })
                     name =
+                        meta.federation_name ||
                         data.result.client_config.meta.federation_name ||
                         'Unnamed federation'
-                    meta = data.result.client_config.meta
                 }
                 if (data.id === 1) {
                     consensusVersion = data.result.core.consensus

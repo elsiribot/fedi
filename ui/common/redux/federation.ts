@@ -18,7 +18,7 @@ import type {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
-    fetchMetadataFromExternalUrl,
+    applyExternalMetadataToFederations,
     getFederationGroupChats,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
@@ -146,8 +146,8 @@ export const refreshFederationsMetadata = createAsyncThunk<
     async (_, { getState, dispatch }) => {
         const federations = getState().federation.federations
         console.info('refreshFederationsMetadata')
-        const federationsWithMeta = await Promise.all(
-            federations.map(fetchMetadataFromExternalUrl),
+        const federationsWithMeta = await applyExternalMetadataToFederations(
+            federations,
         )
         dispatch(setFederations(federationsWithMeta))
     },
@@ -160,8 +160,8 @@ export const refreshFederations = createAsyncThunk<
 >('federation/refreshFederations', async (fedimint, { dispatch }) => {
     const federations = await fedimint.listFederations()
     console.info('refreshFederations', 'federations', federations)
-    const federationsWithMeta = await Promise.all(
-        federations.map(fetchMetadataFromExternalUrl),
+    const federationsWithMeta = await applyExternalMetadataToFederations(
+        federations,
     )
     dispatch(setFederations(federationsWithMeta))
     return federations
@@ -183,9 +183,8 @@ export const joinFederation = createAsyncThunk<
 
         const federations = await fedimint.listFederations()
         if (federations.length > 0) {
-            const federationsWithMeta = await Promise.all(
-                federations.map(fetchMetadataFromExternalUrl),
-            )
+            const federationsWithMeta =
+                await applyExternalMetadataToFederations(federations)
             dispatch(setFederations(federationsWithMeta))
             dispatch(setActiveFederationId(federation.id))
         } else {
