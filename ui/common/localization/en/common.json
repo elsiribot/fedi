@@ -406,6 +406,9 @@
             "ended-description": "This pop-up Federation <bold>ended {{date}}</bold>. Leftover balances were donated to a charitable cause."
         },
         "omni": {
+            "action-paste": "Paste from clipboard",
+            "action-scan": "Scan QR code",
+            "action-upload": "Upload QR image",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
             "confirm-fedi-chat": "This is a chat link, do you want to go there?",
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",

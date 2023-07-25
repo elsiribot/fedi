@@ -1,3 +1,23 @@
+/**
+ * @file
+ * This context allows us to push the user to routes with hidden state attached,
+ * accessed via a React context. This is very similar to React-Native's
+ * navigation state (https://reactnavigation.org/docs/navigation-state/)
+ *
+ * This had to be a custom solution since Next.js typically wants you to carry
+ * state to routes in the form of query parameters for improved server side
+ * rendering, but we don't want to do this for two reasons:
+ *
+ * 1. Some of the data here is dangerously large to be put into query parameters
+ *    for fear of limits. For instance, LNURL pay can have arbitrarily sized
+ *    metadata attached.
+ * 2. From a privacy perspective, we do not want users accessing routes with
+ *    query parameters that may provide identifying information. Including a
+ *    federation id, bolt11 invoice, chat identities etc. in the query param
+ *    could have it sent to the server and ending up in logs.
+ *
+ * This state is lost if the user manually navigates or refreshes to a page.
+ */
 import { useRouter } from 'next/router'
 import React, {
     createContext,

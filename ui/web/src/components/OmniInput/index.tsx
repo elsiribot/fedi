@@ -131,23 +131,23 @@ export function OmniInput<
                       onClick: () => setIsScanning(false),
                   }
                 : {
-                      label: 'Scan QR code',
+                      label: t('feature.omni.action-scan'),
                       icon: ScanIcon,
                       onClick: () => setIsScanning(true),
                   },
             {
-                label: 'Paste from Clipboard',
+                label: t('feature.omni.action-paste'),
                 icon: ClipboardIcon,
                 onClick: handlePaste,
             },
             {
-                label: 'Upload QR Image',
+                label: t('feature.omni.action-upload'),
                 icon: QRIcon,
                 onClick: () => fileInputRef.current?.click(),
             },
             ...(customActions || []),
         ]
-    }, [customActions, isScanning, inputLabel, handlePaste, fileInputRef])
+    }, [customActions, isScanning, inputLabel, handlePaste, fileInputRef, t])
 
     let confirmation: React.ReactNode | undefined
     if (invalidData || unexpectedData) {
