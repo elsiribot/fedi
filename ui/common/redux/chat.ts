@@ -7,6 +7,7 @@ import {
     AnyAction,
     isAnyOf,
 } from '@reduxjs/toolkit'
+import { xml } from '@xmpp/client'
 import isEqual from 'lodash/isEqual'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
@@ -617,6 +618,14 @@ export const connectChat = createAsyncThunk<
 
         // On connection, update various states
         client.on('online', async () => {
+            console.debug('online')
+            // Establish healthy websocket state
+            dispatch(
+                setWebsocketIsHealthy({
+                    federationId,
+                    healthy: true,
+                }),
+            )
             // Publish public key
             client
                 .publishPublicKey(encryptionKeys.publicKey)
@@ -675,10 +684,72 @@ export const connectChat = createAsyncThunk<
     },
 )
 
-export const disconnectChat = createAsyncThunk<void, { federationId: string }>(
-    'chat/disconnectChat',
-    async ({ federationId }) => {
-        await xmppChatClientManager.destroyClient(federationId)
+export const disconnectChat = createAsyncThunk<
+    void,
+    { federationId: string },
+    { state: CommonState }
+>('chat/disconnectChat', async ({ federationId }, { dispatch }) => {
+    dispatch(
+        setWebsocketIsHealthy({
+            federationId,
+            healthy: false,
+        }),
+    )
+    await xmppChatClientManager.destroyClient(federationId)
+})
+
+export const ensureHealthyXmppStream = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>(
+    'chat/ensureHealthyXmppStream',
+    ({ fedimint, federationId }, { dispatch }) => {
+        dispatch(
+            setWebsocketIsHealthy({
+                federationId,
+                healthy: false,
+            }),
+        )
+        // Sometimes we send a presence message and do not
+        // get a response which may mean the stream cannot
+        // be resumed so we need to reconnect the chat client
+        const client = xmppChatClientManager.getClient(federationId)
+        const reconnectTimer = setTimeout(async () => {
+            console.info(
+                'no response from XMPP server after 3s, rebuilding XMPP client',
+            )
+            await dispatch(
+                disconnectChat({
+                    federationId,
+                }),
+            ).unwrap()
+            dispatch(
+                connectChat({
+                    fedimint,
+                    federationId,
+                }),
+            )
+        }, 3000)
+        // This expects a response to the presence message which means
+        // the stream has been resumed successfully so we can clear
+        // the reconnectTimer and cleanup the listener
+        const onStanzaReceived = async (_: Element) => {
+            dispatch(
+                setWebsocketIsHealthy({
+                    federationId,
+                    healthy: true,
+                }),
+            )
+            client?.xmpp.removeListener('stanza', onStanzaReceived)
+            console.info('XMPP server responded, do not rebuild XMPP client')
+            clearTimeout(reconnectTimer)
+        }
+        client?.xmpp.on('stanza', onStanzaReceived)
+        console.info(
+            'sending presence to XMPP server to test for stable stream',
+        )
+        client?.xmpp.send(xml('presence'))
     },
 )
 

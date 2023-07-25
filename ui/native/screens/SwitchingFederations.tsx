@@ -7,7 +7,6 @@ import {
     disconnectChat,
     selectActiveFederation,
     setActiveFederationId,
-    setWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
 import HoloLoader from '../components/ui/HoloLoader'
@@ -36,12 +35,9 @@ const SwitchingFederations: React.FC<Props> = ({
             previousActiveFederation &&
             federationId !== previousActiveFederation?.id
         ) {
-            dispatch(
-                setWebsocketIsHealthy({
-                    federationId: previousActiveFederation?.id,
-                    healthy: false,
-                }),
-            )
+            // TODO: Try maintaining multiple connected chat clients across
+            // multiple federations and see if it operates smoothly
+            // For now we disconnect chat for non-active federations...
             dispatch(
                 disconnectChat({
                     federationId: previousActiveFederation?.id,
