@@ -17,7 +17,6 @@ import { fedimint, initializeBridge } from './bridge'
 import CustomToast from './components/ui/CustomToast'
 import { ErrorScreen } from './screens/ErrorScreen'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
-import { ChatProvider } from './state/contexts/ChatContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { FederationsProvider } from './state/contexts/FederationsContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
@@ -115,7 +114,6 @@ const App = () => {
                             providers={[
                                 EnvironmentProvider,
                                 FederationsProvider,
-                                ChatProvider,
                                 BackupRecoveryProvider,
                             ]}>
                             {bridgeIsReady && <Router />}
