@@ -1,23 +1,30 @@
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import arrowLeftIcon from '@fedi/common/assets/svgs/arrow-left.svg'
 import { useAmountInput } from '@fedi/common/hooks/amount'
 import { Sats } from '@fedi/common/types'
 
-import { keyframes, styled, theme } from '../styles'
+import { useMediaQuery } from '../hooks'
+import { config, keyframes, styled, theme } from '../styles'
+import { Icon } from './Icon'
 import { Text } from './Text'
 
 interface Props {
     amount: Sats
     error?: string
     readOnly?: boolean
+    extraInput?: React.ReactNode
     onChangeAmount?: (amount: Sats) => void
 }
+
+const numpadButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'backspace'] as const
 
 export const AmountInput: React.FC<Props> = ({
     amount,
     error,
     readOnly,
+    extraInput,
     onChangeAmount,
 }) => {
     const { t } = useTranslation()
@@ -30,13 +37,19 @@ export const AmountInput: React.FC<Props> = ({
         handleChangeSats,
         currencySymbol,
     } = useAmountInput(amount, onChangeAmount)
+    const isSmall = useMediaQuery(config.media.sm)
 
     const activeWrapProps = {
         active: true,
         readOnly,
-        onClick: useCallback((ev: React.MouseEvent) => {
-            ev.currentTarget.querySelector('input')?.focus()
-        }, []),
+        onClick: useCallback(
+            (ev: React.MouseEvent) => {
+                if (!isSmall) {
+                    ev.currentTarget.querySelector('input')?.focus()
+                }
+            },
+            [isSmall],
+        ),
     }
     const inactiveWrapProps = {
         active: false,
@@ -47,59 +60,118 @@ export const AmountInput: React.FC<Props> = ({
             (ev: React.MouseEvent) => {
                 if (readOnly) return
                 setIsFiat(is => !is)
-                ev.currentTarget.querySelector('input')?.focus()
+                if (!isSmall) {
+                    ev.currentTarget.querySelector('input')?.focus()
+                }
             },
-            [readOnly, setIsFiat],
+            [readOnly, setIsFiat, isSmall],
         ),
     }
 
+    const onPressNumpad = useCallback(
+        (button: (typeof numpadButtons)[number]) => {
+            const value = isFiat ? fiatValue : satsValue
+            const handleChange = isFiat ? handleChangeFiat : handleChangeSats
+            if (button === 'backspace') {
+                handleChange(value.slice(0, -1))
+            } else {
+                handleChange(`${value}${button}`)
+            }
+        },
+        [isFiat, satsValue, fiatValue, handleChangeFiat, handleChangeSats],
+    )
+
     return (
-        <Container
-            css={{
-                '--container-height': `88px`,
-                '--error-height': error ? '28px' : '0px',
-            }}>
-            {error && (
-                <Error>
-                    <Text variant="caption" weight="medium">
-                        {error}
-                    </Text>
-                </Error>
+        <Container>
+            <InputContainer>
+                <AmountInputContainer
+                    css={{
+                        '--container-height': `88px`,
+                        '--error-height': error ? '28px' : '0px',
+                    }}>
+                    {error && (
+                        <Error>
+                            <Text variant="caption" weight="medium">
+                                {error}
+                            </Text>
+                        </Error>
+                    )}
+                    <FieldWrap
+                        {...(isFiat ? inactiveWrapProps : activeWrapProps)}>
+                        <SnugInput>
+                            <input
+                                readOnly={isFiat || readOnly}
+                                value={satsValue}
+                                onChange={ev =>
+                                    handleChangeSats(ev.currentTarget.value)
+                                }
+                            />
+                            <div>{satsValue}</div>
+                        </SnugInput>
+                        <span>{t('words.sats')}</span>
+                    </FieldWrap>
+                    <FieldWrap
+                        {...(isFiat ? activeWrapProps : inactiveWrapProps)}>
+                        <span>{currencySymbol}</span>
+                        <SnugInput>
+                            <input
+                                readOnly={!isFiat || readOnly}
+                                value={fiatValue}
+                                inputMode="decimal"
+                                onChange={ev =>
+                                    handleChangeFiat(ev.currentTarget.value)
+                                }
+                            />
+                            <div>{fiatValue}</div>
+                        </SnugInput>
+                    </FieldWrap>
+                </AmountInputContainer>
+                {extraInput}
+            </InputContainer>
+            {!readOnly && (
+                <NumpadContainer>
+                    {numpadButtons.map(btn => (
+                        <NumpadButton
+                            key={btn}
+                            isPlaceholder={btn === ''}
+                            onClick={() => onPressNumpad(btn)}>
+                            {btn === 'backspace' ? (
+                                <Icon icon={arrowLeftIcon} />
+                            ) : (
+                                btn
+                            )}
+                        </NumpadButton>
+                    ))}
+                </NumpadContainer>
             )}
-            <FieldWrap {...(isFiat ? inactiveWrapProps : activeWrapProps)}>
-                <SnugInput>
-                    <input
-                        readOnly={isFiat || readOnly}
-                        value={satsValue}
-                        onChange={ev =>
-                            handleChangeSats(ev.currentTarget.value)
-                        }
-                    />
-                    <div>{satsValue}</div>
-                </SnugInput>
-                <span>{t('words.sats')}</span>
-            </FieldWrap>
-            <FieldWrap {...(isFiat ? activeWrapProps : inactiveWrapProps)}>
-                <span>{currencySymbol}</span>
-                <SnugInput>
-                    <input
-                        readOnly={!isFiat || readOnly}
-                        value={fiatValue}
-                        inputMode="decimal"
-                        onChange={ev =>
-                            handleChangeFiat(ev.currentTarget.value)
-                        }
-                    />
-                    <div>{fiatValue}</div>
-                </SnugInput>
-            </FieldWrap>
         </Container>
     )
 }
 
 const Container = styled('div', {
-    position: 'relative',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     width: '100%',
+    gap: 24,
+})
+
+const InputContainer = styled('div', {
+    flex: 1,
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    gap: 24,
+})
+
+const AmountInputContainer = styled('div', {
+    width: '100%',
+    position: 'relative',
     height: 'calc(var(--container-height) + var(--error-height))',
     transition: 'height 200ms ease',
 })
@@ -193,5 +265,60 @@ const SnugInput = styled('div', {
         border: 'none',
         padding: 0,
         outline: 'none',
+    },
+})
+
+const NumpadContainer = styled('div', {
+    display: 'none',
+    width: '100%',
+    maxWidth: 400,
+
+    '@sm': {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateRows: 'repeat(4, 1fr)',
+        gap: 8,
+    },
+
+    '@media (max-height: 640px)': {
+        display: 'none',
+    },
+})
+
+const NumpadButton = styled('button', {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    borderRadius: 8,
+    fontSize: 20,
+    fontWeight: theme.fontWeights.medium,
+    lineHeight: '32px',
+    transition: 'background-color 80ms ease',
+
+    '@media (max-height: 760px)': {
+        padding: 16,
+    },
+
+    '@media (max-height: 700px)': {
+        lineHeight: '28px',
+        padding: 12,
+    },
+
+    '&:hover, &:focus': {
+        background: theme.colors.primary05,
+        outline: 'none',
+    },
+    '&:active': {
+        background: theme.colors.primary10,
+        outline: 'none',
+    },
+
+    variants: {
+        isPlaceholder: {
+            true: {
+                visibility: 'hidden',
+            },
+        },
     },
 })
