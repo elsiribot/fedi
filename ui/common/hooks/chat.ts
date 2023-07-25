@@ -5,8 +5,10 @@ import type { ChatMember, ChatMessage } from '@fedi/common/types'
 import {
     selectActiveFederation,
     selectLatestChatMessage,
+    selectPushNotificationToken,
     setLastReadMessageId,
     setLastSeenMessageId,
+    setPushNotificationToken,
 } from '../redux'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
@@ -94,4 +96,33 @@ export function useUpdateLastMessageRead(
         if (!federationId || !messageId || pauseUpdates) return
         dispatch(setLastReadMessageId({ federationId, chatId, messageId }))
     }, [dispatch, chatId, federationId, latestMessage, messageId, pauseUpdates])
+}
+
+// This hook sets a given device token to be published to the XMPP server
+// so it can receive push notifications for new messages
+export function usePublishNotificationToken(
+    getDeviceToken: () => Promise<string>,
+) {
+    const dispatch = useCommonDispatch()
+    const activeFederationId = useCommonSelector(
+        s => s.federation.activeFederationId,
+    )
+    const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
+
+    useEffect(() => {
+        if (!activeFederationId || pushNotificationToken) return
+
+        getDeviceToken()
+            .then(token => {
+                dispatch(
+                    setPushNotificationToken({
+                        federationId: activeFederationId as string,
+                        pushNotificationToken: token,
+                    }),
+                )
+            })
+            .catch(error => {
+                console.error('Failed to get device token', error)
+            })
+    }, [activeFederationId, dispatch, getDeviceToken, pushNotificationToken])
 }

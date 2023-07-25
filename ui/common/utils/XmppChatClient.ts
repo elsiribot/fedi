@@ -274,7 +274,7 @@ export class XmppChatClient {
             const result = await iqCaller.request(
                 publishNotificationTokenQueryXml,
             )
-            console.info('publishNotificationToken', result)
+            console.info('publishNotificationToken result', result)
         } catch (error) {
             console.error('publishNotificationToken', error)
             throw new Error('errors.unknown-error')

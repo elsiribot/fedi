@@ -75,6 +75,7 @@ const initialFederationChatState = {
     lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
     lastSeenMessageId: null as string | null,
     encryptionKeys: null as Keypair | null,
+    pushNotificationToken: null as string | null,
     websocketIsHealthy: false as boolean,
 }
 type FederationChatState = typeof initialFederationChatState
@@ -256,6 +257,17 @@ export const chatSlice = createSlice({
             state[federationId] = {
                 ...federation,
                 authenticatedMember,
+            }
+        },
+        setPushNotificationToken(
+            state,
+            action: FederationPayloadAction<{ pushNotificationToken: string }>,
+        ) {
+            const { federationId, pushNotificationToken } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                pushNotificationToken,
             }
         },
         setChatEncryptionKeys(
@@ -453,6 +465,7 @@ export const {
     setLastFetchedMessageId,
     setLastReadMessageId,
     setLastSeenMessageId,
+    setPushNotificationToken,
     setWebsocketIsHealthy,
     resetAuthenticatedMember,
     resetFederationChatState,
@@ -630,6 +643,13 @@ export const connectChat = createAsyncThunk<
             client
                 .publishPublicKey(encryptionKeys.publicKey)
                 .catch(() => console.error('Failed to publish public key'))
+
+            // Publish a push notification token if set by the application
+            if (chatState.pushNotificationToken) {
+                client
+                    .publishNotificationToken(chatState.pushNotificationToken)
+                    .catch(() => console.error('Failed to publish public key'))
+            }
 
             // Fetch chat history
             dispatch(fetchChatHistory({ federationId }))
@@ -1208,6 +1228,9 @@ export const selectChatLastReadMessageIds = (s: CommonState) =>
 
 export const selectChatLastSeenMessageId = (s: CommonState) =>
     selectFederationChatState(s).lastSeenMessageId
+
+export const selectPushNotificationToken = (s: CommonState) =>
+    selectFederationChatState(s).pushNotificationToken
 
 export const selectWebsocketIsHealthy = (s: CommonState) =>
     selectFederationChatState(s).websocketIsHealthy
