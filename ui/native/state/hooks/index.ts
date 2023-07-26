@@ -5,6 +5,7 @@ import {
     MutableRefObject,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
 } from 'react'
 import { AppState as RNAppState, AppStateStatus } from 'react-native'
@@ -325,7 +326,8 @@ export const useXmppHealthCheck = () => {
 // This hook gets the device's FCM token and publishes it
 // to the XMPP server if chat is supported
 export const useXmppPushNotifications = async () => {
-    usePublishNotificationToken(() => {
-        return messaging().getToken()
-    })
+    const getDeviceToken = useMemo(() => {
+        return () => messaging().getToken()
+    }, [])
+    usePublishNotificationToken(getDeviceToken)
 }
