@@ -6,16 +6,13 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useCameraDevices } from 'react-native-vision-camera'
 
-import { selectChatConnectionOptions } from '@fedi/common/redux'
-import {
-    decodeDirectChatLink,
-    decodeGroupInvitationLink,
-} from '@fedi/common/utils/xmpp'
+import { joinChatGroup, selectChatConnectionOptions } from '@fedi/common/redux'
+import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ScanMemberCode'>
@@ -26,9 +23,14 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const dispatch = useAppDispatch()
 
     const handleUserInput = useCallback(
         async (input: string) => {
+            if (!activeFederationId) return
             if (input.startsWith('fedi:member:')) {
                 console.info('fedi chat member detected', input)
                 // TODO: show chat unavailable
@@ -43,15 +45,20 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                 })
             } else if (input.startsWith('fedi:group:')) {
                 console.info('fedi chat group detected', input)
-                const groupId = decodeGroupInvitationLink(input)
+                const res = await dispatch(
+                    joinChatGroup({
+                        federationId: activeFederationId,
+                        link: input,
+                    }),
+                ).unwrap()
                 navigation.replace('GroupChat', {
-                    groupId,
+                    groupId: res.id,
                 })
             } else {
                 toast?.show(t('feature.chat.invalid-member'), 3000)
             }
         },
-        [connectionOptions, navigation, toast, t],
+        [activeFederationId, connectionOptions, dispatch, navigation, t, toast],
     )
 
     const devices = useCameraDevices()

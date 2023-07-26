@@ -1,11 +1,11 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { fetchGroupConfig } from '@fedi/common/redux'
+import { fetchGroupConfig, joinChatGroup } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
@@ -32,6 +32,19 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
         toast?.show(t('feature.chat.copied-group-invite-code'), 3000)
     }
 
+    const handleJoinGroup = useCallback(async () => {
+        if (!federationId) return
+        const res = await dispatch(
+            joinChatGroup({
+                federationId,
+                link: encodeGroupInvitationLink(groupId),
+            }),
+        ).unwrap()
+        navigation.replace('GroupChat', {
+            groupId: res.id,
+        })
+    }, [dispatch, federationId, groupId, navigation])
+
     useEffect(() => {
         const refreshGroupName = async () => {
             if (federationId && groupId) {
@@ -49,7 +62,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
             size="sm"
             color={theme.colors.secondary}
             containerStyle={styles(theme).container}
-            onPress={() => navigation.navigate('GroupChat', { groupId })}
+            onPress={handleJoinGroup}
             onLongPress={copyToClipboard}
             title={
                 <View style={styles(theme).contents}>
