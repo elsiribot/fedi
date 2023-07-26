@@ -11,6 +11,14 @@ import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
+// prettier-ignore
+const numpadButtons = [
+    1, 2, 3,
+    4, 5, 6,
+    7, 8, 9,
+    null, 0, 'backspace',
+] as const
+
 /**
  * Provides state, callbacks, and misc information for rendering an amount
  * input that allows entry in both fiat and sats.
@@ -128,6 +136,20 @@ export function useAmountInput(
         ],
     )
 
+    const handleNumpadPress = useCallback(
+        (button: (typeof numpadButtons)[number]) => {
+            if (button === null) return
+            const value = isFiat ? fiatValue : satsValue
+            const handleChange = isFiat ? handleChangeFiat : handleChangeSats
+            if (button === 'backspace') {
+                handleChange(value.slice(0, -1))
+            } else {
+                handleChange(`${value}${button}`)
+            }
+        },
+        [isFiat, fiatValue, satsValue, handleChangeFiat, handleChangeSats],
+    )
+
     const currencySymbol = useMemo(
         () => amountUtils.getCurrencySymbol(currency),
         [currency],
@@ -142,5 +164,7 @@ export function useAmountInput(
         handleChangeSats,
         currency,
         currencySymbol,
+        numpadButtons,
+        handleNumpadPress,
     }
 }

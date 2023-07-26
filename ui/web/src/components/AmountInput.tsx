@@ -18,8 +18,6 @@ interface Props {
     onChangeAmount?: (amount: Sats) => void
 }
 
-const numpadButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'backspace'] as const
-
 export const AmountInput: React.FC<Props> = ({
     amount,
     error,
@@ -36,6 +34,8 @@ export const AmountInput: React.FC<Props> = ({
         handleChangeFiat,
         handleChangeSats,
         currencySymbol,
+        numpadButtons,
+        handleNumpadPress,
     } = useAmountInput(amount, onChangeAmount)
     const isSmall = useMediaQuery(config.media.sm)
 
@@ -67,19 +67,6 @@ export const AmountInput: React.FC<Props> = ({
             [readOnly, setIsFiat, isSmall],
         ),
     }
-
-    const onPressNumpad = useCallback(
-        (button: (typeof numpadButtons)[number]) => {
-            const value = isFiat ? fiatValue : satsValue
-            const handleChange = isFiat ? handleChangeFiat : handleChangeSats
-            if (button === 'backspace') {
-                handleChange(value.slice(0, -1))
-            } else {
-                handleChange(`${value}${button}`)
-            }
-        },
-        [isFiat, satsValue, fiatValue, handleChangeFiat, handleChangeSats],
-    )
 
     return (
         <Container>
@@ -133,8 +120,8 @@ export const AmountInput: React.FC<Props> = ({
                     {numpadButtons.map(btn => (
                         <NumpadButton
                             key={btn}
-                            isPlaceholder={btn === ''}
-                            onClick={() => onPressNumpad(btn)}>
+                            isPlaceholder={btn === null}
+                            onClick={() => btn && handleNumpadPress(btn)}>
                             {btn === 'backspace' ? (
                                 <Icon icon={arrowLeftIcon} />
                             ) : (
