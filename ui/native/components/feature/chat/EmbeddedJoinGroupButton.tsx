@@ -37,16 +37,20 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
 
     const handleJoinGroup = useCallback(async () => {
         if (!federationId) return
-        const res = await dispatch(
-            joinChatGroup({
-                federationId,
-                link: encodeGroupInvitationLink(groupId),
-            }),
-        ).unwrap()
-        navigation.replace('GroupChat', {
-            groupId: res.id,
-        })
-    }, [dispatch, federationId, groupId, navigation])
+        try {
+            const res = await dispatch(
+                joinChatGroup({
+                    federationId,
+                    link: encodeGroupInvitationLink(groupId),
+                }),
+            ).unwrap()
+            navigation.replace('GroupChat', {
+                groupId: res.id,
+            })
+        } catch (error) {
+            toast?.show(t('errors.chat-unavailable'), 3000)
+        }
+    }, [dispatch, federationId, groupId, navigation, t, toast])
 
     useEffect(() => {
         if (!xmppClient || !groupId) return

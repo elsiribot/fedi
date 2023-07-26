@@ -33,15 +33,19 @@ const JoinGroup: React.FC<Props> = ({ navigation }: Props) => {
             if (!activeFederationId) return
             if (input.startsWith('fedi:group:')) {
                 console.info('fedi chat group detected', input)
-                const res = await dispatch(
-                    joinChatGroup({
-                        federationId: activeFederationId,
-                        link: input,
-                    }),
-                ).unwrap()
-                navigation.replace('GroupChat', {
-                    groupId: res.id,
-                })
+                try {
+                    const res = await dispatch(
+                        joinChatGroup({
+                            federationId: activeFederationId,
+                            link: input,
+                        }),
+                    ).unwrap()
+                    navigation.replace('GroupChat', {
+                        groupId: res.id,
+                    })
+                } catch (error) {
+                    toast?.show(t('errors.chat-unavailable'), 3000)
+                }
             } else {
                 toast?.show(t('feature.chat.invalid-group'), 3000)
             }
