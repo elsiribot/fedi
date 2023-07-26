@@ -5,11 +5,12 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { fetchGroupConfig, joinChatGroup } from '@fedi/common/redux'
+import { joinChatGroup, selectChatXmppClient } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import { ChatGroup } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -21,10 +22,12 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(s => s.federation.activeFederationId)
+    const xmppClient = useAppSelector(selectChatXmppClient)
     const { toast } = useEnvironmentContext().state
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [groupName, setGroupName] = useState<string>('')
+    const [groupConfig, setGroupConfig] =
+        useState<Pick<ChatGroup, 'name' | 'broadcastOnly'>>()
 
     const copyToClipboard = () => {
         const invitationLink = encodeGroupInvitationLink(groupId)
@@ -46,16 +49,15 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     }, [dispatch, federationId, groupId, navigation])
 
     useEffect(() => {
-        const refreshGroupName = async () => {
-            if (federationId && groupId) {
-                const groupConfig = await dispatch(
-                    fetchGroupConfig({ federationId, groupId }),
-                ).unwrap()
-                setGroupName(groupConfig.name as string)
-            }
+        if (!xmppClient || !groupId) return
+        const refreshGroupConfig = async () => {
+            const config = await xmppClient.fetchGroupConfig(groupId)
+            setGroupConfig(config)
         }
-        refreshGroupName()
-    }, [dispatch, federationId, groupId])
+        refreshGroupConfig()
+    }, [groupId, xmppClient])
+
+    if (!groupConfig) return null
 
     return (
         <Button
@@ -68,7 +70,11 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
                 <View style={styles(theme).contents}>
                     <SvgImage
                         containerStyle={styles(theme).icon}
-                        name="SocialPeople"
+                        name={
+                            groupConfig.broadcastOnly
+                                ? 'SpeakerPhone'
+                                : 'SocialPeople'
+                        }
                         size={SvgImageSize.xs}
                     />
                     <Text medium caption>
@@ -79,7 +85,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
                         caption
                         numberOfLines={1}
                         style={styles(theme).groupNameText}>
-                        {`${groupName}`}
+                        {`${groupConfig.name}`}
                     </Text>
                 </View>
             }
