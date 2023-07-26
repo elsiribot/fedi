@@ -262,5 +262,12 @@ const ConfirmationActions = styled('div', {
 const WebsiteLink = styled('a', {
     fontSize: theme.fontSizes.body,
     fontWeight: theme.fontWeights.medium,
+    wordBreak: 'break-word',
     textDecoration: 'underline',
+    // Limit to 3 lines
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 5,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 })
