@@ -27,14 +27,12 @@ import {
     was previously stored with weak serializability and needed to be gracefully
     moved to work with the Redux-based storage manager
 
-    typescript ignores are used here in favor of temporarily re-introducing
+    TS `any` types are used here in favor of temporarily re-introducing
     some old chat types that were already removed
 */
-// @ts-expect-error
-const convertMessages = (legacyMessages, myId) => {
+const convertMessages = (legacyMessages: any, myId: any) => {
     console.info('preparing', legacyMessages.length, 'messages for migration')
-    // @ts-expect-error
-    const migratedMessages = legacyMessages.map(lm => {
+    const migratedMessages = legacyMessages.map((lm: any) => {
         let m: ChatMessage = {
             id: lm.id,
             content: lm.content,
@@ -66,30 +64,25 @@ const convertMessages = (legacyMessages, myId) => {
         lastSeenMessageId: getLatestMessage(migratedMessages)?.id || null,
     }
 }
-// @ts-expect-error
-const convertGroups = legacyGroups => {
+const convertGroups = (legacyGroups: any) => {
     console.info('preparing', legacyGroups.length, 'groups for migration')
     return {
-        // @ts-expect-error
-        groups: legacyGroups.map(lg => {
+        groups: legacyGroups.map((lg: any) => {
             return {
                 id: lg.id,
                 name: lg.name,
                 broadcastOnly: lg.broadcastOnly || false,
             }
         }),
-        // @ts-expect-error
-        groupRoles: legacyGroups.reduce((result, lg) => {
+        groupRoles: legacyGroups.reduce((result: any, lg: any) => {
             result[lg.id] = lg.myRole || 'moderator'
             return result
         }, {}),
     }
 }
-// @ts-expect-error
-const convertMembers = legacyMembers => {
+const convertMembers = (legacyMembers: any) => {
     console.info('preparing', legacyMembers.length, 'members for migration')
-    // @ts-expect-error
-    return legacyMembers.map(lm => {
+    return legacyMembers.map((lm: any) => {
         return {
             id: `${lm.jid._local}@${lm.jid._domain}`,
             username: lm.jid._local,
