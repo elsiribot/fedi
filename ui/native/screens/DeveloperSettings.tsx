@@ -38,7 +38,6 @@ import { AddCustomFediModDialog } from '../components/feature/developer-settings
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
 import {
-    AUTHENTICATED_GUARDIAN_DB_KEY,
     CHAT_GROUPS_PERSISTENCE_KEY,
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
@@ -268,7 +267,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                     checked={!authenticatedGuardian}
                     onPress={() => {
                         reduxDispatch(changeAuthenticatedGuardian(null))
-                        AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
                     }}
                     containerStyle={styles(theme).checkboxContainer}
                 />

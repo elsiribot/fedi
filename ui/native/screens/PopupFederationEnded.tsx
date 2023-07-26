@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
@@ -15,10 +14,6 @@ import {
 
 import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/ui/FederationLogo'
-import {
-    ACTIVE_FEDERATION_ID_DB_KEY,
-    AUTHENTICATED_GUARDIAN_DB_KEY,
-} from '../constants'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -53,7 +48,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
-        AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
     }, [dispatch])
 
     // FIXME: this needs some kind of loading state
@@ -72,7 +66,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                 // causes this bug
                 resetChatState()
                 resetGuardiansState()
-                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
                 await dispatch(
                     leaveFederation({
                         fedimint,

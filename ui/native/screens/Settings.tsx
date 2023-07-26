@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
@@ -23,10 +22,6 @@ import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import SvgImage from '../components/ui/SvgImage'
-import {
-    ACTIVE_FEDERATION_ID_DB_KEY,
-    AUTHENTICATED_GUARDIAN_DB_KEY,
-} from '../constants'
 import {
     changeDeveloperMode,
     useEnvironmentContext,
@@ -73,7 +68,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
-        AsyncStorage.removeItem(AUTHENTICATED_GUARDIAN_DB_KEY)
     }, [dispatch])
 
     // FIXME: this needs some kind of loading state
@@ -92,7 +86,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 // causes this bug
                 resetChatState()
                 resetGuardiansState()
-                AsyncStorage.removeItem(ACTIVE_FEDERATION_ID_DB_KEY)
                 await dispatch(
                     leaveFederation({
                         fedimint,
