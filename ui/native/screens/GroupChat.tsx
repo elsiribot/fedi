@@ -41,12 +41,6 @@ const GroupChat: React.FC<Props> = ({ route }: Props) => {
         [messages],
     )
 
-    // TODO: Should we still try to enter the group on this screen
-    // even if we auto-enter all groups when coming online?
-    // useEffect(() => {
-    //     ...
-    // }, [])
-
     // Use this hook only if the screen is in focus
     useUpdateLastMessageRead(
         groupId,

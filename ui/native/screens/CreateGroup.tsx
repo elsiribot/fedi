@@ -38,6 +38,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
                     federationId: activeFederationId,
                     id: groupId,
                     name: groupName,
+                    broadcastOnly,
                 }),
             ).unwrap()
             console.info('group created', newGroup)
@@ -47,7 +48,15 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             toast?.show(error as string, 3000)
         }
         setCreatingGroup(false)
-    }, [activeFederationId, dispatch, groupName, navigation, toast, xmppClient])
+    }, [
+        activeFederationId,
+        broadcastOnly,
+        dispatch,
+        groupName,
+        navigation,
+        toast,
+        xmppClient,
+    ])
 
     const handleSubmit = async () => {
         if (groupName) {

@@ -365,7 +365,11 @@ export class XmppChatClient {
         })
     }
 
-    async configureGroup(groupId: string, updatedName: string): Promise<void> {
+    async configureGroup(
+        groupId: string,
+        updatedName: string,
+        broadcastOnly?: boolean,
+    ): Promise<void> {
         try {
             const { iqCaller, jid } = this.getQueryProperties()
             const roomConfigQueryXml = xmlUtils.buildQuery(
@@ -373,6 +377,7 @@ export class XmppChatClient {
                     roomName: updatedName,
                     from: jid.toString(),
                     to: `${groupId}@muc.${jid.getDomain()}`,
+                    moderatedRoom: broadcastOnly || false,
                 }),
             )
             await iqCaller.request(roomConfigQueryXml)
@@ -408,12 +413,20 @@ export class XmppChatClient {
         }
     }
 
-    async createGroup(groupId: string, groupName: string): Promise<ChatGroup> {
+    async createGroup(
+        groupId: string,
+        groupName: string,
+        broadcastOnly?: boolean,
+    ): Promise<ChatGroup> {
         try {
             const res = await this.enterGroup(groupId)
             if (res.find(status => status.getAttr('code') === '201')) {
-                await this.configureGroup(groupId, groupName)
-                return { id: groupId, name: groupName }
+                await this.configureGroup(groupId, groupName, broadcastOnly)
+                return {
+                    id: groupId,
+                    name: groupName,
+                    broadcastOnly: !!broadcastOnly,
+                }
             } else {
                 throw new Error('Group already exists')
             }

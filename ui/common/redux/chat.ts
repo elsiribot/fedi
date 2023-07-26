@@ -727,15 +727,6 @@ export const fetchChatMember = createAsyncThunk<
     }
 })
 
-export const fetchGroupConfig = createAsyncThunk<
-    Pick<ChatGroup, 'name' | 'broadcastOnly'>,
-    { federationId: string; groupId: string }
->('chat/fetchGroupConfig', async ({ federationId, groupId }) => {
-    const client = xmppChatClientManager.getClient(federationId)
-    const group = await client.fetchGroupConfig(groupId)
-    return group
-})
-
 export const joinChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; link: string }
@@ -748,10 +739,10 @@ export const joinChatGroup = createAsyncThunk<
 
 export const createChatGroup = createAsyncThunk<
     ChatGroup,
-    { federationId: string; id: string; name: string }
->('chat/createChatGroup', async ({ federationId, id, name }) => {
+    { federationId: string; id: string; name: string; broadcastOnly?: boolean }
+>('chat/createChatGroup', async ({ federationId, id, name, broadcastOnly }) => {
     const client = xmppChatClientManager.getClient(federationId)
-    const group = await client.createGroup(id, name)
+    const group = await client.createGroup(id, name, broadcastOnly)
     return group
 })
 
