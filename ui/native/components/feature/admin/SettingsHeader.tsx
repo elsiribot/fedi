@@ -4,7 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
-import { useChatContext } from '../../../state/contexts/ChatContext'
+import { selectWebsocketIsHealthy } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
@@ -13,8 +15,7 @@ const SettingsHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { state } = useChatContext()
-    const { websocketIsHealthy } = state
+    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
 
     return (
         <Header

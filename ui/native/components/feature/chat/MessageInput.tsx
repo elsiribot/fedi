@@ -11,10 +11,9 @@ import {
     View,
 } from 'react-native'
 
-import { selectChatMember } from '@fedi/common/redux'
+import { selectChatMember, selectWebsocketIsHealthy } from '@fedi/common/redux'
 
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
-import { useChatContext } from '../../../state/contexts/ChatContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -36,7 +35,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { memberId } = route.params
     const member = useAppSelector(s => selectChatMember(s, memberId))
     const { toast } = useEnvironmentContext().state
-    const { websocketIsHealthy } = useChatContext().state
+    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,

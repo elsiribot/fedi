@@ -7,6 +7,7 @@ import {
     AnyAction,
     isAnyOf,
 } from '@reduxjs/toolkit'
+import { xml } from '@xmpp/client'
 import isEqual from 'lodash/isEqual'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
@@ -74,6 +75,8 @@ const initialFederationChatState = {
     lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
     lastSeenMessageId: null as string | null,
     encryptionKeys: null as Keypair | null,
+    pushNotificationToken: null as string | null,
+    websocketIsHealthy: false as boolean,
 }
 type FederationChatState = typeof initialFederationChatState
 
@@ -256,6 +259,17 @@ export const chatSlice = createSlice({
                 authenticatedMember,
             }
         },
+        setPushNotificationToken(
+            state,
+            action: FederationPayloadAction<{ pushNotificationToken: string }>,
+        ) {
+            const { federationId, pushNotificationToken } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                pushNotificationToken,
+            }
+        },
         setChatEncryptionKeys(
             state,
             action: FederationPayloadAction<{ encryptionKeys: Keypair }>,
@@ -306,6 +320,17 @@ export const chatSlice = createSlice({
             state[federationId] = {
                 ...federation,
                 lastSeenMessageId: messageId,
+            }
+        },
+        setWebsocketIsHealthy(
+            state,
+            action: FederationPayloadAction<{ healthy: boolean }>,
+        ) {
+            const { federationId, healthy } = action.payload
+            const chatState = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...chatState,
+                websocketIsHealthy: healthy,
             }
         },
         resetAuthenticatedMember(state, action: FederationPayloadAction) {
@@ -440,6 +465,8 @@ export const {
     setLastFetchedMessageId,
     setLastReadMessageId,
     setLastSeenMessageId,
+    setPushNotificationToken,
+    setWebsocketIsHealthy,
     resetAuthenticatedMember,
     resetFederationChatState,
     resetChatState,
@@ -604,10 +631,25 @@ export const connectChat = createAsyncThunk<
 
         // On connection, update various states
         client.on('online', async () => {
+            console.debug('online')
+            // Establish healthy websocket state
+            dispatch(
+                setWebsocketIsHealthy({
+                    federationId,
+                    healthy: true,
+                }),
+            )
             // Publish public key
             client
                 .publishPublicKey(encryptionKeys.publicKey)
                 .catch(() => console.error('Failed to publish public key'))
+
+            // Publish a push notification token if set by the application
+            if (chatState.pushNotificationToken) {
+                client
+                    .publishNotificationToken(chatState.pushNotificationToken)
+                    .catch(() => console.error('Failed to publish public key'))
+            }
 
             // Fetch chat history
             dispatch(fetchChatHistory({ federationId }))
@@ -662,10 +704,72 @@ export const connectChat = createAsyncThunk<
     },
 )
 
-export const disconnectChat = createAsyncThunk<void, { federationId: string }>(
-    'chat/disconnectChat',
-    async ({ federationId }) => {
-        await xmppChatClientManager.destroyClient(federationId)
+export const disconnectChat = createAsyncThunk<
+    void,
+    { federationId: string },
+    { state: CommonState }
+>('chat/disconnectChat', async ({ federationId }, { dispatch }) => {
+    dispatch(
+        setWebsocketIsHealthy({
+            federationId,
+            healthy: false,
+        }),
+    )
+    await xmppChatClientManager.destroyClient(federationId)
+})
+
+export const ensureHealthyXmppStream = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>(
+    'chat/ensureHealthyXmppStream',
+    ({ fedimint, federationId }, { dispatch }) => {
+        dispatch(
+            setWebsocketIsHealthy({
+                federationId,
+                healthy: false,
+            }),
+        )
+        // Sometimes we send a presence message and do not
+        // get a response which may mean the stream cannot
+        // be resumed so we need to reconnect the chat client
+        const client = xmppChatClientManager.getClient(federationId)
+        const reconnectTimer = setTimeout(async () => {
+            console.info(
+                'no response from XMPP server after 3s, rebuilding XMPP client',
+            )
+            await dispatch(
+                disconnectChat({
+                    federationId,
+                }),
+            ).unwrap()
+            dispatch(
+                connectChat({
+                    fedimint,
+                    federationId,
+                }),
+            )
+        }, 3000)
+        // This expects a response to the presence message which means
+        // the stream has been resumed successfully so we can clear
+        // the reconnectTimer and cleanup the listener
+        const onStanzaReceived = async (_: Element) => {
+            dispatch(
+                setWebsocketIsHealthy({
+                    federationId,
+                    healthy: true,
+                }),
+            )
+            client?.xmpp.removeListener('stanza', onStanzaReceived)
+            console.info('XMPP server responded, do not rebuild XMPP client')
+            clearTimeout(reconnectTimer)
+        }
+        client?.xmpp.on('stanza', onStanzaReceived)
+        console.info(
+            'sending presence to XMPP server to test for stable stream',
+        )
+        client?.xmpp.send(xml('presence'))
     },
 )
 
@@ -1115,6 +1219,12 @@ export const selectChatLastReadMessageIds = (s: CommonState) =>
 
 export const selectChatLastSeenMessageId = (s: CommonState) =>
     selectFederationChatState(s).lastSeenMessageId
+
+export const selectPushNotificationToken = (s: CommonState) =>
+    selectFederationChatState(s).pushNotificationToken
+
+export const selectWebsocketIsHealthy = (s: CommonState) =>
+    selectFederationChatState(s).websocketIsHealthy
 
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {

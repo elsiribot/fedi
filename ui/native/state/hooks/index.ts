@@ -1,13 +1,23 @@
+import messaging from '@react-native-firebase/messaging'
 import {
     DependencyList,
     EffectCallback,
+    MutableRefObject,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
 } from 'react'
+import { AppState as RNAppState, AppStateStatus } from 'react-native'
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
 
-import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
+import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
+import {
+    ensureHealthyXmppStream,
+    selectBtcExchangeRate,
+    selectChatXmppClient,
+    selectCurrency,
+} from '@fedi/common/redux'
 import { SupportedCurrency } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -274,4 +284,50 @@ export const useBridge = () => {
             [activeFederationId],
         ),
     }
+}
+
+export const useXmppHealthCheck = () => {
+    const appStateRef = useRef<AppStateStatus>(
+        RNAppState.currentState,
+    ) as MutableRefObject<AppStateStatus>
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const xmppClient = useAppSelector(selectChatXmppClient)
+
+    // This logic is needed to help gracefully resume the XMPP websocket stream
+    useEffect(() => {
+        if (!xmppClient) return
+
+        // Subscribe to changes in AppState to detect when app goes from
+        // background to foreground
+        const subscription = RNAppState.addEventListener(
+            'change',
+            nextAppState => {
+                if (
+                    appStateRef.current.match(/inactive|background/) &&
+                    nextAppState === 'active'
+                ) {
+                    dispatch(
+                        ensureHealthyXmppStream({
+                            fedimint,
+                            federationId: activeFederationId as string,
+                        }),
+                    )
+                }
+                appStateRef.current = nextAppState
+            },
+        )
+        return () => subscription.remove()
+    }, [activeFederationId, dispatch, xmppClient])
+}
+
+// This hook gets the device's FCM token and publishes it
+// to the XMPP server if chat is supported
+export const useXmppPushNotifications = async () => {
+    const getDeviceToken = useMemo(() => {
+        return () => messaging().getToken()
+    }, [])
+    usePublishNotificationToken(getDeviceToken)
 }
