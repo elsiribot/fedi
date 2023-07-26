@@ -121,7 +121,7 @@ export const AmountInput: React.FC<Props> = ({
                         <NumpadButton
                             key={btn}
                             isPlaceholder={btn === null}
-                            onClick={() => btn && handleNumpadPress(btn)}>
+                            onClick={() => handleNumpadPress(btn)}>
                             {btn === 'backspace' ? (
                                 <Icon icon={arrowLeftIcon} />
                             ) : (
