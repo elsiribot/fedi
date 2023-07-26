@@ -748,10 +748,10 @@ export const joinChatGroup = createAsyncThunk<
 
 export const createChatGroup = createAsyncThunk<
     ChatGroup,
-    { federationId: string; id: string; name: string }
->('chat/createChatGroup', async ({ federationId, id, name }) => {
+    { federationId: string; id: string; name: string; broadcastOnly?: boolean }
+>('chat/createChatGroup', async ({ federationId, id, name, broadcastOnly }) => {
     const client = xmppChatClientManager.getClient(federationId)
-    const group = await client.createGroup(id, name)
+    const group = await client.createGroup(id, name, broadcastOnly)
     return group
 })
 
