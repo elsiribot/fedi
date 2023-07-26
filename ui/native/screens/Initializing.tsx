@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
@@ -6,22 +5,17 @@ import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import {
-    changeAuthenticatedGuardian,
     connectChat,
     refreshChatCredentials,
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
     selectChatConnectionOptions,
-    setActiveFederationId,
 } from '@fedi/common/redux'
+import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
-import {
-    ACTIVE_FEDERATION_ID_DB_KEY,
-    AUTHENTICATED_GUARDIAN_DB_KEY,
-} from '../constants'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -34,6 +28,7 @@ const Initializing: React.FC<Props> = () => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const hasLoaded = useAppSelector(selectHasLoadedFromStorage)
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
@@ -123,63 +118,12 @@ const Initializing: React.FC<Props> = () => {
         usernameRequired,
     ])
 
-    // this useEffect checks async storage to restore
-    // federations state on a fresh app load
+    // if there is no active federation go to the splash page to join
     useEffect(() => {
-        const restoreState = async () => {
-            const restoreFederationsState = async () => {
-                try {
-                    // load selected federation id from async storage
-                    const saved = await AsyncStorage.getItem(
-                        ACTIVE_FEDERATION_ID_DB_KEY,
-                    )
-                    const savedJson = saved ? JSON.parse(saved) : null
-
-                    if (savedJson) {
-                        // this logic must be reached to trigger any useEffects
-                        const savedFederation = savedJson.activeFederation
-                        console.info('saved federation', savedFederation)
-                        if (savedFederation?.id) {
-                            dispatch(setActiveFederationId(savedFederation?.id))
-                            // load selected federation id from async storage
-                            const savedGuardian = await AsyncStorage.getItem(
-                                AUTHENTICATED_GUARDIAN_DB_KEY,
-                            )
-                            const savedGuardianJson = savedGuardian
-                                ? JSON.parse(savedGuardian)
-                                : null
-
-                            if (savedGuardianJson) {
-                                const { authenticatedGuardian } =
-                                    savedGuardianJson
-                                console.info(
-                                    'restoring guardian',
-                                    authenticatedGuardian?.name,
-                                )
-                                dispatch(
-                                    changeAuthenticatedGuardian(
-                                        authenticatedGuardian,
-                                    ),
-                                )
-                            }
-                        }
-                    } else {
-                        // if there is nothing in localstorage go to Splash
-                        return navigation.replace('Splash')
-                    }
-                } catch (error) {
-                    console.error('restoreState error', error)
-                    return navigation.replace('Splash')
-                }
-            }
-
-            restoreFederationsState()
+        if (hasLoaded && !activeFederationId) {
+            navigation.replace('Splash')
         }
-
-        if (!activeFederationId) {
-            restoreState()
-        }
-    }, [navigation, dispatch, activeFederationId])
+    }, [navigation, dispatch, activeFederationId, hasLoaded])
 
     return (
         <ImageBackground

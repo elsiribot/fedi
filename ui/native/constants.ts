@@ -25,8 +25,6 @@ export const FEDERATION_SIGNET =
 export const TEST_FEDERATION = FEDERATION_ALPHA
 
 // Keys used for persisting state in local AsyncStorage
-export const AUTHENTICATED_GUARDIAN_DB_KEY = 'AUTHENTICATED_GUARDIAN_DB_KEY'
-export const ACTIVE_FEDERATION_ID_DB_KEY = 'ACTIVE_FEDERATION_ID_DB_KEY'
 export const FEDERATION_USERNAME_ID_DB_KEY = 'FEDERATION_USERNAME_ID_DB_KEY'
 export const CHAT_MEMBERS_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-members'
 export const CHAT_MESSAGES_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-messages'
