@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { EnhancedStore } from '@reduxjs/toolkit'
 
 import {
     setChatGroupRole,
@@ -20,6 +19,7 @@ import {
     CHAT_MEMBERS_PERSISTENCE_KEY,
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
+import { AppStore } from '../state/store'
 
 /*
     Legacy Chat Data Migration
@@ -124,7 +124,7 @@ const checkForAlreadyMigratedData = async (federationId: string) => {
     }
 }
 
-export function checkForLegacyChatMigrations(store: EnhancedStore) {
+export function checkForLegacyChatMigrations(store: AppStore) {
     const state = store.getState()
     const { federations } = state.federation
     federations.map(async (f: Federation) => {
