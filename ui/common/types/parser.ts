@@ -13,6 +13,7 @@ export enum ParserDataType {
     FedimintInvite = 'fedimint:invite',
     FediChatMember = 'fedi:chatmember',
     FediChatGroup = 'fedi:chatgroup',
+    Website = 'website',
     Unknown = 'unknown',
 }
 
@@ -110,6 +111,8 @@ export type ParsedFediChatGroup = ParsedData<
     { id: string }
 >
 
+export type ParsedWebsite = ParsedData<ParserDataType.Website, { url: string }>
+
 export type ParsedUnknownData = ParsedData<
     ParserDataType.Unknown,
     { message?: string }
@@ -127,4 +130,5 @@ export type AnyParsedData =
     | ParsedFederationInvite
     | ParsedFediChatMember
     | ParsedFediChatGroup
+    | ParsedWebsite
     | ParsedUnknownData
