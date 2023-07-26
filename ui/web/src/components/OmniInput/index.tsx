@@ -54,13 +54,14 @@ export function OmniInput<
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
     const [value, setValue] = useState('')
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const isParsingRef = useUpdatingRef(isParsing)
 
     const { customActions, inputPlaceholder, onUnexpectedSuccess } = props
     const inputLabel = props.inputLabel || 'Input data'
 
     const parseInput = useCallback(
         async (input: string) => {
-            if (!input) return
+            if (!input || isParsingRef.current) return
             setIsParsing(true)
             const parsedData = await parseUserInput(input, fedimint, t)
             setIsParsing(false)
@@ -75,7 +76,7 @@ export function OmniInput<
                 setUnexpectedData(parsedData)
             }
         },
-        [propsRef, t],
+        [propsRef, isParsingRef, t],
     )
 
     const handleScan = useCallback(
@@ -167,7 +168,7 @@ export function OmniInput<
         <Container>
             <Main>
                 {isScanning ? (
-                    <QRScanner onScan={handleScan} />
+                    <QRScanner onScan={handleScan} processing={isParsing} />
                 ) : (
                     <>
                         <InputForm onSubmit={handleSubmit}>

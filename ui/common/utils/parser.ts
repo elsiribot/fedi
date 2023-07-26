@@ -19,6 +19,7 @@ import {
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     ParsedUnknownData,
+    ParsedWebsite,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'
 import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
@@ -33,6 +34,7 @@ export function parseUserInput<T extends TFunction>(
     fedimint: FedimintBridge,
     t: T,
 ): Promise<AnyParsedData> {
+    raw = raw.trim()
     return new Promise(resolve => {
         // Run all parsers simultaneously.
         const parserPromises = [
@@ -77,7 +79,9 @@ export function parseUserInput<T extends TFunction>(
 }
 
 /**
- * Attempt to parse an LNURL or lightning address.
+ * Attempt to parse an LNURL or lightning address. Any HTTP(S) address can be
+ * a valid LNURL so we will always fetch to check, but if it does not return a
+ * valid LNURL response it will just be treated as a link to a website.
  * LNURL docs: https://github.com/lnurl/luds
  * Lightning address docs: https://github.com/andrerfneves/lightning-address
  */
@@ -88,14 +92,16 @@ async function parseLnurl(
     | ParsedLnurlAuth
     | ParsedLnurlPay
     | ParsedLnurlWithdraw
+    | ParsedWebsite
     | ParsedUnknownData
     | undefined
 > {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
     let lnurlParamPromise: ReturnType<typeof getLnurlParams> | undefined
+    const isWebsiteUrl = validateWebsiteUrl(raw)
 
-    // LNURLs and lightning addresses both use `getLnurlParams` and are
-    // handled the same way, so get the promise separately but handle it
+    // LNURLs, HTTP URLs and lightning addresses all use `getLnurlParams` and
+    // are handled the same way, so get the promise separately but handle it
     // in one place.
     if (lnRaw.startsWith('lnurl') || lnRaw.startsWith('keyauth')) {
         lnurlParamPromise = getLnurlParams(lnRaw)
@@ -105,18 +111,45 @@ async function parseLnurl(
             const url = `https://${domain}/.well-known/lnurlp/${username}`
             lnurlParamPromise = getLnurlParams(url)
         }
+    } else if (isWebsiteUrl) {
+        // Use raw and not lnRaw for http(s) to keep original casing.
+        lnurlParamPromise = getLnurlParams(raw)
     }
 
-    if (!lnurlParamPromise) return
+    // If we didn't detect an LNURL but it was a valid website URL, return that.
+    // Otherwise bail out.
+    if (!lnurlParamPromise) {
+        if (isWebsiteUrl) {
+            return {
+                type: ParserDataType.Website,
+                data: { url: raw },
+            }
+        }
+        return
+    }
 
     try {
         const params = await lnurlParamPromise
         if (!('tag' in params)) {
-            // If the Lnurl
             // Parse certain error types for special handling.
             if (params.status === 'ERROR') {
-                if (params.reason.includes('Invalid URL')) {
-                    // Ignore this and try to parse using things below.
+                if (
+                    params.reason.includes('Invalid URL') ||
+                    params.reason.includes('invalid JSON') ||
+                    params.reason.includes('Network request failed')
+                ) {
+                    // If this was a website URL that just didn't return LNURL
+                    // data, return it as a parsed website.
+                    if (isWebsiteUrl) {
+                        return {
+                            type: ParserDataType.Website,
+                            data: { url: raw },
+                        }
+                    }
+                    // Otherwise ignore and allow other parsers to try.
+                    else {
+                        return
+                    }
                 }
                 return {
                     type: ParserDataType.Unknown,
@@ -360,4 +393,21 @@ function parseFedimintEcash(raw: string): ParsedFedimintEcash | undefined {
  */
 function stripProtocol(raw: string, protocol: string) {
     return raw.replace(new RegExp(`^${protocol}:\\/?\\/?`, 'i'), '')
+}
+
+function validateWebsiteUrl(url: string) {
+    // Only fully-qualified HTTP(S) URLs, partial ones are too ambiguous.
+    if (
+        !url.toLowerCase().startsWith('http://') &&
+        !url.toLowerCase().startsWith('https://')
+    ) {
+        return false
+    }
+    try {
+        new URL(url)
+        return true
+    } catch {
+        // no-op
+    }
+    return false
 }

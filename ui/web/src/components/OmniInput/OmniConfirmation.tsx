@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import BoltIcon from '@fedi/common/assets/svgs/bolt.svg'
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
+import GlobeIcon from '@fedi/common/assets/svgs/globe.svg'
 import ScanSadIcon from '@fedi/common/assets/svgs/scan-sad.svg'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
@@ -68,6 +69,7 @@ export const OmniConfirmation: React.FC<Props> = ({
     }
 
     let icon: React.FunctionComponent<React.SVGAttributes<SVGElement>>
+    let url: string | undefined
     let text: React.ReactNode
     let continueText = t('words.continue')
     let continueOnClick: undefined | (() => void)
@@ -115,6 +117,13 @@ export const OmniConfirmation: React.FC<Props> = ({
             }
             break
         }
+        case ParserDataType.Website:
+            icon = GlobeIcon
+            text = t('feature.omni.confirm-website-url')
+            url = parsedData.data.url
+            continueHref = url
+            continueOnClick = () => onSuccess(parsedData)
+            break
         case ParserDataType.Bolt12:
             icon = ScanSadIcon
             text = t('feature.omni.unsupported-bolt12')
@@ -138,6 +147,14 @@ export const OmniConfirmation: React.FC<Props> = ({
             <Backdrop />
             <Confirmation>
                 <Icon icon={icon} size="md" />
+                {url && (
+                    <WebsiteLink
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        {url}
+                    </WebsiteLink>
+                )}
                 <Text css={{ padding: '0 24px' }} weight="medium">
                     {text}
                 </Text>
@@ -240,4 +257,17 @@ const ConfirmationActions = styled('div', {
     '& > *': {
         flex: 1,
     },
+})
+
+const WebsiteLink = styled('a', {
+    fontSize: theme.fontSizes.body,
+    fontWeight: theme.fontWeights.medium,
+    wordBreak: 'break-word',
+    textDecoration: 'underline',
+    // Limit to 3 lines
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 5,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 })

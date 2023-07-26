@@ -69,6 +69,13 @@ const lnurlPayParams = {
 describe('parseUserInput', () => {
     // --- Mock API for LNURLs ---
     const server = setupServer(
+        rest.get(lnurlOrigin, (_req, res, ctx) => {
+            return res(
+                ctx.status(200),
+                ctx.set('Content-Type', 'text/html'),
+                ctx.body('<h1>Sup</h1>'),
+            )
+        }),
         rest.get(`${lnurlOrigin}/pay`, (_req, res, ctx) => {
             return res(ctx.status(200), ctx.json(lnurlPayParams))
         }),
@@ -183,6 +190,25 @@ describe('parseUserInput', () => {
     testCases.push({
         input: lnurlAddress,
         type: ParserDataType.LnurlPay,
+    })
+
+    testCases.push({
+        input: lnurlOrigin,
+        type: ParserDataType.Website,
+        data: { url: 'https://fedi.xyz' },
+    })
+    testCases.push({
+        input: `${lnurlOrigin}/?lightning=${encodeLnurl(lnurlPayUrl)}`,
+        type: ParserDataType.LnurlPay,
+    })
+    testCases.push({
+        input: `${lnurlOrigin}/?lightning=lnurl12345`,
+        type: ParserDataType.Unknown,
+    })
+    testCases.push({
+        input: 'www.fedi.xyz', // Not a proper url
+        type: ParserDataType.Unknown,
+        data: {},
     })
 
     // --- Bitcoin address ---

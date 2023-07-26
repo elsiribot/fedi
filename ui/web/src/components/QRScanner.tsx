@@ -14,6 +14,7 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { styled, theme } from '../styles'
+import { CircularLoader } from './CircularLoader'
 import { HoloLoader } from './HoloLoader'
 import { Icon } from './Icon'
 import { Text } from './Text'
@@ -22,10 +23,11 @@ export type ScanResult = QrScanner.ScanResult
 
 interface Props {
     multi?: boolean
+    processing?: boolean
     onScan(result: ScanResult): void
 }
 
-export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
+export const QRScanner: React.FC<Props> = ({ multi, processing, onScan }) => {
     const { t } = useTranslation()
     const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
     const qrScannerRef = useRef<QrScanner | null>(null)
@@ -113,6 +115,11 @@ export const QRScanner: React.FC<Props> = ({ multi, onScan }) => {
                     <HoloLoader size="xl" />
                 </Loading>
             )}
+            {processing && (
+                <Loading shaded>
+                    <CircularLoader />
+                </Loading>
+            )}
             {multi && !!progress && (
                 <Progress>
                     <ProgressBar style={{ width: `${progress * 100}%` }} />
@@ -152,10 +159,21 @@ const Video = styled('video', {
 })
 
 const Loading = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
+    inset: padding,
+    borderRadius: 16,
+
+    variants: {
+        shaded: {
+            true: {
+                background: 'rgba(0, 0, 0, 0.4)',
+                color: theme.colors.white,
+            },
+        },
+    },
 })
 
 const Progress = styled('div', {
@@ -199,6 +217,7 @@ const Error = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    textAlign: 'center',
     gap: 8,
     color: theme.colors.darkGrey,
 })
