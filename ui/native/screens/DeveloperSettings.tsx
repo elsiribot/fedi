@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -20,9 +20,11 @@ import {
     resetFederationChatState,
     selectActiveFederation,
     selectFederationCustomFediMods,
+    selectFediModDebugMode,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
+    setFediModDebugMode,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -66,6 +68,7 @@ const DeveloperSettings: React.FC<Props> = () => {
         useState<boolean>(false)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const customFediMods = useAppSelector(selectFederationCustomFediMods)
+    const fediModDebugMode = useAppSelector(selectFediModDebugMode)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -160,6 +163,22 @@ const DeveloperSettings: React.FC<Props> = () => {
                     isVisible={isAddingCustomFediMod}
                     onClose={() => setIsAddingCustomFediMod(false)}
                 />
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.debug-mode')}
+                        </Text>
+                        <Text small style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.debug-mode-info')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={fediModDebugMode}
+                        onValueChange={value => {
+                            reduxDispatch(setFediModDebugMode(value))
+                        }}
+                    />
+                </View>
             </SettingsSection>
             <SettingsSection title="Change your language">
                 <CheckBox
@@ -468,6 +487,19 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: theme.spacing.md,
+        },
+        switchWrapper: {
+            width: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+        },
+        switchLabelContainer: {
+            maxWidth: '70%',
+        },
+        switchLabel: {
+            textAlign: 'left',
+            marginBottom: theme.spacing.xs,
         },
     })
 

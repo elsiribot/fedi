@@ -22,6 +22,7 @@ import {
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectFediModDebugMode,
 } from '@fedi/common/redux'
 import { Invoice, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -51,12 +52,21 @@ const parseSats = (sats: string | number): Sats => {
     }
 }
 
+const INJECTABLE_ERUDA_DEBUG_WIDGET = `(function () {
+    var script = document.createElement('script');
+    script.src="https://cdn.jsdelivr.net/npm/eruda";
+    document.body.append(script);
+    script.onload = function () { eruda.init(); }
+})();`
+
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
     const { generateInvoice, payInvoice, listGateways } = useBridge()
+    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const { toast } = useEnvironmentContext().state
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
@@ -490,7 +500,14 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 onLoadStart={() => setJsInjected(false)}
                 onLoadProgress={e => {
                     if (!jsInjected && e.nativeEvent.progress > 0.75) {
-                        webview.current.injectJavaScript(injectJs())
+                        const webLnJs = injectJs()
+                        const jsToInject = `${webLnJs}${
+                            fediModDebugMode
+                                ? INJECTABLE_ERUDA_DEBUG_WIDGET
+                                : ''
+                        }`
+
+                        webview.current.injectJavaScript(jsToInject)
                         setJsInjected(true)
                     }
                 }}

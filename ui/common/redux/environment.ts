@@ -8,6 +8,7 @@ import { loadFromStorage } from './storage'
 
 const initialState = {
     developerMode: false,
+    fedimodDebugMode: false,
     language: null as string | null,
 }
 
@@ -21,6 +22,9 @@ export const environmentSlice = createSlice({
     reducers: {
         setDeveloperMode(state, action: PayloadAction<boolean>) {
             state.developerMode = action.payload
+        },
+        setFediModDebugMode(state, action: PayloadAction<boolean>) {
+            state.fedimodDebugMode = action.payload
         },
     },
     extraReducers: builder => {
@@ -37,7 +41,8 @@ export const environmentSlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { setDeveloperMode } = environmentSlice.actions
+export const { setDeveloperMode, setFediModDebugMode } =
+    environmentSlice.actions
 
 /*** Async thunk actions ***/
 
@@ -52,5 +57,8 @@ export const changeLanguage = createAsyncThunk<
 
 export const selectDeveloperMode = (s: CommonState) =>
     s.environment.developerMode
+
+export const selectFediModDebugMode = (s: CommonState) =>
+    s.environment.fedimodDebugMode
 
 export const selectLanguage = (s: CommonState) => s.environment.language
