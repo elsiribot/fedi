@@ -8,6 +8,7 @@ import React, {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import {
@@ -478,8 +479,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
     }
 
+    const style = styles(insets)
+
     return (
-        <View style={styles.container}>
+        <View style={style.container}>
             <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
             <WebView
                 ref={webview}
@@ -514,10 +517,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-})
+const styles = (insets: EdgeInsets) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            paddingBottom: insets.bottom,
+        },
+    })
 
 export default FediModBrowser
