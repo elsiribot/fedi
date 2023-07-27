@@ -69,6 +69,7 @@ export class FediMod extends Shortcut {
     id: string
     type = ShortcutType.fediMod
     url: string
+    imageUrl?: string
     constructor(data: any) {
         super(data)
         this.icon = {

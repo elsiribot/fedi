@@ -2,7 +2,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 
-import { Shortcut } from '../../../types'
+import { FediMod, Shortcut } from '../../../types'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type ShortcutTileProps = {
@@ -14,7 +14,15 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
 
     const renderIcon = () => {
-        if (shortcut.icon.image) {
+        if ((shortcut as FediMod).imageUrl) {
+            return (
+                <Image
+                    style={styles(theme).iconImage}
+                    source={{ uri: (shortcut as FediMod).imageUrl }}
+                    resizeMode="contain"
+                />
+            )
+        } else if (shortcut.icon.image) {
             return (
                 <Image
                     style={styles(theme).iconImage}

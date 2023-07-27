@@ -188,6 +188,7 @@ export interface FediMod {
     id: string
     title: string
     url: string
+    imageUrl?: string
     description?: string
     color?: string
 }
