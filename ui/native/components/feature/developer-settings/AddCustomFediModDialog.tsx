@@ -1,11 +1,21 @@
-import { Button, Dialog, Input, Text, useTheme, Theme } from '@rneui/themed'
+import {
+    Button,
+    Dialog,
+    Input,
+    Text,
+    useTheme,
+    Theme,
+    Image,
+} from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { useDispatch } from 'react-redux'
 
 import { addCustomFediMod, selectActiveFederation } from '@fedi/common/redux'
+import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
 
+import { FediModImages } from '../../../assets/images'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 
@@ -25,6 +35,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
     const federationId = useAppSelector(selectActiveFederation)?.id
     const [title, setTitle] = useState('')
     const [url, setUrl] = useState('')
+    const [imageUrl, setImageUrl] = useState('')
 
     useEffect(() => {
         if (!isVisible) return
@@ -32,19 +43,45 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
         setUrl('')
     }, [isVisible])
 
-    const handleSubmit = () => {
+    // Limit title to 30 characters
+    useEffect(() => {
+        if (title && title.length > 30) {
+            setTitle(title.slice(0, 30))
+        }
+    }, [title])
+
+    useEffect(() => {
+        const populateFieldsWithMetadata = async (validUrl: string) => {
+            const { fetchedTitle, fetchedFavicon } = await fetchMetadataFromUrl(
+                validUrl,
+            )
+            fetchedTitle && setTitle(fetchedTitle)
+            fetchedFavicon && setImageUrl(fetchedFavicon)
+        }
+
+        if (url) {
+            let validUrl = new URL(url).toString()
+            if (validUrl.startsWith('http')) {
+                populateFieldsWithMetadata(validUrl)
+            }
+        }
+    }, [url])
+
+    const handleSubmit = async () => {
         if (!federationId) return
         try {
             let validUrl = new URL(url).toString()
             if (validUrl.startsWith('http')) {
+                const newFediMod = {
+                    id: `custom-${Date.now()}`,
+                    title,
+                    url: validUrl,
+                    ...(imageUrl ? { imageUrl } : {}),
+                }
                 dispatch(
                     addCustomFediMod({
                         federationId,
-                        fediMod: {
-                            id: `custom-${Date.now()}`,
-                            title,
-                            url: validUrl,
-                        },
+                        fediMod: newFediMod,
                     }),
                 )
                 toast?.show(t('feature.fedimods.custom-fedimod-added'), 3000)
@@ -62,16 +99,14 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
     const isValid = !!federationId && !!title && !!url
 
     return (
-        <Dialog isVisible={isVisible} onBackdropPress={onClose}>
+        <Dialog
+            isVisible={isVisible}
+            onBackdropPress={onClose}
+            overlayStyle={style.overlay}>
             <View style={style.container}>
                 <Text h2 style={style.title}>
                     {t('feature.fedimods.add-custom-fedimod')}
                 </Text>
-                <Input
-                    placeholder={t('feature.fedimods.fedimod-title')}
-                    value={title}
-                    onChangeText={setTitle}
-                />
                 <Input
                     placeholder={t('feature.fedimods.fedimod-url')}
                     value={url}
@@ -100,6 +135,26 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                     autoCapitalize={'none'}
                     autoCorrect={false}
                 />
+                <Input
+                    placeholder={t('feature.fedimods.fedimod-title')}
+                    value={title}
+                    onChangeText={setTitle}
+                />
+                <View style={style.imageInputContainer}>
+                    <Input
+                        placeholder={t('feature.fedimods.fedimod-icon')}
+                        value={imageUrl}
+                        onChangeText={setImageUrl}
+                        containerStyle={style.imageInput}
+                    />
+                    <Image
+                        source={
+                            imageUrl ? { uri: imageUrl } : FediModImages.default
+                        }
+                        style={style.imagePreview}
+                        onError={() => setImageUrl('')}
+                    />
+                </View>
                 <Button disabled={!isValid} onPress={handleSubmit}>
                     {t('words.save')}
                 </Button>
@@ -110,10 +165,29 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        overlay: {
+            width: '90%',
+        },
         container: {
-            padding: theme.spacing.md,
+            padding: theme.spacing.sm,
         },
         title: {
             marginBottom: theme.spacing.lg,
+        },
+        imageInputContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: theme.spacing.lg,
+        },
+        imageInput: {
+            marginTop: theme.spacing.md,
+            width: '80%',
+        },
+        imagePreview: {
+            height: 30,
+            width: 30,
+            // backgroundColor: 'lightblue',
+            marginHorizontal: theme.spacing.md,
         },
     })
