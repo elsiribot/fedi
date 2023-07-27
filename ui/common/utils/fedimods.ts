@@ -1,6 +1,6 @@
 const parseHtmlForFavicon = async (
     html: string,
-    sourceUrl: URL | string,
+    urlOrigin: string,
 ): Promise<string> => {
     // Match all <link> tags
     const linkTagRegex = /<link[^>]*>/g
@@ -15,7 +15,7 @@ const parseHtmlForFavicon = async (
             const hrefMatch = tag.match(/href="([^"]*)"/)
 
             if (relMatch && hrefMatch) {
-                let linkedFaviconUrl = new URL(hrefMatch[1], sourceUrl).href
+                let linkedFaviconUrl = new URL(hrefMatch[1], urlOrigin).href
                 linkedFaviconUrl = linkedFaviconUrl.replace(/\/+$/, '') // Trim trailing slashes
 
                 const linkedFaviconResponse = await fetch(linkedFaviconUrl)
@@ -58,20 +58,27 @@ export async function fetchMetadataFromUrl(
         fetchedFavicon = ''
 
     try {
-        const htmlResponse = await fetch(url.toString())
+        // Seems not all web servers handle trailing slashes
+        // so we trim them to make fetches more reliable
+        // ex: https://example.com/image.png/ fails to return
+        const trimmedUrl = url.toString().replace(/\/+$/, '')
+        const htmlResponse = await fetch(trimmedUrl)
         if (htmlResponse.ok) {
             const html = await htmlResponse.text()
             fetchedTitle = parseHtmlForTitle(html)
-            fetchedFavicon = await parseHtmlForFavicon(html, url)
+            fetchedFavicon = await parseHtmlForFavicon(
+                html,
+                new URL(trimmedUrl).origin,
+            )
 
             if (!fetchedTitle) {
-                fetchedTitle = new URL(url).hostname
+                fetchedTitle = new URL(trimmedUrl).hostname
             }
         }
 
         if (!fetchedFavicon) {
             // As a fallback, try and fetch favicon.ico from the root
-            const faviconUrl = new URL('/favicon.ico', url).href
+            const faviconUrl = new URL('/favicon.ico', trimmedUrl).href
             const rootFaviconResponse = await fetch(faviconUrl)
 
             if (rootFaviconResponse.ok) {
