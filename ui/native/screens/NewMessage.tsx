@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
     fetchChatMembers,
     selectAllChatMembers,
@@ -14,11 +15,7 @@ import {
 
 import MembersList from '../components/feature/chat/MembersList'
 import SvgImage from '../components/ui/SvgImage'
-import {
-    useAppDispatch,
-    useAppSelector,
-    useDebouncedEffect,
-} from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>

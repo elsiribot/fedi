@@ -393,6 +393,7 @@
             "debug-mode-info": "Injects a dev tool (Eruda) into the browser when opening Fedi Mods",
             "fedimod-title": "Fedi Mod Title",
             "fedimod-url": "Fedi Mod URL",
+            "fedimod-icon": "Fedi Mod Icon",
             "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fediMod}}",
             "enter-valid-url": "Please enter a valid url (http:// or https://)",
             "wants-to-pay-you": "{{fediMod}} wants to pay you",
