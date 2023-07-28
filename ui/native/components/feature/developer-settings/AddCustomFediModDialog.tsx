@@ -109,7 +109,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
             onBackdropPress={onClose}
             overlayStyle={style.overlay}>
             <View style={style.container}>
-                <Text h2 style={style.title}>
+                <Text style={style.title}>
                     {t('feature.fedimods.add-custom-fedimod')}
                 </Text>
                 <Input
@@ -139,18 +139,27 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                     }}
                     autoCapitalize={'none'}
                     autoCorrect={false}
+                    containerStyle={style.roundedBorderInput}
+                    inputContainerStyle={style.innerInputContainer}
                 />
                 <Input
                     placeholder={t('feature.fedimods.fedimod-title')}
                     value={title}
                     onChangeText={setTitle}
+                    containerStyle={style.roundedBorderInput}
+                    inputContainerStyle={style.innerInputContainer}
                 />
-                <View style={style.imageInputContainer}>
+                <View
+                    style={[
+                        style.imagePreviewContainer,
+                        style.roundedBorderInput,
+                    ]}>
                     <Input
                         placeholder={t('feature.fedimods.fedimod-icon')}
                         value={imageUrl}
                         onChangeText={setImageUrl}
-                        containerStyle={style.imageInput}
+                        containerStyle={style.imageOuterInputContainer}
+                        inputContainerStyle={style.innerInputContainer}
                     />
                     <Image
                         source={
@@ -177,22 +186,32 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.sm,
         },
         title: {
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
         },
-        imageInputContainer: {
+        imagePreviewContainer: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: theme.spacing.lg,
         },
-        imageInput: {
+        roundedBorderInput: {
             marginTop: theme.spacing.md,
+            paddingHorizontal: theme.spacing.md,
+            borderColor: theme.colors.primaryVeryLight,
+            borderWidth: 1,
+            borderRadius: theme.borders.defaultRadius,
+        },
+        innerInputContainer: {
+            borderBottomWidth: 0,
+            marginTop: theme.spacing.sm,
+        },
+        imageOuterInputContainer: {
             width: '80%',
+            paddingHorizontal: 0,
         },
         imagePreview: {
             height: 30,
             width: 30,
-            // backgroundColor: 'lightblue',
             marginHorizontal: theme.spacing.md,
         },
     })
