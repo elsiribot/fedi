@@ -189,31 +189,29 @@ describe('fedimods', () => {
 
     it('should return the /favicon.ico as a fallback', async () => {
         const metadata = await fetchMetadataFromUrl(`${rootFaviconFallback}`)
-        expect(metadata.fetchedFavicon).toBe(
-            `${rootFaviconFallback}/favicon.ico`,
-        )
+        expect(metadata.fetchedIcon).toBe(`${rootFaviconFallback}/favicon.ico`)
     })
 
     it('should return an empty string favicon with no links or favicon.ico fallback', async () => {
         const metadata = await fetchMetadataFromUrl(`${noFavicon}`)
-        expect(metadata.fetchedFavicon).toBe('')
+        expect(metadata.fetchedIcon).toBe('')
     })
 
     it('should return the apple touch icon as the favicon', async () => {
         const metadata = await fetchMetadataFromUrl(`${appleTouchIconLink}`)
-        expect(metadata.fetchedFavicon).toBe(
+        expect(metadata.fetchedIcon).toBe(
             `${appleTouchIconLink}/test-apple-touch-icon.png`,
         )
     })
 
     it('should return the icon link as the favicon', async () => {
         const metadata = await fetchMetadataFromUrl(`${iconLink}`)
-        expect(metadata.fetchedFavicon).toBe(`${iconLink}/test-icon-link.png`)
+        expect(metadata.fetchedIcon).toBe(`${iconLink}/test-icon-link.png`)
     })
 
     it('should return the shortcut icon link as the favicon', async () => {
         const metadata = await fetchMetadataFromUrl(`${shortcutIconLink}`)
-        expect(metadata.fetchedFavicon).toBe(
+        expect(metadata.fetchedIcon).toBe(
             `${shortcutIconLink}/test-shortcut-icon-link.png`,
         )
     })
@@ -222,7 +220,7 @@ describe('fedimods', () => {
         const metadata = await fetchMetadataFromUrl(
             `${appleTouchFaviconFallback}`,
         )
-        expect(metadata.fetchedFavicon).toBe(
+        expect(metadata.fetchedIcon).toBe(
             `${appleTouchFaviconFallback}/favicon.ico`,
         )
     })

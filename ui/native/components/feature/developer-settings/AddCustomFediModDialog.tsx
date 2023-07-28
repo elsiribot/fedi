@@ -52,11 +52,11 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
 
     useEffect(() => {
         const populateFieldsWithMetadata = async (validUrl: string) => {
-            const { fetchedTitle, fetchedFavicon } = await fetchMetadataFromUrl(
+            const { fetchedTitle, fetchedIcon } = await fetchMetadataFromUrl(
                 validUrl,
             )
             fetchedTitle && setTitle(fetchedTitle)
-            fetchedFavicon && setImageUrl(fetchedFavicon)
+            fetchedIcon && setImageUrl(fetchedIcon)
         }
 
         if (url) {

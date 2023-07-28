@@ -1,4 +1,4 @@
-const parseHtmlForFavicon = async (
+const parseHtmlForIcon = async (
     html: string,
     urlOrigin: string,
 ): Promise<string> => {
@@ -15,12 +15,12 @@ const parseHtmlForFavicon = async (
             const hrefMatch = tag.match(/href="([^"]*)"/)
 
             if (relMatch && hrefMatch) {
-                let linkedFaviconUrl = new URL(hrefMatch[1], urlOrigin).href
-                linkedFaviconUrl = linkedFaviconUrl.replace(/\/+$/, '') // Trim trailing slashes
+                let linkedIconUrl = new URL(hrefMatch[1], urlOrigin).href
+                linkedIconUrl = linkedIconUrl.replace(/\/+$/, '') // Trim trailing slashes
 
-                const linkedFaviconResponse = await fetch(linkedFaviconUrl)
-                if (linkedFaviconResponse.ok) {
-                    return linkedFaviconUrl
+                const linkedIconResponse = await fetch(linkedIconUrl)
+                if (linkedIconResponse.ok) {
+                    return linkedIconUrl
                 }
             }
         }
@@ -47,15 +47,77 @@ const parseHtmlForTitle = (html: string): string => {
     return ''
 }
 
+type ManifestIcon = {
+    src: string
+    sizes: string
+}
+
+const fetchTitleAndIconFromManifest = async (
+    manifestUrl: string,
+): Promise<{ title: string; icon: string }> => {
+    const trimmed = manifestUrl.replace(/\/+$/, '') // Trim trailing slashes
+    const response = await fetch(trimmed)
+    if (response.ok) {
+        const manifest = await response.json()
+
+        // Get the name from the manifest
+        const title = manifest.name || ''
+
+        // Find the largest icon using sizes in expected format
+        // 48x48, 72x72, etc
+        let largestIcon: ManifestIcon | null = null
+        if (manifest.icons && manifest.icons.length > 0) {
+            largestIcon = manifest.icons.reduce(
+                (prev: ManifestIcon, current: ManifestIcon) => {
+                    const prevSize = Math.max(
+                        ...prev.sizes.split('x').map(Number),
+                    )
+                    const currentSize = Math.max(
+                        ...current.sizes.split('x').map(Number),
+                    )
+                    return prevSize < currentSize ? current : prev
+                },
+            )
+        }
+
+        return { title, icon: largestIcon?.src || '' }
+    } else {
+        throw new Error(`Failed to fetch manifest from ${manifestUrl}`)
+    }
+}
+
+const parseHtmlForWebAppManifest = (
+    html: string,
+    urlOrigin: string,
+): string => {
+    // Match all <link> tags
+    const linkTagRegex = /<link[^>]*>/g
+    const linkTags = html.match(linkTagRegex) || []
+
+    // Define the rel value we're interested in
+    const relValue = 'manifest'
+
+    for (const tag of linkTags) {
+        const relMatch = tag.match(new RegExp(`rel="${relValue}"`))
+        const hrefMatch = tag.match(/href="([^"]*)"/)
+
+        if (relMatch && hrefMatch) {
+            return new URL(hrefMatch[1], urlOrigin).href
+        }
+    }
+
+    return ''
+}
+
 /**
  * Submit a fetch request to Fedimod URL to try and find metadata to use
  * as a default icon and title
  */
 export async function fetchMetadataFromUrl(
     url: URL | string,
-): Promise<{ fetchedFavicon: string; fetchedTitle: string }> {
+): Promise<{ fetchedIcon: string; fetchedTitle: string }> {
     let fetchedTitle = '',
-        fetchedFavicon = ''
+        fetchedIcon = ''
 
     try {
         // Seems not all web servers handle trailing slashes
@@ -65,32 +127,50 @@ export async function fetchMetadataFromUrl(
         const htmlResponse = await fetch(trimmedUrl)
         if (htmlResponse.ok) {
             const html = await htmlResponse.text()
-            fetchedTitle = parseHtmlForTitle(html)
-            fetchedFavicon = await parseHtmlForFavicon(
-                html,
-                new URL(trimmedUrl).origin,
-            )
+            const urlOrigin = new URL(trimmedUrl).origin
 
-            if (!fetchedTitle) {
-                fetchedTitle = new URL(trimmedUrl).hostname
+            // Attempt to parse and fetch both title and favicon
+            // from Web App Manifest first if <link> is found in DOM
+            const manifestUrl = parseHtmlForWebAppManifest(html, urlOrigin)
+            if (manifestUrl) {
+                const manifestData = await fetchTitleAndIconFromManifest(
+                    manifestUrl,
+                )
+                fetchedTitle = manifestData.title
+                fetchedIcon = manifestData.icon
+                    ? new URL(manifestData.icon, urlOrigin).href
+                    : ''
             }
-        }
 
-        if (!fetchedFavicon) {
-            // As a fallback, try and fetch favicon.ico from the root
-            const faviconUrl = new URL('/favicon.ico', trimmedUrl).href
-            const rootFaviconResponse = await fetch(faviconUrl)
+            // If title is missing, parse for other tags
+            if (!fetchedTitle) {
+                fetchedTitle = parseHtmlForTitle(html)
+                // Use hostname is no tags are found
+                if (!fetchedTitle) {
+                    fetchedTitle = new URL(trimmedUrl).hostname
+                }
+            }
 
-            if (rootFaviconResponse.ok) {
-                fetchedFavicon = faviconUrl
+            if (!fetchedIcon) {
+                fetchedIcon = await parseHtmlForIcon(html, urlOrigin)
+
+                // Fallback to favicon.ico from the root if favicon is still missing
+                if (!fetchedIcon) {
+                    const faviconUrl = new URL('/favicon.ico', trimmedUrl).href
+                    const rootFaviconResponse = await fetch(faviconUrl)
+
+                    if (rootFaviconResponse.ok) {
+                        fetchedIcon = faviconUrl
+                    }
+                }
             }
         }
     } catch (error) {
-        console.error('fetchFaviconFromUrl', error)
+        console.error('fetchMetadataFromUrl', error)
     }
 
     return {
-        fetchedFavicon,
+        fetchedIcon,
         fetchedTitle,
     }
 }
