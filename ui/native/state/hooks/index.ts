@@ -1,7 +1,5 @@
 import messaging from '@react-native-firebase/messaging'
 import {
-    DependencyList,
-    EffectCallback,
     MutableRefObject,
     useCallback,
     useEffect,
@@ -35,19 +33,6 @@ export const useAppDispatch: () => AppDispatch = useDispatch
  * Provides application state from redux, given a selector.
  */
 export const useAppSelector: TypedUseSelectorHook<AppState> = useSelector
-
-export const useDebouncedEffect = (
-    effect: EffectCallback,
-    deps: DependencyList,
-    delay: number,
-) => {
-    useEffect(() => {
-        const handler = setTimeout(() => effect(), delay)
-
-        return () => clearTimeout(handler)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [...(deps || []), delay])
-}
 
 export const usePrevious = <T extends unknown>(value: T): T | undefined => {
     const ref = useRef<T>()
