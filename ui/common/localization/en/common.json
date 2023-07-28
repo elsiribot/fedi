@@ -389,6 +389,8 @@
             "custom-fedimods": "Custom Fedi Mods",
             "custom-fedimod-added": "Custom Fedi Mod added",
             "custom-fedimod-removed": "Custom Fedi Mod removed",
+            "debug-mode": "Fedi Mod Debug Mode",
+            "debug-mode-info": "Injects a dev tool (Eruda) into the browser when opening Fedi Mods",
             "fedimod-title": "Fedi Mod Title",
             "fedimod-url": "Fedi Mod URL",
             "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fediMod}}",
