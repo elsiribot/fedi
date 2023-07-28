@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { useDispatch } from 'react-redux'
 
+import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import { addCustomFediMod, selectActiveFederation } from '@fedi/common/redux'
 import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
 
@@ -50,22 +51,26 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
         }
     }, [title])
 
-    useEffect(() => {
-        const populateFieldsWithMetadata = async (validUrl: string) => {
-            const { fetchedTitle, fetchedIcon } = await fetchMetadataFromUrl(
-                validUrl,
-            )
-            fetchedTitle && setTitle(fetchedTitle)
-            fetchedIcon && setImageUrl(fetchedIcon)
-        }
-
-        if (url) {
-            let validUrl = new URL(url).toString()
-            if (validUrl.startsWith('http')) {
-                populateFieldsWithMetadata(validUrl)
+    // When URL field stops changing input for 500ms, fetch metadata
+    // if it is a valid URL
+    useDebouncedEffect(
+        () => {
+            const populateFieldsWithMetadata = async (validUrl: string) => {
+                const { fetchedTitle, fetchedIcon } =
+                    await fetchMetadataFromUrl(validUrl)
+                fetchedTitle && setTitle(fetchedTitle)
+                fetchedIcon && setImageUrl(fetchedIcon)
             }
-        }
-    }, [url])
+            if (url) {
+                let validUrl = new URL(url).toString()
+                if (validUrl.startsWith('http')) {
+                    populateFieldsWithMetadata(validUrl)
+                }
+            }
+        },
+        [url],
+        500,
+    )
 
     const handleSubmit = async () => {
         if (!federationId) return
