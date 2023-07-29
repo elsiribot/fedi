@@ -69,12 +69,13 @@ const ChatHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            leftContainerStyle={{ flex: 6 }}
+            leftContainerStyle={{ flex: 2 }}
             headerLeft={
                 <Text h2 medium>
                     {t('words.chat')}
                 </Text>
             }
+            centerContainerStyle={{ flex: 2 }}
             headerRight={
                 <>
                     <Pressable
@@ -88,8 +89,7 @@ const ChatHeader: React.FC<{}> = () => {
                                 )
                             }
                         }}
-                        hitSlop={5}
-                        style={styles(theme).iconContainer}>
+                        hitSlop={5}>
                         <SvgImage
                             name="Recovery"
                             color={theme.colors.primaryLight}
@@ -101,8 +101,7 @@ const ChatHeader: React.FC<{}> = () => {
                     {websocketIsHealthy && (
                         <Pressable
                             onPress={() => navigation.navigate('MemberQrCode')}
-                            hitSlop={5}
-                            style={styles(theme).iconContainer}>
+                            hitSlop={5}>
                             <SvgImage name="Qr" color={theme.colors.primary} />
                         </Pressable>
                     )}
@@ -115,14 +114,10 @@ const ChatHeader: React.FC<{}> = () => {
 
 const styles = (_theme: Theme) =>
     StyleSheet.create({
-        iconContainer: {
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-        },
         rightContainer: {
+            flex: 1,
             flexDirection: 'row',
-            alignItems: 'flex-end',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
         },
     })
 

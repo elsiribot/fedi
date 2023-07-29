@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
-import { Text, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 
 import { selectWebsocketIsHealthy } from '@fedi/common/redux'
 
@@ -19,12 +19,13 @@ const SettingsHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            leftContainerStyle={{ flex: 6 }}
+            leftContainerStyle={{ flex: 2 }}
             headerLeft={
                 <Text h2 medium>
                     {t('words.settings')}
                 </Text>
             }
+            centerContainerStyle={{ flex: 2 }}
             headerRight={
                 <>
                     {websocketIsHealthy && (
@@ -36,8 +37,18 @@ const SettingsHeader: React.FC<{}> = () => {
                     )}
                 </>
             }
+            rightContainerStyle={styles(theme).rightContainer}
         />
     )
 }
+
+const styles = (_theme: Theme) =>
+    StyleSheet.create({
+        rightContainer: {
+            flex: 1,
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+        },
+    })
 
 export default SettingsHeader
