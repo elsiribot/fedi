@@ -1,25 +1,20 @@
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
-import { NavigationHook, RootStackParamList } from '../../../types/navigation'
+import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-
-type GroupAdminRouteProp = RouteProp<RootStackParamList, 'GroupAdmin'>
+import SvgImage from '../../ui/SvgImage'
 
 const GroupInviteHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<GroupAdminRouteProp>()
-    const { groupId } = route.params
 
     return (
         <Header
-            dark
             headerLeft={
                 <Pressable
                     onPress={() => navigation.goBack()}
@@ -27,31 +22,10 @@ const GroupInviteHeader: React.FC<{}> = () => {
                     style={{
                         padding: theme.spacing.sm,
                     }}>
-                    <SvgImage
-                        name="ChevronLeft"
-                        color={theme.colors.secondary}
-                    />
+                    <SvgImage name="ChevronLeft" />
                 </Pressable>
             }
-            headerCenter={
-                <Text bold style={{ color: theme.colors.secondary }}>
-                    {t('feature.chat.group-invite')}
-                </Text>
-            }
-            headerRight={
-                <Pressable
-                    onPress={() => {
-                        navigation.navigate('EditGroup', { groupId })
-                    }}
-                    disabled
-                    style={{
-                        padding: theme.spacing.sm,
-                        // Disabled
-                        opacity: 0.25,
-                    }}>
-                    <SvgImage name="Edit" size={SvgImageSize.md} />
-                </Pressable>
-            }
+            headerCenter={<Text bold>{t('feature.chat.group-invite')}</Text>}
         />
     )
 }
