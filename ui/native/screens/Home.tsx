@@ -28,7 +28,9 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const [recoveryInProgress] = useState(false)
 
     return (
-        <ScrollView contentContainerStyle={styles(theme).container}>
+        <ScrollView
+            contentContainerStyle={styles(theme).container}
+            alwaysBounceVertical={false}>
             {recoveryInProgress ? (
                 <SocialRecoveryProcessing />
             ) : (

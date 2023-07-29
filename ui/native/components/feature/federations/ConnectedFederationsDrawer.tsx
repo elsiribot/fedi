@@ -56,7 +56,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                             inviteLink: federation.connectInfo,
                         })
                     }}>
-                    <SvgImage name="InviteMembers" />
+                    <SvgImage name="Qr" />
                 </Pressable>
             )}
         </View>

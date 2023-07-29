@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import { joinChatGroup } from '@fedi/common/redux'
+import { joinChatGroup, selectChatGroup } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { Images } from '../assets/images'
@@ -28,6 +28,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     )
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
+    const group = useAppSelector(s => selectChatGroup(s, groupId))
     const groupInvitationLink = encodeGroupInvitationLink(groupId)
 
     useEffect(() => {
@@ -55,6 +56,11 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
+            <View style={styles(theme).textContainer}>
+                <Text h2 medium>
+                    {group?.name}
+                </Text>
+            </View>
             <View style={styles(theme).qrCodeContainer}>
                 <QRCode
                     value={groupInvitationLink}
@@ -101,34 +107,39 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
-            // TODO: Add react-linear-gradient-package and use
-            // dark holo background instead of primary black
-            backgroundColor: theme.colors.primary,
+        },
+        textContainer: {
+            marginTop: 'auto',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
         },
         qrCodeContainer: {
             borderRadius: theme.borders.defaultRadius,
-            backgroundColor: theme.colors.secondary,
+            borderColor: theme.colors.primaryLight,
+            borderWidth: 1,
             padding: QR_CODE_SIZE * 0.05,
-            marginVertical: theme.spacing.xl,
             flexDirection: 'row',
             justifyContent: 'center',
+            marginVertical: theme.spacing.xl,
         },
         copyInviteLinkContainer: {
             flexDirection: 'row',
             alignItems: 'center',
             width: QR_CODE_SIZE * 1.1,
-            backgroundColor: theme.colors.secondary,
             borderRadius: theme.borders.defaultRadius,
+            borderColor: theme.colors.primaryLight,
+            borderWidth: 1,
             paddingHorizontal: theme.spacing.sm,
             paddingVertical: theme.spacing.md,
         },
         copyButtonContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            width: '15%',
+            justifyContent: 'flex-end',
+            width: '20%',
         },
         inviteLinkText: {
-            width: '85%',
+            width: '80%',
             color: theme.colors.primaryLight,
             fontSize: theme.sizes.xxs,
         },
@@ -138,20 +149,20 @@ const styles = (theme: Theme) =>
             paddingLeft: theme.spacing.xs,
         },
         inviteLinkNotice: {
-            color: theme.colors.secondary,
+            color: theme.colors.primary,
             marginTop: theme.spacing.md,
             marginBottom: theme.spacing.xl,
             marginHorizontal: theme.spacing.md,
             textAlign: 'center',
         },
-        button: {
-            backgroundColor: theme.colors.secondary,
-        },
         buttonContainer: {
             marginTop: 'auto',
         },
+        button: {
+            backgroundColor: theme.colors.primary,
+        },
         buttonTitle: {
-            color: theme.colors.primary,
+            color: theme.colors.secondary,
         },
     })
 

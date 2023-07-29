@@ -27,8 +27,11 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         activeFederationMetadata &&
         shouldShowOfflineWallet(activeFederationMetadata)
 
+    const style = styles(theme)
+
     return (
         <Header
+            containerStyle={style.container}
             headerLeft={
                 <Text
                     onPress={showOfflineWallet ? toggleOffline : () => {}}
@@ -42,7 +45,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                     <Pressable
                         onPress={toggleOffline}
                         hitSlop={5}
-                        style={styles(theme).iconContainer}>
+                        style={style.iconContainer}>
                         <SvgImage
                             name="Offline"
                             color={theme.colors.primaryLight}
@@ -53,15 +56,21 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                     </Pressable>
                 )
             }
-            rightContainerStyle={styles(theme).rightContainer}
+            rightContainerStyle={style.rightContainer}
             // Needed to make more room for Wallet title in headerLeft
             centerContainerStyle={{ flex: 1 }}
         />
     )
 }
 
-const styles = (_theme: Theme) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            paddingBottom: theme.spacing.md,
+            elevation: 2,
+            shadowColor: theme.colors.primaryLight,
+            shadowRadius: 2,
+        },
         iconContainer: {
             flexDirection: 'row',
             alignItems: 'flex-end',
