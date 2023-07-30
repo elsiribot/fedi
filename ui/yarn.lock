@@ -12023,9 +12023,9 @@ react-native-video@5.2.1:
     prop-types "^15.7.2"
     shaka-player "^2.5.9"
 
-react-native-vision-camera@fedibtc/react-native-vision-camera#temp/rn-reanimated-workaround:
+"react-native-vision-camera@https://github.com/fedibtc/react-native-vision-camera#patch/rn-reanimated":
   version "2.15.4"
-  resolved "https://codeload.github.com/fedibtc/react-native-vision-camera/tar.gz/3bd957baeb1e857bd123551da0c3abb0ce2206ff"
+  resolved "https://github.com/fedibtc/react-native-vision-camera#a7829bbd1eef7f4f967a1ea0f2faf72b3bb0cce8"
 
 react-native-webln@fedibtc/react-native-webln#0.1.11-patch:
   version "0.1.11"
