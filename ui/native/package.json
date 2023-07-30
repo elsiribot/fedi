@@ -76,7 +76,7 @@
         "react-native-uuid": "2.0.1",
         "react-native-vector-icons": "9.2.0",
         "react-native-video": "5.2.1",
-        "react-native-vision-camera": "fedibtc/react-native-vision-camera#temp/rn-reanimated-workaround",
+        "react-native-vision-camera": "https://github.com/fedibtc/react-native-vision-camera#patch/rn-reanimated",
         "react-native-webln": "fedibtc/react-native-webln#0.1.11-patch",
         "react-native-webview": "13.2.2",
         "react-native-worklets": "https://github.com/chrfalch/react-native-worklets",
