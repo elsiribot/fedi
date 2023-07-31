@@ -4,11 +4,14 @@ buildscript {
     ext {
         kotlinVersion = "1.7.21"
         buildToolsVersion = "33.0.0"
-        minSdkVersion = 21
+        minSdkVersion = 23
         compileSdkVersion = 33
         targetSdkVersion = 33
 
-        VisionCameraCodeScanner_minSdkVersion = 21
+        // for older npm packages that haven't updated
+        kotlin_version = "1.7.21"   
+
+        VisionCameraCodeScanner_minSdkVersion = 23
         VisionCameraCodeScanner_compileSdkVersion = 33
         VisionCameraCodeScanner_targetSdkVersion = 33
 
