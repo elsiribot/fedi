@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useCameraDevices } from 'react-native-vision-camera'
 
 import { selectFederationMetadata } from '@fedi/common/redux'
 import { AddressOrInvoice } from '@fedi/common/types'
@@ -84,18 +83,12 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [paymentRequestUri, navigation])
 
-    const devices = useCameraDevices()
-    const device = devices.back
-
     const renderQrCodeScanner = () => {
-        if (device == null) {
+        if (inputToProcess !== '') {
             return <ActivityIndicator />
-        } else if (inputToProcess !== '') {
-            return null
         } else {
             return (
                 <QrCodeScanner
-                    device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
                         handleUserInput(qrCodeData)
                     }}

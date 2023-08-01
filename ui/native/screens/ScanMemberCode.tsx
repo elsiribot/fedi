@@ -2,9 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useCameraDevices } from 'react-native-vision-camera'
 
 import { joinChatGroup, selectChatConnectionOptions } from '@fedi/common/redux'
 import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
@@ -65,22 +64,14 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
         [activeFederationId, connectionOptions, dispatch, navigation, t, toast],
     )
 
-    const devices = useCameraDevices()
-    const device = devices.back
-
     const renderQrCodeScanner = () => {
-        if (device == null) {
-            return <ActivityIndicator />
-        } else {
-            return (
-                <QrCodeScanner
-                    device={device}
-                    onQrCodeDetected={(qrCodeData: string) => {
-                        handleUserInput(qrCodeData)
-                    }}
-                />
-            )
-        }
+        return (
+            <QrCodeScanner
+                onQrCodeDetected={(qrCodeData: string) => {
+                    handleUserInput(qrCodeData)
+                }}
+            />
+        )
     }
 
     return (

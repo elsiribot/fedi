@@ -5,27 +5,53 @@ import {
     progressOfFrames,
     State as FrameState,
 } from 'qrloop'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
-import { Camera, CameraType } from 'react-native-camera-kit'
+import { Camera, CameraDevice } from 'react-native-vision-camera'
+import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
 
-type AnimatedQrCodeScanner = {
+/*
+    This is the QR scanner that was used when react-native-vision-camera v2
+    was compatible with the latest React Native. After upgrading to RN v0.72,
+    this library broke with errors at both compile and runtime when using frame
+    processors like useScanBarcodes
+
+    Its dependency on react-native-reanimated made it difficult to refactor
+    to work with RN 72 so we had to switch to use react-native-camera-kit
+    for scanning QRs
+
+    Leaving this code here so we can switch back to it after theu upgrade to v3
+    is complete since it is more robust than react-native-camera-kit but still 
+    works well wherever frame processors are not needed so for now we are
+    keeping the dependency on v2
+*/
+
+type QrCodeScanner = {
+    device: CameraDevice
     onQrCodeDetected: Function
     onProgress: Function
 }
 
-const AnimatedQrCodeScanner = ({
+const QrCodeScanner = ({
+    device,
     onQrCodeDetected,
     onProgress,
-}: AnimatedQrCodeScanner) => {
+}: QrCodeScanner) => {
     const [sendingResult, setSendingResult] = useState<boolean>(false)
-    const cameraRef = useRef<Camera>(null)
+    const [frameProcessor, barcodes] = useScanBarcodes(
+        [BarcodeFormat.QR_CODE],
+        {
+            checkInverted: true,
+        },
+    )
     const [frames, setFrames] = useState<FrameState | null>(null)
-    const [barcodes, setBarcodes] = useState<string[]>([])
 
     useEffect(() => {
         barcodes.map(b => {
-            const updatedFrames = parseFramesReducer(frames, b as string)
+            const updatedFrames = parseFramesReducer(
+                frames,
+                b.content?.data as string,
+            )
 
             // Report progress
             const updatedProgress = progressOfFrames(updatedFrames)
@@ -60,19 +86,10 @@ const AnimatedQrCodeScanner = ({
     return (
         <Camera
             style={styles.camera}
-            ref={cameraRef}
-            cameraType={CameraType.Back}
-            flashMode="auto"
-            scanBarcode={true}
-            onReadCode={(event: any) => {
-                if (event?.nativeEvent?.codeStringValue) {
-                    const { codeStringValue } = event.nativeEvent
-                    const exists = barcodes.find(b => b === codeStringValue)
-                    if (!exists) {
-                        setBarcodes([...barcodes, codeStringValue])
-                    }
-                }
-            }}
+            device={device}
+            isActive={true}
+            frameProcessor={frameProcessor}
+            frameProcessorFps={'auto'}
         />
     )
 }
@@ -84,4 +101,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default AnimatedQrCodeScanner
+export default QrCodeScanner

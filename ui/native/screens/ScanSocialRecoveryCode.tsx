@@ -4,7 +4,6 @@ import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { useCameraDevices } from 'react-native-vision-camera'
 
 import type { SocialRecoveryQrCode } from '@fedi/common/types'
 
@@ -73,11 +72,8 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
         handleUserInput(text.trim())
     }, [handleUserInput])
 
-    const devices = useCameraDevices()
-    const device = devices.back
-
     const renderQrCodeScanner = () => {
-        if (downloading || device == null) {
+        if (downloading) {
             return (
                 <View style={styles(theme).activityIndicator}>
                     <ActivityIndicator />
@@ -86,9 +82,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
         } else {
             return (
                 <QrCodeScanner
-                    device={device}
                     onQrCodeDetected={(qrCodeData: string) => {
-                        // FIXME: only 1 request at-a-time
                         handleUserInput(qrCodeData)
                     }}
                 />

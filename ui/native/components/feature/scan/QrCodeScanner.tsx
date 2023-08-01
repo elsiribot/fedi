@@ -1,24 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { StyleSheet } from 'react-native'
-import { Camera, CameraDevice } from 'react-native-vision-camera'
-import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
+import { Camera, CameraType } from 'react-native-camera-kit'
 
 import { usePrevious } from '../../../state/hooks'
 
 type QrCodeScanner = {
-    device: CameraDevice
     onQrCodeDetected: Function
 }
 
-const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
+const QrCodeScanner = ({ onQrCodeDetected }: QrCodeScanner) => {
     const [detectedQrData, setDetectedQrData] = useState<string>('')
     const previousQrData = usePrevious(detectedQrData)
-    const [frameProcessor, barcodes] = useScanBarcodes(
-        [BarcodeFormat.QR_CODE],
-        {
-            checkInverted: true,
-        },
-    )
+    const cameraRef = useRef<Camera>(null)
 
     useEffect(() => {
         if (detectedQrData !== '' && detectedQrData !== previousQrData) {
@@ -38,19 +31,16 @@ const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {
         }
     }, [detectedQrData, onQrCodeDetected, previousQrData])
 
-    useEffect(() => {
-        barcodes.map(b => {
-            setDetectedQrData(b.content?.data as string)
-        })
-    }, [barcodes])
-
     return (
         <Camera
             style={styles.camera}
-            device={device}
-            isActive={true}
-            frameProcessor={frameProcessor}
-            frameProcessorFps={2}
+            ref={cameraRef}
+            cameraType={CameraType.Back}
+            flashMode="auto"
+            scanBarcode={true}
+            onReadCode={(event: any) => {
+                setDetectedQrData(event?.nativeEvent?.codeStringValue)
+            }}
         />
     )
 }
