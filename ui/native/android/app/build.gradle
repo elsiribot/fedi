@@ -188,6 +188,15 @@ dependencies {
     // implementation platform('com.google.firebase:firebase-bom:32.0.0')
     // implementation 'com.google.firebase:firebase-messaging'
 
+    // Make sure to use the latest camera libraries for video recording
+    // react-native-vision-camera uses 1.1.0 so we need to override here
+    implementation "androidx.camera:camera-core:1.2.3"
+    implementation "androidx.camera:camera-camera2:1.2.3"
+    implementation "androidx.camera:camera-lifecycle:1.2.3"
+    implementation "androidx.camera:camera-video:1.2.3"
+    implementation "androidx.camera:camera-view:1.2.3"
+    implementation "androidx.camera:camera-extensions:1.2.3"
+
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
