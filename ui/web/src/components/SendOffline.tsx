@@ -2,8 +2,9 @@ import { dataToFrames } from 'qrloop'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { MSats, Sats } from '@fedi/common/types'
+import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector, useToast } from '../hooks'
@@ -28,18 +29,21 @@ export const SendOffline: React.FC<Props> = ({
     const { t } = useTranslation()
     const { showErrorToast } = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const { minimumAmount, maximumAmount } = useMinMaxSendAmount()
     const [amount, setAmount] = useState(0 as Sats)
     const [isGeneratingEcash, setIsGeneratingEcash] = useState(false)
     const [offlinePayment, setOfflinePayment] = useState<string | null>(null)
     const [qrFrames, setQrFrames] = useState<string[] | null>(null)
     const [hasConfirmedPayment, setHasConfirmedPayment] = useState(false)
+    const [submitAttempts, setSubmitAttempts] = useState(0)
 
     const federationId = activeFederation?.id
-    const balance = activeFederation?.balance || (0 as MSats)
-    const isDisabled = amount <= 0 || amount > amountUtils.msatToSat(balance)
 
     const handleSend = useCallback(async () => {
         if (!federationId) return
+        setSubmitAttempts(attempt => attempt + 1)
+        if (amount > maximumAmount || amount < minimumAmount) return
+
         setIsGeneratingEcash(true)
         try {
             const ecash = await fedimint.generateEcash(
@@ -53,7 +57,14 @@ export const SendOffline: React.FC<Props> = ({
             showErrorToast(err, 'errors.unknown-error')
         }
         setIsGeneratingEcash(false)
-    }, [amount, federationId, showErrorToast, onEcashGenerated])
+    }, [
+        federationId,
+        amount,
+        minimumAmount,
+        maximumAmount,
+        showErrorToast,
+        onEcashGenerated,
+    ])
 
     if (offlinePayment && qrFrames) {
         return (
@@ -81,6 +92,10 @@ export const SendOffline: React.FC<Props> = ({
                         amount={amount}
                         onChangeAmount={setAmount}
                         readOnly={isGeneratingEcash}
+                        verb={t('words.send')}
+                        minimumAmount={minimumAmount}
+                        maximumAmount={maximumAmount}
+                        submitAttempts={submitAttempts}
                     />
                 </AmountContainer>
 
@@ -89,10 +104,7 @@ export const SendOffline: React.FC<Props> = ({
                         {t('feature.send.offline-send-warning')}
                     </Text>
                 </HelpText>
-                <Button
-                    disabled={isDisabled}
-                    loading={isGeneratingEcash}
-                    onClick={handleSend}>
+                <Button loading={isGeneratingEcash} onClick={handleSend}>
                     {t('words.send')}
                 </Button>
             </>
