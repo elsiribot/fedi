@@ -230,6 +230,7 @@
             "send-a-message-to": "Send a message to {{name}}",
             "they-requested-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
             "they-sent-payment": "{{name}} sent you {{amount}} {{unit}} {{memo}}",
+            "unknown-member": "Unknown member",
             "group-invite": "Group invite",
             "paste-group-invite": "Paste group invite",
             "removed-admin-from-group": "Removed {{username}} as an admin",
