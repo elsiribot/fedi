@@ -39,6 +39,11 @@ export const SendOffline: React.FC<Props> = ({
 
     const federationId = activeFederation?.id
 
+    const handleChangeAmount = useCallback((amt: Sats) => {
+        setSubmitAttempts(0)
+        setAmount(amt)
+    }, [])
+
     const handleSend = useCallback(async () => {
         if (!federationId) return
         setSubmitAttempts(attempt => attempt + 1)
@@ -90,7 +95,7 @@ export const SendOffline: React.FC<Props> = ({
                 <AmountContainer>
                     <AmountInput
                         amount={amount}
-                        onChangeAmount={setAmount}
+                        onChangeAmount={handleChangeAmount}
                         readOnly={isGeneratingEcash}
                         verb={t('words.send')}
                         minimumAmount={minimumAmount}
