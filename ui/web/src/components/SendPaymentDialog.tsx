@@ -5,14 +5,14 @@ import OfflineIcon from '@fedi/common/assets/svgs/offline.svg'
 import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { ParserDataType } from '@fedi/common/types'
+import { ParserDataType, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useRouteState } from '../context/RouteStateContext'
-import { useAppSelector } from '../hooks'
+import { useAppSelector, useMediaQuery } from '../hooks'
 import { fedimint } from '../lib/bridge'
-import { styled } from '../styles'
+import { config, styled } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
@@ -39,9 +39,8 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const {
         isReadyToPay,
         exactAmount,
-        // TODO: Pass to AmountInput to validate amounts
-        // minimumInputAmount,
-        // maximumInputAmount,
+        minimumAmount,
+        maximumAmount,
         description,
         inputAmount,
         setInputAmount,
@@ -54,8 +53,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const [isSending, setIsSending] = useState(false)
     const [hasSent, setHasSent] = useState(false)
     const [sendError, setSendError] = useState<string>()
+    const [submitAttempts, setSubmitAttempts] = useState(0)
     const containerRef = useRef<HTMLDivElement | null>(null)
     const isOfflineWalletSupported = useIsOfflineWalletSupported()
+    const isSmall = useMediaQuery(config.media.sm)
 
     // Reset modal on close and open
     useEffect(() => {
@@ -65,6 +66,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setIsSending(false)
             setHasSent(false)
             setSendError(undefined)
+            setSubmitAttempts(0)
             resetOmniPaymentState()
         } else {
             requestAnimationFrame(() =>
@@ -79,7 +81,16 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         handleOmniInput(sendRouteState)
     }, [open, sendRouteState, handleOmniInput])
 
+    const handleChangeAmount = useCallback(
+        (amount: Sats) => {
+            setSubmitAttempts(0)
+            setInputAmount(amount)
+        },
+        [setInputAmount],
+    )
+
     const handleSend = useCallback(async () => {
+        setSubmitAttempts(attempts => attempts + 1)
         setIsSending(true)
         try {
             await handleOmniSend(inputAmount)
@@ -102,8 +113,13 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 <InvoiceContainer>
                     <AmountInput
                         amount={inputAmount}
-                        onChangeAmount={setInputAmount}
+                        onChangeAmount={handleChangeAmount}
                         readOnly={!!exactAmount}
+                        verb={t('words.send')}
+                        minimumAmount={minimumAmount}
+                        maximumAmount={maximumAmount}
+                        submitAttempts={submitAttempts}
+                        autoFocus={!isSmall}
                         extraInput={
                             description ? (
                                 <InvoiceDescription>

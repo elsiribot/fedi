@@ -165,10 +165,10 @@ export function useAmountInput(
  * LNURL withdrawal or WebLN invoice request as part of the calculation.
  */
 export function useMinMaxRequestAmount({
-    lnurlWithdraw,
+    lnurlWithdrawal,
     weblnRequest,
 }: {
-    lnurlWithdraw?: ParsedLnurlWithdraw | null
+    lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
     weblnRequest?: RequestInvoiceArgs | null
 } = {}) {
     const maxReceiveAmount = useCommonSelector(selectMaxReceiveAmount)
@@ -176,16 +176,16 @@ export function useMinMaxRequestAmount({
     return useMemo(() => {
         let minimumAmount = 1 as Sats
         let maximumAmount = maxReceiveAmount
-        if (lnurlWithdraw) {
-            if (lnurlWithdraw.data.minWithdrawable) {
+        if (lnurlWithdrawal) {
+            if (lnurlWithdrawal.minWithdrawable) {
                 minimumAmount = Math.max(
-                    amountUtils.msatToSat(lnurlWithdraw.data.minWithdrawable),
+                    amountUtils.msatToSat(lnurlWithdrawal.minWithdrawable),
                     minimumAmount,
                 ) as Sats
             }
-            if (lnurlWithdraw.data.maxWithdrawable) {
+            if (lnurlWithdrawal.maxWithdrawable) {
                 maximumAmount = Math.min(
-                    amountUtils.msatToSat(lnurlWithdraw.data.maxWithdrawable),
+                    amountUtils.msatToSat(lnurlWithdrawal.maxWithdrawable),
                     maximumAmount,
                 ) as Sats
             }
@@ -205,7 +205,7 @@ export function useMinMaxRequestAmount({
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [maxReceiveAmount, lnurlWithdraw, weblnRequest])
+    }, [maxReceiveAmount, lnurlWithdrawal, weblnRequest])
 }
 
 /**
@@ -213,8 +213,8 @@ export function useMinMaxRequestAmount({
  * LNURL pay request as part of the calculation.
  */
 export function useMinMaxSendAmount({
-    lnurlPay,
-}: { lnurlPay?: ParsedLnurlPay } = {}) {
+    lnurlPayment,
+}: { lnurlPayment?: ParsedLnurlPay['data'] } = {}) {
     const balance = useCommonSelector(selectFederationBalance)
 
     return useMemo(() => {
@@ -223,17 +223,17 @@ export function useMinMaxSendAmount({
         if (balance) {
             maximumAmount = amountUtils.msatToSat(balance)
         }
-        if (lnurlPay) {
-            if (lnurlPay.data.minSendable) {
-                minimumAmount = amountUtils.msatToSat(lnurlPay.data.minSendable)
+        if (lnurlPayment) {
+            if (lnurlPayment.minSendable) {
+                minimumAmount = amountUtils.msatToSat(lnurlPayment.minSendable)
             }
-            if (lnurlPay.data.maxSendable) {
+            if (lnurlPayment.maxSendable) {
                 maximumAmount = Math.min(
-                    amountUtils.msatToSat(lnurlPay.data.maxSendable),
+                    amountUtils.msatToSat(lnurlPayment.maxSendable),
                     maximumAmount || Infinity,
                 ) as Sats
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [balance, lnurlPay])
+    }, [balance, lnurlPayment])
 }

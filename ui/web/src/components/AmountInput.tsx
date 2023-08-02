@@ -14,24 +14,24 @@ import { Text } from './Text'
 
 interface Props {
     amount: Sats
-    error?: React.ReactNode
     readOnly?: boolean
     verb?: string
     minimumAmount?: Sats | null
     maximumAmount?: Sats | null
     submitAttempts?: number
+    autoFocus?: boolean
     extraInput?: React.ReactNode
     onChangeAmount?: (amount: Sats) => void
 }
 
 export const AmountInput: React.FC<Props> = ({
     amount,
-    error,
     readOnly,
     verb,
     minimumAmount,
     maximumAmount,
     submitAttempts = 0,
+    autoFocus,
     extraInput,
     onChangeAmount,
 }) => {
@@ -72,11 +72,8 @@ export const AmountInput: React.FC<Props> = ({
     }, [submitAttempts])
 
     // Check validation for errors to render with suggestion for amount.
-    if (
-        !error &&
-        validation &&
-        (!validation.onlyShowOnSubmit || submitAttempts)
-    ) {
+    let error: React.ReactNode | undefined
+    if (validation && (!validation.onlyShowOnSubmit || submitAttempts)) {
         // The way we handle clicking validation amount is:
         // 1. Fade out input container
         // 2. Disable field wrap transitions
@@ -135,6 +132,7 @@ export const AmountInput: React.FC<Props> = ({
     const activeWrapProps = {
         active: true,
         readOnly,
+        autoFocus,
         hasError: !!error,
         onClick: useCallback(
             (ev: React.MouseEvent) => {
@@ -144,6 +142,10 @@ export const AmountInput: React.FC<Props> = ({
             },
             [isSmall],
         ),
+    }
+    const activeInputProps = {
+        autoFocus,
+        readOnly,
     }
     const inactiveWrapProps = {
         active: false,
@@ -162,6 +164,10 @@ export const AmountInput: React.FC<Props> = ({
             [readOnly, setIsFiat, isSmall],
         ),
     }
+    const inactiveInputProps = {
+        autoFocus: false,
+        readOnly: true,
+    }
 
     return (
         <Container>
@@ -177,7 +183,9 @@ export const AmountInput: React.FC<Props> = ({
                         {...(isFiat ? inactiveWrapProps : activeWrapProps)}>
                         <SnugInput>
                             <input
-                                readOnly={isFiat || readOnly}
+                                {...(isFiat
+                                    ? inactiveInputProps
+                                    : activeInputProps)}
                                 value={satsValue}
                                 onChange={ev =>
                                     handleChangeSats(ev.currentTarget.value)
@@ -192,6 +200,9 @@ export const AmountInput: React.FC<Props> = ({
                         {...(isFiat ? activeWrapProps : inactiveWrapProps)}>
                         <SnugInput>
                             <input
+                                {...(isFiat
+                                    ? activeInputProps
+                                    : inactiveInputProps)}
                                 readOnly={!isFiat || readOnly}
                                 value={fiatValue}
                                 inputMode="decimal"

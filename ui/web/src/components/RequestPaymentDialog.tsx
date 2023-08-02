@@ -42,7 +42,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const lnurlw = useRouteState('/request')
     const { minimumAmount, maximumAmount } = useMinMaxRequestAmount({
-        lnurlWithdraw: lnurlw,
+        lnurlWithdrawal: lnurlw?.data,
     })
     const [amount, setAmount] = useState(
         lnurlw?.data.maxWithdrawable
