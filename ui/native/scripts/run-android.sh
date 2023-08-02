@@ -4,7 +4,7 @@
 set -e
 
 echo "-----WARNING-----"
-echo "This script is deprecated. Check the ui/README for docs on running with Nix: just build-bridge-android"
+echo "This script is deprecated. Check the ui/README for docs on running with Nix: just run-dev-ui"
 echo "-----------------"
 
 # re-build bridge bindings for android
