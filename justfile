@@ -83,3 +83,6 @@ mprocs:
 build-bridge-android:
   ./scripts/bridge/build-bridge-android.sh
 
+# start dev UI (native + pwa). Use `just run-dev-ui interactive` for build options
+run-dev-ui mode="default":
+  MODE={{mode}} ./scripts/dev-ui/run.sh
