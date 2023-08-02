@@ -1,9 +1,11 @@
-import React, { useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
+import React, { useCallback, useEffect, useRef } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 
 import arrowLeftIcon from '@fedi/common/assets/svgs/arrow-left.svg'
+import switchIcon from '@fedi/common/assets/svgs/switch.svg'
 import { useAmountInput } from '@fedi/common/hooks/amount'
 import { Sats } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useMediaQuery } from '../hooks'
 import { config, keyframes, styled, theme } from '../styles'
@@ -12,8 +14,12 @@ import { Text } from './Text'
 
 interface Props {
     amount: Sats
-    error?: string
+    error?: React.ReactNode
     readOnly?: boolean
+    verb?: string
+    minimumAmount?: Sats | null
+    maximumAmount?: Sats | null
+    submitAttempts?: number
     extraInput?: React.ReactNode
     onChangeAmount?: (amount: Sats) => void
 }
@@ -22,6 +28,10 @@ export const AmountInput: React.FC<Props> = ({
     amount,
     error,
     readOnly,
+    verb,
+    minimumAmount,
+    maximumAmount,
+    submitAttempts = 0,
     extraInput,
     onChangeAmount,
 }) => {
@@ -33,15 +43,99 @@ export const AmountInput: React.FC<Props> = ({
         fiatValue,
         handleChangeFiat,
         handleChangeSats,
-        currencySymbol,
+        currency,
         numpadButtons,
         handleNumpadPress,
-    } = useAmountInput(amount, onChangeAmount)
+        validation,
+    } = useAmountInput(amount, onChangeAmount, minimumAmount, maximumAmount)
     const isSmall = useMediaQuery(config.media.sm)
+    const errorElRef = useRef<HTMLDivElement | null>(null)
+    const amountInputContainerElRef = useRef<HTMLDivElement | null>(null)
+
+    // Wiggle the error on subsequent submit attempts.
+    useEffect(() => {
+        const errorEl = errorElRef.current
+        if (submitAttempts < 2 || !errorEl) return
+        errorEl.animate(
+            [
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(6px)' },
+                { transform: 'translateX(-4px)' },
+                { transform: 'translateX(2px)' },
+                { transform: 'translateX(0)' },
+            ],
+            {
+                duration: 200,
+                iterations: 1,
+            },
+        )
+    }, [submitAttempts])
+
+    // Check validation for errors to render with suggestion for amount.
+    if (
+        !error &&
+        validation &&
+        (!validation.onlyShowOnSubmit || submitAttempts)
+    ) {
+        // The way we handle clicking validation amount is:
+        // 1. Fade out input container
+        // 2. Disable field wrap transitions
+        // 3. Change the amount
+        // 4. Fade in input container
+        // 5. Re-enable field wrap transitions
+        const handleClickValidationAmount = () => {
+            const containerEl = amountInputContainerElRef.current
+            if (!containerEl) {
+                handleChangeSats(validation.amount.toString())
+                return
+            }
+            const fieldWrapEls = containerEl.querySelectorAll<HTMLDivElement>(
+                FieldWrap.selector,
+            )
+            const fadeOut = containerEl.animate(
+                [{ opacity: 1 }, { opacity: 0 }],
+                { duration: 300, iterations: 1 },
+            )
+            fadeOut.onfinish = () => {
+                handleChangeSats(validation.amount.toString())
+                fieldWrapEls.forEach(el => (el.style.transition = 'none'))
+                requestAnimationFrame(() => {
+                    containerEl.animate([{ opacity: 0 }, { opacity: 1 }], {
+                        duration: 300,
+                        iterations: 1,
+                    })
+                    requestAnimationFrame(() => {
+                        fieldWrapEls.forEach(el =>
+                            el.style.removeProperty('transition'),
+                        )
+                    })
+                })
+            }
+        }
+        error = (
+            <Trans
+                i18nKey={validation.i18nKey}
+                components={{
+                    suggestion: (
+                        <ErrorAmountButton
+                            onClick={handleClickValidationAmount}
+                        />
+                    ),
+                }}
+                values={{
+                    verb: verb?.toLowerCase() || t('words.send'),
+                    amount: `${amountUtils.formatSats(validation.amount)} ${t(
+                        'words.sats',
+                    )}`,
+                }}
+            />
+        )
+    }
 
     const activeWrapProps = {
         active: true,
         readOnly,
+        hasError: !!error,
         onClick: useCallback(
             (ev: React.MouseEvent) => {
                 if (!isSmall) {
@@ -54,6 +148,7 @@ export const AmountInput: React.FC<Props> = ({
     const inactiveWrapProps = {
         active: false,
         readOnly,
+        hasError: !!error,
         role: readOnly ? undefined : 'button',
         tabIndex: readOnly ? undefined : 0,
         onClick: useCallback(
@@ -72,17 +167,12 @@ export const AmountInput: React.FC<Props> = ({
         <Container>
             <InputContainer>
                 <AmountInputContainer
+                    ref={amountInputContainerElRef}
                     css={{
-                        '--container-height': `88px`,
-                        '--error-height': error ? '28px' : '0px',
+                        '--error-height-offset': error
+                            ? '0px'
+                            : `${errorHeight / 2}px`,
                     }}>
-                    {error && (
-                        <Error>
-                            <Text variant="caption" weight="medium">
-                                {error}
-                            </Text>
-                        </Error>
-                    )}
                     <FieldWrap
                         {...(isFiat ? inactiveWrapProps : activeWrapProps)}>
                         <SnugInput>
@@ -95,11 +185,11 @@ export const AmountInput: React.FC<Props> = ({
                             />
                             <div>{satsValue}</div>
                         </SnugInput>
-                        <span>{t('words.sats')}</span>
+                        <Suffix>{t('words.sats')}</Suffix>
+                        <Icon icon={switchIcon} />
                     </FieldWrap>
                     <FieldWrap
                         {...(isFiat ? activeWrapProps : inactiveWrapProps)}>
-                        <span>{currencySymbol}</span>
                         <SnugInput>
                             <input
                                 readOnly={!isFiat || readOnly}
@@ -111,7 +201,18 @@ export const AmountInput: React.FC<Props> = ({
                             />
                             <div>{fiatValue}</div>
                         </SnugInput>
+                        <Suffix>{currency}</Suffix>
+                        <Icon icon={switchIcon} />
                     </FieldWrap>
+                    {error && (
+                        <Error
+                            needsReminder={submitAttempts > 1}
+                            ref={errorElRef}>
+                            <Text variant="caption" weight="medium">
+                                {error}
+                            </Text>
+                        </Error>
+                    )}
                 </AmountInputContainer>
                 {extraInput}
             </InputContainer>
@@ -135,6 +236,9 @@ export const AmountInput: React.FC<Props> = ({
     )
 }
 
+const fieldsHeight = 88
+const errorHeight = 28
+
 const Container = styled('div', {
     flex: 1,
     display: 'flex',
@@ -143,6 +247,7 @@ const Container = styled('div', {
     justifyContent: 'space-between',
     width: '100%',
     gap: 24,
+    overflow: 'hidden',
 })
 
 const InputContainer = styled('div', {
@@ -159,64 +264,116 @@ const InputContainer = styled('div', {
 const AmountInputContainer = styled('div', {
     width: '100%',
     position: 'relative',
-    height: 'calc(var(--container-height) + var(--error-height))',
-    transition: 'height 200ms ease',
+    height: fieldsHeight + errorHeight,
 })
 
-const errorFadeDown = keyframes({
-    '0%': { opacity: 0, transform: 'translateY(-10px)' },
+const errorFade = keyframes({
+    '0%': { opacity: 0, transform: 'translateY(10px)' },
     '100%': { opacity: 1, transform: 'translateY(0)' },
+})
+
+const errorReminder = keyframes({
+    '0%': { transform: 'translateX(0)' },
+    '20%': { transform: 'translateX(8px)' },
+    '40%': { transform: 'translateX(-4px)' },
+    '60%': { transform: 'translateX(2px)' },
+    '100%': { transform: 'translateX(0)' },
 })
 
 const Error = styled('div', {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
     textAlign: 'center',
     color: theme.colors.red,
-    animation: `${errorFadeDown} 200ms ease`,
+    animation: `${errorFade} 200ms linear`,
+
+    variants: {
+        needsReminder: {
+            true: {
+                animation: `${errorReminder} 100ms ease`,
+            },
+        },
+    },
+})
+
+const ErrorAmountButton = styled('button', {
+    textDecoration: 'underline',
+    textTransform: 'uppercase',
+})
+
+const switchIconFade = keyframes({
+    '0%': { opacity: 0 },
+    '100%': { opacity: 1 },
+})
+
+const Suffix = styled('span', {
+    paddingLeft: 6,
+    fontSize: 32,
+    lineHeight: '48px',
+    textTransform: 'uppercase',
+    fontWeight: theme.fontWeights.medium,
+    transformOrigin: '10% 70%',
+    transition: 'transform 200ms ease',
 })
 
 const FieldWrap = styled('div', {
     position: 'absolute',
     left: '50%',
     top: 0,
+    width: '100%',
     maxWidth: '100%',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'flex-end',
-    overflow: 'hidden',
     transition: 'transform 200ms ease, color 200ms ease, opacity 200ms ease',
 
-    // prefix
-    '& > span:first-child': {
-        fontSize: 32,
+    '> *': {
+        flexShrink: 0,
     },
 
-    // suffix
-    '& > span:last-child': {
-        fontSize: 20,
-        lineHeight: '42px',
-        textTransform: 'uppercase',
-        paddingLeft: 6,
+    // Switch icon
+    '> svg': {
+        flexShrink: 0,
+        position: 'relative',
+        top: -12,
+        marginLeft: 6,
+        animation: `${switchIconFade} 200ms ease 200ms 1 both`,
     },
 
     variants: {
         active: {
             true: {
-                transform: 'translateX(-50%) translateY(var(--error-height))',
+                transform: `
+                    translateX(-50%)
+                    translateX(22px)
+                    translateY(var(--error-height-offset))
+                `,
+
+                '> svg': {
+                    opacity: 0,
+                    animation: 'none',
+                },
+
+                [`& ${Suffix}`]: {
+                    transform: 'scale(0.7)',
+                },
             },
             false: {
                 opacity: 0.5,
                 transform: `
                     translateX(-50%)
-                    translateY(var(--error-height))
-                    translateY(var(--container-height))
+                    translateY(var(--error-height-offset))
+                    translateY(${fieldsHeight}px)
                     translateY(-100%)
                     scale(0.6)
                 `,
                 cursor: 'pointer',
+
+                '&:hover, &:focus': {
+                    opacity: 0.6,
+                },
 
                 '> *': {
                     pointerEvents: 'none',
@@ -238,6 +395,7 @@ const SnugInput = styled('div', {
     '& > div, & > input': {
         fontSize: 32,
         lineHeight: '48px',
+        fontWeight: theme.fontWeights.medium,
     },
 
     '& > div': {
