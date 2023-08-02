@@ -1,0 +1,14 @@
+server: 127.0.0.1:4051
+procs:
+  metro:
+    shell: bash ../scripts/dev-ui/start-metro.sh
+    stop: SIGKILL
+  common:
+    shell: bash ../scripts/dev-ui/start-common.sh
+    stop: SIGKILL
+  pwa:
+    shell: bash ../scripts/dev-ui/start-pwa.sh
+    stop: SIGKILL
+  android:
+    shell: bash ../scripts/dev-ui/start-android.sh
+    stop: SIGKILL

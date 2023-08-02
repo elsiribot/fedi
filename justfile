@@ -78,3 +78,6 @@ test-bridge testcase="":
 # start mprocs with a dev federation setup
 mprocs:
   ./scripts/mprocs.sh
+
+run-dev-ui:
+  ./scripts/dev-ui/run.sh
