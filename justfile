@@ -79,5 +79,7 @@ test-bridge testcase="":
 mprocs:
   ./scripts/mprocs.sh
 
-run-dev-ui:
-  ./scripts/dev-ui/run.sh
+# build the android bridge for ui/native
+build-bridge-android:
+  ./scripts/bridge/build-bridge-android.sh
+

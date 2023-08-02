@@ -2,4 +2,4 @@
 
 ./ts-bindgen.sh
 ./ios.sh
-./android.sh
+../scripts/bridge/build-bridge-android.sh

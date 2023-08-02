@@ -6,7 +6,7 @@
         "node": ">=16"
     },
     "scripts": {
-        "build-bridge-android": "bash scripts/build-bridge-android.sh",
+        "build-bridge-android": "bash ../../scripts/bridge/build-bridge-android.sh",
         "build-bridge-ios": "bash scripts/build-bridge-ios.sh",
         "build-android": "bash scripts/build-android.sh",
         "ios-arm64": "arch -x86_64 bash scripts/run-ios.sh",
