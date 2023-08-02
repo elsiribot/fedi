@@ -1,6 +1,6 @@
 {
     "name": "@fedi/native",
-    "version": "1.12.6",
+    "version": "1.12.7",
     "private": true,
     "engines": {
         "node": ">=16"
@@ -9,11 +9,11 @@
         "build-bridge-android": "bash scripts/build-bridge-android.sh",
         "build-bridge-ios": "bash scripts/build-bridge-ios.sh",
         "build-android": "bash scripts/build-android.sh",
-        "android": "bash scripts/run-android.sh",
-        "ios": "bash scripts/run-ios.sh",
         "ios-arm64": "arch -x86_64 bash scripts/run-ios.sh",
         "start": "react-native start",
         "dev": "react-native start",
+        "dev:ios": "bash scripts/run-ios.sh",
+        "dev:android": "bash scripts/run-android.sh",
         "test": "yarn run test:functional",
         "test:functional": "jest --config='tests/configs/jest-functional.config.js'",
         "test:android:regtest": "bash scripts/run-detox-tests-android.sh -n regtest",
@@ -75,7 +75,7 @@
         "react-native-tab-view": "3.3.4",
         "react-native-url-polyfill": "^2.0.0",
         "react-native-uuid": "2.0.1",
-        "react-native-vector-icons": "9.2.0",
+        "react-native-vector-icons": "^10.0.0",
         "react-native-video": "5.2.1",
         "react-native-vision-camera": "https://github.com/fedibtc/react-native-vision-camera#patch/rn-reanimated",
         "react-native-webln": "fedibtc/react-native-webln#0.1.11-patch",

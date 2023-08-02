@@ -39,11 +39,16 @@ let
   androidSdk =
     android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
       cmdline-tools-latest
+      build-tools-30-0-3
       build-tools-32-0-0
+      build-tools-33-0-0
       platform-tools
       platforms-android-31
+      platforms-android-33
       emulator
       ndk-bundle
+      ndk-23-1-7779620
+      cmake-3-22-1
       patcher-v4
       tools
     ]);

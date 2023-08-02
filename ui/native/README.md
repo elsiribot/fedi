@@ -28,8 +28,6 @@ yarn run start
 
 The [Rust bridge](https://github.com/fedibtc/fedi-react-native/tree/master/bridge) gets built automatically by the `npm run android` and `npm run ios` commands, but as a first run try building it independently with `npm run build-bridge-android` and `npm run build-bridge-ios`. You can build these in parallel with separate terminals.
 
-If you would like to build the bridge in Nix, export `FEDI_NIX=1` before running this. At this point only Android is supported.
-
 ```
 # builds ios
 yarn run build-bridge-ios
@@ -103,3 +101,7 @@ yarn run android -- --deviceid=<deviceid>
 ```
 xcrun xctrace list devices
 ```
+
+### Cannot connect to development server
+
+On an Android simulator, if the app installs but cannot connect to the Metro packaging server (usually running on port 8081) try running `adb reverse tcp:8081 tcp:8081` to resolve the problem. (see [this guide](https://reactnative.dev/docs/running-on-device?platform=android#method-1-using-adb-reverse-recommended) for details)
