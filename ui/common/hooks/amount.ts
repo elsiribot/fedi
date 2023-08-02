@@ -174,8 +174,8 @@ export function useMinMaxRequestAmount({
     const maxReceiveAmount = useCommonSelector(selectMaxReceiveAmount)
 
     return useMemo(() => {
-        let minimumAmount: Sats = 1 as Sats
-        let maximumAmount: Sats = maxReceiveAmount
+        let minimumAmount = 1 as Sats
+        let maximumAmount = maxReceiveAmount
         if (lnurlWithdraw) {
             if (lnurlWithdraw.data.minWithdrawable) {
                 minimumAmount = Math.max(
@@ -218,8 +218,8 @@ export function useMinMaxSendAmount({
     const balance = useCommonSelector(selectFederationBalance)
 
     return useMemo(() => {
-        let minimumAmount: Sats | undefined
-        let maximumAmount: Sats | undefined
+        let minimumAmount = 1 as Sats // Cannot send millisat amounts
+        let maximumAmount = 1_000_000_000_000_000 as Sats // MAX_SAFE_INTEGER rounded down
         if (balance) {
             maximumAmount = amountUtils.msatToSat(balance)
         }

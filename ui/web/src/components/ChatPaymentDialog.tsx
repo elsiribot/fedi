@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import {
+    useMinMaxRequestAmount,
+    useMinMaxSendAmount,
+} from '@fedi/common/hooks/amount'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     selectActiveFederation,
@@ -33,8 +37,12 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const myId = useAppSelector(selectAuthenticatedMember)?.id
+    const sendMinMax = useMinMaxSendAmount()
+    const requestMinMax = useMinMaxRequestAmount()
     const [amount, setAmount] = useState(0 as Sats)
     const [isSending, setIsSending] = useState(false)
+    const [submitAttempts, setSubmitAttempts] = useState(0)
+    const [submitType, setSubmitType] = useState<'send' | 'request'>()
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
 
     const balance = activeFederation?.balance
@@ -44,6 +52,8 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         if (open) return
         setAmount(0 as Sats)
         setIsSending(false)
+        setSubmitAttempts(0)
+        setSubmitType(undefined)
     }, [open])
 
     const sendPaymentMessage = useCallback(
@@ -83,6 +93,15 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
     const handleSend = useCallback(async () => {
         if (!federationId) return
+        setSubmitType('send')
+        setSubmitAttempts(attempt => attempt + 1)
+        if (
+            amount < sendMinMax.minimumAmount ||
+            amount > sendMinMax.maximumAmount
+        ) {
+            return
+        }
+
         setIsSending(true)
         try {
             const token = await fedimint.generateEcash(
@@ -94,18 +113,32 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             toast.showErrorToast(err, 'errors.unknown-error')
         }
         setIsSending(false)
-    }, [sendPaymentMessage, amount, toast, federationId])
+    }, [sendPaymentMessage, amount, sendMinMax, toast, federationId])
 
     const handleRequest = useCallback(async () => {
+        setSubmitType('request')
+        setSubmitAttempts(attempt => attempt + 1)
+        if (
+            amount < requestMinMax.minimumAmount ||
+            amount > requestMinMax.maximumAmount
+        ) {
+            return
+        }
+
         setIsSending(true)
+        setSubmitType('request')
         await sendPaymentMessage()
         setIsSending(false)
-    }, [sendPaymentMessage])
+    }, [sendPaymentMessage, amount, requestMinMax])
 
     if (balance === undefined) return null
 
-    const isReceiveDisabled = amount <= 0
-    const isSendDisabled = amount <= 0 || amount > balance
+    const inputMinMax =
+        submitType === 'send'
+            ? sendMinMax
+            : submitType === 'request'
+            ? requestMinMax
+            : {}
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -116,20 +149,24 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             </Balance>
             <AmountContainer>
                 {open && (
-                    <AmountInput amount={amount} onChangeAmount={setAmount} />
+                    <AmountInput
+                        amount={amount}
+                        onChangeAmount={setAmount}
+                        verb={
+                            submitType === 'send'
+                                ? t('words.send')
+                                : t('words.request')
+                        }
+                        submitAttempts={submitAttempts}
+                        {...inputMinMax}
+                    />
                 )}
             </AmountContainer>
             <Actions>
-                <Button
-                    disabled={isReceiveDisabled}
-                    loading={isSending}
-                    onClick={handleRequest}>
+                <Button loading={isSending} onClick={handleRequest}>
                     {t('words.request')}
                 </Button>
-                <Button
-                    disabled={isSendDisabled}
-                    loading={isSending}
-                    onClick={handleSend}>
+                <Button loading={isSending} onClick={handleSend}>
                     {t('words.send')}
                 </Button>
             </Actions>
