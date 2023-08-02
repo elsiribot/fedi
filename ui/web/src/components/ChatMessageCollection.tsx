@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
@@ -23,6 +24,7 @@ export const ChatMessageCollection: React.FC<Props> = ({
     collection,
     showUsernames,
 }) => {
+    const { t } = useTranslation()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const memberMap = useAppSelector(selectChatMemberMap)
 
@@ -42,7 +44,8 @@ export const ChatMessageCollection: React.FC<Props> = ({
                         <div key={messages[0].id}>
                             {showUsernames && !isMe && (
                                 <Username>
-                                    {member?.username || 'Unknown member'}
+                                    {member?.username ||
+                                        t('feature.chat.unknown-member')}
                                 </Username>
                             )}
                             <MessageAvatarWrap isMe={isMe}>
