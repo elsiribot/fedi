@@ -79,9 +79,21 @@ test-bridge testcase="":
 mprocs:
   ./scripts/mprocs.sh
 
-# build the android bridge for ui/native
+# build the bridge for ui/native (android + ios + typescript bindings)
+build-bridge:
+  ./scripts/bridge/build.sh
+
+# build only the android bridge artifacts for ui/native
 build-bridge-android:
   ./scripts/bridge/build-bridge-android.sh
+
+# build only the ios bridge artifacts for ui/native
+build-bridge-ios:
+  ./scripts/bridge/build-bridge-ios.sh
+
+# generate typescript bindings for the bridge
+generate-bridge-bindings:
+  ./scripts/bridge/ts-bindgen.sh
 
 # start dev UI (native + pwa). Use `just run-dev-ui interactive` for build options
 run-dev-ui mode="default":
