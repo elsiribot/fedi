@@ -1,5 +1,5 @@
 import '@rneui/themed'
-import { ViewStyle } from 'react-native'
+import { DimensionValue, ViewStyle } from 'react-native'
 
 // This declaration is required to combine the Theme type
 // from @react-naviation/native with the @rneui/themed Theme type
@@ -35,7 +35,7 @@ declare module '@rneui/themed' {
             notification: string
         }
         percentages: {
-            [key: string]: string
+            [key: string]: DimensionValue
         }
         sizes: {
             [key: string]: number

@@ -1,42 +1,38 @@
 /**
- * Metro configuration for React Native
- * https://github.com/facebook/react-native
+ * Metro configuration
+ * https://facebook.github.io/metro/docs/configuration
  *
- * @format
+ * @type {import('metro-config').MetroConfig}
  */
-const { getDefaultConfig } = require('metro-config')
+const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config')
+const defaultSourceExts =
+    require('metro-config/src/defaults/defaults').sourceExts
+const defaultAssetExts = require('metro-config/src/defaults/defaults').assetExts
 const exclusionList = require('metro-config/src/defaults/exclusionList')
 const path = require('path')
 
-module.exports = (async () => {
-    const {
-        resolver: { sourceExts, assetExts },
-    } = await getDefaultConfig()
-    return {
-        transformer: {
-            babelTransformerPath: require.resolve(
-                'react-native-svg-transformer',
-            ),
-            getTransformOptions: async () => ({
-                transform: {
-                    experimentalImportSupport: false,
-                    inlineRequires: true,
-                },
-            }),
-        },
-        resolver: {
-            assetExts: assetExts.filter(ext => ext !== 'svg'),
-            sourceExts: [...sourceExts, 'svg'],
-            nodeModulesPaths: [
-                path.resolve(__dirname, './node_modules'),
-                path.resolve(__dirname, '../node_modules'),
-            ],
-            extraNodeModules: {
-                '@fedi/common': path.resolve(__dirname, '../common'),
+module.exports = mergeConfig(getDefaultConfig(__dirname), {
+    transformer: {
+        babelTransformerPath: require.resolve('react-native-svg-transformer'),
+        getTransformOptions: async () => ({
+            transform: {
+                experimentalImportSupport: false,
+                inlineRequires: true,
             },
-            // Ignore @fedi/common/dist/*
-            blockList: exclusionList([/.*\/common\/dist\/.*/]),
+        }),
+    },
+    resolver: {
+        assetExts: defaultAssetExts.filter(ext => ext !== 'svg'),
+        sourceExts: [...defaultSourceExts, 'svg'],
+        nodeModulesPaths: [
+            path.resolve(__dirname, './node_modules'),
+            path.resolve(__dirname, '../node_modules'),
+        ],
+        extraNodeModules: {
+            '@fedi/common': path.resolve(__dirname, '../common'),
         },
-        watchFolders: [path.resolve(__dirname, '../')],
-    }
-})()
+        // Ignore @fedi/common/dist/*
+        blockList: exclusionList([/.*\/common\/dist\/.*/]),
+    },
+    watchFolders: [path.resolve(__dirname, '../')],
+})

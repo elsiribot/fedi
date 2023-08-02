@@ -54,6 +54,6 @@ const styles = (theme: Theme) =>
         },
         subText: {
             fontSize: theme.sizes.xxs,
-            opa: theme.colors.primaryLight,
+            color: theme.colors.primaryLight,
         },
     })

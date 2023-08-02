@@ -1,6 +1,6 @@
 module.exports = {
     root: true,
-    extends: ['@react-native-community', 'prettier', '../.eslintrc.js'],
+    extends: ['@react-native', 'prettier', '../.eslintrc.js'],
     parser: '@typescript-eslint/parser',
     rules: {
         // The react-navigation library used in native takes nested components

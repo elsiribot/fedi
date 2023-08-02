@@ -41,7 +41,6 @@ const RecordVideo = () => {
                 prev: CameraDeviceFormat | undefined,
                 curr: CameraDeviceFormat,
             ) => {
-                console.info('CameraDeviceFormat: ', curr)
                 // Initialize
                 if (prev === undefined) return curr
                 // Filter out formats that don't have video dimensions specified, or are smaller than 100 pixels
@@ -58,6 +57,7 @@ const RecordVideo = () => {
     }, [device?.formats])
 
     if (devices.front === undefined) return null
+    // console.info('devices', devices)
 
     const startRecording = async () => {
         setIsRecording(true)

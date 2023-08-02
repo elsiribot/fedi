@@ -2,8 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
-import { useCameraDevices } from 'react-native-vision-camera'
+import { Alert, StyleSheet, View } from 'react-native'
 
 import AnimatedQrCodeScanner from '../components/feature/scan/AnimatedQrCodeScanner'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
@@ -20,23 +19,15 @@ const ReceiveOffline: React.FC<Props> = ({ navigation }: Props) => {
     const [showingError, setShowingError] = useState(false)
     const [percent, setPercent] = useState(0)
 
-    const devices = useCameraDevices()
-    const device = devices.back
-
     const renderQrCodeScanner = () => {
-        if (device == null) {
-            return <ActivityIndicator />
-        } else {
-            return (
-                <AnimatedQrCodeScanner
-                    device={device}
-                    onProgress={(p: number) => {
-                        if (p > percent) setPercent(p)
-                    }}
-                    onQrCodeDetected={onResult}
-                />
-            )
-        }
+        return (
+            <AnimatedQrCodeScanner
+                onProgress={(p: number) => {
+                    if (p > percent) setPercent(p)
+                }}
+                onQrCodeDetected={onResult}
+            />
+        )
     }
 
     const onResult = async (ecash: string) => {

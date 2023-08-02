@@ -5,8 +5,8 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useCameraDevices } from 'react-native-vision-camera'
 
+// import { useCameraDevices } from 'react-native-vision-camera'
 import { joinFederation } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
@@ -82,18 +82,19 @@ const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
         handleUserInput(text.trim())
     }, [handleUserInput])
 
-    const devices = useCameraDevices()
-    const device = devices.back
+    // const devices = useCameraDevices()
+    // const device = devices.back
 
     const renderQrCodeScanner = () => {
-        if (device == null) {
+        // if (device == null) {
+        //     return <ActivityIndicator />
+        // } else if (isJoining) {
+        if (isJoining) {
             return <ActivityIndicator />
-        } else if (isJoining) {
-            return null
         } else {
             return (
                 <QrCodeScanner
-                    device={device}
+                    // device={device}
                     onQrCodeDetected={handleUserInput}
                 />
             )
