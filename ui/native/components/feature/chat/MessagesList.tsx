@@ -15,7 +15,10 @@ import {
 } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import {
+    selectAuthenticatedMember,
+    selectChatMemberMap,
+} from '@fedi/common/redux'
 import { ChatMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { jidToId } from '@fedi/common/utils/chat'
@@ -42,6 +45,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     const lastScrolledMessageIdRef = useRef(messages[0]?.[0]?.[0].id)
     const isScrolledToBottomRef = useRef(true)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const memberMap = useAppSelector(selectChatMemberMap)
     const [hasNewMessage, setHasNewMessages] = useState(false)
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
 
@@ -115,7 +119,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
                     {item.map(msgs => {
                         if (!msgs.length) return null
                         const sentBy = msgs[0].sentBy
-                        const sentByName = sentBy || ''
+                        const sentByName =
+                            memberMap[sentBy]?.username ||
+                            t('feature.chat.unknown-member')
                         const sentByMe = sentByName && sentByName === myName
                         return (
                             <View style={style.senderGroup} key={msgs[0].id}>
