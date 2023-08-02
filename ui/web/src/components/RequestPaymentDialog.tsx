@@ -1,24 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
+import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
 import {
     useIsOfflineWalletSupported,
     useIsOnchainDepositSupported,
 } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import {
-    selectActiveFederation,
-    selectMaxReceiveAmount,
-} from '@fedi/common/redux'
+import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { useRouteState } from '../context/RouteStateContext'
-import { useAppSelector } from '../hooks'
+import { useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { config, styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
@@ -41,20 +38,23 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     onOpenChange,
 }) => {
     const { t } = useTranslation()
+    const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
-    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     const lnurlw = useRouteState('/request')
+    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount({
+        lnurlWithdraw: lnurlw,
+    })
     const [amount, setAmount] = useState(
         lnurlw?.data.maxWithdrawable
             ? amountUtils.msatToSat(lnurlw.data.maxWithdrawable)
             : (0 as Sats),
     )
     const [note, setNote] = useState(lnurlw?.data.defaultDescription || '')
+    const [submitAttempts, setSubmitAttempts] = useState(0)
     const [wantsInvoice, setWantsInvoice] = useState(false)
     const [isLightning, setIsLightning] = useState(true)
     const [lightningInvoice, setLightningInvoice] = useState<string>()
     const [bitcoinUrl, setBitcoinUrl] = useState<string>()
-    const [generateError, setGenerateError] = useState<string>()
     const [isWithdrawing, setIsWithdrawing] = useState(false)
     const [isReceivingOffline, setIsReceivingOffline] = useState(false)
     const [receivedTransaction, setReceivedTransaction] =
@@ -73,10 +73,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                     : (0 as Sats),
             )
             setNote(lnurlw?.data.defaultDescription || '')
+            setSubmitAttempts(0)
             setWantsInvoice(false)
+            setIsLightning(true)
             setLightningInvoice(undefined)
             setBitcoinUrl(undefined)
-            setGenerateError(undefined)
             setIsWithdrawing(false)
             setIsReceivingOffline(false)
             setReceivedTransaction(undefined)
@@ -125,11 +126,8 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         }
 
         if (promise) {
-            setGenerateError(undefined)
             promise.catch(err => {
-                setGenerateError(
-                    formatErrorMessage(t, err, 'error.unknown-error'),
-                )
+                toast.showErrorToast(err, 'error.unknown-error')
                 setWantsInvoice(false)
             })
             return () => {
@@ -144,7 +142,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         lightningInvoice,
         bitcoinUrl,
         activeFederationId,
-        t,
+        toast,
     ])
 
     // Watch for incoming payments when we're rendering a lightning invoice
@@ -187,20 +185,32 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             )
             setLightningInvoice(invoice)
         } catch (err) {
-            setGenerateError(formatErrorMessage(t, err, 'error.unknown-error'))
+            toast.showErrorToast(err, 'error.unknown-error')
             setIsWithdrawing(false)
+        }
+    }
+
+    const handleChangeAmount = useCallback((amt: Sats) => {
+        setAmount(amt)
+        setSubmitAttempts(0)
+    }, [])
+
+    const handleSubmit = () => {
+        setSubmitAttempts(attempts => attempts + 1)
+        // Bail out if invalid amount, let them see error message
+        if (amount < minimumAmount || amount > maximumAmount) {
+            return
+        }
+        if (lnurlw) {
+            handleLnurlWithdraw()
+        } else {
+            setWantsInvoice(true)
         }
     }
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
     const lightningUrl = lightningInvoice ? `lightning:${lightningInvoice}` : ''
     const copyData = isLightning ? lightningUrl : bitcoinUrl
-    const error =
-        amount > maxReceiveAmount
-            ? t('feature.receive.maximum-invoice-amount', {
-                  maxAmount: amountUtils.formatSats(maxReceiveAmount),
-              })
-            : generateError
     const showNote = !!note || !wantsInvoice
     const showOfflineReceive = isOfflineWalletSupported && !lnurlw
     const amountSats = amountUtils.formatSats(amount)
@@ -232,9 +242,12 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 <Center>
                     <AmountInput
                         amount={amount}
-                        error={error}
-                        onChangeAmount={setAmount}
+                        onChangeAmount={handleChangeAmount}
                         readOnly={wantsInvoice}
+                        verb={t('words.request')}
+                        minimumAmount={minimumAmount}
+                        maximumAmount={maximumAmount}
+                        submitAttempts={submitAttempts}
                         extraInput={
                             showNote ? (
                                 <NoteInput
@@ -266,11 +279,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                     <Buttons>
                         <Button
                             width="full"
-                            onClick={() =>
-                                lnurlw
-                                    ? handleLnurlWithdraw()
-                                    : setWantsInvoice(true)
-                            }
+                            onClick={handleSubmit}
                             loading={isWithdrawing}>
                             {lnurlw
                                 ? t('feature.receive.withdraw-from-domain', {
