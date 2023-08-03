@@ -116,7 +116,11 @@ const AmountInput: React.FC<Props> = ({
                 <Pressable
                     style={styles(theme).symbolSwitcher}
                     onPress={() => setIsFiat(!isFiat)}>
-                    <Text style={styles(theme).secondaryAmountText} medium>
+                    <Text
+                        style={styles(theme).secondaryAmountText}
+                        medium
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
                         {isFiat
                             ? `${satsValue} ${t('words.sats').toUpperCase()}`
                             : `${fiatValue} ${currency}`}

@@ -91,6 +91,10 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={handleSubmit}
                     loading={generatingInvoice}
                     containerStyle={styles(theme, insets).button}
+                    titleProps={{
+                        numberOfLines: 1,
+                        adjustsFontSizeToFit: true,
+                    }}
                 />
             </View>
         </KeyboardAwareWrapper>

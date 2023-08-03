@@ -28,19 +28,29 @@ const InvisibleInput: React.FC<Props> = ({
                 style={styles(theme).interactionContainer}
                 onPress={() => inputRef.current?.focus()}>
                 {labelPosition === 'left' && (
-                    <Text h2 style={styles(theme).labelText}>
+                    <Text
+                        h2
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={styles(theme).labelText}>
                         {label}
                     </Text>
                 )}
                 <Text
                     h1
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
                     h1Style={[
                         labelPosition === 'left' ? styles(theme).offset : {},
                     ]}>
                     {value}
                 </Text>
                 {labelPosition === 'right' && (
-                    <Text h2 style={styles(theme).labelText}>
+                    <Text
+                        h2
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={styles(theme).labelText}>
                         {label}
                     </Text>
                 )}
