@@ -12,3 +12,6 @@ procs:
     android:
         shell: bash scripts/dev-ui/start-android.sh
         stop: SIGKILL
+    ios:
+        shell: bash scripts/dev-ui/start-ios.sh
+        stop: SIGKILL
