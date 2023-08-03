@@ -18,6 +18,7 @@ fi
 if [[ "$SKIP_BRIDGE_BUILD" == "0" ]]; then
     echo "Building fedi bridge"
     $REPO_ROOT/scripts/bridge/build-bridge-android.sh
+    $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
 fi
 
 if [[ "$SKIP_INSTALL_PODS" == "0" ]]; then
