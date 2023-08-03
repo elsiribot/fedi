@@ -42,4 +42,5 @@ fi
 
 source $REPO_ROOT/scripts/dev-ui/setup.sh
 
+cd $REPO_ROOT
 mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml
