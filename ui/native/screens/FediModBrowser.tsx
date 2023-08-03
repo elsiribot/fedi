@@ -19,6 +19,7 @@ import {
     SendPaymentResponse,
 } from 'webln'
 
+import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -92,8 +93,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
     const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
-    const [amountRequested, setAmountRequested] = useState<Sats>(0 as Sats)
+    const [amountRequested, setAmountRequested] = useState(0 as Sats)
+    const [requestSubmitAttempts, setRequestSubmitAttempts] = useState(0)
     const [lnurlData, setLnurlData] = useState<string>('')
+    const requestMinMax = useMinMaxRequestAmount({
+        weblnRequest: requestInvoiceArgs,
+    })
 
     // Overlay components for makeInvoice UX
     const rejectMakeInvoiceButton = useMemo(
@@ -115,36 +120,40 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const acceptMakeInvoiceButton = useMemo(
         () => ({
             primary: true,
-            disabled: amountRequested === 0,
             text: t('words.accept'),
             onPress: async () => {
-                if (amountRequested > 0) {
-                    try {
-                        setLoading(true)
-                        const invoice = await generateInvoice(
-                            amountUtils.satToMsat(amountRequested),
-                            requestInvoiceArgs?.defaultMemo || '',
-                        )
-                        if (overlayResolveRef.current) {
-                            overlayResolveRef.current({
-                                paymentRequest: invoice,
-                            })
-                        }
-                    } catch (error) {
-                        toast?.show((error as Error).message, 3000)
-                        if (overlayRejectRef.current) {
-                            overlayRejectRef.current(error as Error)
-                        }
-                    }
-                    setLoading(false)
-                    setShowOverlay(false)
-                } else {
-                    console.error('nothing')
+                setRequestSubmitAttempts(attempts => attempts + 1)
+                if (
+                    amountRequested > requestMinMax.maximumAmount ||
+                    amountRequested < requestMinMax.minimumAmount
+                ) {
+                    return
                 }
+
+                try {
+                    setLoading(true)
+                    const invoice = await generateInvoice(
+                        amountUtils.satToMsat(amountRequested),
+                        requestInvoiceArgs?.defaultMemo || '',
+                    )
+                    if (overlayResolveRef.current) {
+                        overlayResolveRef.current({
+                            paymentRequest: invoice,
+                        })
+                    }
+                } catch (error) {
+                    toast?.show((error as Error).message, 3000)
+                    if (overlayRejectRef.current) {
+                        overlayRejectRef.current(error as Error)
+                    }
+                }
+                setLoading(false)
+                setShowOverlay(false)
             },
         }),
         [
             amountRequested,
+            requestMinMax,
             generateInvoice,
             requestInvoiceArgs?.defaultMemo,
             t,
@@ -179,12 +188,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             description: requestInvoiceArgs?.defaultMemo || '',
             body: (
                 <AmountInput
+                    {...requestMinMax}
                     amount={amountRequested}
-                    minimumAmount={requestInvoiceArgs?.minimumAmount as Sats}
-                    maximumAmount={requestInvoiceArgs?.maximumAmount as Sats}
+                    submitAttempts={requestSubmitAttempts}
+                    verb={t('words.request')}
                     onChangeAmount={(changedAmount: Sats) => {
+                        setRequestSubmitAttempts(0)
                         setAmountRequested(changedAmount)
-                        // enforce min/max here?
                     }}
                 />
             ),
@@ -194,9 +204,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             acceptMakeInvoiceButton,
             amountRequested,
             rejectMakeInvoiceButton,
+            requestMinMax,
+            requestSubmitAttempts,
             requestInvoiceArgs?.defaultMemo,
-            requestInvoiceArgs?.maximumAmount,
-            requestInvoiceArgs?.minimumAmount,
             fediMod.title,
             t,
         ],
@@ -356,6 +366,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             overlayResolveRef.current = undefined
             overlayRejectRef.current = undefined
             setAmountRequested(0 as Sats)
+            setRequestSubmitAttempts(0)
             setInvoiceToPay(null)
             setRequestInvoiceArgs(null)
             setLnurlData('')
