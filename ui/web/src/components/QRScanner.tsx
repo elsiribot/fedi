@@ -22,50 +22,46 @@ import { Text } from './Text'
 export type ScanResult = QrScanner.ScanResult
 
 interface Props {
-    multi?: boolean
     processing?: boolean
     onScan(result: ScanResult): void
 }
 
-export const QRScanner: React.FC<Props> = ({ multi, processing, onScan }) => {
+export const QRScanner: React.FC<Props> = ({ processing, onScan }) => {
     const { t } = useTranslation()
     const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
     const qrScannerRef = useRef<QrScanner | null>(null)
     const [mediaError, setMediaError] = useState<string>()
-    const [, setFrames] = useState<FrameState | null>(null)
+    const [frames, setFrames] = useState<FrameState | null>(null)
     const [progress, setProgress] = useState(0)
     const [isLoading, setIsLoading] = useState(true)
 
-    // Maintain a ref to onScan to avoid re-running useEffects
+    // Maintain a ref to onScan and frames to avoid re-running useEffects
+    const framesRef = useUpdatingRef(frames)
     const onScanRef = useUpdatingRef(onScan)
 
-    // Accumulate frames
-    const handleMultiScan = useCallback(
+    const handleScan = useCallback(
         (result: ScanResult) => {
-            setFrames(oldFrames => {
-                try {
-                    const newFrames = parseFramesReducer(oldFrames, result.data)
-                    if (areFramesComplete(newFrames)) {
-                        onScanRef.current({
-                            data: framesToData(newFrames).toString(),
-                            cornerPoints: result.cornerPoints,
-                        })
-                    }
-                    setProgress(progressOfFrames(newFrames))
-                    return newFrames
-                } catch (err) {
-                    setMediaError(
-                        formatErrorMessage(t, err, 'errors.unknown-error'),
-                    )
-                    return null
+            // Attempt to parse qrloop'd QR codes first
+            try {
+                const newFrames = parseFramesReducer(
+                    framesRef.current,
+                    result.data,
+                )
+                if (areFramesComplete(newFrames)) {
+                    onScanRef.current({
+                        data: framesToData(newFrames).toString(),
+                        cornerPoints: result.cornerPoints,
+                    })
                 }
-            })
+                setFrames(newFrames)
+                setProgress(progressOfFrames(newFrames))
+            } catch (err) {
+                // Fall back to regular ol' QR code
+                onScanRef.current(result)
+            }
         },
-        [t, onScanRef],
+        [framesRef, onScanRef],
     )
-
-    // Maintain a ref that switches between handlers based on multi
-    const handleScanRef = useUpdatingRef(multi ? handleMultiScan : onScan)
 
     // Sets up QrScanner using device camera
     const handleScannerSetup = useCallback(async () => {
@@ -82,7 +78,7 @@ export const QRScanner: React.FC<Props> = ({ multi, processing, onScan }) => {
             const QrScanner = (await import('qr-scanner')).default
             const qrScanner = new QrScanner(
                 videoEl,
-                result => handleScanRef.current(result),
+                result => handleScan(result),
                 {
                     returnDetailedScanResult: true,
                     onDecodeError: () => null, // no-op
@@ -93,7 +89,7 @@ export const QRScanner: React.FC<Props> = ({ multi, processing, onScan }) => {
         } catch (err) {
             setMediaError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
-    }, [videoEl, handleScanRef, t])
+    }, [videoEl, handleScan, t])
 
     // Setup scanner on mount, tear down on unmount
     useEffect(() => {
@@ -120,7 +116,7 @@ export const QRScanner: React.FC<Props> = ({ multi, processing, onScan }) => {
                     <CircularLoader />
                 </Loading>
             )}
-            {multi && !!progress && (
+            {progress !== 0 && (
                 <Progress>
                     <ProgressBar style={{ width: `${progress * 100}%` }} />
                     <ProgressPercent>
