@@ -131,6 +131,26 @@
 
         # rust packages outputs with git hash replaced
         rustPackagesFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackages;
+
+        xcode-wrapper = stdenv.mkDerivation {
+          name = "xcode-wrapper-14.3.1";
+          buildCommand = ''
+            mkdir -p $out/bin
+            cd $out/bin
+            ln -s /usr/bin/ld
+            ln -s /usr/bin/gcc
+            ln -s /usr/bin/clang
+            ln -s /usr/bin/xcodebuild
+
+            # Check if we have the xcodebuild version that we want
+            if [ -z "$($out/bin/xcodebuild -version | grep 14.3.1)" ]
+            then
+                echo "xcodebuild version: 14.3.1 is required"
+                echo "run `xcode-select --install` to install xcode from the CLI"
+                exit 1
+            fi
+          '';
+        };
       in
       {
         packages = {
@@ -162,8 +182,11 @@
                 pkgs.gnused
                 pkgs.yarn
                 pkgs.nodejs
-              ] ++ lib.optionals stdenv.isDarwin [
+                pkgs.jdk17
+              ]
+              ++ lib.optionals stdenv.isDarwin [
                 pkgs.cocoapods
+                xcode-wrapper
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
