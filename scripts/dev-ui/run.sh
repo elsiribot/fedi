@@ -73,7 +73,7 @@ if [[ "$MODE" == "interactive" ]]; then
   done
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     SKIP_IOS_BUILD=1
-    SKIP_IOS_MODULES=1
+    SKIP_INSTALL_PODS=1
   else
     SKIP_IOS_BUILD=0
     unset REPLY
@@ -94,5 +94,9 @@ fi
 
 source $REPO_ROOT/scripts/dev-ui/setup.sh
 
+# export these so mprocs scripts can see them
+export SKIP_PWA_BUILD
+export SKIP_ANDROID_BUILD
+export SKIP_IOS_BUILD
 cd $REPO_ROOT
 mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml
