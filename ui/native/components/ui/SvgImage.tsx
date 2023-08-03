@@ -16,7 +16,7 @@ export enum SvgImageSize {
 
 type SvgImageProps = {
     name: SvgImageName
-    size?: SvgImageSize
+    size?: SvgImageSize | number
     containerStyle?: ViewStyle
     svgProps?: SvgProps
     color?: string
@@ -36,8 +36,8 @@ const SvgImage = ({
 
     const defaultSvgProps = {
         color: color || theme.colors.primary,
-        height: theme.sizes[svgSize],
-        width: theme.sizes[svgSize],
+        height: typeof svgSize === 'number' ? svgSize : theme.sizes[svgSize],
+        width: typeof svgSize === 'number' ? svgSize : theme.sizes[svgSize],
     }
     const mergedSvgProps = {
         ...defaultSvgProps,
