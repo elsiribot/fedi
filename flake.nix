@@ -146,14 +146,16 @@
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
-            ] ++ prev.nativeBuildInputs;
+            ]
+            ++ prev.nativeBuildInputs;
           });
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
             nativeBuildInputs =
               [
                 (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
-              ] ++
-              prev.nativeBuildInputs ++ [
+              ]
+              ++ prev.nativeBuildInputs
+              ++ [
                 pkgs.wasm-pack
                 pkgs.wasm-bindgen-cli
                 pkgs.binaryen
@@ -165,7 +167,15 @@
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
-            shellHook = prev.shellHook + toolchains.wasm32CrossEnvVars + toolchains.iosCrossEnvVars;
+            shellHook = prev.shellHook
+              + toolchains.wasm32CrossEnvVars
+              + toolchains.iosCrossEnvVars
+              + toolchains.androidCrossEnvVars
+              + ''
+              export PATH=$PATH:${toolchains.androidSdk}/bin
+              alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
+              alias emulator="emulator -avd phone"
+            '';
           });
         };
       });
