@@ -12,7 +12,7 @@ cd $REPO_ROOT/ui
 if [[ "$SKIP_NODE_MODULES" == "0" ]]; then
     echo "Reinstalling node modules"
     rm -rf $REPO_ROOT/ui/node_modules
-    yarn install
+    nix develop .#cross --command yarn install
 fi
 
 if [[ "$SKIP_BRIDGE_BUILD" == "0" ]]; then

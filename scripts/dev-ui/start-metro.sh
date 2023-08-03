@@ -8,4 +8,4 @@ $REPO_ROOT/scripts/enforce-nix.sh
 echo "dev-ui: starting android"
 
 cd $REPO_ROOT/ui/native
-yarn start
+nix develop .#cross --command yarn start
