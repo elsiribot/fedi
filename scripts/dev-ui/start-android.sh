@@ -15,5 +15,5 @@ echo "Building & installing android app bundle"
 
 nix develop .#cross --command npx react-native run-android --active-arch-only --mode=ProductionDebug --verbose
 sleep 1
-echo "Starting android logcat"
-nix develop .#cross --command adb logcat *:S ReactNative:V ReactNativeJS:V
+echo "Starting android logging..."
+nix develop .#cross --command npx react-native log-android

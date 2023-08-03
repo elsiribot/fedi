@@ -20,3 +20,5 @@ then
 else
     nix develop .#cross --command npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID
 fi
+
+nix develop .#cross --command npx react-native log-ios
