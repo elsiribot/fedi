@@ -23,7 +23,7 @@ fi
 if [[ "$SKIP_INSTALL_PODS" == "0" ]]; then
     echo "Installing ios Pods"
     cd $REPO_ROOT/ui/native/ios
-    # nix develop .#cross --command pod install
+    nix develop .#cross --command pod install
 fi
 
 echo "Finished dev-ui setup"
