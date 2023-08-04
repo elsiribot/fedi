@@ -226,13 +226,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 options={() => ({
                     title: t('words.home'),
                     header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <HomeHeader
-                                toggleOffline={toggleOffline}
-                                offline={offline}
-                            />
-                        </>
+                        <HomeHeader
+                            toggleOffline={toggleOffline}
+                            offline={offline}
+                        />
                     ),
                 })}>
                 {props => <Home {...props} offline={offline} />}
@@ -241,12 +238,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 name="Chat"
                 component={ChatScreen}
                 options={() => ({
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <ChatHeader />
-                        </>
-                    ),
+                    header: () => <ChatHeader />,
                     tabBarBadge: hasUnseenMessages ? '' : undefined,
                 })}
             />
@@ -254,12 +246,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 name="Settings"
                 component={Settings}
                 options={() => ({
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <SettingsHeader />
-                        </>
-                    ),
+                    header: () => <SettingsHeader />,
                 })}
             />
         </Tab.Navigator>
