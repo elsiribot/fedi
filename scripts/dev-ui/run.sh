@@ -13,9 +13,12 @@ SKIP_PWA_BUILD=${SKIP_PWA_BUILD:-0}
 SKIP_ANDROID_BUILD=${SKIP_ANDROID_BUILD:-0}
 SKIP_IOS_BUILD=${SKIP_IOS_BUILD:-0}
 SKIP_INSTALL_PODS=${SKIP_INSTALL_PODS:-0}
+SELECT_IOS_DEVICE=${SELECT_IOS_DEVICE:-0}
 
 if [[ "$MODE" == "interactive" ]]; then
   echo "Running development UI (native + PWA) in interactive mode"
+  # Set to true so we can handle it in the start-ios.sh script
+  SELECT_IOS_DEVICE=1
 
   unset REPLY
   while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
@@ -74,7 +77,10 @@ if [[ "$MODE" == "interactive" ]]; then
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     SKIP_IOS_BUILD=1
     SKIP_INSTALL_PODS=1
+    # disable this since we are skipping ios build
+    SELECT_IOS_DEVICE=0
   else
+    SELECT_IOS_DEVICE=1
     SKIP_IOS_BUILD=0
     unset REPLY
     while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
@@ -98,5 +104,6 @@ source $REPO_ROOT/scripts/dev-ui/setup.sh
 export SKIP_PWA_BUILD
 export SKIP_ANDROID_BUILD
 export SKIP_IOS_BUILD
+export SELECT_IOS_DEVICE
 cd $REPO_ROOT
 mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml
