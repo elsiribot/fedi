@@ -18,7 +18,7 @@ nix develop .#cross --command cargo build --package fedi-ffi --profile release-s
 nix develop .#cross --command cargo build --package fedi-ffi --release --target aarch64-apple-ios-sim $CARGO_FLAGS
 
 mkdir -p $TARGET/lipo-ios-sim/release-smaller
-lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output $TARGET/lipo-ios-sim/release-smaller/libfediffi.a
+nix develop .#cross --command lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release-smaller/libfediffi.a -create -output $TARGET/lipo-ios-sim/release-smaller/libfediffi.a
 
 cd $BRIDGE_ROOT/fedi-swift
 mv Sources/Fedi/fedi.swift Sources/Fedi/Fedi.swift || true
