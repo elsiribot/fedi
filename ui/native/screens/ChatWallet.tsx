@@ -198,12 +198,15 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                             containerStyle={
                                 styles(theme, insets).buttonContainer
                             }
+                            disabled={sendingEcash || isLoading}
                         />
                     ) : (
                         <>
                             <Button
-                                title={t('words.request')}
+                                title={'sup'}
                                 onPress={requestEcash}
+                                disabled={isLoading}
+                                loading={isLoading && submitType === 'request'}
                                 containerStyle={
                                     styles(theme, insets).buttonContainer
                                 }
@@ -211,6 +214,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                             <Button
                                 title={t('words.send')}
                                 onPress={handleSend}
+                                disabled={isLoading}
+                                loading={isLoading && submitType === 'send'}
                                 containerStyle={
                                     styles(theme, insets).buttonContainer
                                 }

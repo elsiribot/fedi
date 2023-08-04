@@ -89,6 +89,7 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
                         amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
                     }${t('words.sats').toUpperCase()}`}
                     onPress={handleSubmit}
+                    disabled={generatingInvoice}
                     loading={generatingInvoice}
                     containerStyle={styles(theme, insets).button}
                     titleProps={{

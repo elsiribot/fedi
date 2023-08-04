@@ -113,6 +113,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
                     title={t('words.next')}
                     onPress={onNext}
                     containerStyle={styles(theme, insets).button}
+                    disabled={isLoading}
                     loading={isLoading}
                 />
             </View>
