@@ -104,9 +104,12 @@ const Header: React.FC<HeaderProps> = ({
     }
     const mergedContainerStyle = {
         ...defaultContainerStyle,
-        borderBottomColor: dark
+        borderBottomColor: inline
+            ? 'transparent'
+            : dark
             ? theme.colors.primary
             : defaultContainerStyle.borderBottomColor,
+        shadowColor: inline ? 'transparent' : defaultContainerStyle.shadowColor,
         paddingTop: inline
             ? theme.spacing.lg
             : defaultContainerStyle.paddingTop,

@@ -71,10 +71,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            paddingBottom: theme.spacing.md,
-            elevation: 2,
-            shadowColor: theme.colors.primaryLight,
-            shadowRadius: 2,
+            paddingBottom: theme.spacing.lg,
         },
         iconContainer: {
             flexDirection: 'row',
