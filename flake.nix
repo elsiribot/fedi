@@ -146,7 +146,7 @@
             if [ -z "$($out/bin/xcodebuild -version | grep 14.3.1)" ]
             then
                 echo "xcodebuild version: 14.3.1 is required"
-                echo "run `xcode-select --install` to install xcode from the CLI"
+                echo "run:  xcode-select --install   to install xcode from the CLI"
                 exit 1
             fi
           '';
