@@ -106,4 +106,4 @@ export SKIP_ANDROID_BUILD
 export SKIP_IOS_BUILD
 export SELECT_IOS_DEVICE
 cd $REPO_ROOT
-mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml
+nix develop .#cross --command mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml
