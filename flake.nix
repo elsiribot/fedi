@@ -136,11 +136,11 @@
           name = "xcode-wrapper-14.3.1";
           buildCommand = ''
             mkdir -p $out/bin
-            cd $out/bin
-            ln -s /usr/bin/ld
-            ln -s /usr/bin/gcc
-            ln -s /usr/bin/clang
-            ln -s /usr/bin/xcodebuild
+
+            ln -s /usr/bin/ld $out/bin/ld
+            ln -s /usr/bin/clang $out/bin/clang
+            ln -s /usr/bin/xcodebuild $out/bin/xcodebuild
+            ln -s /usr/bin/xcrun $out/bin/xcrun
 
             # Check if we have the xcodebuild version that we want
             if [ -z "$($out/bin/xcodebuild -version | grep 14.3.1)" ]
