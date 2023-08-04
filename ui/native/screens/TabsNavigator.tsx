@@ -31,7 +31,6 @@ import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'

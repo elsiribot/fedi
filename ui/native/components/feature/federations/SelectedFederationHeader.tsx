@@ -14,7 +14,7 @@ import {
 } from '../../../types/navigation'
 import { FederationLogo } from '../../ui/FederationLogo'
 import Header from '../../ui/Header'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
