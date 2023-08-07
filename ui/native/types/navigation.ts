@@ -2,7 +2,12 @@ import { DrawerNavigationProp } from '@react-navigation/drawer'
 import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
-import { Transaction } from '@fedi/common/types'
+import {
+    ParsedBolt11,
+    ParsedLnurlPay,
+    ParsedLnurlWithdraw,
+    Transaction,
+} from '@fedi/common/types'
 
 import { BtcLnUri, MSats, FediMod } from '.'
 
@@ -46,7 +51,7 @@ export type RootStackParamList = {
     CompleteSocialRecovery: undefined
     ConfirmReceiveOffline: { ecash: string; amount: MSats }
     ConfirmRecoveryAssist: undefined
-    ConfirmSendLightning: { lightningUri: BtcLnUri }
+    ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConnectedFederationsDrawer: undefined
     CreateGroup: undefined
@@ -69,7 +74,7 @@ export type RootStackParamList = {
     PopupFederationEnded: undefined
     LocateSocialRecovery: undefined
     ReceiveSuccess: { tx: Transaction }
-    Receive: undefined
+    Receive: { parsedData?: ParsedLnurlWithdraw } | undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
@@ -101,4 +106,5 @@ export type RootStackParamList = {
     TabsNavigator: undefined
     Transactions: undefined
     DeveloperSettings: undefined
+    OmniScanner: undefined
 }

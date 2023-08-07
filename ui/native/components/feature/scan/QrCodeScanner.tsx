@@ -5,7 +5,7 @@ import { Camera, CameraType } from 'react-native-camera-kit'
 import { usePrevious } from '../../../state/hooks'
 
 type QrCodeScanner = {
-    onQrCodeDetected: Function
+    onQrCodeDetected(data: string): void
 }
 
 const QrCodeScanner = ({ onQrCodeDetected }: QrCodeScanner) => {
