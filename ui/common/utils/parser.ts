@@ -96,6 +96,10 @@ async function parseLnurl(
     | ParsedUnknownData
     | undefined
 > {
+    // Ignore Fedi URIs, they can sometimes look like URLs.
+    if (raw.toLowerCase().startsWith('fedi:')) return
+
+    // Strip lightning protocol for uniformity, keep track of if we were passed a full URL.
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
     let lnurlParamPromise: ReturnType<typeof getLnurlParams> | undefined
     const isWebsiteUrl = validateWebsiteUrl(raw)
