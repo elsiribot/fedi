@@ -227,12 +227,7 @@ const MainNavigator = () => {
                                 name="CreateUsername"
                                 component={CreateUsername}
                                 options={() => ({
-                                    header: () => (
-                                        <>
-                                            <SelectedFederationHeader />
-                                            <NewMemberHeader />
-                                        </>
-                                    ),
+                                    header: () => <NewMemberHeader />,
                                     animation: 'fade',
                                     animationDuration: 300,
                                 })}

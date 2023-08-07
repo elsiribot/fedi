@@ -86,7 +86,7 @@ export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
 
     return (
         <>
-            <QRScanner multi onScan={handleScan} />
+            <QRScanner onScan={handleScan} />
             <Input
                 placeholder="Paste offline send code"
                 value={value}

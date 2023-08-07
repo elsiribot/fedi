@@ -8,6 +8,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { selectFederations } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
@@ -109,16 +110,18 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     />
                 ))}
             </DrawerContentScrollView>
-            <Pressable
-                style={styles(theme).addFederationButton}
-                onPress={() => {
-                    mainNavigation.navigate('ScanFederationCode')
-                }}>
-                <SvgImage name="Plus" />
-                <Text style={styles(theme).addFederationText}>
-                    {t('feature.federations.add-federation')}
-                </Text>
-            </Pressable>
+            <SafeAreaView edges={['bottom', 'left']}>
+                <Pressable
+                    style={styles(theme).addFederationButton}
+                    onPress={() => {
+                        mainNavigation.navigate('ScanFederationCode')
+                    }}>
+                    <SvgImage name="Plus" color={theme.colors.darkGrey} />
+                    <Text style={styles(theme).addFederationText} caption>
+                        {t('feature.federations.add-federation')}
+                    </Text>
+                </Pressable>
+            </SafeAreaView>
         </ImageBackground>
     )
 }
@@ -132,7 +135,10 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: theme.spacing.md,
+            gap: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.lg,
+            paddingVertical: theme.spacing.sm,
+            color: theme.colors.darkGrey,
         },
         addFederationText: {
             paddingLeft: theme.spacing.xs,
