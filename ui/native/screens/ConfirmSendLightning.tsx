@@ -1,21 +1,20 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { selectActiveFederation } from '@fedi/common/redux'
-import type { Invoice } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
-import FiatAmount from '../components/feature/wallet/FiatAmount'
-import LineBreak from '../components/ui/LineBreak'
+import AmountInput from '../components/ui/AmountInput'
+import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector, useBridge } from '../state/hooks'
-import { MSats } from '../types'
+import { useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -23,128 +22,102 @@ export type Props = NativeStackScreenProps<
     'ConfirmSendLightning'
 >
 
-const DEFAULT_DECODED_INVOICE = {
-    paymentHash: '',
-    amount: 0 as MSats,
-    description: '',
-    invoice: '',
-    fee: null,
-}
-
 const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
     const { toast } = useEnvironmentContext().state
-    const { payInvoice } = useBridge()
-    const { lightningUri } = route.params
+    const { parsedData } = route.params
+    const {
+        isReadyToPay,
+        exactAmount,
+        minimumAmount,
+        maximumAmount,
+        inputAmount,
+        description,
+        setInputAmount,
+        handleOmniInput,
+        handleOmniSend,
+    } = useOmniPaymentState(fedimint, activeFederation?.id)
+
+    useEffect(() => {
+        handleOmniInput(parsedData)
+    }, [handleOmniInput, parsedData])
 
     const [unit] = useState('sats')
-    const [invoicePaid, setInvoicePaid] = useState<boolean>(false)
     const [isPayingInvoice, setIsPayingInvoice] = useState<boolean>(false)
-    const [decodedInvoice, setDecodedInvoice] = useState<Invoice>(
-        DEFAULT_DECODED_INVOICE,
-    )
+    const [submitAttempts, setSubmitAttempts] = useState(0)
 
-    useEffect(() => {
-        const getDecodedInvoice = async () => {
-            try {
-                const decoded = await fedimint.decodeInvoice(lightningUri.body)
-                console.info('decoded invoice', decoded)
-                setDecodedInvoice(decoded)
-            } catch (error) {
-                console.error('getDecodedInvoice', error)
-            }
-        }
+    const navigationReplace = navigation.replace
+    const handleSend = useCallback(async () => {
+        setSubmitAttempts(attempts => attempts + 1)
+        if (inputAmount > maximumAmount || inputAmount < minimumAmount) return
 
-        getDecodedInvoice()
-
-        return () => {
-            setDecodedInvoice(DEFAULT_DECODED_INVOICE)
-        }
-    }, [lightningUri])
-
-    useEffect(() => {
-        const sendPayment = async () => {
-            try {
-                console.info('paying invoice', decodedInvoice?.invoice)
-                await payInvoice(decodedInvoice?.invoice)
-                console.info('invoice paid')
-                setInvoicePaid(true)
-            } catch (error) {
-                console.error('onSendBtc', error)
-                toast?.show((error as Error).message, 3000)
-            }
-            setIsPayingInvoice(false)
-        }
-        if (isPayingInvoice && decodedInvoice.invoice) {
-            sendPayment()
-        }
-    }, [decodedInvoice.invoice, isPayingInvoice, payInvoice, toast])
-
-    useEffect(() => {
-        if (invoicePaid && isPayingInvoice === false) {
-            navigation.replace('SendSuccess', {
-                amount: decodedInvoice?.amount!,
+        setIsPayingInvoice(true)
+        try {
+            await handleOmniSend(inputAmount)
+            navigationReplace('SendSuccess', {
+                amount: amountUtils.satToMsat(inputAmount),
                 unit,
             })
+        } catch (err) {
+            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
-    }, [decodedInvoice?.amount, invoicePaid, isPayingInvoice, navigation, unit])
+        setIsPayingInvoice(false)
+    }, [
+        handleOmniSend,
+        inputAmount,
+        minimumAmount,
+        maximumAmount,
+        unit,
+        navigationReplace,
+        toast,
+        t,
+    ])
 
-    if (!decodedInvoice.amount) return <ActivityIndicator />
+    if (!isReadyToPay) return <ActivityIndicator />
 
     return (
-        <View style={styles(theme).container}>
-            <Text caption>
-                {`${t('words.balance')}: `}
-                {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(activeFederation?.balance!),
-                )} `}
-                {`${t('words.sats').toUpperCase()}`}
-            </Text>
-            <View style={styles(theme).detailsContainer}>
-                {decodedInvoice.amount && (
-                    <>
-                        <Text h2>
-                            {`${amountUtils.formatNumber(
-                                amountUtils.msatToSat(decodedInvoice.amount),
-                            )} ${t('words.sats').toUpperCase()}`}
-                        </Text>
-                        <FiatAmount
-                            amountSats={amountUtils.msatToSat(
-                                decodedInvoice.amount,
-                            )}
-                        />
-                    </>
-                )}
-                {decodedInvoice.description && (
-                    <Text small>{decodedInvoice.description}</Text>
-                )}
-                <LineBreak />
-                <Text>
-                    {`${stringUtils.truncateMiddleOfString(
-                        decodedInvoice.invoice,
-                        14,
-                    )}`}
+        <KeyboardAwareWrapper>
+            <View style={styles(theme).container}>
+                <Text caption>
+                    {`${t('words.balance')}: `}
+                    {`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(activeFederation?.balance!),
+                    )} `}
+                    {`${t('words.sats').toUpperCase()}`}
                 </Text>
+                <View style={styles(theme).detailsContainer}>
+                    <AmountInput
+                        amount={inputAmount}
+                        onChangeAmount={setInputAmount}
+                        minimumAmount={minimumAmount}
+                        maximumAmount={maximumAmount}
+                        submitAttempts={submitAttempts}
+                        readOnly={!!exactAmount}
+                    />
+                    {description && (
+                        <Text caption style={styles(theme).description}>
+                            {description}
+                        </Text>
+                    )}
+                </View>
+                <View style={styles(theme).buttonContainer}>
+                    <Button
+                        title={`${t('words.send')}${
+                            inputAmount
+                                ? ` ${amountUtils.formatNumber(inputAmount)} `
+                                : ' '
+                        }${t('words.sats').toUpperCase()}`}
+                        onPress={handleSend}
+                        loading={isPayingInvoice}
+                        disabled={isPayingInvoice}
+                        fullWidth
+                    />
+                </View>
             </View>
-            <View style={styles(theme).buttonContainer}>
-                <Button
-                    title={`${t('words.send')}${
-                        decodedInvoice.amount
-                            ? ` ${amountUtils.formatNumber(
-                                  amountUtils.msatToSat(decodedInvoice.amount),
-                              )} `
-                            : ' '
-                    }${t('words.sats').toUpperCase()}`}
-                    onPress={() => setIsPayingInvoice(true)}
-                    loading={isPayingInvoice}
-                    disabled={isPayingInvoice}
-                    fullWidth
-                />
-            </View>
-        </View>
+        </KeyboardAwareWrapper>
     )
 }
 
@@ -159,6 +132,11 @@ const styles = (theme: Theme) =>
         detailsContainer: {
             alignItems: 'center',
             paddingVertical: theme.spacing.xl,
+        },
+        description: {
+            paddingTop: theme.spacing.lg,
+            textAlign: 'center',
+            color: theme.colors.darkGrey,
         },
         buttonContainer: {
             width: '90%',
