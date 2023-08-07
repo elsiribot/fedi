@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 
 import KeyboardAwareWrapper from './KeyboardAwareWrapper'
+import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
 
 type CustomOverlayButton = {
     text: string
@@ -20,6 +21,8 @@ type CustomOverlayButton = {
 
 export type CustomOverlayContents = {
     title: string
+    icon?: SvgImageName
+    url?: string | null
     message?: string | null
     description?: string | null
     body?: React.ReactNode | null
@@ -45,6 +48,8 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
 
     const {
         title,
+        icon = null,
+        url = null,
         message = null,
         description = null,
         body = null,
@@ -116,6 +121,20 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     transform: [{ translateY: animatedTranslateY }],
                 }}>
                 <KeyboardAwareWrapper>
+                    {icon && (
+                        <SvgImage
+                            size={SvgImageSize.md}
+                            name={icon}
+                            containerStyle={styles(theme).overlayIcon}
+                        />
+                    )}
+                    {url && (
+                        <Text
+                            style={styles(theme).overlayUrl}
+                            numberOfLines={5}>
+                            {url}
+                        </Text>
+                    )}
                     <Text medium style={styles(theme).overlayTitle}>
                         {title}
                     </Text>
@@ -172,6 +191,14 @@ const styles = (theme: Theme) =>
             }),
         },
         overlayTitle: {
+            textAlign: 'center',
+        },
+        overlayIcon: {
+            marginBottom: theme.spacing.md,
+        },
+        overlayUrl: {
+            textDecorationLine: 'underline',
+            marginBottom: theme.spacing.md,
             textAlign: 'center',
         },
         overlayText: {
