@@ -58,7 +58,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const isFocused = useIsFocused()
     const insets = useSafeAreaInsets()
-    const [offline, setOffline] = useState(false)
+    const [offline] = useState(false)
     const { toast } = useEnvironmentContext().state
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const lastSeenMessageId = useAppSelector(selectChatLastSeenMessageId)
@@ -69,15 +69,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const appStateRef = useRef<AppStateStatus>(
         AppState.currentState,
     ) as MutableRefObject<AppStateStatus>
-
-    const toggleOffline = () => {
-        if (!offline) {
-            toast?.show('Simulating offline mode ON', 3000)
-        } else {
-            toast?.show('Simulating offline mode OFF', 3000)
-        }
-        setOffline(!offline)
-    }
 
     // If the popup federation has ended, redirect user to end screen.
     useEffect(() => {
@@ -224,12 +215,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 initialParams={{ offline }}
                 options={() => ({
                     title: t('words.home'),
-                    header: () => (
-                        <HomeHeader
-                            toggleOffline={toggleOffline}
-                            offline={offline}
-                        />
-                    ),
+                    header: () => <HomeHeader />,
                 })}>
                 {props => <Home {...props} offline={offline} />}
             </Tab.Screen>

@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,21 +8,15 @@ import { selectFederationMetadata } from '@fedi/common/redux'
 import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
+import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 
-type HomeHeaderProps = {
-    toggleOffline?: () => void
-    offline: boolean
-}
-
-const HomeHeader: React.FC<HomeHeaderProps> = ({
-    toggleOffline,
-    offline = false,
-}: HomeHeaderProps) => {
+const HomeHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const navigation = useNavigation<NavigationHook>()
     const activeFederationMetadata = useAppSelector(selectFederationMetadata)
 
     const showOfflineWallet =
@@ -37,26 +32,17 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 inline
                 containerStyle={style.container}
                 headerLeft={
-                    <Text
-                        onPress={showOfflineWallet ? toggleOffline : () => {}}
-                        h2
-                        medium>
+                    <Text h2 medium>
                         {t('words.home')}
                     </Text>
                 }
                 headerRight={
                     showOfflineWallet && (
                         <Pressable
-                            onPress={toggleOffline}
+                            onPress={() => navigation.navigate('OmniScanner')}
                             hitSlop={5}
                             style={style.iconContainer}>
-                            <SvgImage
-                                name="Offline"
-                                color={theme.colors.primaryLight}
-                                containerStyle={{
-                                    opacity: offline ? 1 : 0.2,
-                                }}
-                            />
+                            <SvgImage name="OmniScan" />
                         </Pressable>
                     )
                 }
