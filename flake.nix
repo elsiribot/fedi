@@ -147,7 +147,7 @@
             then
                 echo "xcodebuild version: 14.3.1 is required"
                 echo "run:  xcode-select --install   to install xcode from the CLI"
-                exit 1
+                exit 0
             fi
           '';
         };
@@ -186,7 +186,6 @@
               ]
               ++ lib.optionals stdenv.isDarwin [
                 pkgs.cocoapods
-                xcode-wrapper
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
@@ -199,6 +198,23 @@
               alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
               alias emulator="emulator -avd phone"
             '';
+          });
+          xcode = fmLib.devShells.cross.overrideAttrs (prev: {
+            nativeBuildInputs =
+              [
+                (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
+              ]
+              ++ prev.nativeBuildInputs
+              ++ [
+                pkgs.binaryen
+                pkgs.gnused
+                pkgs.yarn
+                pkgs.nodejs
+              ]
+              ++ lib.optionals stdenv.isDarwin [
+                xcode-wrapper
+              ];
+            shellHook = prev.shellHook;
           });
         };
       });

@@ -15,7 +15,7 @@ $REPO_ROOT/scripts/enforce-nix.sh
 # connected to the machine and simulators. Once the user selects a device, the script 
 # extracts the device ID, which can then be used to run commands specifically for that device.
 devices=()
-xcrunDevicesList=$(nix develop .#cross --command xcrun xctrace list devices)
+xcrunDevicesList=$(nix develop .#xcode --command xcrun xctrace list devices)
 while IFS= read -r line; do
     devices+=("$line")
 done < <(echo "$xcrunDevicesList" | grep -Eo '.*\([0-9A-Fa-f-]+\)$')
@@ -59,8 +59,8 @@ echo "Building & installing ios app bundle"
 # iOS dev builds don't work in nix yet...
 # But if you run `npx react-native run-ios`` in a non-nix shell
 # just one time it should succeed... then iOS dev builds will work fine in mprocs
-nix develop .#cross --command npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID \
+nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID \
     || echo -e "\n---------------\niOS dev builds don't work in nix yet... But if you run the command below in a non-nix shell once it should succeed.\nthen come back here and restart the ios shell, then iOS dev builds will work fine in mprocs\n---------------\n  cd $REPO_ROOT/ui/native && npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID\n---------------\n"
 
 # Start logging
-nix develop .#cross --command npx react-native log-ios
+nix develop .#xcode --command npx react-native log-ios
