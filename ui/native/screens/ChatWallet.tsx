@@ -6,6 +6,10 @@ import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
+    useMinMaxRequestAmount,
+    useMinMaxSendAmount,
+} from '@fedi/common/hooks/amount'
+import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectMaxReceiveAmount,
@@ -31,13 +35,17 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
-    const [confirmingSend, setConfirmingSend] = useState<boolean>(false)
-    const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [sendingEcash, setSendingEcash] = useState<boolean>(false)
-    const [amount, setAmount] = useState<Sats>(0 as Sats)
+    const [confirmingSend, setConfirmingSend] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [sendingEcash, setSendingEcash] = useState(false)
+    const [amount, setAmount] = useState(0 as Sats)
+    const [submitAttempts, setSubmitAttempts] = useState(0)
+    const [submitType, setSubmitType] = useState<'send' | 'request'>()
     const { generateEcash } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { recipientId } = route.params
+    const sendMinMax = useMinMaxSendAmount()
+    const requestMinMax = useMinMaxRequestAmount()
 
     useEffect(() => {
         const generateAndSendEcash = async () => {
@@ -82,6 +90,15 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     ])
 
     const requestEcash = async () => {
+        setSubmitType('request')
+        setSubmitAttempts(attempts => attempts + 1)
+        if (
+            amount < requestMinMax.minimumAmount ||
+            amount > requestMinMax.maximumAmount
+        ) {
+            return
+        }
+
         try {
             setIsLoading(true)
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
@@ -113,6 +130,15 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     const handleSend = async () => {
+        setSubmitType('send')
+        setSubmitAttempts(attempts => attempts + 1)
+        if (
+            amount < sendMinMax.minimumAmount ||
+            amount > sendMinMax.maximumAmount
+        ) {
+            return
+        }
+
         setConfirmingSend(true)
         Keyboard.dismiss()
     }
@@ -132,6 +158,13 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         setAmount(updatedValue)
     }
 
+    const inputMinMax =
+        submitType === 'send'
+            ? sendMinMax
+            : submitType === 'request'
+            ? requestMinMax
+            : {}
+
     return (
         <KeyboardAwareWrapper additionalVerticalOffset={theme.spacing.md}>
             <View style={styles(theme, insets).container}>
@@ -147,6 +180,13 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     <AmountInput
                         amount={amount}
                         onChangeAmount={onChangeAmount}
+                        submitAttempts={submitAttempts}
+                        verb={
+                            submitType === 'send'
+                                ? t('words.send')
+                                : t('words.request')
+                        }
+                        {...inputMinMax}
                     />
                 </View>
 
@@ -158,34 +198,26 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                             containerStyle={
                                 styles(theme, insets).buttonContainer
                             }
-                            disabled={
-                                !(activeFederation!.balance > 0) ||
-                                !Number(amount) ||
-                                sendingEcash ||
-                                isLoading
-                            }
+                            disabled={sendingEcash || isLoading}
                         />
                     ) : (
                         <>
                             <Button
-                                title={t('words.request')}
+                                title={'sup'}
                                 onPress={requestEcash}
+                                disabled={isLoading}
+                                loading={isLoading && submitType === 'request'}
                                 containerStyle={
                                     styles(theme, insets).buttonContainer
                                 }
-                                disabled={!Number(amount) || isLoading}
                             />
                             <Button
                                 title={t('words.send')}
                                 onPress={handleSend}
+                                disabled={isLoading}
+                                loading={isLoading && submitType === 'send'}
                                 containerStyle={
                                     styles(theme, insets).buttonContainer
-                                }
-                                disabled={
-                                    !(activeFederation!.balance > 0) ||
-                                    !Number(amount) ||
-                                    sendingEcash ||
-                                    isLoading
                                 }
                             />
                         </>

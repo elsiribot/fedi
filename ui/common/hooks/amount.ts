@@ -1,11 +1,14 @@
 import { useState, useCallback, useMemo } from 'react'
+import { RequestInvoiceArgs } from 'webln'
 
 import {
     selectBtcExchangeRate,
     selectCurrency,
+    selectMaxReceiveAmount,
     selectFederationMetadata,
+    selectFederationBalance,
 } from '../redux'
-import { Btc, Sats } from '../types'
+import { Btc, ParsedLnurlPay, ParsedLnurlWithdraw, Sats } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
@@ -50,20 +53,10 @@ export function useAmountInput(
         ),
     )
 
-    const clampSats = useCallback(
-        (value: number, min?: number | null, max?: number | null) => {
-            if (Number.isNaN(value)) return 0 as Sats
-            let clamped = Math.round(Math.max(0, value))
-            if (min && clamped < min) {
-                clamped = Math.round(Math.max(0, min))
-            }
-            if (max && clamped > max) {
-                clamped = Math.round(Math.min(max, Number.MAX_SAFE_INTEGER))
-            }
-            return clamped as Sats
-        },
-        [],
-    )
+    const clampSats = useCallback((value: number) => {
+        if (Number.isNaN(value)) return 0 as Sats
+        return Math.round(Math.max(0, value)) as Sats
+    }, [])
 
     const handleChangeSats = useCallback(
         (value: string) => {
@@ -75,11 +68,7 @@ export function useAmountInput(
                 escapeSeparator = '\\.'
             }
             const regex = new RegExp(escapeSeparator, 'g')
-            const sats = clampSats(
-                parseInt(value.replace(regex, ''), 10),
-                minimumAmount,
-                maximumAmount,
-            )
+            const sats = clampSats(parseInt(value.replace(regex, ''), 10))
             const fiat = amountUtils.satToBtc(sats) * btcToFiatRateRef.current
             onChangeAmount && onChangeAmount(sats)
             setSatsValue(Intl.NumberFormat().format(sats))
@@ -87,14 +76,7 @@ export function useAmountInput(
                 amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
             )
         },
-        [
-            clampSats,
-            onChangeAmount,
-            currency,
-            btcToFiatRateRef,
-            minimumAmount,
-            maximumAmount,
-        ],
+        [clampSats, onChangeAmount, currency, btcToFiatRateRef],
     )
 
     const handleChangeFiat = useCallback(
@@ -118,22 +100,13 @@ export function useAmountInput(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
 
-            if (minimumAmount && sats < minimumAmount) return
-            if (maximumAmount && sats > maximumAmount) return
             onChangeAmount && onChangeAmount(sats)
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
-        [
-            clampSats,
-            btcToFiatRateRef,
-            onChangeAmount,
-            currency,
-            minimumAmount,
-            maximumAmount,
-        ],
+        [clampSats, btcToFiatRateRef, onChangeAmount, currency],
     )
 
     const handleNumpadPress = useCallback(
@@ -155,6 +128,23 @@ export function useAmountInput(
         [currency],
     )
 
+    const validation = useMemo(() => {
+        if (maximumAmount && amount > maximumAmount) {
+            return {
+                i18nKey: 'errors.invalid-amount-max',
+                amount: maximumAmount,
+                onlyShowOnSubmit: false,
+            } as const
+        }
+        if (minimumAmount && amount < minimumAmount) {
+            return {
+                i18nKey: 'errors.invalid-amount-min',
+                amount: minimumAmount,
+                onlyShowOnSubmit: true,
+            } as const
+        }
+    }, [amount, minimumAmount, maximumAmount])
+
     return {
         isFiat,
         setIsFiat,
@@ -166,5 +156,84 @@ export function useAmountInput(
         currencySymbol,
         numpadButtons,
         handleNumpadPress,
+        validation,
     }
+}
+
+/**
+ * Get the minimum and maximum amount you can receive. Optionally take in an
+ * LNURL withdrawal or WebLN invoice request as part of the calculation.
+ */
+export function useMinMaxRequestAmount({
+    lnurlWithdrawal,
+    weblnRequest,
+}: {
+    lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
+    weblnRequest?: RequestInvoiceArgs | null
+} = {}) {
+    const maxReceiveAmount = useCommonSelector(selectMaxReceiveAmount)
+
+    return useMemo(() => {
+        let minimumAmount = 1 as Sats
+        let maximumAmount = maxReceiveAmount
+        if (lnurlWithdrawal) {
+            if (lnurlWithdrawal.minWithdrawable) {
+                minimumAmount = Math.max(
+                    amountUtils.msatToSat(lnurlWithdrawal.minWithdrawable),
+                    minimumAmount,
+                ) as Sats
+            }
+            if (lnurlWithdrawal.maxWithdrawable) {
+                maximumAmount = Math.min(
+                    amountUtils.msatToSat(lnurlWithdrawal.maxWithdrawable),
+                    maximumAmount,
+                ) as Sats
+            }
+        }
+        if (weblnRequest) {
+            if (weblnRequest.minimumAmount) {
+                minimumAmount = Math.max(
+                    parseInt(weblnRequest.minimumAmount as string, 10),
+                    minimumAmount,
+                ) as Sats
+            }
+            if (weblnRequest.maximumAmount) {
+                maximumAmount = Math.min(
+                    parseInt(weblnRequest.maximumAmount as string, 10),
+                    maximumAmount,
+                ) as Sats
+            }
+        }
+        return { minimumAmount, maximumAmount }
+    }, [maxReceiveAmount, lnurlWithdrawal, weblnRequest])
+}
+
+/**
+ * Get the minimum and maximum amount you can send. Optionally take in an
+ * LNURL pay request as part of the calculation.
+ */
+export function useMinMaxSendAmount({
+    lnurlPayment,
+}: { lnurlPayment?: ParsedLnurlPay['data'] } = {}) {
+    const balance = useCommonSelector(selectFederationBalance)
+
+    return useMemo(() => {
+        let minimumAmount = 1 as Sats // Cannot send millisat amounts
+        let maximumAmount = 1_000_000_000_000_000 as Sats // MAX_SAFE_INTEGER rounded down
+        if (balance) {
+            maximumAmount = amountUtils.msatToSat(balance)
+        }
+        if (lnurlPayment) {
+            if (lnurlPayment.minSendable) {
+                minimumAmount = amountUtils.msatToSat(lnurlPayment.minSendable)
+            }
+            if (lnurlPayment.maxSendable) {
+                maximumAmount = Math.min(
+                    amountUtils.msatToSat(lnurlPayment.maxSendable),
+                    maximumAmount || Infinity,
+                ) as Sats
+            }
+        }
+        return { minimumAmount, maximumAmount }
+    }, [balance, lnurlPayment])
 }

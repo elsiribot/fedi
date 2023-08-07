@@ -10,6 +10,7 @@ import {
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { lnurlPay } from '../utils/lnurl'
+import { useMinMaxSendAmount } from './amount'
 
 const expectedOmniInputTypes = [
     ParserDataType.Bolt11,
@@ -25,10 +26,10 @@ interface OmniPaymentState {
     isReadyToPay: boolean
     /** The amount that must be sent with no ability to change, can be undefined */
     exactAmount: Sats | undefined
-    /** The minimum amount that can be sent to an LNURL payment, can be undefined */
-    minimumInputAmount: Sats | undefined
-    /** The maximum amount that can be sent to an LNURL payment, can be undefined */
-    maximumInputAmount: Sats | undefined
+    /** The minimum amount that can be sent */
+    minimumAmount: Sats
+    /** The maximum amount that can be sent */
+    maximumAmount: Sats
     /** A short description of the payment */
     description: string | undefined
     /** Handles sending the payment when the user has confirmed, can throw errors */
@@ -58,6 +59,9 @@ export function useOmniPaymentState(
     const [invoice, setInvoice] = useState<Invoice>()
     const [lnurlPayment, setLnurlPayment] = useState<ParsedLnurlPay['data']>()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
+        lnurlPayment,
+    })
 
     const handleOmniInput = useCallback(
         async (input: ExpectedInputData) => {
@@ -107,8 +111,6 @@ export function useOmniPaymentState(
     }, [])
 
     let exactAmount: Sats | undefined
-    let minimumInputAmount: Sats | undefined
-    let maximumInputAmount: Sats | undefined
     let description: string | undefined
     if (invoice) {
         exactAmount = invoice.amount
@@ -116,14 +118,8 @@ export function useOmniPaymentState(
             : undefined
         description = invoice.description
     } else if (lnurlPayment) {
-        minimumInputAmount =
-            lnurlPayment.minSendable &&
-            amountUtils.msatToSat(lnurlPayment.minSendable)
-        maximumInputAmount =
-            lnurlPayment.maxSendable &&
-            amountUtils.msatToSat(lnurlPayment.maxSendable)
-        if (minimumInputAmount === maximumInputAmount && !!minimumInputAmount) {
-            exactAmount = minimumInputAmount
+        if (minimumAmount === maximumAmount && !!minimumAmount) {
+            exactAmount = minimumAmount
         }
         description = lnurlPayment.description
     }
@@ -131,8 +127,8 @@ export function useOmniPaymentState(
     return {
         isReadyToPay: !!invoice || !!lnurlPayment,
         exactAmount,
-        minimumInputAmount,
-        maximumInputAmount,
+        minimumAmount,
+        maximumAmount,
         description,
         handleOmniSend,
         inputAmount,
