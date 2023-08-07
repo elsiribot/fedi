@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { selectMaxReceiveAmount } from '@fedi/common/redux'
+import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import AmountInput from '../components/ui/AmountInput'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useBridge } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -22,24 +22,14 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
+    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount()
     const { toast } = useEnvironmentContext().state
     const [amount, setAmount] = useState<Sats>(0 as Sats)
-    const [amountIsValid, setAmountIsValid] = useState<boolean>(false)
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
-    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
+    const [submitAttempts, setSubmitAttempts] = useState(0)
     // TODO integrate memo
     const [memo] = useState<string>('')
-
-    useEffect(() => {
-        if (amount === 0) {
-            setAmountIsValid(false)
-        } else if (maxReceiveAmount > -1 && amount > maxReceiveAmount) {
-            setAmountIsValid(false)
-        } else {
-            setAmountIsValid(true)
-        }
-    }, [amount, maxReceiveAmount])
 
     useEffect(() => {
         const createNewInvoice = async () => {
@@ -68,36 +58,44 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
     }, [invoice, navigation])
 
     const onChangeAmount = (updatedValue: Sats) => {
-        if (maxReceiveAmount > -1 && updatedValue > maxReceiveAmount) {
-            toast?.show(
-                t('feature.receive.maximum-invoice-amount', {
-                    maxAmount: amountUtils.formatSats(maxReceiveAmount as Sats),
-                }),
-                3000,
-            )
-        } else {
-            toast?.close(0)
+        setSubmitAttempts(0)
+        setAmount(updatedValue)
+    }
+
+    const handleSubmit = () => {
+        setSubmitAttempts(attempts => attempts + 1)
+        if (amount > maximumAmount || amount < minimumAmount) {
+            return
         }
 
-        setAmount(updatedValue)
+        setGeneratingInvoice(true)
+        Keyboard.dismiss()
     }
 
     return (
         <KeyboardAwareWrapper>
             <View style={styles(theme, insets).container}>
-                <AmountInput amount={amount} onChangeAmount={onChangeAmount} />
+                <AmountInput
+                    amount={amount}
+                    onChangeAmount={onChangeAmount}
+                    minimumAmount={minimumAmount}
+                    maximumAmount={maximumAmount}
+                    submitAttempts={submitAttempts}
+                    verb={t('words.request')}
+                />
                 <Button
                     fullWidth
                     title={`${t('words.request')}${
                         amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
                     }${t('words.sats').toUpperCase()}`}
-                    onPress={() => {
-                        setGeneratingInvoice(true)
-                        Keyboard.dismiss()
-                    }}
-                    disabled={!amountIsValid || generatingInvoice}
+                    onPress={handleSubmit}
+                    disabled={generatingInvoice}
                     loading={generatingInvoice}
                     containerStyle={styles(theme, insets).button}
+                    titleProps={{
+                        numberOfLines: 1,
+                        adjustsFontSizeToFit: true,
+                    }}
                 />
             </View>
         </KeyboardAwareWrapper>
