@@ -31,7 +31,6 @@ import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -226,13 +225,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 options={() => ({
                     title: t('words.home'),
                     header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <HomeHeader
-                                toggleOffline={toggleOffline}
-                                offline={offline}
-                            />
-                        </>
+                        <HomeHeader
+                            toggleOffline={toggleOffline}
+                            offline={offline}
+                        />
                     ),
                 })}>
                 {props => <Home {...props} offline={offline} />}
@@ -241,12 +237,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 name="Chat"
                 component={ChatScreen}
                 options={() => ({
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <ChatHeader />
-                        </>
-                    ),
+                    header: () => <ChatHeader />,
                     tabBarBadge: hasUnseenMessages ? '' : undefined,
                 })}
             />
@@ -254,12 +245,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 name="Settings"
                 component={Settings}
                 options={() => ({
-                    header: () => (
-                        <>
-                            <SelectedFederationHeader />
-                            <SettingsHeader />
-                        </>
-                    ),
+                    header: () => <SettingsHeader />,
                 })}
             />
         </Tab.Navigator>

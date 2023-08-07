@@ -18,6 +18,7 @@ interface HeaderBase {
     dark?: boolean
     backButton?: boolean
     closeButton?: boolean
+    inline?: boolean
 }
 
 interface HeaderWithBackButton extends HeaderBase {
@@ -43,6 +44,7 @@ const Header: React.FC<HeaderProps> = ({
     dark,
     backButton,
     closeButton,
+    inline,
 }: HeaderProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
@@ -102,9 +104,15 @@ const Header: React.FC<HeaderProps> = ({
     }
     const mergedContainerStyle = {
         ...defaultContainerStyle,
-        borderBottomColor: dark
+        borderBottomColor: inline
+            ? 'transparent'
+            : dark
             ? theme.colors.primary
             : defaultContainerStyle.borderBottomColor,
+        shadowColor: inline ? 'transparent' : defaultContainerStyle.shadowColor,
+        paddingTop: inline
+            ? theme.spacing.lg
+            : defaultContainerStyle.paddingTop,
         ...containerStyle,
     }
 
@@ -121,6 +129,7 @@ const Header: React.FC<HeaderProps> = ({
             leftContainerStyle={mergedLeftContainerStyle}
             centerContainerStyle={mergedCenterContainerStyle}
             rightContainerStyle={mergedRightContainerStyle}
+            edges={inline ? ['left', 'right'] : undefined}
         />
     )
 }

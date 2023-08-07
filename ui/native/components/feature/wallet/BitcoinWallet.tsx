@@ -117,6 +117,9 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.sm,
             width: '88%',
             minHeight: theme.sizes.walletCardHeight,
+            marginTop: 0,
+            borderWidth: 0,
+            shadowColor: 'transparent',
         },
         cardWrapper: {
             flex: 1,

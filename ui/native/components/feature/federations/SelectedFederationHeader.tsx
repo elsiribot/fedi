@@ -14,7 +14,7 @@ import {
 } from '../../../types/navigation'
 import { FederationLogo } from '../../ui/FederationLogo'
 import Header from '../../ui/Header'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
@@ -48,12 +48,12 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                         onPress={openFederationsDrawer}>
                         <FederationLogo
                             federation={activeFederation}
-                            size={20}
+                            size={24}
                         />
                         <Text bold caption style={styles(theme).federationName}>
                             {activeFederation?.name}
                         </Text>
-                        <SvgImage name="ChevronRight" size={SvgImageSize.xs} />
+                        <SvgImage name="ChevronRight" size={20} />
                     </Pressable>
                     {popupInfo && <PopupFederationCountdown />}
                 </View>
@@ -77,15 +77,11 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.sm,
         },
         federationName: {
-            marginHorizontal: theme.spacing.sm,
-        },
-        image: {
-            height: 20,
-            width: 20,
-            resizeMode: 'contain',
+            marginLeft: theme.spacing.sm,
+            marginRight: theme.spacing.xs,
         },
         headerContainer: {
-            marginTop: theme.spacing.lg,
+            paddingBottom: theme.spacing.sm,
             borderBottomColor: theme.colors.extraLightGrey,
             borderBottomWidth: 1,
         },

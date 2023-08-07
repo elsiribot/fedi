@@ -9,6 +9,7 @@ import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
 import { useAppSelector } from '../../../state/hooks'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
+import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 
 type HomeHeaderProps = {
     toggleOffline?: () => void
@@ -30,46 +31,47 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
     const style = styles(theme)
 
     return (
-        <Header
-            containerStyle={style.container}
-            headerLeft={
-                <Text
-                    onPress={showOfflineWallet ? toggleOffline : () => {}}
-                    h2
-                    medium>
-                    {t('words.home')}
-                </Text>
-            }
-            headerRight={
-                showOfflineWallet && (
-                    <Pressable
-                        onPress={toggleOffline}
-                        hitSlop={5}
-                        style={style.iconContainer}>
-                        <SvgImage
-                            name="Offline"
-                            color={theme.colors.primaryLight}
-                            containerStyle={{
-                                opacity: offline ? 1 : 0.2,
-                            }}
-                        />
-                    </Pressable>
-                )
-            }
-            rightContainerStyle={style.rightContainer}
-            // Needed to make more room for Wallet title in headerLeft
-            centerContainerStyle={{ flex: 1 }}
-        />
+        <>
+            <SelectedFederationHeader />
+            <Header
+                inline
+                containerStyle={style.container}
+                headerLeft={
+                    <Text
+                        onPress={showOfflineWallet ? toggleOffline : () => {}}
+                        h2
+                        medium>
+                        {t('words.home')}
+                    </Text>
+                }
+                headerRight={
+                    showOfflineWallet && (
+                        <Pressable
+                            onPress={toggleOffline}
+                            hitSlop={5}
+                            style={style.iconContainer}>
+                            <SvgImage
+                                name="Offline"
+                                color={theme.colors.primaryLight}
+                                containerStyle={{
+                                    opacity: offline ? 1 : 0.2,
+                                }}
+                            />
+                        </Pressable>
+                    )
+                }
+                rightContainerStyle={style.rightContainer}
+                // Needed to make more room for Wallet title in headerLeft
+                centerContainerStyle={{ flex: 1 }}
+            />
+        </>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            paddingBottom: theme.spacing.md,
-            elevation: 2,
-            shadowColor: theme.colors.primaryLight,
-            shadowRadius: 2,
+            paddingBottom: theme.spacing.lg,
         },
         iconContainer: {
             flexDirection: 'row',
