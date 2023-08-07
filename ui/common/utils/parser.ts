@@ -139,6 +139,7 @@ async function parseLnurl(
             if (params.status === 'ERROR') {
                 if (
                     params.reason.includes('Invalid URL') ||
+                    params.reason.includes('invalid lnurl') ||
                     params.reason.includes('invalid JSON') ||
                     params.reason.includes('Network request failed')
                 ) {
