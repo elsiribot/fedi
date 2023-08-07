@@ -1,7 +1,15 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { RefObject, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native'
+import {
+    Keyboard,
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    TextInput,
+    TextStyle,
+    View,
+} from 'react-native'
 
 import { useAmountInput } from '@fedi/common/hooks/amount'
 import { Sats } from '@fedi/common/types'
@@ -12,6 +20,7 @@ import SvgImage from './SvgImage'
 
 export type Props = {
     amount: Sats
+    readOnly?: boolean
     minimumAmount?: Sats | null
     maximumAmount?: Sats | null
     submitAttempts?: number
@@ -21,6 +30,7 @@ export type Props = {
 
 const AmountInput: React.FC<Props> = ({
     amount,
+    readOnly,
     minimumAmount,
     maximumAmount,
     submitAttempts,
@@ -61,10 +71,16 @@ const AmountInput: React.FC<Props> = ({
         const handlePressSuggestion = () => {
             handleChangeSats(validation.amount.toString())
         }
+        const suggestionStyle: StyleProp<TextStyle> = [
+            styles(theme).errorSuggestion,
+        ]
+        if (!readOnly) {
+            suggestionStyle.push(styles(theme).clickableSuggestion)
+        }
         // TODO: Make only underlined suggestion pressable, <Trans /> doesn't like <Pressable /> as a component
         // TODO: Make this wiggle when submitAttempts is incremented
         error = (
-            <Pressable onPress={handlePressSuggestion}>
+            <Pressable onPress={handlePressSuggestion} disabled={readOnly}>
                 <Text style={styles(theme).error} caption>
                     <Trans
                         i18nKey={validation.i18nKey}
@@ -78,10 +94,7 @@ const AmountInput: React.FC<Props> = ({
                         }}
                         components={{
                             suggestion: (
-                                <Text
-                                    style={styles(theme).errorSuggestion}
-                                    caption
-                                />
+                                <Text style={suggestionStyle} caption />
                             ),
                         }}
                     />
@@ -94,6 +107,7 @@ const AmountInput: React.FC<Props> = ({
         <View style={styles(theme).container}>
             <Pressable
                 style={styles(theme).inputs}
+                disabled={readOnly}
                 onPress={() => {
                     console.debug('inputRef?.current?.focus()')
                     inputRef?.current?.focus()
@@ -104,6 +118,7 @@ const AmountInput: React.FC<Props> = ({
                         onChangeText={handleChangeFiat}
                         value={fiatValue}
                         label={currency}
+                        readOnly={readOnly}
                     />
                 ) : (
                     <InvisibleInput
@@ -111,10 +126,12 @@ const AmountInput: React.FC<Props> = ({
                         onChangeText={handleChangeSats}
                         value={satsValue}
                         label={t('words.sats').toUpperCase()}
+                        readOnly={readOnly}
                     />
                 )}
                 <Pressable
                     style={styles(theme).symbolSwitcher}
+                    disabled={readOnly}
                     onPress={() => setIsFiat(!isFiat)}>
                     <Text
                         style={styles(theme).secondaryAmountText}
@@ -125,11 +142,13 @@ const AmountInput: React.FC<Props> = ({
                             ? `${satsValue} ${t('words.sats').toUpperCase()}`
                             : `${fiatValue} ${currency}`}
                     </Text>
-                    <SvgImage
-                        name="Switch"
-                        color={theme.colors.grey}
-                        size={20}
-                    />
+                    {!readOnly && (
+                        <SvgImage
+                            name="Switch"
+                            color={theme.colors.grey}
+                            size={20}
+                        />
+                    )}
                 </Pressable>
             </Pressable>
             {error}
@@ -168,6 +187,8 @@ const styles = (theme: Theme) =>
         },
         errorSuggestion: {
             color: theme.colors.red,
+        },
+        clickableSuggestion: {
             textDecorationLine: 'underline',
         },
     })

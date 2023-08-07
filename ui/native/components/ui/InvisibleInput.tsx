@@ -6,6 +6,7 @@ export type Props = {
     value: string
     onChangeText: (_: string) => void
     inputRef: RefObject<TextInput>
+    readOnly?: boolean
     label?: string
     labelPosition?: 'left' | 'right'
 }
@@ -17,15 +18,17 @@ const InvisibleInput: React.FC<Props> = ({
     value,
     onChangeText,
     inputRef,
+    readOnly,
     label = '',
     labelPosition = 'right',
 }) => {
     const { theme } = useTheme()
 
     return (
-        <Pressable style={styles(theme).container}>
+        <Pressable style={styles(theme).container} disabled={readOnly}>
             <Pressable
                 style={styles(theme).interactionContainer}
+                disabled={readOnly}
                 onPress={() => inputRef.current?.focus()}>
                 {labelPosition === 'left' && (
                     <Text
@@ -57,7 +60,7 @@ const InvisibleInput: React.FC<Props> = ({
             </Pressable>
             <TextInput
                 ref={inputRef}
-                autoFocus
+                autoFocus={!readOnly}
                 onChangeText={onChangeText}
                 value={value}
                 keyboardType="numeric"
