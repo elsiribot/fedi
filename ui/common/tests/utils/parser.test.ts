@@ -202,8 +202,8 @@ describe('parseUserInput', () => {
         type: ParserDataType.LnurlPay,
     })
     testCases.push({
-        input: `${lnurlOrigin}/?lightning=lnurl12345`,
-        type: ParserDataType.Unknown,
+        input: `${lnurlOrigin}/?lightning=lnurl12345`, // Not a proper lnurl, falls back on website
+        type: ParserDataType.Website,
     })
     testCases.push({
         input: 'www.fedi.xyz', // Not a proper url
