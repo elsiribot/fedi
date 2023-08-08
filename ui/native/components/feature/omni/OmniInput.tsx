@@ -113,7 +113,10 @@ export function OmniInput<
     return (
         <View style={style.container}>
             <View style={style.scanner}>
-                <QrCodeScanner onQrCodeDetected={parseInput} />
+                <QrCodeScanner
+                    processing={Boolean(isParsing || unexpectedData)}
+                    onQrCodeDetected={parseInput}
+                />
             </View>
             <View style={style.actions}>
                 {actions.map(({ label, icon, onPress }, idx) => (

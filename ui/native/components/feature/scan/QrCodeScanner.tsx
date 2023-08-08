@@ -12,11 +12,12 @@ import { Camera, CameraType } from 'react-native-camera-kit'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 
-type QrCodeScanner = {
+type Props = {
+    processing?: boolean
     onQrCodeDetected(data: string): void
 }
 
-const QrCodeScanner = ({ onQrCodeDetected }: QrCodeScanner) => {
+const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
     const { theme } = useTheme()
     const [frames, setFrames] = useState<FrameState | null>(null)
     const [progress, setProgress] = useState(0)
@@ -42,22 +43,27 @@ const QrCodeScanner = ({ onQrCodeDetected }: QrCodeScanner) => {
     }
 
     const handleScan = (data: string) => {
+        // Ignore scans while processing
+        if (processing) return
+
         // Attempt to parse qrloop'd QR codes first
         try {
             const newFrames = parseFramesReducer(framesRef.current, data)
+            setFrames(newFrames)
+            setProgress(progressOfFrames(newFrames))
             if (areFramesComplete(newFrames)) {
                 handleDetected(framesToData(newFrames).toString())
                 // Reset frames & progress after short delay
                 setTimeout(() => {
                     setFrames(null)
                     setProgress(0)
-                }, 500)
+                }, 300)
             }
-            setFrames(newFrames)
-            setProgress(progressOfFrames(newFrames))
         } catch (err) {
             // Fall back to regular ol' QR code
             handleDetected(data)
+            setFrames(null)
+            setProgress(0)
         }
     }
 
@@ -74,6 +80,7 @@ const QrCodeScanner = ({ onQrCodeDetected }: QrCodeScanner) => {
                     handleScan(event?.nativeEvent?.codeStringValue)
                 }
             />
+            {processing && <View style={style.processingCover} />}
             {Boolean(progress) && (
                 <View style={style.progressContainer}>
                     <View
@@ -101,6 +108,16 @@ const styles = (theme: Theme) =>
         camera: {
             height: '100%',
             width: '100%',
+        },
+        processingCover: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
         },
         progressContainer: {
             position: 'absolute',
