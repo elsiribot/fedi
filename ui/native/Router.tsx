@@ -709,8 +709,6 @@ const linking: NavigationLinkingConfig = {
                     Receive: 'receive',
                     BitcoinRequest: 'bitcoin-request',
                     ReceiveSuccess: 'receive-success',
-                    ReceiveOffline: 'receive-offline',
-                    ConfirmReceiveOffline: 'confirm-receive-offline',
                     // Federations
                     FederationInvite: 'federation-invite',
                     ScanFederationCode: 'scan-federation-code',

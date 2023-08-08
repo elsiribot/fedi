@@ -49,7 +49,6 @@ export type RootStackParamList = {
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
-    ConfirmReceiveOffline: { ecash: string; amount: MSats }
     ConfirmRecoveryAssist: undefined
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
