@@ -8,7 +8,7 @@ This is a fork of [uniffi-bindings-template](https://github.com/thunderbiscuit/u
 
 ## Building
 
-`./android.sh` will build the Android package and publish to "maven local". `./ios.sh` build build the ios package which you can add to project via XCode UI.
+`/scripts/bridge/build-bridge-android.sh` will build the Android package and publish to "maven local". `/scripts/bridge/build-bridge-ios.sh` build build the ios package which you can add to project via XCode UI.
 
 Export the following variables to get Android builds working. Ask a project maintainer if you have any trouble building for Android.
 
@@ -16,7 +16,7 @@ Export the following variables to get Android builds working. Ask a project main
 export ANDROID_NDK_ROOT=/Users/justin/Library/Android/sdk/ndk/25.1.8937393
 export PATH="$PATH:/Users/justin/Library/Android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/darwin-x86_64/bin"
 export AR=/opt/homebrew/opt/llvm/bin/llvm-ar
-./build.sh
+./scripts/bridge/build-bridge-android.sh
 ```
 
 ## [Debugging](./debugging.md)

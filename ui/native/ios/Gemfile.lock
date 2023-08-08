@@ -275,7 +275,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  cocoapods (~> 1.12, >= 1.12.1)
+  cocoapods (~> 1.12)
   fastlane
 
 RUBY VERSION

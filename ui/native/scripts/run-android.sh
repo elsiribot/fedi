@@ -3,8 +3,12 @@
 # exit on failure
 set -e
 
+echo "-----WARNING-----"
+echo "This script is deprecated. Check the ui/README for docs on running with Nix: just run-dev-ui"
+echo "-----------------"
+
 # re-build bridge bindings for android
-npm run build-bridge-android
+yarn build-bridge-android
 
 # launch android production flavor in debug mode
 nix develop .#cross --command npx react-native run-android --active-arch-only --mode=ProductionDebug --verbose

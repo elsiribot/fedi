@@ -1,19 +1,85 @@
-# Fedi Client
+# Fedi UI
 
-The Fedi client codebase is a Yarn workspace that's split between 3 projects:
+The Fedi UI codebase is a Yarn workspace that's split between 3 projects:
 
+| | |
+| --- | --- |
 | `common` | Shared constants, utilities, and types between all clients |
 | `native` | A `react-native` based native app for Android and iOS |
 | `web` | A `next` based progressive web app for desktop and mobile web |
 
-## Setup
+## Development Environment: Nix
+
+We use [Nix](https://nixos.org/download.html), a powerful package manager for Linux and other Unix systems, for managing our development environment. This ensures that we all work in a consistent environment that's easy to set up.
+
+You can follow the [Fedimint Nix setup docs](https://github.com/fedimint/fedimint/blob/master/docs/dev-env.md#set-up-nix) to prepare your environment.
+
+After the installation is complete, you may need to close and reopen your terminal for the changes to take effect.
+
+### Starting a Development Session
+
+Before you start working, you should enter a Nix development shell. This sets up your environment with all the dependencies you need for development.
+
+To enter a Nix development shell, navigate to the project root directory and run:
+
+```bash
+nix develop
+```
+
+You should do this in every new terminal session where you plan to run our development tasks.
+
+Note: Whenever you see a command that starts with `just`, make sure you've run `nix develop` in the terminal where you're running the command.
+
+### Running the Development UI
+
+We use a command runner called [Just](https://github.com/casey/just) to manage our development tasks. The `run-dev-ui` command is used to start the development UI (both native and PWA).
+
+#### Basic Usage
+
+The `run-dev-ui` command can be run with the default settings like this:
+
+```bash
+just run-dev-ui
+```
+
+This will start the development UI with the default mode and settings. It does not prompt for any build options.
+
+#### Interactive Mode
+
+To start the development UI in interactive mode, which prompts for build options, use the `interactive` mode:
+
+```bash
+just run-dev-ui mode=interactive
+```
+
+In interactive mode, the script will ask whether to skip reinstalling node modules and rebuilding the bridge. You can respond with `y` (yes) or `n` (no) to each prompt.
+
+#### Passing options directly
+
+You can also choose to skip reinstalling node modules and/or rebuilding the bridge without using interactive mode by setting the `SKIP_NODE_MODULES` and `SKIP_BRIDGE_BUILD` environment variables:
+
+```bash
+SKIP_NODE_MODULES=1 SKIP_BRIDGE_BUILD=1 just run-dev-ui
+```
+
+Setting `SKIP_NODE_MODULES=1` skips the reinstall of node modules, and setting `SKIP_BRIDGE_BUILD=1` skips the bridge rebuild.
+
+Note: The script treats any value other than `1` as `0` for these variables. So, if they are not set or set to any value other than `1`, the respective steps will not be skipped.
+
+## Workspace Details
+
+If you already have common development tools like Node/Yarn you can try using a non-Nix development setup, but this is not recommended.
+
+### Dependencies
+
+Prefer yarn over npm to install dependencies
 
 ```bash
 # Install dependencies
 yarn install
 ```
 
-## Running commands
+### Running commands
 
 Running commands in the `ui/` directory will run those commands in all directories.
 This is the most convenient way to develop on the UI, ensuring that any changes
@@ -40,7 +106,7 @@ yarn dev
 yarn workspace @fedi/web dev
 ```
 
-## Adding new packages
+### Adding new packages
 
 To install a new package, go to each project that needs it and run `yarn add ...`
 for the package in each. For packages that are shared across multiple projects,
@@ -59,7 +125,7 @@ yarn run syncpack fix-mismatches
 
 which will upgrade all projects to use the highest version of the dependency.
 
-### Hoisting
+#### Hoisting
 
 All packages are hoisted up into `ui/node_modules`, even if only a
 single module uses them.

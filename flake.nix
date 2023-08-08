@@ -131,6 +131,26 @@
 
         # rust packages outputs with git hash replaced
         rustPackagesFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackages;
+
+        xcode-wrapper = stdenv.mkDerivation {
+          name = "xcode-wrapper-14.3.1";
+          buildCommand = ''
+            mkdir -p $out/bin
+
+            ln -s /usr/bin/ld $out/bin/ld
+            ln -s /usr/bin/clang $out/bin/clang
+            ln -s /usr/bin/xcodebuild $out/bin/xcodebuild
+            ln -s /usr/bin/xcrun $out/bin/xcrun
+
+            # Check if we have the xcodebuild version that we want
+            if [ -z "$($out/bin/xcodebuild -version | grep 14.3.1)" ]
+            then
+                echo "xcodebuild version: 14.3.1 is required"
+                echo "run:  xcode-select --install   to install xcode from the CLI"
+                exit 0
+            fi
+          '';
+        };
       in
       {
         packages = {
@@ -146,26 +166,55 @@
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
-            ] ++ prev.nativeBuildInputs;
+            ]
+            ++ prev.nativeBuildInputs;
           });
           cross = fmLib.devShells.cross.overrideAttrs (prev: {
             nativeBuildInputs =
               [
                 (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
-              ] ++
-              prev.nativeBuildInputs ++ [
+              ]
+              ++ prev.nativeBuildInputs
+              ++ [
                 pkgs.wasm-pack
                 pkgs.wasm-bindgen-cli
                 pkgs.binaryen
                 pkgs.gnused
                 pkgs.yarn
                 pkgs.nodejs
-              ] ++ lib.optionals stdenv.isDarwin [
+                pkgs.jdk17
+              ]
+              ++ lib.optionals stdenv.isDarwin [
                 pkgs.cocoapods
               ];
             ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
             ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
-            shellHook = prev.shellHook + toolchains.wasm32CrossEnvVars + toolchains.iosCrossEnvVars;
+            shellHook = prev.shellHook
+              + toolchains.wasm32CrossEnvVars
+              + toolchains.iosCrossEnvVars
+              + toolchains.androidCrossEnvVars
+              + ''
+              export PATH=$PATH:${toolchains.androidSdk}/bin
+              alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
+              alias emulator="emulator -avd phone"
+            '';
+          });
+          xcode = fmLib.devShells.cross.overrideAttrs (prev: {
+            nativeBuildInputs =
+              [
+                (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
+              ]
+              ++ prev.nativeBuildInputs
+              ++ [
+                pkgs.binaryen
+                pkgs.gnused
+                pkgs.yarn
+                pkgs.nodejs
+              ]
+              ++ lib.optionals stdenv.isDarwin [
+                xcode-wrapper
+              ];
+            shellHook = prev.shellHook;
           });
         };
       });
