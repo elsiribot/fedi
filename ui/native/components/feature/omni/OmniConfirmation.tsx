@@ -98,7 +98,8 @@ export const OmniConfirmation: React.FC<Props> = ({
                 icon: 'Bolt',
                 title: t('feature.omni.confirm-lightning-withdraw'),
             }
-            continueOnPress = () => handleNavigate('Receive', { parsedData })
+            continueOnPress = () =>
+                handleNavigate('ReceiveLightning', { parsedData })
             break
         case ParserDataType.FedimintInvite:
             contents = {

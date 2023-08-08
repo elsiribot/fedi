@@ -73,8 +73,9 @@ export type RootStackParamList = {
     PersonalRecoverySuccess: undefined
     PopupFederationEnded: undefined
     LocateSocialRecovery: undefined
+    Receive: undefined
+    ReceiveLightning: { parsedData?: ParsedLnurlWithdraw } | undefined
     ReceiveSuccess: { tx: Transaction }
-    Receive: { parsedData?: ParsedLnurlWithdraw } | undefined
     ReceiveOffline: undefined
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined

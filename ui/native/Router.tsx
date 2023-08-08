@@ -35,7 +35,7 @@ import EulaHeader from './components/feature/onboarding/EulaHeader'
 import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
-import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
+import ReceiveLightningHeader from './components/feature/receive/ReceiveLightningHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
@@ -56,7 +56,6 @@ import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
 import CompleteRecoveryAssist from './screens/CompleteRecoveryAssist'
 import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
-import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
@@ -86,7 +85,7 @@ import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PopupFederationEnded from './screens/PopupFederationEnded'
 import Receive from './screens/Receive'
-import ReceiveOffline from './screens/ReceiveOffline'
+import ReceiveLightning from './screens/ReceiveLightning'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
@@ -396,28 +395,16 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="ReceiveLightning"
+                                component={ReceiveLightning}
+                                options={() => ({
+                                    header: () => <ReceiveLightningHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="ReceiveSuccess"
                                 component={ReceiveSuccess}
                                 options={{ headerShown: false }}
-                            />
-                            {/* Wallet (Receive Offline) */}
-                            <Stack.Screen
-                                name="ReceiveOffline"
-                                component={ReceiveOffline}
-                                options={() => ({
-                                    header: () => (
-                                        <ReceiveBitcoinOfflineHeader />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ConfirmReceiveOffline"
-                                component={ConfirmReceiveOffline}
-                                options={() => ({
-                                    header: () => (
-                                        <ReceiveBitcoinOfflineHeader />
-                                    ),
-                                })}
                             />
                             {/* Federations */}
                             <Stack.Screen
