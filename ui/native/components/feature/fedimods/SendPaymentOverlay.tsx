@@ -14,7 +14,7 @@ import CustomOverlay from '../../ui/CustomOverlay'
 interface Props {
     fediMod: FediMod
     invoice?: Invoice | null
-    lnurlPayment?: ParsedLnurlPay['data']
+    lnurlPayment?: ParsedLnurlPay['data'] | null
     onReject: (err: Error) => void
     onAccept: (res: { preimage: string }) => void
 }
