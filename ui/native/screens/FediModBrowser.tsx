@@ -19,7 +19,6 @@ import {
     SendPaymentResponse,
 } from 'webln'
 
-import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -30,7 +29,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
 import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
-import AmountInput from '../components/ui/AmountInput'
+import { MakeInvoiceOverlay } from '../components/feature/webview/MakeInvoiceOverlay'
 import CustomOverlay, {
     CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
@@ -43,16 +42,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
-const parseSats = (sats: string | number): Sats => {
-    if (typeof sats === 'string') {
-        return Number.parseInt(sats, 10) as Sats
-    } else if (typeof sats === 'number') {
-        return sats as Sats
-    } else {
-        return 0 as Sats
-    }
-}
-
 const INJECTABLE_ERUDA_DEBUG_WIDGET = `(function () {
     var script = document.createElement('script');
     script.src="https://cdn.jsdelivr.net/npm/eruda";
@@ -62,7 +51,7 @@ const INJECTABLE_ERUDA_DEBUG_WIDGET = `(function () {
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const { generateInvoice, payInvoice, listGateways } = useBridge()
+    const { payInvoice, listGateways } = useBridge()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -93,124 +82,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
     const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
-    const [amountRequested, setAmountRequested] = useState(0 as Sats)
-    const [requestSubmitAttempts, setRequestSubmitAttempts] = useState(0)
     const [lnurlData, setLnurlData] = useState<string>('')
-    const requestMinMax = useMinMaxRequestAmount({
-        weblnRequest: requestInvoiceArgs,
-    })
-
-    // Overlay components for makeInvoice UX
-    const rejectMakeInvoiceButton = useMemo(
-        () => ({
-            text: t('words.reject'),
-            onPress: () => {
-                if (overlayRejectRef.current) {
-                    overlayRejectRef.current(
-                        new RejectionError(
-                            t('errors.webln-payment-request-rejected'),
-                        ),
-                    )
-                    setShowOverlay(false)
-                }
-            },
-        }),
-        [t],
-    )
-    const acceptMakeInvoiceButton = useMemo(
-        () => ({
-            primary: true,
-            text: t('words.accept'),
-            onPress: async () => {
-                setRequestSubmitAttempts(attempts => attempts + 1)
-                if (
-                    amountRequested > requestMinMax.maximumAmount ||
-                    amountRequested < requestMinMax.minimumAmount
-                ) {
-                    return
-                }
-
-                try {
-                    setLoading(true)
-                    const invoice = await generateInvoice(
-                        amountUtils.satToMsat(amountRequested),
-                        requestInvoiceArgs?.defaultMemo || '',
-                    )
-                    if (overlayResolveRef.current) {
-                        overlayResolveRef.current({
-                            paymentRequest: invoice,
-                        })
-                    }
-                } catch (error) {
-                    toast?.show((error as Error).message, 3000)
-                    if (overlayRejectRef.current) {
-                        overlayRejectRef.current(error as Error)
-                    }
-                }
-                setLoading(false)
-                setShowOverlay(false)
-            },
-        }),
-        [
-            amountRequested,
-            requestMinMax,
-            generateInvoice,
-            requestInvoiceArgs?.defaultMemo,
-            t,
-            toast,
-        ],
-    )
-    const fixedInvoiceContents = useMemo(
-        () => ({
-            title: `${t('feature.fedimods.wants-to-pay-you', {
-                fediMod: fediMod.title,
-            })}`,
-            message: `${amountUtils.formatNumber(amountRequested)} ${t(
-                'words.sats',
-            ).toUpperCase()}`,
-            description: `${convertSatsToFormattedFiat(amountRequested)}`,
-            buttons: [rejectMakeInvoiceButton, acceptMakeInvoiceButton],
-        }),
-        [
-            t,
-            fediMod.title,
-            amountRequested,
-            convertSatsToFormattedFiat,
-            rejectMakeInvoiceButton,
-            acceptMakeInvoiceButton,
-        ],
-    )
-    const dynamicInvoiceContents = useMemo(
-        () => ({
-            title: `${t('feature.fedimods.enter-amount-to-withdraw', {
-                fediMod: fediMod.title,
-            })}`,
-            description: requestInvoiceArgs?.defaultMemo || '',
-            body: (
-                <AmountInput
-                    {...requestMinMax}
-                    amount={amountRequested}
-                    submitAttempts={requestSubmitAttempts}
-                    verb={t('words.request')}
-                    onChangeAmount={(changedAmount: Sats) => {
-                        setRequestSubmitAttempts(0)
-                        setAmountRequested(changedAmount)
-                    }}
-                />
-            ),
-            buttons: [rejectMakeInvoiceButton, acceptMakeInvoiceButton],
-        }),
-        [
-            acceptMakeInvoiceButton,
-            amountRequested,
-            rejectMakeInvoiceButton,
-            requestMinMax,
-            requestSubmitAttempts,
-            requestInvoiceArgs?.defaultMemo,
-            fediMod.title,
-            t,
-        ],
-    )
 
     // Overlay components for sendPayment UX
     const rejectSendPaymentButton = useMemo(
@@ -324,20 +196,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         }
     }, [allowLoginButton, denyLoginButton, fediMod.title, t])
 
-    // opens overlay for makeInvoice UX
-    useEffect(() => {
-        if (requestInvoiceArgs?.amount) {
-            setOverlayContents(fixedInvoiceContents)
-        } else if (requestInvoiceArgs) {
-            setOverlayContents(dynamicInvoiceContents)
-        }
-    }, [
-        amountRequested,
-        dynamicInvoiceContents,
-        fixedInvoiceContents,
-        requestInvoiceArgs,
-    ])
-
     // opens overlay for sendPayment UX
     useEffect(() => {
         if (invoiceToPay) {
@@ -365,8 +223,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         if (showOverlay === false) {
             overlayResolveRef.current = undefined
             overlayRejectRef.current = undefined
-            setAmountRequested(0 as Sats)
-            setRequestSubmitAttempts(0)
             setInvoiceToPay(null)
             setRequestInvoiceArgs(null)
             setLnurlData('')
@@ -379,15 +235,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         }
     }, [showOverlay])
-
-    // Makes sure to parse invoice amount for makeInvoice UX
-    useEffect(() => {
-        if (requestInvoiceArgs?.amount) {
-            setAmountRequested(parseSats(requestInvoiceArgs.amount))
-        } else if (requestInvoiceArgs?.defaultAmount) {
-            setAmountRequested(parseSats(requestInvoiceArgs.defaultAmount))
-        }
-    }, [requestInvoiceArgs])
 
     // Handle all messages coming from a WebLN-enabled site
     const onMessage = onMessageHandler(webview, {
@@ -525,6 +372,18 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 allowsInlineMediaPlayback
                 onMessage={onMessage}
                 style={{ width: '100%', height: '100%', flex: 1 }}
+            />
+            <MakeInvoiceOverlay
+                fediMod={fediMod}
+                requestInvoiceArgs={requestInvoiceArgs}
+                onReject={err => {
+                    overlayRejectRef.current?.(err)
+                    setRequestInvoiceArgs(null)
+                }}
+                onAccept={paymentRequest => {
+                    overlayResolveRef.current?.({ paymentRequest })
+                    setRequestInvoiceArgs(null)
+                }}
             />
             <CustomOverlay
                 show={showOverlay}
