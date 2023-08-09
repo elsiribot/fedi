@@ -21,7 +21,6 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
-import lnurlUtils from '../../utils/LNURLUtils'
 import type { AppState, AppDispatch } from '../store'
 
 /**
@@ -153,18 +152,6 @@ export const useBridge = () => {
         listTransactions: useCallback(() => {
             return fedimint.listTransactions(activeFederationId!)
         }, [activeFederationId]),
-        lnurlSignMessage: useCallback(
-            (url: string) => {
-                return fedimint.lnurlSignMessage(url, activeFederationId!)
-            },
-            [activeFederationId],
-        ),
-        lnurlGetToken: useCallback(
-            (lnurl: string) => {
-                return lnurlUtils.getToken(fedimint, lnurl, activeFederationId!)
-            },
-            [activeFederationId],
-        ),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return fedimint.updateTransactionNotes(

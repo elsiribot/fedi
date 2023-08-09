@@ -58,7 +58,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { toast } = useEnvironmentContext().state
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const [jsInjected, setJsInjected] = useState<boolean>(false)
-    const [jwt] = useState<string | null>(null)
     const overlayResolveRef = useRef<
         FediModResolver<FediModResponse> | undefined
     >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
@@ -184,8 +183,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
     })
 
-    // FIXME: properly url-encode this
-    let uri = jwt ? `${fediMod.url}?token=${jwt}` : fediMod.url
+    let uri = fediMod.url
     // TODO: Remove me after alpha, just to get webln working on faucet.
     if (uri.includes('https://faucet.mutinynet.dev.fedibtc.com')) {
         uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
