@@ -90,6 +90,36 @@
                     <string>fedi</string>
                 </array>
             </dict>
+            <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>lightning</string>
+                </array>
+            </dict>
+            <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>bitcoin</string>
+                </array>
+            </dict>
+            <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>lnurlw</string>
+                </array>
+            </dict>
+            <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>lnurlp</string>
+                </array>
+            </dict>
+            <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>keyauth</string>
+                </array>
+            </dict>
         </array>
         <key>ITSAppUsesNonExemptEncryption</key>
         <false />

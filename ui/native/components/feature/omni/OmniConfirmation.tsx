@@ -16,20 +16,34 @@ import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 
 interface Props {
     parsedData: AnyParsedData
+    goBackText?: string
     onGoBack: () => void
     onSuccess: (parsedData: AnyParsedData) => void
 }
 
 export const OmniConfirmation: React.FC<Props> = ({
     parsedData,
+    goBackText: propsGoBackText,
     onGoBack,
     onSuccess,
 }) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const navigation = useNavigation<NavigationHook>()
+    const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
+
+    // OmniConfirmation can be rendered ourside of StackNavigator, so `replace`
+    // is not always available, so fall back to navigate. Cast as NavigationHook
+    // at assignment to avoid the no `replace` case being typed as `never`.
+    const navigate =
+        'replace' in navigation
+            ? (navigation as NavigationHook).replace
+            : (navigation as NavigationHook).navigate
+    const handleNavigate = (...params: Parameters<typeof navigate>) => {
+        navigate(...params)
+        onSuccess(parsedData)
+    }
 
     const handleAuth = async () => {
         if (!activeFederationId || parsedData.type !== ParserDataType.LnurlAuth)
@@ -77,15 +91,14 @@ export const OmniConfirmation: React.FC<Props> = ({
                 title: t('feature.omni.confirm-lightning-pay'),
             }
             continueOnPress = () =>
-                navigation.replace('ConfirmSendLightning', { parsedData })
+                handleNavigate('ConfirmSendLightning', { parsedData })
             break
         case ParserDataType.LnurlWithdraw:
             contents = {
                 icon: 'Bolt',
                 title: t('feature.omni.confirm-lightning-withdraw'),
             }
-            continueOnPress = () =>
-                navigation.replace('Receive', { parsedData })
+            continueOnPress = () => handleNavigate('Receive', { parsedData })
             break
         case ParserDataType.FedimintInvite:
             contents = {
@@ -93,7 +106,7 @@ export const OmniConfirmation: React.FC<Props> = ({
                 title: t('feature.omni.confirm-federation-invite'),
             }
             // TODO: Pass along scanned federation code
-            continueOnPress = () => navigation.replace('ScanFederationCode')
+            continueOnPress = () => handleNavigate('ScanFederationCode')
             break
         case ParserDataType.FedimintEcash:
             contents = {
@@ -120,12 +133,12 @@ export const OmniConfirmation: React.FC<Props> = ({
             }
             if (parsedData.type === ParserDataType.FediChatGroup) {
                 continueOnPress = () =>
-                    navigation.replace('GroupChat', {
+                    handleNavigate('GroupChat', {
                         groupId: parsedData.data.id,
                     })
             } else {
                 continueOnPress = () =>
-                    navigation.replace('DirectChat', {
+                    handleNavigate('DirectChat', {
                         memberId: parsedData.data.id,
                     })
             }
@@ -165,10 +178,11 @@ export const OmniConfirmation: React.FC<Props> = ({
             break
     }
 
+    const goBackText = propsGoBackText || t('phrases.go-back')
     const buttons = useMemo(() => {
         const b = [
             {
-                text: t('phrases.go-back'),
+                text: goBackText,
                 onPress: () => onGoBack(),
                 primary: !continueOnPress,
             },
@@ -181,7 +195,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             })
         }
         return b
-    }, [continueText, continueOnPress, onGoBack, t])
+    }, [goBackText, onGoBack, continueText, continueOnPress])
 
     return (
         <CustomOverlay

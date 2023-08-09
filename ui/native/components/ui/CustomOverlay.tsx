@@ -44,6 +44,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
 }) => {
     const { theme } = useTheme()
     const [overlayHeight, setOverlayHeight] = useState(0)
+    const animatedOpacity = useRef(new Animated.Value(0)).current
     const animatedTranslateY = useRef(new Animated.Value(0)).current
 
     const {
@@ -70,10 +71,16 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
 
     // Set height whenever overlay layout changes.
     const handleOverlayLayout = (event: LayoutChangeEvent) => {
-        const height = event.nativeEvent.layout.height
+        const { height } = event.nativeEvent.layout
         if (!overlayHeight) {
-            // On initial height report, immediately set height without animation.
+            // On initial height report, immediately set height without animation,
+            // and begin to fade in to avoid visual jump.
             animatedTranslateY.setValue(height)
+            Animated.timing(animatedOpacity, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+            }).start()
         }
         setOverlayHeight(height)
     }
@@ -118,6 +125,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                 onLayout={handleOverlayLayout}
                 style={{
                     ...styles(theme).overlayContents,
+                    opacity: animatedOpacity,
                     transform: [{ translateY: animatedTranslateY }],
                 }}>
                 <KeyboardAwareWrapper>

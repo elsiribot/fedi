@@ -30,6 +30,7 @@ import ConnectedFederationsDrawer from './components/feature/federations/Connect
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
 import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
+import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import EulaHeader from './components/feature/onboarding/EulaHeader'
 import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
@@ -696,7 +697,14 @@ const MainNavigator = () => {
 }
 
 const linking: NavigationLinkingConfig = {
-    prefixes: ['fedi://', 'lightning:', 'bitcoin:'],
+    prefixes: [
+        'fedi:',
+        'lightning:',
+        'bitcoin:',
+        'lnurlw://',
+        'lnurlp://',
+        'keyauth://',
+    ],
     config: {
         screens: {
             MainNavigator: {
@@ -784,6 +792,7 @@ const Router = () => {
                     }}
                 />
             </Drawer.Navigator>
+            <OmniLinkHandler />
         </NavigationContainer>
     )
 }
