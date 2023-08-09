@@ -22,15 +22,26 @@ const Receive: React.FC<Props> = () => {
             edges={['bottom', 'left', 'right']}
             style={styles(theme).container}>
             <OmniInput
-                expectedInputTypes={[ParserDataType.LnurlWithdraw]}
-                onExpectedInput={parsedData =>
-                    navigation.navigate('ReceiveLightning', { parsedData })
-                }
-                onUnexpectedSuccess={() =>
+                expectedInputTypes={[
+                    ParserDataType.LnurlWithdraw,
+                    ParserDataType.FedimintEcash,
+                ]}
+                onExpectedInput={parsedData => {
+                    if (parsedData.type === ParserDataType.LnurlWithdraw) {
+                        navigation.navigate('ReceiveLightning', { parsedData })
+                    } else if (
+                        parsedData.type === ParserDataType.FedimintEcash
+                    ) {
+                        navigation.navigate('ConfirmReceiveOffline', {
+                            ecash: parsedData.data.token,
+                        })
+                    }
+                }}
+                onUnexpectedSuccess={() => {
                     navigation.canGoBack()
                         ? navigation.goBack()
                         : navigation.navigate('TabsNavigator')
-                }
+                }}
                 customActions={[
                     {
                         label: t('feature.receive.create-lightning-request'),

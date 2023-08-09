@@ -117,6 +117,7 @@
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-amount-max": "The max you can {{verb}} is <suggestion>{{amount}}</suggestion>",
         "invalid-amount-min": "The minimum you can {{verb}} is <suggestion>{{amount}}</suggestion>",
+        "invalid-ecash-token": "Invalid ecash token",
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "invalid-character": "The following characters are not allowed: \" & ' / : < >",
