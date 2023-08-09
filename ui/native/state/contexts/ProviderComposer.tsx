@@ -1,9 +1,7 @@
 import React from 'react'
 
 interface Props {
-    providers: Array<
-        React.JSXElementConstructor<React.PropsWithChildren<unknown>>
-    >
+    providers: React.ComponentType<{ children: React.ReactNode }>[]
     children: React.ReactNode
 }
 
