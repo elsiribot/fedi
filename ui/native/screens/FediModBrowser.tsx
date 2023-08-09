@@ -1,11 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, {
-    MutableRefObject,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
+import React, { MutableRefObject, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -14,7 +8,6 @@ import { WebView } from 'react-native-webview'
 import {
     RequestInvoiceArgs,
     RequestInvoiceResponse,
-    RejectionError,
     UnsupportedMethodError,
     SendPaymentResponse,
 } from 'webln'
@@ -24,17 +17,22 @@ import {
     selectAuthenticatedMember,
     selectFediModDebugMode,
 } from '@fedi/common/redux'
-import { Invoice, MSats, Sats } from '@fedi/common/types'
+import {
+    Invoice,
+    MSats,
+    ParsedLnurlAuth,
+    ParserDataType,
+} from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../bridge'
 import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
+import { AuthOverlay } from '../components/feature/webview/AuthOverlay'
 import { MakeInvoiceOverlay } from '../components/feature/webview/MakeInvoiceOverlay'
-import CustomOverlay, {
-    CustomOverlayContents,
-} from '../components/ui/CustomOverlay'
+import { SendPaymentOverlay } from '../components/feature/webview/SendPaymentOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector, useBridge, useBtcFiatPrice } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
@@ -51,190 +49,27 @@ const INJECTABLE_ERUDA_DEBUG_WIDGET = `(function () {
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const { payInvoice, listGateways } = useBridge()
+    const { listGateways } = useBridge()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const { toast } = useEnvironmentContext().state
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const webview = useRef<WebView>() as MutableRefObject<WebView>
-    // const [webLnSupported, setWebLnSupported] = useState<boolean>(false)
     const [jsInjected, setJsInjected] = useState<boolean>(false)
-    const [jwt, setJwt] = useState<string | null>(null)
-    const [showOverlay, setShowOverlay] = useState<boolean>(false)
-    const [loading, setLoading] = useState<boolean>(false)
-    const [overlayContents, setOverlayContents] =
-        useState<CustomOverlayContents>({
-            title: '',
-            message: '',
-            description: '',
-            body: null,
-            buttons: [],
-        })
+    const [jwt] = useState<string | null>(null)
     const overlayResolveRef = useRef<
         FediModResolver<FediModResponse> | undefined
     >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
     const overlayRejectRef = useRef<(reason: Error) => void>()
-    const { lnurlGetToken } = useBridge()
 
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
     const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
-    const [lnurlData, setLnurlData] = useState<string>('')
-
-    // Overlay components for sendPayment UX
-    const rejectSendPaymentButton = useMemo(
-        () => ({
-            text: t('words.reject'),
-            onPress: () => {
-                if (overlayRejectRef.current) {
-                    overlayRejectRef.current(
-                        new RejectionError(t('errors.webln-payment-rejected')),
-                    )
-                    setShowOverlay(false)
-                }
-            },
-        }),
-        [t],
-    )
-    const acceptSendPaymentButton = useMemo(
-        () => ({
-            primary: true,
-            text: t('words.accept'),
-            onPress: async () => {
-                if (invoiceToPay?.invoice) {
-                    try {
-                        setLoading(true)
-                        const { preimage } = await payInvoice(
-                            invoiceToPay?.invoice,
-                        )
-                        if (overlayResolveRef.current) {
-                            overlayResolveRef.current({
-                                preimage,
-                            })
-                            setShowOverlay(false)
-                        }
-                    } catch (error) {
-                        console.error('sendPayment failed', error)
-                        toast?.show(t('errors.failed-to-pay-invoice'), 3000)
-                        if (overlayRejectRef.current) {
-                            overlayRejectRef.current(error as Error)
-                        }
-                    }
-                    setLoading(false)
-                    setShowOverlay(false)
-                }
-            },
-        }),
-        [payInvoice, invoiceToPay, t, toast],
-    )
-    const paymentRequestContents = useMemo(() => {
-        const amountSats = invoiceToPay
-            ? amountUtils.msatToSat(invoiceToPay.amount)
-            : (0 as Sats)
-
-        return {
-            title: t('feature.fedimods.payment-request', {
-                fediMod: fediMod.title,
-            }),
-            message: `${amountUtils.formatNumber(amountSats)} ${t(
-                'words.sats',
-            ).toUpperCase()}`,
-            description: `${convertSatsToFormattedFiat(amountSats)}`,
-            buttons: [rejectSendPaymentButton, acceptSendPaymentButton],
-        }
-    }, [
-        acceptSendPaymentButton,
-        convertSatsToFormattedFiat,
-        invoiceToPay,
-        rejectSendPaymentButton,
-        fediMod.title,
-        t,
-    ])
-
-    // Overlay components for LNURL-Auth UX
-    const denyLoginButton = useMemo(
-        () => ({
-            text: t('words.no'),
-            onPress: () => {
-                console.error('Login denied')
-                setShowOverlay(false)
-            },
-        }),
-        [t],
-    )
-    const allowLoginButton = useMemo(
-        () => ({
-            primary: true,
-            text: t('words.yes'),
-            onPress: async () => {
-                try {
-                    setLoading(true)
-                    if (lnurlData) {
-                        const token = await lnurlGetToken(lnurlData)
-                        setJwt(token)
-                        console.info('LNURL auth successful', token)
-                    } else {
-                        throw new Error('No LNURL-Auth data found')
-                    }
-                } catch (e) {
-                    toast?.show(t('feature.fedimods.login-failed'), 3000)
-                }
-                setLoading(false)
-                setShowOverlay(false)
-            },
-        }),
-        [t, lnurlGetToken, lnurlData, toast],
-    )
-    const loginRequestContents = useMemo(() => {
-        return {
-            title: t('feature.fedimods.login-to'),
-            message: `${fediMod.title}`,
-            buttons: [denyLoginButton, allowLoginButton],
-        }
-    }, [allowLoginButton, denyLoginButton, fediMod.title, t])
-
-    // opens overlay for sendPayment UX
-    useEffect(() => {
-        if (invoiceToPay) {
-            setOverlayContents(paymentRequestContents)
-        }
-    }, [paymentRequestContents, invoiceToPay])
-
-    // opens overlay for LNURL-Auth login UX
-    useEffect(() => {
-        if (lnurlData) {
-            setOverlayContents(loginRequestContents)
-        }
-    }, [lnurlData, loginRequestContents])
-
-    // Show the overlay after contents have been set
-    useEffect(() => {
-        if (overlayContents.title) {
-            setShowOverlay(true)
-        }
-    }, [overlayContents])
-
-    // Reset unused state and clear overlay contents after it has
-    // been hidden from view
-    useEffect(() => {
-        if (showOverlay === false) {
-            overlayResolveRef.current = undefined
-            overlayRejectRef.current = undefined
-            setInvoiceToPay(null)
-            setRequestInvoiceArgs(null)
-            setLnurlData('')
-            setOverlayContents({
-                title: '',
-                message: '',
-                description: '',
-                body: null,
-                buttons: [],
-            })
-        }
-    }, [showOverlay])
+    const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
+        ParsedLnurlAuth['data'] | null
+    >(null)
 
     // Handle all messages coming from a WebLN-enabled site
     const onMessage = onMessageHandler(webview, {
@@ -334,8 +169,17 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         // Non-WebLN
         // Called when an a-tag containing a `lightning:` uri is found on a page
         foundInvoice: async (data: string) => {
-            if (data.toLowerCase().startsWith('lnurl')) {
-                setLnurlData(data)
+            try {
+                const parsedData = await parseUserInput(data, fedimint, t)
+                if (parsedData.type === ParserDataType.LnurlAuth) {
+                    setLnurlAuthRequest(parsedData.data)
+                }
+            } catch (err) {
+                console.warn(
+                    'Encountered error parsing lightning uri',
+                    data,
+                    err,
+                )
             }
         },
     })
@@ -385,20 +229,28 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     setRequestInvoiceArgs(null)
                 }}
             />
-            <CustomOverlay
-                show={showOverlay}
-                onBackdropPress={() => {
-                    setShowOverlay(false)
-                    if (overlayRejectRef.current) {
-                        overlayRejectRef.current(
-                            new RejectionError(t('errors.webln-canceled')),
-                        )
-                        overlayRejectRef.current = undefined
-                        overlayResolveRef.current = undefined
-                    }
+            <SendPaymentOverlay
+                fediMod={fediMod}
+                invoice={invoiceToPay}
+                onReject={err => {
+                    overlayRejectRef.current?.(err)
+                    setInvoiceToPay(null)
                 }}
-                contents={overlayContents}
-                loading={loading}
+                onAccept={preimage => {
+                    overlayResolveRef.current?.({ preimage })
+                    setInvoiceToPay(null)
+                }}
+            />
+            <AuthOverlay
+                fediMod={fediMod}
+                lnurlAuthRequest={lnurlAuthRequest}
+                onReject={err => {
+                    overlayRejectRef.current?.(err)
+                    setLnurlAuthRequest(null)
+                }}
+                onAccept={() => {
+                    setLnurlAuthRequest(null)
+                }}
             />
         </View>
     )
