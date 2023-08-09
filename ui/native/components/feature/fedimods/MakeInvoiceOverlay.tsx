@@ -18,7 +18,7 @@ interface Props {
     requestInvoiceArgs?: RequestInvoiceArgs | null
     lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
     onReject: (err: Error) => void
-    onAccept: (invoice: string) => void
+    onAccept: (res: { paymentRequest: string }) => void
 }
 
 export const MakeInvoiceOverlay: React.FC<Props> = ({
@@ -53,11 +53,11 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
 
         try {
             setIsLoading(true)
-            const invoice = await generateInvoice(
+            const paymentRequest = await generateInvoice(
                 amountUtils.satToMsat(inputAmount),
                 memo,
             )
-            onAcceptRef.current(invoice)
+            onAcceptRef.current({ paymentRequest })
         } catch (error) {
             toast?.show(
                 formatErrorMessage(t, error, 'errors.unknown-error'),
@@ -122,7 +122,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
             show={isShowing}
             loading={isLoading}
             onBackdropPress={() =>
-                onReject(new RejectionError('errors.webln-canceled'))
+                onReject(new RejectionError(t('errors.webln-canceled')))
             }
             contents={{
                 title,

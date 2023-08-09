@@ -27,10 +27,10 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../bridge'
+import { AuthOverlay } from '../components/feature/fedimods/AuthOverlay'
 import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
-import { AuthOverlay } from '../components/feature/webview/AuthOverlay'
-import { MakeInvoiceOverlay } from '../components/feature/webview/MakeInvoiceOverlay'
-import { SendPaymentOverlay } from '../components/feature/webview/SendPaymentOverlay'
+import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
+import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -183,6 +183,28 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
     })
 
+    const resetOverlay = () => {
+        setRequestInvoiceArgs(null)
+        setInvoiceToPay(null)
+        setLnurlAuthRequest(null)
+    }
+
+    const overlayProps = {
+        fediMod,
+        onReject: (err: Error) => {
+            if (err && overlayRejectRef.current) {
+                overlayRejectRef.current(err)
+            }
+            resetOverlay()
+        },
+        onAccept: (res?: FediModResponse) => {
+            if (res && overlayResolveRef.current) {
+                overlayResolveRef.current(res)
+            }
+            resetOverlay()
+        },
+    }
+
     let uri = fediMod.url
     // TODO: Remove me after alpha, just to get webln working on faucet.
     if (uri.includes('https://faucet.mutinynet.dev.fedibtc.com')) {
@@ -216,39 +238,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 style={{ width: '100%', height: '100%', flex: 1 }}
             />
             <MakeInvoiceOverlay
-                fediMod={fediMod}
+                {...overlayProps}
                 requestInvoiceArgs={requestInvoiceArgs}
-                onReject={err => {
-                    overlayRejectRef.current?.(err)
-                    setRequestInvoiceArgs(null)
-                }}
-                onAccept={paymentRequest => {
-                    overlayResolveRef.current?.({ paymentRequest })
-                    setRequestInvoiceArgs(null)
-                }}
             />
-            <SendPaymentOverlay
-                fediMod={fediMod}
-                invoice={invoiceToPay}
-                onReject={err => {
-                    overlayRejectRef.current?.(err)
-                    setInvoiceToPay(null)
-                }}
-                onAccept={preimage => {
-                    overlayResolveRef.current?.({ preimage })
-                    setInvoiceToPay(null)
-                }}
-            />
+            <SendPaymentOverlay {...overlayProps} invoice={invoiceToPay} />
             <AuthOverlay
-                fediMod={fediMod}
+                {...overlayProps}
                 lnurlAuthRequest={lnurlAuthRequest}
-                onReject={err => {
-                    overlayRejectRef.current?.(err)
-                    setLnurlAuthRequest(null)
-                }}
-                onAccept={() => {
-                    setLnurlAuthRequest(null)
-                }}
             />
         </View>
     )

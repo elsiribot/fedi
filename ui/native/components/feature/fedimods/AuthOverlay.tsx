@@ -51,6 +51,9 @@ export const AuthOverlay: React.FC<Props> = ({
         <CustomOverlay
             show={Boolean(lnurlAuthRequest)}
             loading={isLoading}
+            onBackdropPress={() =>
+                onReject(new RejectionError(t('errors.webln-canceled')))
+            }
             contents={{
                 title: t('feature.fedimods.login-to'),
                 message: fediMod.title,

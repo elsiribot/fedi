@@ -16,7 +16,7 @@ interface Props {
     invoice?: Invoice | null
     lnurlPayment?: ParsedLnurlPay['data']
     onReject: (err: Error) => void
-    onAccept: (preimage: string) => void
+    onAccept: (res: { preimage: string }) => void
 }
 
 export const SendPaymentOverlay: React.FC<Props> = ({
@@ -38,8 +38,8 @@ export const SendPaymentOverlay: React.FC<Props> = ({
         setIsLoading(true)
         try {
             if (!invoice) throw new Error()
-            const { preimage } = await payInvoice(invoice.invoice)
-            onAcceptRef.current(preimage)
+            const res = await payInvoice(invoice.invoice)
+            onAcceptRef.current(res)
         } catch (error) {
             toast?.show(
                 formatErrorMessage(t, error, 'errors.unknown-error'),
@@ -66,6 +66,9 @@ export const SendPaymentOverlay: React.FC<Props> = ({
         <CustomOverlay
             show={isShowing}
             loading={isLoading}
+            onBackdropPress={() =>
+                onReject(new RejectionError(t('errors.webln-canceled')))
+            }
             contents={{
                 title: t('feature.fedimods.payment-request', {
                     fediMod: fediMod.title,
