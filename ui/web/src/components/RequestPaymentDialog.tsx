@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
-import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
+import { useRequestForm } from '@fedi/common/hooks/amount'
 import {
     useIsOfflineWalletSupported,
     useIsOnchainDepositSupported,
@@ -41,15 +41,17 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const lnurlw = useRouteState('/request')
-    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount({
+    const {
+        inputAmount: amount,
+        setInputAmount: setAmount,
+        memo: note,
+        setMemo: setNote,
+        minimumAmount,
+        maximumAmount,
+        reset: resetRequestForm,
+    } = useRequestForm({
         lnurlWithdrawal: lnurlw?.data,
     })
-    const [amount, setAmount] = useState(
-        lnurlw?.data.maxWithdrawable
-            ? amountUtils.msatToSat(lnurlw.data.maxWithdrawable)
-            : (0 as Sats),
-    )
-    const [note, setNote] = useState(lnurlw?.data.defaultDescription || '')
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [wantsInvoice, setWantsInvoice] = useState(false)
     const [isLightning, setIsLightning] = useState(true)
@@ -67,12 +69,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     // Reset on close, focus input on desktop open
     useEffect(() => {
         if (!open) {
-            setAmount(
-                lnurlw?.data.maxWithdrawable
-                    ? amountUtils.msatToSat(lnurlw.data.maxWithdrawable)
-                    : (0 as Sats),
-            )
-            setNote(lnurlw?.data.defaultDescription || '')
+            resetRequestForm()
             setSubmitAttempts(0)
             setWantsInvoice(false)
             setIsLightning(true)
@@ -88,7 +85,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 )
             }
         }
-    }, [open, lnurlw])
+    }, [open, lnurlw, resetRequestForm])
 
     // Reset invoices on federation change, amount change, or note change
     useEffect(() => {
@@ -190,10 +187,13 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         }
     }
 
-    const handleChangeAmount = useCallback((amt: Sats) => {
-        setAmount(amt)
-        setSubmitAttempts(0)
-    }, [])
+    const handleChangeAmount = useCallback(
+        (amt: Sats) => {
+            setAmount(amt)
+            setSubmitAttempts(0)
+        },
+        [setAmount],
+    )
 
     const handleSubmit = () => {
         setSubmitAttempts(attempts => attempts + 1)
