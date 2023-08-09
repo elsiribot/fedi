@@ -67,17 +67,17 @@ export function useOmniPaymentState(
         async (input: ExpectedInputData) => {
             if (input.type === ParserDataType.Bolt11) {
                 const decoded = await fedimint.decodeInvoice(input.data.invoice)
-                setInvoice(decoded)
                 if (decoded.amount) {
                     setInputAmount(amountUtils.msatToSat(decoded.amount))
                 }
+                setInvoice(decoded)
             } else if (input.type === ParserDataType.LnurlPay) {
-                setLnurlPayment(input.data)
                 if (input.data.minSendable) {
                     setInputAmount(
                         amountUtils.msatToSat(input.data.minSendable),
                     )
                 }
+                setLnurlPayment(input.data)
             }
         },
         [fedimint],

@@ -6,30 +6,42 @@ import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
+import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
+import { fedimint } from '../bridge'
 import AmountInput from '../components/ui/AmountInput'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
-const Receive: React.FC<Props> = ({ navigation }: Props) => {
+const Receive: React.FC<Props> = ({ navigation, route }: Props) => {
+    const lnurlWithdrawal = route.params?.parsedData?.data
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
-    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount()
+    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount({
+        lnurlWithdrawal,
+    })
     const { toast } = useEnvironmentContext().state
-    const [amount, setAmount] = useState<Sats>(0 as Sats)
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const [amount, setAmount] = useState<Sats>(
+        lnurlWithdrawal?.maxWithdrawable
+            ? amountUtils.msatToSat(lnurlWithdrawal?.maxWithdrawable)
+            : (0 as Sats),
+    )
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     // TODO integrate memo
-    const [memo] = useState<string>('')
+    const [memo] = useState<string>(lnurlWithdrawal?.defaultDescription || '')
 
     useEffect(() => {
         const createNewInvoice = async () => {
@@ -62,14 +74,46 @@ const Receive: React.FC<Props> = ({ navigation }: Props) => {
         setAmount(updatedValue)
     }
 
+    const handleLnurlWithdraw = async () => {
+        setGeneratingInvoice(true)
+        try {
+            if (!activeFederationId || !lnurlWithdrawal) throw new Error()
+            const lnurlInvoice = await lnurlWithdraw(
+                fedimint,
+                activeFederationId,
+                lnurlWithdrawal,
+                amountUtils.satToMsat(amount),
+                memo,
+            )
+            navigation.navigate('BitcoinRequest', {
+                uri: `lightning:${lnurlInvoice}`,
+            })
+            // TODO: Better UI for this? We want to show them the QR code in case
+            // the payment doesn't go through, but we also want to let them know
+            // that LNURL _should_ handle the payment.
+            toast?.show(
+                t('feature.receive.awaiting-withdrawal-from', {
+                    domain: lnurlWithdrawal.domain,
+                }),
+            )
+        } catch (err) {
+            toast?.show(formatErrorMessage(t, err, 'error.unknown-error'))
+            setGeneratingInvoice(false)
+        }
+    }
+
     const handleSubmit = () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (amount > maximumAmount || amount < minimumAmount) {
             return
         }
 
-        setGeneratingInvoice(true)
-        Keyboard.dismiss()
+        if (lnurlWithdrawal) {
+            handleLnurlWithdraw()
+        } else {
+            setGeneratingInvoice(true)
+            Keyboard.dismiss()
+        }
     }
 
     return (

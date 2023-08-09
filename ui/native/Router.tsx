@@ -45,6 +45,7 @@ import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOff
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
+import SvgImage from './components/ui/SvgImage'
 import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BroadcastAdminsList from './screens/BroadcastAdminsList'
@@ -77,6 +78,7 @@ import JoinGroup from './screens/JoinGroup'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
+import OmniScanner from './screens/OmniScanner'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -635,6 +637,21 @@ const MainNavigator = () => {
                                     header: () => <SelectedFederationHeader />,
                                 })}
                             />
+                            {/* Omni scanner */}
+                            <Stack.Screen
+                                name="OmniScanner"
+                                component={OmniScanner}
+                                options={() => ({
+                                    header: () => (
+                                        <Header
+                                            backButton
+                                            headerCenter={
+                                                <SvgImage name="OmniScan" />
+                                            }
+                                        />
+                                    ),
+                                })}
+                            />
                             {/* Developer-only */}
                             <Stack.Screen
                                 name="DeveloperSettings"
@@ -736,6 +753,8 @@ const linking: NavigationLinkingConfig = {
                     SocialRecoveryQrModal: 'social-recovery-qr-modal',
                     // No federation
                     Splash: 'splash',
+                    // Omni scanner
+                    OmniScanner: 'omni-scanner',
                 },
             },
         },
