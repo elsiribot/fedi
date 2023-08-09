@@ -58,25 +58,6 @@ export const OmniConfirmation: React.FC<Props> = ({
         setIsLoading(false)
     }
 
-    const handleRedeemToken = async () => {
-        if (
-            !activeFederationId ||
-            parsedData.type !== ParserDataType.FedimintEcash
-        )
-            return
-        setIsLoading(true)
-        try {
-            await fedimint.receiveEcash(
-                parsedData.data.token,
-                activeFederationId,
-            )
-            onSuccess(parsedData)
-        } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
-        }
-        setIsLoading(false)
-    }
-
     let contents: CustomOverlayContents = {
         title: '',
     }
@@ -114,7 +95,10 @@ export const OmniConfirmation: React.FC<Props> = ({
                 icon: 'Bolt',
                 title: t('feature.omni.confirm-ecash-token'),
             }
-            continueOnPress = handleRedeemToken
+            continueOnPress = () =>
+                handleNavigate('ConfirmReceiveOffline', {
+                    ecash: parsedData.data.token,
+                })
             break
         case ParserDataType.LnurlAuth:
             contents = {
