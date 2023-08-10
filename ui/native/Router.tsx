@@ -36,6 +36,7 @@ import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
+import ReceiveLightningHeader from './components/feature/receive/ReceiveLightningHeader'
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
@@ -86,7 +87,7 @@ import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PopupFederationEnded from './screens/PopupFederationEnded'
 import Receive from './screens/Receive'
-import ReceiveOffline from './screens/ReceiveOffline'
+import ReceiveLightning from './screens/ReceiveLightning'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
@@ -396,18 +397,10 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ReceiveSuccess"
-                                component={ReceiveSuccess}
-                                options={{ headerShown: false }}
-                            />
-                            {/* Wallet (Receive Offline) */}
-                            <Stack.Screen
-                                name="ReceiveOffline"
-                                component={ReceiveOffline}
+                                name="ReceiveLightning"
+                                component={ReceiveLightning}
                                 options={() => ({
-                                    header: () => (
-                                        <ReceiveBitcoinOfflineHeader />
-                                    ),
+                                    header: () => <ReceiveLightningHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -418,6 +411,11 @@ const MainNavigator = () => {
                                         <ReceiveBitcoinOfflineHeader />
                                     ),
                                 })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveSuccess"
+                                component={ReceiveSuccess}
+                                options={{ headerShown: false }}
                             />
                             {/* Federations */}
                             <Stack.Screen
@@ -722,8 +720,6 @@ const linking: NavigationLinkingConfig = {
                     Receive: 'receive',
                     BitcoinRequest: 'bitcoin-request',
                     ReceiveSuccess: 'receive-success',
-                    ReceiveOffline: 'receive-offline',
-                    ConfirmReceiveOffline: 'confirm-receive-offline',
                     // Federations
                     FederationInvite: 'federation-invite',
                     ScanFederationCode: 'scan-federation-code',

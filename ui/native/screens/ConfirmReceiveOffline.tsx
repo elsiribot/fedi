@@ -1,11 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import type { Transaction } from '@fedi/common/types'
+import type { MSats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
@@ -24,11 +25,35 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { receiveEcash } = useBridge()
+    const { receiveEcash, validateEcash } = useBridge()
     const { toast } = useEnvironmentContext().state
-    const { amount, ecash } = route.params
+    const { ecash } = route.params
+    const [amount, setAmount] = useState(0 as MSats)
+    const [error, setError] = useState<Error>()
     const [note, setNote] = useState('')
     const [receiving, setReceiving] = useState(false)
+
+    useEffect(() => {
+        validateEcash(ecash)
+            .then(res => {
+                if (res.valid) {
+                    setAmount(res.amount)
+                } else {
+                    setError(new Error('errors.invalid-ecash-token'))
+                }
+            })
+            .catch(err => {
+                setError(err)
+            })
+    }, [ecash, validateEcash])
+
+    useEffect(() => {
+        if (error) {
+            toast?.show(
+                formatErrorMessage(t, error, 'errors.invalid-ecash-token'),
+            )
+        }
+    }, [error, t, toast])
 
     const onReceive = async () => {
         // Don't call multiple times
@@ -60,7 +85,11 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 <Text caption>{t('phrases.you-are-offline')}</Text>
             </View>
             <View style={styles(theme).amountContainer}>
-                <Text h2>{`${amountUtils.formatNumber(amountSats)} `}</Text>
+                {amountSats ? (
+                    <Text h2>{`${amountUtils.formatNumber(amountSats)} `}</Text>
+                ) : (
+                    <ActivityIndicator />
+                )}
                 <Text>{`${t('words.sats').toUpperCase()}`}</Text>
             </View>
 

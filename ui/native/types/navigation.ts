@@ -49,8 +49,8 @@ export type RootStackParamList = {
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
-    ConfirmReceiveOffline: { ecash: string; amount: MSats }
     ConfirmRecoveryAssist: undefined
+    ConfirmReceiveOffline: { ecash: string }
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
     ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
     ConnectedFederationsDrawer: undefined
@@ -73,8 +73,9 @@ export type RootStackParamList = {
     PersonalRecoverySuccess: undefined
     PopupFederationEnded: undefined
     LocateSocialRecovery: undefined
-    ReceiveSuccess: { tx: Transaction }
-    Receive: { parsedData?: ParsedLnurlWithdraw } | undefined
+    Receive: undefined
+    ReceiveLightning: { parsedData?: ParsedLnurlWithdraw } | undefined
+    ReceiveSuccess: { tx: Pick<Transaction, 'amount' | 'bitcoin' | 'offline'> }
     ReceiveOffline: undefined
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined

@@ -79,11 +79,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                                 {t('words.request')}
                             </Text>
                         }
-                        onPress={() =>
-                            navigation.navigate(
-                                offline ? 'ReceiveOffline' : 'Receive',
-                            )
-                        }
+                        onPress={() => navigation.navigate('Receive')}
                         containerStyle={styles(theme).buttonContainer}
                         buttonStyle={styles(theme).button}
                     />
