@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RejectionError, RequestInvoiceArgs } from 'webln'
 
@@ -43,6 +43,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const [submitAttempts, setSubmitAttempts] = useState(0)
+    const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
     const {
         inputAmount,
@@ -51,7 +52,17 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
         minimumAmount,
         maximumAmount,
         exactAmount,
+        reset,
     } = useRequestForm({ requestInvoiceArgs, lnurlWithdrawal })
+
+    // Reset form when it appears
+    const isShowing = Boolean(requestInvoiceArgs || lnurlWithdrawal)
+    useEffect(() => {
+        if (isShowing) {
+            reset()
+            setAmountInputKey(key => key + 1)
+        }
+    }, [isShowing, reset])
 
     const handleAccept = async () => {
         setSubmitAttempts(attempts => attempts + 1)
@@ -107,6 +118,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
         description = requestInvoiceArgs?.defaultMemo || ''
         body = (
             <AmountInput
+                key={amountInputKey}
                 amount={inputAmount}
                 submitAttempts={submitAttempts}
                 minimumAmount={minimumAmount}
@@ -119,8 +131,6 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
             />
         )
     }
-
-    const isShowing = Boolean(lnurlWithdrawal || requestInvoiceArgs)
 
     return (
         <CustomOverlay
