@@ -153,6 +153,7 @@ export const JoinFederation: React.FC = () => {
                             federation={{
                                 id: federationPreview.id,
                                 name: federationPreview.name,
+                                meta: federationPreview.meta,
                             }}
                             size="lg"
                         />

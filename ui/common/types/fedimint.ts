@@ -145,6 +145,7 @@ export interface ClientConfigMetadata {
     default_currency?: SupportedCurrency
     welcome_message?: string
     tos_url?: string
+    federation_icon_url?: string
     // TODO: client config meta only supports strings currently so
     // will need to refactor these:
     // 1. switch to boolean true/false
