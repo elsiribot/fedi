@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const BitcoinRequestHeader: React.FC<{}> = () => {
+const ReceiveLightningHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
@@ -20,4 +20,4 @@ const BitcoinRequestHeader: React.FC<{}> = () => {
     )
 }
 
-export default BitcoinRequestHeader
+export default ReceiveLightningHeader
