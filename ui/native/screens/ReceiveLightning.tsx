@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useMinMaxRequestAmount } from '@fedi/common/hooks/amount'
+import { useRequestForm } from '@fedi/common/hooks/amount'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -30,21 +30,21 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
-    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount({
+    const {
+        inputAmount: amount,
+        setInputAmount: setAmount,
+        exactAmount,
+        memo,
+        minimumAmount,
+        maximumAmount,
+    } = useRequestForm({
         lnurlWithdrawal,
     })
     const { toast } = useEnvironmentContext().state
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
-    const [amount, setAmount] = useState<Sats>(
-        lnurlWithdrawal?.maxWithdrawable
-            ? amountUtils.msatToSat(lnurlWithdrawal?.maxWithdrawable)
-            : (0 as Sats),
-    )
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
-    // TODO integrate memo
-    const [memo] = useState<string>(lnurlWithdrawal?.defaultDescription || '')
 
     useEffect(() => {
         const createNewInvoice = async () => {
@@ -128,6 +128,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                     minimumAmount={minimumAmount}
                     maximumAmount={maximumAmount}
                     submitAttempts={submitAttempts}
+                    readOnly={Boolean(exactAmount)}
                     verb={t('words.request')}
                 />
                 <Button

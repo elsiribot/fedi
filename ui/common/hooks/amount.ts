@@ -14,6 +14,11 @@ import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
+interface RequestAmountArgs {
+    lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
+    requestInvoiceArgs?: RequestInvoiceArgs | null
+}
+
 // prettier-ignore
 const numpadButtons = [
     1, 2, 3,
@@ -166,11 +171,8 @@ export function useAmountInput(
  */
 export function useMinMaxRequestAmount({
     lnurlWithdrawal,
-    weblnRequest,
-}: {
-    lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
-    weblnRequest?: RequestInvoiceArgs | null
-} = {}) {
+    requestInvoiceArgs,
+}: RequestAmountArgs = {}) {
     const maxReceiveAmount = useCommonSelector(selectMaxReceiveAmount)
 
     return useMemo(() => {
@@ -190,22 +192,22 @@ export function useMinMaxRequestAmount({
                 ) as Sats
             }
         }
-        if (weblnRequest) {
-            if (weblnRequest.minimumAmount) {
+        if (requestInvoiceArgs) {
+            if (requestInvoiceArgs.minimumAmount) {
                 minimumAmount = Math.max(
-                    parseInt(weblnRequest.minimumAmount as string, 10),
+                    parseInt(requestInvoiceArgs.minimumAmount as string, 10),
                     minimumAmount,
                 ) as Sats
             }
-            if (weblnRequest.maximumAmount) {
+            if (requestInvoiceArgs.maximumAmount) {
                 maximumAmount = Math.min(
-                    parseInt(weblnRequest.maximumAmount as string, 10),
+                    parseInt(requestInvoiceArgs.maximumAmount as string, 10),
                     maximumAmount,
                 ) as Sats
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [maxReceiveAmount, lnurlWithdrawal, weblnRequest])
+    }, [maxReceiveAmount, lnurlWithdrawal, requestInvoiceArgs])
 }
 
 /**
@@ -236,4 +238,83 @@ export function useMinMaxSendAmount({
         }
         return { minimumAmount, maximumAmount }
     }, [balance, lnurlPayment])
+}
+
+/**
+ * Provide all the state necessary to implement a request form that generates
+ * a Lightning invoice. Optionally provide a set of WebLN requestInvoice args
+ * or an LNURL withdrawal.
+ */
+export function useRequestForm(args: RequestAmountArgs = {}) {
+    const { minimumAmount, maximumAmount } = useMinMaxRequestAmount(args)
+    const [inputAmount, setInputAmount] = useState(
+        getDefaultRequestAmount(args),
+    )
+    const [memo, setMemo] = useState(getDefaultRequestMemo(args))
+    const argsRef = useUpdatingRef(args)
+
+    const reset = useCallback(() => {
+        setInputAmount(getDefaultRequestAmount(argsRef.current))
+        setMemo(getDefaultRequestMemo(argsRef.current))
+    }, [argsRef])
+
+    // Determine if they should be able to change the amount, or if an exact
+    // amount is requested.
+    let exactAmount: Sats | undefined = undefined
+    if (
+        args.lnurlWithdrawal &&
+        args.lnurlWithdrawal.minWithdrawable &&
+        args.lnurlWithdrawal.minWithdrawable ===
+            args.lnurlWithdrawal.maxWithdrawable
+    ) {
+        exactAmount = amountUtils.msatToSat(
+            args.lnurlWithdrawal.minWithdrawable,
+        )
+    }
+    if (args.requestInvoiceArgs?.amount) {
+        exactAmount = parseInt(
+            args.requestInvoiceArgs.amount as string,
+            10,
+        ) as Sats
+    }
+
+    return {
+        inputAmount,
+        setInputAmount,
+        memo,
+        setMemo,
+        exactAmount,
+        minimumAmount,
+        maximumAmount,
+        reset,
+    }
+}
+
+function getDefaultRequestAmount({
+    requestInvoiceArgs,
+    lnurlWithdrawal,
+}: RequestAmountArgs) {
+    if (lnurlWithdrawal?.maxWithdrawable) {
+        return amountUtils.msatToSat(lnurlWithdrawal?.maxWithdrawable)
+    }
+    if (requestInvoiceArgs?.amount) {
+        return parseInt(requestInvoiceArgs.amount as string, 10) as Sats
+    }
+    if (requestInvoiceArgs?.defaultAmount) {
+        return parseInt(requestInvoiceArgs.defaultAmount as string, 10) as Sats
+    }
+    return 0 as Sats
+}
+
+function getDefaultRequestMemo({
+    requestInvoiceArgs,
+    lnurlWithdrawal,
+}: RequestAmountArgs) {
+    if (lnurlWithdrawal?.defaultDescription) {
+        return lnurlWithdrawal.defaultDescription
+    }
+    if (requestInvoiceArgs?.defaultMemo) {
+        return requestInvoiceArgs.defaultMemo
+    }
+    return ''
 }
