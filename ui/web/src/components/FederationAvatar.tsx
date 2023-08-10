@@ -7,15 +7,15 @@ import { Federation } from '@fedi/common/types'
 import { Avatar, AvatarProps } from './Avatar'
 
 type Props = Omit<AvatarProps, 'id' | 'shape' | 'name'> & {
-    federation: Pick<Federation, 'id' | 'name'>
+    federation: Pick<Federation, 'id' | 'name' | 'meta'>
 }
 
 export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {
     let src: string | undefined
 
     // TODO: pull icon from federation meta, not hard coded name matching
-    if ((federation as Federation)?.meta?.federation_icon_url) {
-        src = (federation as Federation)?.meta?.federation_icon_url
+    if (federation.meta.federation_icon_url) {
+        src = federation.meta.federation_icon_url
     } else if (federation.name.toLowerCase().includes('alpha')) {
         src = FederationAlphaImage.src
     } else if (federation.name.toLowerCase().includes('prague')) {
