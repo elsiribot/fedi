@@ -8,7 +8,13 @@ import {
     selectFederationMetadata,
     selectFederationBalance,
 } from '../redux'
-import { Btc, ParsedLnurlPay, ParsedLnurlWithdraw, Sats } from '../types'
+import {
+    Btc,
+    Invoice,
+    ParsedLnurlPay,
+    ParsedLnurlWithdraw,
+    Sats,
+} from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
@@ -17,6 +23,11 @@ import { useUpdatingRef } from './util'
 interface RequestAmountArgs {
     lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
     requestInvoiceArgs?: RequestInvoiceArgs | null
+}
+
+interface SendAmountArgs {
+    invoice?: Invoice | null
+    lnurlPayment?: ParsedLnurlPay['data'] | null
 }
 
 // prettier-ignore
@@ -215,9 +226,13 @@ export function useMinMaxRequestAmount({
  * LNURL pay request as part of the calculation.
  */
 export function useMinMaxSendAmount({
+    invoice,
     lnurlPayment,
-}: { lnurlPayment?: ParsedLnurlPay['data'] } = {}) {
+}: SendAmountArgs = {}) {
     const balance = useCommonSelector(selectFederationBalance)
+
+    const invoiceAmount = invoice?.amount
+    const { minSendable, maxSendable } = lnurlPayment || {}
 
     return useMemo(() => {
         let minimumAmount = 1 as Sats // Cannot send millisat amounts
@@ -225,19 +240,21 @@ export function useMinMaxSendAmount({
         if (balance) {
             maximumAmount = amountUtils.msatToSat(balance)
         }
-        if (lnurlPayment) {
-            if (lnurlPayment.minSendable) {
-                minimumAmount = amountUtils.msatToSat(lnurlPayment.minSendable)
+        if (invoiceAmount) {
+            minimumAmount = amountUtils.msatToSat(invoiceAmount)
+        } else {
+            if (minSendable) {
+                minimumAmount = amountUtils.msatToSat(minSendable)
             }
-            if (lnurlPayment.maxSendable) {
+            if (maxSendable) {
                 maximumAmount = Math.min(
-                    amountUtils.msatToSat(lnurlPayment.maxSendable),
+                    amountUtils.msatToSat(maxSendable),
                     maximumAmount || Infinity,
                 ) as Sats
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [balance, lnurlPayment])
+    }, [balance, invoiceAmount, minSendable, maxSendable])
 }
 
 /**
@@ -317,4 +334,47 @@ function getDefaultRequestMemo({
         return requestInvoiceArgs.defaultMemo
     }
     return ''
+}
+
+/**
+ * Provide all the state necessary to implement a pay form that generates
+ * a Lightning invoice. Optionally provide an LNURL pay request.
+ */
+export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
+    const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
+        invoice,
+        lnurlPayment,
+    })
+    const minimumAmountRef = useUpdatingRef(minimumAmount)
+
+    // Determine if they should be able to change the amount, or if an exact
+    // amount is requested.
+    let exactAmount: Sats | undefined = undefined
+    let description: string | undefined
+    if (invoice) {
+        exactAmount = amountUtils.msatToSat(invoice.amount)
+        description = invoice.description
+    } else if (
+        lnurlPayment &&
+        lnurlPayment.minSendable &&
+        lnurlPayment.minSendable === lnurlPayment.maxSendable
+    ) {
+        exactAmount = amountUtils.msatToSat(lnurlPayment.minSendable)
+        description = lnurlPayment.description
+    }
+
+    const reset = useCallback(() => {
+        setInputAmount(minimumAmountRef.current)
+    }, [minimumAmountRef])
+
+    return {
+        inputAmount,
+        setInputAmount,
+        description,
+        exactAmount,
+        minimumAmount,
+        maximumAmount,
+        reset,
+    }
 }
