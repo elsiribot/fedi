@@ -12,7 +12,6 @@ import {
 
 import { FederationLogo } from '../components/ui/FederationLogo'
 import HoloGradient from '../components/ui/HoloGradient'
-import { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -35,11 +34,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <ScrollView
                     contentContainerStyle={styles(theme).innerCardContainer}>
-                    <FederationLogo
-                        federation={activeFederation}
-                        size={SvgImageSize.xl}
-                    />
-                    {/*refer to below image style for above image*/}
+                    <FederationLogo federation={activeFederation} size={96} />
                     <Text h2 medium style={styles(theme).welcome}>
                         {t('feature.onboarding.welcome-to-federation')}
                     </Text>
@@ -134,11 +129,6 @@ const styles = (theme: Theme) =>
             marginTop: 'auto',
             width: '100%',
             alignItems: 'center',
-        },
-        image: {
-            height: 100,
-            width: 100,
-            resizeMode: 'contain',
         },
         roundedCardContainer: {
             marginTop: 'auto',

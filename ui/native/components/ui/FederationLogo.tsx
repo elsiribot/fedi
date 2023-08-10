@@ -1,4 +1,5 @@
 import React from 'react'
+import { Image } from 'react-native'
 
 import { Federation } from '@fedi/common/types'
 
@@ -14,7 +15,6 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
     const svgProps =
         typeof size === 'number' ? { width: size, height: size } : undefined
 
-    // TODO: pull icon from federation meta, not hard coded name matching
     let name: SvgImageName = 'Federation'
     if (federation?.name.toLowerCase().includes('alpha')) {
         name = 'FederationAlphaIcon'
@@ -22,7 +22,13 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
         name = 'FederationPragueIcon'
     }
 
-    return (
+    return federation?.meta?.federation_icon_url ? (
+        <Image
+            style={svgProps}
+            source={{ uri: federation?.meta?.federation_icon_url }}
+            resizeMode="cover"
+        />
+    ) : (
         <SvgImage
             name={name}
             size={svgSize}

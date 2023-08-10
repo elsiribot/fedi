@@ -19,7 +19,7 @@ import { Images } from '../../../assets/images'
 import { useAppSelector, useBtcFiatPrice } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import { FederationLogo } from '../../ui/FederationLogo'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 
 type Props = {
     federation: Federation
@@ -37,7 +37,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
     return (
         <View style={styles(theme).drawerItemLabel}>
-            <FederationLogo federation={federation} size={SvgImageSize.lg} />
+            <FederationLogo federation={federation} size={48} />
             <View style={styles(theme).labelsContainer}>
                 <Text bold numberOfLines={1}>
                     {federation.name}
