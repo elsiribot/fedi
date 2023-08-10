@@ -167,7 +167,7 @@ async function run() {
                     // Otherwise sort alphabetically
                     return a.key.localeCompare(b.key)
                 },
-            }),
+            }) + '\n',
         )
         console.info('Wrote updated language file to', languagePath)
     }
