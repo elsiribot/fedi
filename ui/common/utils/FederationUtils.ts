@@ -309,8 +309,34 @@ export async function getFederationPreview(
                         'Unnamed federation'
                 }
                 if (data.id === 1) {
-                    consensusVersion = data.result.core.consensus
+                    // Breaking API change in newer versions of fedimint
+                    // TODO: Remove this ternary far in the future.
+                    consensusVersion =
+                        'core_consensus' in data.result.core
+                            ? data.result.core.core_consensus
+                            : data.result.core.consensus
+                    if (typeof consensusVersion !== 'number') {
+                        // No clue what this response is, make it some future version
+                        console.warn(
+                            'getFederationPreview: got unexpected consensusVersion, setting to 999',
+                            { consensusVersion },
+                        )
+                        consensusVersion = 999
+                    }
+
                     apiVersion = data.result.core.api[0]
+                    if (
+                        !apiVersion ||
+                        typeof apiVersion.major !== 'number' ||
+                        typeof apiVersion.minor !== 'number'
+                    ) {
+                        // No clue what this response is, make it some future version
+                        console.warn(
+                            'getFederationPreview: got unexpected apiVersion, setting to 999',
+                            { apiVersion },
+                        )
+                        apiVersion = { major: 999, minor: 999 }
+                    }
                 }
                 if (consensusVersion !== undefined && apiVersion && meta) {
                     resolve({
