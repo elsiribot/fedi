@@ -79,12 +79,14 @@ export const PopupFederationCountdown: React.FC = () => {
                         {countdownI18nText}
                     </View>
                     <Text caption style={style.overlaySpacing}>
-                        <Trans
-                            t={t}
-                            i18nKey="feature.popup.ending-description"
-                            values={{ date: popupInfo.endsAtText }}
-                            components={{ bold: <Text caption bold /> }}
-                        />
+                        {popupInfo.countdownMessage || (
+                            <Trans
+                                t={t}
+                                i18nKey="feature.popup.ending-description"
+                                values={{ date: popupInfo.endsAtText }}
+                                components={{ bold: <Text caption bold /> }}
+                            />
+                        )}
                     </Text>
                     <Button
                         // containerStyle={style.buttonContainer}
