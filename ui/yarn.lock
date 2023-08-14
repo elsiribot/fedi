@@ -12750,10 +12750,6 @@ react-native-video@5.2.1:
   version "2.15.4"
   resolved "https://github.com/fedibtc/react-native-vision-camera#a7829bbd1eef7f4f967a1ea0f2faf72b3bb0cce8"
 
-react-native-webln@fedibtc/react-native-webln#0.1.11-patch:
-  version "0.1.11"
-  resolved "https://codeload.github.com/fedibtc/react-native-webln/tar.gz/d20aa5ba83ba69a718cce990f59ae3403b5befb3"
-
 react-native-webview@13.2.2:
   version "13.2.2"
   resolved "https://registry.yarnpkg.com/react-native-webview/-/react-native-webview-13.2.2.tgz#06b04db8e1f4ed57a9dc92f4094aa0e41271b89b"
