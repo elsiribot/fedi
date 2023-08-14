@@ -2,11 +2,12 @@
 
 The Fedi UI codebase is a Yarn workspace that's split between 3 projects:
 
-| | |
-| --- | --- |
-| `common` | Shared constants, utilities, and types between all clients |
-| `native` | A `react-native` based native app for Android and iOS |
-| `web` | A `next` based progressive web app for desktop and mobile web |
+|              |                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------- |
+| `common`     | Shared constants, utilities, and types between all clients                                               |
+| `injections` | A set of scripts that can be injected into webviews to provide WebLN, NIP-07, or any other functionality |
+| `native`     | A `react-native` based native app for Android and iOS                                                    |
+| `web`        | A `next` based progressive web app for desktop and mobile web                                            |
 
 ## Development Environment: Nix
 

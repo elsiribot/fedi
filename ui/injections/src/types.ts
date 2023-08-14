@@ -1,0 +1,92 @@
+import type {
+    GetInfoResponse,
+    KeysendArgs,
+    RequestInvoiceArgs,
+    SendPaymentResponse,
+    RequestInvoiceResponse,
+    SignMessageResponse,
+} from 'webln'
+
+export enum InjectionMessageType {
+    webln_enable = 'webln_enable',
+    webln_getInfo = 'webln_getInfo',
+    webln_sendPayment = 'webln_sendPayment',
+    webln_keysend = 'webln_keysend',
+    webln_makeInvoice = 'webln_makeInvoice',
+    webln_signMessage = 'webln_signMessage',
+    webln_verifyMessage = 'webln_verifyMessage',
+    // TODO: Nostr
+    // nostr_getPublicKey = 'nostr_getPublicKey',
+    // nostr_signEvent = 'nostr_signEvent',
+    // nostr_getRelays = 'nostr_getRelays',
+    // nostr_nip04_encrypt = 'nostr_nip04_encrypt',
+    // nostr_nip04_decrypt = 'nostr_nip04_decrypt',
+}
+
+export type InjectionMessageResponseMap = {
+    [InjectionMessageType.webln_enable]: {
+        message: void
+        response: void
+    }
+    [InjectionMessageType.webln_getInfo]: {
+        message: void
+        response: GetInfoResponse
+    }
+    [InjectionMessageType.webln_sendPayment]: {
+        message: string
+        response: SendPaymentResponse
+    }
+    [InjectionMessageType.webln_keysend]: {
+        message: KeysendArgs
+        response: SendPaymentResponse
+    }
+    [InjectionMessageType.webln_makeInvoice]: {
+        message: RequestInvoiceArgs
+        response: RequestInvoiceResponse
+    }
+    [InjectionMessageType.webln_signMessage]: {
+        message: string
+        response: SignMessageResponse
+    }
+    [InjectionMessageType.webln_verifyMessage]: {
+        message: {
+            signature: string
+            message: string
+        }
+        response: void
+    }
+}
+
+export type InjectionRequestMessage<T extends InjectionMessageType> = {
+    id: number
+    type: T
+    data: InjectionMessageResponseMap[T]['message']
+}
+
+export type AnyInjectionRequestMessage =
+    InjectionRequestMessage<InjectionMessageType>
+
+export type InjectionResponseMessage<T extends InjectionMessageType> = {
+    id: number
+    type: T
+    data: InjectionMessageResponseMap[T]['response']
+}
+
+export type AnyInjectionResponseMessage =
+    InjectionResponseMessage<InjectionMessageType>
+
+export interface InjectionResponseError {
+    id: number
+    type: InjectionMessageType
+    error: { message: string }
+}
+
+export type InjectionMessageHandler<T extends InjectionMessageType> = (
+    data: InjectionRequestMessage<T>['data'],
+) =>
+    | InjectionResponseMessage<T>['data']
+    | Promise<InjectionResponseMessage<T>['data']>
+
+export type InjectionMessageHandlers = {
+    [T in InjectionMessageType]: InjectionMessageHandler<T>
+}

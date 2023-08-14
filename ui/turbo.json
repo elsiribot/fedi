@@ -5,6 +5,9 @@
         "@fedi/common#build": {
             "outputs": ["dist/**"]
         },
+        "@fedi/injections#build": {
+            "outputs": ["dist/**"]
+        },
         "@fedi/web#build": {
             "dependsOn": ["^build"],
             "outputs": [".next/**", "!.next/cache/**"]
@@ -20,7 +23,7 @@
             "dependsOn": ["^build"]
         },
         "@fedi/native#dev": {
-            "dependsOn": ["@fedi/common#build"]
+            "dependsOn": ["@fedi/common#build", "@fedi/injections#build"]
         }
     }
 }
