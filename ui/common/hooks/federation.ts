@@ -49,6 +49,9 @@ export function usePopupFederationInfo() {
     const [secondsLeft, setTimeLeft] = useState(0)
     const [endsInText, setShutdownTime] = useState('')
 
+    const countdownMessage = activeFederation?.meta?.popup_countdown_message
+    const endedMessage = activeFederation?.meta?.popup_ended_message
+
     // Uncomment me to test popup federations
     // const [rawTimestamp] = useState((1686584896.205).toString())
 
@@ -106,6 +109,8 @@ export function usePopupFederationInfo() {
     if (!endTimestamp) return null
 
     return {
+        countdownMessage,
+        endedMessage,
         endTimestamp,
         secondsLeft,
         endsInText,

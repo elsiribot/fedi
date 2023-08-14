@@ -118,12 +118,14 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                     </Text>
                 </View>
                 <Text caption style={{ textAlign: 'center' }}>
-                    <Trans
-                        t={t}
-                        i18nKey="feature.popup.ended-description"
-                        values={{ date: popupInfo?.endsAtText }}
-                        components={{ bold: <Text caption bold /> }}
-                    />
+                    {popupInfo?.endedMessage || (
+                        <Trans
+                            t={t}
+                            i18nKey="feature.popup.ended-description"
+                            values={{ date: popupInfo?.endsAtText }}
+                            components={{ bold: <Text caption bold /> }}
+                        />
+                    )}
                 </Text>
             </View>
 
