@@ -41,7 +41,7 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun getSupportedEvents(promise: Promise) {
         var arrayList = fedimintGetSupportedEvents()
-        var nativeArray = Arguments.fromList(arrayList);
+        var nativeArray = Arguments.fromList(arrayList)
         promise.resolve(nativeArray)
     }
 
