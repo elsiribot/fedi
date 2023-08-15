@@ -4,7 +4,6 @@ import android.util.Log
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.rustylibs.fedi.*
-import com.facebook.react.bridge.Arguments
 
 import kotlinx.coroutines.*
 
@@ -36,13 +35,6 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
             var response = fedimintRpc(method, payload)
             promise.resolve(response)
         }
-    }
-
-    @ReactMethod
-    fun getSupportedEvents(promise: Promise) {
-        var arrayList = fedimintGetSupportedEvents()
-        var nativeArray = Arguments.fromList(arrayList)
-        promise.resolve(nativeArray)
     }
 
     companion object {
