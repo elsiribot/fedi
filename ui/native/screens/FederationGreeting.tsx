@@ -4,10 +4,11 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { connectChat, selectAuthenticatedMember } from '@fedi/common/redux'
 
+import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -19,6 +20,8 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const dispatch = useAppDispatch()
+    const { activeFederationId } = useAppSelector(s => s.federation)
 
     return (
         <View style={styles(theme).container}>
@@ -42,7 +45,14 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 fullWidth
                 title={t('feature.onboarding.continue-to-fedi')}
-                onPress={() => {
+                onPress={async () => {
+                    if (!activeFederationId) return
+                    await dispatch(
+                        connectChat({
+                            fedimint,
+                            federationId: activeFederationId,
+                        }),
+                    ).unwrap()
                     navigation.replace('TabsNavigator')
                 }}
                 containerStyle={styles(theme).button}
