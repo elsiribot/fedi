@@ -203,7 +203,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     ) : (
                         <>
                             <Button
-                                title={'sup'}
+                                title={t('words.request')}
                                 onPress={requestEcash}
                                 disabled={isLoading}
                                 loading={isLoading && submitType === 'request'}
