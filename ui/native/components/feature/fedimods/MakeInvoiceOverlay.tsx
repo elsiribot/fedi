@@ -1,14 +1,21 @@
-import React, { useCallback, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RejectionError, RequestInvoiceArgs } from 'webln'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
+import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useBridge, useBtcFiatPrice } from '../../../state/hooks'
+import {
+    useAppSelector,
+    useBridge,
+    useBtcFiatPrice,
+} from '../../../state/hooks'
 import { FediMod, ParsedLnurlWithdraw } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
@@ -32,9 +39,11 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     const { toast } = useEnvironmentContext().state
     const { generateInvoice } = useBridge()
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
+    const federationId = useAppSelector(selectActiveFederation)?.id
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const [submitAttempts, setSubmitAttempts] = useState(0)
+    const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
     const {
         inputAmount,
@@ -43,9 +52,19 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
         minimumAmount,
         maximumAmount,
         exactAmount,
+        reset,
     } = useRequestForm({ requestInvoiceArgs, lnurlWithdrawal })
 
-    const handleAccept = useCallback(async () => {
+    // Reset form when it appears
+    const isShowing = Boolean(requestInvoiceArgs || lnurlWithdrawal)
+    useEffect(() => {
+        if (isShowing) {
+            reset()
+            setAmountInputKey(key => key + 1)
+        }
+    }, [isShowing, reset])
+
+    const handleAccept = async () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (inputAmount > maximumAmount || inputAmount < minimumAmount) {
             return
@@ -53,10 +72,17 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
 
         try {
             setIsLoading(true)
-            const paymentRequest = await generateInvoice(
-                amountUtils.satToMsat(inputAmount),
-                memo,
-            )
+            if (!federationId) throw new Error()
+            const msats = amountUtils.satToMsat(inputAmount)
+            const paymentRequest = lnurlWithdrawal
+                ? await lnurlWithdraw(
+                      fedimint,
+                      federationId,
+                      lnurlWithdrawal,
+                      msats,
+                      memo,
+                  )
+                : await generateInvoice(msats, memo)
             onAcceptRef.current({ paymentRequest })
         } catch (error) {
             toast?.show(
@@ -65,23 +91,13 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
             )
             onRejectRef.current(error as Error)
         }
-    }, [
-        inputAmount,
-        memo,
-        generateInvoice,
-        maximumAmount,
-        minimumAmount,
-        onAcceptRef,
-        onRejectRef,
-        t,
-        toast,
-    ])
+    }
 
-    const handleReject = useCallback(() => {
+    const handleReject = () => {
         onRejectRef.current(
             new RejectionError(t('errors.webln-payment-request-rejected')),
         )
-    }, [onRejectRef, t])
+    }
 
     let title = ''
     let message = ''
@@ -102,6 +118,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
         description = requestInvoiceArgs?.defaultMemo || ''
         body = (
             <AmountInput
+                key={amountInputKey}
                 amount={inputAmount}
                 submitAttempts={submitAttempts}
                 minimumAmount={minimumAmount}
@@ -114,8 +131,6 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
             />
         )
     }
-
-    const isShowing = Boolean(lnurlWithdrawal || requestInvoiceArgs)
 
     return (
         <CustomOverlay

@@ -18,6 +18,7 @@ import CustomToast from './components/ui/CustomToast'
 import { ErrorScreen } from './screens/ErrorScreen'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
+import { OmniLinkContextProvider } from './state/contexts/OmniLinkContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
@@ -113,6 +114,7 @@ const App = () => {
                             providers={[
                                 EnvironmentProvider,
                                 BackupRecoveryProvider,
+                                OmniLinkContextProvider,
                             ]}>
                             {bridgeIsReady && <Router />}
                             <CustomToast />

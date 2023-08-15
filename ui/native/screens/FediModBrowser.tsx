@@ -21,6 +21,8 @@ import {
     Invoice,
     MSats,
     ParsedLnurlAuth,
+    ParsedLnurlPay,
+    ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -32,6 +34,7 @@ import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserH
 import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useOmniLinkInterceptor } from '../state/contexts/OmniLinkContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -65,10 +68,35 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
 
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
+    const [lnurlWithdrawal, setLnurlWithdrawal] = useState<
+        ParsedLnurlWithdraw['data'] | null
+    >(null)
     const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null)
+    const [lnurlPayment, setLnurlPayment] = useState<
+        ParsedLnurlPay['data'] | null
+    >(null)
     const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
         ParsedLnurlAuth['data'] | null
     >(null)
+
+    // Intercept any URIs the user tries to navigate to that we can handle inline
+    useOmniLinkInterceptor(parsedLink => {
+        switch (parsedLink.type) {
+            case ParserDataType.LnurlWithdraw:
+                setLnurlWithdrawal(parsedLink.data)
+                return true
+            case ParserDataType.Bolt11:
+                setInvoiceToPay(parsedLink.data)
+                return true
+            case ParserDataType.LnurlPay:
+                setLnurlPayment(parsedLink.data)
+                return true
+            case ParserDataType.LnurlAuth:
+                setLnurlAuthRequest(parsedLink.data)
+                return true
+        }
+        return false
+    })
 
     // Handle all messages coming from a WebLN-enabled site
     const onMessage = onMessageHandler(webview, {
@@ -185,7 +213,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
 
     const resetOverlay = () => {
         setRequestInvoiceArgs(null)
+        setLnurlWithdrawal(null)
         setInvoiceToPay(null)
+        setLnurlPayment(null)
         setLnurlAuthRequest(null)
     }
 
@@ -240,8 +270,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             <MakeInvoiceOverlay
                 {...overlayProps}
                 requestInvoiceArgs={requestInvoiceArgs}
+                lnurlWithdrawal={lnurlWithdrawal}
             />
-            <SendPaymentOverlay {...overlayProps} invoice={invoiceToPay} />
+            <SendPaymentOverlay
+                {...overlayProps}
+                invoice={invoiceToPay}
+                lnurlPayment={lnurlPayment}
+            />
             <AuthOverlay
                 {...overlayProps}
                 lnurlAuthRequest={lnurlAuthRequest}
