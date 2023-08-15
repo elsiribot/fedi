@@ -750,7 +750,11 @@ fn with_separator(n: u64) -> String {
 }
 
 fn format_amount(amount: Amount) -> String {
-    format!("{} sats", with_separator(amount.msats / 1000))
+    if amount.msats < 10000 && amount.msats % 1000 != 0 {
+        format!("{} msats", amount.msats)
+    } else {
+        format!("{} sats", with_separator(amount.msats / 1000))
+    }
 }
 
 pub fn format_state(mut state: LndGatewaysState) -> anyhow::Result<std::io::Cursor<Vec<u8>>> {
