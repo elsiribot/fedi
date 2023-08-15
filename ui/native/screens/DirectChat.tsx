@@ -9,6 +9,7 @@ import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
     fetchChatMember,
     selectChatClientStatus,
+    selectChatConnectionOptions,
     selectChatMember,
     selectChatMessages,
     sendDirectMessage,
@@ -27,7 +28,16 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { memberId } = route.params
+    const { memberId: memberIdParam } = route.params
+
+    // Check for missing domain in case we scan an old member QR
+    let memberId = memberIdParam
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
+    if (!memberId.includes('@') && connectionOptions) {
+        const { domain } = connectionOptions
+        memberId = `${memberId}@${domain}`
+    }
+
     const isFocused = useIsFocused()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(
