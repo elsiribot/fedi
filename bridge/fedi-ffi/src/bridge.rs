@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
+    error::ErrorCode,
     event::{Event, TypedEventExt},
     recovery::{
         SocialRecoveryApproval, SocialRecoveryIdKey, SocialRecoveryQr, SocialRecoveryStateKey,
@@ -205,7 +206,10 @@ impl Bridge {
     pub async fn leave_federation(&self, federation_id: &FederationId) -> anyhow::Result<()> {
         // shut down state machines
         {
-            let federation = self.get_federation(federation_id).await.unwrap();
+            let federation = self
+                .get_federation(federation_id)
+                .await
+                .context(ErrorCode::FederationNotFound)?;
             federation
                 .task_group
                 .clone()

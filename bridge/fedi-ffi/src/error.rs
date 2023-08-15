@@ -13,6 +13,8 @@ pub enum ErrorCode {
     InvalidInvoice,
     #[error("Invalid Mnemonic")]
     InvalidMnemonic,
+    #[error("Federation not found")]
+    FederationNotFound,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {
