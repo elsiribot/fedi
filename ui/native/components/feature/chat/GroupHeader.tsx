@@ -5,7 +5,6 @@ import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { selectChatGroup } from '@fedi/common/redux'
-import { ChatGroup } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
@@ -38,7 +37,7 @@ const GroupHeader: React.FC<{}> = () => {
                     onPress={() => {
                         navigation.navigate('GroupAdmin', { groupId })
                     }}>
-                    <GroupIcon chat={group as ChatGroup} size={AvatarSize.sm} />
+                    {group && <GroupIcon chat={group} size={AvatarSize.sm} />}
                     <Text
                         bold
                         numberOfLines={1}
