@@ -29,7 +29,7 @@ import NewMessageHeader from './components/feature/chat/NewMessageHeader'
 import ScanMemberCodeHeader from './components/feature/chat/ScanMemberCodeHeader'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import FederationInviteHeader from './components/feature/federations/FederationInviteHeader'
-import ScanFederationCodeHeader from './components/feature/federations/ScanFederationCodeHeader'
+import JoinFederationHeader from './components/feature/federations/JoinFederationHeader'
 import SelectedFederationHeader from './components/feature/federations/SelectedFederationHeader'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import EulaHeader from './components/feature/onboarding/EulaHeader'
@@ -77,6 +77,7 @@ import GroupAdmin from './screens/GroupAdmin'
 import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
 import Initializing from './screens/Initializing'
+import JoinFederation from './screens/JoinFederation'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
@@ -92,7 +93,6 @@ import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
 import RecoveryWords from './screens/RecoveryWords'
-import ScanFederationCode from './screens/ScanFederationCode'
 import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
@@ -165,10 +165,10 @@ const MainNavigator = () => {
                         }}
                     />
                     <Stack.Screen
-                        name="ScanFederationCode"
-                        component={ScanFederationCode}
+                        name="JoinFederation"
+                        component={JoinFederation}
                         options={() => ({
-                            header: () => <ScanFederationCodeHeader />,
+                            header: () => <JoinFederationHeader />,
                         })}
                     />
                     <Stack.Screen
@@ -720,7 +720,7 @@ const linking: NavigationLinkingConfig = {
                     ReceiveSuccess: 'receive-success',
                     // Federations
                     FederationInvite: 'federation-invite',
-                    ScanFederationCode: 'scan-federation-code',
+                    JoinFederation: 'join-federation',
                     // Backup & Recovery
                     ChooseBackupMethod: 'choose-backup-method',
                     ChooseRecoveryMethod: 'choose-recovery-method',

@@ -18,7 +18,7 @@ describe('Basic Navigation', () => {
         await device.reloadReactNative()
     })
 
-    it('navigates from Splash to ScanFederationCode and back', async () => {
+    it('navigates from Splash to JoinFederation and back', async () => {
         // click join federation button
         const joinFederationButton = element(by.id('JoinFederationButton'))
         await expect(joinFederationButton).toBeVisible()

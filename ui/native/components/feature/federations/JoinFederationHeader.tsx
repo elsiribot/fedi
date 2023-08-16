@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const ScanFederationCodeHeader: React.FC<{}> = () => {
+const JoinFederationHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
 
     return (
@@ -12,11 +12,11 @@ const ScanFederationCodeHeader: React.FC<{}> = () => {
             backButton
             headerCenter={
                 <Text bold numberOfLines={1} adjustsFontSizeToFit>
-                    {t('feature.federations.scan-federation-invite')}
+                    {t('feature.federations.join-federation')}
                 </Text>
             }
         />
     )
 }
 
-export default ScanFederationCodeHeader
+export default JoinFederationHeader

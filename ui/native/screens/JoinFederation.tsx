@@ -17,12 +17,9 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'ScanFederationCode'
->
+export type Props = NativeStackScreenProps<RootStackParamList, 'JoinFederation'>
 
-const ScanFederationCode: React.FC<Props> = ({ navigation }: Props) => {
+const JoinFederation: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -154,4 +151,4 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
     })
 
-export default ScanFederationCode
+export default JoinFederation
