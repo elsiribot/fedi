@@ -1,6 +1,3 @@
-import { MutableRefObject } from 'react'
-import type { WebView, WebViewMessageEvent } from 'react-native-webview'
-
 import {
     AnyInjectionRequestMessage,
     InjectionMessageType,
@@ -34,16 +31,28 @@ export function generateInjectionJs(config: {
     return injections.join('\n')
 }
 
+// Types from react and react-native-webview that have been simplified and
+// inlined here to avoid unnecessary dependencies just for types.
+interface MutableRefObjectLike<T> {
+    current: T
+}
+interface WebViewLike {
+    postMessage(message: string): void
+}
+interface WebViewMessageEventLike {
+    nativeEvent: { data: string }
+}
+
 /**
  * Generates a callback intended to be passed to a react-native-webview
  * `<WebView />`'s `onMessage` prop. Takes in a `useRef` of the webview,
  * and a map of message handlers keyed by `InjectionMessageType`.
  */
 export function makeWebViewMessageHandler(
-    webviewRef: MutableRefObject<WebView>,
+    webviewRef: MutableRefObjectLike<WebViewLike>,
     handlers: InjectionMessageHandlers,
 ) {
-    return async (event: WebViewMessageEvent) => {
+    return async (event: WebViewMessageEventLike) => {
         const webview = webviewRef.current
         if (!webview) {
             throw new Error(
