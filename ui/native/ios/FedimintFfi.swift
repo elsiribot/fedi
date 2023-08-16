@@ -12,6 +12,11 @@ class FedimintFfi: NSObject {
   func rpc(_ method: NSString, payload: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
     resolve(fedimintRpc(method: String(method), payload: String(payload)))
   }
+
+  @objc
+  func getSupportedEvents(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    resolve(fedimintGetSupportedEvents());
+  }
 }
 
 @objc(BridgeNativeEventEmitter)

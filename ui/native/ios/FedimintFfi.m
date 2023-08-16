@@ -13,6 +13,10 @@ RCT_EXTERN_METHOD(rpc:(NSString*)method
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 
+
+RCT_EXTERN_METHOD(getSupportedEvents:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+
 + (BOOL)requiresMainQueueSetup
 {
   return YES;
