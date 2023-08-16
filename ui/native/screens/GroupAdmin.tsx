@@ -23,9 +23,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const myRole = useAppSelector(s => selectChatGroupRole(s, groupId))
-    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
-        group?.broadcastOnly || false,
-    )
+    const [broadcastOnly] = useState<boolean>(group?.broadcastOnly || false)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -68,17 +66,8 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <SettingsItem
                     image={<SvgImage name="SpeakerPhone" />}
                     label={t('feature.chat.broadcast-only')}
-                    action={
-                        <Switch
-                            value={broadcastOnly}
-                            onValueChange={_value => {
-                                console.info('not implemented')
-                                setBroadcastOnly(broadcastOnly)
-                            }}
-                        />
-                    }
+                    action={<Switch value={broadcastOnly} disabled />}
                     onPress={() => {
-                        console.info('not implemented')
                         toast?.show(
                             t('feature.chat.changing-broadcast-not-supported'),
                             3000,
