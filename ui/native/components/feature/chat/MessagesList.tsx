@@ -50,7 +50,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
 
     const style = styles(theme)
-    const myName = authenticatedMember?.id || ''
+    const myId = authenticatedMember?.id || ''
 
     // Animate new message button in and out
     useEffect(() => {
@@ -81,14 +81,14 @@ const MessagesList: React.FC<MessagesListProps> = ({
         lastScrolledMessageIdRef.current = lastMessage.id
 
         // If we sent it, or we're already at the bottom, scroll without asking
-        if (lastMessage.sentBy === myName || isScrolledToBottomRef.current) {
+        if (lastMessage.sentBy === myId || isScrolledToBottomRef.current) {
             scrollToEnd()
         }
         // Otherwise, mark that we have new messages
         else {
             setHasNewMessages(true)
         }
-    }, [messages, myName, scrollToEnd])
+    }, [messages, myId, scrollToEnd])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(
@@ -122,7 +122,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         const sentByName =
                             memberMap[sentBy]?.username ||
                             t('feature.chat.unknown-member')
-                        const sentByMe = sentByName && sentByName === myName
+                        const sentByMe = sentBy && sentBy === myId
                         return (
                             <View style={style.senderGroup} key={msgs[0].id}>
                                 {!sentByMe && multiUserChat && (
