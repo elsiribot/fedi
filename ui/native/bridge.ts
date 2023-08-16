@@ -27,13 +27,8 @@ export const fedimint = new FedimintBridge(fedimintRpc)
 export async function initializeBridge(dataDir: string) {
     // Pass through all native bridge events to the FedimintBridge class instance
     const emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
-    const eventTypes: (keyof FedimintBridgeEventMap)[] = [
-        'log',
-        'federation',
-        'transaction',
-        'socialRecovery',
-        'recoveryFileCreation',
-    ]
+    const eventTypes: (keyof FedimintBridgeEventMap)[] =
+        await FedimintFfi.getSupportedEvents()
     eventTypes.forEach(eventType =>
         emitter.addListener(eventType, (serializedEvent: string) => {
             fedimint.emit(eventType, JSON.parse(serializedEvent))
