@@ -32,11 +32,8 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
             '@fedi/common': path.resolve(__dirname, '../common'),
             '@fedi/injections': path.resolve(__dirname, '../injections'),
         },
-        // Ignore @fedi/common/dist/* and @fedi/injections/dist/*
-        blockList: exclusionList([
-            /.*\/common\/dist\/.*/,
-            /.*\/injections\/dist\/.*/,
-        ]),
+        // Ignore @fedi/common/dist/*
+        blockList: exclusionList([/.*\/common\/dist\/.*/]),
     },
     watchFolders: [path.resolve(__dirname, '../')],
 })
