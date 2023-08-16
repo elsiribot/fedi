@@ -23,10 +23,10 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
     const dispatch = useAppDispatch()
     const { activeFederationId } = useAppSelector(s => s.federation)
 
-    const handleContinue = useCallback(async () => {
+    const handleContinue = useCallback(() => {
         try {
             if (!activeFederationId) return
-            await dispatch(
+            dispatch(
                 connectChat({
                     fedimint,
                     federationId: activeFederationId,
