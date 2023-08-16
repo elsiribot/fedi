@@ -1,12 +1,13 @@
 import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useMemo } from 'react'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
+    joinChatGroup,
     selectChatGroup,
     selectChatGroupRole,
     selectChatMessages,
@@ -14,15 +15,18 @@ import {
 } from '@fedi/common/redux'
 import { ChatRole } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
+import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
-const GroupChat: React.FC<Props> = ({ route }: Props) => {
+const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { groupId } = route.params
@@ -31,10 +35,29 @@ const GroupChat: React.FC<Props> = ({ route }: Props) => {
         s => s.federation.activeFederationId,
     ) as string
     const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const currentGroup = group
     const myRole = useAppSelector(s => selectChatGroupRole(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
-    const dispatch = useAppDispatch()
+    const [failedToJoin, setFailedToJoin] = useState(false)
+
+    // If they're not a part of the group, encode a join link and attempt a join
+    const isGroupFound = !!group
+    useEffect(() => {
+        if (isGroupFound || failedToJoin) return
+        dispatch(
+            joinChatGroup({
+                federationId,
+                link: encodeGroupInvitationLink(groupId),
+            }),
+        )
+            .unwrap()
+            .catch(err => {
+                console.warn(
+                    `Attempted to join missing group ${groupId} but failed`,
+                    err,
+                )
+                setFailedToJoin(true)
+            })
+    }, [isGroupFound, groupId, failedToJoin, federationId, dispatch])
 
     const messageCollections = useMemo(
         () => makeMessageGroups(messages, 'desc'),
@@ -58,10 +81,29 @@ const GroupChat: React.FC<Props> = ({ route }: Props) => {
         ).unwrap()
     }
 
+    // Render a spinner while attempting join, error message if it fails
+    if (!group) {
+        return (
+            <View style={styles(theme).container}>
+                {failedToJoin ? (
+                    <View style={styles(theme).errorMessage}>
+                        <SvgImage size={SvgImageSize.md} name="ScanSad" />
+                        <Text>{t('feature.chat.invalid-group')}</Text>
+                        <Button onPress={() => navigation.goBack()}>
+                            {t('phrases.go-back')}
+                        </Button>
+                    </View>
+                ) : (
+                    <ActivityIndicator />
+                )}
+            </View>
+        )
+    }
+
     // In a broadcast-only group, members cannot send messages if they have a
     // role of 'visitor'. The creator of the group has the role of 'owner'
     const blockMessageInput =
-        currentGroup?.broadcastOnly && myRole === ChatRole.visitor
+        group?.broadcastOnly && myRole === ChatRole.visitor
 
     return (
         <View style={styles(theme).container}>
@@ -89,6 +131,12 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.xl,
             color: theme.colors.primaryLight,
             width: '70%',
+        },
+        errorMessage: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: theme.spacing.lg,
         },
     })
 
