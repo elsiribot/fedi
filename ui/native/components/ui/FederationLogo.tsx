@@ -5,8 +5,8 @@ import { Federation } from '@fedi/common/types'
 
 import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
 
-interface Props {
-    federation?: Federation
+type Props = {
+    federation?: Pick<Federation, 'id' | 'name' | 'meta'>
     size: SvgImageSize | number
 }
 

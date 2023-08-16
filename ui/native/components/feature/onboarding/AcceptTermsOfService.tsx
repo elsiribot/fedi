@@ -1,29 +1,24 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { FederationPreview } from '../../../types'
 
-import { useAppSelector } from '../state/hooks'
-import { navigate } from '../state/navigation'
-import type { RootStackParamList } from '../types/navigation'
+export type Props = {
+    federation: FederationPreview
+    onAccept: () => void
+    onReject: () => void
+}
 
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'FederationAcceptTerms'
->
-
-const FederationAcceptTerms: React.FC<Props> = ({
-    navigation,
-    route,
+const AcceptTermsOfService: React.FC<Props> = ({
+    federation,
+    onAccept,
+    onReject,
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { nextScreen } = route.params
-    const activeFederation = useAppSelector(selectActiveFederation)
 
     return (
         <View style={styles(theme).container}>
@@ -37,7 +32,7 @@ const FederationAcceptTerms: React.FC<Props> = ({
                     linkStyle={styles(theme).linkText}>
                     <Text>
                         {t('feature.onboarding.by-clicking-i-accept', {
-                            tos_url: activeFederation?.meta?.tos_url,
+                            tos_url: federation.meta?.tos_url,
                         })}
                     </Text>
                 </Hyperlink>
@@ -47,18 +42,14 @@ const FederationAcceptTerms: React.FC<Props> = ({
                 <Button
                     fullWidth
                     title={t('feature.onboarding.i-accept')}
-                    onPress={() => {
-                        navigation.dispatch(navigate(nextScreen))
-                    }}
+                    onPress={onAccept}
                     containerStyle={styles(theme).button}
                 />
                 <Button
                     fullWidth
                     type="clear"
                     title={t('feature.onboarding.i-do-not-accept')}
-                    onPress={() => {
-                        navigation.goBack()
-                    }}
+                    onPress={onReject}
                     containerStyle={styles(theme).button}
                 />
             </View>
@@ -103,4 +94,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default FederationAcceptTerms
+export default AcceptTermsOfService

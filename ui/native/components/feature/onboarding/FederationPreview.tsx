@@ -1,47 +1,48 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-    selectChatConnectionOptions,
-} from '@fedi/common/redux'
+import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
 
-import { FederationLogo } from '../components/ui/FederationLogo'
-import HoloGradient from '../components/ui/HoloGradient'
-import { useAppSelector } from '../state/hooks'
-import type { RootStackParamList } from '../types/navigation'
+import { FederationLogo } from '../../ui/FederationLogo'
+import HoloGradient from '../../ui/HoloGradient'
+import AcceptTermsOfService from './AcceptTermsOfService'
 
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'FederationWelcome'
->
+type Props = {
+    federation: FederationPreviewType
+    onJoin: (joinAs: 'returningMember' | 'newMember') => void
+}
 
-const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
+const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const [joinAs, setJoinAs] = useState<'returningMember' | 'newMember'>()
+    const [showTerms, setShowTerms] = useState<boolean>(false)
+
+    if (showTerms) {
+        return (
+            <AcceptTermsOfService
+                onAccept={() => joinAs && onJoin(joinAs)}
+                onReject={() => setShowTerms(false)}
+                federation={federation}
+            />
+        )
+    }
 
     return (
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <ScrollView
                     contentContainerStyle={styles(theme).innerCardContainer}>
-                    <FederationLogo federation={activeFederation} size={96} />
+                    <FederationLogo federation={federation} size={96} />
                     <Text h2 medium style={styles(theme).welcome}>
                         {t('feature.onboarding.welcome-to-federation')}
                     </Text>
                     <Text h2 medium style={styles(theme).welcomeTitle}>
-                        {activeFederation?.name}
+                        {federation?.name}
                     </Text>
-                    {activeFederation?.meta?.welcome_message ? (
+                    {federation?.meta?.welcome_message ? (
                         <HoloGradient
                             level="100"
                             style={styles(theme).customWelcomeContainer}
@@ -59,7 +60,7 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                                             />
                                         ),
                                     }}>
-                                    {activeFederation.meta.welcome_message}
+                                    {federation.meta.welcome_message}
                                 </Trans>
                             </Text>
                         </HoloGradient>
@@ -76,12 +77,11 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                     title={t('feature.onboarding.join-returning-member')}
                     onPress={() => {
-                        if (activeFederation?.meta?.tos_url) {
-                            navigation.navigate('FederationAcceptTerms', {
-                                nextScreen: 'ChooseRecoveryMethod',
-                            })
+                        if (federation.meta?.tos_url) {
+                            setJoinAs('returningMember')
+                            setShowTerms(true)
                         } else {
-                            navigation.navigate('ChooseRecoveryMethod')
+                            onJoin('returningMember')
                         }
                     }}
                     containerStyle={styles(theme).button}
@@ -90,21 +90,11 @@ const FederationWelcome: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     title={t('feature.onboarding.join-new-member')}
                     onPress={() => {
-                        if (activeFederation?.meta?.tos_url) {
-                            navigation.navigate('FederationAcceptTerms', {
-                                nextScreen:
-                                    activeChatConnectionOptions &&
-                                    authenticatedMember === null
-                                        ? 'CreateUsername'
-                                        : 'TabsNavigator',
-                            })
-                        } else if (
-                            activeChatConnectionOptions &&
-                            authenticatedMember === null
-                        ) {
-                            navigation.navigate('CreateUsername')
+                        if (federation.meta?.tos_url) {
+                            setJoinAs('newMember')
+                            setShowTerms(true)
                         } else {
-                            navigation.navigate('TabsNavigator')
+                            onJoin('newMember')
                         }
                     }}
                     containerStyle={styles(theme).button}
@@ -162,4 +152,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default FederationWelcome
+export default FederationPreview

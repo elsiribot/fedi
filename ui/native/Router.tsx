@@ -68,10 +68,8 @@ import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
 import EditGroup from './screens/EditGroup'
 import Eula from './screens/Eula'
-import FederationAcceptTerms from './screens/FederationAcceptTerms'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
-import FederationWelcome from './screens/FederationWelcome'
 import FediModBrowser from './screens/FediModBrowser'
 import GroupAdmin from './screens/GroupAdmin'
 import GroupChat from './screens/GroupChat'
@@ -210,27 +208,6 @@ const MainNavigator = () => {
                             />
 
                             {/* Federation Onboarding */}
-                            <Stack.Screen
-                                name="FederationWelcome"
-                                component={FederationWelcome}
-                                options={() => ({
-                                    header: () => <SelectedFederationHeader />,
-                                    animation: 'fade',
-                                    animationDuration: 300,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="FederationAcceptTerms"
-                                component={FederationAcceptTerms}
-                                initialParams={{
-                                    nextScreen: 'ChooseRecoveryMethod',
-                                }}
-                                options={() => ({
-                                    header: () => <Header backButton />,
-                                    animation: 'fade',
-                                    animationDuration: 300,
-                                })}
-                            />
                             <Stack.Screen
                                 name="CreateUsername"
                                 component={CreateUsername}

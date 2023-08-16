@@ -87,8 +87,10 @@ export const OmniConfirmation: React.FC<Props> = ({
                 icon: 'Federation',
                 title: t('feature.omni.confirm-federation-invite'),
             }
-            // TODO: Pass along scanned federation code
-            continueOnPress = () => handleNavigate('JoinFederation')
+            continueOnPress = () =>
+                handleNavigate('JoinFederation', {
+                    invite: parsedData.data.invite,
+                })
             break
         case ParserDataType.FedimintEcash:
             contents = {

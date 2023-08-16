@@ -62,7 +62,7 @@ const Initializing: React.FC<Props> = () => {
             }
             // if chat is supported but auth is not set, recover/create username
             if (isChatSupported && authenticatedMember === null) {
-                return navigation.replace('FederationWelcome')
+                return navigation.replace('CreateUsername')
             }
         }
     }, [activeFederation, authenticatedMember, isChatSupported, navigation])

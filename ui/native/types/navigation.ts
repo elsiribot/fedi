@@ -3,6 +3,7 @@ import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
+    FederationPreview,
     ParsedBolt11,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
@@ -61,10 +62,9 @@ export type RootStackParamList = {
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
-    FederationWelcome: undefined
-    FederationAcceptTerms: { nextScreen: keyof RootStackParamList }
+    FederationAcceptTerms: { federation: FederationPreview }
     Initializing: undefined
-    JoinFederation: undefined
+    JoinFederation: { invite?: string }
     MemberQrCode: undefined
     NewMessage: undefined
     PersonalBackupGuidance: undefined
