@@ -32,10 +32,10 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
                     federationId: activeFederationId,
                 }),
             )
-            navigation.replace('TabsNavigator')
         } catch (error) {
             console.error(error)
         }
+        navigation.replace('TabsNavigator')
     }, [activeFederationId, dispatch, navigation])
 
     return (
