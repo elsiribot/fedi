@@ -3,10 +3,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import {
-    selectChatConnectionOptions,
-    selectChatMember,
-} from '@fedi/common/redux'
+import { selectChatMember } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
@@ -19,15 +16,7 @@ type DirectChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 const DirectChatHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const route = useRoute<DirectChatRouteProp>()
-    const { memberId: memberIdParam } = route.params
-
-    // Check for missing domain in case we scan an old member QR
-    let memberId = memberIdParam
-    const connectionOptions = useAppSelector(selectChatConnectionOptions)
-    if (!memberId?.includes('@') && connectionOptions) {
-        const { domain } = connectionOptions
-        memberId = `${memberId}@${domain}`
-    }
+    const { memberId } = route.params
     const member = useAppSelector(s => selectChatMember(s, memberId))
     const username = member?.username || memberId.split('@')[0] || ''
 

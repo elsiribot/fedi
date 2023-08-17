@@ -1,4 +1,3 @@
-import { useNavigation, useRoute } from '@react-navigation/native'
 import { Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,41 +10,24 @@ import {
     View,
 } from 'react-native'
 
-import {
-    selectChatConnectionOptions,
-    selectChatMember,
-    selectWebsocketIsHealthy,
-} from '@fedi/common/redux'
+import { selectWebsocketIsHealthy } from '@fedi/common/redux'
 
-import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
-import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-
-type DirectChatRouteProp = DirectChatProps['route']
+import ChatWalletButton from './ChatWalletButton'
 
 type MessageInputProps = {
     onMessageSubmitted: (message: string) => void
+    memberId?: string | undefined
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
     onMessageSubmitted,
+    memberId, // should only defined for DirectChat
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<DirectChatRouteProp>()
-    const { memberId: memberIdParam } = route.params
-
-    // Check for missing domain in case we scan an old member QR
-    let memberId = memberIdParam
-    const connectionOptions = useAppSelector(selectChatConnectionOptions)
-    if (!memberId?.includes('@') && connectionOptions) {
-        const { domain } = connectionOptions
-        memberId = `${memberId}@${domain}`
-    }
-    const member = useAppSelector(s => selectChatMember(s, memberId))
 
     const { toast } = useEnvironmentContext().state
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
@@ -85,39 +67,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     : {},
             ]}>
             {/* in-chat payments only available for DirectChat */}
-            {memberId && (
-                <Pressable
-                    onPress={() => {
-                        if (!member) {
-                            toast?.show(t('errors.chat-member-not-found'), 4000)
-                            return
-                        }
-                        if (websocketIsHealthy === false) {
-                            toast?.show(
-                                t('errors.chat-connection-unhealthy'),
-                                4000,
-                            )
-                            return
-                        }
-                        navigation.navigate('ChatWallet', {
-                            recipientId: memberId,
-                        })
-                    }}>
-                    <SvgImage
-                        name="Wallet"
-                        containerStyle={{
-                            marginRight: theme.spacing.md,
-                            marginBottom: theme.spacing.sm,
-                        }}
-                        size={SvgImageSize.md}
-                        color={
-                            websocketIsHealthy && member
-                                ? theme.colors.primary
-                                : theme.colors.primaryVeryLight
-                        }
-                    />
-                </Pressable>
-            )}
+            {memberId && <ChatWalletButton memberId={memberId} />}
             <Input
                 onChangeText={setMessageText}
                 value={messageText}
