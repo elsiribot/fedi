@@ -16,6 +16,7 @@ import { XMPP_MESSAGE_TYPES, XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ArchiveQueryFilters,
     ArchiveQueryPagination,
+    ChatAffiliation,
     ChatGroup,
     ChatMember,
     ChatMessage,
@@ -35,10 +36,11 @@ import xmlUtils, {
     GroupChatMessage,
     PublishNotificationTokenQuery,
     PublishPublicKeyQuery,
-    SetMemberRoleQuery,
+    SetMemberAffiliationQuery,
     SetPubsubNodeConfigQuery,
     SetRoomConfigQuery,
     UniqueRoomNameQuery,
+    XmppMemberAffiliation,
     XmppMemberRole,
 } from './XmlUtils'
 import { jidToId } from './chat'
@@ -50,6 +52,7 @@ interface XmppChatClientEventMap {
     memberSeen: ChatMember
     group: ChatGroup
     groupRole: { groupId: string; role: ChatRole }
+    groupAffiliation: { groupId: string; affiliation: ChatAffiliation }
     error: Error
 }
 
@@ -288,11 +291,11 @@ export class XmppChatClient {
         try {
             const { iqCaller, jid } = this.getQueryProperties()
             const grantVoiceQueryXml = xmlUtils.buildQuery(
-                new SetMemberRoleQuery({
+                new SetMemberAffiliationQuery({
                     from: jid.toString(),
                     to: `${groupId}@muc.${jid.getDomain()}`,
-                    username: member.username,
-                    role: XmppMemberRole.participant,
+                    memberJid: member.id,
+                    affiliation: XmppMemberAffiliation.member,
                 }),
             )
             await iqCaller.request(grantVoiceQueryXml)
@@ -473,11 +476,11 @@ export class XmppChatClient {
         try {
             const { iqCaller, jid } = this.getQueryProperties()
             const revokeVoiceQueryXml = xmlUtils.buildQuery(
-                new SetMemberRoleQuery({
+                new SetMemberAffiliationQuery({
                     from: jid.toString(),
                     to: `${groupId}@muc.${jid.getDomain()}`,
-                    username: member.username,
-                    role: XmppMemberRole.visitor,
+                    memberJid: member.id,
+                    affiliation: XmppMemberAffiliation.none,
                 }),
             )
             await iqCaller.request(revokeVoiceQueryXml)
@@ -768,6 +771,13 @@ export class XmppChatClient {
         const role = stanza.getChild('x')?.getChild('item')?.getAttr('role')
         if (role) {
             this.emit('groupRole', { groupId, role })
+        }
+        const affiliation = stanza
+            .getChild('x')
+            ?.getChild('item')
+            ?.getAttr('affiliation')
+        if (affiliation) {
+            this.emit('groupAffiliation', { groupId, affiliation })
         }
     }
 

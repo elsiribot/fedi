@@ -31,6 +31,7 @@ import {
     ChatPaymentStatus,
     Federation,
     ChatRole,
+    ChatAffiliation,
 } from '../types'
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
@@ -70,6 +71,7 @@ const initialFederationChatState = {
     messages: [] as ChatMessage[],
     groups: [] as ChatGroup[],
     groupRoles: {} as Record<Chat['id'], string | undefined>,
+    groupAffiliations: {} as Record<Chat['id'], string | undefined>,
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
     lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
@@ -239,6 +241,23 @@ export const chatSlice = createSlice({
                 },
             }
         },
+        setChatGroupAffiliation(
+            state,
+            action: FederationPayloadAction<{
+                groupId: string
+                affiliation: string
+            }>,
+        ) {
+            const { federationId, groupId, affiliation } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                groupAffiliations: {
+                    ...federation.groupAffiliations,
+                    [groupId]: affiliation,
+                },
+            }
+        },
         addChatGroup(
             state,
             action: FederationPayloadAction<{ group: ChatGroup }>,
@@ -405,6 +424,9 @@ export const chatSlice = createSlice({
                         groups: chatState.groups,
                         groupRoles:
                             chatState.groupRoles || prevChatState.groupRoles,
+                        groupAffiliations:
+                            chatState.groupAffiliations ||
+                            prevChatState.groupAffiliations,
                         membersSeen: chatState.members,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
@@ -460,6 +482,7 @@ export const {
     setChatGroups,
     addChatGroup,
     setChatGroupRole,
+    setChatGroupAffiliation,
     setAuthenticatedMember,
     setChatEncryptionKeys,
     setLastFetchedMessageId,
@@ -628,6 +651,12 @@ export const connectChat = createAsyncThunk<
 
         client.on('groupRole', ({ groupId, role }) => {
             dispatch(setChatGroupRole({ federationId, groupId, role }))
+        })
+
+        client.on('groupAffiliation', ({ groupId, affiliation }) => {
+            dispatch(
+                setChatGroupAffiliation({ federationId, groupId, affiliation }),
+            )
         })
 
         // On connection, update various states
@@ -1219,6 +1248,9 @@ export const selectAllChatGroups = (s: CommonState) =>
 export const selectAllChatGroupRoles = (s: CommonState) =>
     selectFederationChatState(s).groupRoles
 
+export const selectAllChatGroupAffiliations = (s: CommonState) =>
+    selectFederationChatState(s).groupAffiliations
+
 export const selectChatClientStatus = (s: CommonState) =>
     selectFederationChatState(s).clientStatus
 
@@ -1463,6 +1495,18 @@ export const selectChatGroupRole = createSelector(
             return role as ChatRole
         }
         return ChatRole.visitor
+    },
+)
+
+export const selectChatGroupAffiliation = createSelector(
+    selectAllChatGroupAffiliations,
+    (_: CommonState, chatId: Chat['id']) => chatId,
+    (affiliations, chatId) => {
+        const affiliation = affiliations[chatId] || ChatAffiliation.none
+        if (Object.keys(ChatAffiliation).includes(affiliation)) {
+            return affiliation as ChatAffiliation
+        }
+        return ChatAffiliation.none
     },
 )
 

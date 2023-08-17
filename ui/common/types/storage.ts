@@ -52,15 +52,35 @@ export interface StoredStateV3 extends Omit<StoredStateV2, 'version' | 'chat'> {
     customFediMods?: Record<Federation['id'], FediMod[] | undefined>
 }
 
+export interface StoredStateV4 extends Omit<StoredStateV3, 'version' | 'chat'> {
+    version: 4
+    chat: Record<
+        Federation['id'],
+        | {
+              authenticatedMember: ChatMember | null
+              messages: ChatMessage[]
+              groups: ChatGroup[]
+              groupRoles?: Record<ChatGroup['id'], string | undefined>
+              groupAffiliations?: Record<ChatGroup['id'], string | undefined>
+              members: ChatMember[]
+              lastFetchedMessageId: string | null
+              lastReadMessageIds: Record<Chat['id'], string | undefined>
+              lastSeenMessageId: string | null
+          }
+        | undefined
+    >
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
     | StoredStateV1
     | StoredStateV2
     | StoredStateV3
+    | StoredStateV4
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV3
+export type LatestStoredState = StoredStateV4
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

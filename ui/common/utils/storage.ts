@@ -1,6 +1,7 @@
 import get from 'lodash/get'
 
 import { CommonState } from '../redux'
+import { Chat } from '../types'
 import {
     AnyStoredState,
     LatestStoredState,
@@ -17,7 +18,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 3,
+        version: 4,
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
@@ -31,6 +32,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
                         messages: chatState.messages,
                         groups: chatState.groups,
                         groupRoles: chatState.groupRoles,
+                        groupAffiliations: chatState.groupAffiliations,
                         members: chatState.membersSeen,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
@@ -176,6 +178,38 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         migrationState = {
             ...migrationState,
             version: 3,
+            chat: newChat,
+        }
+    }
+
+    // Version 3 -> 4
+    if (migrationState.version === 3) {
+        const oldChat = migrationState.chat
+        const newChat = Object.entries(oldChat).reduce(
+            (prevChat, [federationId, chatState]) => {
+                if (!chatState) return prevChat
+                if (!chatState.groupRoles) return prevChat
+                const groupAffiliations = Object.entries(
+                    chatState.groupRoles,
+                ).reduce((prevGroup, [groupId, role]) => {
+                    if (!role) return prevGroup
+                    return {
+                        [groupId]: role === 'moderator' ? 'owner' : 'none',
+                    }
+                }, {} as Record<Chat['id'], string | undefined>)
+                return {
+                    ...prevChat,
+                    [federationId]: {
+                        ...chatState,
+                        groupAffiliations,
+                    },
+                }
+            },
+            {} as StoredStateV3['chat'],
+        )
+        migrationState = {
+            ...migrationState,
+            version: 4,
             chat: newChat,
         }
     }

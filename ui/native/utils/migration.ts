@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import {
+    setChatGroupAffiliation,
     setChatGroupRole,
     setChatGroups,
     setChatMembersSeen,
@@ -76,6 +77,10 @@ const convertGroups = (legacyGroups: any) => {
         }),
         groupRoles: legacyGroups.reduce((result: any, lg: any) => {
             result[lg.id] = lg.myRole || 'moderator'
+            return result
+        }, {}),
+        groupAffiliations: legacyGroups.reduce((result: any, lg: any) => {
+            result[lg.id] = lg.myRole === 'moderator' ? 'owner' : 'none'
             return result
         }, {}),
     }
@@ -293,6 +298,21 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                             federationId: f.id,
                             groupId,
                             role: role as string,
+                        }),
+                    )
+                }
+                // Add chat group affiliations to redux
+                for (const [groupId, affiliation] of Object.entries(
+                    migratedChatGroups.groupAffiliations as Record<
+                        Chat['id'],
+                        string | undefined
+                    >,
+                )) {
+                    store.dispatch(
+                        setChatGroupAffiliation({
+                            federationId: f.id,
+                            groupId,
+                            affiliation: affiliation as string,
                         }),
                     )
                 }

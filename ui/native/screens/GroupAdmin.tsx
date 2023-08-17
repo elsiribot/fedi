@@ -4,14 +4,14 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
-import { selectChatGroup, selectChatGroupRole } from '@fedi/common/redux'
+import { selectChatGroup, selectChatGroupAffiliation } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
-import { ChatRole } from '../types'
+import { ChatAffiliation } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
@@ -22,7 +22,9 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { toast } = useEnvironmentContext().state
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const myRole = useAppSelector(s => selectChatGroupRole(s, groupId))
+    const myAffiliation = useAppSelector(s =>
+        selectChatGroupAffiliation(s, groupId),
+    )
     const [broadcastOnly] = useState<boolean>(group?.broadcastOnly || false)
 
     return (
@@ -78,7 +80,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     <SettingsItem
                         image={<SvgImage name="SpeakerPhone" />}
                         label={t('feature.chat.broadcast-admin-settings')}
-                        disabled={myRole !== ChatRole.moderator}
+                        disabled={myAffiliation === ChatAffiliation.none}
                         onPress={() => {
                             navigation.navigate('BroadcastAdminsList', {
                                 groupId,

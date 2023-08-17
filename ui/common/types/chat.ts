@@ -8,6 +8,12 @@ export enum ChatType {
     group = 'group',
 }
 
+export enum ChatAffiliation {
+    // This is the default affiliation granted to a member entering a MUC room
+    // which determines their ability to send messages in a broadcast-only room
+    none = 'none',
+    member = 'member',
+}
 export enum ChatRole {
     // This is the default role granted to a member entering a MUC room
     // which determines their ability to send messages in a broadcast-only room

@@ -14,6 +14,10 @@ interface CommonXmppAttributes {
     from?: string
     to?: string
 }
+export enum XmppMemberAffiliation {
+    none = 'none',
+    member = 'member',
+}
 export enum XmppMemberRole {
     visitor = 'visitor',
     participant = 'participant',
@@ -266,9 +270,9 @@ interface PublishNotificationTokenArgs extends CommonXmppAttributes {
 interface PublishPublicKeyArgs extends CommonXmppAttributes {
     pubkey: string
 }
-interface SetMemberRoleArgs extends CommonXmppAttributes {
-    username: string
-    role: string
+interface SetMemberAffiliationArgs extends CommonXmppAttributes {
+    memberJid: string
+    affiliation: string
 }
 type SetPubsubNodeConfigArgs = CommonXmppAttributes
 interface SetRoomConfigArgs extends CommonXmppAttributes {
@@ -556,18 +560,18 @@ export class PublishNotificationTokenQuery extends XmppQuery {
         return xml(this.tag, attributes, enableXml)
     }
 }
-export class SetMemberRoleQuery extends XmppQuery {
-    static id = 'setMemberRole'
-    args: SetMemberRoleArgs
-    constructor(args: SetMemberRoleArgs) {
+export class SetMemberAffiliationQuery extends XmppQuery {
+    static id = 'setMemberAffiliation'
+    args: SetMemberAffiliationArgs
+    constructor(args: SetMemberAffiliationArgs) {
         super()
         this.args = args
     }
     build = (): Element => {
-        const { from, to, username, role } = this.args
+        const { from, to, memberJid, affiliation } = this.args
 
         const attributes = {
-            id: `${SetMemberRoleQuery.id}-${uuidv4()}`,
+            id: `${SetMemberAffiliationQuery.id}-${uuidv4()}`,
             from,
             to,
             type: 'set',
@@ -581,7 +585,7 @@ export class SetMemberRoleQuery extends XmppQuery {
                 {
                     xmlns: 'http://jabber.org/protocol/muc#admin',
                 },
-                xml('item', { role, nick: username }),
+                xml('item', { affiliation, jid: memberJid }),
             ),
         )
     }

@@ -9,11 +9,11 @@ import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
     joinChatGroup,
     selectChatGroup,
-    selectChatGroupRole,
+    selectChatGroupAffiliation,
     selectChatMessages,
     sendGroupMessage,
 } from '@fedi/common/redux'
-import { ChatRole } from '@fedi/common/types'
+import { ChatAffiliation } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
@@ -35,7 +35,9 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         s => s.federation.activeFederationId,
     ) as string
     const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const myRole = useAppSelector(s => selectChatGroupRole(s, groupId))
+    const myAffiliation = useAppSelector(s =>
+        selectChatGroupAffiliation(s, groupId),
+    )
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
     const [failedToJoin, setFailedToJoin] = useState(false)
 
@@ -101,9 +103,9 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     // In a broadcast-only group, members cannot send messages if they have a
-    // role of 'visitor'. The creator of the group has the role of 'owner'
+    // affiliation of 'none'. The creator of the group has the affiliation of 'owner'
     const blockMessageInput =
-        group?.broadcastOnly && myRole === ChatRole.visitor
+        group?.broadcastOnly && myAffiliation === ChatAffiliation.none
 
     return (
         <View style={styles(theme).container}>
