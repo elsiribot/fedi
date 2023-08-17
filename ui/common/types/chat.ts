@@ -13,6 +13,7 @@ export enum ChatAffiliation {
     // which determines their ability to send messages in a broadcast-only room
     none = 'none',
     member = 'member',
+    owner = 'owner',
 }
 export enum ChatRole {
     // This is the default role granted to a member entering a MUC room

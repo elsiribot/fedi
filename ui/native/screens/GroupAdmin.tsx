@@ -80,7 +80,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     <SettingsItem
                         image={<SvgImage name="SpeakerPhone" />}
                         label={t('feature.chat.broadcast-admin-settings')}
-                        disabled={myAffiliation === ChatAffiliation.none}
+                        disabled={myAffiliation !== ChatAffiliation.owner}
                         onPress={() => {
                             navigation.navigate('BroadcastAdminsList', {
                                 groupId,

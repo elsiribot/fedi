@@ -17,6 +17,7 @@ interface CommonXmppAttributes {
 export enum XmppMemberAffiliation {
     none = 'none',
     member = 'member',
+    owner = 'owner',
 }
 export enum XmppMemberRole {
     visitor = 'visitor',
