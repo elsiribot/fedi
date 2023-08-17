@@ -223,6 +223,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 name="Chat"
                 component={ChatScreen}
                 options={() => ({
+                    title: t('words.chat'),
                     header: () => <ChatHeader />,
                     tabBarBadge: hasUnseenMessages ? '' : undefined,
                 })}
@@ -231,6 +232,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                 name="Settings"
                 component={Settings}
                 options={() => ({
+                    title: t('words.settings'),
                     header: () => <SettingsHeader />,
                 })}
             />
