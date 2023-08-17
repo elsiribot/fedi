@@ -85,7 +85,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                     </Text>
                 </TouchableOpacity>
             </View>
-            <Text style={styles(theme).inviteLinkNotice} numberOfLines={2}>
+            <Text style={styles(theme).inviteLinkNotice} numberOfLines={3}>
                 {t('feature.chat.invite-link-notice')}
             </Text>
             <Button
