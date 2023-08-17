@@ -100,10 +100,13 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     <Button
                         size="sm"
                         color={theme.colors.secondary}
-                        containerStyle={styles(theme).buttonContainer}
                         onPress={onCancel}
                         title={
-                            <Text medium caption>
+                            <Text
+                                medium
+                                caption
+                                numberOfLines={1}
+                                adjustsFontSizeToFit>
                                 {t('words.cancel')}
                             </Text>
                         }
@@ -186,10 +189,6 @@ const styles = (theme: Theme) =>
         statusText: {
             color: theme.colors.secondary,
             marginLeft: theme.spacing.xs,
-        },
-        buttonContainer: {
-            flex: 1,
-            maxWidth: '50%',
         },
         messageText: {
             color: theme.colors.secondary,
