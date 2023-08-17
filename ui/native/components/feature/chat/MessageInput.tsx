@@ -11,7 +11,11 @@ import {
     View,
 } from 'react-native'
 
-import { selectChatMember, selectWebsocketIsHealthy } from '@fedi/common/redux'
+import {
+    selectChatConnectionOptions,
+    selectChatMember,
+    selectWebsocketIsHealthy,
+} from '@fedi/common/redux'
 
 import { Props as DirectChatProps } from '../../../screens/DirectChat'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
@@ -32,8 +36,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<DirectChatRouteProp>()
-    const { memberId } = route.params
+    const { memberId: memberIdParam } = route.params
+
+    // Check for missing domain in case we scan an old member QR
+    let memberId = memberIdParam
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
+    if (!memberId.includes('@') && connectionOptions) {
+        const { domain } = connectionOptions
+        memberId = `${memberId}@${domain}`
+    }
     const member = useAppSelector(s => selectChatMember(s, memberId))
+
     const { toast } = useEnvironmentContext().state
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const [messageText, setMessageText] = useState<string>('')
