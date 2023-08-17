@@ -33,7 +33,7 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     // Check for missing domain in case we scan an old member QR
     let memberId = memberIdParam
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
-    if (!memberId.includes('@') && connectionOptions) {
+    if (!memberId?.includes('@') && connectionOptions) {
         const { domain } = connectionOptions
         memberId = `${memberId}@${domain}`
     }
