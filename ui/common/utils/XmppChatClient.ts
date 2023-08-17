@@ -120,6 +120,12 @@ export class XmppChatClient {
                         const id: string = memberJid.split(
                             `/${XMPP_RESOURCE}`,
                         )[0]
+
+                        this.emit(
+                            'memberSeen',
+                            this.memberFromJid(memberJid.toString()),
+                        )
+
                         return {
                             id,
                             username,
@@ -757,6 +763,7 @@ export class XmppChatClient {
     }
 
     private handleIncomingPresence(stanza: Element) {
+        console.info('handleIncomingPresence', stanza)
         const groupId = stanza.getAttr('from')?.split('@')[0]
         if (!groupId) return
 
@@ -772,6 +779,7 @@ export class XmppChatClient {
         if (role) {
             this.emit('groupRole', { groupId, role })
         }
+        console.info('handleIncomingPresence', stanza.toString())
         const affiliation = stanza
             .getChild('x')
             ?.getChild('item')
