@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import {
-    connectChat,
     refreshChatCredentials,
     refreshFederations,
     selectActiveFederation,
@@ -53,13 +52,6 @@ const Initializing: React.FC<Props> = () => {
                         federationId: activeFederationId!,
                     }),
                 ).unwrap()
-
-                dispatch(
-                    connectChat({
-                        fedimint,
-                        federationId: activeFederationId!,
-                    }),
-                )
 
                 return navigation.replace('TabsNavigator')
             } else {
