@@ -323,6 +323,7 @@
         },
         "parser": {
             "unrecognized": "Format de données non reconnu",
+            "unsupported-bolt11-zero-amount": "Les factures Lightning à montant nul ne sont pas prises en charge. Générez une nouvelle facture avec un montant et réessayez.",
             "unsupported-lnurl": "Type de LNURL non pris en charge '{{type}}'"
         },
         "popup": {

@@ -323,6 +323,7 @@
         },
         "parser": {
             "unrecognized": "Unrecognized data format",
+            "unsupported-bolt11-zero-amount": "Zero amount Lightning invoices are not supported. Generate a new invoice with an amount and try again.",
             "unsupported-lnurl": "Unsupported LNURL type '{{type}}'"
         },
         "popup": {

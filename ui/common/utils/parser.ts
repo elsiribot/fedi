@@ -38,7 +38,7 @@ export function parseUserInput<T extends TFunction>(
     return new Promise(resolve => {
         // Run all parsers simultaneously.
         const parserPromises = [
-            parseBolt11(raw, fedimint),
+            parseBolt11(raw, fedimint, t),
             parseBolt12(raw),
             parseLnurl(raw, t),
             parseBitcoinAddress(raw),
@@ -236,7 +236,8 @@ async function parseLnurl(
 async function parseBolt11(
     raw: string,
     fedimint: FedimintBridge,
-): Promise<ParsedBolt11 | undefined> {
+    t: TFunction,
+): Promise<ParsedBolt11 | ParsedUnknownData | undefined> {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
 
     // Quick detection of BOLT 11, but ignore BOLT 12 and LNURL.
@@ -256,8 +257,21 @@ async function parseBolt11(
             data: decoded,
         }
     } catch (err) {
+        // Attempt to parse error messages for meaningful failures
+        if (err instanceof Error) {
+            if (err.message.includes('Invoice missing amount')) {
+                return {
+                    type: ParserDataType.Unknown,
+                    data: {
+                        message: t(
+                            'feature.parser.unsupported-bolt11-zero-amount',
+                        ),
+                    },
+                }
+            }
+        }
+        // Otherwise, return nothing and let other parsers try
         console.warn('parseBolt11 error', err)
-        /* no-op, other parsers will be attempted */
     }
 }
 
