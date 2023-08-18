@@ -148,6 +148,9 @@ export const refreshFederationsMetadata = createAsyncThunk<
         console.info('refreshFederationsMetadata')
         const federationsWithMeta = await applyExternalMetadataToFederations(
             federations,
+            federationWithMeta => {
+                dispatch(updateFederation(federationWithMeta))
+            },
         )
         dispatch(setFederations(federationsWithMeta))
     },
@@ -162,6 +165,9 @@ export const refreshFederations = createAsyncThunk<
     console.info('refreshFederations', 'federations', federations)
     const federationsWithMeta = await applyExternalMetadataToFederations(
         federations,
+        federationWithMeta => {
+            dispatch(updateFederation(federationWithMeta))
+        },
     )
     dispatch(setFederations(federationsWithMeta))
     return federations
@@ -184,7 +190,12 @@ export const joinFederation = createAsyncThunk<
         const federations = await fedimint.listFederations()
         if (federations.length > 0) {
             const federationsWithMeta =
-                await applyExternalMetadataToFederations(federations)
+                await applyExternalMetadataToFederations(
+                    federations,
+                    federationWithMeta => {
+                        dispatch(updateFederation(federationWithMeta))
+                    },
+                )
             dispatch(setFederations(federationsWithMeta))
             dispatch(setActiveFederationId(federation.id))
         } else {
