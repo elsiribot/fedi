@@ -1,13 +1,10 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { updateChatPayment } from '@fedi/common/redux'
 import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
 
-import { fedimint } from '../../../bridge'
-import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type IncomingPushPaymentProps = {
@@ -22,42 +19,10 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
 }: IncomingPushPaymentProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
-    const [processingRedemption, setProcessingRedemption] =
-        useState<boolean>(false)
     const { payment } = message
 
-    // Check for valid ecash if found in incoming message
-    useEffect(() => {
-        const dispatchPaymentUpdate = async () => {
-            try {
-                setProcessingRedemption(true)
-                await dispatch(
-                    updateChatPayment({
-                        fedimint,
-                        federationId: activeFederationId as string,
-                        messageId: message.id,
-                        action: 'receive',
-                    }),
-                ).unwrap()
-            } catch (error) {
-                console.error('dispatchPaymentUpdate', error)
-            }
-            setProcessingRedemption(false)
-        }
-        if (payment?.token) {
-            dispatchPaymentUpdate()
-        }
-    }, [activeFederationId, dispatch, message.id, payment?.token])
-
     const renderPaymentStatus = () => {
-        if (
-            processingRedemption === false &&
-            payment?.status === ChatPaymentStatus.paid
-        ) {
+        if (payment?.status === ChatPaymentStatus.paid) {
             return (
                 <View style={styles(theme).statusContainer}>
                     <SvgImage
