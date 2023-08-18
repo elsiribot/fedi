@@ -549,12 +549,20 @@ export const connectChat = createAsyncThunk<
 >(
     'chat/connectChat',
     async ({ fedimint, federationId }, { getState, dispatch }) => {
+        console.info(`connecting chat for federation ${federationId}...`)
         // Assemble all necessary state for starting chat, throw if we are missing anything.
         const state = getState()
         const chatState = state.chat[federationId]
         const federation = state.federation.federations.find(
             f => f.id === federationId,
         )
+        const xmppClientStatus = chatState?.clientStatus
+        if (xmppClientStatus !== 'offline') {
+            console.warn(
+                `Chat connection attempt already in progress for ${federationId}...`,
+            )
+            return
+        }
 
         if (!federation) {
             console.error(
