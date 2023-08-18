@@ -1,5 +1,5 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -21,7 +21,42 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
 }: IncomingPaymentActionsProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(
+        s => s.federation.activeFederationId,
+    )
+    const [processingRedemption, setProcessingRedemption] =
+        useState<boolean>(false)
     const { payment } = message
+
+    // Check for valid ecash if found in incoming message
+    useEffect(() => {
+        const dispatchPaymentUpdate = async () => {
+            try {
+                setProcessingRedemption(true)
+                await dispatch(
+                    updateChatPayment({
+                        fedimint,
+                        federationId: activeFederationId as string,
+                        messageId: message.id,
+                        action: 'receive',
+                    }),
+                ).unwrap()
+            } catch (error) {
+                console.error('dispatchPaymentUpdate', error)
+            }
+            setProcessingRedemption(false)
+        }
+        // HACK: we just need to give the Rust bridge a split second
+        // to resolve some DB lock to avoid a panic so wait 250ms here
+        let timeout = setTimeout(() => {})
+        if (payment?.token) {
+            timeout = setTimeout(() => dispatchPaymentUpdate(), 250)
+        }
+        return () => {
+            clearTimeout(timeout)
+        }
+    }, [activeFederationId, dispatch, message.id, payment?.token])
 
     const renderPaymentStatus = () => {
         let paymentStatus = (
@@ -31,6 +66,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                 </Text>
             </View>
         )
+        if (processingRedemption) return paymentStatus
 
         switch (payment?.status!) {
             case ChatPaymentStatus.paid:
@@ -83,6 +119,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     />
                 )
                 break
+            // Redemption in progess & status = accepted
             default:
                 break
         }
