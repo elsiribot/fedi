@@ -14,19 +14,24 @@ import {
     FederationPreview,
 } from '../types'
 
+/**
+ * Given a federations with meta containing an external URL, attempt to fetch
+ * external meta. If the first attempt fails, resolve quickly and attempt
+ * retries in the background every 3 seconds
+ */
 const fetchMetadataFromExternalUrl = async (
     federation: Pick<Federation, 'meta' | 'id'>,
+    onBackgroundSuccess?: (meta: Federation['meta']) => void | undefined,
+    delay = 3000, // Delay between retries in milliseconds
 ): Promise<Federation['meta']> => {
     const externalUrl = federation.meta?.meta_external_url
     if (!externalUrl) {
         return federation.meta
     }
 
-    console.info('Fetching metadata from', externalUrl)
-    try {
-        const response = await fetch(externalUrl, {
-            cache: 'no-cache',
-        })
+    const attemptFetch = async () => {
+        console.info('Fetching metadata from', externalUrl)
+        const response = await fetch(externalUrl, { cache: 'no-cache' })
         const metaJson = await response.json()
         console.info(
             `Found metadata at ${externalUrl}. Checking for matching federation key...`,
@@ -38,23 +43,62 @@ const fetchMetadataFromExternalUrl = async (
             )
             return metaJson[federation.id]
         }
-    } catch (error) {
-        console.error('Failed to fetch metadata from external url', error)
+        throw new Error('Key not found')
     }
 
-    return federation.meta
+    const retryInBackground = async (): Promise<Federation['meta']> => {
+        try {
+            return await attemptFetch()
+        } catch (error) {
+            console.error('Failed to fetch metadata from external url', error)
+            console.info(`Retrying in ${delay / 1000} seconds...`)
+            await new Promise(resolve => setTimeout(resolve, delay))
+            return retryInBackground() // Recursive call
+        }
+    }
+
+    try {
+        // Wait for either the fetch to succeed or throw
+        return await attemptFetch()
+    } catch (error) {
+        if (onBackgroundSuccess) {
+            // If the fetch fails, start the retries in the background
+            retryInBackground().then(meta => {
+                // Update the federation metadata when the background fetch succeeds
+                // using the provided callback
+                console.info(`Background fetch succeeded for ${federation.id}`)
+                onBackgroundSuccess(meta)
+            })
+        }
+        return federation.meta // Return existing metadata immediately
+    }
 }
 
 /**
- * Given a list of federations, return the federations with their meta fields
- * updated from
+ * Given a list of federations, return the federations with updated meta fields
+ * from an external URL. If the first attempt fails, the onBackgroundSuccess
+ * callback can be provided to handle retries in the background
  */
 export const applyExternalMetadataToFederations = (
     federations: Federation[],
+    onBackgroundSuccess?: (federation: Federation) => void,
 ) => {
     return Promise.all(
         federations.map(async federation => {
-            const meta = await fetchMetadataFromExternalUrl(federation)
+            const meta = await fetchMetadataFromExternalUrl(
+                federation,
+                onBackgroundSuccess
+                    ? (metaFetchedInBackground: Federation['meta']) => {
+                          onBackgroundSuccess({
+                              ...federation,
+                              name:
+                                  metaFetchedInBackground.federation_name ||
+                                  federation.name,
+                              meta: metaFetchedInBackground,
+                          })
+                      }
+                    : undefined,
+            )
             return {
                 ...federation,
                 name: meta.federation_name || federation.name,
@@ -232,6 +276,12 @@ export const getFederationFediMods = (
             )
         }
     }
+
+    // FIXME: if metadata fails to fetch, we render an empty array since this
+    // would be less confusing than showing a totally different set of Fedimods
+    // there shoud be a proper loader / robust handling for figuring out if we
+    // should fallback on default Fedimods
+    return []
     return DEFAULT_FEDIMODS
 }
 
