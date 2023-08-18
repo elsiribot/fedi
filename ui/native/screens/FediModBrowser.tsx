@@ -7,14 +7,15 @@ import { WebView } from 'react-native-webview'
 import {
     RequestInvoiceArgs,
     RequestInvoiceResponse,
-    UnsupportedMethodError,
     SendPaymentResponse,
+    UnsupportedMethodError,
 } from 'webln'
 
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectFediModDebugMode,
+    selectNostrEnabled,
 } from '@fedi/common/redux'
 import {
     Invoice,
@@ -48,12 +49,13 @@ type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const { listGateways } = useBridge()
+    const { listGateways, getNostrPubKey } = useBridge()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
+    const nostrEnabled = useAppSelector(selectNostrEnabled)
     const { toast } = useEnvironmentContext().state
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const overlayResolveRef = useRef<
@@ -189,6 +191,36 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 }),
             )
         },
+        [InjectionMessageType.nostr_getPublicKey]: async () => {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const pubKey = await getNostrPubKey()
+                    resolve(pubKey)
+                } catch (err) {
+                    console.warn(err)
+                    reject('Failed to getNostrPubKey')
+                }
+            })
+        },
+        [InjectionMessageType.nostr_signEvent]: async () => {
+            throw new UnsupportedMethodError('error')
+        },
+        [InjectionMessageType.nostr_getRelays]: async () => {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    resolve({})
+                } catch (err) {
+                    console.warn(err)
+                    reject('Failed to getRelays')
+                }
+            })
+        },
+        [InjectionMessageType.nostr_nip04_encrypt]: async () => {
+            throw new UnsupportedMethodError('error')
+        },
+        [InjectionMessageType.nostr_nip04_decrypt]: async () => {
+            throw new UnsupportedMethodError('error')
+        },
     })
 
     const resetOverlay = () => {
@@ -228,10 +260,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
             <WebView
                 ref={webview}
+                webviewDebuggingEnabled={true}
                 source={{ uri }}
                 injectedJavaScript={generateInjectionJs({
                     webln: true,
                     eruda: fediModDebugMode,
+                    nostr: nostrEnabled,
                 })}
                 allowsInlineMediaPlayback
                 onMessage={onMessage}

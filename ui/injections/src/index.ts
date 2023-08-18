@@ -17,6 +17,7 @@ const messageTypes = Object.values(InjectionMessageType)
 export function generateInjectionJs(config: {
     webln?: boolean
     eruda?: boolean
+    nostr?: boolean
 }) {
     const injections: string[] = []
 
@@ -26,6 +27,10 @@ export function generateInjectionJs(config: {
 
     if (config.eruda) {
         injections.push(process.env.INJECTION_ERUDA as string)
+    }
+
+    if (config.nostr) {
+        injections.push(process.env.INJECTION_NOSTR as string)
     }
 
     return injections.join('\n')

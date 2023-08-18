@@ -9,6 +9,7 @@ module.exports = env => ({
     entry: {
         'injectables/eruda': path.join(src, 'injectables/eruda.ts'),
         'injectables/webln': path.join(src, 'injectables/webln.ts'),
+        'injectables/nostr': path.join(src, 'injectables/nostr.ts'),
     },
     output: {
         path: dist,

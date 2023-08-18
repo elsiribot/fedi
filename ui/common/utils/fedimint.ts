@@ -121,6 +121,10 @@ export class FedimintBridge {
         })
     }
 
+    async getNostrPubKey(federationId: string) {
+        return this.rpc<string>('getNostrPubKey', { federationId })
+    }
+
     async getXmppCredentials(federationId: string) {
         return this.rpc<XmppCredentials>('xmppCredentials', { federationId })
     }

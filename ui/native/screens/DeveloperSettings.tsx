@@ -21,10 +21,12 @@ import {
     selectActiveFederation,
     selectFederationCustomFediMods,
     selectFediModDebugMode,
+    selectNostrEnabled,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
     setFediModDebugMode,
+    setNostrEnabled,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -69,6 +71,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const customFediMods = useAppSelector(selectFederationCustomFediMods)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
+    const nostrEnabled = useAppSelector(selectNostrEnabled)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -176,6 +179,22 @@ const DeveloperSettings: React.FC<Props> = () => {
                         value={fediModDebugMode}
                         onValueChange={value => {
                             reduxDispatch(setFediModDebugMode(value))
+                        }}
+                    />
+                </View>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.nostr-enabled')}
+                        </Text>
+                        <Text small style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.nostr-enabled-info')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={nostrEnabled}
+                        onValueChange={value => {
+                            reduxDispatch(setNostrEnabled(value))
                         }}
                     />
                 </View>

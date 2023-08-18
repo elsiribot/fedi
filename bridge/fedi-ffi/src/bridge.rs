@@ -63,6 +63,7 @@ pub const XMPP_CHILD_ID: ChildId = ChildId(10);
 pub const XMPP_PASSWORD: ChildId = ChildId(0);
 pub const XMPP_KEYPAIR_SEED: ChildId = ChildId(1);
 pub const LNURL_CHILD_ID: ChildId = ChildId(11);
+pub const NOSTR_CHILD_ID: ChildId = ChildId(12);
 pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
 // Backup twice per day
 pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
@@ -1004,6 +1005,16 @@ impl Federation {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&XmppUsername, &username).await;
         dbtx.commit_tx().await;
+    }
+
+    /// Get Nostr Public key for a specific federation
+    pub async fn get_nostr_pub_key(&self) -> PublicKey {
+        let secp = Secp256k1::new();
+        let root_secret = self.root_secret().await;
+        let nostr_secret = root_secret.child_key(NOSTR_CHILD_ID);
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let nostr_pubkey = nostr_keypair.public_key();
+        nostr_pubkey
     }
 
     /// Sign LNURL message using a key derived from client secret

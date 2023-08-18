@@ -333,6 +333,16 @@ async fn payAddress(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn getNostrPubKey(
+    bridge: Arc<Bridge>,
+    federation_id: FederationId,
+) -> anyhow::Result<String> {
+    let federation = get_federation(&bridge, &federation_id).await?;
+    let nostr_pub_key = federation.get_nostr_pub_key().await;
+    Ok(nostr_pub_key.to_string())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn lnurlSignMessage(
     bridge: Arc<Bridge>,
     // hex-encoded message
@@ -652,6 +662,8 @@ rpc_methods!(RpcMethods {
     lnurlSignMessage,
     xmppCredentials,
     backupXmppUsername,
+    // Nostr
+    getNostrPubKey,
 });
 
 #[instrument(

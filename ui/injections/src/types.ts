@@ -2,10 +2,16 @@ import type {
     GetInfoResponse,
     KeysendArgs,
     RequestInvoiceArgs,
-    SendPaymentResponse,
     RequestInvoiceResponse,
+    SendPaymentResponse,
     SignMessageResponse,
 } from 'webln'
+
+import {
+    NostrRelayMapResponse,
+    SignedNostrEvent,
+    UnsignedNostrEvent,
+} from './injectables/nostr/types'
 
 export enum InjectionMessageType {
     webln_enable = 'webln_enable',
@@ -15,12 +21,11 @@ export enum InjectionMessageType {
     webln_makeInvoice = 'webln_makeInvoice',
     webln_signMessage = 'webln_signMessage',
     webln_verifyMessage = 'webln_verifyMessage',
-    // TODO: Nostr
-    // nostr_getPublicKey = 'nostr_getPublicKey',
-    // nostr_signEvent = 'nostr_signEvent',
-    // nostr_getRelays = 'nostr_getRelays',
-    // nostr_nip04_encrypt = 'nostr_nip04_encrypt',
-    // nostr_nip04_decrypt = 'nostr_nip04_decrypt',
+    nostr_getPublicKey = 'nostr_getPublicKey',
+    nostr_signEvent = 'nostr_signEvent',
+    nostr_getRelays = 'nostr_getRelays',
+    nostr_nip04_encrypt = 'nostr_nip04_encrypt',
+    nostr_nip04_decrypt = 'nostr_nip04_decrypt',
 }
 
 export type InjectionMessageResponseMap = {
@@ -54,6 +59,32 @@ export type InjectionMessageResponseMap = {
             message: string
         }
         response: void
+    }
+    [InjectionMessageType.nostr_getPublicKey]: {
+        message: void
+        response: string
+    }
+    [InjectionMessageType.nostr_signEvent]: {
+        message: UnsignedNostrEvent
+        response: SignedNostrEvent
+    }
+    [InjectionMessageType.nostr_getRelays]: {
+        message: void
+        response: NostrRelayMapResponse
+    }
+    [InjectionMessageType.nostr_nip04_encrypt]: {
+        message: {
+            pubkey: string
+            plaintext: string
+        }
+        response: string
+    }
+    [InjectionMessageType.nostr_nip04_decrypt]: {
+        message: {
+            pubkey: string
+            ciphertext: string
+        }
+        response: string
     }
 }
 

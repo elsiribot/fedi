@@ -268,6 +268,8 @@
             "custom-fedimods": "Custom Fedi Mods",
             "debug-mode": "Modo de depuración de Fedi Mod",
             "debug-mode-info": "Inyecta una herramienta de desarrollo (Eruda) en el navegador al abrir Fedi Mods",
+            "nostr-enabled": "Nostr",
+            "nostr-enabled-info": "Injects Nostr extensions (NIP07) into the browser when opening Fedi Mods", // TODO: Translate
             "enter-amount-to-withdraw": "Ingrese una cantidad para retirar de {{fediMod}}",
             "enter-valid-url": "Introduzca una URL válida (http:// o https://)",
             "fedimod-icon": "Icono del Fedi Mod",

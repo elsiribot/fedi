@@ -162,6 +162,9 @@ export const useBridge = () => {
             },
             [activeFederationId],
         ),
+        getNostrPubKey: useCallback(() => {
+            return fedimint.getNostrPubKey(activeFederationId!)
+        }, [activeFederationId]),
         listGateways: useCallback(() => {
             return fedimint.listGateways(activeFederationId!)
         }, [activeFederationId]),
