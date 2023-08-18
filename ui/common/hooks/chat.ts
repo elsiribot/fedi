@@ -170,9 +170,7 @@ export async function useMonitorChatConnection(fedimint: FedimintBridge) {
     useEffect(() => {
         if (!activeFederationId || !isChatSupported) return
 
-        console.info('useEffect', xmppClientStatus)
         const monitorChatConnection = async () => {
-            console.info('monitorChatConnection', xmppClientStatus)
             if (xmppClientStatus === 'offline') {
                 // If client is offline, attempt to connect
                 await dispatch(
