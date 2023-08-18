@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 
 import type { ChatMember, ChatMessage } from '@fedi/common/types'
 
@@ -167,37 +167,35 @@ export async function useMonitorChatConnection(fedimint: FedimintBridge) {
     const isChatSupported = useIsChatSupported()
     const xmppClientStatus = useCommonSelector(selectChatClientStatus)
 
-    useEffect(() => {
-        if (!activeFederationId || !isChatSupported) return
+    const attemptChatConnection = useCallback(async () => {
+        if (!activeFederationId || xmppClientStatus !== 'offline') return
 
-        const monitorChatConnection = async () => {
-            if (xmppClientStatus === 'offline') {
-                // If client is offline, attempt to connect
-                await dispatch(
-                    connectChat({
-                        fedimint,
-                        federationId: activeFederationId,
-                    }),
-                )
-            }
-        }
+        // If client is offline, attempt to connect
+        await dispatch(
+            connectChat({
+                fedimint,
+                federationId: activeFederationId,
+            }),
+        )
+    }, [activeFederationId, dispatch, fedimint, xmppClientStatus])
+
+    useEffect(() => {
+        if (!isChatSupported) return
 
         // Call the function immediately to check the connection right away
         // wait 100ms to give the xmppClientStatus time to update
-        setTimeout(() => monitorChatConnection(), 100)
+        setTimeout(() => attemptChatConnection(), 100)
+    }, [isChatSupported, attemptChatConnection])
+
+    useEffect(() => {
+        if (!isChatSupported) return
 
         // Set up an interval to check the chat connection every 10 seconds
-        const intervalId = setInterval(monitorChatConnection, 10000)
+        const intervalId = setInterval(attemptChatConnection, 10000)
 
         // Cleanup function to clear the interval when the component unmounts
         return () => {
             clearInterval(intervalId)
         }
-    }, [
-        isChatSupported,
-        dispatch,
-        activeFederationId,
-        xmppClientStatus,
-        fedimint,
-    ])
+    }, [isChatSupported, attemptChatConnection])
 }
