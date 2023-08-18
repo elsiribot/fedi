@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react'
 import type { ChatMember, ChatMessage } from '@fedi/common/types'
 
 import {
+    connectChat,
     fetchChatMember,
     selectActiveFederation,
     selectChatClientStatus,
@@ -13,6 +14,8 @@ import {
     setLastSeenMessageId,
     setPushNotificationToken,
 } from '../redux'
+import { FedimintBridge } from '../utils/fedimint'
+import { useIsChatSupported } from './federation'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useChatMemberSearch(members: ChatMember[]) {
@@ -156,4 +159,47 @@ export function useChatMember(memberId: string) {
     }, [dispatch, hasMember, federationId, isChatOnline, memberId])
 
     return { member, isFetchingMember }
+}
+
+export async function useMonitorChatConnection(fedimint: FedimintBridge) {
+    const dispatch = useCommonDispatch()
+    const { activeFederationId } = useCommonSelector(s => s.federation)
+    const isChatSupported = useIsChatSupported()
+    const xmppClientStatus = useCommonSelector(selectChatClientStatus)
+
+    useEffect(() => {
+        if (!activeFederationId || !isChatSupported) return
+
+        console.info('useEffect', xmppClientStatus)
+        const monitorChatConnection = async () => {
+            console.info('monitorChatConnection', xmppClientStatus)
+            if (xmppClientStatus === 'offline') {
+                // If client is offline, attempt to connect
+                await dispatch(
+                    connectChat({
+                        fedimint,
+                        federationId: activeFederationId,
+                    }),
+                )
+            }
+        }
+
+        // Call the function immediately to check the connection right away
+        // wait 100ms to give the xmppClientStatus time to update
+        setTimeout(() => monitorChatConnection(), 100)
+
+        // Set up an interval to check the chat connection every 10 seconds
+        const intervalId = setInterval(monitorChatConnection, 10000)
+
+        // Cleanup function to clear the interval when the component unmounts
+        return () => {
+            clearInterval(intervalId)
+        }
+    }, [
+        isChatSupported,
+        dispatch,
+        activeFederationId,
+        xmppClientStatus,
+        fedimint,
+    ])
 }
