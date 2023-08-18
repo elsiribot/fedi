@@ -63,7 +63,7 @@ const xmppChatClientManager = new XmppChatClientManager()
 /*** Initial State ***/
 
 const initialFederationChatState = {
-    clientStatus: 'disconnected' as XmppClientStatus,
+    clientStatus: 'offline' as XmppClientStatus,
     clientError: null as string | null,
     authenticatedMember: null as ChatMember | null,
     credentials: null as XmppCredentials | null,
