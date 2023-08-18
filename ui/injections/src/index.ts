@@ -38,6 +38,7 @@ interface MutableRefObjectLike<T> {
 }
 interface WebViewLike {
     postMessage(message: string): void
+    injectJavaScript(message: string): void
 }
 interface WebViewMessageEventLike {
     nativeEvent: { data: string }
@@ -81,7 +82,19 @@ export function makeWebViewMessageHandler(
             const response = await handler(
                 message as Parameters<typeof handler>[0],
             )
-            webview.postMessage(JSON.stringify({ id, type, data: response }))
+            const detail = {
+                id,
+                type,
+                data: response,
+            }
+            webview.injectJavaScript(`window.dispatchEvent(
+                new CustomEvent(
+                    "fedi:message",
+                    {
+                        detail: ${JSON.stringify(detail)}
+                    }
+                )
+            )`)
         } catch (err) {
             const errorMessage =
                 err && typeof err === 'object'
@@ -89,15 +102,21 @@ export function makeWebViewMessageHandler(
                         ? err.message
                         : String(err)
                     : 'Unexpected error'
-            webview.postMessage(
-                JSON.stringify({
-                    id,
-                    type,
-                    error: {
-                        message: errorMessage,
-                    },
-                }),
-            )
+            const detail = {
+                id,
+                type,
+                error: {
+                    message: errorMessage,
+                },
+            }
+            webview.injectJavaScript(`document.dispatchEvent(
+                new CustomEvent(
+                    "fedi:message",
+                    {
+                        detail: ${JSON.stringify(detail)}
+                    }
+                )
+            )`)
         }
     }
 }
