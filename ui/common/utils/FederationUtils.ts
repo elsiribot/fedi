@@ -232,6 +232,12 @@ export const getFederationFediMods = (
             )
         }
     }
+
+    // FIXME: if metadata fails to fetch, we render an empty array since this
+    // would be less confusing than showing a totally different set of Fedimods
+    // there shoud be a proper loader / robust handling for figuring out if we
+    // should fallback on default Fedimods
+    return []
     return DEFAULT_FEDIMODS
 }
 
