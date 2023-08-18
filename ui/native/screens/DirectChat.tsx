@@ -1,4 +1,4 @@
-import { useIsFocused } from '@react-navigation/native'
+import { useIsFocused, useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo } from 'react'
@@ -21,22 +21,28 @@ import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import type { RootStackParamList } from '../types/navigation'
+import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 
 const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { memberId: memberIdParam } = route.params
+    const navigation = useNavigation<NavigationHook>()
 
-    // Check for missing domain in case we scan an old member QR
-    let memberId = memberIdParam
+    // Check for missing domain in case we scan an old member QR and update
+    // the route param so we only have to do this once
+    const { memberId } = route.params
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
-    if (!memberId.includes('@') && connectionOptions) {
-        const { domain } = connectionOptions
-        memberId = `${memberId}@${domain}`
-    }
+    useEffect(() => {
+        if (memberId && !memberId.includes('@') && connectionOptions) {
+            const { domain } = connectionOptions
+            let fullMemberId = `${memberId}@${domain}`
+            navigation.setParams({
+                memberId: fullMemberId,
+            })
+        }
+    }, [memberId, connectionOptions, navigation])
 
     const isFocused = useIsFocused()
     const dispatch = useAppDispatch()
@@ -93,7 +99,7 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     return (
         <View style={styles(theme).container}>
             <MessagesList messages={messageCollections} />
-            <MessageInput onMessageSubmitted={handleSend} />
+            <MessageInput onMessageSubmitted={handleSend} memberId={memberId} />
         </View>
     )
 }
