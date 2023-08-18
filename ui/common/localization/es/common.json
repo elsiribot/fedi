@@ -323,7 +323,7 @@
         },
         "parser": {
             "unrecognized": "Formato de datos no reconocido",
-            "unsupported-bolt11-zero-amount": "No se admiten las facturas Lightning de importe cero. Genera una nueva factura con un monto y vuelve a intentarlo.",
+            "unsupported-bolt11-zero-amount": "Facturas Lightning sin monto no estan soportadas. Genera una factura nueva con un monto e intenta escanearlo de nuevo.",
             "unsupported-lnurl": "Tipo LNURL no compatible '{{type}}'"
         },
         "popup": {
