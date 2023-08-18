@@ -16,30 +16,42 @@ import {
 
 const fetchMetadataFromExternalUrl = async (
     federation: Pick<Federation, 'meta' | 'id'>,
+    maxRetries = 10, // Maximum number of retries
+    delay = 3000, // Delay between retries in milliseconds
 ): Promise<Federation['meta']> => {
     const externalUrl = federation.meta?.meta_external_url
     if (!externalUrl) {
         return federation.meta
     }
 
-    console.info('Fetching metadata from', externalUrl)
-    try {
-        const response = await fetch(externalUrl, {
-            cache: 'no-cache',
-        })
-        const metaJson = await response.json()
-        console.info(
-            `Found metadata at ${externalUrl}. Checking for matching federation key...`,
-            Object.keys(metaJson),
-        )
-        if (metaJson[federation.id]) {
+    for (let i = 0; i < maxRetries; i++) {
+        console.info('Fetching metadata from', externalUrl)
+        try {
+            const response = await fetch(externalUrl, {
+                cache: 'no-cache',
+            })
+            const metaJson = await response.json()
             console.info(
-                `Found federation key ${federation.id}. Overriding other meta fields with external data...`,
+                `Found metadata at ${externalUrl}. Checking for matching federation key...`,
+                Object.keys(metaJson),
             )
-            return metaJson[federation.id]
+            if (metaJson[federation.id]) {
+                console.info(
+                    `Found federation key ${federation.id}. Overriding other meta fields with external data...`,
+                )
+                return metaJson[federation.id]
+            }
+        } catch (error) {
+            console.error('Failed to fetch metadata from external url', error)
+            if (i < maxRetries - 1) {
+                console.info(`Retrying in ${delay / 1000} seconds...`)
+                await new Promise(resolve => setTimeout(resolve, delay))
+            } else {
+                console.error(
+                    'Max retries reached, returning existing metadata.',
+                )
+            }
         }
-    } catch (error) {
-        console.error('Failed to fetch metadata from external url', error)
     }
 
     return federation.meta
