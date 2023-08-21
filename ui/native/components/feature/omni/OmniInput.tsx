@@ -1,8 +1,8 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -15,9 +15,10 @@ import {
     ParsedUnknownData,
     ParserDataType,
 } from '../../../types'
-import SvgImage, { SvgImageName } from '../../ui/SvgImage'
-import QrCodeScanner from '../scan/QrCodeScanner'
+import { SvgImageName } from '../../ui/SvgImage'
 import { OmniConfirmation } from './OmniConfirmation'
+import { OmniMemberSearch } from './OmniMemberSearch'
+import { OmniQrScanner } from './OmniQrScanner'
 
 export interface OmniInputAction {
     label: React.ReactNode
@@ -44,11 +45,21 @@ export function OmniInput<
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const [isParsing, setIsParsing] = useState(false)
+
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
     const isParsingRef = useUpdatingRef(isParsing)
 
-    const { customActions, onUnexpectedSuccess } = props
+    const { expectedInputTypes, customActions, onUnexpectedSuccess } = props
+    const canMemberSearch = expectedInputTypes.includes(
+        ParserDataType.FediChatMember as T,
+    )
+    const canLnurlPay = expectedInputTypes.includes(
+        ParserDataType.LnurlPay as T,
+    )
+    const [inputMethod, setInputMethod] = useState<'scan' | 'search'>(
+        canMemberSearch ? 'search' : 'scan',
+    )
 
     const parseInput = useCallback(
         async (input: string) => {
@@ -80,20 +91,43 @@ export function OmniInput<
     }, [parseInput, toast, t])
 
     const actions: OmniInputAction[] = useMemo(() => {
+        const contextualActions: OmniInputAction[] = []
+        if (inputMethod !== 'search' && canMemberSearch) {
+            contextualActions.push({
+                label: t(
+                    canLnurlPay
+                        ? 'feature.omni.action-enter-username-or-ln'
+                        : 'feature.omni.action-enter-username',
+                ),
+                icon: 'Keyboard',
+                onPress: () => setInputMethod('search'),
+            })
+        }
+        if (inputMethod !== 'scan') {
+            contextualActions.push({
+                label: t('feature.omni.action-scan'),
+                icon: 'Scan',
+                onPress: () => setInputMethod('scan'),
+            })
+        }
+
         return [
+            ...contextualActions,
             {
                 label: t('feature.omni.action-paste'),
                 icon: 'Clipboard',
                 onPress: handlePaste,
             },
-            // {
-            //     label: t('feature.omni.action-upload'),
-            //     icon: 'QR',
-            //     onClick: () => handleScanImageFile,
-            // },
             ...(customActions || []),
         ]
-    }, [customActions, handlePaste, t])
+    }, [
+        customActions,
+        inputMethod,
+        canMemberSearch,
+        canLnurlPay,
+        handlePaste,
+        t,
+    ])
 
     let confirmation: React.ReactNode | undefined
     if (invalidData || unexpectedData) {
@@ -112,20 +146,20 @@ export function OmniInput<
     const style = styles(theme)
     return (
         <View style={style.container}>
-            <View style={style.scanner}>
-                <QrCodeScanner
-                    processing={Boolean(isParsing || unexpectedData)}
-                    onQrCodeDetected={parseInput}
+            {inputMethod === 'scan' && (
+                <OmniQrScanner
+                    onInput={parseInput}
+                    actions={actions}
+                    isProcessing={Boolean(isParsing || unexpectedData)}
                 />
-            </View>
-            <View style={style.actions}>
-                {actions.map(({ label, icon, onPress }, idx) => (
-                    <Pressable key={idx} onPress={onPress} style={style.action}>
-                        <SvgImage name={icon} />
-                        <Text bold>{label}</Text>
-                    </Pressable>
-                ))}
-            </View>
+            )}
+            {inputMethod === 'search' && (
+                <OmniMemberSearch
+                    onInput={parseInput}
+                    actions={actions}
+                    canLnurlPay={canLnurlPay}
+                />
+            )}
             {confirmation}
         </View>
     )
@@ -136,22 +170,6 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             flexDirection: 'column',
-            gap: theme.spacing.lg,
-        },
-        scanner: {
-            flex: 1,
-            width: '100%',
-            borderRadius: 20,
-            overflow: 'hidden',
-        },
-        actions: {
-            width: '100%',
-            flexDirection: 'column',
-        },
-        action: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: theme.spacing.md,
             gap: theme.spacing.lg,
         },
     })
