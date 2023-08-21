@@ -1,13 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { connectChat, selectAuthenticatedMember } from '@fedi/common/redux'
 
+import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -19,6 +20,23 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const dispatch = useAppDispatch()
+    const { activeFederationId } = useAppSelector(s => s.federation)
+
+    const handleContinue = useCallback(async () => {
+        try {
+            if (!activeFederationId) return
+            await dispatch(
+                connectChat({
+                    fedimint,
+                    federationId: activeFederationId,
+                }),
+            )
+            navigation.replace('TabsNavigator')
+        } catch (error) {
+            console.error(error)
+        }
+    }, [activeFederationId, dispatch, navigation])
 
     return (
         <View style={styles(theme).container}>
@@ -42,9 +60,7 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 fullWidth
                 title={t('feature.onboarding.continue-to-fedi')}
-                onPress={() => {
-                    navigation.replace('TabsNavigator')
-                }}
+                onPress={handleContinue}
                 containerStyle={styles(theme).button}
             />
         </View>

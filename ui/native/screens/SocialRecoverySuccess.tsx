@@ -1,11 +1,16 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import {
+    connectChat,
+    selectAuthenticatedMember,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 
+import { fedimint } from '../bridge'
 import Success from '../components/ui/Success'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -15,7 +20,29 @@ export type Props = NativeStackScreenProps<
 
 const SocialRecoverySuccess: React.FC<Props> = () => {
     const { t } = useTranslation()
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const { activeFederationId } = useAppSelector(s => s.federation)
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        const handleConnectChat = async () => {
+            try {
+                if (!activeFederationId) return
+                await dispatch(
+                    connectChat({
+                        fedimint,
+                        federationId: activeFederationId,
+                    }),
+                )
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        if (connectionOptions && authenticatedMember) {
+            handleConnectChat()
+        }
+    }, [activeFederationId, authenticatedMember, connectionOptions, dispatch])
 
     return (
         <Success
