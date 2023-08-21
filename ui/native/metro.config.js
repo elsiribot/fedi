@@ -30,6 +30,7 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
         ],
         extraNodeModules: {
             '@fedi/common': path.resolve(__dirname, '../common'),
+            '@fedi/injections': path.resolve(__dirname, '../injections'),
         },
         // Ignore @fedi/common/dist/*
         blockList: exclusionList([/.*\/common\/dist\/.*/]),

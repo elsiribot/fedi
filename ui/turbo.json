@@ -5,12 +5,18 @@
         "@fedi/common#build": {
             "outputs": ["dist/**"]
         },
+        "@fedi/injections#build": {
+            "outputs": ["dist/**"]
+        },
         "@fedi/web#build": {
             "dependsOn": ["^build"],
             "outputs": [".next/**", "!.next/cache/**"]
         },
         "test": {},
         "lint": {},
+        "@fedi/native#lint": {
+            "dependsOn": ["@fedi/common#build", "@fedi/injections#build"]
+        },
         "format": {},
         "dev": {
             "cache": false,
@@ -20,7 +26,7 @@
             "dependsOn": ["^build"]
         },
         "@fedi/native#dev": {
-            "dependsOn": ["@fedi/common#build"]
+            "dependsOn": ["@fedi/common#build", "@fedi/injections#build"]
         }
     }
 }

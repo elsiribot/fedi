@@ -3,7 +3,6 @@ import React, { MutableRefObject, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { injectJs, onMessageHandler } from 'react-native-webln'
 import { WebView } from 'react-native-webview'
 import {
     RequestInvoiceArgs,
@@ -26,7 +25,11 @@ import {
     ParserDataType,
 } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { parseUserInput } from '@fedi/common/utils/parser'
+import {
+    InjectionMessageType,
+    generateInjectionJs,
+    makeWebViewMessageHandler,
+} from '@fedi/injections'
 
 import { fedimint } from '../bridge'
 import { AuthOverlay } from '../components/feature/fedimods/AuthOverlay'
@@ -43,13 +46,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
-const INJECTABLE_ERUDA_DEBUG_WIDGET = `(function () {
-    var script = document.createElement('script');
-    script.src="https://cdn.jsdelivr.net/npm/eruda";
-    document.body.append(script);
-    script.onload = function () { eruda.init(); }
-})();`
-
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
     const { listGateways } = useBridge()
@@ -60,7 +56,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const { toast } = useEnvironmentContext().state
     const webview = useRef<WebView>() as MutableRefObject<WebView>
-    const [jsInjected, setJsInjected] = useState<boolean>(false)
     const overlayResolveRef = useRef<
         FediModResolver<FediModResponse> | undefined
     >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
@@ -99,12 +94,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     })
 
     // Handle all messages coming from a WebLN-enabled site
-    const onMessage = onMessageHandler(webview, {
-        enable: async () => {
+    const onMessage = makeWebViewMessageHandler(webview, {
+        [InjectionMessageType.webln_enable]: async () => {
             /* no-op */
             console.info('webln enabled')
         },
-        getInfo: () => {
+        [InjectionMessageType.webln_getInfo]: () => {
             return new Promise(async (resolve, reject) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
@@ -124,7 +119,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 }
             })
         },
-        makeInvoice: async (data: string | number | RequestInvoiceArgs) => {
+        [InjectionMessageType.webln_makeInvoice]: async data => {
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
                 // Save these refs to we can resolve / reject elsewhere
@@ -143,7 +138,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 }
             })
         },
-        sendPayment: async (data: string) => {
+        [InjectionMessageType.webln_sendPayment]: async data => {
             console.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
@@ -173,41 +168,26 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 }
             })
         },
-        signMessage: async () => {
+        [InjectionMessageType.webln_signMessage]: async () => {
             throw new UnsupportedMethodError(
                 t('errors.webln-method-not-supported', {
                     method: 'signMessage',
                 }),
             )
         },
-        verifyMessage: async () => {
+        [InjectionMessageType.webln_verifyMessage]: async () => {
             throw new UnsupportedMethodError(
                 t('errors.webln-method-not-supported', {
                     method: 'verifyMessage',
                 }),
             )
         },
-        keysend: async () => {
+        [InjectionMessageType.webln_keysend]: async () => {
             throw new UnsupportedMethodError(
-                t('errors.webln-method-not-supported', { method: 'keysend' }),
+                t('errors.webln-method-not-supported', {
+                    method: 'keysend',
+                }),
             )
-        },
-
-        // Non-WebLN
-        // Called when an a-tag containing a `lightning:` uri is found on a page
-        foundInvoice: async (data: string) => {
-            try {
-                const parsedData = await parseUserInput(data, fedimint, t)
-                if (parsedData.type === ParserDataType.LnurlAuth) {
-                    setLnurlAuthRequest(parsedData.data)
-                }
-            } catch (err) {
-                console.warn(
-                    'Encountered error parsing lightning uri',
-                    data,
-                    err,
-                )
-            }
         },
     })
 
@@ -249,20 +229,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             <WebView
                 ref={webview}
                 source={{ uri }}
-                onLoadStart={() => setJsInjected(false)}
-                onLoadProgress={e => {
-                    if (!jsInjected && e.nativeEvent.progress > 0.75) {
-                        const webLnJs = injectJs()
-                        const jsToInject = `${webLnJs}${
-                            fediModDebugMode
-                                ? INJECTABLE_ERUDA_DEBUG_WIDGET
-                                : ''
-                        }`
-
-                        webview.current.injectJavaScript(jsToInject)
-                        setJsInjected(true)
-                    }
-                }}
+                injectedJavaScript={generateInjectionJs({
+                    webln: true,
+                    eruda: fediModDebugMode,
+                })}
                 allowsInlineMediaPlayback
                 onMessage={onMessage}
                 style={{ width: '100%', height: '100%', flex: 1 }}
