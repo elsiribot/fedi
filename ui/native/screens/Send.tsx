@@ -1,9 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { StyleSheet, View } from 'react-native'
 
 import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 
@@ -18,7 +16,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 const Send: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const showOfflineWallet = useIsOfflineWalletSupported()
 
     const { navigate } = navigation
@@ -35,9 +32,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     }, [showOfflineWallet, t, navigate])
 
     return (
-        <SafeAreaView
-            edges={['bottom', 'left', 'right']}
-            style={styles(theme).container}>
+        <View style={styles().container}>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.Bolt11,
@@ -56,16 +51,15 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 onUnexpectedSuccess={() => null}
                 customActions={customActions}
             />
-        </SafeAreaView>
+        </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = () =>
     StyleSheet.create({
         container: {
             flex: 1,
             width: '100%',
-            padding: theme.spacing.lg,
         },
     })
 

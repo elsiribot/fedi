@@ -1,10 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { StyleSheet, View } from 'react-native'
 
 import { OmniInput } from '../components/feature/omni/OmniInput'
 import { ParserDataType } from '../types'
@@ -14,13 +12,10 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Receive'>
 
 const Receive: React.FC<Props> = () => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
     return (
-        <SafeAreaView
-            edges={['bottom', 'left', 'right']}
-            style={styles(theme).container}>
+        <View style={styles().container}>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.LnurlWithdraw,
@@ -57,15 +52,14 @@ const Receive: React.FC<Props> = () => {
                     },
                 ]}
             />
-        </SafeAreaView>
+        </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = () =>
     StyleSheet.create({
         container: {
             flex: 1,
-            padding: theme.spacing.lg,
             width: '100%',
         },
     })
