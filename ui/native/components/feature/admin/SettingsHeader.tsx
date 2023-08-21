@@ -10,7 +10,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
-import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 
 const SettingsHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -19,36 +18,28 @@ const SettingsHeader: React.FC<{}> = () => {
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
 
     return (
-        <>
-            <SelectedFederationHeader />
-            <Header
-                inline
-                leftContainerStyle={{ flex: 2 }}
-                headerLeft={
-                    <Text h2 medium>
-                        {t('words.settings')}
-                    </Text>
-                }
-                centerContainerStyle={{ flex: 2 }}
-                headerRight={
-                    <>
-                        {websocketIsHealthy && (
-                            <Pressable
-                                onPress={() =>
-                                    navigation.navigate('MemberQrCode')
-                                }
-                                hitSlop={5}>
-                                <SvgImage
-                                    name="Qr"
-                                    color={theme.colors.primary}
-                                />
-                            </Pressable>
-                        )}
-                    </>
-                }
-                rightContainerStyle={styles(theme).rightContainer}
-            />
-        </>
+        <Header
+            inline
+            leftContainerStyle={{ flex: 2 }}
+            headerLeft={
+                <Text h2 medium>
+                    {t('words.settings')}
+                </Text>
+            }
+            centerContainerStyle={{ flex: 2 }}
+            headerRight={
+                <>
+                    {websocketIsHealthy && (
+                        <Pressable
+                            onPress={() => navigation.navigate('MemberQrCode')}
+                            hitSlop={5}>
+                            <SvgImage name="Qr" color={theme.colors.primary} />
+                        </Pressable>
+                    )}
+                </>
+            }
+            rightContainerStyle={styles(theme).rightContainer}
+        />
     )
 }
 
