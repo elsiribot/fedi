@@ -1,37 +1,46 @@
-import { useRoute } from '@react-navigation/native'
+import { RouteProp, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 
 import { selectChatMember } from '@fedi/common/redux'
 
-import { Props as ChatWalletProps } from '../../../screens/ChatWallet'
 import { useAppSelector } from '../../../state/hooks'
+import { RootStackParamList } from '../../../types/navigation'
 import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
 
-type ChatWalletRouteProp = ChatWalletProps['route']
+type ChatRouteProp = RouteProp<RootStackParamList, 'ChatWallet'>
 
-const ChatWalletHeader: React.FC<{}> = () => {
+const DirectChatHeader: React.FC = () => {
     const { theme } = useTheme()
-    const route = useRoute<ChatWalletRouteProp>()
-    const { recipientId } = route.params
-    const chatMember = useAppSelector(s => selectChatMember(s, recipientId))
+    const route = useRoute<ChatRouteProp>()
+    const memberId = route.params.recipientId
+    const member = useAppSelector(s => selectChatMember(s, memberId))
+    const username = member?.username || memberId.split('@')[0] || ''
 
     return (
         <Header
             backButton
             containerStyle={styles(theme).container}
+            leftContainerStyle={styles(theme).headerLeftContainer}
+            centerContainerStyle={styles(theme).headerCenterContainer}
             headerCenter={
-                <View style={styles(theme).recipientContainer}>
-                    <Avatar
-                        id={chatMember?.id || ''}
-                        name={chatMember?.username || ''}
-                    />
-                    <Text bold style={styles(theme).recipientText}>
-                        {chatMember?.username || ''}
+                <Pressable
+                    disabled
+                    style={styles(theme).memberContainer}
+                    onPress={() => {
+                        // TODO: implement admin settings for 1on1 chat
+                        // navigation.navigate('GroupAdmin', { group })
+                    }}>
+                    <Avatar id={member?.id || ''} name={username} />
+                    <Text
+                        bold
+                        numberOfLines={1}
+                        style={styles(theme).memberText}>
+                        {username}
                     </Text>
-                </View>
+                </Pressable>
             }
         />
     )
@@ -40,17 +49,26 @@ const ChatWalletHeader: React.FC<{}> = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            marginTop: theme.spacing.md,
+            alignItems: 'center',
         },
-        recipientContainer: {
-            padding: theme.spacing.sm,
+        headerLeftContainer: {
+            height: theme.sizes.md,
+        },
+        headerCenterContainer: {
+            flex: 6,
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+        },
+        memberText: {
+            marginLeft: theme.spacing.sm,
+        },
+        memberContainer: {
+            padding: theme.spacing.xs,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
         },
-        recipientText: {
-            marginLeft: theme.spacing.sm,
-        },
     })
 
-export default ChatWalletHeader
+export default DirectChatHeader

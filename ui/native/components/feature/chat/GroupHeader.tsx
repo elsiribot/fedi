@@ -10,7 +10,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 import { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
-import SvgImage from '../../ui/SvgImage'
 import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
@@ -27,7 +26,6 @@ const GroupHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            containerStyle={styles(theme).container}
             centerContainerStyle={styles(theme).headerCenterContainer}
             headerCenter={
                 <Pressable
@@ -46,45 +44,16 @@ const GroupHeader: React.FC<{}> = () => {
                     </Text>
                 </Pressable>
             }
-            rightContainerStyle={styles(theme).headerRightContainer}
-            headerRight={
-                <>
-                    <Pressable
-                        disabled
-                        onPress={() => {}}
-                        style={styles(theme).headerIconContainer}>
-                        <SvgImage name="Video" color={theme.colors.primary} />
-                    </Pressable>
-                    <Pressable
-                        disabled
-                        onPress={() => {}}
-                        style={styles(theme).headerIconContainer}>
-                        <SvgImage name="Phone" color={theme.colors.primary} />
-                    </Pressable>
-                </>
-            }
         />
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            marginTop: theme.spacing.md,
-        },
         headerCenterContainer: {
             flex: 6,
-            justifyContent: 'flex-start',
-        },
-        headerRightContainer: {
-            flex: 3,
-            flexDirection: 'row',
-            justifyContent: 'flex-end',
-        },
-        headerIconContainer: {
-            padding: theme.spacing.sm,
-            // Disabled
-            opacity: 0.25,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
         groupNameText: {
             marginLeft: theme.spacing.sm,
@@ -94,11 +63,11 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
         },
         groupNameContainer: {
-            width: '95%',
-            padding: theme.spacing.sm,
+            flex: 1,
+            padding: theme.spacing.xs,
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'flex-start',
+            justifyContent: 'center',
         },
     })
 

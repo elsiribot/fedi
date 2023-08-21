@@ -19,7 +19,6 @@ const GroupAdminHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            containerStyle={styles(theme).container}
             rightContainerStyle={styles(theme).headerRightContainer}
             headerRight={
                 <>
@@ -40,9 +39,6 @@ const GroupAdminHeader: React.FC<{}> = () => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            marginTop: theme.spacing.md,
-        },
         headerCenterContainer: {
             flex: 6,
             justifyContent: 'flex-start',
