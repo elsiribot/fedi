@@ -11,10 +11,6 @@ on:
             - 'ui/common/**'
             - '!ui/native/ios/**' # Don't run for changes in /ios folder
 
-defaults:
-    run:
-        working-directory: ui/native
-
 jobs:
     release-android:
         name: Build Android APK and publish in GitHub draft release
@@ -36,32 +32,11 @@ jobs:
                   name: fedibtc
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-            - name: Setup JDK
-              uses: actions/setup-java@v3
-              with:
-                  distribution: 'zulu'
-                  java-version: 11
-                  cache: 'gradle'
-
-            - name: Setup Node
-              uses: actions/setup-node@v1
-              with:
-                  node-version: '16.18.X'
-
             - name: Build bridge
-              run: |
-                  yarn build-bridge-android
+              run: nix develop .#cross --command just build-bridge-android
 
-            - name: Install Node dependencies
-              run: yarn install
-
-            - name: Setup Ruby
-              uses: ruby/setup-ruby@v1
-              with:
-                  ruby-version: '2.7.5'
-
-            - name: Install Fastlane
-              run: cd android && bundle install && cd ..
+            - name: Build UI dependencies
+              run: nix develop .#cross --command just build-ui-deps
 
             - name: Bump version & prep for APK build
               id: versioning

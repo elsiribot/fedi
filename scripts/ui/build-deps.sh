@@ -15,7 +15,3 @@ echo "Building UI modules: @fedi/common and @fedi/injections"
 nix develop .#cross --command yarn build
 echo "Building UI modules: @fedi/common and @fedi/injections"
 cd $REPO_ROOT
-
-# DELETEME: see if these work in CI...
-pushd $REPO_ROOT/ui
-popd
