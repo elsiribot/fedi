@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 cd bridge/fedi-wasm || exit
-nix develop --ignore-environment .#cross --command ./wasm-build.sh
+nix develop --ignore-environment .#cross --command ./wasm-build.sh "$@"
 cd ../..
 # cp out/* ../../ui/common/wasm# 
 

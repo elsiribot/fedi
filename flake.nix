@@ -166,6 +166,7 @@
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
+              pkgs.git
             ]
             ++ prev.nativeBuildInputs;
           });
@@ -176,6 +177,7 @@
               ]
               ++ prev.nativeBuildInputs
               ++ [
+                pkgs.git
                 pkgs.wasm-pack
                 pkgs.wasm-bindgen-cli
                 pkgs.binaryen

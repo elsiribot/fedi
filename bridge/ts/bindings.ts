@@ -12,14 +12,7 @@ export type Opaque<BaseType, TagName> = BaseType & {
 
 export type AddressOrInvoice = "address" | "invoice";
 
-export type Amount = Opaque<number, "fedimint_api::Amount">;
-
-export interface BitcoinTransactionDetails {
-  address: string;
-  txid: string;
-  fee: Amount | null;
-  incomingStatus: IncomingBitcoinTransactionStatus | null;
-}
+export type Amount = Opaque<number, "fedimint_core::Amount">;
 
 export interface BridgeLightningGateway {
   mintPubKey: Opaque<string, "XOnlyPublicKey">;
@@ -32,7 +25,8 @@ export type ErrorCode =
   | "initializationFailed"
   | "badRequest"
   | "invalidInvoice"
-  | "invalidMnemonic";
+  | "invalidMnemonic"
+  | "federationNotFound";
 
 export type Event =
   | { Federation: { event: FedimintFederation } }
@@ -41,20 +35,32 @@ export type Event =
   | { RecoveryFileCreation: { event: RecoveryFileCreationEvent } }
   | { Log: { event: LogEvent } };
 
+export type FederationId = Opaque<string, "FederationId">;
+
 export interface FediConfig {
   client_config: any;
-  username: string | null;
 }
 
 export interface FedimintFederation {
+  id: FederationId;
   name: string;
-  connectInfo: any;
+  network: string;
+  connectInfo: string;
   nodes: Array<{ url: string; name: string }>;
   balance: Amount;
   socialRecoveryActive: boolean;
+  meta: Record<string, string>;
 }
 
 export type IncomingBitcoinTransactionStatus = "pending" | "complete";
+
+export interface Invoice {
+  paymentHash: string;
+  amount: Amount;
+  fee: Amount;
+  description: string;
+  invoice: string;
+}
 
 export interface LightningTransactionDetails {
   invoice: any;
@@ -74,19 +80,23 @@ export interface OfflineTransactionDetails {
   claimed: boolean;
 }
 
+export interface PayInvoiceResponse {
+  preimage: string;
+}
+
 export type PeerId = number;
 
 export type PublicKey = Opaque<string, "PublicKey">;
 
 export interface RecoveryFileCreationEvent {
-  federationId: string;
+  federationId: FederationId;
 }
 
 export type RecoveryId = Opaque<string, "RecoveryId">;
 
 export interface RpcMethods {
   listTransactions: [
-    { federationId: string },
+    { federationId: FederationId },
     Array<{
       id: string;
       createdAt: bigint;
@@ -94,57 +104,78 @@ export interface RpcMethods {
       amount: Amount;
       notes: string;
       lightning: LightningTransactionDetails | null;
-      bitcoin: BitcoinTransactionDetails | null;
+      lnPayState: any;
       offline: OfflineTransactionDetails | null;
     }>
   ];
   updateTransactionNotes: [
-    { federationId: string; transactionId: string; notes: string },
+    { federationId: FederationId; transactionId: string; notes: string },
     null
   ];
   joinFederation: [
     { connectString: string },
     {
+      id: FederationId;
       name: string;
-      connectInfo: any;
+      network: string;
+      connectInfo: string;
       nodes: Array<{ url: string; name: string }>;
       balance: Amount;
       socialRecoveryActive: boolean;
+      meta: Record<string, string>;
     }
   ];
   listFederations: [
     {},
     Array<{
+      id: FederationId;
       name: string;
-      connectInfo: any;
+      network: string;
+      connectInfo: string;
       nodes: Array<{ url: string; name: string }>;
       balance: Amount;
       socialRecoveryActive: boolean;
+      meta: Record<string, string>;
     }>
   ];
   generateInvoice: [
-    { federationId: string; amount: Amount; description: string },
+    { federationId: FederationId; amount: Amount; description: string },
     string
   ];
-  decodeInvoice: [{ invoice: string }, string];
-  payInvoice: [{ federationId: string; invoice: string }, null];
-  generateAddress: [{ federationId: string }, string];
-  payAddress: [{ federationId: string; address: string; sats: bigint }, string];
-  generateEcash: [{ federationId: string; amount: Amount }, string];
+  decodeInvoice: [
+    { invoice: string },
+    {
+      paymentHash: string;
+      amount: Amount;
+      fee: Amount;
+      description: string;
+      invoice: string;
+    }
+  ];
+  payInvoice: [
+    { federationId: FederationId; invoice: string },
+    { preimage: string }
+  ];
+  generateAddress: [{ federationId: FederationId }, string];
+  payAddress: [
+    { federationId: FederationId; address: string; sats: bigint },
+    string
+  ];
+  generateEcash: [{ federationId: FederationId; amount: Amount }, string];
   receiveEcash: [
-    { federationId: string; ecash: string },
-    Opaque<number, "fedimint_api::Amount">
+    { federationId: FederationId; ecash: string },
+    Opaque<number, "fedimint_core::Amount">
   ];
   validateEcash: [
-    { federationId: string; ecash: string },
+    { federationId: FederationId; ecash: string },
     { valid: boolean; amount: Amount }
   ];
   addressOrInvoice: [
-    { federationId: string; input: string },
+    { federationId: FederationId; input: string },
     "address" | "invoice"
   ];
   listGateways: [
-    { federationId: string },
+    { federationId: FederationId },
     Array<{
       mintPubKey: Opaque<string, "XOnlyPublicKey">;
       nodePubKey: Opaque<string, "PublicKey">;
@@ -152,33 +183,37 @@ export interface RpcMethods {
       active: boolean;
     }>
   ];
-  switchGateway: [{ federationId: string; nodePubkey: PublicKey }, null];
-  getMnemonic: [{ federationId: string }, Array<string>];
+  switchGateway: [{ federationId: FederationId; nodePubkey: PublicKey }, null];
+  getMnemonic: [{ federationId: FederationId }, Array<string>];
   recoverFromMnemonic: [
-    { federationId: string; mnemonic: Array<string> },
+    { federationId: FederationId; mnemonic: Array<string> },
     string | null
   ];
-  leaveFederation: [{ federationId: string }, null];
-  uploadBackupFile: [{ federationId: string; videoFilePath: string }, string];
+  leaveFederation: [{ federationId: FederationId }, null];
+  connectionString: [{ federationId: FederationId }, string];
+  uploadBackupFile: [
+    { federationId: FederationId; videoFilePath: string },
+    string
+  ];
   locateRecoveryFile: [{}, string];
-  validateRecoveryFile: [{ federationId: string; path: string }, boolean];
-  recoveryQr: [{ federationId: string }, { recoveryId: RecoveryId }];
+  validateRecoveryFile: [{ federationId: FederationId; path: string }, boolean];
+  recoveryQr: [{ federationId: FederationId }, { recoveryId: RecoveryId }];
   socialRecoveryApprovals: [
-    { federationId: string },
+    { federationId: FederationId },
     {
-      federationId: string;
+      federationId: FederationId;
       approvals: Array<SocialRecoveryApproval>;
       remaining: number;
     }
   ];
-  completeSocialRecovery: [{ federationId: string }, string | null];
+  completeSocialRecovery: [{ federationId: FederationId }, string | null];
   socialRecoveryDownloadVerificationDoc: [
-    { federationId: string; recoveryId: RecoveryId },
+    { federationId: FederationId; recoveryId: RecoveryId },
     string | null
   ];
   approveSocialRecoveryRequest: [
     {
-      federationId: string;
+      federationId: FederationId;
       recoveryId: RecoveryId;
       peerId: PeerId;
       password: string;
@@ -186,11 +221,14 @@ export interface RpcMethods {
     null
   ];
   lnurlSignMessage: [
-    { message: string; federationId: string },
+    { message: string; federationId: FederationId },
     { signature: string; pubkey: PublicKey }
   ];
-  xmppCredentials: [{ federationId: string }, { password: string }];
-  backupXmppUsername: [{ federationId: string; username: string }, null];
+  xmppCredentials: [
+    { federationId: FederationId },
+    { password: string; keypairSeed: string; username: string | null }
+  ];
+  backupXmppUsername: [{ federationId: FederationId; username: string }, null];
 }
 
 export interface SocialRecoveryApproval {
@@ -199,7 +237,7 @@ export interface SocialRecoveryApproval {
 }
 
 export interface SocialRecoveryEvent {
-  federationId: string;
+  federationId: FederationId;
   approvals: Array<SocialRecoveryApproval>;
   remaining: number;
 }
@@ -207,7 +245,7 @@ export interface SocialRecoveryEvent {
 export type TransactionDirection = "send" | "receive";
 
 export interface TransactionEvent {
-  federationId: string;
+  federationId: FederationId;
   transaction: Transaction;
 }
 
@@ -218,11 +256,12 @@ export interface Transaction {
   amount: Amount;
   notes: string;
   lightning: LightningTransactionDetails | null;
-  bitcoin: BitcoinTransactionDetails | null;
+  lnPayState: any;
   offline: OfflineTransactionDetails | null;
 }
 
 export interface XmppCredentials {
   password: string;
-    keypairSeed: string;
+  keypairSeed: string;
+  username: string | null;
 }
