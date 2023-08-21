@@ -45,6 +45,7 @@
         "pay": "Pay",
         "payments": "Payments",
         "pending": "Pending",
+        "people": "People",
         "receive": "Receive",
         "received": "Received",
         "reject": "Reject",
@@ -283,6 +284,8 @@
             "wants-to-pay-you": "{{fediMod}} wants to pay you"
         },
         "omni": {
+            "action-enter-username": "Enter Username",
+            "action-enter-username-or-ln": "Enter Username / Lightning Address",
             "action-paste": "Paste from clipboard",
             "action-scan": "Scan QR code",
             "action-upload": "Upload QR image",
@@ -293,6 +296,10 @@
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",
             "confirm-website-url": "This is a website url, do you want to open this in your browser?",
+            "search-placeholder-username": "Enter a username",
+            "search-placeholder-username-or-ln": "Enter a username or lightning address",
+            "search-no-history": "No previous history with “{{username}}”",
+            "search-no-history-send": "Send to “{{username}}” for the first time",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"

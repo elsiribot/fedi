@@ -1350,6 +1350,61 @@ export const selectOrderedChatList = createSelector(
     },
 )
 
+/**
+ * Returns members who have sent us messages recently. Optionally
+ * takes in an argument of the number to return, defaults to 4.
+ */
+export const selectRecentChatMembers = createSelector(
+    selectOrderedChatMessages,
+    selectChatMemberMap,
+    selectAuthenticatedMember,
+    (_: CommonState, limit?: number) => limit || 4,
+    (messages, memberMap, authenticatedMember, limit) => {
+        const recentMembers: ChatMember[] = []
+        for (const message of messages) {
+            // Grab the member of the sender (to us) or sendee (from us)
+            const member =
+                memberMap[
+                    message.sentTo && message.sentTo !== authenticatedMember?.id
+                        ? message.sentTo
+                        : message.sentBy
+                ]
+            // Ignore group chats
+            if (message.sentIn) continue
+            // Ignore unidentified members
+            if (!member) continue
+            // Ignore members we've already added
+            if (recentMembers.find(m => m.id === member.id)) continue
+            // Add the member, and once we've reached the limit, break out
+            recentMembers.push(member)
+            if (recentMembers.length >= limit) break
+        }
+        return recentMembers
+    },
+)
+
+/**
+ * Returns members that match our search query. Prioritizes exact matches,
+ * followed by startsWith, followed by contains, all sorted alphabetically.
+ * If no search query is passed, all members are returned.
+ */
+export const selectSearchChatMembers = createSelector(
+    selectAllChatMembers,
+    (_: CommonState, searchQuery?: string) => searchQuery,
+    (members, searchQuery) => {
+        if (!searchQuery) return members
+        return members
+            .filter(m => m.username.includes(searchQuery))
+            .sort((a, b) => {
+                if (a.username === searchQuery) return -1
+                if (b.username === searchQuery) return 1
+                if (a.username.startsWith(searchQuery)) return -1
+                if (b.username.startsWith(searchQuery)) return 1
+                return a.username.localeCompare(b.username)
+            })
+    },
+)
+
 export const selectChat = createSelector(
     selectOrderedChatList,
     (_: CommonState, chatId: Chat['id']) => chatId,
