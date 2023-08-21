@@ -47,8 +47,14 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
             }
             setProcessingRedemption(false)
         }
+        // HACK: we just need to give the Rust bridge a split second
+        // to resolve some DB lock to avoid a panic so wait 250ms here
+        let timeout = setTimeout(() => {})
         if (payment?.token) {
-            dispatchPaymentUpdate()
+            timeout = setTimeout(() => dispatchPaymentUpdate(), 250)
+        }
+        return () => {
+            clearTimeout(timeout)
         }
     }, [activeFederationId, dispatch, message.id, payment?.token])
 
