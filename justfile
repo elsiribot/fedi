@@ -94,6 +94,10 @@ build-bridge-android:
 build-bridge-ios:
   ./scripts/bridge/build-bridge-ios.sh
 
+# install UI dependencies
+build-ui-deps:
+  ./scripts/ui/build-deps.sh
+
 # generate typescript bindings for the bridge
 generate-bridge-bindings:
   ./scripts/bridge/ts-bindgen.sh
