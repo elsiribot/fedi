@@ -98,6 +98,10 @@ build-bridge-ios:
 build-ui-deps:
   ./scripts/ui/build-deps.sh
 
+# install UI dependencies
+bump-version-native-ui:
+  ./scripts/ui/bump-version-native.sh
+
 # generate typescript bindings for the bridge
 generate-bridge-bindings:
   ./scripts/bridge/ts-bindgen.sh
