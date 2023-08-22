@@ -43,17 +43,9 @@ jobs:
               run: nix develop .#cross --command just bump-version-native-ui
 
             - name: Build APK
+              env:
+                  APK_PATH: ${{ steps.versioning.outputs.APK_PATH }}
               run: nix develop .#cross --command just build-production-apk
-
-            - name: Rename APK with version
-              run: |
-                  RELEASE_PATH=./android/app/build/outputs/apk/production/release
-                  SOURCE=$RELEASE_PATH/app-production-release.apk
-                  DESTINATION=./${{ steps.versioning.outputs.APK_PATH }}
-                  echo "Moving apk from $SOURCE to $DESTINATION"
-                  mv $SOURCE $DESTINATION
-                  echo "checking RELEASE_PATH $RELEASE_PATH"
-                  ls $RELEASE_PATH
 
             - name: Create draft GitHub release with APK
               uses: softprops/action-gh-release@v1
