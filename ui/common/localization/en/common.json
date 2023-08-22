@@ -133,7 +133,9 @@
         "webln-method-not-supported": "{{method}} is not supported",
         "webln-payment-rejected": "Payment rejected",
         "webln-payment-request-rejected": "Payment request rejected",
-        "you-have-already-joined": "You have already joined this federation"
+        "you-have-already-joined": "You have already joined this federation",
+        "get-nostr-pubkey-failed": "Failed to get nostr pub key",
+        "sign-nostr-event-failed": "Failed to sign nostr event"
     },
     "feature": {
         "backup": {

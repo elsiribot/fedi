@@ -7,11 +7,7 @@ import type {
     SignMessageResponse,
 } from 'webln'
 
-import {
-    NostrRelayMapResponse,
-    SignedNostrEvent,
-    UnsignedNostrEvent,
-} from './injectables/nostr/types'
+import { SignedNostrEvent, UnsignedNostrEvent } from './injectables/nostr/types'
 
 export enum InjectionMessageType {
     webln_enable = 'webln_enable',
@@ -23,9 +19,6 @@ export enum InjectionMessageType {
     webln_verifyMessage = 'webln_verifyMessage',
     nostr_getPublicKey = 'nostr_getPublicKey',
     nostr_signEvent = 'nostr_signEvent',
-    nostr_getRelays = 'nostr_getRelays',
-    nostr_nip04_encrypt = 'nostr_nip04_encrypt',
-    nostr_nip04_decrypt = 'nostr_nip04_decrypt',
 }
 
 export type InjectionMessageResponseMap = {
@@ -67,24 +60,6 @@ export type InjectionMessageResponseMap = {
     [InjectionMessageType.nostr_signEvent]: {
         message: UnsignedNostrEvent
         response: SignedNostrEvent
-    }
-    [InjectionMessageType.nostr_getRelays]: {
-        message: void
-        response: NostrRelayMapResponse
-    }
-    [InjectionMessageType.nostr_nip04_encrypt]: {
-        message: {
-            pubkey: string
-            plaintext: string
-        }
-        response: string
-    }
-    [InjectionMessageType.nostr_nip04_decrypt]: {
-        message: {
-            pubkey: string
-            ciphertext: string
-        }
-        response: string
     }
 }
 

@@ -26,12 +26,12 @@ import {
     ParserDataType,
 } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import encryptionUtils from '@fedi/common/utils/EncryptionUtils'
 import {
     InjectionMessageType,
     generateInjectionJs,
     makeWebViewMessageHandler,
 } from '@fedi/injections'
+import { eventHashFromEvent } from '@fedi/injections/src/injectables/nostr/utils'
 
 import { fedimint } from '../bridge'
 import { AuthOverlay } from '../components/feature/fedimods/AuthOverlay'
@@ -199,7 +199,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     resolve(pub_key)
                 } catch (err) {
                     console.warn(err)
-                    reject('Failed to getNostrPubKey')
+                    reject(t('errors.get-nostr-pubkey-failed'))
                 }
             })
         },
@@ -208,16 +208,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             return new Promise(async (resolve, reject) => {
                 try {
                     const pub_key = await getNostrPubKey()
-                    const event_hash = encryptionUtils.toSha256EncHex(
-                        JSON.stringify([
-                            0,
-                            pub_key,
-                            evt.created_at,
-                            evt.kind,
-                            evt.tags,
-                            evt.content,
-                        ]),
-                    )
+                    const event_hash = eventHashFromEvent(pub_key, evt)
                     let result = await signNostrEvent(event_hash)
                     resolve({
                         id: event_hash,
@@ -230,25 +221,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     })
                 } catch (err) {
                     console.warn(err)
-                    reject('Failed to signNostrEvent')
+                    reject(t('errors.sign-nostr-event-failed'))
                 }
             })
-        },
-        [InjectionMessageType.nostr_getRelays]: async () => {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    resolve({})
-                } catch (err) {
-                    console.warn(err)
-                    reject('Failed to getRelays')
-                }
-            })
-        },
-        [InjectionMessageType.nostr_nip04_encrypt]: async () => {
-            throw new UnsupportedMethodError('error')
-        },
-        [InjectionMessageType.nostr_nip04_decrypt]: async () => {
-            throw new UnsupportedMethodError('error')
         },
     })
 
@@ -289,7 +264,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
             <WebView
                 ref={webview}
-                webviewDebuggingEnabled={true}
+                webviewDebuggingEnabled={fediModDebugMode} // required for IOS debugging
                 source={{ uri }}
                 injectedJavaScript={generateInjectionJs({
                     webln: true,

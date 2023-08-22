@@ -133,7 +133,9 @@
         "webln-method-not-supported": "{{method}} n'est pas pris en charge",
         "webln-payment-rejected": "Paiement rejeté",
         "webln-payment-request-rejected": "Demande de paiement rejetée",
-        "you-have-already-joined": "Vous avez déjà rejoint cette fédération"
+        "you-have-already-joined": "Vous avez déjà rejoint cette fédération",
+        "get-nostr-pubkey-failed": "Failed to get nostr pub key",
+        "sign-nostr-event-failed": "Failed to sign nostr event"
     },
     "feature": {
         "backup": {
@@ -269,7 +271,7 @@
             "debug-mode": "Mode de débogage Fedi Mod",
             "debug-mode-info": "Injecte un outil de développement (Eruda) dans le navigateur lors de l'ouverture de Fedi Mods",
             "nostr-enabled": "Nostr",
-            "nostr-enabled-info": "Injects Nostr extensions (NIP07) into the browser when opening Fedi Mods", // TODO: Translate
+            "nostr-enabled-info": "Injects Nostr extensions (NIP07) into the browser when opening Fedi Mods",
             "enter-amount-to-withdraw": "Entrez un montant à retirer de {{fediMod}}",
             "enter-valid-url": "Veuillez saisir une URL valide (http:// ou https://)",
             "fedimod-icon": "Icône Mod Fedi",
