@@ -1,11 +1,12 @@
 import { Buffer } from 'buffer'
+import Hex from 'crypto-js/enc-hex'
 import sha256 from 'crypto-js/sha256'
 import { box, randomBytes } from 'tweetnacl'
 import {
-    decodeUTF8,
-    encodeUTF8,
-    encodeBase64,
     decodeBase64,
+    decodeUTF8,
+    encodeBase64,
+    encodeUTF8,
 } from 'tweetnacl-util'
 
 import { Key, Keypair } from '../types'
@@ -99,6 +100,9 @@ class EncryptionUtils {
             result[i++] = w & 0x000000ff
         }
         return result
+    }
+    toSha256EncHex = (message: string): string => {
+        return sha256(message).toString(Hex)
     }
 }
 

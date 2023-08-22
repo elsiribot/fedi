@@ -6,8 +6,8 @@ import {
     useMemo,
     useRef,
 } from 'react'
-import { AppState as RNAppState, AppStateStatus } from 'react-native'
-import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
+import { AppStateStatus, AppState as RNAppState } from 'react-native'
+import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
@@ -21,7 +21,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
-import type { AppState, AppDispatch } from '../store'
+import type { AppDispatch, AppState } from '../store'
 
 /**
  * Provides a `dispatch` function that allows you to dispatch redux actions.
@@ -165,6 +165,12 @@ export const useBridge = () => {
         getNostrPubKey: useCallback(() => {
             return fedimint.getNostrPubKey(activeFederationId!)
         }, [activeFederationId]),
+        signNostrEvent: useCallback(
+            (eventHash: string) => {
+                return fedimint.signNostrEvent(eventHash, activeFederationId!)
+            },
+            [activeFederationId],
+        ),
         listGateways: useCallback(() => {
             return fedimint.listGateways(activeFederationId!)
         }, [activeFederationId]),

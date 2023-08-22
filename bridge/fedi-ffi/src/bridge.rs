@@ -5,7 +5,11 @@ use fedimint_client::{
     backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret, sm::OperationId,
     ClientBuilder, ClientSecret, OperationLogEntry,
 };
-use fedimint_core::{config::FederationId, db::IDatabase, task::timeout};
+use fedimint_core::{
+    config::FederationId,
+    db::{DatabaseValue, IDatabase},
+    task::timeout,
+};
 use fedimint_ln_client::{
     db::LightningGatewayKey, network_to_currency, LightningClientExt, LightningClientGen,
     LightningClientModule, LightningMeta, LnPayState, LnReceiveState,
@@ -42,7 +46,7 @@ use crate::{
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::{
     secp256k1::{Message, PublicKey, Secp256k1},
-    Network,
+    Network, XOnlyPublicKey,
 };
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_core::api::{GlobalFederationApi, WsClientConnectInfo, WsFederationApi};
@@ -1008,13 +1012,24 @@ impl Federation {
     }
 
     /// Get Nostr Public key for a specific federation
-    pub async fn get_nostr_pub_key(&self) -> PublicKey {
+    pub async fn get_nostr_pub_key(&self) -> XOnlyPublicKey {
         let secp = Secp256k1::new();
         let root_secret = self.root_secret().await;
         let nostr_secret = root_secret.child_key(NOSTR_CHILD_ID);
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let nostr_pubkey = nostr_keypair.public_key();
-        nostr_pubkey
+        let nostr_pubkey = nostr_keypair.x_only_public_key();
+        nostr_pubkey.0
+    }
+
+    pub async fn sign_nostr_event(&self, event_hash: String) -> String {
+        let secp = Secp256k1::new();
+        let root_secret = self.root_secret().await;
+        let nostr_secret = root_secret.child_key(NOSTR_CHILD_ID);
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let data = &hex::decode(event_hash).unwrap();
+        let message = Message::from_slice(data).unwrap();
+        let sig = secp.sign_schnorr(&message, &nostr_keypair);
+        hex::encode(sig.to_bytes())
     }
 
     /// Sign LNURL message using a key derived from client secret

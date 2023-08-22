@@ -1,19 +1,19 @@
 import type {
-    Transaction,
-    Federation,
-    Invoice,
     AddressOrInvoice,
-    ValidateEcashResponse,
-    LnurlSignedMessage,
-    XmppCredentials,
-    RecoveredUsername,
-    SeedWords,
-    MSats,
-    Sats,
+    Federation,
+    FedimintBridgeEventMap,
+    Invoice,
     LightningGateway,
+    LnurlSignedMessage,
+    MSats,
+    RecoveredUsername,
+    Sats,
+    SeedWords,
     SocialRecoveryEvent,
     SocialRecoveryQrCode,
-    FedimintBridgeEventMap,
+    Transaction,
+    ValidateEcashResponse,
+    XmppCredentials,
 } from '../types'
 
 export class FedimintBridge {
@@ -123,6 +123,13 @@ export class FedimintBridge {
 
     async getNostrPubKey(federationId: string) {
         return this.rpc<string>('getNostrPubKey', { federationId })
+    }
+
+    async signNostrEvent(eventHash: string, federationId: string) {
+        return this.rpc<string>('signNostrEvent', {
+            eventHash,
+            federationId,
+        })
     }
 
     async getXmppCredentials(federationId: string) {

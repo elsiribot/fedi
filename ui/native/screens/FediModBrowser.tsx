@@ -26,6 +26,7 @@ import {
     ParserDataType,
 } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import encryptionUtils from '@fedi/common/utils/EncryptionUtils'
 import {
     InjectionMessageType,
     generateInjectionJs,
@@ -49,7 +50,7 @@ type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const { listGateways, getNostrPubKey } = useBridge()
+    const { listGateways, getNostrPubKey, signNostrEvent } = useBridge()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -194,16 +195,44 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.nostr_getPublicKey]: async () => {
             return new Promise(async (resolve, reject) => {
                 try {
-                    const pubKey = await getNostrPubKey()
-                    resolve(pubKey)
+                    const pub_key = await getNostrPubKey()
+                    resolve(pub_key)
                 } catch (err) {
                     console.warn(err)
                     reject('Failed to getNostrPubKey')
                 }
             })
         },
-        [InjectionMessageType.nostr_signEvent]: async () => {
-            throw new UnsupportedMethodError('error')
+        [InjectionMessageType.nostr_signEvent]: async evt => {
+            console.info('nostr_signEvent data:', evt)
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const pub_key = await getNostrPubKey()
+                    const event_hash = encryptionUtils.toSha256EncHex(
+                        JSON.stringify([
+                            0,
+                            pub_key,
+                            evt.created_at,
+                            evt.kind,
+                            evt.tags,
+                            evt.content,
+                        ]),
+                    )
+                    let result = await signNostrEvent(event_hash)
+                    resolve({
+                        id: event_hash,
+                        pubkey: pub_key,
+                        created_at: evt.created_at,
+                        kind: evt.kind,
+                        content: evt.content,
+                        tags: evt.tags,
+                        sig: result,
+                    })
+                } catch (err) {
+                    console.warn(err)
+                    reject('Failed to signNostrEvent')
+                }
+            })
         },
         [InjectionMessageType.nostr_getRelays]: async () => {
             return new Promise(async (resolve, reject) => {

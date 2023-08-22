@@ -343,6 +343,17 @@ async fn getNostrPubKey(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn signNostrEvent(
+    bridge: Arc<Bridge>,
+    event_hash: String,
+    federation_id: FederationId,
+) -> anyhow::Result<String> {
+    let federation: Arc<Federation> = get_federation(&bridge, &federation_id).await?;
+    let sig = federation.sign_nostr_event(event_hash).await;
+    Ok(sig)
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn lnurlSignMessage(
     bridge: Arc<Bridge>,
     // hex-encoded message
@@ -664,6 +675,7 @@ rpc_methods!(RpcMethods {
     backupXmppUsername,
     // Nostr
     getNostrPubKey,
+    signNostrEvent,
 });
 
 #[instrument(
