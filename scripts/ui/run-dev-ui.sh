@@ -98,7 +98,7 @@ else
   echo "Running development UI (native + PWA)"
 fi
 
-source $REPO_ROOT/scripts/dev-ui/setup.sh
+source $REPO_ROOT/scripts/ui/dev-setup.sh
 
 # export these so mprocs scripts can see them
 export SKIP_PWA_BUILD
