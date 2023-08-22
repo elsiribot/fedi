@@ -5,9 +5,13 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
+# Check if git user + email to make sure we can commit when running in CI 
+if [ -z "$(git config --global --get user.email)" ]; then
+  git config --global user.email "dev@fedibtc.com"
+  git config --global user.name "Fedi Dev CI"
+fi
+
 pushd $REPO_ROOT/ui/native
-git config --global user.email "dev@fedibtc.com"
-git config --global user.name "Fedi Dev CI"
 RELEASE_BRANCH_VERSION="${GITHUB_REF##*/}"
 echo "Release branch: $RELEASE_BRANCH_VERSION"
 CURRENT_VERSION="$(npm pkg get version --ws false | sed 's/"//g')"
