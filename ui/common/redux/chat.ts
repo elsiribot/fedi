@@ -556,13 +556,6 @@ export const connectChat = createAsyncThunk<
         const federation = state.federation.federations.find(
             f => f.id === federationId,
         )
-        const xmppClientStatus = chatState?.clientStatus
-        if (xmppClientStatus !== 'offline') {
-            console.warn(
-                `Chat connection attempt already in progress for ${federationId}...`,
-            )
-            return
-        }
 
         if (!federation) {
             console.error(
@@ -699,16 +692,23 @@ export const connectChat = createAsyncThunk<
 
         // Start the client
         const connectionOptions = makeChatServerOptions(chatDomain)
-        client.start(
-            {
-                domain: connectionOptions.domain,
-                service: connectionOptions.service,
-                resource: connectionOptions.resource,
-                username: authenticatedMember.username,
-                password: credentials.password,
-            },
-            encryptionKeys,
-        )
+        if (client?.xmpp && client?.xmpp?.status !== 'offline') {
+            console.warn(
+                `Chat connection attempt already in progress for ${federationId}...`,
+            )
+            return
+        } else {
+            client.start(
+                {
+                    domain: connectionOptions.domain,
+                    service: connectionOptions.service,
+                    resource: connectionOptions.resource,
+                    username: authenticatedMember.username,
+                    password: credentials.password,
+                },
+                encryptionKeys,
+            )
+        }
     },
 )
 
