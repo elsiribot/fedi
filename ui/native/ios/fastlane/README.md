@@ -31,6 +31,14 @@ Push a new beta build to TestFlight from CI
 
 Push a new beta build to TestFlight
 
+### ios build_release
+
+```sh
+[bundle exec] fastlane ios build_release
+```
+
+Create a release build
+
 ### ios check_appstore_certs
 
 ```sh
