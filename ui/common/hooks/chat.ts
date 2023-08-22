@@ -1,11 +1,13 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 import type { ChatMember, ChatMessage } from '@fedi/common/types'
 
 import {
     connectChat,
+    disconnectChat,
     fetchChatMember,
     selectActiveFederation,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatMember,
     selectLatestChatMessage,
@@ -165,37 +167,44 @@ export async function useMonitorChatConnection(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
     const { activeFederationId } = useCommonSelector(s => s.federation)
     const isChatSupported = useIsChatSupported()
-    const xmppClientStatus = useCommonSelector(selectChatClientStatus)
-
-    const attemptChatConnection = useCallback(async () => {
-        if (!activeFederationId || xmppClientStatus !== 'offline') return
-
-        // If client is offline, attempt to connect
-        await dispatch(
-            connectChat({
-                fedimint,
-                federationId: activeFederationId,
-            }),
-        )
-    }, [activeFederationId, dispatch, fedimint, xmppClientStatus])
+    const authenticatedMember = useCommonSelector(selectAuthenticatedMember)
+    const memberId = authenticatedMember?.id
 
     useEffect(() => {
+        // Can't connect to chat if no federation is selected
+        if (!activeFederationId) return
+
+        // Can't connect to chat if federation doesn't support chat
         if (!isChatSupported) return
 
-        // Call the function immediately to check the connection right away
-        // wait 100ms to give the xmppClientStatus time to update
-        setTimeout(() => attemptChatConnection(), 100)
-    }, [isChatSupported, attemptChatConnection])
+        // Can't connect to federation if we don't have auth
+        if (!memberId) return
 
-    useEffect(() => {
-        if (!isChatSupported) return
-
-        // Set up an interval to check the chat connection every 10 seconds
-        const intervalId = setInterval(attemptChatConnection, 10000)
-
-        // Cleanup function to clear the interval when the component unmounts
-        return () => {
-            clearInterval(intervalId)
+        let reconnectTimeout: ReturnType<typeof setTimeout>
+        const attemptChatConnection = async () => {
+            console.debug('attemptChatConnection')
+            try {
+                await dispatch(
+                    connectChat({
+                        fedimint,
+                        federationId: activeFederationId,
+                    }),
+                ).unwrap()
+            } catch {
+                // Attempt reconnect in 5s if it fails
+                reconnectTimeout = setTimeout(attemptChatConnection, 5000)
+            }
         }
-    }, [isChatSupported, attemptChatConnection])
+
+        // Attempt initial chat connection on mount
+        attemptChatConnection()
+
+        // Disconnect whenever dependencies change
+        return () => {
+            dispatch(disconnectChat({ federationId: activeFederationId }))
+            if (reconnectTimeout) clearTimeout(reconnectTimeout)
+        }
+        // Dependencies are non-exhaustive here intentionally to prevent
+        // multiple calls to connectChat which may cause race-condition bugs
+    }, [activeFederationId, isChatSupported, memberId])
 }
