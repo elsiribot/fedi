@@ -185,6 +185,9 @@
                 pkgs.yarn
                 pkgs.nodejs
                 pkgs.jdk17
+                # tools for managing native app deployments
+                pkgs.fastlane
+                pkgs.ruby
               ]
               ++ lib.optionals stdenv.isDarwin [
                 pkgs.cocoapods

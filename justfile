@@ -94,10 +94,22 @@ build-bridge-android:
 build-bridge-ios:
   ./scripts/bridge/build-bridge-ios.sh
 
+# install UI dependencies
+build-ui-deps:
+  ./scripts/ui/build-deps.sh
+
+# generates a standard production release APK for @fedi/native
+build-production-apk:
+  ./scripts/ui/build-production-apk.sh
+
+# bumps the npm + react-native versions for @fedi/native
+bump-version-native-ui:
+  ./scripts/ui/bump-version-native.sh
+
 # generate typescript bindings for the bridge
 generate-bridge-bindings:
   ./scripts/bridge/ts-bindgen.sh
 
 # start dev UI (native + pwa). Use `just run-dev-ui interactive` for build options
 run-dev-ui mode="default":
-  MODE={{mode}} ./scripts/dev-ui/run.sh
+  MODE={{mode}} ./scripts/ui/run-dev-ui.sh
