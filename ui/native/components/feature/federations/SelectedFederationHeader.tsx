@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
@@ -13,7 +14,6 @@ import {
     NavigationHook,
 } from '../../../types/navigation'
 import { FederationLogo } from '../../ui/FederationLogo'
-import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
 
@@ -39,27 +39,20 @@ const SelectedFederationHeader: React.FC<{}> = () => {
     }, [drawerNavigator, activeFederation, previousActiveFederation?.id])
 
     return (
-        <Header
-            centerContainerStyle={{ flex: 10 }}
-            headerCenter={
-                <View style={styles(theme).container}>
-                    <Pressable
-                        style={styles(theme).federation}
-                        onPress={openFederationsDrawer}>
-                        <FederationLogo
-                            federation={activeFederation}
-                            size={24}
-                        />
-                        <Text bold caption style={styles(theme).federationName}>
-                            {activeFederation?.name}
-                        </Text>
-                        <SvgImage name="ChevronRight" size={20} />
-                    </Pressable>
-                    {popupInfo && <PopupFederationCountdown />}
-                </View>
-            }
-            containerStyle={styles(theme).headerContainer}
-        />
+        <SafeAreaView
+            edges={['top', 'left', 'right']}
+            style={styles(theme).container}>
+            <Pressable
+                style={styles(theme).federation}
+                onPress={openFederationsDrawer}>
+                <FederationLogo federation={activeFederation} size={24} />
+                <Text bold caption style={styles(theme).federationName}>
+                    {activeFederation?.name}
+                </Text>
+                <SvgImage name="ChevronRight" size={20} />
+            </Pressable>
+            {popupInfo && <PopupFederationCountdown />}
+        </SafeAreaView>
     )
 }
 
@@ -69,6 +62,9 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
+            paddingBottom: theme.spacing.sm,
+            borderBottomColor: theme.colors.extraLightGrey,
+            borderBottomWidth: 1,
         },
         federation: {
             flexDirection: 'row',

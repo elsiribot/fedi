@@ -31,6 +31,7 @@ import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
+import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -117,126 +118,132 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <Tab.Navigator
-            initialRouteName="Home"
-            id={TABS_NAVIGATOR_ID}
-            screenOptions={({ route }) => ({
-                tabBarButton: props => {
-                    switch (route.name) {
-                        case 'Home':
-                            return <Pressable {...props} />
-                        case 'Chat':
-                            if (connectionOptions) {
+        <>
+            <SelectedFederationHeader />
+            <Tab.Navigator
+                initialRouteName="Home"
+                id={TABS_NAVIGATOR_ID}
+                screenOptions={({ route }) => ({
+                    tabBarButton: props => {
+                        switch (route.name) {
+                            case 'Home':
                                 return <Pressable {...props} />
-                            } else {
+                            case 'Chat':
+                                if (connectionOptions) {
+                                    return <Pressable {...props} />
+                                } else {
+                                    return (
+                                        <Pressable
+                                            {...props}
+                                            style={[
+                                                props.style,
+                                                styles(theme, insets)
+                                                    .disabledIcon,
+                                            ]}
+                                            onPress={() => {
+                                                toast?.show(
+                                                    t(
+                                                        'errors.chat-unavailable',
+                                                    ),
+                                                    3000,
+                                                )
+                                            }}
+                                        />
+                                    )
+                                }
+                            case 'Settings':
+                                return <Pressable {...props} />
+                            default:
+                                return null
+                        }
+                    },
+                    tabBarIcon: ({ focused }) => {
+                        switch (route.name) {
+                            case 'Home':
                                 return (
-                                    <Pressable
-                                        {...props}
-                                        style={[
-                                            props.style,
-                                            styles(theme, insets).disabledIcon,
-                                        ]}
-                                        onPress={() => {
-                                            toast?.show(
-                                                t('errors.chat-unavailable'),
-                                                3000,
-                                            )
-                                        }}
+                                    <SvgImage
+                                        name={focused ? 'HomeFilled' : 'Home'}
+                                        containerStyle={
+                                            styles(theme, insets)
+                                                .tabBarIconContainer
+                                        }
+                                        color={
+                                            focused
+                                                ? theme.colors.primary
+                                                : theme.colors.primaryLight
+                                        }
                                     />
                                 )
-                            }
-                        case 'Settings':
-                            return <Pressable {...props} />
-                        default:
-                            return null
-                    }
-                },
-                tabBarIcon: ({ focused }) => {
-                    switch (route.name) {
-                        case 'Home':
-                            return (
-                                <SvgImage
-                                    name={focused ? 'HomeFilled' : 'Home'}
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    color={
-                                        focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight
-                                    }
-                                />
-                            )
-                        case 'Chat':
-                            return (
-                                <SvgImage
-                                    name={focused ? 'ChatFilled' : 'Chat'}
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    color={
-                                        focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight
-                                    }
-                                />
-                            )
-                        case 'Settings':
-                            return (
-                                <SvgImage
-                                    name={focused ? 'CogFilled' : 'Cog'}
-                                    containerStyle={
-                                        styles(theme, insets)
-                                            .tabBarIconContainer
-                                    }
-                                    color={
-                                        focused
-                                            ? theme.colors.primary
-                                            : theme.colors.primaryLight
-                                    }
-                                />
-                            )
-                        default:
-                            return null
-                    }
-                },
-                tabBarActiveTintColor: theme.colors.primary,
-                tabBarInactiveTintColor: theme.colors.primaryLight,
-                tabBarStyle: styles(theme, insets).tabBar,
-                tabBarItemStyle: styles(theme, insets).tabBarItem,
-                headerTitleStyle: theme.components.Text.style,
-                tabBarLabelStyle: styles(theme, insets).tabBarLabel,
-                tabBarBadgeStyle: styles(theme, insets).tabBarBadge,
-            })}>
-            <Tab.Screen
-                name="Home"
-                initialParams={{ offline }}
-                options={() => ({
-                    title: t('words.home'),
-                    header: () => <HomeHeader />,
+                            case 'Chat':
+                                return (
+                                    <SvgImage
+                                        name={focused ? 'ChatFilled' : 'Chat'}
+                                        containerStyle={
+                                            styles(theme, insets)
+                                                .tabBarIconContainer
+                                        }
+                                        color={
+                                            focused
+                                                ? theme.colors.primary
+                                                : theme.colors.primaryLight
+                                        }
+                                    />
+                                )
+                            case 'Settings':
+                                return (
+                                    <SvgImage
+                                        name={focused ? 'CogFilled' : 'Cog'}
+                                        containerStyle={
+                                            styles(theme, insets)
+                                                .tabBarIconContainer
+                                        }
+                                        color={
+                                            focused
+                                                ? theme.colors.primary
+                                                : theme.colors.primaryLight
+                                        }
+                                    />
+                                )
+                            default:
+                                return null
+                        }
+                    },
+                    tabBarActiveTintColor: theme.colors.primary,
+                    tabBarInactiveTintColor: theme.colors.primaryLight,
+                    tabBarStyle: styles(theme, insets).tabBar,
+                    tabBarItemStyle: styles(theme, insets).tabBarItem,
+                    headerTitleStyle: theme.components.Text.style,
+                    tabBarLabelStyle: styles(theme, insets).tabBarLabel,
+                    tabBarBadgeStyle: styles(theme, insets).tabBarBadge,
                 })}>
-                {props => <Home {...props} offline={offline} />}
-            </Tab.Screen>
-            <Tab.Screen
-                name="Chat"
-                component={ChatScreen}
-                options={() => ({
-                    title: t('words.chat'),
-                    header: () => <ChatHeader />,
-                    tabBarBadge: hasUnseenMessages ? '' : undefined,
-                })}
-            />
-            <Tab.Screen
-                name="Settings"
-                component={Settings}
-                options={() => ({
-                    title: t('words.settings'),
-                    header: () => <SettingsHeader />,
-                })}
-            />
-        </Tab.Navigator>
+                <Tab.Screen
+                    name="Home"
+                    initialParams={{ offline }}
+                    options={() => ({
+                        title: t('words.home'),
+                        header: () => <HomeHeader />,
+                    })}>
+                    {props => <Home {...props} offline={offline} />}
+                </Tab.Screen>
+                <Tab.Screen
+                    name="Chat"
+                    component={ChatScreen}
+                    options={() => ({
+                        title: t('words.chat'),
+                        header: () => <ChatHeader />,
+                        tabBarBadge: hasUnseenMessages ? '' : undefined,
+                    })}
+                />
+                <Tab.Screen
+                    name="Settings"
+                    component={Settings}
+                    options={() => ({
+                        title: t('words.settings'),
+                        header: () => <SettingsHeader />,
+                    })}
+                />
+            </Tab.Navigator>
+        </>
     )
 }
 
