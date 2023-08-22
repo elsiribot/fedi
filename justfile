@@ -98,7 +98,11 @@ build-bridge-ios:
 build-ui-deps:
   ./scripts/ui/build-deps.sh
 
-# install UI dependencies
+# generates a standard production release APK for @fedi/native
+build-production-apk:
+  ./scripts/ui/build-production-apk.sh
+
+# bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
   ./scripts/ui/bump-version-native.sh
 
