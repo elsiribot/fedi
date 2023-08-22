@@ -63,3 +63,6 @@ jobs:
         secrets: inherit
         with:
             commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}
+        if: >-
+            github.event_name == 'push' &&
+            startsWith(github.ref, 'refs/heads/release/')
