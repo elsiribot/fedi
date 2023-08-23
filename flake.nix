@@ -211,10 +211,15 @@
               ]
               ++ prev.nativeBuildInputs
               ++ [
+                pkgs.git
+                pkgs.wasm-pack
+                pkgs.wasm-bindgen-cli
                 pkgs.binaryen
                 pkgs.gnused
                 pkgs.yarn
                 pkgs.nodejs
+                pkgs.fastlane
+                pkgs.ruby
               ]
               ++ lib.optionals stdenv.isDarwin [
                 xcode-wrapper
