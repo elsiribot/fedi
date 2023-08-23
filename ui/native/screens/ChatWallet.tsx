@@ -1,14 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     useMinMaxRequestAmount,
     useMinMaxSendAmount,
 } from '@fedi/common/hooks/amount'
+import { useChatMember } from '@fedi/common/hooks/chat'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -17,6 +18,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatPayment, ChatPaymentStatus, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
 import AmountInput from '../components/ui/AmountInput'
@@ -44,8 +46,22 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { generateEcash } = useBridge()
     const { toast } = useEnvironmentContext().state
     const { recipientId } = route.params
+    const { member, isFetchingMember } = useChatMember(recipientId)
     const sendMinMax = useMinMaxSendAmount()
     const requestMinMax = useMinMaxRequestAmount()
+
+    // Reset navigation stack on going back to the chat to give better back
+    // button behavior if directed here from Omni.
+    // TODO: Have TabsNavigator go back to Chat tab instead of Home on back.
+    const backToChat = useCallback(() => {
+        navigation.reset({
+            index: 1,
+            routes: [
+                { name: 'TabsNavigator' },
+                { name: 'DirectChat', params: { memberId: recipientId } },
+            ],
+        })
+    }, [navigation, recipientId])
 
     useEffect(() => {
         const generateAndSendEcash = async () => {
@@ -58,19 +74,22 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     status: ChatPaymentStatus.accepted,
                     token: ecash,
                 }
-                dispatch(
+                await dispatch(
                     sendDirectMessage({
                         fedimint,
                         federationId: activeFederation?.id as string,
                         recipientId: recipientId,
                         payment,
                     }),
-                )
+                ).unwrap()
                 // go back to DirectChat to show sent payment
-                navigation.goBack()
+                backToChat()
             } catch (error) {
-                console.error(error)
-                toast?.show(t('errors.unknown-error'), 3000)
+                console.error('generateAndSendEcash', error)
+                toast?.show(
+                    formatErrorMessage(t, error, 'errors.unknown-error'),
+                    3000,
+                )
             }
             setSendingEcash(false)
         }
@@ -82,7 +101,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         amount,
         dispatch,
         generateEcash,
-        navigation,
+        backToChat,
         recipientId,
         sendingEcash,
         t,
@@ -108,18 +127,22 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 recipient: authenticatedMember?.id,
                 status: ChatPaymentStatus.requested,
             }
-            dispatch(
+            await dispatch(
                 sendDirectMessage({
                     fedimint,
                     federationId: activeFederation?.id as string,
                     recipientId: recipientId,
                     payment,
                 }),
-            )
+            ).unwrap()
             setIsLoading(false)
-            navigation.goBack()
+            backToChat()
         } catch (error) {
-            console.error(error)
+            console.error('requestEcash', error)
+            toast?.show(
+                formatErrorMessage(t, error, 'errors.unknown-error'),
+                3000,
+            )
             setIsLoading(false)
         }
     }
@@ -156,6 +179,23 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         }
 
         setAmount(updatedValue)
+    }
+
+    if (isFetchingMember) {
+        return (
+            <View style={styles(theme, insets).centeredContainer}>
+                <ActivityIndicator />
+            </View>
+        )
+    } else if (!member) {
+        const username = recipientId.split('@')[0]
+        return (
+            <View style={styles(theme, insets).centeredContainer}>
+                <Text style={styles(theme, insets).centeredText}>
+                    {t('feature.chat.member-not-found', { username })}
+                </Text>
+            </View>
+        )
     }
 
     const inputMinMax =
@@ -247,6 +287,16 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         buttonContainer: {
             margin: theme.spacing.sm,
             flex: 1,
+        },
+        centeredContainer: {
+            flex: 1,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+        },
+        centeredText: {
+            textAlign: 'center',
         },
     })
 
