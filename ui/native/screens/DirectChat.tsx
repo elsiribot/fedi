@@ -1,16 +1,16 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
-    fetchChatMember,
-    selectChatClientStatus,
+    useChatMember,
+    useUpdateLastMessageRead,
+} from '@fedi/common/hooks/chat'
+import {
     selectChatConnectionOptions,
-    selectChatMember,
     selectChatMessages,
     sendDirectMessage,
 } from '@fedi/common/redux'
@@ -51,23 +51,12 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     )
     const { toast } = useEnvironmentContext().state
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
-    const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
-    const member = useAppSelector(s => selectChatMember(s, memberId))
+    const { member, isFetchingMember } = useChatMember(memberId)
 
     const messageCollections = useMemo(
         () => makeMessageGroups(messages, 'desc'),
         [messages],
     )
-
-    // If we don't have info about this member, attempt to fetch a pubkey for them
-    useEffect(() => {
-        if (member || !activeFederationId || !isChatOnline) return
-        dispatch(
-            fetchChatMember({ federationId: activeFederationId, memberId }),
-        ).catch(() => {
-            /* no-op */
-        })
-    }, [activeFederationId, dispatch, isChatOnline, member, memberId])
 
     // Use this hook only if the screen is in focus
     useUpdateLastMessageRead(
@@ -96,12 +85,29 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         [activeFederationId, dispatch, member, memberId, t, toast],
     )
 
-    return (
-        <View style={styles(theme).container}>
-            <MessagesList messages={messageCollections} />
-            <MessageInput onMessageSubmitted={handleSend} memberId={memberId} />
-        </View>
-    )
+    let content: React.ReactNode
+    if (isFetchingMember) {
+        content = <ActivityIndicator />
+    } else if (!member) {
+        const username = memberId.split('@')[0]
+        content = (
+            <Text style={styles(theme).centeredText}>
+                {t('feature.chat.member-not-found', { username })}
+            </Text>
+        )
+    } else {
+        content = (
+            <>
+                <MessagesList messages={messageCollections} />
+                <MessageInput
+                    onMessageSubmitted={handleSend}
+                    memberId={memberId}
+                />
+            </>
+        )
+    }
+
+    return <View style={styles(theme).container}>{content}</View>
 }
 
 const styles = (_: Theme) =>
@@ -110,6 +116,9 @@ const styles = (_: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        centeredText: {
+            textAlign: 'center',
         },
     })
 
