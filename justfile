@@ -113,3 +113,7 @@ generate-bridge-bindings:
 # start dev UI (native + pwa). Use `just run-dev-ui interactive` for build options
 run-dev-ui mode="default":
   MODE={{mode}} ./scripts/ui/run-dev-ui.sh
+
+# installs the xcodes tool and installs a version of Xcode.app
+install-xcode:
+  ./scripts/install-xcode.sh
