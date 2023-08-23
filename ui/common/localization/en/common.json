@@ -89,6 +89,7 @@
         "how-it-works": "How it works",
         "i-understand": "I understand",
         "invalid-federation-code": "Invalid federation code",
+        "lightning-address": "Lightning address",
         "lightning-request": "Lightning request",
         "new-member": "New member",
         "no-transactions": "No transactions",
@@ -298,8 +299,8 @@
             "confirm-website-url": "This is a website url, do you want to open this in your browser?",
             "search-placeholder-username": "Enter a username",
             "search-placeholder-username-or-ln": "Enter a username or lightning address",
-            "search-no-history": "No previous history with “{{username}}”",
-            "search-no-history-send": "Send to “{{username}}” for the first time",
+            "search-no-history-header": "No history with user",
+            "search-no-results": "No users match “{{query}}”",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"

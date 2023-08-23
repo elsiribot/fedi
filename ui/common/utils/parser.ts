@@ -22,6 +22,7 @@ import {
     ParsedWebsite,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'
+import { isValidInternetIdentifier } from './validation'
 import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
 
 /**
@@ -109,7 +110,7 @@ async function parseLnurl(
     // in one place.
     if (lnRaw.startsWith('lnurl') || lnRaw.startsWith('keyauth')) {
         lnurlParamPromise = getLnurlParams(lnRaw)
-    } else if (lnRaw.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
+    } else if (isValidInternetIdentifier(lnRaw)) {
         const [username, domain] = lnRaw.split('@')
         if (username && domain) {
             const url = `https://${domain}/.well-known/lnurlp/${username}`

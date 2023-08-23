@@ -3,7 +3,10 @@ import { useState, useMemo, useEffect } from 'react'
 import type { ChatMember, ChatMessage } from '@fedi/common/types'
 
 import {
+    fetchChatMember,
     selectActiveFederation,
+    selectChatClientStatus,
+    selectChatMember,
     selectLatestChatMessage,
     selectPushNotificationToken,
     setLastReadMessageId,
@@ -17,26 +20,26 @@ export function useChatMemberSearch(members: ChatMember[]) {
 
     const searchedMembers = useMemo(() => {
         if (!query) return members
-        const lowerQeury = query.toLowerCase()
+        const lowerQuery = query.toLowerCase()
         const filteredMembers = members.filter(m =>
-            m.username.toLowerCase().includes(lowerQeury),
+            m.username.toLowerCase().includes(lowerQuery),
         )
         return filteredMembers.sort((m1, m2) => {
             const m1Name = m1.username.toLowerCase()
             const m2Name = m2.username.toLowerCase()
-            if (m1Name === lowerQeury) {
-                return 1
-            }
-            if (m2Name === lowerQeury) {
+            if (m1Name === lowerQuery) {
                 return -1
             }
-            if (m1Name.startsWith(lowerQeury)) {
+            if (m2Name === lowerQuery) {
                 return 1
             }
-            if (m2Name.startsWith(lowerQeury)) {
+            if (m1Name.startsWith(lowerQuery)) {
                 return -1
             }
-            return 0
+            if (m2Name.startsWith(lowerQuery)) {
+                return 1
+            }
+            return m1Name.localeCompare(m2Name)
         })
     }, [members, query])
 
@@ -125,4 +128,32 @@ export function usePublishNotificationToken(
                 console.error('Failed to get device token', error)
             })
     }, [activeFederationId, dispatch, getDeviceToken, pushNotificationToken])
+}
+
+/**
+ * Given a member id, return the chat member and whether or not we're actively
+ * fetching the chat member. If the chat member is not found in the redux store,
+ * attempt to fetch information about them from the chat server.
+ */
+export function useChatMember(memberId: string) {
+    const dispatch = useCommonDispatch()
+    const federationId = useCommonSelector(selectActiveFederation)?.id
+    const member = useCommonSelector(s => selectChatMember(s, memberId))
+    const isChatOnline = useCommonSelector(selectChatClientStatus) === 'online'
+    const [isFetchingMember, setIsFetchingMember] = useState(false)
+
+    const hasMember = !!member
+    useEffect(() => {
+        if (hasMember || !federationId || !isChatOnline) return
+        setIsFetchingMember(true)
+        dispatch(fetchChatMember({ federationId, memberId }))
+            .catch(() => {
+                /* no-op */
+            })
+            .finally(() => {
+                setIsFetchingMember(false)
+            })
+    }, [dispatch, hasMember, federationId, isChatOnline, memberId])
+
+    return { member, isFetchingMember }
 }

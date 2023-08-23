@@ -1383,28 +1383,6 @@ export const selectRecentChatMembers = createSelector(
     },
 )
 
-/**
- * Returns members that match our search query. Prioritizes exact matches,
- * followed by startsWith, followed by contains, all sorted alphabetically.
- * If no search query is passed, all members are returned.
- */
-export const selectSearchChatMembers = createSelector(
-    selectAllChatMembers,
-    (_: CommonState, searchQuery?: string) => searchQuery,
-    (members, searchQuery) => {
-        if (!searchQuery) return members
-        return members
-            .filter(m => m.username.includes(searchQuery))
-            .sort((a, b) => {
-                if (a.username === searchQuery) return -1
-                if (b.username === searchQuery) return 1
-                if (a.username.startsWith(searchQuery)) return -1
-                if (b.username.startsWith(searchQuery)) return 1
-                return a.username.localeCompare(b.username)
-            })
-    },
-)
-
 export const selectChat = createSelector(
     selectOrderedChatList,
     (_: CommonState, chatId: Chat['id']) => chatId,
@@ -1431,6 +1409,25 @@ export const selectChatMember = createSelector(
     (_: CommonState, memberId: string) => memberId,
     (chatMembers, memberId) => {
         return chatMembers.find(member => member.id === memberId)
+    },
+)
+
+export const selectChatMembersWithHistory = createSelector(
+    selectAllChatMembers,
+    selectAllChatMessages,
+    (members, messages) => {
+        const memberIdMap: Record<ChatMember['id'], boolean> = {}
+        messages.forEach(m => {
+            // Exclude group chats
+            if (m.sentIn) return
+            // Lazily include both sender & receiver, which will include ourselves,
+            // but is faster than determining which of the two isn't us
+            memberIdMap[m.sentBy] = true
+            if (m.sentTo) {
+                memberIdMap[m.sentTo] = true
+            }
+        })
+        return members.filter(m => !!memberIdMap[m.id])
     },
 )
 
