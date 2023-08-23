@@ -63,6 +63,9 @@ jobs:
             - name: Test bridge
               run: nix build -L .#testBridge
 
+            - name: Build Android bridge artifacts
+              run: nix develop .#cross --command just build-bridge-android
+
     shell:
       strategy:
         matrix:
