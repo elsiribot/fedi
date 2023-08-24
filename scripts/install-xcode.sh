@@ -28,3 +28,4 @@ cleanup
 echo -e "\x1B[33m\nRunning 'xcode-select -p'...\x1B[0m"
 xcode-select -p
 echo -e "\nBe sure that the output of xcode-select -p shown above points to \n\x1B[32;1m/Applications/Xcode-$XCODE_VERSION_TO_INSTALL.app/Contents/Developer\x1B[0m \nand NOT \n\x1B[33m/Library/Developer/CommandLineTools\x1B[0m"
+echo -e "\nYou can fix this with 'sudo xcode-select --switch \x1B[32;1m/Applications/Xcode-$XCODE_VERSION_TO_INSTALL.app/Contents/Developer\x1B[0m'"
