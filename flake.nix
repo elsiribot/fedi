@@ -132,6 +132,8 @@
         # rust packages outputs with git hash replaced
         rustPackagesFinal = builtins.mapAttrs (name: package: fmLib.replaceGitHash { inherit name package; }) rustPackages;
 
+        # this symlinks binaries needed to run xcode-specific commands assuming
+        # xcode is already installed on the machine (can't be nixified normally)
         xcode-wrapper = stdenv.mkDerivation {
           name = "xcode-wrapper-14.3.1";
           buildCommand = ''
@@ -151,6 +153,38 @@
             fi
           '';
         };
+
+        crossDevShell = fmLib.devShells.cross.overrideAttrs (prev: {
+          nativeBuildInputs =
+            [
+              (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
+            ]
+            ++ prev.nativeBuildInputs
+            ++ [
+              pkgs.git
+              pkgs.wasm-pack
+              pkgs.wasm-bindgen-cli
+              pkgs.binaryen
+              pkgs.gnused
+              pkgs.yarn
+              pkgs.nodejs
+              pkgs.jdk17
+              # tools for managing native app deployments
+              pkgs.fastlane
+              pkgs.ruby
+            ];
+          ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
+          ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
+          shellHook = prev.shellHook
+            + toolchains.wasm32CrossEnvVars
+            + toolchains.iosCrossEnvVars
+            + toolchains.androidCrossEnvVars
+            + ''
+            export PATH=$PATH:${toolchains.androidSdk}/bin
+            alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
+            alias emulator="emulator -avd phone"
+          '';
+        });
       in
       {
         packages = {
@@ -170,55 +204,15 @@
             ]
             ++ prev.nativeBuildInputs;
           });
-          cross = fmLib.devShells.cross.overrideAttrs (prev: {
-            nativeBuildInputs =
-              [
-                (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
-              ]
-              ++ prev.nativeBuildInputs
-              ++ [
-                pkgs.git
-                pkgs.wasm-pack
-                pkgs.wasm-bindgen-cli
-                pkgs.binaryen
-                pkgs.gnused
-                pkgs.yarn
-                pkgs.nodejs
-                pkgs.jdk17
-                # tools for managing native app deployments
-                pkgs.fastlane
-                pkgs.ruby
-              ]
+          cross = crossDevShell;
+          # nix develop .#xcode is used for running commands that depend on an
+          # existing underlying Xcode installation that cannot be nixified
+          xcode = crossDevShell.overrideAttrs (prev: {
+            nativeBuildInputs = prev.nativeBuildInputs
               ++ lib.optionals stdenv.isDarwin [
-                pkgs.cocoapods
-              ];
-            ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
-            ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
-            shellHook = prev.shellHook
-              + toolchains.wasm32CrossEnvVars
-              + toolchains.iosCrossEnvVars
-              + toolchains.androidCrossEnvVars
-              + ''
-              export PATH=$PATH:${toolchains.androidSdk}/bin
-              alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
-              alias emulator="emulator -avd phone"
-            '';
-          });
-          xcode = fmLib.devShells.cross.overrideAttrs (prev: {
-            nativeBuildInputs =
-              [
-                (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
-              ]
-              ++ prev.nativeBuildInputs
-              ++ [
-                pkgs.binaryen
-                pkgs.gnused
-                pkgs.yarn
-                pkgs.nodejs
-              ]
-              ++ lib.optionals stdenv.isDarwin [
-                xcode-wrapper
-              ];
+              pkgs.cocoapods
+              xcode-wrapper
+            ];
             shellHook = prev.shellHook;
           });
         };

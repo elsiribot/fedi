@@ -9,30 +9,16 @@ defaults:
 jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
-        runs-on: macos-latest
+        runs-on: [self-hosted, macos]
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
               with:
                   submodules: true
 
-            - name: Cache
-              uses: actions/cache@v3
-              env:
-                  SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
+            - uses: cachix/install-nix-action@v20
               with:
-                  path: |
-                      ~/.cargo/registry
-                      ~/.cargo/git
-                      ./bridge/target
-                  key: ${{ runner.os }}
-
-            - name: Install Rust
-              uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
-                  override: true
-                  components: rustfmt, clippy
+                  nix_path: nixpkgs=channel:nixos-22.05
 
             - name: Setup Node
               uses: actions/setup-node@v1
@@ -41,15 +27,10 @@ jobs:
 
             - name: Build bridge
               run: |
-                  npm run build-bridge-ios
+                  yarn build-bridge-ios
 
             - name: Install Node dependencies
-              run: npm ci --cache .npm
-
-            - name: Setup Ruby
-              uses: ruby/setup-ruby@v1
-              with:
-                  ruby-version: '2.7.5'
+              run: yarn install
 
             - name: Install pods
               run: cd ios && pod install && cd ..
@@ -62,7 +43,7 @@ jobs:
                   rm -rf ./tmp
 
             - name: Install Fastlane
-              run: cd android && bundle install && cd ..
+              run: cd ios && bundle install && cd ..
 
             - name: Execute fastlane beta lane for CI
               env:

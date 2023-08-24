@@ -10,15 +10,16 @@ cd $BRIDGE_ROOT
 TARGET=$REPO_ROOT/target
 
 cd $BRIDGE_ROOT/fedi-ffi
-nix develop .#cross --command cargo run --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
+nix develop .#xcode --command cargo run --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
 cd $BRIDGE_ROOT
 
-nix develop .#cross --command cargo build --package fedi-ffi --profile release --target x86_64-apple-ios $CARGO_FLAGS
-nix develop .#cross --command cargo build --package fedi-ffi --profile release --target aarch64-apple-ios $CARGO_FLAGS
-nix develop .#cross --command cargo build --package fedi-ffi --release --target aarch64-apple-ios-sim $CARGO_FLAGS
+# use the xcode shell to make sure we have the necessary SDKs
+nix develop .#xcode --command cargo build --package fedi-ffi --profile release --target x86_64-apple-ios $CARGO_FLAGS
+nix develop .#xcode --command cargo build --package fedi-ffi --profile release --target aarch64-apple-ios $CARGO_FLAGS
+nix develop .#xcode --command cargo build --package fedi-ffi --release --target aarch64-apple-ios-sim $CARGO_FLAGS
 
 mkdir -p $TARGET/lipo-ios-sim/release
-nix develop .#cross --command lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release/libfediffi.a -create -output $TARGET/lipo-ios-sim/release/libfediffi.a
+nix develop .#xcode --command lipo $TARGET/aarch64-apple-ios-sim/release/libfediffi.a ../target/x86_64-apple-ios/release/libfediffi.a -create -output $TARGET/lipo-ios-sim/release/libfediffi.a
 
 cd $BRIDGE_ROOT/fedi-swift
 mv Sources/Fedi/fedi.swift Sources/Fedi/Fedi.swift || true
@@ -29,5 +30,3 @@ cp $TARGET/aarch64-apple-ios/release/libfediffi.a fediFFI.xcframework/ios-arm64/
 cp $TARGET/lipo-ios-sim/release/libfediffi.a fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
 rm Sources/Fedi/fediFFI.h
 rm Sources/Fedi/fediFFI.modulemap
-#rm fediFFI.xcframework.zip || true
-#zip -9 -r fediFFI.xcframework.zip fediFFI.xcframework
