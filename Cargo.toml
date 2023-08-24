@@ -42,7 +42,6 @@ keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 [workspace.dependencies]
 threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
 
-
 # stabilitypool-server = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "e8d07c283ac8af081ecb6fcfd8fc193c503da5ff" }
 # stabilitypool-client = { git = "https://x-access-token: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@github.com/fedibtc/stabilitypool", rev = "e8d07c283ac8af081ecb6fcfd8fc193c503da5ff" }
 # stabilitypool-server = { path = "../stabilitypool/stabilitypool-server" }
@@ -74,7 +73,6 @@ ln-gateway = { git = "https://github.com/fedimint/fedimint" }
 uniffi_bindgen = "0.21.1"
 
 [profile.dev]
-split-debuginfo = "packed"
 
 # in dev mode optimize crates that are perf-critical (usually just crypto crates)
 [profile.dev.package]
@@ -93,6 +91,9 @@ bls12_381 = { opt-level = 3 }
 subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
 threshold_crypto = { opt-level = 3 }
+
+[profile.ci]
+inherits = "dev"
 
 [patch.'https://github.com/fedimint/fedimint']
 fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "c4feb8d487b604dce68082df12bb5fc862421784" }
