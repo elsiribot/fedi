@@ -169,7 +169,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                             name={authenticatedMember?.username || ''}
                         />
                     </View>
-                    <Text h2 medium>
+                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                         {authenticatedMember?.username || 'satoshi'}
                     </Text>
                 </View>
