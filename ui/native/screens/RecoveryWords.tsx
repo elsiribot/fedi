@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
 import type { SeedWords } from '@fedi/common/types'
 
@@ -21,7 +21,12 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
     return (
         <View style={styles(theme).wordContainer}>
             <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
-            <Text style={styles(theme).wordText}>{word}</Text>
+            <Text
+                style={styles(theme).wordText}
+                numberOfLines={1}
+                adjustsFontSizeToFit>
+                {word}
+            </Text>
         </View>
     )
 }
@@ -58,22 +63,24 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text h2 h2Style={styles(theme).label}>
-                {t('feature.backup.recovery-words')}
-            </Text>
-            <Text style={styles(theme).instructionsText}>
-                {t('feature.backup.recovery-words-instructions')}
-            </Text>
-            <Card containerStyle={styles(theme).roundedCardContainer}>
-                <View style={styles(theme).twoColumnContainer}>
-                    <View style={styles(theme).seedWordsContainer}>
-                        {renderFirstSixSeedWords()}
+            <ScrollView contentContainerStyle={styles(theme).scrollView}>
+                <Text h2 h2Style={styles(theme).label}>
+                    {t('feature.backup.recovery-words')}
+                </Text>
+                <Text style={styles(theme).instructionsText}>
+                    {t('feature.backup.recovery-words-instructions')}
+                </Text>
+                <Card containerStyle={styles(theme).roundedCardContainer}>
+                    <View style={styles(theme).twoColumnContainer}>
+                        <View style={styles(theme).seedWordsContainer}>
+                            {renderFirstSixSeedWords()}
+                        </View>
+                        <View style={styles(theme).seedWordsContainer}>
+                            {renderLastSixSeedWords()}
+                        </View>
                     </View>
-                    <View style={styles(theme).seedWordsContainer}>
-                        {renderLastSixSeedWords()}
-                    </View>
-                </View>
-            </Card>
+                </Card>
+            </ScrollView>
             <Button
                 title={t('words.continue')}
                 containerStyle={styles(theme).continueButton}
@@ -91,6 +98,9 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'flex-start',
             padding: theme.spacing.xl,
+        },
+        scrollView: {
+            paddingBottom: theme.spacing.lg,
         },
         continueButton: {
             width: '100%',
@@ -123,11 +133,14 @@ const styles = (theme: Theme) =>
             marginVertical: theme.spacing.sm,
         },
         wordNumber: {
+            flexShrink: 0,
             color: theme.colors.black,
             paddingHorizontal: theme.spacing.md,
-            width: '30%',
+            minWidth: 40,
         },
         wordText: {
+            flex: 1,
+            textAlign: 'left',
             fontWeight: '400',
         },
     })
