@@ -48,7 +48,9 @@ const TransactionsList = ({
     }
 
     return (
-        <SafeAreaView style={styles(theme).container}>
+        <SafeAreaView
+            edges={['left', 'right', 'bottom']}
+            style={styles(theme).container}>
             <FlatList
                 data={transactions}
                 renderItem={renderTransaction}
@@ -97,7 +99,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            alignItems: 'center',
+            width: '100%',
         },
         overlayContainer: {
             borderRadius: theme.borders.defaultRadius,

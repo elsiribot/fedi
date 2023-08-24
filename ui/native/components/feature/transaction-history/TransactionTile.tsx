@@ -43,8 +43,9 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                             : t('words.received')
                     }`}
                 </Text>
-                {/* TODO: truncate this */}
-                <Text>{txn.notes}</Text>
+                <Text small numberOfLines={1}>
+                    {txn.notes}
+                </Text>
             </View>
 
             <View style={styles(theme).rightContainer}>
@@ -54,6 +55,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                     )} ${t('words.sats').toUpperCase()}`}
                 </Text>
                 <Text
+                    small
                     style={[
                         styles(theme).rightAlignedText,
                         styles(theme).subText,
@@ -73,22 +75,23 @@ const styles = (theme: Theme) =>
         container: {
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
             height: 48,
-            backgroundColor: theme.colors.secondary,
+            width: '100%',
+            gap: theme.spacing.md,
             paddingHorizontal: theme.spacing.xl,
+            backgroundColor: theme.colors.secondary,
             marginVertical: theme.spacing.md,
         },
         leftContainer: {
-            width: '10%',
+            flexShrink: 0,
         },
         centerContainer: {
-            width: '60%',
-            paddingHorizontal: theme.spacing.sm,
+            flex: 1,
+            width: '100%',
             flexDirection: 'column',
         },
         rightContainer: {
-            width: '30%',
+            flexShrink: 0,
             flexDirection: 'column',
             justifyContent: 'flex-end',
         },
@@ -96,7 +99,6 @@ const styles = (theme: Theme) =>
             textAlign: 'right',
         },
         subText: {
-            fontSize: theme.sizes.xxs,
             color: theme.colors.primaryLight,
         },
     })
