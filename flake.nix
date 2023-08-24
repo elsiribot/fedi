@@ -208,9 +208,9 @@
           xcode = crossDevShell.overrideAttrs (prev: {
             nativeBuildInputs = prev.nativeBuildInputs
               ++ lib.optionals stdenv.isDarwin [
-                pkgs.cocoapods
-                xcode-wrapper
-              ];
+              pkgs.cocoapods
+              xcode-wrapper
+            ];
             shellHook = prev.shellHook;
           });
         };
