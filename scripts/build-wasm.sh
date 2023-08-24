@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 cd bridge/fedi-wasm || exit
-nix develop --ignore-environment .#cross --command ./wasm-build.sh "$@"
+nix develop --ignore-environment .#cross --command wasm-pack build --target web --out-dir out "$@"
 cd ../..
-# cp out/* ../../ui/common/wasm# 
 
 WASM_OUT="bridge/fedi-wasm/out"
 

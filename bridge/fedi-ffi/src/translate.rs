@@ -54,13 +54,13 @@ impl NeedTranslation for anyhow::Error {}
 
 impl Translate<fedimint_core::config::FederationId> for fedimint_core_v0::config::FederationId {
     fn translate(self) -> fedimint_core::config::FederationId {
-        fedimint_core::config::FederationId(self.0.clone())
+        fedimint_core::config::FederationId(self.0)
     }
 }
 
 impl Translate<fedimint_core_v0::config::FederationId> for fedimint_core::config::FederationId {
     fn translate(self) -> fedimint_core_v0::config::FederationId {
-        fedimint_core_v0::config::FederationId(self.0.clone())
+        fedimint_core_v0::config::FederationId(self.0)
     }
 }
 

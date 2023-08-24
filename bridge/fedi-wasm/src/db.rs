@@ -5,10 +5,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use fedimint_core::{apply, async_trait_maybe_send};
 use futures::stream;
+use futures::FutureExt;
+use futures::StreamExt;
 
 use fedimint_core::db::{
-    IDatabase, IDatabaseTransaction, ISingleUseDatabaseTransaction, PrefixStream,
-    SingleUseDatabaseTransaction,
+    IDatabase, IDatabaseTransaction, IDatabaseTransactionOps, ISingleUseDatabaseTransaction,
+    PrefixStream, SingleUseDatabaseTransaction,
 };
 use tokio::sync::Mutex;
 
@@ -137,12 +139,10 @@ impl fedimint_core_v0::db::IDatabase for MemAndIndexedDb {
     }
 }
 
-// In-memory database transaction should only be used for test code and never
-// for production as it doesn't properly implement MVCC
 #[apply(async_trait_maybe_send!)]
-impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
+impl<'a> IDatabaseTransactionOps<'a> for MemTransaction<'a> {
     async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
-        let val = fedimint_core::db::IDatabaseTransaction::raw_get_bytes(self, key).await;
+        let val = fedimint_core::db::IDatabaseTransactionOps::raw_get_bytes(self, key).await;
         // Insert data from copy so we can read our own writes
         self.tx_data.insert(key.to_vec(), value.to_vec());
         self.operations
@@ -180,6 +180,24 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
         Ok(Box::pin(stream::iter(data)))
     }
 
+    async fn raw_remove_by_prefix(&mut self, key_prefix: &[u8]) -> anyhow::Result<()> {
+        let mut keys = self
+            .tx_data
+            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
+            .take_while(|(key, _)| key.starts_with(key_prefix))
+            .map(|(key, _)| key.clone())
+            .collect::<Vec<_>>();
+        for key in keys.iter() {
+            let ret = self.tx_data.remove(&key.to_vec());
+            self.operations
+                .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
+                    key: key.to_vec(),
+                }));
+            self.num_pending_operations += 1;
+        }
+        Ok(())
+    }
+
     async fn raw_find_by_prefix_sorted_descending(
         &mut self,
         key_prefix: &[u8],
@@ -195,6 +213,29 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
         Ok(Box::pin(stream::iter(data)))
     }
 
+    async fn rollback_tx_to_savepoint(&mut self) -> Result<()> {
+        self.tx_data = self.savepoint.clone();
+
+        // Remove any pending operations beyond the savepoint
+        let removed_ops = self.num_pending_operations - self.num_savepoint_operations;
+        for _i in 0..removed_ops {
+            self.operations.pop();
+        }
+
+        Ok(())
+    }
+
+    async fn set_tx_savepoint(&mut self) -> Result<()> {
+        self.savepoint = self.tx_data.clone();
+        self.num_savepoint_operations = self.num_pending_operations;
+        Ok(())
+    }
+}
+
+// In-memory database transaction should only be used for test code and never
+// for production as it doesn't properly implement MVCC
+#[apply(async_trait_maybe_send!)]
+impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
     async fn commit_tx(self) -> Result<()> {
         let mut data = self.db.data.lock().await;
         let mut data_new = data.clone();
@@ -229,21 +270,6 @@ impl<'a> IDatabaseTransaction<'a> for MemTransaction<'a> {
         // if everything succeeds
         *data = data_new;
         Ok(())
-    }
-
-    async fn rollback_tx_to_savepoint(&mut self) {
-        self.tx_data = self.savepoint.clone();
-
-        // Remove any pending operations beyond the savepoint
-        let removed_ops = self.num_pending_operations - self.num_savepoint_operations;
-        for _i in 0..removed_ops {
-            self.operations.pop();
-        }
-    }
-
-    async fn set_tx_savepoint(&mut self) {
-        self.savepoint = self.tx_data.clone();
-        self.num_savepoint_operations = self.num_pending_operations;
     }
 }
 

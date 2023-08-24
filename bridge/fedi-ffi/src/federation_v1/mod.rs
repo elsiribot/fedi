@@ -9,7 +9,7 @@ use bitcoin::{
     secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey},
     Network,
 };
-use fedi_social_client::{common::VerificationDocument, FediSocialClientGen, RecoveryId};
+use fedi_social_client::{common::VerificationDocument, FediSocialClientInit, RecoveryId};
 use fedimint_client::{
     backup::Metadata, get_client_root_secret, sm::OperationId, ClientBuilder, ClientSecret,
 };
@@ -26,8 +26,8 @@ use fedimint_ln_client::{
     LightningClientModule, LightningMeta, LnPayState, LnReceiveState, PayType,
 };
 use fedimint_mint_client::{
-    parse_ecash, serialize_ecash, MintClientExt, MintClientGen, MintClientModule, MintMeta,
-    MintMetaVariants, ReissueExternalNotesState,
+    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants, OOBNotes,
+    ReissueExternalNotesState,
 };
 use fedimint_wallet_client::WalletClientGen;
 use fedimint_wallet_client::WalletClientModule;
@@ -94,7 +94,7 @@ impl FederationV1 {
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen(None));
-        client_builder.with_module(FediSocialClientGen);
+        client_builder.with_module(FediSocialClientInit);
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_dyn_database(db);
@@ -110,7 +110,7 @@ impl FederationV1 {
         client_builder.with_module(MintClientGen);
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen(None));
-        client_builder.with_module(FediSocialClientGen);
+        client_builder.with_module(FediSocialClientInit);
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_old_client_database(old_client);
@@ -252,7 +252,7 @@ impl FederationV1 {
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        Ok(invoice.try_into()?)
+        invoice.try_into()
     }
 
     /// Subscribe to state updates for a given lightning invoice
@@ -512,7 +512,7 @@ impl FederationV1 {
                 format!("{:?} balance subscription", federation.federation_name()),
                 |_| async move {
                     let mut updates = federation.client.subscribe_balance_changes().await;
-                    while let Some(_) = updates.next().await {
+                    while (updates.next().await).is_some() {
                         federation.send_federation_event().await;
                     }
                 },
@@ -556,7 +556,7 @@ impl FederationV1 {
 
     /// Receive ecash
     pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
-        let ecash = parse_ecash(&ecash)?;
+        let ecash = OOBNotes::from_str(&ecash)?;
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
         let operation_id = self.client.reissue_external_notes(ecash, ()).await?;
@@ -587,7 +587,7 @@ impl FederationV1 {
     /// FIXME: might be better to return a typed object here and serialize at RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
         let (_, notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
-        Ok(serialize_ecash(&notes))
+        Ok(notes.to_string())
     }
 
     /// Get client root secret

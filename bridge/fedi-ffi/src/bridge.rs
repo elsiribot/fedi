@@ -107,16 +107,14 @@ impl MultiFederation {
 
     pub async fn list_gateways(&self) -> Result<Vec<RpcLightningGateway>> {
         match self {
-            Self::V0(v0) => v0.list_gateways().await.map(|gws| {
-                gws.into_iter()
-                    .map(|gw| RpcLightningGateway::V0(gw))
-                    .collect()
-            }),
-            Self::V1(v1) => v1.list_gateways().await.map(|gws| {
-                gws.into_iter()
-                    .map(|gw| RpcLightningGateway::V1(gw))
-                    .collect()
-            }),
+            Self::V0(v0) => v0
+                .list_gateways()
+                .await
+                .map(|gws| gws.into_iter().map(RpcLightningGateway::V0).collect()),
+            Self::V1(v1) => v1
+                .list_gateways()
+                .await
+                .map(|gws| gws.into_iter().map(RpcLightningGateway::V1).collect()),
         }
     }
 
@@ -357,7 +355,7 @@ impl Bridge {
         match self.join_federation_v1(invite_code.clone()).await {
             Ok(multi) => {
                 info!("Joined v1 federation");
-                return Ok(multi_federation_to_rpc_federation(&*multi).await);
+                return Ok(multi_federation_to_rpc_federation(&multi).await);
             }
             Err(e) => {
                 error!("failed to join federation {e:?}");
@@ -366,7 +364,7 @@ impl Bridge {
         match self.join_federation_v0(invite_code.clone()).await {
             Ok(multi) => {
                 info!("Joined v0 federation");
-                return Ok(multi_federation_to_rpc_federation(&*multi).await);
+                return Ok(multi_federation_to_rpc_federation(&multi).await);
             }
             Err(e) => {
                 error!("failed to join federation {e:?}");
@@ -421,9 +419,11 @@ impl Bridge {
 
     pub async fn list_federations(&self) -> Vec<RpcFederation> {
         let lock = self.federations.lock().await;
-        join_all(lock.clone().into_iter().map(|(_, multi)| async move {
-            multi_federation_to_rpc_federation(&multi.clone()).await
-        }))
+        join_all(
+            lock.clone().into_values().map(|multi| async move {
+                multi_federation_to_rpc_federation(&multi.clone()).await
+            }),
+        )
         .await
     }
 
@@ -662,9 +662,7 @@ impl Bridge {
             .word_iter()
             .map(|s| s.to_string())
             .collect();
-        let username = self
-            .recover_from_mnemonic(federation_id.into(), mnemonic)
-            .await?;
+        let username = self.recover_from_mnemonic(federation_id, mnemonic).await?;
         multi.delete_social_recovery_state_and_id().await?;
         Ok(username)
     }

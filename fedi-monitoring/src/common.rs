@@ -18,12 +18,12 @@ use fedimint_client::{
 use fedimint_core::{
     config::ClientConfig,
     core::IntoDynInstance,
-    module::{CommonModuleGen, __reexports::serde_json},
-    Amount, OutPoint, TieredMulti, TieredSummary,
+    module::{CommonModuleInit, __reexports::serde_json},
+    Amount, OutPoint, TieredSummary,
 };
 use fedimint_ln_client::{LightningClientExt, LightningClientGen, LnPayState, PayType};
 use fedimint_mint_client::{
-    parse_ecash, MintClientExt, MintClientGen, MintClientModule, MintCommonGen, SpendableNote,
+    MintClientExt, MintClientGen, MintClientModule, MintCommonGen, OOBNotes,
 };
 use fedimint_wallet_client::WalletClientGen;
 use futures::StreamExt;
@@ -152,21 +152,18 @@ pub async fn try_cli_get_notes_string(amount: &Amount, tries: usize) -> anyhow::
     cli_get_notes_string(amount).await
 }
 
-pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<TieredMulti<SpendableNote>> {
+pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<OOBNotes> {
     cmd!(FedimintCli, "fetch").out_string().await?;
     let notes = cli_get_notes_raw(amount)
         .await?
         .as_str()
-        .map(parse_ecash)
+        .map(OOBNotes::from_str)
         .transpose()?
         .ok_or_else(|| anyhow!("no note returned"))?;
     Ok(notes)
 }
 
-pub async fn try_cli_get_notes(
-    amount: &Amount,
-    tries: usize,
-) -> anyhow::Result<TieredMulti<SpendableNote>> {
+pub async fn try_cli_get_notes(amount: &Amount, tries: usize) -> anyhow::Result<OOBNotes> {
     for _ in 0..tries {
         match cli_get_notes(amount).await {
             Ok(notes) => return Ok(notes),
@@ -273,10 +270,7 @@ pub async fn get_note_summary(client: &Client) -> anyhow::Result<TieredSummary> 
     Ok(summary)
 }
 
-pub async fn reissue_notes(
-    client: &Client,
-    notes: TieredMulti<SpendableNote>,
-) -> anyhow::Result<()> {
+pub async fn reissue_notes(client: &Client, notes: OOBNotes) -> anyhow::Result<()> {
     let operation_id = client.reissue_external_notes(notes, ()).await?;
     let mut updates = client
         .subscribe_reissue_external_notes(operation_id)

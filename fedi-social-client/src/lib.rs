@@ -3,26 +3,27 @@ pub use fedi_social_common::*;
 use fedi_social_common::config::FediSocialClientConfig;
 use fedi_social_common::{FediSocialCommonGen, FediSocialModuleTypes};
 use fedimint_client::derivable_secret::DerivableSecret;
-use fedimint_client::module::gen::ClientModuleGen;
+use fedimint_client::module::init::ClientModuleInit;
 use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
 use fedimint_core::api::{DynGlobalApi, DynModuleApi};
+use fedimint_core::config::FederationId;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::{ApiVersion, ExtendsCommonModuleGen, MultiApiVersion};
+use fedimint_core::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
 
 #[derive(Debug, Clone)]
-pub struct FediSocialClientGen;
+pub struct FediSocialClientInit;
 
-impl ExtendsCommonModuleGen for FediSocialClientGen {
+impl ExtendsCommonModuleInit for FediSocialClientInit {
     type Common = FediSocialCommonGen;
 }
 
 #[apply(async_trait_maybe_send!)]
-impl ClientModuleGen for FediSocialClientGen {
+impl ClientModuleInit for FediSocialClientInit {
     type Module = FediSocialClientModule;
 
     fn supported_api_versions(&self) -> MultiApiVersion {
@@ -33,6 +34,7 @@ impl ClientModuleGen for FediSocialClientGen {
     // FIXME: use some of these things like
     async fn init(
         &self,
+        _federation_id: FederationId,
         _cfg: FediSocialClientConfig,
         _db: Database,
         _api_version: ApiVersion,

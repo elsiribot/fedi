@@ -9,12 +9,11 @@
     };
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-0&rev=7a3dfeebcbf11b860859212eedc14597c0d57d75";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-1&rev=c7b426e39631b91478a82b8236bcf22527278b00";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      # TODO: we can probably use upstream commit for this?
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-0&rev=7a3dfeebcbf11b860859212eedc14597c0d57d75";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-1&rev=c7b426e39631b91478a82b8236bcf22527278b00";
     };
     # Fedi at consensus version 0. This is used to test bridge against old federations
     fedi-v0 = {
@@ -57,7 +56,7 @@
         clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
           configureFlags = [ "--enable-developer" "--disable-valgrind" ];
         } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation";
+          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
         });
 
         filterSubdirs = import ./nix/filterSubdirs.nix { inherit lib; };
@@ -182,7 +181,7 @@
             ] ++ [
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
-              fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
+              fedimint-pkgs.packages.${system}.fedimint-pkgs
               pkgs.git
               pkgs.fs-dir-cache
               pkgs.convco
@@ -222,7 +221,6 @@
             # straight from Fedimint, without any modifications
             gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
             fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
-            dbtool-pkgs = fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs;
           } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {

@@ -1,7 +1,7 @@
 use config::FediSocialClientConfig;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::{CommonModuleGen, ModuleCommon, ModuleConsensusVersion};
+use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::plugin_types_trait_impl_common;
 use serde::{Deserialize, Serialize};
 
@@ -67,7 +67,7 @@ pub struct FediSocialModuleTypes;
 #[derive(Debug)]
 pub struct FediSocialCommonGen;
 
-impl CommonModuleGen for FediSocialCommonGen {
+impl CommonModuleInit for FediSocialCommonGen {
     const CONSENSUS_VERSION: ModuleConsensusVersion = VERSION;
     const KIND: ModuleKind = KIND;
 

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use fedi_social_client::RecoveryId;
 use fedimint_core::config::FederationId;
-use fedimint_core::db::{Database, IDatabase};
+use fedimint_core::db::IDatabase;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
 use serde::{Deserialize, Serialize};
@@ -106,8 +106,7 @@ impl FediFile {
         {
             let mut info = self.info.lock().await;
             let federation_info = FederationInfo::new(invite_code, client_config);
-            (*info)
-                .federations
+            info.federations
                 .insert(RpcFederationId(federation_id), federation_info);
         }
         self.save().await
@@ -116,15 +115,14 @@ impl FediFile {
     pub async fn leave_federation(&self, federation_id: FederationId) -> Result<()> {
         {
             let mut info = self.info.lock().await;
-            (*info).federations.remove(&RpcFederationId(federation_id));
+            info.federations.remove(&RpcFederationId(federation_id));
         }
         self.save().await
     }
 
     pub async fn get_federation_info(&self, federation_id: FederationId) -> Option<FederationInfo> {
         let info = self.info.lock().await;
-        (*info)
-            .federations
+        info.federations
             .get(&RpcFederationId(federation_id))
             .cloned()
     }
@@ -141,7 +139,7 @@ impl FediFile {
     ) -> Result<()> {
         {
             let mut info = self.info.lock().await;
-            let fed = (*info)
+            let fed = info
                 .federations
                 .get_mut(&RpcFederationId(federation_id))
                 .unwrap();
@@ -160,7 +158,7 @@ impl FediFile {
         federation_id: FederationId,
     ) -> Option<SystemTime> {
         let fed = self.get_federation_info(federation_id).await.unwrap();
-        fed.last_backup_timestamp.clone()
+        fed.last_backup_timestamp
     }
 
     pub async fn save_last_backup_timestamp(
@@ -170,11 +168,11 @@ impl FediFile {
     ) -> Result<()> {
         {
             let mut info = self.info.lock().await;
-            let fed = (*info)
+            let fed = info
                 .federations
                 .get_mut(&RpcFederationId(federation_id))
                 .unwrap();
-            fed.last_backup_timestamp = Some(last_backup_timestamp.clone());
+            fed.last_backup_timestamp = Some(last_backup_timestamp);
         }
         self.save().await
     }
@@ -194,7 +192,7 @@ impl FediFile {
     ) -> Result<()> {
         {
             let mut info = self.info.lock().await;
-            let fed = (*info)
+            let fed = info
                 .federations
                 .get_mut(&RpcFederationId(federation_id))
                 .unwrap();
@@ -205,7 +203,7 @@ impl FediFile {
 
     pub async fn get_social_recovery_id(&self, federation_id: FederationId) -> Option<RecoveryId> {
         let fed = self.get_federation_info(federation_id).await.unwrap();
-        fed.social_recovery_id.clone()
+        fed.social_recovery_id
     }
 
     pub async fn save_social_recovery_id(
@@ -215,11 +213,11 @@ impl FediFile {
     ) -> Result<()> {
         {
             let mut info = self.info.lock().await;
-            let fed = (*info)
+            let fed = info
                 .federations
                 .get_mut(&RpcFederationId(federation_id))
                 .unwrap();
-            fed.social_recovery_id = Some(social_recovery_id.clone());
+            fed.social_recovery_id = Some(social_recovery_id);
         }
         self.save().await
     }
@@ -227,7 +225,7 @@ impl FediFile {
     pub async fn reset_social_recovery(&self, federation_id: FederationId) -> Result<()> {
         {
             let mut info = self.info.lock().await;
-            let fed = (*info)
+            let fed = info
                 .federations
                 .get_mut(&RpcFederationId(federation_id))
                 .unwrap();

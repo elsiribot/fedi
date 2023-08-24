@@ -228,7 +228,7 @@ impl FederationV0 {
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        Ok(invoice.try_into()?)
+        invoice.try_into()
     }
 
     /// Subscribe to state updates for a given lightning invoice
@@ -312,7 +312,7 @@ impl FederationV0 {
             .subscibe_to_ln_pay(operation_id, invoice.clone())
             .await?;
 
-        return Ok(response);
+        Ok(response)
     }
 
     /// Subscribe to updates on all active operations
@@ -448,7 +448,7 @@ impl FederationV0 {
                 format!("{:?} balance subscription", federation.federation_name()),
                 |_| async move {
                     let mut updates = federation.client.subscribe_balance_changes().await;
-                    while let Some(_) = updates.next().await {
+                    while (updates.next().await).is_some() {
                         federation.send_federation_event().await;
                     }
                 },

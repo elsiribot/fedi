@@ -7,7 +7,7 @@ async fn main() -> anyhow::Result<()> {
     Fedimintd::new()?
         .with_default_modules()
         .with_module(FediSocialGen)
-        .with_extra_module_gens_params(3, fedi_social_common::KIND, FediSocialGenParams::new())
+        .with_extra_module_inits_params(3, fedi_social_common::KIND, FediSocialGenParams::new())
         .run()
         .await
 }

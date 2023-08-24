@@ -1,4 +1,4 @@
-use fedi_social_client::FediSocialClientGen;
+use fedi_social_client::FediSocialClientInit;
 use fedimint_cli::FedimintCli;
 // use stabilitypool::PoolClientGen;
 
@@ -6,7 +6,7 @@ use fedimint_cli::FedimintCli;
 async fn main() -> anyhow::Result<()> {
     FedimintCli::new()?
         .with_default_modules()
-        .with_module(FediSocialClientGen)
+        .with_module(FediSocialClientInit)
         // .with_module(PoolClientGen)
         .run()
         .await;

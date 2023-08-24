@@ -12,13 +12,14 @@ use crate::error::get_error_code;
 use crate::federation_v0::initialize_fedi_file_from_rocksdb;
 use anyhow::{bail, Context};
 use bitcoin::secp256k1::Message;
-use fedimint_mint_client::parse_ecash;
+use fedimint_mint_client::OOBNotes;
 use futures::Future;
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::{atomic::AtomicU64, Arc};
 pub use tokio;
 use tracing::{error, info, instrument};
@@ -186,7 +187,8 @@ async fn validateEcash(
     ecash: String,
 ) -> anyhow::Result<RpcAmount> {
     // TODO: actually check that ecash was issued by this federation, and is unspent
-    let amount = parse_ecash(&ecash)?.total_amount();
+    let oob_notes = OOBNotes::from_str(&ecash)?;
+    let amount = oob_notes.total_amount();
     Ok(RpcAmount(amount))
 }
 

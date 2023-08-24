@@ -37,6 +37,6 @@ pub async fn override_localhost_gateway(
     mut dbtx: DatabaseTransaction<'_>,
 ) {
     gateway.api = override_localhost(&gateway.api);
-    dbtx.insert_entry(&LightningGatewayKey, &gateway).await;
+    dbtx.insert_entry(&LightningGatewayKey, gateway).await;
     dbtx.commit_tx().await;
 }

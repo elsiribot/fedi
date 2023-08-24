@@ -22,8 +22,8 @@ use fedimint_core::db::{Database, DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     api_endpoint, ApiEndpoint, ApiError, ConsensusProposal, CoreConsensusVersion,
-    ExtendsCommonModuleGen, InputMeta, ModuleCommon, ModuleConsensusVersion, ModuleError,
-    PeerHandle, ServerModuleGen, SupportedModuleApiVersions, TransactionItemAmount,
+    ExtendsCommonModuleInit, InputMeta, ModuleCommon, ModuleConsensusVersion, ModuleError,
+    PeerHandle, ServerModuleInit, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::TaskGroup;
@@ -48,12 +48,12 @@ use common::db::{
 #[derive(Clone, Debug)]
 pub struct FediSocialGen;
 
-impl ExtendsCommonModuleGen for FediSocialGen {
+impl ExtendsCommonModuleInit for FediSocialGen {
     type Common = FediSocialCommonGen;
 }
 
 #[async_trait]
-impl ServerModuleGen for FediSocialGen {
+impl ServerModuleInit for FediSocialGen {
     type Params = FediSocialGenParams;
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
@@ -403,12 +403,10 @@ impl FediSocial {
 
         debug!(id = %request.id, "Received social recovery request");
 
-        let Some(backup) = dbtx
-            .get_value(&BackupId(request.id.0))
-            .await else {
-                return Err(ApiError::bad_request(
-                    "invalid request: backup id not found".into(),
-                ));
+        let Some(backup) = dbtx.get_value(&BackupId(request.id.0)).await else {
+            return Err(ApiError::bad_request(
+                "invalid request: backup id not found".into(),
+            ));
         };
 
         if request.verification_doc.id() != backup.verification_doc_hash {
@@ -445,11 +443,8 @@ impl FediSocial {
 
         // TODO: guardian auth needed here
 
-        let Some(recovery) = dbtx
-            .get_value(&request)
-            .await
-             else {
-                return Ok(None);
+        let Some(recovery) = dbtx.get_value(&request).await else {
+            return Ok(None);
         };
 
         Ok(Some(recovery.verification_doc))
@@ -479,22 +474,16 @@ impl FediSocial {
             return Err(ApiError::bad_request("unauthorized".into()));
         }
 
-        let Some(recovery) = dbtx
-            .get_value(&RecoveryId(request.0))
-            .await
-             else {
-                return Err(ApiError::bad_request(
-                    "invalid request: recovery id not found".into(),
-                ));
+        let Some(recovery) = dbtx.get_value(&RecoveryId(request.0)).await else {
+            return Err(ApiError::bad_request(
+                "invalid request: recovery id not found".into(),
+            ));
         };
 
-        let Some(backup) = dbtx
-            .get_value(&BackupId(request.0))
-            .await
-             else {
-                return Err(ApiError::bad_request(
-                    "invalid request: backup id not found".into(),
-                ));
+        let Some(backup) = dbtx.get_value(&BackupId(request.0)).await else {
+            return Err(ApiError::bad_request(
+                "invalid request: backup id not found".into(),
+            ));
         };
 
         info!(id = %request.0, "Creating social recovery decryption key");
