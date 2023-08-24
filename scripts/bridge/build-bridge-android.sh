@@ -3,16 +3,21 @@
 # exit on failure
 set -e
 
+if [ -z "${ANDROID_HOME:-}" ]; then
+  >&2 echo "This command is meant to run in a .#cross shell"
+  exit 1
+fi
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 BRIDGE_ROOT=$REPO_ROOT/bridge
 cd $BRIDGE_ROOT
 
 # build the bridge inside nix
-nix develop .#cross --command cargo build --release -p fedi-ffi --target aarch64-linux-android
+cargo build --release -p fedi-ffi --target aarch64-linux-android
 
 if [ "$FEDI_EMULATOR" != "1" ]; then
-    nix develop .#cross --command cargo build --release -p fedi-ffi --target x86_64-linux-android
-    nix develop .#cross --command cargo build --release -p fedi-ffi --target armv7-linux-androideabi
+    cargo build --release -p fedi-ffi --target x86_64-linux-android
+    cargo build --release -p fedi-ffi --target armv7-linux-androideabi
 fi
 
 # copy bridge outputs to where ffi-bindgen expects them
@@ -27,8 +32,8 @@ if [ "$FEDI_EMULATOR" != "1" ]; then
 fi
 # build android lib with ffi-bindgen inside nix
 cd $BRIDGE_ROOT/fedi-ffi
-nix develop --ignore-environment .#cross --command cargo run --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
+cargo run --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
 
 # publish android live to local maven
 cd $BRIDGE_ROOT/fedi-android
-nix develop .#cross --command ./gradlew publishToMavenLocal
+./gradlew publishToMavenLocal

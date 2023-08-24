@@ -88,7 +88,7 @@ build-bridge:
 
 # build only the android bridge artifacts for ui/native
 build-bridge-android:
-  ./scripts/bridge/build-bridge-android.sh
+  nix develop --ignore-environment .#cross --command ./scripts/bridge/build-bridge-android.sh
 
 # build only the ios bridge artifacts for ui/native
 build-bridge-ios:
