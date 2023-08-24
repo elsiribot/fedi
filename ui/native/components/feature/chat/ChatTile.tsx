@@ -122,10 +122,10 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
-            width: '20%',
+            flexShrink: 0,
         },
         contents: {
-            width: '80%',
+            flex: 1,
             flexDirection: 'column',
             alignItems: 'flex-start',
             justifyContent: 'center',
@@ -149,10 +149,10 @@ const styles = (theme: Theme) =>
             fontStyle: 'italic',
         },
         chatTypeIconContainer: {
-            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
+            marginRight: theme.spacing.md,
         },
         pinIcon: {
             width: '10%',
