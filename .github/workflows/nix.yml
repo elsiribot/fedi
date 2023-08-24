@@ -70,12 +70,13 @@ jobs:
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
-            # caching ~/.cargo to avoid downloading all (especially git) deps in pre-commit's `cargo update --lock` check
-            - name: Cache ~/.cargo
+            - name: Cache Rust files
               uses: actions/cache@v3
               with:
-                path: ~/.cargo
-                key: $build-android-${{ hashFiles('Cargo.*.lock') }}
+                path: |
+                  ~/.cargo
+                  target/
+                key: build-android-rust-${{ hashFiles('*.lock') }}
 
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
@@ -94,6 +95,14 @@ jobs:
         runs-on: [self-hosted, macos]
         timeout-minutes: 60
         steps:
+            - name: Cache Rust files
+              uses: actions/cache@v3
+              with:
+                path: |
+                  ~/.cargo
+                  target/
+                key: build-ios-rust-${{ hashFiles('*.lock') }}
+
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
               with:
@@ -105,7 +114,8 @@ jobs:
               continue-on-error: true
 
             - name: Build iOS bridge artifacts
-              run: nix develop .#cross --command just build-bridge-ios
+              # note: can't use --ignore-environment as it uses globally installed xcode
+              run: nix develop .#xcode --command ./scripts/bridge/build-bridge-ios.sh
 
     shell:
         strategy:
