@@ -33,16 +33,6 @@ jobs:
             - name: Commit check
               run: nix develop --ignore-environment .#lint --command ./misc/git-hooks/pre-commit
 
-    # DELETME: no-op renamed build step that is blocking PRs
-    # should just pass and Build - linux should replace it
-    build:
-        name: 'Build'
-        runs-on: [self-hosted, linux]
-        steps:
-            - name: Trick CI
-              run: echo 'no-op'
-
-    # TODO: mark as required check?
     build-linux:
         name: 'Build - linux'
         runs-on: [self-hosted, linux]
@@ -78,7 +68,6 @@ jobs:
             - name: Test bridge
               run: nix build -L .#testBridge
 
-    # TODO: mark as required check?
     build-ios:
         name: 'Build - macos'
         runs-on: [self-hosted, macos]
