@@ -69,16 +69,16 @@ jobs:
             - name: Build fedi-monitoring
               run: nix build -L .#fedi-monitoring
 
-            - name: Test bridge
-              run: nix build -L .#testBridge
-
             - name: Build Android bridge artifacts
               run: nix develop .#cross --command just build-bridge-android
+
+            - name: Test bridge
+              run: nix build -L .#testBridge
 
     build-ios:
         name: 'Build - macos'
         runs-on: [self-hosted, macos]
-        timeout-minutes: 30
+        timeout-minutes: 60
         steps:
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
