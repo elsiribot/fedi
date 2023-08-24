@@ -24,7 +24,7 @@ while read -r line ; do
   echo "$line" >> "$tmp_file"
 done < "$1"
 
-if ! convco check < "$tmp_file" ; then
+if ! nix develop --command convco check < "$tmp_file" ; then
    >&2 echo "Use git recommit <args> to fix your commit"
   exit 1
 fi

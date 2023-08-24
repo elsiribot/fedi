@@ -134,7 +134,7 @@ function check_cargo_lock() {
 export -f check_cargo_lock
 
 
-parallel ::: \
+nix develop --command parallel ::: \
   check_nix \
   check_cargo_fmt \
   check_dbg \
