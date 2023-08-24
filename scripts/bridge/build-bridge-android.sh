@@ -30,9 +30,11 @@ if [ "$FEDI_EMULATOR" != "1" ]; then
     mkdir -p $BRIDGE_ROOT/fedi-android/lib/src/main/jniLibs/armeabi-v7a
     cp $REPO_ROOT/target/armv7-linux-androideabi/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/armeabi-v7a/libfediffi.so
 fi
+
 # build android lib with ffi-bindgen inside nix
 cd $BRIDGE_ROOT/fedi-ffi
-cargo run --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
+# note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
+cargo run --target-dir "${REPO_ROOT}/target/ffi-bindgen-run" --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
 
 # publish android live to local maven
 cd $BRIDGE_ROOT/fedi-android

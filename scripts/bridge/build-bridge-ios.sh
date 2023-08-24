@@ -10,7 +10,8 @@ cd $BRIDGE_ROOT
 TARGET=$REPO_ROOT/target
 
 cd $BRIDGE_ROOT/fedi-ffi
-cargo run --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
+# note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
+cargo run --target-dir "${REPO_ROOT}/target/ffi-bindgen-run" --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
 cd $BRIDGE_ROOT
 
 # use the xcode shell to make sure we have the necessary SDKs
