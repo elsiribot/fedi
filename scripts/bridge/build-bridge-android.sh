@@ -9,6 +9,7 @@ if [ -z "${ANDROID_HOME:-}" ]; then
 fi
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
+TARGET_DIR=$REPO_ROOT/target
 BRIDGE_ROOT=$REPO_ROOT/bridge
 cd $BRIDGE_ROOT
 
@@ -34,7 +35,7 @@ fi
 # build android lib with ffi-bindgen inside nix
 cd $BRIDGE_ROOT/fedi-ffi
 # note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
-cargo run --target-dir "${REPO_ROOT}/target/ffi-bindgen-run" --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
+cargo run --target-dir "${TARGET_DIR}/ffi-bindgen-run" --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
 
 # publish android live to local maven
 cd $BRIDGE_ROOT/fedi-android
