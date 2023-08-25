@@ -76,7 +76,7 @@ jobs:
                 path: |
                   ~/.cargo
                   target/
-                key: build-android-rust-${{ hashFiles('*.lock') }}
+                key: build-nix-develop-android-rust-${{ hashFiles('*.lock') }}
 
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
@@ -101,7 +101,7 @@ jobs:
                 path: |
                   ~/.cargo
                   target/
-                key: build-ios-rust-${{ hashFiles('*.lock') }}
+                key: build-nix-develop-ios-rust-${{ hashFiles('*.lock') }}
 
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
