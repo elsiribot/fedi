@@ -94,7 +94,7 @@ threshold_crypto = { opt-level = 3 }
 
 [profile.ci]
 inherits = "dev"
-debuginfo = "line-tables-only"
+debug = 1
 
 [patch.'https://github.com/fedimint/fedimint']
 fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "c4feb8d487b604dce68082df12bb5fc862421784" }
