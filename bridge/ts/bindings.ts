@@ -73,8 +73,17 @@ export interface LogEvent {
   log: string;
 }
 
-export interface OfflineTransactionDetails {
-  claimed: boolean;
+export type RpcAmount = Opaque<number, "fedimint_core::Amount">;
+
+export interface RpcFederation {
+  balance: RpcAmount;
+  id: RpcFederationId;
+  network: string;
+  name: string;
+  inviteCode: string | null;
+  meta: Record<string, string>;
+  socialRecoveryActive: boolean;
+  nodes: Array<{ url: string; name: string }>;
 }
 
 export interface PayInvoiceResponse {
@@ -106,25 +115,24 @@ export interface RpcMethods {
     null
   ];
   joinFederation: [
-    { connectString: string },
+    { inviteCode: string },
     {
       id: FederationId;
       name: string;
-      inviteCode: any;
-      nodes: Array<{ url: string; name: string }>;
-      balance: Amount;
+      inviteCode: string | null;
+      meta: Record<string, string>;
       socialRecoveryActive: boolean;
       meta: Record<string, string>;
     }
   ];
+  leaveFederation: [{ federationId: RpcFederationId }, null];
   listFederations: [
     {},
     Array<{
       id: FederationId;
       name: string;
-      inviteCode: any;
-      nodes: Array<{ url: string; name: string }>;
-      balance: Amount;
+      inviteCode: string | null;
+      meta: Record<string, string>;
       socialRecoveryActive: boolean;
       meta: Record<string, string>;
     }>
@@ -212,8 +220,8 @@ export interface RpcMethods {
     null
   ];
   signLnurlMessage: [
-    { message: string; federationId: string },
-    { signature: string; pubkey: PublicKey }
+    { message: string; federationId: RpcFederationId },
+    { signature: string; pubkey: RpcPublicKey }
   ];
   xmppCredentials: [
     { federationId: FederationId },

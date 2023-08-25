@@ -29,7 +29,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::constants::BACKUP_FREQUENCY;
 use crate::federation_v0::utils::display_currency;
-use crate::types::MultiClientConfig;
+use crate::types::{MultiClientConfig, RpcTransaction};
 
 pub use self::migrate::initialize_fedi_file_from_rocksdb;
 
@@ -725,5 +725,11 @@ impl FederationV0 {
                 },
             )
             .await;
+    }
+
+    /// Return all transactions in DB
+    pub async fn list_transactions(&self) -> Vec<RpcTransaction> {
+        tracing::info!("in list_transactions v0");
+        vec![]
     }
 }

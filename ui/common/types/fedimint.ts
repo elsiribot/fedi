@@ -75,13 +75,21 @@ export type LnPayState =
     | { type: 'Refunded' }
     | { type: 'Failed' }
 
+export type LnReceiveState =
+    | { type: 'Created' }
+    | { type: 'WaitingForPayment'; invoice: string }
+    | { type: 'Canceled' }
+    | { type: 'Funded' }
+    | { type: 'AwaitingFunds' }
+    | { type: 'Claimed' }
+
 export interface Transaction {
     id: string
     createdAt: number
     direction: TransactionDirection
     amount: MSats
     notes: string
-    lnPayState: LnPayState | null
+    lnState: LnPayState | LnReceiveState | null
     bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
     offline: OfflineTransactionDetails | null

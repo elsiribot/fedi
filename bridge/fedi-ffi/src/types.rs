@@ -1,8 +1,11 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
 use anyhow::anyhow;
 use bitcoin::{secp256k1::ecdsa::Signature, Network};
 use fedimint_core::config::PeerUrl;
+use fedimint_ln_client::{
+    pay::GatewayPayError, receive::LightningReceiveError, LnPayState, LnReceiveState,
+};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -43,6 +46,7 @@ pub struct RpcFederationId(
 );
 
 pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
+    tracing::info!("federation_v0_to_rpc_federation");
     let balance = RpcAmount(federation.get_balance().await.translate());
     let id = RpcFederationId(federation.federation_id().translate());
     let name = federation.federation_name();
@@ -74,6 +78,7 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
 }
 
 pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFederation {
+    tracing::info!("federation_v1_to_rpc_federation");
     let balance = RpcAmount(federation.get_balance().await);
     let id = RpcFederationId(federation.federation_id());
     let name = federation.federation_name();
@@ -252,6 +257,136 @@ pub struct RpcSignedLnurlMessage {
     #[ts(type = "string")]
     pub signature: Signature,
     pub pubkey: RpcPublicKey,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcTransaction {
+    pub id: String,
+    #[ts(type = "number")]
+    pub created_at: u64,
+    pub amount: RpcAmount,
+    pub direction: String,
+    pub notes: String,
+    pub ln_state: Option<RpcLnState>,
+    pub lightning: Option<RpcLightningDetails>,
+    pub offline_transaction_details: Option<RpcOfflineTransactionDetails>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(untagged)]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcLnState {
+    PayState(RpcLnPayState),
+    RecvState(RpcLnReceiveState),
+}
+
+impl RpcLnState {
+    pub fn from_ln_recv_state(opt: Option<LnReceiveState>) -> Option<RpcLnState> {
+        match opt {
+            Some(state) => Some(match state {
+                LnReceiveState::Created => RpcLnState::RecvState(RpcLnReceiveState::Created),
+                LnReceiveState::WaitingForPayment { invoice, timeout } => {
+                    RpcLnState::RecvState(RpcLnReceiveState::WaitingForPayment { invoice, timeout })
+                }
+                LnReceiveState::Canceled { reason } => {
+                    RpcLnState::RecvState(RpcLnReceiveState::Canceled { reason: reason })
+                }
+                LnReceiveState::Funded => RpcLnState::RecvState(RpcLnReceiveState::Funded),
+                LnReceiveState::AwaitingFunds => {
+                    RpcLnState::RecvState(RpcLnReceiveState::AwaitingFunds)
+                }
+                LnReceiveState::Claimed => RpcLnState::RecvState(RpcLnReceiveState::Claimed),
+            }),
+            None => None,
+        }
+    }
+    pub fn from_ln_pay_state(opt: Option<LnPayState>) -> Option<RpcLnState> {
+        match opt {
+            Some(state) => Some(match state {
+                LnPayState::Created => RpcLnState::PayState(RpcLnPayState::Created),
+                LnPayState::Canceled => RpcLnState::PayState(RpcLnPayState::Canceled),
+                LnPayState::Funded => RpcLnState::PayState(RpcLnPayState::Funded),
+                LnPayState::WaitingForRefund {
+                    block_height,
+                    gateway_error,
+                } => RpcLnState::PayState(RpcLnPayState::WaitingForRefund {
+                    block_height,
+                    gateway_error,
+                }),
+                LnPayState::AwaitingChange => RpcLnState::PayState(RpcLnPayState::AwaitingChange),
+                LnPayState::Success { preimage } => {
+                    RpcLnState::PayState(RpcLnPayState::Success { preimage })
+                }
+                LnPayState::Refunded { gateway_error } => {
+                    RpcLnState::PayState(RpcLnPayState::Refunded { gateway_error })
+                }
+                LnPayState::UnexpectedError { .. } => RpcLnState::PayState(RpcLnPayState::Failed),
+            }),
+            None => None,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcLnPayState {
+    Created,
+    Canceled,
+    Funded,
+    WaitingForRefund {
+        block_height: u32,
+        #[ts(type = "string")]
+        gateway_error: GatewayPayError,
+    },
+    AwaitingChange,
+    Success {
+        preimage: String,
+    },
+    Refunded {
+        #[ts(type = "string")]
+        gateway_error: GatewayPayError,
+    },
+    Failed,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcLnReceiveState {
+    Created,
+    WaitingForPayment {
+        invoice: String,
+        #[ts(type = "string")]
+        timeout: Duration,
+    },
+    Canceled {
+        #[ts(type = "string")]
+        reason: LightningReceiveError,
+    },
+    Funded,
+    AwaitingFunds,
+    Claimed,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcLightningDetails {
+    pub invoice: String,
+    pub fee: Option<RpcAmount>,
+}
+
+#[derive(Debug, Serialize, TS, Default)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcOfflineTransactionDetails {
+    pub claimed: bool,
 }
 
 // FIXME: should probaby type these as bytes

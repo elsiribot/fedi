@@ -8,7 +8,8 @@ use super::storage::{FediFile, Storage};
 use super::types::{
     multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
-    RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval, SocialRecoveryQr,
+    RpcSignedLnurlMessage, RpcTransaction, RpcXmppCredentials, SocialRecoveryApproval,
+    SocialRecoveryQr,
 };
 use super::{federation_v0::FederationV0, translate::Translate};
 use anyhow::{anyhow, bail, Result};
@@ -258,6 +259,13 @@ impl MultiFederation {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => v1.delete_social_recovery_state_and_id().await,
         }
+    }
+
+    pub async fn list_transactions(&self) -> Result<Vec<RpcTransaction>> {
+        Ok(match self {
+            Self::V0(v0) => v0.list_transactions().await,
+            Self::V1(v1) => v1.list_transactions(usize::MAX, None).await,
+        })
     }
 
     pub async fn sign_lnurl_message(&self, message: &Message) -> RpcSignedLnurlMessage {
@@ -665,6 +673,14 @@ impl Bridge {
         let username = self.recover_from_mnemonic(federation_id, mnemonic).await?;
         multi.delete_social_recovery_state_and_id().await?;
         Ok(username)
+    }
+
+    pub async fn list_transactions(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<Vec<RpcTransaction>> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.list_transactions().await
     }
 
     pub async fn sign_lnurl_message(

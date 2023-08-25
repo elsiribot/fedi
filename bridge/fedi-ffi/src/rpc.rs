@@ -6,7 +6,7 @@ use super::storage::Storage;
 use super::types::{
     RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway,
     RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
-    RpcXmppCredentials, SocialRecoveryQr,
+    RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
 use crate::federation_v0::initialize_fedi_file_from_rocksdb;
@@ -194,10 +194,10 @@ async fn validateEcash(
 
 #[macro_rules_derive(rpc_method!)]
 async fn listTransactions(
-    _bridge: Arc<Bridge>,
-    _federation_id: RpcFederationId,
-) -> anyhow::Result<Vec<()>> {
-    Ok(vec![])
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<Vec<RpcTransaction>> {
+    bridge.list_transactions(federation_id).await
 }
 
 #[macro_rules_derive(rpc_method!)]

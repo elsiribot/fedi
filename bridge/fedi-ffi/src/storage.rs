@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
-use tracing::{debug, error};
+use tracing::debug;
 
 use crate::constants::FEDI_FILE_PATH;
 use crate::types::MultiClientConfig;

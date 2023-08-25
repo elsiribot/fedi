@@ -5,7 +5,6 @@ use fedimint_core_v0::config::ClientConfig;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use tracing::info;
 use v0_rocksdb::{
     FediClientConfigKey, InviteCodeKey, JoinedFederation, JoinedFederationsPrefix, XmppUsernameKey,
 };

@@ -2,7 +2,13 @@ mod dev;
 pub mod social;
 mod utils;
 
-use std::{default::Default, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    default::Default,
+    str::FromStr,
+    sync::Arc,
+    time::Duration,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use anyhow::{anyhow, bail, Context};
 use bitcoin::{
@@ -11,7 +17,8 @@ use bitcoin::{
 };
 use fedi_social_client::{common::VerificationDocument, FediSocialClientInit, RecoveryId};
 use fedimint_client::{
-    backup::Metadata, get_client_root_secret, sm::OperationId, ClientBuilder, ClientSecret,
+    backup::Metadata, db::ChronologicalOperationLogKey, get_client_root_secret,
+    oplog::OperationLogEntry, sm::OperationId, ClientBuilder, ClientSecret,
 };
 use fedimint_core::{
     api::{DynModuleApi, GlobalFederationApi, IGlobalFederationApi},
@@ -38,7 +45,7 @@ use tracing::{debug, error, info, warn};
 use crate::{
     constants::{BACKUP_FREQUENCY, NOSTR_CHILD_ID},
     federation_v1::{social::SOCIAL_RECOVERY_SECRET_CHILD_ID, utils::display_currency},
-    types::{MultiClientConfig, SocialRecoveryQr},
+    types::{MultiClientConfig, RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr},
 };
 
 use self::{
@@ -1053,5 +1060,94 @@ impl FederationV1 {
                 },
             )
             .await;
+    }
+
+    /// Return all transactions via operation log
+    pub async fn list_transactions(
+        &self,
+        limit: usize,
+        start_after: Option<ChronologicalOperationLogKey>,
+    ) -> Vec<RpcTransaction> {
+        self.client
+            .operation_log()
+            .list_operations(limit, start_after)
+            .await
+            .into_iter()
+            .map(|op: (ChronologicalOperationLogKey, OperationLogEntry)| {
+                match op.1.operation_type() {
+                    "ln" => match op.1.meta() {
+                        LightningMeta::Pay { invoice, .. } => RpcTransaction {
+                            id: op.0.operation_id.to_string(),
+                            created_at: Self::_get_duration(op.0.creation_time),
+                            amount: RpcAmount(Amount {
+                                msats: invoice.amount_milli_satoshis().unwrap(),
+                            }),
+                            direction: "send".to_string(),
+                            notes: op.1.operation_type().to_string(),
+                            ln_state: RpcLnState::from_ln_pay_state(op.1.outcome::<LnPayState>()),
+                            lightning: Some(RpcLightningDetails {
+                                invoice: invoice.to_string(),
+                                fee: None, // TODO: to be implemented on the fedimint side
+                            }),
+                            offline_transaction_details: None,
+                        },
+                        LightningMeta::Receive { invoice, .. } => RpcTransaction {
+                            id: op.0.operation_id.to_string(),
+                            created_at: Self::_get_duration(op.0.creation_time),
+                            amount: RpcAmount(Amount {
+                                msats: invoice.amount_milli_satoshis().unwrap(),
+                            }),
+                            direction: "receive".to_string(),
+                            notes: op.1.operation_type().to_string(),
+                            ln_state: RpcLnState::from_ln_recv_state(
+                                op.1.outcome::<LnReceiveState>(),
+                            ),
+                            lightning: Some(RpcLightningDetails {
+                                invoice: invoice.to_string(),
+                                fee: None, // TODO: to be implemented on the fedimint side
+                            }),
+                            offline_transaction_details: None,
+                        },
+                    },
+                    "mint" => {
+                        let mint_meta: MintMeta = op.1.meta();
+                        match mint_meta.variant {
+                            MintMetaVariants::Reissuance { .. } => RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: Self::_get_duration(op.0.creation_time),
+                                direction: "receive".to_string(),
+                                notes: op.1.operation_type().to_string(),
+                                ln_state: None,
+                                amount: RpcAmount(mint_meta.amount),
+                                lightning: None,
+                                offline_transaction_details: None, // TODO: what is the outcome of MintMeta
+                            },
+                            MintMetaVariants::SpendOOB {
+                                requested_amount, ..
+                            } => RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: Self::_get_duration(op.0.creation_time),
+                                direction: "send".to_string(),
+                                notes: op.1.operation_type().to_string(),
+                                ln_state: None,
+                                amount: RpcAmount(requested_amount),
+                                lightning: None,
+                                offline_transaction_details: None, // TODO: what is the outcome of MintMeta
+                            },
+                        }
+                    }
+                    _ => {
+                        panic!(
+                            "Found unimplemented for module with operation type = {}",
+                            op.1.operation_type()
+                        );
+                    }
+                }
+            })
+            .collect()
+    }
+
+    fn _get_duration(system_time: SystemTime) -> u64 {
+        system_time.duration_since(UNIX_EPOCH).unwrap().as_secs()
     }
 }
