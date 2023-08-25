@@ -55,10 +55,6 @@ export interface BitcoinTransactionDetails {
     incomingStatus: IncomingBitcoinTransactionStatus | null
 }
 
-export interface OfflineTransactionDetails {
-    claimed: boolean
-}
-
 export type LnPayState =
     | { type: 'Created' }
     | { type: 'Canceled' }
@@ -86,9 +82,7 @@ export interface Transaction {
     amount: MSats
     notes: string
     lnState: LnPayState | LnReceiveState | null
-    bitcoin: BitcoinTransactionDetails | null
     lightning: LightningTransactionDetails | null
-    offline: OfflineTransactionDetails | null
 }
 
 export interface SocialRecoveryQrCode {

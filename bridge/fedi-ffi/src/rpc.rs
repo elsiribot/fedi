@@ -179,11 +179,7 @@ async fn receiveEcash(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn validateEcash(
-    _bridge: Arc<Bridge>,
-    _federation_id: RpcFederationId,
-    ecash: String,
-) -> anyhow::Result<RpcAmount> {
+async fn validateEcash(_bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcAmount> {
     // TODO: actually check that ecash was issued by this federation, and is unspent
     let oob_notes = OOBNotes::from_str(&ecash)?;
     let amount = oob_notes.total_amount();

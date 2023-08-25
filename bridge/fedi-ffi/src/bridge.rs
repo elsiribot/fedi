@@ -371,6 +371,11 @@ impl Bridge {
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
+        let global_db = self.storage.global_database_v0().await?;
+        let mut dbtx = global_db.begin_transaction().await;
+        dbtx.insert_entry(&JoinedFederationV1(federation_id.translate()), &())
+            .await;
+        dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V1(federation));
         federations
             .entry(federation_id)
@@ -388,6 +393,11 @@ impl Bridge {
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
+        let global_db = self.storage.global_database_v0().await?;
+        let mut dbtx = global_db.begin_transaction().await;
+        dbtx.insert_entry(&JoinedFederationV0(federation_id), &())
+            .await;
+        dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V0(federation));
         federations
             .entry(federation_id.translate())

@@ -272,7 +272,6 @@ impl FederationV0 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
-                                offline_transaction_details: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -733,7 +732,6 @@ impl FederationV0 {
 
     /// Return all transactions in DB
     pub async fn list_transactions(&self) -> Vec<RpcTransaction> {
-        tracing::info!("in list_transactions v0");
         vec![]
     }
 

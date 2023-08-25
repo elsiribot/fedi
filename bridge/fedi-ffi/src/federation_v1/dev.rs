@@ -37,6 +37,8 @@ pub async fn override_localhost_gateway(
     mut dbtx: DatabaseTransaction<'_>,
 ) {
     gateway.api = override_localhost(&gateway.api);
+    // uncomment this hack to trigger outgoing payments in refund case
+    // gateway.api = Url::from_str(&gateway.api.to_string().replace("http", "https")).unwrap();
     dbtx.insert_entry(&LightningGatewayKey, gateway).await;
     dbtx.commit_tx().await;
 }

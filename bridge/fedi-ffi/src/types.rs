@@ -263,7 +263,6 @@ pub struct RpcTransaction {
     pub notes: String,
     pub ln_state: Option<RpcLnState>,
     pub lightning: Option<RpcLightningDetails>,
-    pub offline_transaction_details: Option<RpcOfflineTransactionDetails>,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -372,13 +371,6 @@ pub enum RpcLnReceiveState {
 pub struct RpcLightningDetails {
     pub invoice: String,
     pub fee: Option<RpcAmount>,
-}
-
-#[derive(Debug, Serialize, TS, Default)]
-#[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
-pub struct RpcOfflineTransactionDetails {
-    pub claimed: bool,
 }
 
 // FIXME: should probaby type these as bytes

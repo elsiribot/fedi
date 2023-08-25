@@ -98,9 +98,8 @@ export class FedimintBridge {
         })
     }
 
-    async validateEcash(ecash: string, federationId: string) {
+    async validateEcash(ecash: string) {
         return this.rpc<MSats>('validateEcash', {
-            federationId,
             ecash,
         })
     }
