@@ -105,21 +105,25 @@ let
     export CXX_armv7_linux_androideabi="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_armv7_linux_androideabi="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
     export LDFLAGS_armv7_linux_androideabi="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/arm-linux-androideabi/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/arm-linux-androideabi$` -L ${fake-libgcc-arm}/lib"
+    export LDFLAGS_armv7_linux_androideabi="$LDFLAGS_armv7_linux_androideabi --compress-debug-sections=zlib"
 
     export CC_aarch64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_aarch64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_aarch64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
     export LDFLAGS_aarch64_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/aarch64-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/aarch64-linux-android$` -L ${fake-libgcc-aarch64}/lib"
+    export LDFLAGS_aarch64_linux_android="$LDFLAGS_aarch64_linux_android --compress-debug-sections=zlib"
 
     export CC_x86_64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_x86_64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_x86_64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
     export LDFLAGS_x86_64_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/x86_64-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/x86_64-linux-android$` -L ${fake-libgcc-x86_64}/lib"
+    export LDFLAGS_x86_64_linux_android="$LDFLAGS_x86_64_linux_android --compress-debug-sections=zlib"
 
     export CC_i686_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_i686_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_i686_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
     export LDFLAGS_i686_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/i686-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/i686-linux-android$` -L ${fake-libgcc-i386}/lib"
+    export LDFLAGS_i686_linux_android="$LDFLAGS_i686_linux_android --compress-debug-sections=zlib"
   '';
 
   # Definitions of all the cross-compilation targets we support.
