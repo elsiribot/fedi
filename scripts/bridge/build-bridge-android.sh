@@ -14,22 +14,22 @@ BRIDGE_ROOT=$REPO_ROOT/bridge
 cd $BRIDGE_ROOT
 
 # build the bridge inside nix
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target aarch64-linux-android
+cargo build --target-dir "${TARGET_DIR}" ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target aarch64-linux-android
 
 if [ "$FEDI_EMULATOR" != "1" ]; then
-    cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target x86_64-linux-android
-    cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target armv7-linux-androideabi
+    cargo build --target-dir "${TARGET_DIR}" ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target x86_64-linux-android
+    cargo build --target-dir "${TARGET_DIR}" ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target armv7-linux-androideabi
 fi
 
 # copy bridge outputs to where ffi-bindgen expects them
 mkdir -p $BRIDGE_ROOT/fedi-android/lib/src/main/jniLibs/arm64-v8a
-cp $REPO_ROOT/target/aarch64-linux-android/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/arm64-v8a/libfediffi.so
+cp ${TARGET_DIR}/aarch64-linux-android/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/arm64-v8a/libfediffi.so
 
 if [ "$FEDI_EMULATOR" != "1" ]; then
     mkdir -p $BRIDGE_ROOT/fedi-android/lib/src/main/jniLibs/x86_64
-    cp $REPO_ROOT/target/x86_64-linux-android/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/x86_64/libfediffi.so
+    cp ${TARGET_DIR}/x86_64-linux-android/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/x86_64/libfediffi.so
     mkdir -p $BRIDGE_ROOT/fedi-android/lib/src/main/jniLibs/armeabi-v7a
-    cp $REPO_ROOT/target/armv7-linux-androideabi/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/armeabi-v7a/libfediffi.so
+    cp ${TARGET_DIR}/armv7-linux-androideabi/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/armeabi-v7a/libfediffi.so
 fi
 
 # build android lib with ffi-bindgen inside nix
