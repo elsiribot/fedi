@@ -19,14 +19,23 @@
     android-nixpkgs = {
       url = "github:tadfisher/android-nixpkgs?rev=297976c270bfe86feb57bd66c27a5ad9b4dea3f1"; # stable
     };
+
+    fs-dir-cache = {
+      url = "github:dpc/fs-dir-cache?rev=7df2421948c04a1683d1feafd2e08b0ac35837a8";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
         pkgs = import nixpkgs {
           inherit system;
+          overlays = [
+            (final: prev: {
+              fs-dir-cache = fs-dir-cache.packages.${system}.default;
+            })
+          ];
         };
         pkgs-kitman = import fedimint-build.inputs.nixpkgs-kitman {
           inherit system;
@@ -172,6 +181,7 @@
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
+              pkgs.fs-dir-cache
             ];
           ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
           ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
@@ -201,6 +211,7 @@
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
               pkgs.git
+              pkgs.fs-dir-cache
             ]
             ++ prev.nativeBuildInputs;
           });
@@ -212,6 +223,7 @@
               ++ lib.optionals stdenv.isDarwin [
               pkgs.cocoapods
               xcode-wrapper
+              pkgs.fs-dir-cache
             ];
             shellHook = prev.shellHook;
           });

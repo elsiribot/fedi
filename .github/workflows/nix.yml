@@ -70,14 +70,6 @@ jobs:
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
-            - name: Cache Rust files
-              uses: actions/cache@v3
-              with:
-                path: |
-                  ~/.cargo
-                  target/
-                key: build-nix-develop-android-rust-${{ hashFiles('*.lock', '.cargo/*') }}
-
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
               with:
@@ -88,21 +80,13 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build Android bridge artifacts
-              run: nix develop --ignore-environment .#cross --command env CARGO_PROFILE=ci ./scripts/bridge/build-bridge-android.sh
+              run: nix develop --ignore-environment .#cross --command env HOME="$HOME" CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-android ./scripts/bridge/build-bridge-android.sh
 
     build-ios:
         name: 'Build - macos'
         runs-on: [self-hosted, macos]
         timeout-minutes: 60
         steps:
-            - name: Cache Rust files
-              uses: actions/cache@v3
-              with:
-                path: |
-                  ~/.cargo
-                  target/
-                key: build-nix-develop-ios-rust-${{ hashFiles('*.lock', '.cargo/*') }}
-
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
               with:
@@ -115,7 +99,7 @@ jobs:
 
             - name: Build iOS bridge artifacts
               # note: can't use --ignore-environment as it uses globally installed xcode
-              run: nix develop .#xcode --command  env CARGO_PROFILE=ci ./scripts/bridge/build-bridge-ios.sh
+              run: nix develop .#xcode --command env HOME="$HOME" CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-ios ./scripts/bridge/build-bridge-ios.sh
 
     shell:
         strategy:
