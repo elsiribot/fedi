@@ -7,6 +7,10 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 BRIDGE_ROOT=$REPO_ROOT/bridge
 TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 
+# clean any leftover binaries that we could pass to lipo below
+# shellcheck disable=SC2046
+rm -f $(find $TARGET_DIR/ -name libfediffi.a | grep -v '/deps/')
+
 cd $BRIDGE_ROOT
 # use the xcode shell to make sure we have the necessary SDKs
 if [ "${CARGO_PROFILE:-}" == "ci" ]; then
