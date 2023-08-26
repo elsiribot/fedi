@@ -213,6 +213,30 @@
 
         devShells = fmLib.devShells // {
           default = crossDevShell;
+          # TODO: this is overriden just to fix semgrep on MacOS,
+          # which will be fixed upstream as well. Then this whole section
+          # can be removed
+          lint = fmLib.devShells.lint.overrideAttrs (prev:
+            let
+              moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
+            in
+            {
+              nativeBuildInputs = with pkgs; [
+                toolchains.fenixToolchainCargoFmt
+                nixpkgs-fmt
+                shellcheck
+                git
+                parallel
+                typos
+                convco
+                moreutils-ts
+                nix
+              ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+                semgrep
+              ];
+
+            });
+
           cross = crossDevShell;
           # nix develop .#xcode is used for running commands that depend on an
           # existing underlying Xcode installation that cannot be nixified
