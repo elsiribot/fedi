@@ -16,6 +16,8 @@ export FS_DIR_CACHE_KEY_NAME="$job_name"             # the base name of our key
 export FS_DIR_CACHE_LOCK_TIMEOUT_SECS="$((60 * 30))" # unlock after timeout in case our job fails misereably
 
 
+fs-dir-cache gc unused --seconds "$((7 * 24 * 60 * 60))" # delete caches not used in more than a week
+
 # create/reuse cache (sub-directory) and lock it (wait if already locked)
 cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-file flake.lock)
 
@@ -24,7 +26,6 @@ cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-file flake.lock)
 # shellcheck disable=SC2064
 trap "fs-dir-cache unlock --dir ${cache_dir}" EXIT
 # TBD.
-# trap 'fs-dir-cache gc unused --seconds "$((7 * 24 * 60 * 60))"' # delete caches not used in more than a week
 
 export TARGET_DIR="$cache_dir/target"
 

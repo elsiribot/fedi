@@ -21,7 +21,7 @@
     };
 
     fs-dir-cache = {
-      url = "github:dpc/fs-dir-cache?rev=7df2421948c04a1683d1feafd2e08b0ac35837a8";
+      url = "github:dpc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
     };
   };
 
