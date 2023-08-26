@@ -70,13 +70,6 @@ jobs:
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
-            - name: Cache Rust files
-              uses: actions/cache@v3
-              with:
-                path: |
-                  ~/.cargo
-                key: nix-develop-build-bridge-android-${{ hashFiles('*.lock', '.cargo/*') }}
-
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
               with:
@@ -94,13 +87,6 @@ jobs:
         runs-on: [self-hosted, macos]
         timeout-minutes: 60
         steps:
-            - name: Cache Rust files
-              uses: actions/cache@v3
-              with:
-                path: |
-                  ~/.cargo
-                key: nix-develop-build-bridge-ios-${{ hashFiles('*.lock', '.cargo/*') }}
-
             - uses: actions/checkout@v3
             - uses: cachix/install-nix-action@v20
               with:
