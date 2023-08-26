@@ -9,7 +9,7 @@ if [ -z "${ANDROID_HOME:-}" ]; then
 fi
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-TARGET_DIR=$REPO_ROOT/target
+TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 BRIDGE_ROOT=$REPO_ROOT/bridge
 cd $BRIDGE_ROOT
 

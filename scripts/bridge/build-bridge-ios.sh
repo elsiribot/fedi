@@ -5,7 +5,7 @@ set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 BRIDGE_ROOT=$REPO_ROOT/bridge
-TARGET_DIR=$REPO_ROOT/target
+TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 
 cd $BRIDGE_ROOT
 # use the xcode shell to make sure we have the necessary SDKs
