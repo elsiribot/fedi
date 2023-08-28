@@ -7,7 +7,9 @@ import {
     Easing,
     Platform,
     LayoutChangeEvent,
+    Insets,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import KeyboardAwareWrapper from './KeyboardAwareWrapper'
 import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
@@ -43,6 +45,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
     loading,
 }) => {
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const [overlayHeight, setOverlayHeight] = useState(0)
     const animatedOpacity = useRef(new Animated.Value(0)).current
     const animatedTranslateY = useRef(new Animated.Value(0)).current
@@ -56,6 +59,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
         body = null,
         buttons = [],
     } = contents
+    const style = styles(theme, insets)
 
     // Animate overlay in and out
     useEffect(() => {
@@ -90,7 +94,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
             return (
                 <Button
                     key={i}
-                    containerStyle={styles(theme).buttonContainer}
+                    containerStyle={style.buttonContainer}
                     title={button.text}
                     titleStyle={{
                         color: button.primary
@@ -119,12 +123,12 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
         <Overlay
             isVisible={show}
             onBackdropPress={onBackdropPress}
-            overlayStyle={styles(theme).overlayContainer}
+            overlayStyle={style.overlayContainer}
             animationType="fade">
             <Animated.View
                 onLayout={handleOverlayLayout}
                 style={{
-                    ...styles(theme).overlayContents,
+                    ...style.overlayContents,
                     opacity: animatedOpacity,
                     transform: [{ translateY: animatedTranslateY }],
                 }}>
@@ -133,32 +137,30 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                         <SvgImage
                             size={SvgImageSize.md}
                             name={icon}
-                            containerStyle={styles(theme).overlayIcon}
+                            containerStyle={style.overlayIcon}
                         />
                     )}
                     {url && (
-                        <Text
-                            style={styles(theme).overlayUrl}
-                            numberOfLines={5}>
+                        <Text style={style.overlayUrl} numberOfLines={5}>
                             {url}
                         </Text>
                     )}
-                    <Text medium style={styles(theme).overlayTitle}>
+                    <Text medium style={style.overlayTitle}>
                         {title}
                     </Text>
                     {message && (
-                        <Text h1 h1Style={styles(theme).overlayText}>
+                        <Text h1 h1Style={style.overlayText}>
                             {message}
                         </Text>
                     )}
                     {description && (
-                        <Text style={styles(theme).overlayDescription}>
+                        <Text style={style.overlayDescription}>
                             {description}
                         </Text>
                     )}
                     {body}
                     {buttons?.length > 0 && (
-                        <View style={styles(theme).overlayButtonView}>
+                        <View style={style.overlayButtonView}>
                             {renderButtons()}
                         </View>
                     )}
@@ -168,7 +170,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: Insets) =>
     StyleSheet.create({
         overlayContainer: {
             // Undo all overlay styling, overlayContents will handle styling
@@ -184,8 +186,9 @@ const styles = (theme: Theme) =>
             position: 'relative',
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            paddingVertical: theme.spacing.xl,
+            paddingTop: theme.spacing.xl,
             paddingHorizontal: theme.spacing.md,
+            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
             backgroundColor: theme.colors.white,
             ...Platform.select({
                 android: {
@@ -220,10 +223,9 @@ const styles = (theme: Theme) =>
         overlayButtonView: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginVertical: theme.spacing.sm,
+            marginTop: theme.spacing.xl,
         },
         buttonContainer: {
-            marginVertical: theme.spacing.lg,
             marginHorizontal: theme.spacing.sm,
             flex: 1,
             borderWidth: 1,
