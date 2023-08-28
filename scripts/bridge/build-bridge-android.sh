@@ -3,7 +3,7 @@
 # exit on failure
 set -e
 
-if [ -z "${ANDROID_HOME:-}" ]; then
+if [ -z "${FEDI_CROSS_DEV_SHELL:-}" ] ; then
   >&2 echo "This command is meant to run in a .#cross shell"
   exit 1
 fi

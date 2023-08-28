@@ -185,6 +185,7 @@
             ];
           ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
           ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
+          FEDI_CROSS_DEV_SHELL = "1";
           shellHook = prev.shellHook
             + toolchains.wasm32CrossEnvVars
             + toolchains.iosCrossEnvVars
