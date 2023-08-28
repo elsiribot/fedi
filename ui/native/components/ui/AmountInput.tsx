@@ -108,7 +108,7 @@ const AmountInput: React.FC<Props> = ({
         )
     }
 
-    const hasNumpad = height >= 500
+    const hasNumpad = height >= 500 && !readOnly
     const secondaryAmountText = isFiat
         ? `${satsValue} ${t('words.sats').toUpperCase()}`
         : `${fiatValue} ${currency}`
