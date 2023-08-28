@@ -118,7 +118,11 @@ export function usePublishNotificationToken(
     const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
 
     useEffect(() => {
-        if (!activeFederationId || pushNotificationToken) return
+        // Can't publish if no federation is selected
+        if (!activeFederationId) return
+
+        // Can't publish if we don't have a token
+        if (!pushNotificationToken) return
 
         getDeviceToken()
             .then(token => {

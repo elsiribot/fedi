@@ -19,7 +19,6 @@ import {
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useMonitorChatConnection } from '@fedi/common/hooks/chat'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import {
     refreshFederationsMetadata,
@@ -30,19 +29,13 @@ import {
 } from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
-import { fedimint } from '../bridge'
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    useAppDispatch,
-    useAppSelector,
-    useXmppHealthCheck,
-    useXmppPushNotifications,
-} from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -105,15 +98,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         const lastMessage = getLatestMessage(messages)
         return !!lastMessage && lastMessage.id !== lastSeenMessageId
     }, [messages, lastSeenMessageId])
-
-    // Makes sure we always have a healthy XMPP websocket for chat
-    useXmppHealthCheck()
-
-    // Publishes an FCM push notification token if chat is available
-    useXmppPushNotifications()
-
-    // Make sure the chat connection is always online if available
-    useMonitorChatConnection(fedimint)
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.

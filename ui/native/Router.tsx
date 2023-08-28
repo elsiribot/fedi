@@ -7,8 +7,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
+import { useMonitorChatConnection } from '@fedi/common/hooks/chat'
 import { selectActiveFederation } from '@fedi/common/redux'
 
+import { fedimint } from './bridge'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
@@ -115,7 +117,11 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import { useAppSelector } from './state/hooks'
+import {
+    useAppSelector,
+    useXmppHealthCheck,
+    useXmppPushNotifications,
+} from './state/hooks'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -769,6 +775,15 @@ const linking: NavigationLinkingConfig = {
 const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
+
+    // Makes sure we always have a healthy XMPP websocket for chat
+    useXmppHealthCheck()
+
+    // Publishes an FCM push notification token if chat is available
+    useXmppPushNotifications()
+
+    // Make sure the chat connection is always online if available
+    useMonitorChatConnection(fedimint)
 
     return (
         <NavigationContainer ref={navigation} theme={theme} linking={linking}>
