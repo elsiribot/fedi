@@ -1,19 +1,14 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Keyboard, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Alert, Keyboard } from 'react-native'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
-import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import AmountInput from '../components/ui/AmountInput'
-import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import SvgImage from '../components/ui/SvgImage'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { AmountScreen } from '../components/ui/AmountScreen'
+import { useBridge } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -23,10 +18,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const SendOfflineAmount: React.FC<Props> = () => {
-    const insets = useSafeAreaInsets()
-    const { theme } = useTheme()
     const navigation = useNavigation()
-    const activeFederation = useAppSelector(selectActiveFederation)
     const { t } = useTranslation()
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState(0 as Sats)
@@ -79,75 +71,24 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }
 
     return (
-        <KeyboardAwareWrapper>
-            <View style={styles(theme, insets).container}>
-                <Text caption>
-                    {`${t('words.balance')}: `}
-                    {`${amountUtils.formatNumber(
-                        amountUtils.msatToSat(activeFederation?.balance!),
-                    )} `}
-                    {`${t('words.sats').toUpperCase()}`}
-                </Text>
-
-                <View style={styles(theme, insets).amountInputContainer}>
-                    <AmountInput
-                        amount={amount}
-                        onChangeAmount={onChangeAmount}
-                        minimumAmount={minimumAmount}
-                        maximumAmount={maximumAmount}
-                        submitAttempts={submitAttempts}
-                        verb={t('words.send')}
-                    />
-                </View>
-                <View style={styles(theme, insets).offlineContainer}>
-                    <SvgImage
-                        name="Offline"
-                        containerStyle={{
-                            marginRight: theme.spacing.md,
-                        }}
-                    />
-                    <Text caption>{t('phrases.you-are-offline')}</Text>
-                </View>
-                <Button
-                    fullWidth
-                    title={t('words.next')}
-                    onPress={onNext}
-                    containerStyle={styles(theme, insets).button}
-                    disabled={isLoading}
-                    loading={isLoading}
-                />
-            </View>
-        </KeyboardAwareWrapper>
+        <AmountScreen
+            showBalance
+            amount={amount}
+            onChangeAmount={onChangeAmount}
+            minimumAmount={minimumAmount}
+            maximumAmount={maximumAmount}
+            submitAttempts={submitAttempts}
+            verb={t('words.send')}
+            buttons={[
+                {
+                    title: t('words.next'),
+                    onPress: onNext,
+                    disabled: isLoading,
+                    loading: isLoading,
+                },
+            ]}
+        />
     )
 }
-
-const styles = (theme: Theme, insets: EdgeInsets) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.xl,
-            paddingBottom: theme.spacing.xl + insets.bottom,
-            width: '100%',
-        },
-        amountInputContainer: {
-            marginTop: 'auto',
-        },
-        offlineContainer: {
-            marginTop: 'auto',
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        offlineIcon: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
-            marginRight: theme.spacing.md,
-        },
-        button: {
-            marginTop: 'auto',
-        },
-    })
 
 export default SendOfflineAmount
