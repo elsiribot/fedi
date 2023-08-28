@@ -341,6 +341,23 @@ async fn backupXmppUsername(
     bridge.backup_xmpp_username(federation_id, username).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn getNostrPubKey(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<String> {
+    bridge.get_nostr_pub_key(federation_id).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn signNostrEvent(
+    bridge: Arc<Bridge>,
+    event_hash: String,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<String> {
+    bridge.sign_nostr_event(federation_id, event_hash).await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -428,6 +445,9 @@ rpc_methods!(RpcMethods {
     // XMPP
     xmppCredentials,
     backupXmppUsername,
+    // Nostr
+    getNostrPubKey,
+    signNostrEvent,
 });
 
 #[instrument(

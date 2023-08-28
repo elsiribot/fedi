@@ -15,6 +15,8 @@ pub enum ErrorCode {
     InvalidMnemonic,
     #[error("Social backup and recovery is not supported for this version of federation")]
     SocialRecoveryNotSupported,
+    #[error("Nostr events not supported for this version of federation")]
+    NostrNotSupported,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

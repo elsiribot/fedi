@@ -6,7 +6,7 @@ use std::{default::Default, str::FromStr, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, bail, Context};
 use bitcoin::{
-    secp256k1::{Message, PublicKey, Secp256k1},
+    secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey},
     Network,
 };
 use fedi_social_client::{common::VerificationDocument, FediSocialClientGen, RecoveryId};
@@ -36,7 +36,7 @@ use lightning_invoice::Invoice;
 use tracing::{debug, error, info, warn};
 
 use crate::{
-    constants::BACKUP_FREQUENCY,
+    constants::{BACKUP_FREQUENCY, NOSTR_CHILD_ID},
     federation_v1::{social::SOCIAL_RECOVERY_SECRET_CHILD_ID, utils::display_currency},
     types::{MultiClientConfig, SocialRecoveryQr},
 };
@@ -954,6 +954,29 @@ impl FederationV1 {
             signature,
             pubkey: RpcPublicKey(lnurl_pubkey),
         }
+    }
+
+    /// Get Nostr public key
+    pub async fn get_nostr_pub_key(&self) -> XOnlyPublicKey {
+        let secp = Secp256k1::new();
+        let root_secret = self.root_secret().await;
+        let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let nostr_pubkey = nostr_keypair.x_only_public_key();
+        nostr_pubkey.0
+    }
+
+    /// Sign Nostr event
+    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
+        let secp = Secp256k1::new();
+        let root_secret = self.root_secret().await;
+        let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let data = &hex::decode(event_hash)?;
+        let message = Message::from_slice(data)?;
+        let sig = secp.sign_schnorr(&message, &nostr_keypair);
+        // Return hex-encoded string
+        Ok(format!("{}", sig))
     }
 
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account

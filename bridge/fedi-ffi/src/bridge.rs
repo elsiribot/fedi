@@ -13,6 +13,7 @@ use super::types::{
 use super::{federation_v0::FederationV0, translate::Translate};
 use anyhow::{anyhow, bail, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
+use bitcoin::XOnlyPublicKey;
 use fedi_social_client::RecoveryId;
 use fedimint_core::config::FederationId;
 use fedimint_core::task::TaskGroup;
@@ -272,6 +273,20 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.get_xmpp_credentials().await,
             Self::V1(v1) => v1.get_xmpp_credentials().await,
+        }
+    }
+
+    pub async fn get_nostr_pub_key(&self) -> Result<XOnlyPublicKey> {
+        match self {
+            Self::V0(v0) => bail!(ErrorCode::NostrNotSupported),
+            Self::V1(v1) => Ok(v1.get_nostr_pub_key().await),
+        }
+    }
+
+    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
+        match self {
+            Self::V0(v0) => bail!(ErrorCode::NostrNotSupported),
+            Self::V1(v1) => v1.sign_nostr_event(event_hash).await,
         }
     }
 }
@@ -679,5 +694,22 @@ impl Bridge {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.save_xmpp_username(&username).await;
         multi.backup().await
+    }
+
+    pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi
+            .get_nostr_pub_key()
+            .await
+            .map(|pubkey| pubkey.to_string())
+    }
+
+    pub async fn sign_nostr_event(
+        &self,
+        federation_id: RpcFederationId,
+        event_hash: String,
+    ) -> Result<String> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.sign_nostr_event(event_hash).await
     }
 }
