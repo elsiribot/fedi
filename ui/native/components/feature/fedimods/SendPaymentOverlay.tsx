@@ -1,5 +1,7 @@
+import { useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
@@ -36,6 +38,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
     onAccept,
 }) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { payInvoice } = useBridge()
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
@@ -110,18 +113,20 @@ export const SendPaymentOverlay: React.FC<Props> = ({
         description = convertSatsToFormattedFiat(inputAmount)
     } else {
         body = (
-            <AmountInput
-                key={amountInputKey}
-                amount={inputAmount}
-                submitAttempts={submitAttempts}
-                minimumAmount={minimumAmount}
-                maximumAmount={maximumAmount}
-                verb={t('words.send')}
-                onChangeAmount={amount => {
-                    setSubmitAttempts(0)
-                    setInputAmount(amount)
-                }}
-            />
+            <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
+                <AmountInput
+                    key={amountInputKey}
+                    amount={inputAmount}
+                    submitAttempts={submitAttempts}
+                    minimumAmount={minimumAmount}
+                    maximumAmount={maximumAmount}
+                    verb={t('words.send')}
+                    onChangeAmount={amount => {
+                        setSubmitAttempts(0)
+                        setInputAmount(amount)
+                    }}
+                />
+            </View>
         )
     }
 

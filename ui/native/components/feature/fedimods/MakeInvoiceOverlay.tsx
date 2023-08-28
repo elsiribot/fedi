@@ -1,5 +1,7 @@
+import { useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 import { RejectionError, RequestInvoiceArgs } from 'webln'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
@@ -36,6 +38,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     onAccept,
 }) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { generateInvoice } = useBridge()
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
@@ -60,7 +63,9 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     useEffect(() => {
         if (isShowing) {
             reset()
+            setSubmitAttempts(0)
             setAmountInputKey(key => key + 1)
+            setIsLoading(false)
         }
     }, [isShowing, reset])
 
@@ -117,18 +122,20 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
         })}`
         description = requestInvoiceArgs?.defaultMemo || ''
         body = (
-            <AmountInput
-                key={amountInputKey}
-                amount={inputAmount}
-                submitAttempts={submitAttempts}
-                minimumAmount={minimumAmount}
-                maximumAmount={maximumAmount}
-                verb={t('words.request')}
-                onChangeAmount={amount => {
-                    setSubmitAttempts(0)
-                    setInputAmount(amount)
-                }}
-            />
+            <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
+                <AmountInput
+                    key={amountInputKey}
+                    amount={inputAmount}
+                    submitAttempts={submitAttempts}
+                    minimumAmount={minimumAmount}
+                    maximumAmount={maximumAmount}
+                    verb={t('words.request')}
+                    onChangeAmount={amount => {
+                        setSubmitAttempts(0)
+                        setInputAmount(amount)
+                    }}
+                />
+            </View>
         )
     }
 
