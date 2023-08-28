@@ -8,7 +8,6 @@ export type Props = {
     inputRef: RefObject<TextInput>
     readOnly?: boolean
     label?: string
-    labelPosition?: 'left' | 'right'
 }
 
 // The Input/TextInput component can be difficult to customize for some UI
@@ -20,7 +19,6 @@ const InvisibleInput: React.FC<Props> = ({
     inputRef,
     readOnly,
     label = '',
-    labelPosition = 'right',
 }) => {
     const { theme } = useTheme()
 
@@ -30,33 +28,16 @@ const InvisibleInput: React.FC<Props> = ({
                 style={styles(theme).interactionContainer}
                 disabled={readOnly}
                 onPress={() => inputRef.current?.focus()}>
-                {labelPosition === 'left' && (
-                    <Text
-                        h2
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        style={styles(theme).labelText}>
-                        {label}
-                    </Text>
-                )}
-                <Text
-                    h1
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    h1Style={[
-                        labelPosition === 'left' ? styles(theme).offset : {},
-                    ]}>
+                <Text h1 numberOfLines={1} adjustsFontSizeToFit>
                     {value}
                 </Text>
-                {labelPosition === 'right' && (
-                    <Text
-                        h2
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        style={styles(theme).labelText}>
-                        {label}
-                    </Text>
-                )}
+                <Text
+                    h2
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    style={styles(theme).labelText}>
+                    {label}
+                </Text>
             </Pressable>
             <TextInput
                 ref={inputRef}
@@ -89,8 +70,9 @@ const styles = (theme: Theme) =>
             position: 'absolute',
         },
         labelText: {
-            marginHorizontal: theme.spacing.sm,
+            marginLeft: theme.spacing.sm,
             marginBottom: 3,
+            fontSize: 20,
         },
         offset: {},
     })

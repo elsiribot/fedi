@@ -1,5 +1,6 @@
 export { default as Alarm } from '@fedi/common/assets/svgs/alarm.svg'
 export { default as AllowCameraAccessIcon } from '@fedi/common/assets/svgs/allow-camera-access-icon.svg'
+export { default as ArrowLeft } from '@fedi/common/assets/svgs/arrow-left.svg'
 export { default as Bitcoin } from '@fedi/common/assets/svgs/bitcoin.svg'
 export { default as BitcoinCircle } from '@fedi/common/assets/svgs/bitcoin-circle.svg'
 export { default as Bolt } from '@fedi/common/assets/svgs/bolt.svg'
