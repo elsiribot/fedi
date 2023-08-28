@@ -8,7 +8,7 @@ echo "This script is deprecated. Check the ui/README for docs on running with Ni
 echo "-----------------"
 
 # re-build bridge bindings for ios
-yarn build-bridge-ios
+nix develop .#xcode --command yarn build-bridge-ios
 
 # make sure we've installed pods
 pushd ios
