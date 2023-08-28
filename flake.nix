@@ -167,8 +167,13 @@
           nativeBuildInputs =
             [
               (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
+            ] ++ [
+              fedimint-build.packages.${system}.devimint
+              fedimint-pkgs.packages.${system}.gateway-pkgs
+              fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
+              pkgs.git
+              pkgs.fs-dir-cache
             ]
-            ++ prev.nativeBuildInputs
             ++ [
               pkgs.git
               pkgs.wasm-pack
@@ -182,9 +187,11 @@
               pkgs.fastlane
               pkgs.ruby
               pkgs.fs-dir-cache
-            ];
+            ]
+            ++ prev.nativeBuildInputs;
           ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
           ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
+          FEDI_CROSS_DEV_SHELL = "1";
           shellHook = prev.shellHook
             + toolchains.wasm32CrossEnvVars
             + toolchains.iosCrossEnvVars
@@ -205,16 +212,7 @@
         } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {
-          default = fmLib.devShells.default.overrideAttrs (prev: {
-            nativeBuildInputs = [
-              fedimint-build.packages.${system}.devimint
-              fedimint-pkgs.packages.${system}.gateway-pkgs
-              fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
-              pkgs.git
-              pkgs.fs-dir-cache
-            ]
-            ++ prev.nativeBuildInputs;
-          });
+          default = crossDevShell;
           cross = crossDevShell;
           # nix develop .#xcode is used for running commands that depend on an
           # existing underlying Xcode installation that cannot be nixified
