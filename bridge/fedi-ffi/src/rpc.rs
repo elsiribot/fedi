@@ -711,7 +711,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_fedi_file_migration() -> anyhow::Result<()> {
+    async fn test_fedi_file_migration() -> anyhow::Result<()> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()
@@ -736,7 +736,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_join_and_leave_and_join() -> anyhow::Result<()> {
+    async fn test_join_and_leave_and_join() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
         let rpc_federation_id = RpcFederationId(federation.federation_id());
@@ -752,7 +752,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_lightning_send_and_receive() -> anyhow::Result<()> {
+    async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let receive_amount = fedimint_core::Amount::from_sats(100);
         let rpc_receive_amount = RpcAmount(receive_amount);
@@ -798,7 +798,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_ecash() -> anyhow::Result<()> {
+    async fn test_ecash() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
@@ -832,7 +832,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_backup_and_recovery() -> anyhow::Result<()> {
+    async fn test_backup_and_recovery() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
@@ -869,7 +869,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_social_recovery() -> anyhow::Result<()> {
+    async fn test_social_recovery() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
         // Social recovery not supported for v0 federations.

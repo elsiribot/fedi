@@ -31,8 +31,6 @@ FM_INVITE_CODE=$(cat $FM_DATA_DIR/invite-code)
 export FM_INVITE_CODE
 
 echo "## Running tests"
-# for now, just run all tests starting with `test_multi`
-# cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi "$@" -- --test-threads=1
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_multi -- --test-threads=1
+cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi "$@" -- --test-threads=1
 
 echo "## Tests Passed"

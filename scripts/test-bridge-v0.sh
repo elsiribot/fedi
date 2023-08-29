@@ -2,7 +2,6 @@
 set -ex
 
 export RUST_BACKTRACE=full
-export TESTCASE=$1
 
 # make sure nothing is running
 pkill -9 fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet distributedgen || true
@@ -58,7 +57,6 @@ fedimint-cli ng reissue $ECASH
 
 echo "## Running tests"
 # for now, just run all tests starting with `test_multi`
-# cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi $TESTCASE -- --test-threads=1
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi test_multi -- --test-threads=1
+cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi "$@" -- --test-threads=1
 
 echo "## Tests Passed"
