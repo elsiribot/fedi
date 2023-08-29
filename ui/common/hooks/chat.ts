@@ -167,6 +167,10 @@ export function useChatMember(memberId: string) {
     return { member, isFetchingMember }
 }
 
+/**
+ * Given an instance of the bridge, monitor the chat connection and
+ * attempt to reconnect and continue attempting if it fails
+ */
 export async function useMonitorChatConnection(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
     const { activeFederationId } = useCommonSelector(s => s.federation)
@@ -186,7 +190,6 @@ export async function useMonitorChatConnection(fedimint: FedimintBridge) {
 
         let reconnectTimeout: ReturnType<typeof setTimeout>
         const attemptChatConnection = async () => {
-            console.debug('attemptChatConnection')
             try {
                 await dispatch(
                     connectChat({
