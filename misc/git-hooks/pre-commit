@@ -29,12 +29,15 @@ if [ -z "${NO_STASH:-}" ] && [ $is_unclean -ne 0 ]; then
   trap revert_git_stash EXIT
 fi
 
-
 export git_ls_files
 git_ls_files="$(git ls-files)"
-export git_ls_nonbinary_files
-git_ls_nonbinary_files="$(echo "$git_ls_files" | xargs file --mime | grep -v "; charset=binary" | cut -d: -f1)"
 
+export git_ls_nonbinary_files
+git_ls_nonbinary_files="$(echo "$git_ls_files" |  grep -v -E "^db/|\.(png|ods|jpg|jpeg|woff2|keystore|wasm|ttf|jar|ico)\$")"
+
+# Uncomment and run this to figure out which paths are probably missing in 'git_ls_nonbinary_files''s filter:
+# git_ls_nonbinary_files_slow="$(git ls-files -z | xargs -0 file --mime | grep -v "; charset=binary" | cut -d: -f1)"
+# diff -u <(echo "$git_ls_nonbinary_files_slow") <(echo "$git_ls_nonbinary_files")
 
 function check_nix() {
   set -eo pipefail
