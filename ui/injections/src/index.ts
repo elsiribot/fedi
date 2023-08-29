@@ -77,7 +77,7 @@ export function makeWebViewMessageHandler(
             return
         }
 
-        const { id, type } = message
+        const { id, type, data } = message
         try {
             // Have to do a little casting since TS can't infer that the
             // handler matches the message.
@@ -85,7 +85,7 @@ export function makeWebViewMessageHandler(
                 typeof type
             >
             const response = await handler(
-                message as Parameters<typeof handler>[0],
+                data as Parameters<typeof handler>[0],
             )
             const detail = {
                 id,
@@ -114,7 +114,7 @@ export function makeWebViewMessageHandler(
                     message: errorMessage,
                 },
             }
-            webview.injectJavaScript(`document.dispatchEvent(
+            webview.injectJavaScript(`window.dispatchEvent(
                 new CustomEvent(
                     "fedi:message",
                     {
