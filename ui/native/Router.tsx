@@ -22,7 +22,6 @@ import EditGroupHeader from './components/feature/chat/EditGroupHeader'
 import GroupAdminHeader from './components/feature/chat/GroupAdminHeader'
 import GroupHeader from './components/feature/chat/GroupHeader'
 import GroupInviteHeader from './components/feature/chat/GroupInviteHeader'
-import JoinGroupHeader from './components/feature/chat/JoinGroupHeader'
 import MemberQrCodeHeader from './components/feature/chat/MemberQrCodeHeader'
 import NewMessageHeader from './components/feature/chat/NewMessageHeader'
 import ScanMemberCodeHeader from './components/feature/chat/ScanMemberCodeHeader'
@@ -76,7 +75,6 @@ import GroupAdmin from './screens/GroupAdmin'
 import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
 import Initializing from './screens/Initializing'
-import JoinGroup from './screens/JoinGroup'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
@@ -247,13 +245,6 @@ const MainNavigator = () => {
                                 component={NewMessage}
                                 options={() => ({
                                     header: () => <NewMessageHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="JoinGroup"
-                                component={JoinGroup}
-                                options={() => ({
-                                    header: () => <JoinGroupHeader />,
                                 })}
                             />
                             <Stack.Screen

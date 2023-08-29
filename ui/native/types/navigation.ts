@@ -64,7 +64,6 @@ export type RootStackParamList = {
     FederationWelcome: undefined
     FederationAcceptTerms: { nextScreen: keyof RootStackParamList }
     Initializing: undefined
-    JoinGroup: undefined
     MemberQrCode: undefined
     NewMessage: undefined
     PersonalBackupGuidance: undefined
