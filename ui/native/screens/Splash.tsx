@@ -3,6 +3,7 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
@@ -19,7 +20,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
+        <SafeAreaView style={styles(theme).container}>
             <View style={styles(theme).illustrationContainer}>
                 <ImageBackground
                     resizeMode="contain"
@@ -34,7 +35,11 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                 />
             </View>
             <View style={styles(theme).welcomeContainer}>
-                <SvgImage size={SvgImageSize.md} name="FediLogoIcon" />
+                <SvgImage
+                    containerStyle={styles(theme).welcomeIcon}
+                    size={SvgImageSize.md}
+                    name="FediLogoIcon"
+                />
                 <Text h2 medium>
                     {t('feature.onboarding.welcome-to-fedi')}
                 </Text>
@@ -48,7 +53,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     testID="JoinFederationButton"
                     title={t('feature.federations.join-federation')}
-                    containerStyle={styles(theme).button}
                     onPress={handleJoinFederation}
                 />
                 <Text style={styles(theme).agreementText} small>
@@ -63,7 +67,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     </Text>
                 </Text>
             </View>
-        </View>
+        </SafeAreaView>
     )
 }
 
@@ -73,56 +77,55 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: theme.spacing.lg,
             padding: theme.spacing.lg,
-            marginVertical: theme.spacing.xl,
         },
         buttonsContainer: {
-            height: '20%',
             width: '100%',
             alignItems: 'center',
             justifyContent: 'space-evenly',
-        },
-        button: {
-            marginVertical: theme.spacing.sm,
+            gap: theme.spacing.xl,
         },
         illustrationContainer: {
             position: 'relative',
-            height: '50%',
+            flex: 1,
+            flexShrink: 1,
+            maxHeight: theme.sizes.splashImageSize,
             alignItem: 'center',
             justifyContent: 'center',
             width: '100%',
-            marginVertical: theme.spacing.md,
         },
         illustrationImage: {
             position: 'absolute',
-            minHeight: theme.sizes.splashImageSize,
-            minWidth: theme.sizes.splashImageSize,
+            height: '100%',
             width: '100%',
             transform: [
                 {
-                    scale: 1.5,
+                    scale: 1,
                 },
             ],
         },
         illustrationImageBlurred: {
             position: 'absolute',
-            minHeight: theme.sizes.splashImageSize,
-            minWidth: theme.sizes.splashImageSize,
+            height: '100%',
             width: '100%',
             opacity: 0.5,
             transform: [
                 {
-                    scale: 1.6,
+                    scale: 1.05,
                 },
             ],
         },
         welcomeContainer: {
-            height: '20%',
             width: '100%',
+            maxWidth: 320,
             alignItems: 'center',
             justifyContent: 'space-evenly',
+            gap: theme.spacing.sm,
             paddingHorizontal: theme.spacing.xl,
-            marginVertical: theme.spacing.md,
+        },
+        welcomeIcon: {
+            marginBottom: theme.spacing.sm,
         },
         welcomeText: {
             textAlign: 'center',
@@ -133,7 +136,7 @@ const styles = (theme: Theme) =>
         agreementText: {
             textAlign: 'center',
             width: '70%',
-            marginVertical: theme.spacing.xl,
+            color: theme.colors.grey,
         },
     })
 

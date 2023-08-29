@@ -10,7 +10,11 @@ const ChooseBackupMethodHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            headerCenter={<Text bold>{t('feature.backup.choose-method')}</Text>}
+            headerCenter={
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.backup.choose-method')}
+                </Text>
+            }
         />
     )
 }

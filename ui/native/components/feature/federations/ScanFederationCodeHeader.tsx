@@ -11,7 +11,7 @@ const ScanFederationCodeHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={
-                <Text bold>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
                     {t('feature.federations.scan-federation-invite')}
                 </Text>
             }

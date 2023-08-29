@@ -33,7 +33,7 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).textContainer}>
-                <Text h2 medium>
+                <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                     {member.username}
                 </Text>
                 <Text caption style={styles(theme).noticeText}>

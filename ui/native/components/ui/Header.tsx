@@ -76,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({
                 onPress={() => navigation.dispatch(reset('TabsNavigator'))}
                 hitSlop={5}
                 style={{
-                    padding: theme.spacing.xs,
+                    padding: theme.spacing.sm,
                 }}>
                 <SvgImage name="Close" />
             </Pressable>

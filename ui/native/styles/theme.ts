@@ -157,7 +157,7 @@ const theme = createTheme({
         recordButtonInner: 56,
         socialBackupCameraWidth: dimensions.width * 0.9,
         socialBackupCameraHeight: dimensions.height * 0.4,
-        splashImageSize: 230,
+        splashImageSize: 360,
         splashLogoHeight: 32,
         splashLogoWidth: 120,
         tabBarHeight: 72,

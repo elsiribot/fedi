@@ -417,6 +417,14 @@ const MainNavigator = () => {
                                 component={ReceiveSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {/* Transaction history */}
+                            <Stack.Screen
+                                name="Transactions"
+                                component={Transactions}
+                                options={() => ({
+                                    header: () => <TransactionsHeader />,
+                                })}
+                            />
                             {/* Federations */}
                             <Stack.Screen
                                 name="FederationInvite"
@@ -670,14 +678,7 @@ const MainNavigator = () => {
                             />
                         </Stack.Group>
                         {/* Put all Overlay/Modal screens here */}
-                        <Stack.Group screenOptions={{ presentation: 'modal' }}>
-                            <Stack.Screen
-                                name="Transactions"
-                                component={Transactions}
-                                options={() => ({
-                                    header: () => <TransactionsHeader />,
-                                })}
-                            />
+                        <Stack.Group>
                             <Stack.Screen
                                 name="SocialRecoveryQrModal"
                                 component={SocialRecoveryQrModal}
