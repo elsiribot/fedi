@@ -69,10 +69,9 @@ nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64
     echo "   then you should be able to run the command below in a non-nix shell and it should succeed."
     echo "   Note the command includes removing the Xcode DerivedData folder (assuming default location on MacOS) which is required."
     echo "   Then come back here and restart the iOS shell and iOS dev builds will work fine in mprocs"
-    
     echo -e "======================================================"
     echo -e "\x1B[32;1m======================================================"
-    echo "   rm -rf ~/Library/Developer/Xcode/DerivedData && cd $REPO_ROOT/ui/native && npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID"
+    echo "   sudo rm -rf ~/Library/Developer/Xcode/DerivedData && cd $REPO_ROOT/ui/native && npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID"
     echo -e "======================================================"
     echo -e "\x1B[31;1m======================================================"
     echo "   if that still doesn't work. Be sure to follow the React Native docs for environment setup and try again:"
