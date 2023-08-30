@@ -8,4 +8,4 @@ $REPO_ROOT/scripts/enforce-nix.sh
 echo "ui: starting react-native metro bundler"
 
 cd $REPO_ROOT/ui/native
-nix develop .#cross --command yarn start
+yarn start
