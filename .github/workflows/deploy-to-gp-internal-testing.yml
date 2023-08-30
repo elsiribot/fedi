@@ -7,19 +7,14 @@ on:
                 required: false
                 type: string
 
-defaults:
-    run:
-        working-directory: ui/native
-
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
         runs-on: buildjet-8vcpu-ubuntu-2204
         steps:
             - name: Checkout repo
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
               with:
-                  submodules: true
                   ref: ${{ inputs.commit-to-deploy }}
 
             - uses: cachix/install-nix-action@v20
@@ -31,29 +26,11 @@ jobs:
                   name: fedibtc
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-            - name: Setup JDK
-              uses: actions/setup-java@v3
-              with:
-                  distribution: 'zulu'
-                  java-version: 11
-                  cache: 'gradle'
-
-            - name: Setup Node
-              uses: actions/setup-node@v1
-              with:
-                  node-version: '16.18.X'
-
             - name: Build bridge
-              run: |
-                  yarn build-bridge-android
+              run: nix develop --command env CARGO_PROFILE=release ./scripts/bridge/build-bridge-android.sh
 
-            - name: Install Node dependencies
-              run: yarn install
-
-            - name: Setup Ruby
-              uses: ruby/setup-ruby@v1
-              with:
-                  ruby-version: '2.7.5'
+            - name: Build UI dependencies
+              run: nix develop --command ./scripts/ui/build-deps.sh
 
             - name: Generate JSON credentials file
               run: |
@@ -62,8 +39,5 @@ jobs:
                   base64 --decode ./tmp/service-account-credentials.txt >> ./android/decoded-service-account-credentials.json
                   rm -rf ./tmp
 
-            - name: Install Fastlane
-              run: cd android && bundle install && cd ..
-
             - name: Execute Fastlane command
-              run: cd android && bundle exec fastlane internal && cd ..
+              run: nix develop --command ./scripts/ui/deploy-to-google-play.sh

@@ -26,9 +26,7 @@ if [[ "$SKIP_BRIDGE_BUILD" == "0" ]]; then
 fi
 
 if [[ "$SKIP_INSTALL_PODS" == "0" ]]; then
-    echo "Installing ios Pods"
-    cd $REPO_ROOT/ui/native/ios
-    nix develop .#xcode --command pod install
+    $REPO_ROOT/scripts/ui/install-ios-deps.sh
 fi
 
 echo "Finished dev-ui setup"

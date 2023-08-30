@@ -102,7 +102,14 @@ build-ui-deps:
 # generates a standard production release APK for @fedi/native
 build-production-apk:
   nix develop --command ./scripts/ui/build-production-apk.sh
-  ./scripts/ui/build-production-apk.sh
+
+# generates a signed xcode release archive and uploads to testflight
+deploy-to-testflight:
+  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
+
+# generates a standard production release AAB for @fedi/native and uploads it to the Google Play Internal Testing track
+deploy-to-google-play:
+  nix develop --command ./scripts/ui/deploy-to-google-play.sh
 
 # bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
