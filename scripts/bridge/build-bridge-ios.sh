@@ -52,6 +52,7 @@ AARCH64_SIM_BINARY_PATH=$TARGET_DIR/aarch64-apple-ios-sim/${CARGO_PROFILE:-debug
 X86_BINARY_PATH=$TARGET_DIR/x86_64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
 if [ -e "$AARCH64_SIM_BINARY_PATH" ] && [ -e "$X86_BINARY_PATH" ]; then
   echo "Combining binaries for development..."
+  mkdir -p $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}
   lipo $AARCH64_SIM_BINARY_PATH $X86_BINARY_PATH \
     -create -output $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}/libfediffi.a
 
