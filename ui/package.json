@@ -15,6 +15,7 @@
     "scripts": {
         "build": "turbo run build",
         "dev": "turbo run dev",
+        "dev:deps": "turbo run dev --filter=common --filter=injections",
         "dev:web": "turbo run dev --parallel --filter=web...",
         "dev:native": "turbo run dev --parallel --filter=native...",
         "lint": "turbo run lint",

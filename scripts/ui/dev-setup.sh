@@ -9,11 +9,13 @@ echo "Starting dev-ui setup"
 
 cd $REPO_ROOT/ui
 
+# install node modules and build ui dependencies
 if [[ "$SKIP_NODE_MODULES" == "0" ]]; then
     echo "Reinstalling node modules"
     rm -rf $REPO_ROOT/ui/node_modules
     nix develop .#cross --command yarn install
 fi
+nix develop .#cross --command yarn build
 
 if [[ "$SKIP_BRIDGE_BUILD" == "0" ]]; then
     echo "Building fedi bridge"
