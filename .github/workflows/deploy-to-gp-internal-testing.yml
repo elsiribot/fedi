@@ -33,11 +33,9 @@ jobs:
               run: nix develop --command ./scripts/ui/build-deps.sh
 
             - name: Generate JSON credentials file
-              run: |
-                  mkdir tmp
-                  echo ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }} >> ./tmp/service-account-credentials.txt
-                  base64 --decode ./tmp/service-account-credentials.txt >> ./android/decoded-service-account-credentials.json
-                  rm -rf ./tmp
+              env:
+                  PLAY_STORE_JSON_CREDENTIALS_ENCODED: ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }}
+              run: nix develop --command ./scripts/ci/make-play-store-creds.sh
 
             - name: Execute Fastlane command
               run: nix develop --command ./scripts/ui/deploy-to-google-play.sh
