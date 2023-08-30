@@ -38,3 +38,16 @@ jobs:
                   MATCH_PASSWORD: 'fedimint'
               run: |
                   nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
+              continue-on-error: true
+
+            # This is temporary until we can run xcodebuild successfully within Nix
+            - name: Setup Ruby
+              uses: ruby/setup-ruby@v1
+              with:
+                  ruby-version: '2.7.5'
+
+            - name: Execute fastlane beta lane for CI
+              env:
+                  MATCH_PASSWORD: 'fedimint'
+              run: |
+                  ./scripts/ui/deploy-to-testflight.sh
