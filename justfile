@@ -97,15 +97,16 @@ build-bridge-ios:
 
 # install UI dependencies
 build-ui-deps:
-  ./scripts/ui/build-deps.sh
+  nix develop --command ./scripts/ui/build-deps.sh
 
 # generates a standard production release APK for @fedi/native
 build-production-apk:
+  nix develop --command ./scripts/ui/build-production-apk.sh
   ./scripts/ui/build-production-apk.sh
 
 # bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
-  ./scripts/ui/bump-version-native.sh
+  nix develop --command ./scripts/ui/bump-version-native.sh
 
 # generate typescript bindings for the bridge
 generate-bridge-bindings:
