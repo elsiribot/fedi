@@ -29,11 +29,15 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
+        pkgs-unstable = import nixpkgs-unstable {
+          inherit system;
+        };
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
             (final: prev: {
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
+              convco = pkgs-unstable.convco;
             })
           ];
         };
@@ -173,6 +177,7 @@
               fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
               pkgs.git
               pkgs.fs-dir-cache
+              pkgs.convco
             ]
             ++ [
               pkgs.git
