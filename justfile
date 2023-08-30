@@ -92,8 +92,8 @@ build-bridge-android:
 
 # build only the ios bridge artifacts for ui/native
 build-bridge-ios:
-   # note: can't use --ignore-environment as it uses globally installed xcode
-   nix develop .#xcode --command ./scripts/bridge/build-bridge-ios.sh
+  # note: can't use --ignore-environment as it uses globally installed xcode
+  nix develop .#xcode --command ./scripts/bridge/build-bridge-ios.sh
 
 # install UI dependencies
 build-ui-deps:
