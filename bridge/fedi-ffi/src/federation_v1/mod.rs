@@ -591,8 +591,8 @@ impl FederationV1 {
     }
 
     /// Get client root secret
-    async fn root_secret(&self) -> DerivableSecret {
-        get_client_root_secret::<Bip39RootSecretStrategy>(self.client.db()).await
+    fn root_secret(&self) -> DerivableSecret {
+        self.client.external_secret()
     }
 
     /// Fetch mnemonic from database
@@ -705,7 +705,7 @@ impl FederationV1 {
             )
             .expect("needs social recovery module client config");
         Ok(SocialBackup {
-            module_secret: Self::social_recovery_secret_static(&self.root_secret().await),
+            module_secret: Self::social_recovery_secret_static(&self.root_secret()),
             module_id,
             config: cfg.clone(),
             api: self.social_api(),
@@ -945,7 +945,7 @@ impl FederationV1 {
     /// Sign LNURL message using a key derived from client secret
     pub async fn sign_lnurl_message(&self, msg: &Message) -> RpcSignedLnurlMessage {
         let secp = Secp256k1::new();
-        let root_secret = self.root_secret().await;
+        let root_secret = self.root_secret();
         let lnurl_secret = root_secret.child_key(ChildId(LNURL_CHILD_ID));
         let lnurl_keypair = lnurl_secret.to_secp_key(&secp);
         let lnurl_pubkey = lnurl_keypair.public_key();
@@ -959,7 +959,7 @@ impl FederationV1 {
     /// Get Nostr public key
     pub async fn get_nostr_pub_key(&self) -> XOnlyPublicKey {
         let secp = Secp256k1::new();
-        let root_secret = self.root_secret().await;
+        let root_secret = self.root_secret();
         let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
         let nostr_pubkey = nostr_keypair.x_only_public_key();
@@ -969,7 +969,7 @@ impl FederationV1 {
     /// Sign Nostr event
     pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
         let secp = Secp256k1::new();
-        let root_secret = self.root_secret().await;
+        let root_secret = self.root_secret();
         let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
         let data = &hex::decode(event_hash)?;
@@ -982,7 +982,7 @@ impl FederationV1 {
     /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
     /// after recovering wallet.
     pub async fn get_xmpp_credentials(&self) -> RpcXmppCredentials {
-        let root_secret = self.root_secret().await;
+        let root_secret = self.root_secret();
         let xmpp_secret = root_secret.child_key(ChildId(XMPP_CHILD_ID));
         let password_bytes: [u8; 16] = xmpp_secret
             .child_key(ChildId(XMPP_PASSWORD))
