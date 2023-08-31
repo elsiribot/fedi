@@ -157,6 +157,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     return (
         <SectionList
             sections={searchResultsSections}
+            keyboardShouldPersistTaps="always"
             renderSectionHeader={({ section }) =>
                 'loading' in section ? null : (
                     <Text small medium style={style.searchHeading}>
