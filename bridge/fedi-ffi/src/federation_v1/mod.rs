@@ -44,7 +44,7 @@ use tracing::{debug, error, info, warn};
 use v1_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, XmppUsernameKey};
 
 use crate::{
-    constants::{BACKUP_FREQUENCY, NOSTR_CHILD_ID},
+    constants::{BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID},
     federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID,
     types::{RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr},
     utils::{display_currency, required_threashold_of, to_unix_time, unix_now},
@@ -391,12 +391,8 @@ impl FederationV1 {
             .get_operation(operation_id)
             .await
             .ok_or(anyhow::anyhow!("Operation not found"))?;
-        // let ln_op = LightningCommonGen::KIND.as_str();
-        // let wallet_op = WalletCommonGen::KIND.as_str();
-        // let mint_op = WalletCommonGen::KIND.as_str();
         match operation.operation_type() {
-            // FIXME: dont' hard-code "ln" / "mint"
-            "ln" => match operation.meta() {
+            LIGHTNING_OPERATION_TYPE => match operation.meta() {
                 LightningMeta::Pay { invoice, .. } => {
                     let fed = self.clone();
                     self.task_group
@@ -426,7 +422,7 @@ impl FederationV1 {
                         .await;
                 }
             },
-            "mint" => {
+            MINT_OPERATION_TYPE => {
                 let meta = operation.meta::<MintMeta>();
                 match meta.variant {
                     MintMetaVariants::SpendOOB { .. } => {
@@ -1049,7 +1045,7 @@ impl FederationV1 {
             .into_iter()
             .map(|op: (ChronologicalOperationLogKey, OperationLogEntry)| {
                 match op.1.operation_type() {
-                    "ln" => match op.1.meta() {
+                    LIGHTNING_OPERATION_TYPE => match op.1.meta() {
                         LightningMeta::Pay { invoice, .. } => RpcTransaction {
                             id: op.0.operation_id.to_string(),
                             created_at: to_unix_time(op.0.creation_time)
@@ -1085,7 +1081,7 @@ impl FederationV1 {
                             offline_transaction_details: None,
                         },
                     },
-                    "mint" => {
+                    MINT_OPERATION_TYPE => {
                         let mint_meta: MintMeta = op.1.meta();
                         match mint_meta.variant {
                             MintMetaVariants::Reissuance { .. } => RpcTransaction {

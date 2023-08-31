@@ -14,3 +14,7 @@ pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
 
 // Fedi file path
 pub const FEDI_FILE_PATH: &str = "./fedi_file.json";
+
+// Operation types in fedimint client
+pub const LIGHTNING_OPERATION_TYPE: &str = "ln";
+pub const MINT_OPERATION_TYPE: &str = "mint";
