@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { RefObject, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import {
     Keyboard,
@@ -9,6 +9,7 @@ import {
     TextInput,
     TextStyle,
     View,
+    useWindowDimensions,
 } from 'react-native'
 
 import { useAmountInput } from '@fedi/common/hooks/amount'
@@ -16,6 +17,7 @@ import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import InvisibleInput from './InvisibleInput'
+import { NumpadButton } from './NumpadButton'
 import SvgImage from './SvgImage'
 
 export type Props = {
@@ -44,12 +46,17 @@ const AmountInput: React.FC<Props> = ({
         setIsFiat,
         satsValue,
         fiatValue,
-        handleChangeFiat,
         handleChangeSats,
+        handleChangeFiat,
         currency,
         validation,
+        numpadButtons,
+        handleNumpadPress,
     } = useAmountInput(amount, onChangeAmount, minimumAmount, maximumAmount)
     const inputRef = useRef<TextInput>(null)
+    const { height } = useWindowDimensions()
+
+    const style = styles(theme)
 
     // For some reason the TextInput inside InvisibleInput does not
     // automatically blur the input when the keyboard is dismissed
@@ -71,17 +78,15 @@ const AmountInput: React.FC<Props> = ({
         const handlePressSuggestion = () => {
             handleChangeSats(validation.amount.toString())
         }
-        const suggestionStyle: StyleProp<TextStyle> = [
-            styles(theme).errorSuggestion,
-        ]
+        const suggestionStyle: StyleProp<TextStyle> = [style.errorSuggestion]
         if (!readOnly) {
-            suggestionStyle.push(styles(theme).clickableSuggestion)
+            suggestionStyle.push(style.clickableSuggestion)
         }
         // TODO: Make only underlined suggestion pressable, <Trans /> doesn't like <Pressable /> as a component
         // TODO: Make this wiggle when submitAttempts is incremented
         error = (
             <Pressable onPress={handlePressSuggestion} disabled={readOnly}>
-                <Text style={styles(theme).error} caption>
+                <Text style={style.error} caption>
                     <Trans
                         i18nKey={validation.i18nKey}
                         values={{
@@ -103,44 +108,40 @@ const AmountInput: React.FC<Props> = ({
         )
     }
 
+    const hasNumpad = height >= 500 && !readOnly
+    const secondaryAmountText = isFiat
+        ? `${satsValue} ${t('words.sats').toUpperCase()}`
+        : `${fiatValue} ${currency}`
+
     return (
-        <View style={styles(theme).container}>
-            <Pressable
-                style={styles(theme).inputs}
-                disabled={readOnly}
-                onPress={() => {
-                    console.debug('inputRef?.current?.focus()')
-                    inputRef?.current?.focus()
-                }}>
-                {isFiat ? (
-                    <InvisibleInput
-                        inputRef={inputRef as RefObject<TextInput>}
-                        onChangeText={handleChangeFiat}
-                        value={fiatValue}
-                        label={currency}
-                        readOnly={readOnly}
-                    />
-                ) : (
-                    <InvisibleInput
-                        inputRef={inputRef as RefObject<TextInput>}
-                        onChangeText={handleChangeSats}
-                        value={satsValue}
-                        label={t('words.sats').toUpperCase()}
-                        readOnly={readOnly}
-                    />
-                )}
+        <View style={style.container}>
+            <View style={style.amounts}>
                 <Pressable
-                    style={styles(theme).symbolSwitcher}
+                    style={style.primaryAmount}
+                    disabled={readOnly || hasNumpad}
+                    onPress={() => inputRef?.current?.focus()}>
+                    <InvisibleInput
+                        inputRef={inputRef}
+                        value={isFiat ? fiatValue : satsValue}
+                        label={
+                            isFiat ? currency : t('words.sats').toUpperCase()
+                        }
+                        onChangeText={
+                            isFiat ? handleChangeFiat : handleChangeSats
+                        }
+                        readOnly={readOnly || hasNumpad}
+                    />
+                </Pressable>
+                <Pressable
+                    style={style.symbolSwitcher}
                     disabled={readOnly}
                     onPress={() => setIsFiat(!isFiat)}>
                     <Text
-                        style={styles(theme).secondaryAmountText}
+                        style={style.secondaryAmountText}
                         medium
                         numberOfLines={1}
                         adjustsFontSizeToFit>
-                        {isFiat
-                            ? `${satsValue} ${t('words.sats').toUpperCase()}`
-                            : `${fiatValue} ${currency}`}
+                        {secondaryAmountText}
                     </Text>
                     {!readOnly && (
                         <SvgImage
@@ -150,8 +151,19 @@ const AmountInput: React.FC<Props> = ({
                         />
                     )}
                 </Pressable>
-            </Pressable>
-            {error}
+                {error}
+            </View>
+            {hasNumpad && (
+                <View style={style.numpad}>
+                    {numpadButtons.map(btn => (
+                        <NumpadButton
+                            key={btn}
+                            btn={btn}
+                            onPress={() => handleNumpadPress(btn)}
+                        />
+                    ))}
+                </View>
+            )}
         </View>
     )
 }
@@ -159,17 +171,27 @@ const AmountInput: React.FC<Props> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            width: '100%',
             alignItems: 'center',
-            marginTop: 'auto',
-            marginHorizontal: theme.spacing.xl,
-            // This creates a small buffer zone to block Keyboard.dismiss
-            // events from parent components
-            paddingVertical: theme.spacing.xl,
-            gap: theme.spacing.xl,
+            gap: theme.spacing.lg,
         },
-        inputs: {
+        amounts: {
+            flex: 1,
             alignItems: 'center',
+            justifyContent: 'center',
             gap: theme.spacing.md,
+        },
+        primaryAmount: {
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            marginHorizontal: theme.spacing.lg,
+            width: '100%',
+        },
+        primaryLabelText: {
+            marginLeft: theme.spacing.sm,
+            marginBottom: 3,
+            fontSize: 20,
         },
         secondaryAmountText: {
             color: theme.colors.darkGrey,
@@ -182,6 +204,7 @@ const styles = (theme: Theme) =>
         },
         error: {
             width: '100%',
+            paddingTop: theme.spacing.md,
             color: theme.colors.red,
             textAlign: 'center',
         },
@@ -190,6 +213,13 @@ const styles = (theme: Theme) =>
         },
         clickableSuggestion: {
             textDecorationLine: 'underline',
+        },
+        numpad: {
+            width: '100%',
+            maxWidth: 400,
+            paddingHorizontal: theme.spacing.lg,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
         },
     })
 

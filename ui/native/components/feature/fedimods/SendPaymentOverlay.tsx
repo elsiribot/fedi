@@ -1,5 +1,7 @@
+import { useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
@@ -11,11 +13,7 @@ import { lnurlPay } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import {
-    useAppSelector,
-    useBridge,
-    useBtcFiatPrice,
-} from '../../../state/hooks'
+import { useAppSelector, useBridge } from '../../../state/hooks'
 import { FediMod, Invoice, ParsedLnurlPay } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
@@ -36,9 +34,9 @@ export const SendPaymentOverlay: React.FC<Props> = ({
     onAccept,
 }) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { payInvoice } = useBridge()
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const federationId = useAppSelector(selectActiveFederation)?.id
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
@@ -100,31 +98,6 @@ export const SendPaymentOverlay: React.FC<Props> = ({
         )
     }
 
-    let message: string | undefined
-    let description: string | undefined
-    let body: React.ReactNode = null
-    if (exactAmount) {
-        message = `${amountUtils.formatNumber(inputAmount)} ${t(
-            'words.sats',
-        ).toUpperCase()}`
-        description = convertSatsToFormattedFiat(inputAmount)
-    } else {
-        body = (
-            <AmountInput
-                key={amountInputKey}
-                amount={inputAmount}
-                submitAttempts={submitAttempts}
-                minimumAmount={minimumAmount}
-                maximumAmount={maximumAmount}
-                verb={t('words.send')}
-                onChangeAmount={amount => {
-                    setSubmitAttempts(0)
-                    setInputAmount(amount)
-                }}
-            />
-        )
-    }
-
     return (
         <CustomOverlay
             show={isShowing}
@@ -136,9 +109,23 @@ export const SendPaymentOverlay: React.FC<Props> = ({
                 title: t('feature.fedimods.payment-request', {
                     fediMod: fediMod.title,
                 }),
-                message,
-                description,
-                body,
+                body: (
+                    <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
+                        <AmountInput
+                            key={amountInputKey}
+                            amount={inputAmount}
+                            submitAttempts={submitAttempts}
+                            minimumAmount={minimumAmount}
+                            maximumAmount={maximumAmount}
+                            readOnly={!!exactAmount}
+                            verb={t('words.send')}
+                            onChangeAmount={amount => {
+                                setSubmitAttempts(0)
+                                setInputAmount(amount)
+                            }}
+                        />
+                    </View>
+                ),
                 buttons: [
                     {
                         text: t('words.reject'),

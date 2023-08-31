@@ -38,6 +38,8 @@ const numpadButtons = [
     null, 0, 'backspace',
 ] as const
 
+export type NumpadButtonValue = (typeof numpadButtons)[number]
+
 /**
  * Provides state, callbacks, and misc information for rendering an amount
  * input that allows entry in both fiat and sats.

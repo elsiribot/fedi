@@ -1,9 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Keyboard } from 'react-native'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { selectActiveFederation } from '@fedi/common/redux'
@@ -12,8 +10,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../bridge'
-import AmountInput from '../components/ui/AmountInput'
-import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
+import { AmountScreen } from '../components/ui/AmountScreen'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import { Sats } from '../types'
@@ -26,8 +23,6 @@ export type Props = NativeStackScreenProps<
 
 const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const lnurlWithdrawal = route.params?.parsedData?.data
-    const insets = useSafeAreaInsets()
-    const { theme } = useTheme()
     const { t } = useTranslation()
     const { generateInvoice } = useBridge()
     const {
@@ -120,47 +115,26 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <KeyboardAwareWrapper>
-            <View style={styles(theme, insets).container}>
-                <AmountInput
-                    amount={amount}
-                    onChangeAmount={onChangeAmount}
-                    minimumAmount={minimumAmount}
-                    maximumAmount={maximumAmount}
-                    submitAttempts={submitAttempts}
-                    readOnly={Boolean(exactAmount)}
-                    verb={t('words.request')}
-                />
-                <Button
-                    fullWidth
-                    title={`${t('words.request')}${
+        <AmountScreen
+            amount={amount}
+            onChangeAmount={onChangeAmount}
+            minimumAmount={minimumAmount}
+            maximumAmount={maximumAmount}
+            submitAttempts={submitAttempts}
+            readOnly={Boolean(exactAmount)}
+            verb={t('words.request')}
+            buttons={[
+                {
+                    title: `${t('words.request')}${
                         amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
-                    }${t('words.sats').toUpperCase()}`}
-                    onPress={handleSubmit}
-                    disabled={generatingInvoice}
-                    loading={generatingInvoice}
-                    containerStyle={styles(theme, insets).button}
-                    titleProps={{
-                        numberOfLines: 1,
-                        adjustsFontSizeToFit: true,
-                    }}
-                />
-            </View>
-        </KeyboardAwareWrapper>
+                    }${t('words.sats').toUpperCase()}`,
+                    onPress: handleSubmit,
+                    disabled: generatingInvoice,
+                    loading: generatingInvoice,
+                },
+            ]}
+        />
     )
 }
-
-const styles = (theme: Theme, insets: EdgeInsets) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            padding: theme.spacing.xl,
-            paddingBottom: theme.spacing.xl + insets.bottom,
-            width: '100%',
-        },
-        button: {
-            marginTop: 'auto',
-        },
-    })
 
 export default ReceiveLightning

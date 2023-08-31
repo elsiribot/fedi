@@ -1,5 +1,7 @@
+import { useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 import { RejectionError, RequestInvoiceArgs } from 'webln'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
@@ -11,11 +13,7 @@ import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import {
-    useAppSelector,
-    useBridge,
-    useBtcFiatPrice,
-} from '../../../state/hooks'
+import { useAppSelector, useBridge } from '../../../state/hooks'
 import { FediMod, ParsedLnurlWithdraw } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
@@ -36,9 +34,9 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     onAccept,
 }) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { generateInvoice } = useBridge()
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const federationId = useAppSelector(selectActiveFederation)?.id
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
@@ -60,7 +58,9 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     useEffect(() => {
         if (isShowing) {
             reset()
+            setSubmitAttempts(0)
             setAmountInputKey(key => key + 1)
+            setIsLoading(false)
         }
     }, [isShowing, reset])
 
@@ -99,39 +99,6 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
         )
     }
 
-    let title = ''
-    let message = ''
-    let description = ''
-    let body: React.ReactNode = null
-    if (exactAmount) {
-        title = `${t('feature.fedimods.wants-to-pay-you', {
-            fediMod: fediMod.title,
-        })}`
-        message = `${amountUtils.formatNumber(exactAmount)} ${t(
-            'words.sats',
-        ).toUpperCase()}`
-        description = `${convertSatsToFormattedFiat(exactAmount)}`
-    } else {
-        title = `${t('feature.fedimods.enter-amount-to-withdraw', {
-            fediMod: fediMod.title,
-        })}`
-        description = requestInvoiceArgs?.defaultMemo || ''
-        body = (
-            <AmountInput
-                key={amountInputKey}
-                amount={inputAmount}
-                submitAttempts={submitAttempts}
-                minimumAmount={minimumAmount}
-                maximumAmount={maximumAmount}
-                verb={t('words.request')}
-                onChangeAmount={amount => {
-                    setSubmitAttempts(0)
-                    setInputAmount(amount)
-                }}
-            />
-        )
-    }
-
     return (
         <CustomOverlay
             show={isShowing}
@@ -140,10 +107,31 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
                 onReject(new RejectionError(t('errors.webln-canceled')))
             }
             contents={{
-                title,
-                description,
-                message,
-                body,
+                title: exactAmount
+                    ? t('feature.fedimods.wants-to-pay-you', {
+                          fediMod: fediMod.title,
+                      })
+                    : t('feature.fedimods.enter-amount-to-withdraw', {
+                          fediMod: fediMod.title,
+                      }),
+                description: requestInvoiceArgs?.defaultMemo || '',
+                body: (
+                    <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
+                        <AmountInput
+                            key={amountInputKey}
+                            amount={inputAmount}
+                            submitAttempts={submitAttempts}
+                            minimumAmount={minimumAmount}
+                            maximumAmount={maximumAmount}
+                            readOnly={!!exactAmount}
+                            verb={t('words.request')}
+                            onChangeAmount={amount => {
+                                setSubmitAttempts(0)
+                                setInputAmount(amount)
+                            }}
+                        />
+                    </View>
+                ),
                 buttons: [
                     {
                         text: t('words.reject'),
