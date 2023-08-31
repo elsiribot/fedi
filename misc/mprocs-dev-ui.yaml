@@ -3,8 +3,8 @@ procs:
     metro:
         shell: bash scripts/ui/start-metro.sh
         stop: SIGKILL
-    common:
-        shell: bash scripts/ui/start-common.sh
+    ui-deps:
+        shell: bash scripts/ui/start-ui-deps.sh
         stop: SIGKILL
     pwa:
         shell: bash scripts/ui/start-pwa.sh
