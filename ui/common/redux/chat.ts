@@ -63,7 +63,7 @@ const xmppChatClientManager = new XmppChatClientManager()
 /*** Initial State ***/
 
 const initialFederationChatState = {
-    clientStatus: 'disconnected' as XmppClientStatus,
+    clientStatus: 'offline' as XmppClientStatus,
     clientError: null as string | null,
     authenticatedMember: null as ChatMember | null,
     credentials: null as XmppCredentials | null,
@@ -549,6 +549,7 @@ export const connectChat = createAsyncThunk<
 >(
     'chat/connectChat',
     async ({ fedimint, federationId }, { getState, dispatch }) => {
+        console.info(`connecting chat for federation ${federationId}...`)
         // Assemble all necessary state for starting chat, throw if we are missing anything.
         const state = getState()
         const chatState = state.chat[federationId]
@@ -691,16 +692,23 @@ export const connectChat = createAsyncThunk<
 
         // Start the client
         const connectionOptions = makeChatServerOptions(chatDomain)
-        client.start(
-            {
-                domain: connectionOptions.domain,
-                service: connectionOptions.service,
-                resource: connectionOptions.resource,
-                username: authenticatedMember.username,
-                password: credentials.password,
-            },
-            encryptionKeys,
-        )
+        if (client?.xmpp && client?.xmpp?.status !== 'offline') {
+            console.warn(
+                `Chat connection attempt already in progress for ${federationId}...`,
+            )
+            return
+        } else {
+            client.start(
+                {
+                    domain: connectionOptions.domain,
+                    service: connectionOptions.service,
+                    resource: connectionOptions.resource,
+                    username: authenticatedMember.username,
+                    password: credentials.password,
+                },
+                encryptionKeys,
+            )
+        }
     },
 )
 

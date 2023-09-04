@@ -35,12 +35,7 @@ import SelectedFederationHeader from '../components/feature/federations/Selected
 import HomeHeader from '../components/feature/home/HomeHeader'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import {
-    useAppDispatch,
-    useAppSelector,
-    useXmppHealthCheck,
-    useXmppPushNotifications,
-} from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -103,12 +98,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         const lastMessage = getLatestMessage(messages)
         return !!lastMessage && lastMessage.id !== lastSeenMessageId
     }, [messages, lastSeenMessageId])
-
-    // Makes sure we always have a healthy XMPP websocket for chat
-    useXmppHealthCheck()
-
-    // Publishes an FCM push notification token if chat is available
-    useXmppPushNotifications()
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.

@@ -1,19 +1,13 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
-import {
-    connectChat,
-    disconnectChat,
-    selectChatXmppClient,
-    selectWebsocketIsHealthy,
-} from '@fedi/common/redux'
+import { selectWebsocketIsHealthy } from '@fedi/common/redux'
 
-import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
@@ -24,48 +18,6 @@ const ChatHeader: React.FC<{}> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { toast } = useEnvironmentContext().state
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
-    const xmppClient = useAppSelector(selectChatXmppClient)
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
-    const dispatch = useAppDispatch()
-    const [repairingWebsocket, setRepairingWebsocket] = useState<boolean>(false)
-
-    useEffect(() => {
-        const repairWebsocket = async () => {
-            await dispatch(
-                disconnectChat({
-                    federationId: activeFederationId as string,
-                }),
-            ).unwrap()
-            dispatch(
-                connectChat({
-                    fedimint,
-                    federationId: activeFederationId as string,
-                }),
-            )
-        }
-
-        if (
-            xmppClient &&
-            websocketIsHealthy === false &&
-            repairingWebsocket === true
-        ) {
-            repairWebsocket()
-        }
-    }, [
-        activeFederationId,
-        dispatch,
-        repairingWebsocket,
-        websocketIsHealthy,
-        xmppClient,
-    ])
-
-    useEffect(() => {
-        if (xmppClient === null || websocketIsHealthy === true) {
-            setRepairingWebsocket(false)
-        }
-    }, [xmppClient, websocketIsHealthy])
 
     return (
         <Header
@@ -80,15 +32,12 @@ const ChatHeader: React.FC<{}> = () => {
             headerRight={
                 <>
                     <Pressable
-                        disabled={websocketIsHealthy || repairingWebsocket}
+                        disabled={websocketIsHealthy}
                         onPress={() => {
-                            if (repairingWebsocket === false) {
-                                setRepairingWebsocket(true)
-                                toast?.show(
-                                    t('errors.chat-connection-restoring'),
-                                    3000,
-                                )
-                            }
+                            toast?.show(
+                                t('errors.chat-connection-unhealthy'),
+                                3000,
+                            )
                         }}
                         hitSlop={5}>
                         <SvgImage

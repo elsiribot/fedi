@@ -1,5 +1,9 @@
 # Chat Architecture
 
+**DEPRECATED**
+--------
+*This doc is for reference only. After major refactors, the Client section in particular does not describe the current state of the codebase*
+
 ## Overview
 
 XMPP Prosody server coordinates connections between peers

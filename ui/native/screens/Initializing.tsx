@@ -1,16 +1,14 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import {
-    connectChat,
-    refreshChatCredentials,
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
-    selectChatConnectionOptions,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 
@@ -24,99 +22,50 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const [usernameRequired, setUsernameRequired] = useState<boolean>(false)
     const activeFederation = useAppSelector(selectActiveFederation)
-    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const hasLoaded = useAppSelector(selectHasLoadedFromStorage)
+    const isChatSupported = useIsChatSupported()
 
     const dispatch = useAppDispatch()
     const { activeFederationId, federations } = useAppSelector(
         s => s.federation,
     )
 
-    // after localstorage has been checked call refreshFederations
+    // once active federation ID is loaded from storage, call refreshFederations
     // to get an updated list from the bridge
     useEffect(() => {
-        const initializeChatFeatures = async () => {
-            console.info('initializeChatFeatures')
-            if (authenticatedMember) {
-                console.info(
-                    'active federation',
-                    activeFederationId,
-                    'has a stored username... authenticating',
-                    authenticatedMember.username,
-                )
-                await dispatch(
-                    refreshChatCredentials({
-                        fedimint,
-                        federationId: activeFederationId!,
-                    }),
-                ).unwrap()
-
-                dispatch(
-                    connectChat({
-                        fedimint,
-                        federationId: activeFederationId!,
-                    }),
-                )
-
-                return navigation.replace('TabsNavigator')
-            } else {
-                console.info(
-                    'no username found for active federation',
-                    activeFederationId,
-                )
-                setUsernameRequired(true)
-            }
-        }
         const initializeFederations = async () => {
-            await dispatch(refreshFederations(fedimint)).unwrap()
+            try {
+                await dispatch(refreshFederations(fedimint)).unwrap()
+            } catch (error) {
+                console.error('initializeFederations', error)
+            }
         }
         // activeFederationId should be null if there are 0 federations so
         // this should only ever be called once
-        if (activeFederationId) {
-            if (federations.length === 0) {
-                initializeFederations()
-            }
-            if (connectionOptions) {
-                initializeChatFeatures()
-            }
+        if (activeFederationId && federations.length === 0) {
+            initializeFederations()
         }
-    }, [
-        dispatch,
-        activeFederationId,
-        authenticatedMember,
-        connectionOptions,
-        federations.length,
-        navigation,
-        federations,
-    ])
+    }, [dispatch, activeFederationId, federations.length, federations])
 
+    // once federation is active, determine where to navigate
     useEffect(() => {
-        // If there are no stored usernames for the active federation
-        // go to FederationWelcome to recover/create username
-        // or go to Home if no chat is available
         if (activeFederation) {
-            if (connectionOptions === null) {
-                navigation.replace('TabsNavigator')
-            } else if (authenticatedMember !== null) {
-                navigation.replace('TabsNavigator')
-            } else if (
-                usernameRequired &&
-                connectionOptions &&
-                authenticatedMember === null
-            ) {
-                navigation.replace('FederationWelcome')
+            // if chat is not supported, go Home
+            if (!isChatSupported) {
+                return navigation.replace('TabsNavigator')
+            }
+            // if chat is supported and auth is set, go Home
+            if (isChatSupported && authenticatedMember !== null) {
+                return navigation.replace('TabsNavigator')
+            }
+            // if chat is supported but auth is not set, recover/create username
+            if (isChatSupported && authenticatedMember === null) {
+                return navigation.replace('FederationWelcome')
             }
         }
-    }, [
-        activeFederation,
-        authenticatedMember,
-        connectionOptions,
-        navigation,
-        usernameRequired,
-    ])
+    }, [activeFederation, authenticatedMember, isChatSupported, navigation])
 
     // if there is no active federation go to the splash page to join
     useEffect(() => {

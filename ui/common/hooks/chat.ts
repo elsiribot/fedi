@@ -3,8 +3,11 @@ import { useState, useMemo, useEffect } from 'react'
 import type { ChatMember, ChatMessage } from '@fedi/common/types'
 
 import {
+    connectChat,
+    disconnectChat,
     fetchChatMember,
     selectActiveFederation,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatMember,
     selectLatestChatMessage,
@@ -13,6 +16,8 @@ import {
     setLastSeenMessageId,
     setPushNotificationToken,
 } from '../redux'
+import { FedimintBridge } from '../utils/fedimint'
+import { useIsChatSupported } from './federation'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useChatMemberSearch(members: ChatMember[]) {
@@ -113,7 +118,11 @@ export function usePublishNotificationToken(
     const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
 
     useEffect(() => {
-        if (!activeFederationId || pushNotificationToken) return
+        // Can't publish if no federation is selected
+        if (!activeFederationId) return
+
+        // Can't publish if we don't have a token
+        if (!pushNotificationToken) return
 
         getDeviceToken()
             .then(token => {
@@ -156,4 +165,53 @@ export function useChatMember(memberId: string) {
     }, [dispatch, hasMember, federationId, isChatOnline, memberId])
 
     return { member, isFetchingMember }
+}
+
+/**
+ * Given an instance of the bridge, monitor the chat connection and
+ * attempt to reconnect and continue attempting if it fails
+ */
+export async function useMonitorChatConnection(fedimint: FedimintBridge) {
+    const dispatch = useCommonDispatch()
+    const { activeFederationId } = useCommonSelector(s => s.federation)
+    const isChatSupported = useIsChatSupported()
+    const authenticatedMember = useCommonSelector(selectAuthenticatedMember)
+    const memberId = authenticatedMember?.id
+
+    useEffect(() => {
+        // Can't connect to chat if no federation is selected
+        if (!activeFederationId) return
+
+        // Can't connect to chat if federation doesn't support chat
+        if (!isChatSupported) return
+
+        // Can't connect to federation if we don't have auth
+        if (!memberId) return
+
+        let reconnectTimeout: ReturnType<typeof setTimeout>
+        const attemptChatConnection = async () => {
+            try {
+                await dispatch(
+                    connectChat({
+                        fedimint,
+                        federationId: activeFederationId,
+                    }),
+                ).unwrap()
+            } catch {
+                // Attempt reconnect in 5s if it fails
+                reconnectTimeout = setTimeout(attemptChatConnection, 5000)
+            }
+        }
+
+        // Attempt initial chat connection on mount
+        attemptChatConnection()
+
+        // Disconnect whenever dependencies change
+        return () => {
+            dispatch(disconnectChat({ federationId: activeFederationId }))
+            if (reconnectTimeout) clearTimeout(reconnectTimeout)
+        }
+        // Dependencies are non-exhaustive here intentionally to prevent
+        // multiple calls to connectChat which may cause race-condition bugs
+    }, [activeFederationId, isChatSupported, memberId])
 }
