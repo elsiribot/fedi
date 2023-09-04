@@ -88,24 +88,32 @@ build-bridge:
 
 # build only the android bridge artifacts for ui/native
 build-bridge-android:
-  nix develop --ignore-environment .#cross --command ./scripts/bridge/build-bridge-android.sh
+  nix develop --ignore-environment --command ./scripts/bridge/build-bridge-android.sh
 
 # build only the ios bridge artifacts for ui/native
 build-bridge-ios:
-   # note: can't use --ignore-environment as it uses globally installed xcode
-   nix develop .#xcode --command ./scripts/bridge/build-bridge-ios.sh
+  # note: can't use --ignore-environment as it uses globally installed xcode
+  nix develop .#xcode --command ./scripts/bridge/build-bridge-ios.sh
 
 # install UI dependencies
 build-ui-deps:
-  ./scripts/ui/build-deps.sh
+  nix develop --command ./scripts/ui/build-deps.sh
 
 # generates a standard production release APK for @fedi/native
 build-production-apk:
-  ./scripts/ui/build-production-apk.sh
+  nix develop --command ./scripts/ui/build-production-apk.sh
+
+# generates a signed xcode release archive and uploads to testflight
+deploy-to-testflight:
+  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
+
+# generates a standard production release AAB for @fedi/native and uploads it to the Google Play Internal Testing track
+deploy-to-google-play:
+  nix develop --command ./scripts/ui/deploy-to-google-play.sh
 
 # bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
-  ./scripts/ui/bump-version-native.sh
+  nix develop --command ./scripts/ui/bump-version-native.sh
 
 # generate typescript bindings for the bridge
 generate-bridge-bindings:

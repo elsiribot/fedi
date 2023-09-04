@@ -33,19 +33,19 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build bridge
-              run: nix develop .#cross --command just build-bridge-android
+              run: nix develop --command env CARGO_PROFILE=release ./scripts/bridge/build-bridge-android.sh
 
             - name: Build UI dependencies
-              run: nix develop .#cross --command just build-ui-deps
+              run: nix develop --command ./scripts/ui/build-deps.sh
 
             - name: Bump version & prep for APK build
               id: versioning
-              run: nix develop .#cross --command just bump-version-native-ui
+              run: nix develop --command ./scripts/ui/bump-version-native.sh
 
             - name: Build APK
               env:
                   APK_PATH: ${{ steps.versioning.outputs.APK_PATH }}
-              run: nix develop .#cross --command just build-production-apk
+              run: nix develop --command ./scripts/ui/build-production-apk.sh
 
             - name: Create draft GitHub release with APK
               uses: softprops/action-gh-release@v1

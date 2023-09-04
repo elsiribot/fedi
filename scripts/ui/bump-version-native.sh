@@ -30,7 +30,7 @@ npx react-native-version --target android
 NEW_VERSION="$(npm pkg get version  --ws false | sed 's/"//g')"
 echo "NEW_VERSION $NEW_VERSION"
 echo "Pushing version commit to git branch"
-# git add package.json android/app/build.gradle && git commit -m "${NEW_VERSION}" && git push
+git add package.json android/app/build.gradle && git commit -m "chore: bump version for ${NEW_VERSION}" && git push
 echo "Saving new version + APK path as outputs for next steps in job"
 echo "NEW_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
 echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
