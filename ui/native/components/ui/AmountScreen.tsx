@@ -30,6 +30,7 @@ export const AmountScreen: React.FC<Props> = ({
     const balance = useAppSelector(selectActiveFederation)?.balance
 
     const style = styles(theme, insets, height)
+
     return (
         <KeyboardAwareWrapper>
             <View style={style.container}>
@@ -43,12 +44,14 @@ export const AmountScreen: React.FC<Props> = ({
                     </Text>
                 )}
                 <AmountInput {...amountInputProps} />
-                <View style={style.buttonContainer}>
+                <View style={style.buttonGroup}>
                     {buttons.map((button, index) => (
                         <Button
-                            fullWidth
                             key={`btn-${index}`}
-                            style={[style.button, button.style]}
+                            containerStyle={[
+                                style.buttonContainer,
+                                button.containerStyle,
+                            ]}
                             {...button}
                         />
                     ))}
@@ -72,12 +75,12 @@ const styles = (theme: Theme, insets: Insets, height: number) =>
             color: hexToRgba(theme.colors.primary, 0.6),
             textAlign: 'center',
         },
-        buttonContainer: {
+        buttonGroup: {
             width: '100%',
             flexDirection: 'row',
-            gap: theme.spacing.xl,
+            gap: 20,
         },
-        button: {
-            // flex: 1,
+        buttonContainer: {
+            flex: 1,
         },
     })
