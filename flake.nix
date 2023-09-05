@@ -248,6 +248,7 @@
           xcode = crossDevShell.overrideAttrs (prev: {
             nativeBuildInputs = prev.nativeBuildInputs
               ++ lib.optionals stdenv.isDarwin [
+              pkgs.bundler
               pkgs.cocoapods
               xcode-wrapper
               pkgs.fs-dir-cache

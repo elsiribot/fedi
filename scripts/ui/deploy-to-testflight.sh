@@ -12,7 +12,17 @@ pushd $REPO_ROOT/ui/native/ios
 # security unlock-keychain -p $MATCH_KEYCHAIN_PASSWORD $MATCH_KEYCHAIN_NAME
 
 echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
-fastlane beta_ci --verbose
+
+if [[ "${IN_NIX_SHELL:-}" ]]; then
+  echo "Use fastlane directly within Nix"
+  fastlane beta_ci --verbose
+else
+  echo "Use bundle exec to run fastlane"
+  gem install bundler:2.4.13
+  bundle install
+  bundle exec fastlane beta_ci --verbose
+fi
+
 echo "Build complete!"
 
 popd

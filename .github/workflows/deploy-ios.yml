@@ -48,3 +48,17 @@ jobs:
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
               run: |
                   nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
+              continue-on-error: true
+
+            # This is temporary until we can run xcodebuild successfully within Nix
+            - name: Setup Ruby
+              uses: ruby/setup-ruby@v1
+              with:
+                  ruby-version: '2.7.5'
+
+            - name: Execute fastlane beta lane for CI (nonnix)
+              env:
+                  MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
+                  MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
+              run: |
+                  ./scripts/ui/deploy-to-testflight.sh
