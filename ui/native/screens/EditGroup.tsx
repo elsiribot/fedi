@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { configureChatGroup, selectChatGroup } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
@@ -52,7 +53,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     }),
                 ).unwrap()
             } catch (error) {
-                toast?.show(error as string, 3000)
+                toast?.show(formatErrorMessage(t, error), 3000)
             }
             setEditingGroupName(false)
         }
@@ -67,6 +68,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         groupId,
         groupName,
         toast,
+        t,
     ])
 
     useEffect(() => {

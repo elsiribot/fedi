@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { createChatGroup, selectChatXmppClient } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -45,7 +46,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             navigation.replace('GroupChat', { groupId })
         } catch (error) {
             console.error('group create failed', error)
-            toast?.show(error as string, 3000)
+            toast?.show(formatErrorMessage(t, error), 3000)
         }
         setCreatingGroup(false)
     }, [
@@ -56,6 +57,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
         navigation,
         toast,
         xmppClient,
+        t,
     ])
 
     const handleSubmit = async () => {
