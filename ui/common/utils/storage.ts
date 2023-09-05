@@ -8,6 +8,7 @@ import {
     StorageApi,
     StoredStateV2,
     StoredStateV3,
+    StoredStateV4,
 } from '../types/storage'
 import { getLatestMessageIdsForChats, getLatestMessage } from './chat'
 
@@ -205,7 +206,7 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
                     },
                 }
             },
-            {} as StoredStateV3['chat'],
+            {} as StoredStateV4['chat'],
         )
         migrationState = {
             ...migrationState,

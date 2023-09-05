@@ -779,7 +779,6 @@ export class XmppChatClient {
         if (role) {
             this.emit('groupRole', { groupId, role })
         }
-        console.info('handleIncomingPresence', stanza.toString())
         const affiliation = stanza
             .getChild('x')
             ?.getChild('item')

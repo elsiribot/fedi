@@ -61,7 +61,7 @@ export interface StoredStateV4 extends Omit<StoredStateV3, 'version' | 'chat'> {
               messages: ChatMessage[]
               groups: ChatGroup[]
               groupRoles?: Record<ChatGroup['id'], string | undefined>
-              groupAffiliations?: Record<ChatGroup['id'], string | undefined>
+              groupAffiliations: Record<ChatGroup['id'], string | undefined>
               members: ChatMember[]
               lastFetchedMessageId: string | null
               lastReadMessageIds: Record<Chat['id'], string | undefined>
