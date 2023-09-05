@@ -31,21 +31,10 @@ jobs:
                   ASC_API_KEY_JSON_CREDENTIALS_ENCODED: ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }}
               run: nix develop --command ./scripts/ci/make-testflight-creds.sh
 
-            - name: Execute fastlane beta lane for CI within Nix
-              env:
-                  MATCH_PASSWORD: 'fedimint'
-              run: |
-                  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
-              continue-on-error: true
-
-            # This is temporary until we can run xcodebuild successfully within Nix
-            - name: Setup Ruby
-              uses: ruby/setup-ruby@v1
-              with:
-                  ruby-version: '2.7.5'
-
             - name: Execute fastlane beta lane for CI
               env:
-                  MATCH_PASSWORD: 'fedimint'
+                  # TODO: for prod, regenerate certificates and convert these to secrets
+                  MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
+                  MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
               run: |
-                  ./scripts/ui/deploy-to-testflight.sh
+                  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
