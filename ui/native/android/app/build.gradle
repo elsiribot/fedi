@@ -103,8 +103,8 @@ android {
         applicationId "com.fedi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 211
-        versionName "1.12.23"
+        versionCode 212
+        versionName "1.12.24"
     }
 
     packagingOptions {
