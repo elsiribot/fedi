@@ -17,7 +17,7 @@ const PersonalRecoveryHeader: React.FC<PersonalRecoveryHeaderProps> = ({
         <Header
             backButton={backButton}
             headerCenter={
-                <Text>{t('feature.recovery.personal-recovery')}</Text>
+                <Text bold>{t('feature.recovery.personal-recovery')}</Text>
             }
         />
     )

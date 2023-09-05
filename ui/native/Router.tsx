@@ -665,7 +665,7 @@ const MainNavigator = () => {
                                         <Header
                                             backButton
                                             headerCenter={
-                                                <Text>
+                                                <Text bold>
                                                     {'Developer Settings'}
                                                 </Text>
                                             }
