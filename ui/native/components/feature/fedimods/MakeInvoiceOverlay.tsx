@@ -120,6 +120,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
                         <AmountInput
                             key={amountInputKey}
                             amount={inputAmount}
+                            isSubmitting={isLoading}
                             submitAttempts={submitAttempts}
                             minimumAmount={minimumAmount}
                             maximumAmount={maximumAmount}

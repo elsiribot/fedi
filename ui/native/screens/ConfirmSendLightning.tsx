@@ -83,6 +83,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             minimumAmount={minimumAmount}
             maximumAmount={maximumAmount}
             submitAttempts={submitAttempts}
+            isSubmitting={isPayingInvoice}
             readOnly={!!exactAmount}
             description={description}
             buttons={[

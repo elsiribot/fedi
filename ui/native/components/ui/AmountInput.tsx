@@ -26,6 +26,7 @@ export type Props = {
     minimumAmount?: Sats | null
     maximumAmount?: Sats | null
     submitAttempts?: number
+    isSubmitting?: boolean
     verb?: string
     onChangeAmount?: (amount: Sats) => void
 }
@@ -36,6 +37,7 @@ const AmountInput: React.FC<Props> = ({
     minimumAmount,
     maximumAmount,
     submitAttempts,
+    isSubmitting,
     verb,
     onChangeAmount,
 }) => {
@@ -74,7 +76,11 @@ const AmountInput: React.FC<Props> = ({
 
     // Check validation for errors to render with suggestion for amount.
     let error: React.ReactNode | undefined
-    if (validation && (!validation.onlyShowOnSubmit || submitAttempts)) {
+    if (
+        validation &&
+        !isSubmitting &&
+        (!validation.onlyShowOnSubmit || submitAttempts)
+    ) {
         const handlePressSuggestion = () => {
             handleChangeSats(validation.amount.toString())
         }

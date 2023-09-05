@@ -96,8 +96,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
             )
         } catch (err) {
             toast?.show(formatErrorMessage(t, err, 'error.unknown-error'))
-            setGeneratingInvoice(false)
         }
+        setGeneratingInvoice(false)
     }
 
     const handleSubmit = () => {
@@ -121,6 +121,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
             minimumAmount={minimumAmount}
             maximumAmount={maximumAmount}
             submitAttempts={submitAttempts}
+            isSubmitting={generatingInvoice}
             readOnly={Boolean(exactAmount)}
             verb={t('words.request')}
             buttons={[
