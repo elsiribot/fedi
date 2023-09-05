@@ -19,6 +19,12 @@ platform :ios do
   desc "Push a new beta build to TestFlight from CI"
   lane :beta_ci do
     setup_ci
+    match(
+      type: 'appstore',
+      git_url: 'https://x-access-token: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@github.com/fedibtc/fedi-alpha-react-native-certs',
+      storage_mode: 'git',
+      api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
+    )
     # these steps are the same as standard beta lane
     build_app(
       workspace: "FediReactNative.xcworkspace",
