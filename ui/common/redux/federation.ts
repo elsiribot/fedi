@@ -9,7 +9,6 @@ import isEqual from 'lodash/isEqual'
 import { authenticateChat, CommonState } from '.'
 import type {
     Federation,
-    FederationEvent,
     Guardian,
     MSats,
     Sats,
@@ -47,7 +46,7 @@ export const federationSlice = createSlice({
         setFederations(state, action: PayloadAction<Federation[]>) {
             state.federations = action.payload
         },
-        updateFederation(state, action: PayloadAction<FederationEvent>) {
+        updateFederation(state, action: PayloadAction<Partial<Federation>>) {
             state.federations = state.federations.map(federation => {
                 if (action.payload.id !== federation.id) return federation
 

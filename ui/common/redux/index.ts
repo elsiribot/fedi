@@ -3,7 +3,7 @@ import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMid
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
-import { StorageApi } from '../types'
+import { Federation, StorageApi } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
@@ -53,7 +53,13 @@ export function initializeCommonStore(
 
     // Update federation on bridge events
     fedimint.addListener('federation', event => {
-        dispatch(updateFederation(event))
+        // If they have an external meta configured, exclude name and meta from update
+        const federation: Partial<Federation> = { ...event }
+        if (event.meta.meta_external_url) {
+            delete federation.name
+            delete federation.meta
+        }
+        dispatch(updateFederation(federation))
     })
 
     // Load state from local storage, then start listener that syncs to storage
