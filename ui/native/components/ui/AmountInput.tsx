@@ -124,7 +124,7 @@ const AmountInput: React.FC<Props> = ({
             <View style={style.amounts}>
                 <Pressable
                     style={style.primaryAmount}
-                    disabled={readOnly || hasNumpad}
+                    disabled={readOnly || hasNumpad || isSubmitting}
                     onPress={() => inputRef?.current?.focus()}>
                     <InvisibleInput
                         inputRef={inputRef}
@@ -135,12 +135,12 @@ const AmountInput: React.FC<Props> = ({
                         onChangeText={
                             isFiat ? handleChangeFiat : handleChangeSats
                         }
-                        readOnly={readOnly || hasNumpad}
+                        readOnly={readOnly || hasNumpad || isSubmitting}
                     />
                 </Pressable>
                 <Pressable
                     style={style.symbolSwitcher}
-                    disabled={readOnly}
+                    disabled={readOnly || isSubmitting}
                     onPress={() => setIsFiat(!isFiat)}>
                     <Text
                         style={style.secondaryAmountText}
@@ -166,6 +166,7 @@ const AmountInput: React.FC<Props> = ({
                             key={btn}
                             btn={btn}
                             onPress={() => handleNumpadPress(btn)}
+                            disabled={isSubmitting}
                         />
                     ))}
                 </View>
