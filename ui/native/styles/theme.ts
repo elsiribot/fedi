@@ -75,13 +75,23 @@ const theme = createTheme({
             style: {
                 color: colors.primary,
                 fontSize: fediTheme.fontSizes.body,
-                fontWeight: '400',
+                fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
                 // Use fontFamily for bolding effects because the fontWeight
                 // value only has 2 distinct variants in AlbertSans-Regular
                 // whereas the design calls for a 3rd distinct variant (medium)
-                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
-                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+                ...(props.bold
+                    ? {
+                          fontFamily: 'AlbertSans-Bold',
+                          fontWeight: fediTheme.fontWeights.bold,
+                      }
+                    : {}),
+                ...(props.medium
+                    ? {
+                          fontFamily: 'AlbertSans-Medium',
+                          fontWeight: fediTheme.fontWeights.medium,
+                      }
+                    : {}),
                 // These props match the design spec and fontSize should rarely
                 // be anything different than these specific values
                 ...(props.caption
@@ -92,17 +102,37 @@ const theme = createTheme({
             },
             h1Style: {
                 fontSize: 32,
-                fontWeight: '400',
+                fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
-                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
-                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+                ...(props.bold
+                    ? {
+                          fontFamily: 'AlbertSans-Bold',
+                          fontWeight: fediTheme.fontWeights.bold,
+                      }
+                    : {}),
+                ...(props.medium
+                    ? {
+                          fontFamily: 'AlbertSans-Medium',
+                          fontWeight: fediTheme.fontWeights.medium,
+                      }
+                    : {}),
             },
             h2Style: {
                 fontSize: 24,
-                fontWeight: '400',
+                fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
-                ...(props.bold ? { fontFamily: 'AlbertSans-Bold' } : {}),
-                ...(props.medium ? { fontFamily: 'AlbertSans-Medium' } : {}),
+                ...(props.bold
+                    ? {
+                          fontFamily: 'AlbertSans-Bold',
+                          fontWeight: fediTheme.fontWeights.bold,
+                      }
+                    : {}),
+                ...(props.medium
+                    ? {
+                          fontFamily: 'AlbertSans-Medium',
+                          fontWeight: fediTheme.fontWeights.medium,
+                      }
+                    : {}),
             },
         }),
         Input: {
