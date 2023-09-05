@@ -84,10 +84,11 @@ const styles = (theme: Theme) =>
             justifyContent: 'flex-start',
             alignItems: 'center',
             paddingBottom: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.xs,
         },
         titleText: {
             textAlign: 'center',
-            paddingRight: theme.spacing.xs,
+            lineHeight: 20,
         },
     })
 
