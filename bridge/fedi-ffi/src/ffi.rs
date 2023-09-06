@@ -81,7 +81,6 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
     vec![
         String::from("federation"),
         String::from("transaction"),
-        String::from("transactionV2"),
         String::from("log"),
     ]
 }

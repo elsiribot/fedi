@@ -13,10 +13,6 @@ export interface TransactionEvent {
     transaction: Transaction
 }
 
-export interface TransactionV2Event {
-    federationId: string
-}
-
 export interface LnurlSignedMessage {
     signature: string
     pubkey: string
@@ -236,5 +232,4 @@ export interface FedimintBridgeEventMap {
     federation: FederationEvent
     transaction: TransactionEvent
     socialRecovery: SocialRecoveryEvent
-    transactionV2: TransactionV2Event
 }

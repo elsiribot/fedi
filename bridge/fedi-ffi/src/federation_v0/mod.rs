@@ -29,8 +29,8 @@ use tracing::{debug, error, info, warn};
 use v0_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, XmppUsernameKey};
 
 use crate::constants::BACKUP_FREQUENCY;
-use crate::federation_v0::utils::display_currency;
-use crate::types::RpcTransaction;
+use crate::types::{RpcLightningDetails, RpcLnState, RpcTransaction};
+use crate::utils::{display_currency, unix_now};
 
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
@@ -238,7 +238,7 @@ impl FederationV0 {
     pub async fn subscribe_invoice(
         &self,
         operation_id: OperationId,
-        _invoice: Invoice, // TODO: fetch the invoice from the db
+        invoice: Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
         let fed = self.clone();
         self.task_group
@@ -254,7 +254,27 @@ impl FederationV0 {
                     info!("Update: {:?}", update);
                     match update {
                         LnReceiveState::Claimed => {
-                            fed.send_transaction_event();
+                            let transaction = RpcTransaction {
+                                id: operation_id.to_string(),
+                                created_at: unix_now().expect("unix time should exist"),
+                                amount: RpcAmount(
+                                    Amount {
+                                        msats: invoice.amount_milli_satoshis().unwrap(),
+                                    }
+                                    .translate(),
+                                ),
+                                direction: "receive".to_string(),
+                                notes: "".into(),
+                                // FIXME: map v0 to v1 states on best effort basis
+                                // ln_state: RpcLnState::from_ln_recv_state(Some(update)),
+                                ln_state: None,
+                                lightning: Some(RpcLightningDetails {
+                                    invoice: invoice.to_string(),
+                                    fee: None, // TODO: to be implemented on the fedimint side
+                                }),
+                                offline_transaction_details: None,
+                            };
+                            fed.send_transaction_event(transaction);
                         }
                         LnReceiveState::Canceled { reason } => {
                             // FIXME: handle this
@@ -459,8 +479,8 @@ impl FederationV0 {
             .await;
     }
 
-    fn send_transaction_event(&self) {
-        let event = Event::transaction_v2(self.federation_id().translate());
+    fn send_transaction_event(&self, transaction: RpcTransaction) {
+        let event = Event::transaction(self.federation_id().translate(), transaction);
         self.event_sink.typed_event(&event);
     }
 

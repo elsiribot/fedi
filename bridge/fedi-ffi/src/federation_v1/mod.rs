@@ -1,6 +1,5 @@
 mod dev;
 pub mod social;
-mod utils;
 
 use std::{
     default::Default,
@@ -46,8 +45,9 @@ use v1_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, Xmp
 
 use crate::{
     constants::{BACKUP_FREQUENCY, NOSTR_CHILD_ID},
-    federation_v1::{social::SOCIAL_RECOVERY_SECRET_CHILD_ID, utils::display_currency},
+    federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID,
     types::{RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr},
+    utils::{display_currency, required_threashold_of, to_unix_time, unix_now},
 };
 
 use self::{
@@ -59,7 +59,6 @@ use self::{
         RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryIdKey, SocialRecoveryState,
         SocialRecoveryStateKey, SocialVerification, UserSeedPhrase,
     },
-    utils::required_threashold_of,
 };
 
 use super::{
@@ -271,7 +270,7 @@ impl FederationV1 {
     pub async fn subscribe_invoice(
         &self,
         operation_id: OperationId,
-        _invoice: Invoice, // TODO: fetch the invoice from the db
+        invoice: Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
         let fed = self.clone();
         self.task_group
@@ -287,7 +286,22 @@ impl FederationV1 {
                     info!("Update: {:?}", update);
                     match update {
                         LnReceiveState::Claimed => {
-                            fed.send_transaction_event();
+                            let transaction = RpcTransaction {
+                                id: operation_id.to_string(),
+                                created_at: unix_now().expect("unix time should exist"),
+                                amount: RpcAmount(Amount {
+                                    msats: invoice.amount_milli_satoshis().unwrap(),
+                                }),
+                                direction: "receive".to_string(),
+                                notes: "".into(),
+                                ln_state: RpcLnState::from_ln_recv_state(Some(update)),
+                                lightning: Some(RpcLightningDetails {
+                                    invoice: invoice.to_string(),
+                                    fee: None, // TODO: to be implemented on the fedimint side
+                                }),
+                                offline_transaction_details: None,
+                            };
+                            fed.send_transaction_event(transaction);
                         }
                         LnReceiveState::Canceled { reason } => {
                             // FIXME: handle this
@@ -532,8 +546,8 @@ impl FederationV1 {
             .await;
     }
 
-    fn send_transaction_event(&self) {
-        let event = Event::transaction_v2(self.federation_id());
+    fn send_transaction_event(&self, transaction: RpcTransaction) {
+        let event = Event::transaction(self.federation_id(), transaction);
         self.event_sink.typed_event(&event);
     }
 
@@ -1036,7 +1050,8 @@ impl FederationV1 {
                     "ln" => match op.1.meta() {
                         LightningMeta::Pay { invoice, .. } => RpcTransaction {
                             id: op.0.operation_id.to_string(),
-                            created_at: Self::_get_duration(op.0.creation_time),
+                            created_at: to_unix_time(op.0.creation_time)
+                                .expect("unix time should exist"),
                             amount: RpcAmount(Amount {
                                 msats: invoice.amount_milli_satoshis().unwrap(),
                             }),
@@ -1051,7 +1066,8 @@ impl FederationV1 {
                         },
                         LightningMeta::Receive { invoice, .. } => RpcTransaction {
                             id: op.0.operation_id.to_string(),
-                            created_at: Self::_get_duration(op.0.creation_time),
+                            created_at: to_unix_time(op.0.creation_time)
+                                .expect("unix time should exist"),
                             amount: RpcAmount(Amount {
                                 msats: invoice.amount_milli_satoshis().unwrap(),
                             }),
@@ -1072,7 +1088,8 @@ impl FederationV1 {
                         match mint_meta.variant {
                             MintMetaVariants::Reissuance { .. } => RpcTransaction {
                                 id: op.0.operation_id.to_string(),
-                                created_at: Self::_get_duration(op.0.creation_time),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
                                 direction: "receive".to_string(),
                                 notes: op.1.operation_type().to_string(),
                                 ln_state: None,
@@ -1084,7 +1101,8 @@ impl FederationV1 {
                                 requested_amount, ..
                             } => RpcTransaction {
                                 id: op.0.operation_id.to_string(),
-                                created_at: Self::_get_duration(op.0.creation_time),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
                                 direction: "send".to_string(),
                                 notes: op.1.operation_type().to_string(),
                                 ln_state: None,
@@ -1103,10 +1121,6 @@ impl FederationV1 {
                 }
             })
             .collect()
-    }
-
-    fn _get_duration(system_time: SystemTime) -> u64 {
-        system_time.duration_since(UNIX_EPOCH).unwrap().as_secs()
     }
 
     // Database

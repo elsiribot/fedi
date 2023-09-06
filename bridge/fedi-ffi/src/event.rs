@@ -4,13 +4,16 @@ use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 use ts_rs::TS;
 
+use crate::types::RpcTransaction;
+
 use super::types::{RpcFederation, RpcFederationId, SocialRecoveryApproval};
 
-#[derive(Serialize, Clone, Debug, TS)]
+#[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct TransactionV2Event {
+pub struct TransactionEvent {
     pub federation_id: RpcFederationId,
+    pub transaction: RpcTransaction,
 }
 
 #[derive(Serialize, Clone, Debug, TS)]
@@ -32,16 +35,20 @@ pub struct SocialRecoveryEvent {
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub enum Event {
-    TransactionV2 { event: TransactionV2Event },
+    Transaction { event: TransactionEvent },
     Log { event: LogEvent },
     Federation { event: RpcFederation },
 }
 
 impl Event {
-    pub fn transaction_v2(federation_id: fedimint_core::config::FederationId) -> Self {
-        Self::TransactionV2 {
-            event: TransactionV2Event {
+    pub fn transaction(
+        federation_id: fedimint_core::config::FederationId,
+        transaction: RpcTransaction,
+    ) -> Self {
+        Self::Transaction {
+            event: TransactionEvent {
                 federation_id: RpcFederationId(federation_id),
+                transaction,
             },
         }
     }
@@ -76,9 +83,9 @@ pub trait TypedEventExt: IEventSink {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "log".into(), body);
             }
-            Event::TransactionV2 { event } => {
+            Event::Transaction { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                IEventSink::event(self, "transactionV2".into(), body);
+                IEventSink::event(self, "transaction".into(), body);
             }
             Event::Federation { event } => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");

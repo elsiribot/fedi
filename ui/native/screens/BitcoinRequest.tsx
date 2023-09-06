@@ -146,18 +146,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         return unsubscribe
     }, [transactionEventHandler])
 
-    // FIXME: flesh this out
-    const transactionV2EventHandler = useCallback(() => {
-        navigation.dispatch(reset('TabsNavigator'))
-    }, [navigation])
-    useEffect(() => {
-        const unsubscribe = fedimint.addListener(
-            'transactionV2',
-            transactionV2EventHandler,
-        )
-        return unsubscribe
-    }, [transactionV2EventHandler])
-
     const showOnchainDeposits =
         activeFederationMetadata &&
         shouldShowOnchainDeposits(activeFederationMetadata)
