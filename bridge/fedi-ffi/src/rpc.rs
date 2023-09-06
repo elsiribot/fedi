@@ -9,7 +9,6 @@ use super::types::{
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
-use crate::federation_v0::initialize_fedi_file_from_rocksdb;
 use anyhow::{bail, Context};
 use bitcoin::secp256k1::Message;
 use fedimint_mint_client::OOBNotes;
@@ -34,7 +33,6 @@ pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
 ) -> anyhow::Result<Arc<Bridge>> {
-    initialize_fedi_file_from_rocksdb(&storage).await?;
     let bridge = Bridge::new(storage, event_sink)
         .await
         .context("could not create a bridge")?;

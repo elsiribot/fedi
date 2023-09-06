@@ -51,10 +51,7 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
     let id = RpcFederationId(federation.federation_id().translate());
     let name = federation.federation_name();
     let network = federation.get_network();
-    let invite_code = federation
-        .fedi_file
-        .get_invite_code(federation.federation_id().translate())
-        .await;
+    let invite_code = federation.get_invite_code().await;
     let client_config = federation.client.get_config().await;
     let meta = client_config.meta.clone();
     let nodes = client_config
@@ -83,10 +80,7 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
     let id = RpcFederationId(federation.federation_id());
     let name = federation.federation_name();
     let network = federation.get_network();
-    let invite_code = federation
-        .fedi_file
-        .get_invite_code(federation.federation_id())
-        .await;
+    let invite_code = federation.get_invite_code().await;
     let client_config = federation.client.get_config();
     let meta = federation.client.get_config().meta.clone();
     let nodes = client_config
@@ -397,10 +391,4 @@ pub struct RpcXmppCredentials {
     pub password: String,
     pub keypair_seed: String,
     pub username: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum MultiClientConfig {
-    V0(fedimint_core_v0::config::ClientConfig),
-    V1(fedimint_core::config::ClientConfig),
 }

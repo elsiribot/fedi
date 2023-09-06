@@ -1369,6 +1369,7 @@ dependencies = [
  "uniffi_macros",
  "url",
  "v0-rocksdb",
+ "v1-rocksdb",
 ]
 
 [[package]]
@@ -6244,6 +6245,13 @@ name = "v0-rocksdb"
 version = "0.1.2"
 dependencies = [
  "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05-upgrade-miniscript)",
+]
+
+[[package]]
+name = "v1-rocksdb"
+version = "0.1.2"
+dependencies = [
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?rev=d4282148a79e1b645f153c7eef14b678b2c69518)",
 ]
 
 [[package]]

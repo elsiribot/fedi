@@ -12,6 +12,7 @@ use fedi_social_client::common::{
 };
 use fedi_social_client::config::FediSocialClientConfig;
 use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IFederationApi};
+use fedimint_core::config::FederationId;
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
@@ -21,6 +22,7 @@ use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use secp256k1::Secp256k1;
 use serde::{Deserialize, Serialize};
+use v1_rocksdb::BridgeDbPrefix;
 
 // TODO: Actually implement. Use some bip39 crate instead?
 #[derive(Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq, Clone)]
@@ -172,7 +174,8 @@ impl SocialBackup {
     }
 
     fn get_backup_secret_static(module_secret: &DerivableSecret) -> DerivableSecret {
-        assert_eq!(module_secret.level(), 1);
+        // level 1 is client.external_secret(), then we derive a key from that making it level 2
+        assert_eq!(module_secret.level(), 2);
         module_secret.child_key(SOCIAL_RECOVERY_BACKUP_SNAPSHOT_TYPE_CHILD_ID)
     }
 
@@ -478,4 +481,25 @@ where
         self.request_current_consensus("recover".into(), ApiRequestErased::new(request))
             .await
     }
+}
+
+// These two keys are defined in this crate using prefixes defined in v1-rocksdb
+// because they use values from this crate which v1-rocksdb cannot import
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct SocialRecoveryStateKey(pub FederationId);
+
+impl fedimint_core::db::DatabaseRecord for SocialRecoveryStateKey {
+    const DB_PREFIX: u8 = BridgeDbPrefix::SocialRecoveryState as u8;
+    type Key = Self;
+    type Value = SocialRecoveryState;
+}
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct SocialRecoveryIdKey(pub FederationId);
+
+impl fedimint_core::db::DatabaseRecord for SocialRecoveryIdKey {
+    const DB_PREFIX: u8 = BridgeDbPrefix::SocialRecoveryId as u8;
+    type Key = Self;
+    type Value = RecoveryId;
 }

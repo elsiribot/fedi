@@ -1,10 +1,9 @@
 use crate::error::ErrorCode;
-use crate::types::MultiClientConfig;
 
 use super::event::{EventSink, SocialRecoveryEvent};
 use super::federation_v1::social::RecoveryFile;
 use super::federation_v1::FederationV1;
-use super::storage::{FediFile, Storage};
+use super::storage::Storage;
 use super::types::{
     multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
@@ -22,12 +21,16 @@ use fedimint_core::{Amount, PeerId};
 use fedimint_mint_client::MintClientExt;
 use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
 use futures::future::join_all;
+use futures::StreamExt;
 use lightning_invoice::Invoice;
 use std::path::PathBuf;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::error;
 use tracing::info;
+use v0_rocksdb::{
+    JoinedFederationV0, JoinedFederationV1, JoinedFederationsV0Prefix, JoinedFederationsV1Prefix,
+};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -39,38 +42,33 @@ pub enum MultiFederation {
 }
 
 impl MultiFederation {
-    async fn from_config(
-        federation_id: &RpcFederationId,
-        config: MultiClientConfig,
-        storage: &Storage,
-        event_sink: &EventSink,
-        fedi_file: Arc<FediFile>,
-    ) -> Result<Self> {
-        match config {
-            MultiClientConfig::V0(config) => Ok(Self::V0(
-                FederationV0::from_config(
-                    config,
-                    storage
-                        .federation_idb_v0(&federation_id.0.translate())
-                        .await?,
-                    event_sink.clone(),
-                    fedimint_core_v0::task::TaskGroup::new(),
-                    fedi_file,
-                )
-                .await?,
-            )),
-            MultiClientConfig::V1(config) => Ok(Self::V1(
-                FederationV1::from_config(
-                    config,
-                    storage.federation_idb(&federation_id.0).await?,
-                    event_sink.clone(),
-                    fedimint_core::task::TaskGroup::new(),
-                    fedi_file,
-                )
-                .await?,
-            )),
-        }
-    }
+    // async fn from_config(
+    //     federation_id: &RpcFederationId,
+    //     config: MultiClientConfig,
+    //     storage: &Storage,
+    //     event_sink: &EventSink,
+    // ) -> Result<Self> {
+    //     match config {
+    //         MultiClientConfig::V0(config) => Ok(Self::V0(
+    //             FederationV0::from_db(
+    //                 storage
+    //                     .federation_idb_v0(&federation_id.0.translate())
+    //                     .await?,
+    //                 event_sink.clone(),
+    //                 fedimint_core_v0::task::TaskGroup::new(),
+    //             )
+    //             .await?,
+    //         )),
+    //         MultiClientConfig::V1(config) => Ok(Self::V1(
+    //             FederationV1::from_db(
+    //                 storage.federation_idb(&federation_id.0).await?,
+    //                 event_sink.clone(),
+    //                 fedimint_core::task::TaskGroup::new(),
+    //             )
+    //             .await?,
+    //         )),
+    //     }
+    // }
 
     pub fn federation_id(&self) -> FederationId {
         match self {
@@ -163,27 +161,15 @@ impl MultiFederation {
 
     pub async fn get_xmpp_username(&self) -> Option<String> {
         match self {
-            Self::V0(v0) => {
-                v0.fedi_file
-                    .get_xmpp_username(v0.federation_id().translate())
-                    .await
-            }
-            Self::V1(v1) => v1.fedi_file.get_xmpp_username(v1.federation_id()).await,
+            Self::V0(v0) => v0.get_xmpp_username().await,
+            Self::V1(v1) => v1.get_xmpp_username().await,
         }
     }
 
     pub async fn save_xmpp_username(&self, username: &String) {
         match self {
-            Self::V0(v0) => v0
-                .fedi_file
-                .save_xmpp_username(v0.federation_id().translate(), username)
-                .await
-                .expect("fixme"),
-            Self::V1(v1) => v1
-                .fedi_file
-                .save_xmpp_username(v1.federation_id(), username)
-                .await
-                .expect("fixme"),
+            Self::V0(v0) => v0.save_xmpp_username(username).await,
+            Self::V1(v1) => v1.save_xmpp_username(username).await,
         }
     }
 
@@ -257,7 +243,7 @@ impl MultiFederation {
     pub async fn delete_social_recovery_state_and_id(&self) -> Result<()> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.delete_social_recovery_state_and_id().await,
+            Self::V1(v1) => Ok(v1.delete_social_recovery_state_and_id().await),
         }
     }
 
@@ -304,20 +290,17 @@ pub struct Bridge {
     pub event_sink: EventSink,
     // FIXME: which version should this be? should we have one of both?
     pub task_group: TaskGroup,
-    pub fedi_file: Arc<FediFile>,
 }
 
 impl Bridge {
     pub async fn new(storage: Storage, event_sink: EventSink) -> Result<Self> {
         let task_group = TaskGroup::new();
-        let fedi_file = Arc::new(FediFile::read(storage.clone()).await?);
-        let federations = Self::load_federations(&storage, &event_sink, &fedi_file).await?;
+        let federations = Self::load_federations(&storage, &event_sink).await?;
         let bridge = Self {
             storage,
             federations: Arc::new(Mutex::new(federations)),
             task_group,
             event_sink,
-            fedi_file,
         };
         Ok(bridge)
     }
@@ -326,33 +309,58 @@ impl Bridge {
     async fn load_federations(
         storage: &Storage,
         event_sink: &EventSink,
-        fedi_file: &Arc<FediFile>,
     ) -> Result<HashMap<FederationId, Arc<MultiFederation>>> {
-        let guard = fedi_file.info.lock().await;
-        let joined = (*guard)
-            .clone()
-            .federations
-            .into_iter()
-            .map(|(federation_id, info)| (federation_id, info.client_config));
-        let iter = joined
-            .into_iter()
-            .map(|(federation_id, multi_config)| async move {
-                let multi = MultiFederation::from_config(
-                    &federation_id,
-                    multi_config,
-                    storage,
-                    event_sink,
-                    fedi_file.clone(),
-                )
-                .await?;
-                // FIXME
-                Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
-                    federation_id.0,
-                    Arc::new(multi),
-                ))
-            });
-        let pairs = futures::future::try_join_all(iter).await?;
-        Ok(HashMap::from_iter(pairs))
+        // load v0 federations
+        let db = storage.global_database_v0().await?;
+        let mut dbtx = db.begin_transaction().await;
+        let v0_joined = dbtx
+            .find_by_prefix(&JoinedFederationsV0Prefix)
+            .await
+            .collect::<Vec<_>>()
+            .await;
+        let v0_iter = v0_joined.iter().map(|(federation_id, _)| async {
+            Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
+                federation_id.0.translate(),
+                Arc::new(MultiFederation::V0(
+                    FederationV0::from_db(
+                        storage.federation_idb_v0(&federation_id.0).await?,
+                        event_sink.clone(),
+                        // FIXME
+                        fedimint_core_v0::task::TaskGroup::new(),
+                    )
+                    .await?,
+                )),
+            ))
+        });
+        let v0_pairs = futures::future::try_join_all(v0_iter).await?;
+        let mut v0_map = HashMap::from_iter(v0_pairs);
+
+        // load v1 federations
+        let v1_joined = dbtx
+            .find_by_prefix(&JoinedFederationsV1Prefix)
+            .await
+            .collect::<Vec<_>>()
+            .await;
+        let v1_iter = v1_joined.iter().map(|(federation_id, _)| async {
+            Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
+                federation_id.0.translate(),
+                Arc::new(MultiFederation::V1(
+                    FederationV1::from_db(
+                        storage.federation_idb(&federation_id.0.translate()).await?,
+                        event_sink.clone(),
+                        // FIXME
+                        TaskGroup::new(),
+                    )
+                    .await?,
+                )),
+            ))
+        });
+        let v1_pairs = futures::future::try_join_all(v1_iter).await?;
+        let v1_map: HashMap<FederationId, Arc<MultiFederation>> = HashMap::from_iter(v1_pairs);
+
+        // combine v0 and v1 hashmaps
+        v0_map.extend(v1_map);
+        Ok(v0_map)
     }
 
     /// Joins federation from invite code
@@ -366,7 +374,7 @@ impl Bridge {
                 return Ok(multi_federation_to_rpc_federation(&multi).await);
             }
             Err(e) => {
-                error!("failed to join federation {e:?}");
+                error!("failed to join v1 federation {e:?}");
             }
         }
         match self.join_federation_v0(invite_code.clone()).await {
@@ -375,7 +383,7 @@ impl Bridge {
                 return Ok(multi_federation_to_rpc_federation(&multi).await);
             }
             Err(e) => {
-                error!("failed to join federation {e:?}");
+                error!("failed to join v0 federation {e:?}");
             }
         }
         bail!("failed to join")
@@ -383,11 +391,10 @@ impl Bridge {
 
     async fn join_federation_v1(&self, invite_code: String) -> Result<Arc<MultiFederation>> {
         let federation = FederationV1::join(
-            invite_code.clone(),
+            invite_code,
             &self.storage,
             self.event_sink.clone(),
-            self.task_group.make_subgroup().await,
-            self.fedi_file.clone(),
+            fedimint_core::task::TaskGroup::new(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -405,7 +412,6 @@ impl Bridge {
             &self.storage,
             self.event_sink.clone(),
             fedimint_core_v0::task::TaskGroup::new(),
-            self.fedi_file.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -436,9 +442,21 @@ impl Bridge {
     }
 
     pub async fn leave_federation(&self, federation_id: &FederationId) -> Result<()> {
-        // TODO: shutdown task groups
-        // Remove from FediFile
-        self.fedi_file.leave_federation(*federation_id).await?;
+        // delete federation from global db
+        let global_db = self.storage.global_database_v0().await?;
+        let mut dbtx = global_db.begin_transaction().await;
+        // FIXME: is there a better way to figure out what to delete?
+        dbtx.remove_entry(&JoinedFederationV0(federation_id.translate()))
+            .await;
+        dbtx.remove_entry(&JoinedFederationV1(federation_id.translate()))
+            .await;
+        dbtx.commit_tx().await;
+
+        // Remove from bridge state
+        {
+            let mut lock = self.federations.lock().await;
+            lock.remove(federation_id);
+        }
 
         // Remove from bridge state
         {
@@ -540,7 +558,6 @@ impl Bridge {
                         self.event_sink.clone(),
                         // FIXME: I think the bridge needs to maintain old and new task groups ...
                         fedimint_core_v0::task::TaskGroup::new(),
-                        self.fedi_file.clone(),
                     )
                     .await?,
                 )
@@ -555,7 +572,6 @@ impl Bridge {
                         old_client,
                         self.event_sink.clone(),
                         self.task_group.make_subgroup().await,
-                        self.fedi_file.clone(),
                     )
                     .await?,
                 )

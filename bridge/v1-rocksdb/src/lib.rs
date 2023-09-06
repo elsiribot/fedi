@@ -7,47 +7,31 @@ use fedimint_core::{
 };
 
 #[repr(u8)]
-enum BridgeDbPrefix {
-    JoinedFederationsV0 = 0xb0,
+pub enum BridgeDbPrefix {
+    JoinedFederations = 0xb0,
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
     InviteCode = 0xb3,
     LastBackupTimestamp = 0xb4,
-    JoinedFederationsV1 = 0xbf,
+    SocialRecoveryState = 0xb5,
+    SocialRecoveryId = 0xb6,
 }
 
 #[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederationV0(pub FederationId);
+pub struct JoinedFederation(pub FederationId);
 
 #[derive(Clone, Debug, Decodable, Encodable)]
-pub struct JoinedFederationsV0Prefix;
+pub struct JoinedFederationsPrefix;
 
 impl_db_record!(
-    key = JoinedFederationV0,
+    key = JoinedFederation,
     value = (),
-    db_prefix = BridgeDbPrefix::JoinedFederationsV0,
+    db_prefix = BridgeDbPrefix::JoinedFederations,
 );
 
 impl_db_lookup!(
-    key = JoinedFederationV0,
-    query_prefix = JoinedFederationsV0Prefix
-);
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederationV1(pub FederationId);
-
-#[derive(Clone, Debug, Decodable, Encodable)]
-pub struct JoinedFederationsV1Prefix;
-
-impl_db_record!(
-    key = JoinedFederationV1,
-    value = (),
-    db_prefix = BridgeDbPrefix::JoinedFederationsV1,
-);
-
-impl_db_lookup!(
-    key = JoinedFederationV1,
-    query_prefix = JoinedFederationsV1Prefix
+    key = JoinedFederation,
+    query_prefix = JoinedFederationsPrefix
 );
 
 #[derive(Debug, Decodable, Encodable)]
