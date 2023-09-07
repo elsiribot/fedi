@@ -26,6 +26,7 @@ export type Props = {
     minimumAmount?: Sats | null
     maximumAmount?: Sats | null
     submitAttempts?: number
+    isSubmitting?: boolean
     verb?: string
     onChangeAmount?: (amount: Sats) => void
 }
@@ -36,6 +37,7 @@ const AmountInput: React.FC<Props> = ({
     minimumAmount,
     maximumAmount,
     submitAttempts,
+    isSubmitting,
     verb,
     onChangeAmount,
 }) => {
@@ -74,7 +76,11 @@ const AmountInput: React.FC<Props> = ({
 
     // Check validation for errors to render with suggestion for amount.
     let error: React.ReactNode | undefined
-    if (validation && (!validation.onlyShowOnSubmit || submitAttempts)) {
+    if (
+        validation &&
+        !isSubmitting &&
+        (!validation.onlyShowOnSubmit || submitAttempts)
+    ) {
         const handlePressSuggestion = () => {
             handleChangeSats(validation.amount.toString())
         }
@@ -118,7 +124,7 @@ const AmountInput: React.FC<Props> = ({
             <View style={style.amounts}>
                 <Pressable
                     style={style.primaryAmount}
-                    disabled={readOnly || hasNumpad}
+                    disabled={readOnly || hasNumpad || isSubmitting}
                     onPress={() => inputRef?.current?.focus()}>
                     <InvisibleInput
                         inputRef={inputRef}
@@ -129,12 +135,12 @@ const AmountInput: React.FC<Props> = ({
                         onChangeText={
                             isFiat ? handleChangeFiat : handleChangeSats
                         }
-                        readOnly={readOnly || hasNumpad}
+                        readOnly={readOnly || hasNumpad || isSubmitting}
                     />
                 </Pressable>
                 <Pressable
                     style={style.symbolSwitcher}
-                    disabled={readOnly}
+                    disabled={readOnly || isSubmitting}
                     onPress={() => setIsFiat(!isFiat)}>
                     <Text
                         style={style.secondaryAmountText}
@@ -160,6 +166,7 @@ const AmountInput: React.FC<Props> = ({
                             key={btn}
                             btn={btn}
                             onPress={() => handleNumpadPress(btn)}
+                            disabled={isSubmitting}
                         />
                     ))}
                 </View>

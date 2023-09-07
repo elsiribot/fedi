@@ -131,7 +131,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     payment,
                 }),
             ).unwrap()
-            setIsLoading(false)
             backToChat()
         } catch (error) {
             console.error('requestEcash', error)
@@ -139,8 +138,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 formatErrorMessage(t, error, 'errors.unknown-error'),
                 3000,
             )
-            setIsLoading(false)
         }
+        setIsLoading(false)
     }
 
     const handleConfirmSend = async () => {
@@ -207,6 +206,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             amount={amount}
             onChangeAmount={onChangeAmount}
             submitAttempts={submitAttempts}
+            isSubmitting={isLoading || sendingEcash}
             verb={submitType === 'send' ? t('words.send') : t('words.request')}
             {...inputMinMax}
             buttons={

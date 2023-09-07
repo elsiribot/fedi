@@ -27,16 +27,15 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount()
 
     const onGenerateEcash = async () => {
+        setIsLoading(true)
         try {
-            setIsLoading(true)
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
             const ecash = await generateEcash(millis)
-            setIsLoading(false)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
         } catch (error) {
             console.error(error)
-            setIsLoading(false)
         }
+        setIsLoading(false)
     }
 
     const continueSend = () => {
@@ -78,6 +77,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
             minimumAmount={minimumAmount}
             maximumAmount={maximumAmount}
             submitAttempts={submitAttempts}
+            isSubmitting={isLoading}
             verb={t('words.send')}
             buttons={[
                 {

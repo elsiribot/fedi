@@ -15,10 +15,11 @@ import SvgImage from './SvgImage'
 
 interface Props {
     btn: NumpadButtonValue
+    disabled?: boolean
     onPress: () => void
 }
 
-export const NumpadButton: React.FC<Props> = ({ btn, onPress }) => {
+export const NumpadButton: React.FC<Props> = ({ btn, disabled, onPress }) => {
     const { theme } = useTheme()
     const dimensions = useWindowDimensions()
     const backgroundOpacity = useRef(new Animated.Value(0)).current
@@ -50,7 +51,7 @@ export const NumpadButton: React.FC<Props> = ({ btn, onPress }) => {
                         useNativeDriver: false,
                     }).start()
                 }
-                disabled={btn === null}>
+                disabled={btn === null || disabled}>
                 {btn === 'backspace' ? (
                     <SvgImage
                         name="ArrowLeft"

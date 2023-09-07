@@ -114,6 +114,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
                         <AmountInput
                             key={amountInputKey}
                             amount={inputAmount}
+                            isSubmitting={isLoading}
                             submitAttempts={submitAttempts}
                             minimumAmount={minimumAmount}
                             maximumAmount={maximumAmount}
