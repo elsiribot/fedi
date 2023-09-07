@@ -27,9 +27,14 @@
     fs-dir-cache = {
       url = "github:dpc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
     };
+
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0 }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0, fenix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
@@ -50,7 +55,6 @@
         };
         fmLib = fedimint-build.lib.${system};
         crane = fedimint-build.inputs.crane;
-        fenix = fedimint-build.inputs.fenix;
         advisory-db = fedimint-build.inputs.advisory-db;
 
         clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
