@@ -42,34 +42,6 @@ pub enum MultiFederation {
 }
 
 impl MultiFederation {
-    // async fn from_config(
-    //     federation_id: &RpcFederationId,
-    //     config: MultiClientConfig,
-    //     storage: &Storage,
-    //     event_sink: &EventSink,
-    // ) -> Result<Self> {
-    //     match config {
-    //         MultiClientConfig::V0(config) => Ok(Self::V0(
-    //             FederationV0::from_db(
-    //                 storage
-    //                     .federation_idb_v0(&federation_id.0.translate())
-    //                     .await?,
-    //                 event_sink.clone(),
-    //                 fedimint_core_v0::task::TaskGroup::new(),
-    //             )
-    //             .await?,
-    //         )),
-    //         MultiClientConfig::V1(config) => Ok(Self::V1(
-    //             FederationV1::from_db(
-    //                 storage.federation_idb(&federation_id.0).await?,
-    //                 event_sink.clone(),
-    //                 fedimint_core::task::TaskGroup::new(),
-    //             )
-    //             .await?,
-    //         )),
-    //     }
-    // }
-
     pub fn federation_id(&self) -> FederationId {
         match self {
             Self::V0(multi) => multi.federation_id().translate(),
@@ -270,14 +242,14 @@ impl MultiFederation {
 
     pub async fn get_nostr_pub_key(&self) -> Result<XOnlyPublicKey> {
         match self {
-            Self::V0(v0) => bail!(ErrorCode::NostrNotSupported),
+            Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => Ok(v1.get_nostr_pub_key().await),
         }
     }
 
     pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
         match self {
-            Self::V0(v0) => bail!(ErrorCode::NostrNotSupported),
+            Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => v1.sign_nostr_event(event_hash).await,
         }
     }
@@ -549,7 +521,6 @@ impl Bridge {
         let new_multi = match &*old_multi {
             MultiFederation::V0(v0) => {
                 let old_client = v0.prepare_for_recovery().await?;
-                drop(v0); // Release rocksdb
                 drop(old_multi); // Release rocksdb
                 MultiFederation::V0(
                     FederationV0::from_mnemonic(
@@ -564,7 +535,6 @@ impl Bridge {
             }
             MultiFederation::V1(v1) => {
                 let old_client = v1.prepare_for_recovery().await?;
-                drop(v1); // Release rocksdb
                 drop(old_multi); // Release rocksdb
                 MultiFederation::V1(
                     FederationV1::from_mnemonic(

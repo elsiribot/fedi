@@ -46,7 +46,6 @@ pub struct RpcFederationId(
 );
 
 pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
-    tracing::info!("federation_v0_to_rpc_federation");
     let balance = RpcAmount(federation.get_balance().await.translate());
     let id = RpcFederationId(federation.federation_id().translate());
     let name = federation.federation_name();
@@ -75,7 +74,6 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
 }
 
 pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFederation {
-    tracing::info!("federation_v1_to_rpc_federation");
     let balance = RpcAmount(federation.get_balance().await);
     let id = RpcFederationId(federation.federation_id());
     let name = federation.federation_name();

@@ -846,19 +846,11 @@ mod tests {
         let username = "satoshi".to_string();
         backupXmppUsername(bridge.clone(), federation_id, username.clone()).await?;
 
-        // wipe notes
-        match &*federation {
-            MultiFederation::V0(v0) => v0.client.wipe_state().await?,
-            MultiFederation::V1(v1) => v1.client.wipe_state().await?,
-        }
-        assert_eq!(
-            fedimint_core::Amount::from_msats(0),
-            federation.get_balance().await
-        );
-
-        // recover
+        // recover using fresh bridge instance
         let mnemonic = getMnemonic(bridge.clone(), federation_id).await?;
         drop(federation);
+        drop(bridge);
+        let (bridge, _) = setup().await?;
         let _response = recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
 
         // assert that balance is updated

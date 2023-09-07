@@ -137,7 +137,7 @@ impl FederationV1 {
         };
         federation.subscribe_balance_updates().await;
         // FIXME: this breaks backup and recovery test
-        // federation.poll_scheduled_backups().await;
+        federation.poll_scheduled_backups().await;
         federation.subscribe_to_all_operations().await;
         federation
     }
@@ -685,11 +685,11 @@ impl FederationV1 {
     /// Wipe state and shutdown tasks
     /// FIXME: maybe we should split this into 2 methods?
     pub async fn prepare_for_recovery(&self) -> Result<Client> {
-        self.client.wipe_state().await?;
         self.task_group
             .clone() // FIXME: remove this clone
             .shutdown_join_all(Some(SHUTDOWN_TIMEOUT))
             .await?;
+        self.client.wipe_state().await?;
         let client: Client = self.client.as_ref().clone();
         Ok(client)
     }
@@ -1015,16 +1015,18 @@ impl FederationV1 {
     }
 
     /// Background task which does a backup with the federation twice per day
-    async fn _poll_scheduled_backups(&mut self) {
+    async fn poll_scheduled_backups(&mut self) {
         let federation = self.clone();
         self.task_group
             .spawn(
                 format!("{:?} scheduled backups", federation.federation_name()),
-                |_| async move {
+                |handle| async move {
                     loop {
                         // TODO: select!
-                        if let Err(e) = federation.scheduled_backup().await {
-                            warn!("Error executing scheduled backup {e:?}");
+                        if !handle.is_shutting_down() {
+                            if let Err(e) = federation.scheduled_backup().await {
+                                warn!("Error executing scheduled backup {e:?}");
+                            }
                         }
                         // We check if a backup is due every 10 seconds
                         fedimint_core::task::sleep(Duration::from_secs(10)).await;
