@@ -134,8 +134,6 @@ impl IStorage for PathBasedStorage {
 
     async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
         let db_path = self.data_dir.join(format!("{id}.db"));
-        let lock_path = db_path.join("LOCK");
-        std::fs::remove_file(lock_path).context("delete lock file")?;
         std::fs::remove_dir_all(db_path).context("delete federation db")?;
         // FIXME: do this so we can make sure we don't have any locks remaining
         // let db_opts = Options::default();

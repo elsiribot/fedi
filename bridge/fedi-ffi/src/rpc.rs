@@ -253,11 +253,9 @@ async fn locateRecoveryFile(bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
 async fn validateRecoveryFile(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
-    recovery_file_path: PathBuf,
+    path: PathBuf,
 ) -> anyhow::Result<bool> {
-    bridge
-        .validate_recovery_file(federation_id, recovery_file_path)
-        .await
+    bridge.validate_recovery_file(federation_id, path).await
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
