@@ -1,14 +1,16 @@
 mod dev;
 mod utils;
 
+use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 use std::{default::Default, str::FromStr, sync::Arc};
 
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
 use bitcoin::Network;
 use fedimint_client_v0::backup::Metadata;
+use fedimint_client_v0::db::ChronologicalOperationLogKey;
 use fedimint_client_v0::sm::OperationId;
-use fedimint_client_v0::{get_client_root_secret, ClientBuilder, ClientSecret};
+use fedimint_client_v0::{get_client_root_secret, ClientBuilder, ClientSecret, OperationLogEntry};
 use fedimint_core_v0::task::timeout;
 use fedimint_core_v0::Amount;
 use fedimint_core_v0::{api::GlobalFederationApi, config::FederationId, db::IDatabase};
@@ -25,12 +27,13 @@ use fedimint_wallet_client_v0::{WalletClientExt, WalletClientGen};
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use serde::{Deserialize, Serialize};
+use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v0_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, XmppUsernameKey};
 
-use crate::constants::BACKUP_FREQUENCY;
+use crate::constants::{BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE};
 use crate::types::{RpcLightningDetails, RpcLnState, RpcTransaction};
-use crate::utils::{display_currency, unix_now};
+use crate::utils::{display_currency, to_unix_time, unix_now};
 
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
@@ -69,6 +72,7 @@ pub struct FederationV0 {
     pub client: Arc<Client>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
+    pub ln_pay_states: Arc<Mutex<HashMap<OperationId, LnPayState>>>,
 }
 
 impl FederationV0 {
@@ -105,6 +109,7 @@ impl FederationV0 {
             client: ng,
             event_sink,
             task_group,
+            ln_pay_states: Default::default(),
         };
         federation.subscribe_balance_updates().await;
         // FIXME: this breaks backup and recovery test
@@ -442,6 +447,8 @@ impl FederationV0 {
 
         match timeout(PAY_INVOICE_TIMEOUT, async {
             while let Some(update) = updates.next().await {
+                self.update_ln_pay_states(operation_id.clone(), update.clone())
+                    .await;
                 match update {
                     LnPayState::Success { preimage } => {
                         return Ok(RpcPayInvoiceResponse { preimage });
@@ -730,9 +737,124 @@ impl FederationV0 {
             .await;
     }
 
+    pub async fn get_ln_pay_outcome(
+        &self,
+        operation_id: OperationId,
+        log_entry: OperationLogEntry,
+    ) -> Option<LnPayState> {
+        let outcome = log_entry.outcome::<LnPayState>();
+
+        // Return client's cached outcome if we find it
+        if let Some(outcome) = outcome {
+            return Some(outcome);
+        }
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self.get_ln_pay_state(&operation_id).await {
+            return Some(outcome);
+        }
+
+        // If no cached outcomes, consume the stream to get the outcome and populate client's cache in future
+        // This is only useful for outgoing lightning payments which fail due to timeout and nothing is subscribed to them
+        let mut updates = match self.client.subscribe_ln_pay_updates(operation_id).await {
+            // Assuming this was internal pay
+            Err(_) => return None,
+            Ok(stream) => stream.into_stream(),
+        };
+
+        let mut last_state = None;
+        while let Some(update) = updates.next().await {
+            tracing::info!("update {:?}", update);
+            last_state = Some(update);
+        }
+        return last_state;
+    }
+
     /// Return all transactions in DB
-    pub async fn list_transactions(&self) -> Vec<RpcTransaction> {
-        vec![]
+    pub async fn list_transactions(&self, limit: usize) -> Vec<RpcTransaction> {
+        let futures = self.client.get_operations(limit).await.into_iter().map(
+            |op: (ChronologicalOperationLogKey, OperationLogEntry)| async move {
+                match op.1.operation_type() {
+                    LIGHTNING_OPERATION_TYPE => match op.1.meta() {
+                        LightningMeta::Pay { invoice, .. } => RpcTransaction {
+                            id: op.0.operation_id.to_string(),
+                            created_at: to_unix_time(op.0.creation_time)
+                                .expect("unix time should exist"),
+                            amount: RpcAmount(
+                                Amount {
+                                    msats: invoice.amount_milli_satoshis().unwrap(),
+                                }
+                                .translate(),
+                            ),
+                            direction: "send".to_string(),
+                            notes: "".into(),
+                            ln_state: RpcLnState::from_ln_pay_state(
+                                self.get_ln_pay_outcome(op.0.operation_id, op.1)
+                                    .await
+                                    .translate(),
+                            ),
+                            lightning: Some(RpcLightningDetails {
+                                invoice: invoice.to_string(),
+                                fee: None, // TODO: to be implemented on the fedimint side
+                            }),
+                        },
+                        LightningMeta::Receive { invoice, .. } => RpcTransaction {
+                            id: op.0.operation_id.to_string(),
+                            created_at: to_unix_time(op.0.creation_time)
+                                .expect("unix time should exist"),
+                            amount: RpcAmount(
+                                Amount {
+                                    msats: invoice.amount_milli_satoshis().unwrap(),
+                                }
+                                .translate(),
+                            ),
+                            direction: "receive".to_string(),
+                            notes: "".into(),
+                            ln_state: RpcLnState::from_ln_recv_state(
+                                op.1.outcome::<LnReceiveState>().translate(),
+                            ),
+                            lightning: Some(RpcLightningDetails {
+                                invoice: invoice.to_string(),
+                                fee: None, // TODO: to be implemented on the fedimint side
+                            }),
+                        },
+                    },
+                    MINT_OPERATION_TYPE => {
+                        let mint_meta: MintMeta = op.1.meta();
+                        match mint_meta.variant {
+                            MintMetaVariants::Reissuance { .. } => RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
+                                direction: "receive".to_string(),
+                                notes: "".into(),
+                                ln_state: None,
+                                amount: RpcAmount(mint_meta.amount.translate()),
+                                lightning: None,
+                            },
+                            MintMetaVariants::SpendOOB {
+                                requested_amount, ..
+                            } => RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
+                                direction: "send".to_string(),
+                                notes: "".into(),
+                                ln_state: None,
+                                amount: RpcAmount(requested_amount.translate()),
+                                lightning: None,
+                            },
+                        }
+                    }
+                    _ => {
+                        panic!(
+                            "Found unimplemented for module with operation type = {}",
+                            op.1.operation_type()
+                        );
+                    }
+                }
+            },
+        );
+        futures::future::join_all(futures).await
     }
 
     // Database
@@ -759,5 +881,15 @@ impl FederationV0 {
 
     pub async fn get_invite_code(&self) -> Option<String> {
         self.dbtx().await.get_value(&InviteCodeKey).await
+    }
+
+    async fn update_ln_pay_states(&self, operation_id: OperationId, ln_pay_state: LnPayState) {
+        let mut ln_pay_states = self.ln_pay_states.lock().await;
+        ln_pay_states.insert(operation_id, ln_pay_state);
+    }
+
+    async fn get_ln_pay_state(&self, operation_id: &OperationId) -> Option<LnPayState> {
+        let ln_pay_states = self.ln_pay_states.lock().await;
+        ln_pay_states.get(operation_id).cloned()
     }
 }

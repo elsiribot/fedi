@@ -222,7 +222,7 @@ impl MultiFederation {
 
     pub async fn list_transactions(&self) -> Result<Vec<RpcTransaction>> {
         Ok(match self {
-            Self::V0(v0) => v0.list_transactions().await,
+            Self::V0(v0) => v0.list_transactions(usize::MAX).await,
             Self::V1(v1) => v1.list_transactions(usize::MAX, None).await,
         })
     }
@@ -528,7 +528,7 @@ impl Bridge {
                         mnemonic,
                         old_client,
                         self.event_sink.clone(),
-                        self.task_group_v0.make_subgroup(),
+                        self.task_group_v0.make_subgroup().await,
                     )
                     .await?,
                 )

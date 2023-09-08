@@ -90,3 +90,102 @@ impl Translate<fedimint_core::PeerId> for fedimint_core_v0::PeerId {
         fedimint_core::PeerId::from(self.to_usize() as u16)
     }
 }
+
+impl Translate<fedimint_ln_client::receive::LightningReceiveError>
+    for fedimint_ln_client_v0::receive::LightningReceiveError
+{
+    fn translate(self) -> fedimint_ln_client::receive::LightningReceiveError {
+        match self {
+            fedimint_ln_client_v0::receive::LightningReceiveError::Rejected => {
+                fedimint_ln_client::receive::LightningReceiveError::Rejected
+            }
+            fedimint_ln_client_v0::receive::LightningReceiveError::Timeout => {
+                fedimint_ln_client::receive::LightningReceiveError::Timeout
+            }
+            fedimint_ln_client_v0::receive::LightningReceiveError::ClaimRejected => {
+                fedimint_ln_client::receive::LightningReceiveError::ClaimRejected
+            }
+            fedimint_ln_client_v0::receive::LightningReceiveError::InvalidPreimage => {
+                fedimint_ln_client::receive::LightningReceiveError::InvalidPreimage
+            }
+        }
+    }
+}
+impl Translate<fedimint_ln_client::LnReceiveState> for fedimint_ln_client_v0::LnReceiveState {
+    fn translate(self) -> fedimint_ln_client::LnReceiveState {
+        match self {
+            fedimint_ln_client_v0::LnReceiveState::Created => {
+                fedimint_ln_client::LnReceiveState::Created
+            }
+            fedimint_ln_client_v0::LnReceiveState::WaitingForPayment { invoice, timeout } => {
+                fedimint_ln_client::LnReceiveState::WaitingForPayment { invoice, timeout }
+            }
+            fedimint_ln_client_v0::LnReceiveState::Canceled { reason } => {
+                fedimint_ln_client::LnReceiveState::Canceled {
+                    reason: reason.translate(),
+                }
+            }
+            fedimint_ln_client_v0::LnReceiveState::Funded => {
+                fedimint_ln_client::LnReceiveState::Funded
+            }
+            fedimint_ln_client_v0::LnReceiveState::AwaitingFunds => {
+                fedimint_ln_client::LnReceiveState::AwaitingFunds
+            }
+            fedimint_ln_client_v0::LnReceiveState::Claimed => {
+                fedimint_ln_client::LnReceiveState::Claimed
+            }
+        }
+    }
+}
+
+impl Translate<fedimint_ln_client::pay::GatewayPayError>
+    for fedimint_ln_client_v0::pay::GatewayPayError
+{
+    fn translate(self) -> fedimint_ln_client::pay::GatewayPayError {
+        match self {
+            fedimint_ln_client_v0::pay::GatewayPayError::GatewayInternalError {
+                error_code,
+                error_message,
+            } => fedimint_ln_client::pay::GatewayPayError::GatewayInternalError {
+                error_code,
+                error_message,
+            },
+            fedimint_ln_client_v0::pay::GatewayPayError::OutgoingContractError => {
+                fedimint_ln_client::pay::GatewayPayError::OutgoingContractError
+            }
+        }
+    }
+}
+
+impl Translate<fedimint_ln_client::LnPayState> for fedimint_ln_client_v0::LnPayState {
+    fn translate(self) -> fedimint_ln_client::LnPayState {
+        match self {
+            fedimint_ln_client_v0::LnPayState::Created => fedimint_ln_client::LnPayState::Created,
+            fedimint_ln_client_v0::LnPayState::Canceled => fedimint_ln_client::LnPayState::Canceled,
+            fedimint_ln_client_v0::LnPayState::Funded => fedimint_ln_client::LnPayState::Funded,
+            fedimint_ln_client_v0::LnPayState::WaitingForRefund {
+                block_height,
+                gateway_error,
+            } => fedimint_ln_client::LnPayState::WaitingForRefund {
+                block_height,
+                gateway_error: gateway_error.translate(),
+            },
+            fedimint_ln_client_v0::LnPayState::AwaitingChange => {
+                fedimint_ln_client::LnPayState::AwaitingChange
+            }
+            fedimint_ln_client_v0::LnPayState::Success { preimage } => {
+                fedimint_ln_client::LnPayState::Success { preimage }
+            }
+            fedimint_ln_client_v0::LnPayState::Refunded { gateway_error } => {
+                fedimint_ln_client::LnPayState::Refunded {
+                    gateway_error: gateway_error.translate(),
+                }
+            }
+            fedimint_ln_client_v0::LnPayState::Failed => {
+                fedimint_ln_client::LnPayState::UnexpectedError {
+                    error_message: "Failed".to_string(),
+                }
+            }
+        }
+    }
+}
