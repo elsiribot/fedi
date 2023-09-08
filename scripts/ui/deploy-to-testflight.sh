@@ -13,7 +13,7 @@ pushd $REPO_ROOT/ui/native/ios
 
 echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 
-if [[ "${IN_NIX_SHELL:-}" ]]; then
+if [[ -n "${IN_NIX_SHELL:-}" ]]; then
   echo "Use fastlane directly within Nix"
   fastlane beta_ci --verbose
 else
