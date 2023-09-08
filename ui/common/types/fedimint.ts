@@ -83,6 +83,7 @@ export interface Transaction {
     notes: string
     lnState: LnPayState | LnReceiveState | null
     lightning: LightningTransactionDetails | null
+    bitcoin: BitcoinTransactionDetails | null
 }
 
 export interface SocialRecoveryQrCode {
