@@ -81,6 +81,7 @@
               "fedi-social-common"
               "fedi-social-server"
               "fedi-monitoring"
+              "devops-cli"
               # bridge test script
               "scripts"
               "misc"
@@ -142,6 +143,13 @@
             name = "fedi-monitoring";
             pkgs = {
               fedi-monitoring = { };
+            };
+          };
+
+          devops-cli = craneLibBuildNative.pkgsBuild {
+            name = "devops-cli";
+            pkgs = {
+              devops-cli = { };
             };
           };
 
