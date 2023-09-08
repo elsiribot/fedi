@@ -18,6 +18,7 @@ use fedi_social_client::RecoveryId;
 use fedimint_core::config::FederationId;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::{Amount, PeerId};
+use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_mint_client::MintClientExt;
 use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
 use futures::future::join_all;
@@ -260,28 +261,14 @@ pub struct Bridge {
     pub storage: Storage,
     pub federations: Arc<Mutex<HashMap<FederationId, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
-    // FIXME: which version should this be? should we have one of both?
+    pub task_group_v0: TaskGroupV0,
     pub task_group: TaskGroup,
 }
 
 impl Bridge {
     pub async fn new(storage: Storage, event_sink: EventSink) -> Result<Self> {
         let task_group = TaskGroup::new();
-        let federations = Self::load_federations(&storage, &event_sink).await?;
-        let bridge = Self {
-            storage,
-            federations: Arc::new(Mutex::new(federations)),
-            task_group,
-            event_sink,
-        };
-        Ok(bridge)
-    }
-
-    /// Load federations from storage
-    async fn load_federations(
-        storage: &Storage,
-        event_sink: &EventSink,
-    ) -> Result<HashMap<FederationId, Arc<MultiFederation>>> {
+        let task_group_v0 = TaskGroupV0::new();
         // load v0 federations
         let db = storage.global_database_v0().await?;
         let mut dbtx = db.begin_transaction().await;
@@ -297,8 +284,7 @@ impl Bridge {
                     FederationV0::from_db(
                         storage.federation_idb_v0(&federation_id.0).await?,
                         event_sink.clone(),
-                        // FIXME
-                        fedimint_core_v0::task::TaskGroup::new(),
+                        task_group_v0.make_subgroup().await,
                     )
                     .await?,
                 )),
@@ -320,8 +306,7 @@ impl Bridge {
                     FederationV1::from_db(
                         storage.federation_idb(&federation_id.0.translate()).await?,
                         event_sink.clone(),
-                        // FIXME
-                        TaskGroup::new(),
+                        task_group.make_subgroup().await,
                     )
                     .await?,
                 )),
@@ -332,7 +317,13 @@ impl Bridge {
 
         // combine v0 and v1 hashmaps
         v0_map.extend(v1_map);
-        Ok(v0_map)
+        Ok(Self {
+            storage,
+            federations: Arc::new(Mutex::new(v0_map)),
+            event_sink,
+            task_group_v0,
+            task_group,
+        })
     }
 
     /// Joins federation from invite code
@@ -537,8 +528,7 @@ impl Bridge {
                         mnemonic,
                         old_client,
                         self.event_sink.clone(),
-                        // FIXME: I think the bridge needs to maintain old and new task groups ...
-                        fedimint_core_v0::task::TaskGroup::new(),
+                        self.task_group_v0.make_subgroup(),
                     )
                     .await?,
                 )
