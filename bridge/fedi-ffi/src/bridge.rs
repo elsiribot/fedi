@@ -227,6 +227,23 @@ impl MultiFederation {
         })
     }
 
+    pub async fn update_transaction_notes(
+        &self,
+        transaction_id: String,
+        notes: String,
+    ) -> anyhow::Result<()> {
+        Ok(match self {
+            Self::V0(v0) => {
+                v0.update_transaction_notes(transaction_id.parse()?, notes)
+                    .await
+            }
+            Self::V1(v1) => {
+                v1.update_transaction_notes(transaction_id.parse()?, notes)
+                    .await
+            }
+        })
+    }
+
     pub async fn sign_lnurl_message(&self, message: &Message) -> RpcSignedLnurlMessage {
         match self {
             Self::V0(v0) => v0.sign_lnurl_message(message).await,
@@ -667,6 +684,18 @@ impl Bridge {
     ) -> Result<Vec<RpcTransaction>> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.list_transactions().await
+    }
+
+    pub async fn update_transaction_notes(
+        &self,
+        federation_id: RpcFederationId,
+        transaction_id: String,
+        notes: String,
+    ) -> anyhow::Result<()> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .update_transaction_notes(transaction_id, notes)
+            .await
     }
 
     pub async fn sign_lnurl_message(

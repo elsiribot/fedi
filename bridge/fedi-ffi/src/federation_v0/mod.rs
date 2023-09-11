@@ -29,6 +29,7 @@ use lightning_invoice::Invoice;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
+use v0_rocksdb::TransactionNotesKey;
 use v0_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, XmppUsernameKey};
 
 use crate::constants::{BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE};
@@ -773,6 +774,13 @@ impl FederationV0 {
     pub async fn list_transactions(&self, limit: usize) -> Vec<RpcTransaction> {
         let futures = self.client.get_operations(limit).await.into_iter().map(
             |op: (ChronologicalOperationLogKey, OperationLogEntry)| async move {
+                let notes = self
+                    .dbtx()
+                    .await
+                    .get_value(&TransactionNotesKey(op.0.operation_id))
+                    .await
+                    .unwrap_or_default();
+
                 match op.1.operation_type() {
                     LIGHTNING_OPERATION_TYPE => match op.1.meta() {
                         LightningMeta::Pay { invoice, .. } => RpcTransaction {
@@ -786,7 +794,7 @@ impl FederationV0 {
                                 .translate(),
                             ),
                             direction: "send".to_string(),
-                            notes: "".into(),
+                            notes,
                             ln_state: RpcLnState::from_ln_pay_state(
                                 self.get_ln_pay_outcome(op.0.operation_id, op.1)
                                     .await
@@ -808,7 +816,7 @@ impl FederationV0 {
                                 .translate(),
                             ),
                             direction: "receive".to_string(),
-                            notes: "".into(),
+                            notes,
                             ln_state: RpcLnState::from_ln_recv_state(
                                 op.1.outcome::<LnReceiveState>().translate(),
                             ),
@@ -826,7 +834,7 @@ impl FederationV0 {
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 direction: "receive".to_string(),
-                                notes: "".into(),
+                                notes,
                                 ln_state: None,
                                 amount: RpcAmount(mint_meta.amount.translate()),
                                 lightning: None,
@@ -838,7 +846,7 @@ impl FederationV0 {
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 direction: "send".to_string(),
-                                notes: "".into(),
+                                notes,
                                 ln_state: None,
                                 amount: RpcAmount(requested_amount.translate()),
                                 lightning: None,
@@ -855,6 +863,13 @@ impl FederationV0 {
             },
         );
         futures::future::join_all(futures).await
+    }
+
+    pub async fn update_transaction_notes(&self, transaction: OperationId, notes: String) {
+        let mut dbtx = self.dbtx().await;
+        dbtx.insert_entry(&TransactionNotesKey(transaction), &notes)
+            .await;
+        dbtx.commit_tx().await;
     }
 
     // Database

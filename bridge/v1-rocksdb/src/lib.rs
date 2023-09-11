@@ -1,5 +1,6 @@
 use std::time::SystemTime;
 
+use fedimint_client::sm::OperationId;
 use fedimint_core::{
     config::FederationId,
     encoding::{Decodable, Encodable},
@@ -15,6 +16,7 @@ pub enum BridgeDbPrefix {
     LastBackupTimestamp = 0xb4,
     SocialRecoveryState = 0xb5,
     SocialRecoveryId = 0xb6,
+    TransactionNote = 0xb7,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -69,3 +71,12 @@ impl fedimint_core::db::DatabaseRecord for LastBackupTimestampKey {
     type Key = Self;
     type Value = SystemTime;
 }
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct TransactionNotesKey(pub OperationId);
+
+impl_db_record!(
+    key = TransactionNotesKey,
+    value = String,
+    db_prefix = BridgeDbPrefix::TransactionNote,
+);

@@ -196,12 +196,15 @@ async fn listTransactions(
 
 #[macro_rules_derive(rpc_method!)]
 async fn updateTransactionNotes(
-    _bridge: Arc<Bridge>,
-    _federation_id: RpcFederationId,
-    _transaction_id: String,
-    _notes: String,
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    transaction_id: String,
+    notes: String,
 ) -> anyhow::Result<()> {
     // TODO
+    bridge
+        .update_transaction_notes(federation_id, transaction_id, notes)
+        .await?;
     Ok(())
 }
 

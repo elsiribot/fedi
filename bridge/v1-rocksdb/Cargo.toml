@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 fedimint-core = { workspace = true }
+fedimint-client = { workspace = true }
