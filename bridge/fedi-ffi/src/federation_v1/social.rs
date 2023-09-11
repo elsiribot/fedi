@@ -94,14 +94,13 @@ impl RecoveryFile {
 
 pub struct SocialBackup {
     /// Secret derived from the `root_secret` for this module / functionality
-    /// (level == 1)
+    /// (level == 2)
     pub module_secret: DerivableSecret,
 
     pub module_id: ModuleInstanceId,
 
     pub config: fedi_social_client::config::FediSocialClientConfig,
 
-    // FIXME: this needs to change
     pub api: DynModuleApi,
 }
 
@@ -310,7 +309,6 @@ impl SocialRecovery {
             .api
             .request_raw(
                 peer_id,
-                // &format!("module_{}_decryption_share", self.module_id),
                 "decryption_share",
                 &[ApiRequestErased::new(
                     self.state
@@ -403,7 +401,6 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                // &format!("module_{}_get_verification", self.module_id),
                 "get_verification",
                 &[ApiRequestErased::new(id).to_json()],
             )
@@ -463,13 +460,8 @@ where
         module_id: ModuleInstanceId,
         request: &SignedBackupRequest,
     ) -> FederationResult<()> {
-        tracing::info!("social_backup() {:?}", module_id);
-        self.request_current_consensus(
-            // format!("module_{module_id}_backup"),
-            "backup".into(),
-            ApiRequestErased::new(request),
-        )
-        .await
+        self.request_current_consensus("backup".into(), ApiRequestErased::new(request))
+            .await
     }
 
     async fn social_recovery(
@@ -477,7 +469,6 @@ where
         module_id: ModuleInstanceId,
         request: &SignedRecoveryRequest,
     ) -> FederationResult<()> {
-        tracing::info!("social_recovery() {:?}", module_id);
         self.request_current_consensus("recover".into(), ApiRequestErased::new(request))
             .await
     }

@@ -458,7 +458,6 @@ impl FediSocial {
     ) -> Result<VerificationDocument, ApiError> {
         debug!(id = %request.0, "Received social recovery approval");
 
-        // FIXME: devimint doesn't set this anymore ...
         let env_admin_password = if let Ok(pass) = std::env::var("FM_ADMIN_PASSWORD") {
             pass
         } else {

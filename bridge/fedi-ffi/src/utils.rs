@@ -1,6 +1,5 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-// TODO: make a "shared utils" file
 use bitcoin::Network;
 use lightning_invoice::Currency;
 

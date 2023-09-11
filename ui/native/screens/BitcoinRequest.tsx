@@ -84,10 +84,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
             setRequestType(BitcoinOrLightning.lightning)
             const getDecodedInvoice = async () => {
                 try {
-                    console.info(
-                        'decoding invoice',
-                        JSON.stringify(decodedUri.body),
-                    )
                     const decoded = await fedimint.decodeInvoice(
                         decodedUri.body,
                     )
