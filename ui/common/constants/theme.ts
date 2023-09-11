@@ -79,7 +79,7 @@ export const theme = {
         'rgba(98, 54, 255, 0.08)',
         'rgba(182, 32, 224, 0.08)',
     ],
-}
+} as const
 
 function makeHoloGradientRgbas(alphaMultiplier: number) {
     return [

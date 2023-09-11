@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, {
     MutableRefObject,
     useEffect,
@@ -197,12 +197,24 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                 return null
                         }
                     },
+                    tabBarLabel: ({ focused, children }) => (
+                        <Text
+                            caption
+                            bold={focused}
+                            medium={!focused}
+                            style={{
+                                color: focused
+                                    ? theme.colors.primary
+                                    : theme.colors.primaryLight,
+                            }}>
+                            {children}
+                        </Text>
+                    ),
                     tabBarActiveTintColor: theme.colors.primary,
                     tabBarInactiveTintColor: theme.colors.primaryLight,
                     tabBarStyle: styles(theme, insets).tabBar,
                     tabBarItemStyle: styles(theme, insets).tabBarItem,
                     headerTitleStyle: theme.components.Text.style,
-                    tabBarLabelStyle: styles(theme, insets).tabBarLabel,
                     tabBarBadgeStyle: styles(theme, insets).tabBarBadge,
                 })}>
                 <Tab.Screen
@@ -243,10 +255,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             height: theme.sizes.tabBarHeight + insets.bottom,
             borderTopWidth: 1,
             borderTopColor: theme.colors.extraLightGrey,
-        },
-        tabBarLabel: {
-            fontFamily: 'AlbertSans-Bold',
-            fontSize: 14,
         },
         tabBarIconContainer: {
             paddingBottom: theme.spacing.xs,
