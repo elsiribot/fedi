@@ -34,6 +34,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const dispatch = useAppDispatch()
+    const invite = route?.params?.invite
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [federationPreview, setFederationPreview] =
@@ -56,9 +57,9 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
 
     // If they came here with route state, paste the code for them
     useEffect(() => {
-        if (!route.params?.invite) return
-        handleCode(route.params.invite)
-    }, [route.params, handleCode])
+        if (!invite) return
+        handleCode(invite)
+    }, [invite, handleCode])
 
     const goToNextScreen = useCallback(
         (joinAs: 'returningMember' | 'newMember') => {
