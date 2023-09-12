@@ -43,7 +43,7 @@ pub struct JoinedFederationsV1Prefix;
 
 impl_db_record!(
     key = JoinedFederationV1,
-    value = (),
+    value = String, // database name
     db_prefix = BridgeDbPrefix::JoinedFederationsV1,
 );
 

@@ -100,15 +100,15 @@ impl PathBasedStorage {
 impl IStorage for PathBasedStorage {
     async fn global_database_v0(&self) -> anyhow::Result<DatabaseV0> {
         // using .gdb instead to .db to avoid collision with federation named `global`
-        let db_path = self.data_dir.join("global.gdb");
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_path)?;
+        let db_name = self.data_dir.join("global.gdb");
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
         let db = DatabaseV0::new(db, ModuleDecoderRegistryV0::from_iter([]));
         Ok(db)
     }
 
-    async fn federation_idb(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
-        let db_path = self.data_dir.join(format!("{id}.db"));
-        let db = fedimint_rocksdb::RocksDb::open(db_path)?;
+    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
+        let db_name = self.data_dir.join(format!("{db_name}.db"));
+        let db = fedimint_rocksdb::RocksDb::open(db_name)?;
         Ok(Box::new(db))
     }
 
@@ -117,8 +117,8 @@ impl IStorage for PathBasedStorage {
         // FIXME: we don't really need the v0 type here ...
         id: &fedimint_core_v0::config::FederationId,
     ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>> {
-        let db_path = self.data_dir.join(format!("{id}.db"));
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_path)?;
+        let db_name = self.data_dir.join(format!("{id}.db"));
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
         Ok(Box::new(db))
     }
 
@@ -126,18 +126,15 @@ impl IStorage for PathBasedStorage {
         &self,
         id: &fedimint_core_v0::config::FederationId,
     ) -> anyhow::Result<fedimint_core_v0::db::Database> {
-        let db_path = self.data_dir.join(format!("{id}.db"));
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_path)?;
+        let db_name = self.data_dir.join(format!("{id}.db"));
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
         let registry = fedimint_core_v0::module::registry::ModuleDecoderRegistry::from_iter([]);
         Ok(fedimint_core_v0::db::Database::new(db, registry))
     }
 
-    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
-        let db_path = self.data_dir.join(format!("{id}.db"));
-        std::fs::remove_dir_all(db_path).context("delete federation db")?;
-        // FIXME: do this so we can make sure we don't have any locks remaining
-        // let db_opts = Options::default();
-        // rocksdb::DB::destroy(&db_opts, db_path)?;
+    async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()> {
+        let db_name = self.data_dir.join(format!("{db_name}.db"));
+        std::fs::remove_dir_all(db_name).context("delete federation db")?;
         Ok(())
     }
 

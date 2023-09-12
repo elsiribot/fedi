@@ -739,12 +739,16 @@ mod tests {
         let rpc_federation_id = RpcFederationId(federation.federation_id());
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
-        assert_eq!(Some(env_invite_code), federations[0].invite_code);
+        assert_eq!(Some(env_invite_code.clone()), federations[0].invite_code);
         leaveFederation(bridge.clone(), rpc_federation_id).await?;
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
-        // FIXME: rocksdb lock bug
-        // joinFederation(bridge.clone(), env_invite_code).await?;
-        // assert_eq!(listFederations(bridge).await?.len(), 1);
+
+        // newer federations can rejoin
+        if let MultiFederation::V1(_) = *federation {
+            joinFederation(bridge.clone(), env_invite_code).await?;
+            assert_eq!(listFederations(bridge).await?.len(), 1);
+        }
+
         Ok(())
     }
 

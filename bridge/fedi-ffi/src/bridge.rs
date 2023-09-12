@@ -24,6 +24,7 @@ use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
 use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
+use rand::distributions::{Alphanumeric, DistString};
 use std::path::PathBuf;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
@@ -316,12 +317,12 @@ impl Bridge {
             .await
             .collect::<Vec<_>>()
             .await;
-        let v1_iter = v1_joined.iter().map(|(federation_id, _)| async {
+        let v1_iter = v1_joined.iter().map(|(federation_id, db_name)| async {
             Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
                 federation_id.0.translate(),
                 Arc::new(MultiFederation::V1(
                     FederationV1::from_db(
-                        storage.federation_idb(&federation_id.0.translate()).await?,
+                        storage.federation_idb(&db_name.clone()).await?,
                         event_sink.clone(),
                         task_group.make_subgroup().await,
                     )
@@ -370,18 +371,21 @@ impl Bridge {
     }
 
     async fn join_federation_v1(&self, invite_code: String) -> Result<Arc<MultiFederation>> {
+        // we generate a random string for the rocksdb directory name
+        let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV1::join(
             invite_code,
             &self.storage,
             self.event_sink.clone(),
             fedimint_core::task::TaskGroup::new(),
+            &db_name,
         )
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
         let global_db = self.storage.global_database_v0().await?;
         let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV1(federation_id.translate()), &())
+        dbtx.insert_entry(&JoinedFederationV1(federation_id.translate()), &db_name)
             .await;
         dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V1(federation));
@@ -435,18 +439,11 @@ impl Bridge {
         // delete federation from global db
         let global_db = self.storage.global_database_v0().await?;
         let mut dbtx = global_db.begin_transaction().await;
-        // FIXME: is there a better way to figure out what to delete?
         dbtx.remove_entry(&JoinedFederationV0(federation_id.translate()))
             .await;
-        dbtx.remove_entry(&JoinedFederationV1(federation_id.translate()))
+        let db_name = dbtx
+            .remove_entry(&JoinedFederationV1(federation_id.translate()))
             .await;
-        dbtx.commit_tx().await;
-
-        // Remove from bridge state
-        {
-            let mut lock = self.federations.lock().await;
-            lock.remove(federation_id);
-        }
 
         // Remove from bridge state
         {
@@ -455,8 +452,15 @@ impl Bridge {
         }
 
         // delete federation db
-        self.storage.delete_federation_db(federation_id).await?;
+        if let Some(db_name) = db_name {
+            self.storage.delete_federation_db(&db_name).await?;
+        } else {
+            self.storage
+                .delete_federation_db(&federation_id.to_string())
+                .await?;
+        }
 
+        dbtx.commit_tx().await;
         Ok(())
     }
 

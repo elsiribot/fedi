@@ -18,7 +18,7 @@ use crate::db::{rexie_to_anyhow, MemAndIndexedDb};
 
 pub struct WasmStorage {
     rexie_files: Arc<rexie::Rexie>,
-    federation: StdMutex<HashMap<FederationId, MemAndIndexedDb>>,
+    federation: StdMutex<HashMap<String, MemAndIndexedDb>>,
 }
 
 impl WasmStorage {
@@ -44,10 +44,10 @@ impl IStorage for WasmStorage {
         let db = fedimint_core_v0::db::Database::new(db, registry);
         Ok(db)
     }
-    async fn federation_idb(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
-        let db = MemAndIndexedDb::new(&format!("{id}")).await?;
+    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
+        let db = MemAndIndexedDb::new(&format!("{db_name}")).await?;
         let mut fed = self.federation.lock().unwrap();
-        fed.insert(*id, db.clone());
+        fed.insert(*db_name, db.clone());
         Ok(Box::new(db))
     }
 
@@ -57,13 +57,13 @@ impl IStorage for WasmStorage {
     ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>> {
         let db = MemAndIndexedDb::new(&format!("{id}")).await?;
         let mut fed = self.federation.lock().unwrap();
-        fed.insert(id.translate(), db.clone());
+        fed.insert(id.to_string(), db.clone());
         Ok(Box::new(db))
     }
 
     async fn federation_database_v0(
         &self,
-        id: &fedimint_core_v0::config::FederationId,
+        db_name: &str,
     ) -> anyhow::Result<fedimint_core_v0::db::Database> {
         let db = MemAndIndexedDb::new(&format!("{id}")).await?;
         // FIXME: this really seems like a footgun
@@ -71,9 +71,9 @@ impl IStorage for WasmStorage {
         Ok(fedimint_core_v0::db::Database::new(db, registry))
     }
 
-    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
+    async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()> {
         let mut fed = self.federation.lock().unwrap();
-        let db = fed.remove(id).unwrap();
+        let db = fed.remove(db_name).unwrap();
         drop(fed);
         db.delete().await?;
         Ok(())

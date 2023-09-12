@@ -10,7 +10,7 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
     /// Database to store all federation joined
     async fn global_database_v0(&self) -> anyhow::Result<fedimint_core_v0::db::Database>;
     // Dpc proposed alternative: open_federation_db(federation_id) which just tries each version in descending order
-    async fn federation_idb(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>>;
+    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>>;
     /// FIXME: can I get rid of this?
     async fn federation_database_v0(
         &self,
@@ -20,7 +20,7 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
         &self,
         id: &fedimint_core_v0::config::FederationId,
     ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>>;
-    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()>;
+    async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
     /// convert a relative path to a path understood by the platform.

@@ -193,6 +193,7 @@ impl FederationV1 {
         storage: &Storage,
         event_sink: EventSink,
         task_group: TaskGroup,
+        db_name: &str,
     ) -> Result<Self> {
         // Download federation config
         let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
@@ -204,8 +205,7 @@ impl FederationV1 {
         override_localhost_client_config(&mut client_config);
 
         // Save client config and invite code
-        let federation_id: FederationId = client_config.federation_id;
-        let dyn_db = storage.federation_idb(&federation_id).await?;
+        let dyn_db = storage.federation_idb(db_name).await?;
         let dbtx = dyn_db.begin_transaction().await;
         let notifications = Default::default();
         let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
