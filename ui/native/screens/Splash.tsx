@@ -16,7 +16,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
 
     const handleJoinFederation = async () => {
-        navigation.navigate('JoinFederation')
+        navigation.navigate('JoinFederation', { invite: undefined })
     }
 
     return (

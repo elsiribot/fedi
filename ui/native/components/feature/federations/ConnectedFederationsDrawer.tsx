@@ -114,7 +114,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 <Pressable
                     style={styles(theme).addFederationButton}
                     onPress={() => {
-                        mainNavigation.navigate('JoinFederation')
+                        mainNavigation.navigate('JoinFederation', {
+                            invite: undefined,
+                        })
                     }}>
                     <SvgImage name="Plus" color={theme.colors.darkGrey} />
                     <Text style={styles(theme).addFederationText} caption>
