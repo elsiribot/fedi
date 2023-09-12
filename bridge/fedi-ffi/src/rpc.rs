@@ -899,7 +899,7 @@ mod tests {
 
         // 3 guardians approves
         for i in 0..3 {
-            let password = "admin-pass";
+            let password = "p";
             approveSocialRecoveryRequest(
                 bridge.clone(),
                 federation_id,

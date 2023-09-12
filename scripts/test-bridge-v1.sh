@@ -21,7 +21,7 @@ ln -s $FM_LOGS_DIR target/logs || true
 rm target/test || true
 ln -s $FM_TEST_DIR target/test || true
 
-export FM_ADMIN_PASSWORD=admin-pass
+export FM_ADMIN_PASSWORD=p
 devimint dev-fed &
 DEVIMINT_PID=$!
 eval "$(devimint env)"

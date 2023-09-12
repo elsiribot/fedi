@@ -25,7 +25,7 @@ if [ -n "$DEVIMINT_BIN" ]; then
 fi
 
 # social recovery module needs this
-export FM_ADMIN_PASSWORD=admin-pass
+export FM_ADMIN_PASSWORD=p
 
 devimint dev-fed &> $FM_LOGS_DIR/devimint-outer.log &
 echo $! >> $FM_PID_FILE
