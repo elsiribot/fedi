@@ -35,7 +35,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const { toast } = useEnvironmentContext().state
     const dispatch = useAppDispatch()
     const invite = route?.params?.invite
-    const [isFetchingPreview, setIsFetchingPreview] = useState(false)
+    const [isFetchingPreview, setIsFetchingPreview] = useState(!!invite)
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreviewType>()
