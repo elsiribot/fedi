@@ -88,22 +88,27 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
 #[derive(Clone)]
 pub struct PathBasedStorage {
     data_dir: PathBuf,
+    global_db: DatabaseV0,
 }
 
 impl PathBasedStorage {
     pub async fn new(data_dir: PathBuf) -> anyhow::Result<Self> {
-        Ok(Self { data_dir })
+        // using .gdb instead to .db to avoid collision with federation named `global`
+        let db_path = data_dir.join("global.gdb");
+
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_path)?;
+        let db = DatabaseV0::new(db, ModuleDecoderRegistryV0::from_iter([]));
+        Ok(Self {
+            data_dir,
+            global_db: db,
+        })
     }
 }
 
 #[async_trait]
 impl IStorage for PathBasedStorage {
     async fn global_database_v0(&self) -> anyhow::Result<DatabaseV0> {
-        // using .gdb instead to .db to avoid collision with federation named `global`
-        let db_name = self.data_dir.join("global.gdb");
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
-        let db = DatabaseV0::new(db, ModuleDecoderRegistryV0::from_iter([]));
-        Ok(db)
+        Ok(self.global_db.clone())
     }
 
     async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
