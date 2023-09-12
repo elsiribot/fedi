@@ -151,7 +151,6 @@ impl FederationV1 {
             ln_pay_states: Arc::new(Mutex::new(HashMap::new())),
         };
         federation.subscribe_balance_updates().await;
-        // FIXME: this breaks backup and recovery test
         federation.poll_scheduled_backups().await;
         federation.subscribe_to_all_operations().await;
         federation

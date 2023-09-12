@@ -48,19 +48,9 @@ let
       emulator
       ndk-bundle
       ndk-23-1-7779620
-      ndk-24-0-8215888
       cmake-3-22-1
-      cmake-3-18-1
       patcher-v4
       tools
-      # justin's emulator hacks
-      build-tools-31-0-0
-      platforms-android-32
-      system-images-android-32-google-apis-arm64-v8a
-      # ] ++ lib.optionals (!stdenv.isAarch64) [
-      #   system-images-android-32-google-apis-x86-64
-      # ] ++ lib.optionals (stdenv.isAarch64) [
-      #   system-images-android-32-google-apis-arm64-v8a
     ]);
 
   # The following hack makes fedimint compile on android:
