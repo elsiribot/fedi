@@ -15,9 +15,11 @@ use anyhow::{anyhow, bail, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::XOnlyPublicKey;
 use fedi_social_client::RecoveryId;
+use fedimint_core::api::InviteCode;
 use fedimint_core::config::FederationId;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::{Amount, PeerId};
+use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_mint_client::MintClientExt;
 use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
@@ -26,6 +28,7 @@ use futures::StreamExt;
 use lightning_invoice::Invoice;
 use rand::distributions::{Alphanumeric, DistString};
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::error;
@@ -370,11 +373,17 @@ impl Bridge {
         bail!("failed to join")
     }
 
-    async fn join_federation_v1(&self, invite_code: String) -> Result<Arc<MultiFederation>> {
+    async fn join_federation_v1(&self, invite_code_string: String) -> Result<Arc<MultiFederation>> {
+        // Check if we've already joined this federation
+        let invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
+        if self.get_multi(&invite_code.id).await.is_ok() {
+            bail!("Already joined this federation")
+        }
+
         // we generate a random string for the rocksdb directory name
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV1::join(
-            invite_code,
+            invite_code_string,
             &self.storage,
             self.event_sink.clone(),
             fedimint_core::task::TaskGroup::new(),
@@ -395,9 +404,15 @@ impl Bridge {
         Ok(multi)
     }
 
-    async fn join_federation_v0(&self, invite_code: String) -> Result<Arc<MultiFederation>> {
+    async fn join_federation_v0(&self, invite_code_string: String) -> Result<Arc<MultiFederation>> {
+        // Check if we've already joined this federation
+        let invite_code: InviteCodeV0 = InviteCodeV0::from_str(&invite_code_string)?;
+        if self.get_multi(&invite_code.id.translate()).await.is_ok() {
+            bail!("Already joined this federation")
+        }
+
         let federation = FederationV0::join(
-            invite_code,
+            invite_code_string,
             &self.storage,
             self.event_sink.clone(),
             fedimint_core_v0::task::TaskGroup::new(),

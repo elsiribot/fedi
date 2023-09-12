@@ -736,14 +736,26 @@ mod tests {
     async fn test_join_and_leave_and_join() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
+
+        // Can't re-join a federation we're already a member of
+        assert_eq!(
+            true,
+            joinFederation(bridge.clone(), env_invite_code.clone())
+                .await
+                .is_err()
+        );
+
+        // listTransactions works
         let rpc_federation_id = RpcFederationId(federation.federation_id());
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
         assert_eq!(Some(env_invite_code.clone()), federations[0].invite_code);
+
+        // leaveFederation works
         leaveFederation(bridge.clone(), rpc_federation_id).await?;
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
 
-        // newer federations can rejoin
+        // Newer federations can rejoin without any rocksdb locking problems
         if let MultiFederation::V1(_) = *federation {
             joinFederation(bridge.clone(), env_invite_code).await?;
             assert_eq!(listFederations(bridge).await?.len(), 1);
