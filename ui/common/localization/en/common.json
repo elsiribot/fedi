@@ -116,6 +116,7 @@
         "failed-to-generate-invoice": "Failed to generate invoice",
         "failed-to-join-federation": "Failed to join federation",
         "failed-to-pay-invoice": "Failed to pay invoice",
+        "get-nostr-pubkey-failed": "Failed to get nostr pub key",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "invalid-amount-max": "The max you can {{verb}} is <suggestion>{{amount}}</suggestion>",
         "invalid-amount-min": "The minimum you can {{verb}} is <suggestion>{{amount}}</suggestion>",
@@ -128,6 +129,7 @@
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
         "receives-have-been-disabled": "Receives have been disabled for this federation",
         "recovery-failed": "Recovery failed, please try again",
+        "sign-nostr-event-failed": "Failed to sign nostr event",
         "transaction-render-error": "Encountered an error rendering this transaction",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
@@ -135,9 +137,7 @@
         "webln-method-not-supported": "{{method}} is not supported",
         "webln-payment-rejected": "Payment rejected",
         "webln-payment-request-rejected": "Payment request rejected",
-        "you-have-already-joined": "You have already joined this federation",
-        "get-nostr-pubkey-failed": "Failed to get nostr pub key",
-        "sign-nostr-event-failed": "Failed to sign nostr event"
+        "you-have-already-joined": "You have already joined this federation"
     },
     "feature": {
         "backup": {
@@ -272,8 +272,6 @@
             "custom-fedimods": "Custom Fedi Mods",
             "debug-mode": "Fedi Mod Debug Mode",
             "debug-mode-info": "Injects a dev tool (Eruda) into the browser when opening Fedi Mods",
-            "nostr-enabled": "Nostr",
-            "nostr-enabled-info": "Injects Nostr extensions (NIP07) into the browser when opening Fedi Mods",
             "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fediMod}}",
             "enter-valid-url": "Please enter a valid url (http:// or https://)",
             "fedimod-icon": "Fedi Mod Icon",
@@ -281,6 +279,8 @@
             "fedimod-url": "Fedi Mod URL",
             "login-failed": "Login failed",
             "login-to": "Login to",
+            "nostr-enabled": "Nostr",
+            "nostr-enabled-info": "Injects Nostr extensions (NIP07) into the browser when opening Fedi Mods",
             "payment-request": "Payment request from {{fediMod}}",
             "wants-to-pay-you": "{{fediMod}} wants to pay you"
         },
@@ -297,10 +297,10 @@
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",
             "confirm-website-url": "This is a website url, do you want to open this in your browser?",
-            "search-placeholder-username": "Enter a username",
-            "search-placeholder-username-or-ln": "Enter a username or lightning address",
             "search-no-history-header": "No history with user",
             "search-no-results": "No users match “{{query}}”",
+            "search-placeholder-username": "Enter a username",
+            "search-placeholder-username-or-ln": "Enter a username or lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
