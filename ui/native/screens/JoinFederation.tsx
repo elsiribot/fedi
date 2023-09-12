@@ -106,10 +106,6 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                     typedError?.message?.includes('No record locks available')
                 ) {
                     toast?.show(t('errors.please-force-quit-the-app'), 5000)
-                } else if (
-                    typedError?.message === 'errors.you-have-already-joined'
-                ) {
-                    goToNextScreen(joinAs)
                 } else {
                     toast?.show(
                         formatErrorMessage(
