@@ -44,9 +44,6 @@ pub fn init() {
     set_panic_hook();
     let log_buffer_layer = tracing_subscriber::fmt::layer()
         .json()
-        .with_env_filter(tracing_subscriber::EnvFilter::new(
-            "info,fediffi=debug,fedimint_client=trace,fedimint_core::api=trace",
-        ))
         .with_writer(MemMakeWriter(LOG_BUFFER.with(Arc::clone)))
         .without_time();
     tracing_subscriber::registry()
