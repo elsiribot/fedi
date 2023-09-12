@@ -79,34 +79,10 @@ impl IStorage for WasmStorage {
         Ok(())
     }
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
-        let transaction = self
-            .rexie_files
-            .transaction(&["default"], TransactionMode::ReadOnly)
-            .map_err(rexie_to_anyhow)?;
-        let store = transaction.store("default").map_err(rexie_to_anyhow)?;
-        let key = JsValue::from_str(&path.to_str().expect("path is valid unicode"));
-        let value = store.get(&key).await;
-        match value {
-            Ok(value) => match value.dyn_into::<js_sys::Uint8Array>() {
-                Ok(v) => Ok(v.to_vec()),
-                Err(e) => bail!(format!("failed to read_file: {e:?}")),
-            },
-            Err(e) => Err(rexie_to_anyhow(e)),
-        }
+        todo!()
     }
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
-        let transaction = self
-            .rexie_files
-            .transaction(&["default"], TransactionMode::ReadWrite)
-            .map_err(rexie_to_anyhow)?;
-        let store = transaction.store("default").map_err(rexie_to_anyhow)?;
-        let key = JsValue::from_str(&path.to_str().expect("path is valid unicode"));
-        let value = js_sys::Uint8Array::from(&data[..]);
-        store
-            .put(&value, Some(&key))
-            .await
-            .map_err(rexie_to_anyhow)?;
-        Ok(())
+        todo!()
     }
     fn platform_path(&self, path: &Path) -> PathBuf {
         todo!()
