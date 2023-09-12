@@ -156,7 +156,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
     const showSocialRecovery =
-        activeFederation && shouldShowSocialRecovery(activeFederation.meta)
+        activeFederation && shouldShowSocialRecovery(activeFederation)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

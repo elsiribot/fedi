@@ -179,6 +179,7 @@ export interface Federation {
     socialRecoveryActive: boolean
     meta: ClientConfigMetadata
     network: Network
+    version: number
 }
 
 export type SeedWords = string[]

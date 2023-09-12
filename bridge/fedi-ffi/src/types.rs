@@ -36,6 +36,7 @@ pub struct RpcFederation {
     pub social_recovery_active: bool,
     #[ts(type = "Array<{url: string, name: string}>")]
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
+    pub version: u32,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, TS)]
@@ -70,6 +71,7 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
         meta,
         nodes,
         social_recovery_active,
+        version: 0,
     }
 }
 
@@ -97,6 +99,7 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         meta,
         nodes,
         social_recovery_active,
+        version: 1,
     }
 }
 

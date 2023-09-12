@@ -215,16 +215,20 @@ export const shouldShowInviteCode = (
     return true
 }
 
-export const shouldShowSocialRecovery = (
-    metadata: ClientConfigMetadata,
-): boolean => {
+export const shouldShowSocialRecovery = (federation: Federation): boolean => {
+    // Social recovery not supported on v0 federations
+    if (federation.version === 0) {
+        return false
+    }
     const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+        federation.meta as ClientConfigMetadata,
     )
     if (supportedFeatures.includes(SupportedFeature.social_recovery_disabled)) {
         // This is a boolean true/false but client config meta only
         // supports strings currently so will need to refactor
-        return metadata.social_recovery_disabled === 'true' ? false : true
+        return federation.meta.social_recovery_disabled === 'true'
+            ? false
+            : true
     }
     return true
 }

@@ -32,7 +32,7 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const showSocialRecovery =
-        activeFederation && shouldShowSocialRecovery(activeFederation.meta)
+        activeFederation && shouldShowSocialRecovery(activeFederation)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

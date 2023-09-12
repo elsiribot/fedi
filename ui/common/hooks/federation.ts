@@ -29,7 +29,7 @@ export function useIsInviteSupported() {
 export function useIsSocialRecoverySupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
-    return shouldShowSocialRecovery(activeFederation.meta)
+    return shouldShowSocialRecovery(activeFederation)
 }
 
 export function useIsOfflineWalletSupported() {
