@@ -66,3 +66,14 @@ jobs:
         if: >-
             github.event_name == 'push' &&
             startsWith(github.ref, 'refs/heads/release/')
+
+    call-deployment-workflow-testflight:
+        name: Trigger deployment to TestFlight
+        needs: release-android
+        uses: ./.github/workflows/deploy-to-testflight.yml
+        secrets: inherit
+        with:
+            commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}
+        if: >-
+            github.event_name == 'push' &&
+            startsWith(github.ref, 'refs/heads/release/')

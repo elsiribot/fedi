@@ -34,6 +34,6 @@ git add package.json android/app/build.gradle && git commit -m "chore: bump vers
 echo "Saving new version + APK path as outputs for next steps in job"
 echo "NEW_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
 echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
-echo "Saving latest commit to output for 'call-deployment-workflow' job"
+echo "Saving latest commit to output for 'call-deployment-workflow' jobs"
 echo "COMMIT_TO_DEPLOY=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 popd

@@ -9,7 +9,7 @@ $REPO_ROOT/scripts/enforce-nix.sh
 
 mkdir $REPO_ROOT/tmp
 
-echo "Decoding play store JSON credentials..."
+echo "Decoding App Store Connect JSON credentials..."
 
 echo ${ASC_API_KEY_JSON_CREDENTIALS_ENCODED} >> $ENCODED_CREDENTIALS_PATH
 base64 --decode $ENCODED_CREDENTIALS_PATH >> $DECODED_CREDENTIALS_PATH

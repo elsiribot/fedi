@@ -249,6 +249,7 @@
           xcode = crossDevShell.overrideAttrs (prev: {
             nativeBuildInputs = prev.nativeBuildInputs
               ++ lib.optionals stdenv.isDarwin [
+              pkgs.bundler
               pkgs.cocoapods
               xcode-wrapper
               pkgs.fs-dir-cache
@@ -256,6 +257,7 @@
             shellHook = prev.shellHook
               + ''
               # CocoaPods requires the terminal to be using UTF-8 encoding.
+              export LC_ALL=en_US.UTF-8
               export LANG=en_US.UTF-8
             '';
           });

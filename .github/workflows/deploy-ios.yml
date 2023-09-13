@@ -1,16 +1,26 @@
 name: Deploy to TestFlight
 on:
     workflow_dispatch:
+    workflow_call:
+        inputs:
+            commit-to-deploy:
+                required: false
+                type: string
 
 jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
         runs-on: [self-hosted, macos]
         steps:
-            - uses: actions/checkout@v3
+            - name: Checkout repo
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ inputs.commit-to-deploy }}
+
             - uses: cachix/install-nix-action@v20
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
+
             - uses: cachix/cachix-action@v12
               with:
                   name: fedibtc
@@ -31,9 +41,11 @@ jobs:
                   ASC_API_KEY_JSON_CREDENTIALS_ENCODED: ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }}
               run: nix develop --command ./scripts/ci/make-testflight-creds.sh
 
-            - name: Execute fastlane beta lane for CI within Nix
+            - name: Execute fastlane beta lane for CI
               env:
-                  MATCH_PASSWORD: 'fedimint'
+                  # TODO: for prod, regenerate certificates and convert these to secrets
+                  MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
+                  MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
               run: |
                   nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
               continue-on-error: true
@@ -44,8 +56,9 @@ jobs:
               with:
                   ruby-version: '2.7.5'
 
-            - name: Execute fastlane beta lane for CI
+            - name: Execute fastlane beta lane for CI (nonnix)
               env:
-                  MATCH_PASSWORD: 'fedimint'
+                  MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
+                  MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
               run: |
                   ./scripts/ui/deploy-to-testflight.sh
