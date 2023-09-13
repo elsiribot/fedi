@@ -37,7 +37,7 @@ This workflow runs on every PR opened to the `develop` or `release/**` branches 
 
 Developers should be sure their PRs pass these checks before requesting a review.
 
-- [Run test suites](https://github.com/fedibtc/fedi-react-native/actions/workflows/test.yml)
+- [Run test suites](https://github.com/fedibtc/fedi/actions/workflows/test.yml)
 
 # Deployments
 
@@ -45,28 +45,28 @@ Developers should be sure their PRs pass these checks before requesting a review
 
 This core workflow runs on every `push` event to a `release/**` branch and configures all dependencies to build a fresh version of the bridge, assembles an APK, and publishes it as a Github draft release where the APK can be downloaded and installed. Versioning is also handled automatically (see [Versioning](#versioning) below)
 
-- [Publish APK to GitHub](https://github.com/fedibtc/fedi-react-native/actions/workflows/publish-android-apk.yml)
+- [Publish APK to GitHub](https://github.com/fedibtc/fedi/actions/workflows/publish-android-apk.yml)
 
 ## Special Deployments
 
 These workflows have all the same build steps as the APK workflow but fastlane is set up to generate the respective "flavor" for special deployments which produces an APK with a unique app ID. These workflows should not increment the version number... but may increment the versionCode if necessary (see [Versioning](#versioning))
 
-- [Publish APK (Bitcoin Lake) to GitHub](https://github.com/fedibtc/fedi-react-native/actions/workflows/publish-android-apk-bitcoin-lake.yml)
-- [Publish APK (Bitcoin Ekasi) to GitHub](https://github.com/fedibtc/fedi-react-native/actions/workflows/publish-android-apk-bitcoin-ekasi.yml)
+- [Publish APK (Bitcoin Lake) to GitHub](https://github.com/fedibtc/fedi/actions/workflows/publish-android-apk-bitcoin-lake.yml)
+- [Publish APK (Bitcoin Ekasi) to GitHub](https://github.com/fedibtc/fedi/actions/workflows/publish-android-apk-bitcoin-ekasi.yml)
 
 ## Play Store
 
 This workflow also has all the same build steps as the APK workflow but assembles an AAB instead of an APK so it can be automatically uploaded to the Play Store via [fastlane](https://docs.fastlane.tools/getting-started/android/beta-deployment/). See the [Authentication](#authentication) section below to make sure the credentials are configured properly.
 
-- [Deploy to Google Play - Internal Testing](https://github.com/fedibtc/fedi-react-native/actions/workflows/deploy-to-gp-internal-testing.yml)
-- [Deploy (Bitcoin Ekasi) to Google Play - Internal Testing](https://github.com/fedibtc/fedi-react-native/actions/workflows/deploy-to-gp-internal-bitcoin-ekasi.yml)
-- [Deploy (Bitcoin Lake) to Google Play - Internal Testing](https://github.com/fedibtc/fedi-react-native/actions/workflows/deploy-to-gp-internal-bitcoin-lake.yml)
+- [Deploy to Google Play - Internal Testing](https://github.com/fedibtc/fedi/actions/workflows/deploy-to-gp-internal-testing.yml)
+- [Deploy (Bitcoin Ekasi) to Google Play - Internal Testing](https://github.com/fedibtc/fedi/actions/workflows/deploy-to-gp-internal-bitcoin-ekasi.yml)
+- [Deploy (Bitcoin Lake) to Google Play - Internal Testing](https://github.com/fedibtc/fedi/actions/workflows/deploy-to-gp-internal-bitcoin-lake.yml)
 
 ## TestFlight
 
 This workflow builds the bridge for iOS so is similar to the above APK workflow but without the Android-specific steps.
 
-- [Deploy to TestFlight](https://github.com/fedibtc/fedi-react-native/actions/workflows/deploy-ios.yml)
+- [Deploy to TestFlight](https://github.com/fedibtc/fedi/actions/workflows/deploy-to-testflight.yml)
 
 ❗❗❗
 This currently takes an extremely long time (1hr+) since the `macos` runner is slow to build the bridge and it's also more expensive relative to Linux.
@@ -133,7 +133,7 @@ If GitHub Actions is not available, fastlane can be used to generate builds loca
 
 ## Android
 
-See [android/fastlane/README.md](https://github.com/fedibtc/fedi-react-native/blob/master/android/fastlane/README.md) for available fastlane commands
+See [android/fastlane/README.md](https://github.com/fedibtc/fedi/blob/master/android/fastlane/README.md) for available fastlane commands
 
 ## iOS
 
@@ -149,9 +149,9 @@ cp ./ios/fastlane/.env.example ./ios/fastlane/.env
 
 Then replace `FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD` with your own [application-specific password](https://support.apple.com/en-us/HT204397)
 
-See the [`.env.example`](https://github.com/fedibtc/fedi-react-native/blob/master/ios/fastlane/.env.example)
+See the [`.env.example`](https://github.com/fedibtc/fedi/blob/master/ios/fastlane/.env.example)
 
-See [ios/fastlane/README.md](https://github.com/fedibtc/fedi-react-native/blob/master/ios/fastlane/README.md) for available fastlane commands
+See [ios/fastlane/README.md](https://github.com/fedibtc/fedi/blob/master/ios/fastlane/README.md) for available fastlane commands
 
 <https://docs.fastlane.tools/getting-started/ios/authentication/>
 
