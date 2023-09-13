@@ -17,8 +17,7 @@ use fedimint_ln_client::{
 use fedimint_mint_client::{
     MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants,
 };
-use fedimint_wallet_client::{WalletClientExt, WalletClientGen, WalletClientModule};
-use ring::rand::generate;
+use fedimint_wallet_client::{WalletClientExt, WalletClientGen};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -73,7 +72,6 @@ pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
 // Backup twice per day
 pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
 const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
-const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[derive(Serialize, Deserialize)]
 struct FediBackupMetadata {
@@ -591,7 +589,6 @@ impl Federation {
     pub async fn ng_receive_ecash(
         &self,
         ecash: TieredMulti<fedimint_mint_client::SpendableNote>,
-        save_tx: bool,
     ) -> Result<Amount> {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
@@ -613,9 +610,7 @@ impl Federation {
 
             info!("Update: {:?}", update);
         }
-        if save_tx {
-            self.ng_save_incoming_ecash_tx(amount).await;
-        }
+        self.ng_save_incoming_ecash_tx(amount).await;
         Ok(amount)
     }
 
@@ -625,19 +620,8 @@ impl Federation {
         amount: Amount,
     ) -> Result<TieredMulti<fedimint_mint_client::SpendableNote>> {
         let (_, notes) = self.ng.spend_notes(amount, ONE_YEAR, ()).await?;
-        let notes = if amount != notes.total_amount() {
-            // try to make change
-            timeout(REISSUE_ECASH_TIMEOUT, async {
-                self.ng_receive_ecash(notes, false).await;
-            })
-            .await
-            .context("Failed to select notes with correct amount")?;
-            let (_, new_notes) = self.ng.spend_notes(amount, ONE_YEAR, ()).await?;
-            new_notes
-        } else {
-            notes
-        };
-        self.ng_save_outgoing_ecash_tx(notes.total_amount()).await;
+        let amount = notes.total_amount();
+        self.ng_save_outgoing_ecash_tx(amount).await;
         Ok(notes)
     }
 
