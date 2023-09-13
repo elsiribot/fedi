@@ -285,7 +285,7 @@ async fn receiveEcash(
     // Add a poller to check for ecash notes in the table and try to redeem them periodically.
     // If redeemed, send transaction event and update their entry.
     let ecash = parse_ecash(&ecash)?;
-    Ok(Amount(federation.ng_receive_ecash(ecash, true).await?))
+    Ok(Amount(federation.ng_receive_ecash(ecash).await?))
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -1000,7 +1000,7 @@ mod tests {
 
         // receive ecash
         let ecash = cli_generate_ecash().await?;
-        federation.ng_receive_ecash(ecash, true).await?;
+        federation.ng_receive_ecash(ecash).await?;
 
         let label = std::time::SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1047,7 +1047,7 @@ mod tests {
 
         // receive ecash
         let ecash = cli_generate_ecash().await?;
-        federation.ng_receive_ecash(ecash, true).await?;
+        federation.ng_receive_ecash(ecash).await?;
         let original_balance = fedimint_core::Amount::from_msats(10_000);
         assert_eq!(original_balance, federation.ng_balance().await);
 
