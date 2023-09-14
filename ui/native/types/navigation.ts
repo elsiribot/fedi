@@ -75,7 +75,7 @@ export type RootStackParamList = {
     LocateSocialRecovery: undefined
     Receive: undefined
     ReceiveLightning: { parsedData?: ParsedLnurlWithdraw } | undefined
-    ReceiveSuccess: { tx: Pick<Transaction, 'amount' | 'bitcoin' | 'offline'> }
+    ReceiveSuccess: { tx: Pick<Transaction, 'amount' | 'bitcoin'> }
     ReceiveOffline: undefined
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined

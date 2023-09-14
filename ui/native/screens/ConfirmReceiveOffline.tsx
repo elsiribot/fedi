@@ -59,7 +59,6 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 navigation.navigate('ReceiveSuccess', {
                     // TODO: Fill out other fields? Missing some required Transaction fields.
                     tx: {
-                        offline: { claimed: true },
                         amount,
                     } as Transaction,
                 })

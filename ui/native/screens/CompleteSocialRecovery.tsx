@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
@@ -11,10 +11,7 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import {
-    completeSocialRecovery,
-    selectActiveFederation,
-} from '@fedi/common/redux'
+import { completeSocialRecovery } from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
 import { Images } from '../assets/images'

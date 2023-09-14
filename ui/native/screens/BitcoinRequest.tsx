@@ -14,7 +14,6 @@ import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector, useBridge } from '../state/hooks'
-import { reset } from '../state/navigation'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
