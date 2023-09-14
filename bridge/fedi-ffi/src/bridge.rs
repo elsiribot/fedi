@@ -21,8 +21,8 @@ use fedimint_core::task::TaskGroup;
 use fedimint_core::{Amount, PeerId};
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
-use fedimint_mint_client::MintClientExt;
-use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
+use fedimint_mint_client::{MintClientExt, OOBNotes};
+use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
 use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
@@ -526,6 +526,15 @@ impl Bridge {
     ) -> Result<RpcAmount> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.receive_ecash(ecash).await.map(RpcAmount)
+    }
+
+    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcAmount> {
+        // Attempt v1 deserialization
+        if let Ok(amount) = FederationV1::validate_ecash(ecash.clone()) {
+            return Ok(RpcAmount(amount));
+        }
+        // Attempt v0 deserialization
+        FederationV0::validate_ecash(ecash).map(|amt| RpcAmount(amt.translate()))
     }
 
     pub async fn generate_ecash(

@@ -611,6 +611,10 @@ impl FederationV1 {
         Ok(amount)
     }
 
+    pub fn validate_ecash(ecash: String) -> Result<Amount> {
+        OOBNotes::from_str(&ecash).map(|n| n.total_amount())
+    }
+
     pub async fn subscribe_to_ecash_reissue(&self, operation_id: OperationId) -> Result<()> {
         let mut updates = self
             .client

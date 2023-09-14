@@ -531,6 +531,11 @@ impl FederationV0 {
         Ok(amount)
     }
 
+    pub fn validate_ecash(ecash: String) -> Result<Amount> {
+        let ecash = parse_ecash(&ecash)?;
+        Ok(ecash.total_amount())
+    }
+
     pub async fn subscribe_to_ecash_reissue(&self, operation_id: OperationId) -> Result<()> {
         let mut updates = self
             .client
