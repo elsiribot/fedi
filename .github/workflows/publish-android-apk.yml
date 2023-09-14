@@ -64,7 +64,6 @@ jobs:
         with:
             commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}
         if: >-
-            github.event_name == 'push' &&
             startsWith(github.ref, 'refs/heads/release/')
 
     call-deployment-workflow-testflight:
@@ -75,5 +74,4 @@ jobs:
         with:
             commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}
         if: >-
-            github.event_name == 'push' &&
             startsWith(github.ref, 'refs/heads/release/')
