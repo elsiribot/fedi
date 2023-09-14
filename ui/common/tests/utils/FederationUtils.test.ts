@@ -17,6 +17,7 @@ const baseFed = {
     balance: 0 as MSats,
     socialRecoveryActive: false,
     network: Network.regtest,
+    version: 0,
 }
 
 const fedWithNoMetadata: Federation = {
