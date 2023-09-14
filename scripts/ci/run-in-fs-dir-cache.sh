@@ -19,7 +19,7 @@ export FS_DIR_CACHE_LOCK_TIMEOUT_SECS="$((60 * 30))" # unlock after timeout in c
 fs-dir-cache gc unused --seconds "$((7 * 24 * 60 * 60))" # delete caches not used in more than a week
 
 # create/reuse cache (sub-directory) and lock it (wait if already locked)
-cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-file flake.lock)
+cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-file flake.lock)
 
 # unlock it when the script finish
 # We want to expand it right away:
