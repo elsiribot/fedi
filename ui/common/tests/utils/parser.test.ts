@@ -23,6 +23,8 @@ const simpleBolt11Data = {
     bolt11: simpleBolt11,
     ...simpleBolt11Invoice,
 }
+const simpleV0Ecash =
+    'AAAAAAAAAAUAAAAAAAAAEAAAAAAAAAABytv3ApZWgVAEsPVB/wSW7xGwEWAyXNWZnw1MZMWBBsuYhk+hrVdUAn5fOpAupYeaJ1saucJeD5t/5dIFYKYU5KY/G6aRf8cJVqfLZ3DWDbbo2VNbALxflAzR3YYOopF49G5hUC2oYattZdjM2uEtRQAAAAAAAAEAAAAAAAAAAAE6qbWNeYV/DSx5tpJz4dG3NOmT4+KY6+DmI1+bUV75VaKPsoT629eC4HQolANvFF4VLd7SOphWotT1l3WST9jJIhbvKqmyHmLMSvVVld/czTlP9LM/O2tFS6KM8SMDvxsU+PlV6ZNeIeXq1Fz1QdMmAAAAAAAAAgAAAAAAAAAAAVEMS56MnlPEm/Y0/Cn5KXjQsC8/vMfhN+E/Y4tvWfebtxVHtKPk7dhJqC3P8mR0M6cw5qyTXq4vuDN3GVWQMh1oOMAveatU88IUuno5sz2jDTX0M8bJ2ujQHKKNXwMaafQMDiWpoa8jRhv3jKpIUREAAAAAAAAEAAAAAAAAAAABPvyMsEtqen8ZCoSJ28QyELg6fxNINzdLeKHU0pLv532rjLwME41b9aFevg3+HEblxlMWyc0F1DnO0doaX0of2hv2hs1bPFXyMLPlinxfpcjRE/mylF0D7Ogm8oBHXhxQohr6Bzi4fE2iYF3/gW3mXQAAAAAAACAAAAAAAAAAAAGmwrUa8fH8xbftLJQM4HhRDsRJjOTWgOIpLSDO0i6OsIqMBqxQRBiJ9DH9ji2skiQ5s0DEKpnDQcMsvCUpIJs+6UhERT/lFzqZiqfGK4ljDkG3GkNU9kPMrL7LfW1KGtDvj5+I1hO+kKoANDfPxi66'
 
 const complexBolt11 =
     'lnbc20u1p3y0x3hpp5743k2g0fsqqxj7n8qzuhns5gmkk4djeejk3wkp64ppevgekvc0jsdqcve5kzar2v9nr5gpqd4hkuetesp5ez2g297jduwc20t6lmqlsg3man0vf2jfd8ar9fh8fhn2g8yttfkqxqy9gcqcqzys9qrsgqrzjqtx3k77yrrav9hye7zar2rtqlfkytl094dsp0ms5majzth6gt7ca6uhdkxl983uywgqqqqlgqqqvx5qqjqrzjqd98kxkpyw0l9tyy8r8q57k7zpy9zjmh6sez752wj6gcumqnj3yxzhdsmg6qq56utgqqqqqqqqqqqeqqjq7jd56882gtxhrjm03c93aacyfy306m4fq0tskf83c0nmet8zc2lxyyg3saz8x6vwcp26xnrlagf9semau3qm2glysp7sv95693fphvsp54l567'
@@ -282,7 +284,7 @@ describe('parseUserInput', () => {
     // --- Fedimint ecash ---
 
     testCases.push({
-        input: `AAAAAAAAAAUAAAAAAAAAEAAAAAAAAAABytv3ApZWgVAEsPVB/wSW7xGwEWAyXNWZnw1MZMWBBsuYhk+hrVdUAn5fOpAupYeaJ1saucJeD5t/5dIFYKYU5KY/G6aRf8cJVqfLZ3DWDbbo2VNbALxflAzR3YYOopF49G5hUC2oYattZdjM2uEtRQAAAAAAAAEAAAAAAAAAAAE6qbWNeYV/DSx5tpJz4dG3NOmT4+KY6+DmI1+bUV75VaKPsoT629eC4HQolANvFF4VLd7SOphWotT1l3WST9jJIhbvKqmyHmLMSvVVld/czTlP9LM/O2tFS6KM8SMDvxsU+PlV6ZNeIeXq1Fz1QdMmAAAAAAAAAgAAAAAAAAAAAVEMS56MnlPEm/Y0/Cn5KXjQsC8/vMfhN+E/Y4tvWfebtxVHtKPk7dhJqC3P8mR0M6cw5qyTXq4vuDN3GVWQMh1oOMAveatU88IUuno5sz2jDTX0M8bJ2ujQHKKNXwMaafQMDiWpoa8jRhv3jKpIUREAAAAAAAAEAAAAAAAAAAABPvyMsEtqen8ZCoSJ28QyELg6fxNINzdLeKHU0pLv532rjLwME41b9aFevg3+HEblxlMWyc0F1DnO0doaX0of2hv2hs1bPFXyMLPlinxfpcjRE/mylF0D7Ogm8oBHXhxQohr6Bzi4fE2iYF3/gW3mXQAAAAAAACAAAAAAAAAAAAGmwrUa8fH8xbftLJQM4HhRDsRJjOTWgOIpLSDO0i6OsIqMBqxQRBiJ9DH9ji2skiQ5s0DEKpnDQcMsvCUpIJs+6UhERT/lFzqZiqfGK4ljDkG3GkNU9kPMrL7LfW1KGtDvj5+I1hO+kKoANDfPxi66`,
+        input: simpleV0Ecash,
         type: ParserDataType.FedimintEcash,
         data: null,
     })
@@ -318,6 +320,12 @@ describe('parseUserInput', () => {
             if (invoice === complexBolt11) {
                 return complexBolt11Invoice
             }
+        },
+        validateEcash: async (ecash: string) => {
+            if (ecash === simpleV0Ecash) {
+                return 1
+            }
+            throw Error('Failed to parse')
         },
     } as FedimintBridge
 
