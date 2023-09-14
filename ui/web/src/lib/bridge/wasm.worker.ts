@@ -23,7 +23,6 @@ const initPromise = workerInit().catch(error =>
 
 async function rpcRequest(method: string, data: string): Promise<string> {
     await initPromise
-    console.info(`calling ${method} ${data}`)
     return await fedimint_rpc(method, data)
 }
 
