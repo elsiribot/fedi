@@ -46,6 +46,7 @@ jobs:
                   # TODO: for prod, regenerate certificates and convert these to secrets
                   MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
+                  MATCH_PASSWORD: 'fedibtc'
               run: |
                   nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
               continue-on-error: true
@@ -60,5 +61,6 @@ jobs:
               env:
                   MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
+                  MATCH_PASSWORD: 'fedibtc'
               run: |
                   ./scripts/ui/deploy-to-testflight.sh
