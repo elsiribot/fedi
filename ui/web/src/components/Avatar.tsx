@@ -1,5 +1,5 @@
 import * as RadixAvatar from '@radix-ui/react-avatar'
-import React from 'react'
+import React, { useState } from 'react'
 
 import StringUtils from '@fedi/common/utils/StringUtils'
 import { getIdentityColors } from '@fedi/common/utils/color'
@@ -32,10 +32,15 @@ export const Avatar: React.FC<AvatarProps> = ({
     ...props
 }) => {
     const [bgColor, textColor] = getIdentityColors(id)
+    const [isFallback, setIsFallback] = useState(!src)
+
     const combinedCss = {
         ...css,
         '--bg-color': holo ? theme.colors.white : bgColor,
         '--text-color': holo ? theme.colors.primary : textColor,
+    }
+    if (!isFallback) {
+        combinedCss['--bg-color'] = 'transparent'
     }
 
     return (
@@ -45,9 +50,17 @@ export const Avatar: React.FC<AvatarProps> = ({
             holo={holo}
             css={combinedCss}
             {...props}>
-            {src && <Image src={src} alt="" />}
-            {name && (
-                <Fallback delayMs={src ? 500 : 0}>
+            {src && (
+                <Image
+                    src={src}
+                    alt=""
+                    onLoadingStatusChange={status =>
+                        setIsFallback(status === 'error')
+                    }
+                />
+            )}
+            {name && isFallback && (
+                <Fallback>
                     {icon ? (
                         <Icon icon={icon} size={iconSizes[size]} />
                     ) : (
