@@ -46,7 +46,7 @@ const Receive: React.FC<Props> = () => {
                 }}
                 customActions={[
                     {
-                        label: t('feature.receive.create-lightning-request'),
+                        label: t('feature.receive.request-via-lightning'),
                         icon: 'QrLightning',
                         onPress: () => navigation.navigate('ReceiveLightning'),
                     },

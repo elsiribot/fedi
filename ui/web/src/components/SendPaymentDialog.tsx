@@ -178,9 +178,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                         isOfflineWalletSupported
                             ? [
                                   {
-                                      label: t(
-                                          'feature.send.send-bitcoin-offline',
-                                      ),
+                                      label: t('feature.send.send-offline'),
                                       icon: OfflineIcon,
                                       onClick: () => setIsSendingOffline(true),
                                   },
