@@ -38,7 +38,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     size={SvgImageSize.md}
                     color={theme.colors.white}
                 />
-                <Text medium style={styles(theme).titleText}>
+                <Text bold style={styles(theme).titleText}>
                     {t('words.bitcoin')}
                 </Text>
                 <Pressable onPress={() => navigation.navigate('Transactions')}>
@@ -110,8 +110,8 @@ const styles = (theme: Theme) =>
         container: {
             backgroundColor: theme.colors.orange,
             borderRadius: theme.borders.defaultRadius,
-            padding: theme.spacing.sm,
-            width: '88%',
+            padding: theme.spacing.lg,
+            width: '100%',
             minHeight: theme.sizes.walletCardHeight,
             marginTop: 0,
             borderWidth: 0,
@@ -120,12 +120,12 @@ const styles = (theme: Theme) =>
         cardWrapper: {
             flex: 1,
             justifyContent: 'space-between',
+            gap: theme.spacing.lg,
         },
         titleContainer: {
             textAlign: 'left',
             flexDirection: 'row',
             alignItems: 'center',
-            padding: theme.spacing.md,
         },
         titleText: {
             color: theme.colors.secondary,
@@ -137,15 +137,14 @@ const styles = (theme: Theme) =>
             alignItems: 'flex-end',
         },
         buttonsGroupContainer: {
-            margin: theme.spacing.sm,
             flexDirection: 'row',
             justifyContent: 'space-between',
+            gap: theme.spacing.lg,
         },
         button: {
             backgroundColor: theme.colors.secondary,
         },
         buttonContainer: {
-            margin: theme.spacing.sm,
             flex: 1,
         },
         buttonTitle: {

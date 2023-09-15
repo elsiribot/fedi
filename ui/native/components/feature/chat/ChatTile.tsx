@@ -56,27 +56,23 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     )}
                 </View>
             </View>
-            <View style={styles(theme).contents}>
-                <View style={styles(theme).topRow}>
+            <View style={styles(theme).content}>
+                <View style={styles(theme).preview}>
                     <Text
                         style={styles(theme).namePreview}
                         numberOfLines={1}
                         bold>
                         {chat.name || DEFAULT_GROUP_NAME}
                     </Text>
-                    {latestMessage?.sentAt && (
-                        <Text small style={styles(theme).timestamp}>
-                            {dateUtils.formatChatTileTimestamp(
-                                latestMessage?.sentAt,
-                            )}
-                        </Text>
-                    )}
-                </View>
-                <View style={styles(theme).bottomRow}>
                     {previewMessage ? (
                         <Text
                             caption
-                            style={styles(theme).messagePreview}
+                            style={[
+                                styles(theme).messagePreview,
+                                hasNewMessages
+                                    ? styles(theme).messagePreviewUnread
+                                    : undefined,
+                            ]}
                             numberOfLines={1}
                             {...previewTextWeight}>
                             {previewMessage}
@@ -90,13 +86,22 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                             {t('feature.chat.no-one-is-in-this-group')}
                         </Text>
                     )}
-
+                </View>
+                <View style={styles(theme).metadata}>
+                    {latestMessage?.sentAt && (
+                        <Text small style={styles(theme).timestamp}>
+                            {dateUtils.formatChatTileTimestamp(
+                                latestMessage?.sentAt,
+                            )}
+                        </Text>
+                    )}
                     {/* TODO: Implement pinned chat groups */}
                     {/* {chat.pinned && (
                         <SvgImage
                             name="Pin"
                             size={SvgImageSize.xs}
                             containerStyle={styles(theme).pinIcon}
+                            color={theme.colors.grey}
                         />
                     )} */}
                 </View>
@@ -110,8 +115,7 @@ const styles = (theme: Theme) =>
         container: {
             flexDirection: 'row',
             alignItems: 'center',
-            height: 64,
-            marginVertical: 10,
+            height: 72,
         },
         directIconContainer: {
             height: theme.sizes.lg,
@@ -124,27 +128,29 @@ const styles = (theme: Theme) =>
             height: '100%',
             flexShrink: 0,
         },
-        contents: {
+        content: {
+            flex: 1,
+            flexDirection: 'row',
+            minHeight: 48,
+        },
+        preview: {
             flex: 1,
             flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
+            gap: theme.spacing.xs,
         },
-        topRow: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            width: '100%',
-        },
-        bottomRow: {
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            width: '100%',
+        metadata: {
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            gap: theme.spacing.xs,
         },
         messagePreview: {
-            width: '85%',
+            color: theme.colors.darkGrey,
+        },
+        messagePreviewUnread: {
+            color: theme.colors.primary,
         },
         emptyMessagePreview: {
-            width: '85%',
             color: theme.colors.grey,
             fontStyle: 'italic',
         },
@@ -155,9 +161,8 @@ const styles = (theme: Theme) =>
             marginRight: theme.spacing.md,
         },
         pinIcon: {
-            width: '10%',
             alignItems: 'flex-end',
-            transform: [{ rotate: '45deg' }],
+            color: theme.colors.grey,
         },
         unreadIndicator: {
             backgroundColor: theme.colors.red,

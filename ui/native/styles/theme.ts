@@ -145,7 +145,7 @@ const theme = createTheme({
         },
         Header: {
             containerStyle: {
-                paddingHorizontal: 24,
+                paddingHorizontal: 16,
                 borderBottomColor: colors.secondary,
                 // This helps maximize the clickable area for any header buttons
                 paddingVertical: 0,

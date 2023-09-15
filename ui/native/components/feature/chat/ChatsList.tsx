@@ -43,6 +43,7 @@ const ChatsList: React.FC<{}> = () => {
     return (
         <FlatList
             style={styles(theme).container}
+            contentContainerStyle={styles(theme).content}
             data={chats}
             renderItem={renderChat}
             keyExtractor={item => `${item.id}`}
@@ -62,6 +63,9 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             paddingRight: theme.spacing.md,
+        },
+        content: {
+            paddingBottom: theme.spacing.sm,
         },
     })
 

@@ -22,6 +22,7 @@ const ChatHeader: React.FC<{}> = () => {
     return (
         <Header
             inline
+            containerStyle={styles(theme).container}
             leftContainerStyle={{ flex: 2 }}
             headerLeft={
                 <Text h2 medium>
@@ -62,8 +63,11 @@ const ChatHeader: React.FC<{}> = () => {
     )
 }
 
-const styles = (_theme: Theme) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            paddingBottom: theme.spacing.lg,
+        },
         rightContainer: {
             flex: 1,
             flexDirection: 'row',
