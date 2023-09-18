@@ -9,6 +9,8 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectChatClientStatus,
+    selectCurrency,
+    selectBtcExchangeRate,
 } from '@fedi/common/redux'
 import {
     ChatMessage as ChatMessageType,
@@ -36,6 +38,8 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const federationId = useAppSelector(selectActiveFederation)?.id
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
+    const currency = useAppSelector(selectCurrency)
+    const exchangeRate = useAppSelector(selectBtcExchangeRate)
     const [didReceiveFail, setDidReceiveFail] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -101,7 +105,13 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
     }, [handleDispatchPaymentUpdate])
 
     let extra: React.ReactNode = null
-    const messageText = makePaymentText(t, message, authenticatedMember)
+    const messageText = makePaymentText(
+        t,
+        message,
+        authenticatedMember,
+        currency,
+        exchangeRate,
+    )
 
     if (payment.status === ChatPaymentStatus.paid) {
         extra = (

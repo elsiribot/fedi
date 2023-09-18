@@ -8,6 +8,7 @@ import {
     ChatMessage,
     ChatType,
     MSats,
+    SupportedCurrency,
 } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -15,6 +16,8 @@ export const makePaymentText = (
     t: TFunction,
     message: ChatMessage,
     authenticatedMember: ChatMember | null,
+    currency: SupportedCurrency,
+    btcExchangeRate: number,
 ): string => {
     const { sentBy, sentTo, payment } = message
     const messageSentBy: string = sentBy.split('@')[0]
@@ -27,6 +30,11 @@ export const makePaymentText = (
 
     const previewStringParams = {
         name: messageSentBy,
+        fiat: `${amountUtils.formatFiat(
+            amountUtils.msatToBtc(paymentAmount as MSats) * btcExchangeRate,
+            currency,
+            { noSymbol: true },
+        )} ${currency}`,
         amount: amountUtils.formatNumber(
             amountUtils.msatToSat(paymentAmount as MSats),
         ),
