@@ -135,6 +135,19 @@ export const getFederationDefaultCurrency = (
     return null
 }
 
+export const getFederationFixedExchangeRate = (
+    metadata: ClientConfigMetadata,
+): number | null => {
+    const supportedFeatures = getSupportedFeatures(
+        metadata as ClientConfigMetadata,
+    )
+    if (supportedFeatures.includes(SupportedFeature.fixed_exchange_rate)) {
+        return Number(metadata?.fixed_exchange_rate)
+    }
+
+    return null
+}
+
 export const getFederationChatServerDomain = (
     metadata: ClientConfigMetadata,
 ): string | null => {

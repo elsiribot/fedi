@@ -126,6 +126,7 @@ export enum SupportedCurrency {
 
 export enum SupportedFeature {
     default_currency = 'default_currency',
+    fixed_exchange_rate = 'fixed_exchange_rate',
     chat_server_domain = 'chat_server_domain',
     invite_codes_disabled = 'invite_codes_disabled',
     social_recovery_disabled = 'social_recovery_disabled',
@@ -165,6 +166,8 @@ export interface ClientConfigMetadata {
     popup_end_timestamp?: string
     // 5. string[] - array of group IDs
     default_group_chats?: string
+    // 6. Switch to number
+    fixed_exchange_rate?: string
 }
 
 export enum Network {

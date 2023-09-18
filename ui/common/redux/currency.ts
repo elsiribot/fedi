@@ -2,7 +2,10 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState, selectFederationMetadata } from '.'
 import { SupportedCurrency } from '../types'
-import { getFederationDefaultCurrency } from '../utils/FederationUtils'
+import {
+    getFederationDefaultCurrency,
+    getFederationFixedExchangeRate,
+} from '../utils/FederationUtils'
 import { loadFromStorage } from './storage'
 
 type FiatPriceMap = {
@@ -167,6 +170,7 @@ export const selectCurrency = (s: CommonState) => {
 
 export const selectBtcExchangeRate = (s: CommonState) => {
     const selectedFiatCurrency = selectCurrency(s)
+    const metadata = selectFederationMetadata(s)
 
     let exchangeRate = s.currency.prices[selectedFiatCurrency] || 0
     // Special case for the CFA franc which is a fixed 650x the EUR price
@@ -176,6 +180,15 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     // Special case for CZK which is a fixed 23.5x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CZK) {
         exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
+    }
+    // Special case for Togo farmers using CFA, where a metadata override
+    // provides the exchange rate directly
+    if (metadata) {
+        const federationFixedExchangeRate =
+            getFederationFixedExchangeRate(metadata)
+        if (federationFixedExchangeRate) {
+            exchangeRate = federationFixedExchangeRate
+        }
     }
 
     return exchangeRate
