@@ -12,8 +12,8 @@ use fedimint_client_v0::db::ChronologicalOperationLogKey;
 use fedimint_client_v0::sm::OperationId;
 use fedimint_client_v0::{get_client_root_secret, ClientBuilder, ClientSecret, OperationLogEntry};
 use fedimint_core_v0::task::timeout;
-use fedimint_core_v0::Amount;
 use fedimint_core_v0::{api::GlobalFederationApi, config::FederationId, db::IDatabase};
+use fedimint_core_v0::{Amount, TieredMulti};
 use fedimint_derive_secret_v0::{ChildId, DerivableSecret};
 use fedimint_ln_client_v0::{
     network_to_currency, LightningClientGen, LightningClientModule, LightningMeta, LnPayState,
@@ -32,7 +32,9 @@ use tracing::{debug, error, info, warn};
 use v0_rocksdb::TransactionNotesKey;
 use v0_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, XmppUsernameKey};
 
-use crate::constants::{BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE};
+use crate::constants::{
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
+};
 use crate::types::{RpcLightningDetails, RpcLnState, RpcTransaction};
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -520,15 +522,24 @@ impl FederationV0 {
         Ok(())
     }
 
-    /// Receive ecash
-    /// TODO: user a better type than String
-    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
-        let ecash = parse_ecash(&ecash)?;
+    pub async fn receive_ecash_without_tx(
+        &self,
+        ecash: TieredMulti<fedimint_mint_client_v0::SpendableNote>,
+    ) -> Result<Amount> {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
         let operation_id = self.client.reissue_external_notes(ecash, ()).await?;
         self.subscribe_to_ecash_reissue(operation_id).await?;
         Ok(amount)
+    }
+
+    /// Receive ecash
+    /// TODO: user a better type than String
+    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
+        let ecash = parse_ecash(&ecash)?;
+        let amt = self.receive_ecash_without_tx(ecash).await?;
+        // TODO: save transaction
+        Ok(amt)
     }
 
     pub fn validate_ecash(ecash: String) -> Result<Amount> {
@@ -549,7 +560,6 @@ impl FederationV0 {
                 bail!(format!("Reissue failed: {e}"));
             }
         }
-        // TODO: transaction event?
 
         Ok(())
     }
@@ -558,6 +568,18 @@ impl FederationV0 {
     /// FIXME: might be better to return a typed object here and serialize at RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
         let (_, notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
+        let notes = if amount != notes.total_amount() {
+            // try to make change
+            timeout(REISSUE_ECASH_TIMEOUT, async {
+                self.receive_ecash_without_tx(notes).await
+            })
+            .await
+            .context("Failed to select notes with correct amount")??;
+            let (_, new_notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
+            new_notes
+        } else {
+            notes
+        };
         Ok(serialize_ecash(&notes))
     }
 

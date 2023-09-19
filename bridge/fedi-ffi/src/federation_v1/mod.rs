@@ -50,7 +50,10 @@ use v1_rocksdb::{
 };
 
 use crate::{
-    constants::{BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID},
+    constants::{
+        BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID,
+        REISSUE_ECASH_TIMEOUT,
+    },
     federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID,
     types::{RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr},
     utils::{display_currency, required_threashold_of, to_unix_time, unix_now},
@@ -600,15 +603,21 @@ impl FederationV1 {
         Ok(())
     }
 
-    /// Receive ecash
-    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
-        let ecash = OOBNotes::from_str(&ecash)?;
+    pub async fn receive_ecash_without_tx(&self, ecash: OOBNotes) -> Result<Amount> {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
         let operation_id = self.client.reissue_external_notes(ecash, ()).await?;
-        // FIXME: not saving operation id
         self.subscribe_to_ecash_reissue(operation_id).await?;
         Ok(amount)
+    }
+
+    /// Receive ecash
+    /// TODO: user a better type than String
+    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
+        let ecash = OOBNotes::from_str(&ecash)?;
+        let amt = self.receive_ecash_without_tx(ecash).await?;
+        // TODO: save transaction
+        Ok(amt)
     }
 
     pub fn validate_ecash(ecash: String) -> Result<Amount> {
@@ -629,8 +638,6 @@ impl FederationV1 {
                 bail!(format!("Reissue failed: {e}"));
             }
         }
-        // TODO: transaction event?
-
         Ok(())
     }
 
@@ -638,6 +645,18 @@ impl FederationV1 {
     /// FIXME: might be better to return a typed object here and serialize at RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
         let (_, notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
+        let notes = if amount != notes.total_amount() {
+            // try to make change
+            timeout(REISSUE_ECASH_TIMEOUT, async {
+                self.receive_ecash_without_tx(notes).await
+            })
+            .await
+            .context("Failed to select notes with correct amount")??;
+            let (_, new_notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
+            new_notes
+        } else {
+            notes
+        };
         Ok(notes.to_string())
     }
 
