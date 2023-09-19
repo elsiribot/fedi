@@ -173,6 +173,22 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     const metadata = selectFederationMetadata(s)
 
     let exchangeRate = s.currency.prices[selectedFiatCurrency] || 0
+
+    // Special case for Togo farmers using CFA, where a metadata override
+    // provides the exchange rate directly if the default_currency
+    // is selected
+    if (
+        metadata &&
+        metadata.default_currency &&
+        metadata.default_currency === selectedFiatCurrency
+    ) {
+        const federationFixedExchangeRate =
+            getFederationFixedExchangeRate(metadata)
+        if (federationFixedExchangeRate) {
+            exchangeRate = federationFixedExchangeRate
+            return exchangeRate
+        }
+    }
     // Special case for the CFA franc which is a fixed 650x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CFA) {
         exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
@@ -180,15 +196,6 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     // Special case for CZK which is a fixed 23.5x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CZK) {
         exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
-    }
-    // Special case for Togo farmers using CFA, where a metadata override
-    // provides the exchange rate directly
-    if (metadata) {
-        const federationFixedExchangeRate =
-            getFederationFixedExchangeRate(metadata)
-        if (federationFixedExchangeRate) {
-            exchangeRate = federationFixedExchangeRate
-        }
     }
 
     return exchangeRate
