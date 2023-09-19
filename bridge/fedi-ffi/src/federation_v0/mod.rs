@@ -450,7 +450,7 @@ impl FederationV0 {
 
         match timeout(PAY_INVOICE_TIMEOUT, async {
             while let Some(update) = updates.next().await {
-                self.update_ln_pay_states(operation_id.clone(), update.clone())
+                self.update_ln_pay_states(operation_id, update.clone())
                     .await;
                 match update {
                     LnPayState::Success { preimage } => {
@@ -794,7 +794,7 @@ impl FederationV0 {
             tracing::info!("update {:?}", update);
             last_state = Some(update);
         }
-        return last_state;
+        last_state
     }
 
     /// Return all transactions in DB
@@ -907,7 +907,7 @@ impl FederationV0 {
 
     pub async fn save_xmpp_username(&self, username: &String) {
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&XmppUsernameKey, &username).await;
+        dbtx.insert_entry(&XmppUsernameKey, username).await;
         dbtx.commit_tx().await;
     }
 

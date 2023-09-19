@@ -1,4 +1,3 @@
-use fedimint_core::config::FederationId;
 use fedimint_core::db::IDatabase;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};

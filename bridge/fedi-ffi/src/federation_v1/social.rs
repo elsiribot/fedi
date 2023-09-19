@@ -457,7 +457,7 @@ where
     /// Upload social recovery backup for mint to safekeep
     async fn social_backup(
         &self,
-        module_id: ModuleInstanceId,
+        _module_id: ModuleInstanceId,
         request: &SignedBackupRequest,
     ) -> FederationResult<()> {
         self.request_current_consensus("backup".into(), ApiRequestErased::new(request))
@@ -466,7 +466,7 @@ where
 
     async fn social_recovery(
         &self,
-        module_id: ModuleInstanceId,
+        _module_id: ModuleInstanceId,
         request: &SignedRecoveryRequest,
     ) -> FederationResult<()> {
         self.request_current_consensus("recover".into(), ApiRequestErased::new(request))

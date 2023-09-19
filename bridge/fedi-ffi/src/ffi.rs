@@ -7,7 +7,6 @@ use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 
 use anyhow::Context;
 use async_trait::async_trait;
-use fedimint_core::config::FederationId;
 use fedimint_core::db::IDatabase;
 use fedimint_core_v0::db::Database as DatabaseV0;
 use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;

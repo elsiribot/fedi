@@ -2,12 +2,8 @@ mod dev;
 pub mod social;
 
 use std::{
-    collections::HashMap,
-    default::Default,
-    str::FromStr,
-    sync::Arc,
-    time::Duration,
-    time::{SystemTime, UNIX_EPOCH},
+    collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration,
+    time::SystemTime,
 };
 
 use ::serde::{Deserialize, Serialize};
@@ -40,7 +36,6 @@ use fedimint_mint_client::{
 use fedimint_wallet_client::WalletClientGen;
 use fedimint_wallet_client::WalletClientModule;
 use futures::StreamExt;
-use hex::serde;
 use lightning_invoice::Invoice;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
@@ -519,7 +514,7 @@ impl FederationV1 {
                         .await?
                         .into_stream();
                     while let Some(update) = updates.next().await {
-                        self.update_ln_pay_states(operation_id.clone(), update.clone())
+                        self.update_ln_pay_states(operation_id, update.clone())
                             .await;
                         match update {
                             LnPayState::Success { preimage } => {
@@ -862,7 +857,7 @@ impl FederationV1 {
             Ok(recovery_client) => recovery_client,
             Err(_) => {
                 let recovery_client = self.social_recovery_start(recovery_file.clone()).await?;
-                self.save_social_recovery_state(&recovery_client.state())
+                self.save_social_recovery_state(recovery_client.state())
                     .await;
                 recovery_client
             }
@@ -962,7 +957,7 @@ impl FederationV1 {
         let remaining = approvals_required.saturating_sub(num_approvals);
 
         // Save progress to DB
-        self.save_social_recovery_state(&recovery_client.state())
+        self.save_social_recovery_state(recovery_client.state())
             .await;
 
         Ok((approvals, remaining))
@@ -1112,7 +1107,7 @@ impl FederationV1 {
             tracing::info!("update {:?}", update);
             last_state = Some(update);
         }
-        return last_state;
+        last_state
     }
 
     /// Return all transactions via operation log
@@ -1227,7 +1222,7 @@ impl FederationV1 {
 
     pub async fn save_xmpp_username(&self, username: &String) {
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&XmppUsernameKey, &username).await;
+        dbtx.insert_entry(&XmppUsernameKey, username).await;
         dbtx.commit_tx().await;
     }
 
@@ -1247,7 +1242,7 @@ impl FederationV1 {
 
     pub async fn save_social_recovery_state(&self, state: &SocialRecoveryState) {
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&SocialRecoveryStateKey(self.federation_id()), &state)
+        dbtx.insert_entry(&SocialRecoveryStateKey(self.federation_id()), state)
             .await;
         dbtx.commit_tx().await;
     }

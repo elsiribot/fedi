@@ -21,8 +21,8 @@ use fedimint_core::task::TaskGroup;
 use fedimint_core::{Amount, PeerId};
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
-use fedimint_mint_client::{MintClientExt, OOBNotes};
-use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
+use fedimint_mint_client::MintClientExt;
+use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
 use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
@@ -220,7 +220,10 @@ impl MultiFederation {
     pub async fn delete_social_recovery_state_and_id(&self) -> Result<()> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => Ok(v1.delete_social_recovery_state_and_id().await),
+            Self::V1(v1) => {
+                v1.delete_social_recovery_state_and_id().await;
+                Ok(())
+            },
         }
     }
 
@@ -236,7 +239,7 @@ impl MultiFederation {
         transaction_id: String,
         notes: String,
     ) -> anyhow::Result<()> {
-        Ok(match self {
+        match self {
             Self::V0(v0) => {
                 v0.update_transaction_notes(transaction_id.parse()?, notes)
                     .await
@@ -245,7 +248,8 @@ impl MultiFederation {
                 v1.update_transaction_notes(transaction_id.parse()?, notes)
                     .await
             }
-        })
+        };
+        Ok(())
     }
 
     pub async fn sign_lnurl_message(&self, message: &Message) -> RpcSignedLnurlMessage {

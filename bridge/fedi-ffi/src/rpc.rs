@@ -11,14 +11,12 @@ use super::types::{
 use crate::error::get_error_code;
 use anyhow::{bail, Context};
 use bitcoin::secp256k1::Message;
-use fedimint_mint_client::OOBNotes;
 use futures::Future;
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::{atomic::AtomicU64, Arc};
 pub use tokio;
 use tracing::{error, info, instrument};
@@ -735,8 +733,7 @@ mod tests {
         let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
 
         // Can't re-join a federation we're already a member of
-        assert_eq!(
-            true,
+        assert!(
             joinFederation(bridge.clone(), env_invite_code.clone())
                 .await
                 .is_err()

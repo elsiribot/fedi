@@ -279,27 +279,23 @@ pub enum RpcLnState {
 
 impl RpcLnState {
     pub fn from_ln_recv_state(opt: Option<LnReceiveState>) -> Option<RpcLnState> {
-        match opt {
-            Some(state) => Some(match state {
+        opt.map(|state| match state {
                 LnReceiveState::Created => RpcLnState::RecvState(RpcLnReceiveState::Created),
                 LnReceiveState::WaitingForPayment { invoice, timeout } => {
                     RpcLnState::RecvState(RpcLnReceiveState::WaitingForPayment { invoice, timeout })
                 }
                 LnReceiveState::Canceled { reason } => {
-                    RpcLnState::RecvState(RpcLnReceiveState::Canceled { reason: reason })
+                    RpcLnState::RecvState(RpcLnReceiveState::Canceled { reason })
                 }
                 LnReceiveState::Funded => RpcLnState::RecvState(RpcLnReceiveState::Funded),
                 LnReceiveState::AwaitingFunds => {
                     RpcLnState::RecvState(RpcLnReceiveState::AwaitingFunds)
                 }
                 LnReceiveState::Claimed => RpcLnState::RecvState(RpcLnReceiveState::Claimed),
-            }),
-            None => None,
-        }
+            })
     }
     pub fn from_ln_pay_state(opt: Option<LnPayState>) -> Option<RpcLnState> {
-        match opt {
-            Some(state) => Some(match state {
+        opt.map(|state| match state {
                 LnPayState::Created => RpcLnState::PayState(RpcLnPayState::Created),
                 LnPayState::Canceled => RpcLnState::PayState(RpcLnPayState::Canceled),
                 LnPayState::Funded => RpcLnState::PayState(RpcLnPayState::Funded),
@@ -318,9 +314,7 @@ impl RpcLnState {
                     RpcLnState::PayState(RpcLnPayState::Refunded { gateway_error })
                 }
                 LnPayState::UnexpectedError { .. } => RpcLnState::PayState(RpcLnPayState::Failed),
-            }),
-            None => None,
-        }
+            })
     }
 }
 
