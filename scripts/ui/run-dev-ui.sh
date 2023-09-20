@@ -3,6 +3,11 @@
 # exit on failure (strict)
 set -euo pipefail
 
+if [ -z "${IN_NIX_SHELL:-}" ]; then
+  >&2 echo "Workaround: restart in 'nix develop' shell"
+  exec nix develop .#cross --command "$0" "$@"
+fi
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh

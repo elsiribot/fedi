@@ -130,7 +130,7 @@ generate-bridge-bindings:
 
 # start dev UI (native + pwa). Use `just run-dev-ui interactive` for build options
 run-dev-ui mode="default":
-  export MODE={{mode}} && nix develop --command ./scripts/ui/run-dev-ui.sh
+  export MODE={{mode}} && ./scripts/ui/run-dev-ui.sh
 
 # installs the xcodes tool and installs a version of Xcode.app
 install-xcode:
