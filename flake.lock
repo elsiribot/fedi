@@ -597,17 +597,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_5"
       },
       "locked": {
-        "lastModified": 1693443491,
-        "narHash": "sha256-LDnte9U4/Gfl8eb19oPitisbzT1YS8sMTwgUz4EuWWs=",
+        "lastModified": 1694638803,
+        "narHash": "sha256-auZZb345ruFXeVRZyT7UIHGrINBFDfrok5DSmvkYw8s=",
         "ref": "justin/rel-a06-final",
-        "rev": "d4282148a79e1b645f153c7eef14b678b2c69518",
-        "revCount": 5004,
+        "rev": "6d9ba99640fa7170b4b158ba017da20c552b222f",
+        "revCount": 5018,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
         "ref": "justin/rel-a06-final",
-        "rev": "d4282148a79e1b645f153c7eef14b678b2c69518",
+        "rev": "6d9ba99640fa7170b4b158ba017da20c552b222f",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }
