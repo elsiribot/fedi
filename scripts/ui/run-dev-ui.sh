@@ -7,7 +7,6 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
-SKIP_NODE_MODULES=${SKIP_NODE_MODULES:-0}
 SKIP_BRIDGE_BUILD=${SKIP_BRIDGE_BUILD:-0}
 SKIP_PWA_BUILD=${SKIP_PWA_BUILD:-0}
 SKIP_ANDROID_BUILD=${SKIP_ANDROID_BUILD:-0}
@@ -19,18 +18,6 @@ if [[ "$MODE" == "interactive" ]]; then
   echo "Running development UI (native + PWA) in interactive mode"
   # Set to true so we can handle it in the start-ios.sh script
   SELECT_IOS_DEVICE=1
-
-  unset REPLY
-  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
-  do
-    read -p "Skip reinstall node modules? (y/n) " -n 1 -r
-    echo
-  done
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SKIP_NODE_MODULES=1
-  else
-    SKIP_NODE_MODULES=0
-  fi
 
   unset REPLY
   while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
