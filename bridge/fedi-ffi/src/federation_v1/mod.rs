@@ -50,7 +50,9 @@ use crate::{
         REISSUE_ECASH_TIMEOUT,
     },
     federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID,
-    types::{RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr},
+    types::{
+        EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr,
+    },
     utils::{display_currency, required_threashold_of, to_unix_time, unix_now},
 };
 
@@ -598,10 +600,14 @@ impl FederationV1 {
         Ok(())
     }
 
-    pub async fn receive_ecash_without_tx(&self, ecash: OOBNotes) -> Result<Amount> {
+    pub async fn receive_ecash_with_meta(
+        &self,
+        ecash: OOBNotes,
+        meta: EcashReceiveMetadata,
+    ) -> Result<Amount> {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
-        let operation_id = self.client.reissue_external_notes(ecash, ()).await?;
+        let operation_id = self.client.reissue_external_notes(ecash, meta).await?;
         self.subscribe_to_ecash_reissue(operation_id).await?;
         Ok(amount)
     }
@@ -610,8 +616,9 @@ impl FederationV1 {
     /// TODO: user a better type than String
     pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
         let ecash = OOBNotes::from_str(&ecash)?;
-        let amt = self.receive_ecash_without_tx(ecash).await?;
-        // TODO: save transaction
+        let amt = self
+            .receive_ecash_with_meta(ecash, EcashReceiveMetadata { internal: false })
+            .await?;
         Ok(amt)
     }
 
@@ -643,7 +650,8 @@ impl FederationV1 {
         let notes = if amount != notes.total_amount() {
             // try to make change
             timeout(REISSUE_ECASH_TIMEOUT, async {
-                self.receive_ecash_without_tx(notes).await
+                self.receive_ecash_with_meta(notes, EcashReceiveMetadata { internal: true })
+                    .await
             })
             .await
             .context("Failed to select notes with correct amount")??;
@@ -1133,7 +1141,7 @@ impl FederationV1 {
 
                     match op.1.operation_type() {
                         LIGHTNING_OPERATION_TYPE => match op.1.meta() {
-                            LightningMeta::Pay { invoice, .. } => RpcTransaction {
+                            LightningMeta::Pay { invoice, .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
@@ -1149,8 +1157,8 @@ impl FederationV1 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
-                            },
-                            LightningMeta::Receive { invoice, .. } => RpcTransaction {
+                            }),
+                            LightningMeta::Receive { invoice, .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
@@ -1166,24 +1174,34 @@ impl FederationV1 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
-                            },
+                            }),
                         },
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintMeta = op.1.meta();
                             match mint_meta.variant {
-                                MintMetaVariants::Reissuance { .. } => RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
-                                    created_at: to_unix_time(op.0.creation_time)
-                                        .expect("unix time should exist"),
-                                    direction: "receive".to_string(),
-                                    notes,
-                                    ln_state: None,
-                                    amount: RpcAmount(mint_meta.amount),
-                                    lightning: None,
-                                },
+                                MintMetaVariants::Reissuance { .. } => {
+                                    let internal = serde_json::from_value::<EcashReceiveMetadata>(
+                                        mint_meta.extra_meta,
+                                    )
+                                    .map_or(false, |x| x.internal);
+                                    if !internal {
+                                        Some(RpcTransaction {
+                                            id: op.0.operation_id.to_string(),
+                                            created_at: to_unix_time(op.0.creation_time)
+                                                .expect("unix time should exist"),
+                                            direction: "receive".to_string(),
+                                            notes,
+                                            ln_state: None,
+                                            amount: RpcAmount(mint_meta.amount),
+                                            lightning: None,
+                                        })
+                                    } else {
+                                        None
+                                    }
+                                }
                                 MintMetaVariants::SpendOOB {
                                     requested_amount, ..
-                                } => RpcTransaction {
+                                } => Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
                                     created_at: to_unix_time(op.0.creation_time)
                                         .expect("unix time should exist"),
@@ -1192,7 +1210,7 @@ impl FederationV1 {
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),
                                     lightning: None,
-                                },
+                                }),
                             }
                         }
                         _ => {
@@ -1204,7 +1222,11 @@ impl FederationV1 {
                     }
                 },
             );
-        futures::future::join_all(futures).await
+        futures::future::join_all(futures)
+            .await
+            .into_iter()
+            .flatten()
+            .collect()
     }
 
     pub async fn update_transaction_notes(&self, transaction: OperationId, notes: String) {

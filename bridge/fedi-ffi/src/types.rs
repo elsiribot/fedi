@@ -379,3 +379,8 @@ pub struct RpcXmppCredentials {
     pub keypair_seed: String,
     pub username: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EcashReceiveMetadata {
+    pub internal: bool,
+}
