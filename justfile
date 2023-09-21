@@ -53,6 +53,7 @@ check-wasm:
   nix develop .#cross -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
 build-wasm:
+  >&2 echo '⚠️ This is a development build of the wasm bundle, do not commit the output from this ⚠️'
   ./scripts/build-wasm.sh --dev
 
 release-wasm:
