@@ -223,7 +223,7 @@ impl MultiFederation {
             Self::V1(v1) => {
                 v1.delete_social_recovery_state_and_id().await;
                 Ok(())
-            },
+            }
         }
     }
 

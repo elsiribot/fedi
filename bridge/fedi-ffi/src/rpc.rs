@@ -196,7 +196,6 @@ async fn updateTransactionNotes(
     transaction_id: String,
     notes: String,
 ) -> anyhow::Result<()> {
-    // TODO
     bridge
         .update_transaction_notes(federation_id, transaction_id, notes)
         .await?;
@@ -218,12 +217,6 @@ async fn recoverFromMnemonic(
     mnemonic: Vec<String>,
 ) -> anyhow::Result<Option<String>> {
     bridge.recover_from_mnemonic(federation_id, mnemonic).await
-
-    // let mnemonic = mnemonic.join(" ");
-    // let mnemonic: bip39::Mnemonic = mnemonic.parse()?;
-
-    // let username = bridge.restore_federation(federation_id, mnemonic).await?;
-    // Ok(username)
 }
 
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -703,7 +696,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_fedi_file_migration() -> anyhow::Result<()> {
+    async fn test_multi_bridge_compatibility() -> anyhow::Result<()> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()
@@ -712,7 +705,6 @@ mod tests {
 
         let event_sink = Arc::new(FakeEventSink::new());
         // This fixture contains a "datadir" with 1 global database and one federations database (fedi alpha mutinynet)
-        // TODO: copy the contents of this directory into a tmpdir
         let data_dir = create_data_dir();
         let fixture_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
@@ -733,11 +725,9 @@ mod tests {
         let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
 
         // Can't re-join a federation we're already a member of
-        assert!(
-            joinFederation(bridge.clone(), env_invite_code.clone())
-                .await
-                .is_err()
-        );
+        assert!(joinFederation(bridge.clone(), env_invite_code.clone())
+            .await
+            .is_err());
 
         // listTransactions works
         let rpc_federation_id = RpcFederationId(federation.federation_id());

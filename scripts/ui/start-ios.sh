@@ -60,7 +60,6 @@ run_ios_result=0
 # iOS dev builds don't work in nix yet...
 # But if you run `npx react-native run-ios`` in a non-nix shell
 # just one time it should succeed... then iOS dev builds will work fine in mprocs
-# TODO: what happens if we don't use npx here?
 nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID || {
     echo -e "\n\x1B[31;1m======================================================"
     echo "   iOS dev builds don't work in nix yet... if you see the following error in the logs above:"

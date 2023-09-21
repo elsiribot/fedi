@@ -31,7 +31,6 @@ impl ClientModuleInit for FediSocialClientInit {
             .expect("no version conficts")
     }
 
-    // FIXME: use some of these things like
     async fn init(
         &self,
         _federation_id: FederationId,

@@ -152,7 +152,7 @@
         rustPackagesFinal = builtins.mapAttrs
           (name: package: fmLib.replaceGitHash {
             # FIXME: don't hard-code this. But I don't know how to get it from craneLib
-            inherit name package; placeholder = "11234569abcdef7afa1d2683a099c7af48a523c1";
+            inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
           })
           rustPackages;
 
