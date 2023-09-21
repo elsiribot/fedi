@@ -13,7 +13,7 @@
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-final&rev=d4282148a79e1b645f153c7eef14b678b2c69518";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=justin/rel-a06-final&rev=6d9ba99640fa7170b4b158ba017da20c552b222f";
     };
     # Fedi at consensus version 0. This is used to test bridge against old federations
     fedi-v0 = {
