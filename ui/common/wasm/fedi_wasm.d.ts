@@ -1,6 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+* Returns a blob with log contents
+* @returns {any}
+*/
+export function get_logs(): any;
+/**
 * @param {any} event_sink
 * @returns {Promise<void>}
 */
@@ -11,19 +16,14 @@ export function fedimint_initialize(event_sink: any): Promise<void>;
 * @returns {Promise<string>}
 */
 export function fedimint_rpc(method: string, payload: string): Promise<string>;
-/**
-* Returns a blob with log contents
-* @returns {any}
-*/
-export function get_logs(): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly get_logs: () => number;
   readonly fedimint_initialize: (a: number) => number;
   readonly fedimint_rpc: (a: number, b: number, c: number, d: number) => number;
-  readonly get_logs: () => number;
   readonly rustsecp256k1zkp_v0_7_0_default_illegal_callback_fn: (a: number, b: number) => void;
   readonly rustsecp256k1zkp_v0_7_0_default_error_callback_fn: (a: number, b: number) => void;
   readonly rustsecp256k1_v0_6_1_context_create: (a: number) => number;

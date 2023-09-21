@@ -1,9 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export function get_logs(): number;
 export function fedimint_initialize(a: number): number;
 export function fedimint_rpc(a: number, b: number, c: number, d: number): number;
-export function get_logs(): number;
 export function rustsecp256k1zkp_v0_7_0_default_illegal_callback_fn(a: number, b: number): void;
 export function rustsecp256k1zkp_v0_7_0_default_error_callback_fn(a: number, b: number): void;
 export function rustsecp256k1_v0_6_1_context_create(a: number): number;

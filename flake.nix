@@ -192,6 +192,7 @@
             ]
             ++ [
               pkgs.git
+              pkgs.curl # wasm build needs it for some reason
               pkgs.wasm-pack
               pkgs.wasm-bindgen-cli
               pkgs.binaryen
