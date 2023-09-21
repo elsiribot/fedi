@@ -5,6 +5,8 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
+FLAVOR=${FLAVOR:-production}
+
 # Check if git user + email to make sure we can commit when running in CI 
 if [ -z "$(git config --global --get user.email)" ]; then
   git config --global user.email "dev@fedibtc.com"
@@ -33,7 +35,7 @@ echo "Pushing version commit to git branch"
 git add package.json android/app/build.gradle && git commit -m "chore: bump version for ${NEW_VERSION}" && git push
 echo "Saving new version + APK path as outputs for next steps in job"
 echo "NEW_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
-echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/production/release/app-production-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
+echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/$FLAVOR/release/app-$FLAVOR-release-${NEW_VERSION}.apk" >> $GITHUB_OUTPUT
 echo "Saving latest commit to output for 'call-deployment-workflow' jobs"
 echo "COMMIT_TO_DEPLOY=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 popd
