@@ -56,14 +56,12 @@ jobs:
             - name: Build gateway-pkgs
               run: nix build -L .#gateway-pkgs
 
-            - name: Build dbtool-pkgs
-              run: nix build -L .#dbtool-pkgs
-
             - name: Build fedi-monitoring
               run: nix build -L .#fedi-monitoring
 
             - name: Test bridge
-              run: nix build -L .#testBridge
+              # TODO: turn this into a nix derivation
+              run: ./scripts/test-bridge-all.sh
 
     build-android:
         name: 'Build - android'

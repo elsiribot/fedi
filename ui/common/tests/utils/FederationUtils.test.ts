@@ -12,11 +12,12 @@ const SAMPLE_CHAT_SERVER_DOMAIN = 'chat.dev.fedibtc.com'
 const baseFed = {
     id: 'fedid',
     name: 'testfed',
-    connectInfo: 'tesfedconnectinfo',
+    inviteCode: 'tesfedinvitecode',
     nodes: { '0': { name: 'alpha', url: 'alphaurl' } },
     balance: 0 as MSats,
     socialRecoveryActive: false,
     network: Network.regtest,
+    version: 0,
 }
 
 const fedWithNoMetadata: Federation = {

@@ -3,34 +3,44 @@ pub use fedi_social_common::*;
 use fedi_social_common::config::FediSocialClientConfig;
 use fedi_social_common::{FediSocialCommonGen, FediSocialModuleTypes};
 use fedimint_client::derivable_secret::DerivableSecret;
-use fedimint_client::module::gen::ClientModuleGen;
+use fedimint_client::module::init::ClientModuleInit;
 use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
+use fedimint_core::api::{DynGlobalApi, DynModuleApi};
+use fedimint_core::config::FederationId;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
 use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::ExtendsCommonModuleGen;
+use fedimint_core::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
 
 #[derive(Debug, Clone)]
-pub struct FediSocialClientGen;
+pub struct FediSocialClientInit;
 
-impl ExtendsCommonModuleGen for FediSocialClientGen {
+impl ExtendsCommonModuleInit for FediSocialClientInit {
     type Common = FediSocialCommonGen;
 }
 
 #[apply(async_trait_maybe_send!)]
-impl ClientModuleGen for FediSocialClientGen {
+impl ClientModuleInit for FediSocialClientInit {
     type Module = FediSocialClientModule;
-    type Config = FediSocialClientConfig;
+
+    fn supported_api_versions(&self) -> MultiApiVersion {
+        MultiApiVersion::try_from_iter([ApiVersion { major: 0, minor: 0 }])
+            .expect("no version conficts")
+    }
 
     async fn init(
         &self,
-        _cfg: Self::Config,
+        _federation_id: FederationId,
+        _cfg: FediSocialClientConfig,
         _db: Database,
+        _api_version: ApiVersion,
         _module_root_secret: DerivableSecret,
         _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
+        _api: DynGlobalApi,
+        _module_api: DynModuleApi,
     ) -> anyhow::Result<Self::Module> {
         Ok(FediSocialClientModule {})
     }
@@ -44,9 +54,7 @@ impl ClientModule for FediSocialClientModule {
     type ModuleStateMachineContext = ();
     type States = FediSocialClientStates;
 
-    fn context(&self) -> Self::ModuleStateMachineContext {
-        ()
-    }
+    fn context(&self) -> Self::ModuleStateMachineContext {}
 
     fn input_amount(
         &self,

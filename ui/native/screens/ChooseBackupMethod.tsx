@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
-import { selectFederationMetadata } from '@fedi/common/redux'
+import { selectActiveFederation } from '@fedi/common/redux'
 import { shouldShowSocialRecovery } from '@fedi/common/utils/FederationUtils'
 
 import HoloCard from '../components/ui/HoloCard'
@@ -21,7 +21,7 @@ export type Props = NativeStackScreenProps<
 const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
+    const activeFederation = useAppSelector(selectActiveFederation)
     // TODO: Uncomment when bridge function is ready
     // const { locateRecoveryFile } = useBridge()
     //
@@ -48,8 +48,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const showSocialRecovery =
-        activeFederationMetadata &&
-        shouldShowSocialRecovery(activeFederationMetadata)
+        activeFederation && shouldShowSocialRecovery(activeFederation)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

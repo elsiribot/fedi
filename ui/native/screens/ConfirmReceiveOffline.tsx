@@ -35,15 +35,9 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     useEffect(() => {
         validateEcash(ecash)
-            .then(res => {
-                if (res.valid) {
-                    setAmount(res.amount)
-                } else {
-                    setError(new Error('errors.invalid-ecash-token'))
-                }
-            })
-            .catch(err => {
-                setError(err)
+            .then(amt => setAmount(amt))
+            .catch(() => {
+                setError(new Error('errors.invalid-ecash-token'))
             })
     }, [ecash, validateEcash])
 
@@ -65,7 +59,6 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 navigation.navigate('ReceiveSuccess', {
                     // TODO: Fill out other fields? Missing some required Transaction fields.
                     tx: {
-                        offline: { claimed: true },
                         amount,
                     } as Transaction,
                 })

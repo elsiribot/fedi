@@ -1,18 +1,25 @@
-use fedimint_core::config::FederationId;
-use fedimint_core::db::{Database, IDatabase};
-use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::db::IDatabase;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{apply, async_trait_maybe_send, impl_db_lookup, impl_db_record};
+use fedimint_core::{apply, async_trait_maybe_send};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::SystemTime;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
     /// Database to store all federation joined
-    async fn global_db(&self) -> anyhow::Result<Database>;
-    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>>;
-    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()>;
+    async fn global_database_v0(&self) -> anyhow::Result<fedimint_core_v0::db::Database>;
+    // Dpc proposed alternative: open_federation_db(federation_id) which just tries each version in descending order
+    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>>;
+    /// FIXME: can I get rid of this?
+    async fn federation_database_v0(
+        &self,
+        id: &fedimint_core_v0::config::FederationId,
+    ) -> anyhow::Result<fedimint_core_v0::db::Database>;
+    async fn federation_idb_v0(
+        &self,
+        id: &fedimint_core_v0::config::FederationId,
+    ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>>;
+    async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
     /// convert a relative path to a path understood by the platform.
@@ -20,65 +27,3 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
 }
 
 pub type Storage = Arc<dyn IStorage>;
-
-#[repr(u8)]
-enum BridgeDbPrefix {
-    JoinedFederations = 0xb0,
-    ClientConfig = 0xb1,
-    XmppUsername = 0xb2,
-    FederationConnectInfo = 0xb3,
-    LastBackupTimestamp = 0xb4,
-}
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederation(pub FederationId);
-
-#[derive(Clone, Debug, Decodable, Encodable)]
-pub struct JoinedFederationsPrefix;
-
-impl_db_record!(
-    key = JoinedFederation,
-    value = (),
-    db_prefix = BridgeDbPrefix::JoinedFederations,
-);
-
-impl_db_lookup!(
-    key = JoinedFederation,
-    query_prefix = JoinedFederationsPrefix
-);
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct FediClientConfigKey;
-
-impl fedimint_core::db::DatabaseRecord for FediClientConfigKey {
-    const DB_PREFIX: u8 = BridgeDbPrefix::ClientConfig as u8;
-    type Key = Self;
-    type Value = String;
-}
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct XmppUsername;
-
-impl_db_record!(
-    key = XmppUsername,
-    value = String,
-    db_prefix = BridgeDbPrefix::XmppUsername,
-);
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct FederationConnectInfo;
-
-impl fedimint_core::db::DatabaseRecord for FederationConnectInfo {
-    const DB_PREFIX: u8 = BridgeDbPrefix::FederationConnectInfo as u8;
-    type Key = Self;
-    type Value = String;
-}
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct LastBackupTimestamp;
-
-impl fedimint_core::db::DatabaseRecord for LastBackupTimestamp {
-    const DB_PREFIX: u8 = BridgeDbPrefix::LastBackupTimestamp as u8;
-    type Key = Self;
-    type Value = SystemTime;
-}

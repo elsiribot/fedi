@@ -17,16 +17,16 @@ interface Props {
 
 export const InviteMemberDialog: React.FC<Props> = props => {
     const { t } = useTranslation()
-    const connectInfo = useAppSelector(selectActiveFederation)?.connectInfo
+    const inviteCode = useAppSelector(selectActiveFederation)?.inviteCode
 
-    if (!connectInfo) return null
+    if (!inviteCode) return null
 
     return (
         <Dialog title={t('feature.federations.federation-invite')} {...props}>
             <Content>
-                <QRCode data={connectInfo.toUpperCase()} />
+                <QRCode data={inviteCode.toUpperCase()} />
                 <CopyInput
-                    value={connectInfo}
+                    value={inviteCode}
                     onCopyMessage={t(
                         'feature.federations.copied-federation-invite',
                     )}

@@ -104,25 +104,25 @@ let
     export CC_armv7_linux_androideabi="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_armv7_linux_androideabi="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_armv7_linux_androideabi="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
-    export LDFLAGS_armv7_linux_androideabi="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/arm-linux-androideabi/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/arm-linux-androideabi$` -L ${fake-libgcc-arm}/lib"
+    export LDFLAGS_armv7_linux_androideabi="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/arm-linux-androideabi/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/arm-linux-androideabi$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt -type d | grep /lib64/clang/12.0.5/lib/linux/arm$` -L ${fake-libgcc-arm}/lib"
     export LDFLAGS_armv7_linux_androideabi="$LDFLAGS_armv7_linux_androideabi --compress-debug-sections=zlib"
 
     export CC_aarch64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_aarch64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_aarch64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
-    export LDFLAGS_aarch64_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/aarch64-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/aarch64-linux-android$` -L ${fake-libgcc-aarch64}/lib"
+    export LDFLAGS_aarch64_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/aarch64-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/aarch64-linux-android$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt -type d | grep /lib64/clang/12.0.5/lib/linux/aarch64$` -L ${fake-libgcc-aarch64}/lib"
     export LDFLAGS_aarch64_linux_android="$LDFLAGS_aarch64_linux_android --compress-debug-sections=zlib"
 
     export CC_x86_64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_x86_64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_x86_64_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
-    export LDFLAGS_x86_64_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/x86_64-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/x86_64-linux-android$` -L ${fake-libgcc-x86_64}/lib"
+    export LDFLAGS_x86_64_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/x86_64-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/x86_64-linux-android$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt -type d | grep /lib64/clang/12.0.5/lib/linux/x86_64$` -L ${fake-libgcc-x86_64}/lib"
     export LDFLAGS_x86_64_linux_android="$LDFLAGS_x86_64_linux_android --compress-debug-sections=zlib"
 
     export CC_i686_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang$`"
     export CXX_i686_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/clang++$`"
     export LD_i686_linux_android="`find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ | grep bin/ld$`"
-    export LDFLAGS_i686_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/i686-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/i686-linux-android$` -L ${fake-libgcc-i386}/lib"
+    export LDFLAGS_i686_linux_android="-L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/i686-linux-android/30$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/ -type d | grep sysroot/usr/lib/i686-linux-android$` -L `find ${androidSdk}/share/android-sdk/ndk-bundle/toolchains/llvm/prebuilt -type d | grep /lib64/clang/12.0.5/lib/linux/i386$` -L ${fake-libgcc-i386}/lib"
     export LDFLAGS_i686_linux_android="$LDFLAGS_i686_linux_android --compress-debug-sections=zlib"
   '';
 
@@ -185,59 +185,22 @@ let
     "rustfmt"
   ]);
 
-  cargoWasm32Hack = pkgs.writeShellScriptBin
-    "cargo"
-    ''
-      if grep -q "wasm32-unknown-unknown" <<< "$@" || [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-unknown" ] ; then
-        >&2 echo "Patching your wasm32 build"
-
-        export CARGO_PROFILE_RELEASE_DEBUG=0
-        export CARGO_PROFILE_RELEASE_LTO=fat
-        export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
-        export CARGO_PROFILE_RELEASE_OPT_LEVEL=z
-        export CARGO_PROFILE_RELEASE_PANIC=abort
-        export CARGO_PROFILE_RELEASE_STRING=1
-
-        # Use `Cargo.wasm32.lock` in place of the normal `Cargo.lock`
-        root="$(${fenix.packages.${system}.stable.cargo}/bin/cargo metadata --no-deps --format-version 1 | jq -r '.workspace_root')"
-        cp "$root/Cargo.lock" "$root/Cargo.native.lock"
-        cp "$root/Cargo.wasm32.lock" "$root/Cargo.lock"
-
-        # Restore files back to their place on exit
-        function restore() {
-          cp "$root/Cargo.lock" "$root/Cargo.wasm32.lock"
-          cp "$root/Cargo.native.lock" "$root/Cargo.lock"
-        }
-        trap restore EXIT
-
-        ${fenix.packages.${system}.stable.cargo}/bin/cargo \
-          --config 'patch.crates-io.ring.git="https://github.com/fedibtc/ring"' \
-          --config 'patch.crates-io.ring.rev="ef36b9371e0ec5d465db024bb15930c5dc499dbd"' \
-          "$@"
-      else
-        exec ${fenix.packages.${system}.stable.cargo}/bin/cargo "$@"
-      fi
-    '';
-
   fenixToolchainCrossAll = with fenix.packages.${system}; combine ([
-    # HACK: We need to conditionally (only for wasm32) patch `ring`
-    # and cargo can't do it natively, so we wrap `cargo` binary into
-    # our own wrapper.
-    cargoWasm32Hack
+    stable.cargo
     stable.rustc
   ] ++ (lib.attrsets.mapAttrsToList
     (attr: target: targets.${target.name}.stable.rust-std)
     crossTargets));
 
   fenixToolchainCrossWasm = with fenix.packages.${system}; combine ([
-    cargoWasm32Hack
+    stable.cargo
     stable.rustc
     targets.wasm32-unknown-unknown.stable.rust-std
   ]);
 
   fenixToolchainCross = builtins.mapAttrs
     (attr: target: with fenix.packages.${system}; combine [
-      cargoWasm32Hack
+      stable.cargo
       stable.rustc
       targets.${target.name}.stable.rust-std
     ])

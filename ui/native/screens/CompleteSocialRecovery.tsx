@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
@@ -11,10 +11,7 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import {
-    completeSocialRecovery,
-    selectActiveFederation,
-} from '@fedi/common/redux'
+import { completeSocialRecovery } from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
 import { Images } from '../assets/images'
@@ -40,7 +37,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { socialRecoveryApprovals } = useBridge()
-    const activeFederation = useAppSelector(selectActiveFederation)
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
@@ -69,19 +65,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         getRecoveryAssistCode()
     }, [navigation, recoveryQr, toast])
 
-    const socialRecoveryHandler = useCallback(
-        (event: SocialRecoveryEvent) => {
-            // Ignore all events not from the activeFederation
-            // TODO: Double-check that the bridge emits this event with
-            // the federation ID and not the federation name
-            if (activeFederation!.id !== event.federationId) {
-                return
-            }
-        },
-        [activeFederation],
-    )
-
-    // ask bridge every second
+    // ask bridge for social recovery status every second
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
@@ -103,14 +87,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         socialRecoveryApprovals,
         setApprovals,
     ])
-
-    useEffect(() => {
-        const unsubscribe = fedimint.addListener(
-            'socialRecovery',
-            socialRecoveryHandler,
-        )
-        return unsubscribe
-    }, [navigation, socialRecoveryHandler])
 
     useEffect(() => {
         const completeRecovery = async () => {

@@ -1,10 +1,9 @@
-use std::collections::{BTreeMap, BTreeSet};
-use std::ffi::OsString;
+use std::collections::BTreeMap;
 
 use common::common::{SignedRecoveryRequest, VerificationDocument};
 use common::{
     FediSocialCommonGen, FediSocialConsensusItem, FediSocialInput, FediSocialModuleTypes,
-    FediSocialOutput, FediSocialOutputOutcome,
+    FediSocialOutputOutcome,
 };
 pub use fedi_social_common as common;
 
@@ -15,17 +14,16 @@ use common::config::{
 };
 use common::db::DbKeyPrefix;
 use fedimint_core::config::{
-    ClientModuleConfig, ConfigGenModuleParams, DkgResult, ServerModuleConfig,
-    ServerModuleConsensusConfig, TypedServerModuleConfig, TypedServerModuleConsensusConfig,
+    ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
+    TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{Database, DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
-use fedimint_core::module::interconnect::ModuleInterconect;
 use fedimint_core::module::{
     api_endpoint, ApiEndpoint, ApiError, ConsensusProposal, CoreConsensusVersion,
-    ExtendsCommonModuleGen, InputMeta, ModuleConsensusVersion, ModuleError, PeerHandle,
-    ServerModuleGen, SupportedModuleApiVersions, TransactionItemAmount,
+    ExtendsCommonModuleInit, InputMeta, ModuleCommon, ModuleConsensusVersion, ModuleError,
+    PeerHandle, ServerModuleInit, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::TaskGroup;
@@ -50,17 +48,21 @@ use common::db::{
 #[derive(Clone, Debug)]
 pub struct FediSocialGen;
 
-impl ExtendsCommonModuleGen for FediSocialGen {
+impl ExtendsCommonModuleInit for FediSocialGen {
     type Common = FediSocialCommonGen;
 }
 
 #[async_trait]
-impl ServerModuleGen for FediSocialGen {
+impl ServerModuleInit for FediSocialGen {
     type Params = FediSocialGenParams;
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
         &[ModuleConsensusVersion(0)]
+    }
+
+    fn supported_api_versions(&self) -> SupportedModuleApiVersions {
+        SupportedModuleApiVersions::from_raw(1, 0, &[(0, 0)])
     }
 
     async fn init(
@@ -133,16 +135,11 @@ impl ServerModuleGen for FediSocialGen {
     fn get_client_config(
         &self,
         config: &ServerModuleConsensusConfig,
-    ) -> anyhow::Result<ClientModuleConfig> {
+    ) -> anyhow::Result<FediSocialClientConfig> {
         let config = FediSocialConsensusConfig::from_erased(config)?;
-        Ok(ClientModuleConfig::from_typed(
-            config.kind(),
-            config.version(),
-            &FediSocialClientConfig {
-                federation_pk_set: config.pk_set.clone(),
-            },
-        )
-        .expect("Serialization can't fail"))
+        Ok(FediSocialClientConfig {
+            federation_pk_set: config.pk_set,
+        })
     }
 
     fn validate_config(
@@ -225,10 +222,6 @@ impl ServerModule for FediSocial {
     type Gen = FediSocialGen;
     type VerificationCache = FediSocialVerificationCache;
 
-    fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw(0, 0, &[(0, 0)])
-    }
-
     async fn await_consensus_proposal<'a>(
         &'a self,
         dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
@@ -245,13 +238,13 @@ impl ServerModule for FediSocial {
         ConsensusProposal::new_auto_trigger(vec![])
     }
 
-    async fn begin_consensus_epoch<'a, 'b>(
+    async fn process_consensus_item<'a, 'b>(
         &'a self,
-        _dbtx: &mut ModuleDatabaseTransaction<'b, ModuleInstanceId>,
-        _consensus_items: Vec<(PeerId, FediSocialConsensusItem)>,
-        _consensu_peers: &BTreeSet<PeerId>,
-    ) -> Vec<PeerId> {
-        Default::default()
+        _dbtx: &mut ModuleDatabaseTransaction<'b>,
+        _consensus_item: <Self::Common as ModuleCommon>::ConsensusItem,
+        _peer_id: PeerId,
+    ) -> anyhow::Result<()> {
+        unimplemented!();
     }
 
     fn build_verification_cache<'a>(
@@ -261,49 +254,22 @@ impl ServerModule for FediSocial {
         FediSocialVerificationCache
     }
 
-    async fn validate_input<'a, 'b>(
-        &self,
-        _interconnect: &dyn ModuleInterconect,
-        _dbtx: &mut ModuleDatabaseTransaction<'b, ModuleInstanceId>,
+    async fn process_input<'a, 'b, 'c>(
+        &'a self,
+        _dbtx: &mut ModuleDatabaseTransaction<'c>,
+        _input: &'b <Self::Common as ModuleCommon>::Input,
         _verification_cache: &Self::VerificationCache,
-        _input: &'a FediSocialInput,
     ) -> Result<InputMeta, ModuleError> {
         unimplemented!();
     }
 
-    async fn apply_input<'a, 'b, 'c>(
+    async fn process_output<'a, 'b>(
         &'a self,
-        _interconnect: &'a dyn ModuleInterconect,
-        _dbtx: &mut ModuleDatabaseTransaction<'c, ModuleInstanceId>,
-        _input: &'b FediSocialInput,
-        _cache: &Self::VerificationCache,
-    ) -> Result<InputMeta, ModuleError> {
-        unimplemented!();
-    }
-
-    async fn validate_output(
-        &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-        _output: &FediSocialOutput,
-    ) -> Result<TransactionItemAmount, ModuleError> {
-        unimplemented!();
-    }
-
-    async fn apply_output<'a, 'b>(
-        &'a self,
-        _dbtx: &mut ModuleDatabaseTransaction<'b, ModuleInstanceId>,
-        _output: &'a FediSocialOutput,
+        _dbtx: &mut ModuleDatabaseTransaction<'b>,
+        _output: &'a <Self::Common as ModuleCommon>::Output,
         _out_point: OutPoint,
     ) -> Result<TransactionItemAmount, ModuleError> {
-        unimplemented!();
-    }
-
-    async fn end_consensus_epoch<'a, 'b>(
-        &'a self,
-        _consensus_peers: &BTreeSet<PeerId>,
-        _dbtx: &mut ModuleDatabaseTransaction<'b, ModuleInstanceId>,
-    ) -> Vec<PeerId> {
-        Default::default()
+        unimplemented!()
     }
 
     async fn output_status(
@@ -437,12 +403,10 @@ impl FediSocial {
 
         debug!(id = %request.id, "Received social recovery request");
 
-        let Some(backup) = dbtx
-            .get_value(&BackupId(request.id.0))
-            .await else {
-                return Err(ApiError::bad_request(
-                    "invalid request: backup id not found".into(),
-                ));
+        let Some(backup) = dbtx.get_value(&BackupId(request.id.0)).await else {
+            return Err(ApiError::bad_request(
+                "invalid request: backup id not found".into(),
+            ));
         };
 
         if request.verification_doc.id() != backup.verification_doc_hash {
@@ -479,11 +443,8 @@ impl FediSocial {
 
         // TODO: guardian auth needed here
 
-        let Some(recovery) = dbtx
-            .get_value(&request)
-            .await
-             else {
-                return Ok(None);
+        let Some(recovery) = dbtx.get_value(&request).await else {
+            return Ok(None);
         };
 
         Ok(Some(recovery.verification_doc))
@@ -512,22 +473,16 @@ impl FediSocial {
             return Err(ApiError::bad_request("unauthorized".into()));
         }
 
-        let Some(recovery) = dbtx
-            .get_value(&RecoveryId(request.0))
-            .await
-             else {
-                return Err(ApiError::bad_request(
-                    "invalid request: recovery id not found".into(),
-                ));
+        let Some(recovery) = dbtx.get_value(&RecoveryId(request.0)).await else {
+            return Err(ApiError::bad_request(
+                "invalid request: recovery id not found".into(),
+            ));
         };
 
-        let Some(backup) = dbtx
-            .get_value(&BackupId(request.0))
-            .await
-             else {
-                return Err(ApiError::bad_request(
-                    "invalid request: backup id not found".into(),
-                ));
+        let Some(backup) = dbtx.get_value(&BackupId(request.0)).await else {
+            return Err(ApiError::bad_request(
+                "invalid request: backup id not found".into(),
+            ));
         };
 
         info!(id = %request.0, "Creating social recovery decryption key");

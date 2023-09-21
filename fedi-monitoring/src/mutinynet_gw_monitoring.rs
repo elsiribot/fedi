@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 
 use fedimint_core::{
     config::ClientConfig,
-    task::{timeout, RwLock, TaskGroup},
+    task::{timeout, RwLock},
     Amount,
 };
 use fedimint_ln_client::LightningClientExt;
@@ -84,8 +84,7 @@ pub async fn check_mutinynet(
     state: Arc<RwLock<CheckState>>,
 ) -> anyhow::Result<()> {
     let interval_time = CHECK_INTERVAL_TIME;
-    let mut tg = TaskGroup::new();
-    let client = build_client(&cfg, &mut tg).await?;
+    let client = build_client(&cfg).await?;
     if let Some(gateway_public_key) = &gateway_public_key {
         client.set_active_gateway(gateway_public_key).await?;
     }

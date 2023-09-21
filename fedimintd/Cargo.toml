@@ -9,10 +9,6 @@ description = "fedimintd with custom fedi modules"
 name = "fedimintd"
 path = "src/main.rs"
 
-[[bin]]
-name = "distributedgen"
-path = "src/bin/distributedgen.rs"
-
 [dependencies]
 anyhow = "1.0.66"
 fedimintd = { workspace = true }

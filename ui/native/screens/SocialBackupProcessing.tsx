@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import LineBreak from '../components/ui/LineBreak'
@@ -28,27 +27,6 @@ const SocialBackupProcessing: React.FC<Props> = ({
     const { videoFilePath } = route.params
     const [percentComplete, setPercentComplete] = useState<number>(0)
     const [uploadStarted, setUploadStarted] = useState(false)
-
-    // Registers an event handler listening for recovery file creation events
-    useEffect(() => {
-        const unsubscribe = fedimint.addListener(
-            'recoveryFileCreation',
-            event => {
-                console.info(event)
-                if (event.type === 'progress') {
-                    setPercentComplete(event.percentComplete)
-                } else if (event.type === 'complete') {
-                    navigation.replace('SocialBackupCloudUpload')
-                } else if (event.type === 'failed') {
-                    // TODO: Implement localized errors
-                    // getError(event.errorCode)
-                    toast?.show('Recovery file creation failed', 3000)
-                }
-            },
-        )
-
-        return unsubscribe
-    }, [navigation, toast])
 
     useEffect(() => {
         // FIXME: this is broken until the backend allows us to re-upload

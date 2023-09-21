@@ -1,6 +1,7 @@
 use fedimint_core::config::EmptyGenParams;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::module::__reexports::serde_json;
 use fedimint_core::plugin_types_trait_impl_config;
 use serde::{Deserialize, Serialize};
 
@@ -25,9 +26,19 @@ pub struct FediSocialConsensusConfig {
     pub threshold: u32,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Encodable, Decodable)]
 pub struct FediSocialClientConfig {
     pub federation_pk_set: threshold_crypto::PublicKeySet,
+}
+
+impl std::fmt::Display for FediSocialClientConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "FediSocialClientConfig {}",
+            serde_json::to_string(self).map_err(|_e| std::fmt::Error)?
+        )
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

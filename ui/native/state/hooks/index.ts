@@ -92,12 +92,6 @@ export const useBridge = () => {
     )
 
     return {
-        addressOrInvoice: useCallback(
-            (input: string) => {
-                return fedimint.addressOrInvoice(input, activeFederationId!)
-            },
-            [activeFederationId],
-        ),
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {
                 return fedimint.approveSocialRecoveryRequest(
@@ -237,12 +231,9 @@ export const useBridge = () => {
             },
             [activeFederationId],
         ),
-        validateEcash: useCallback(
-            (ecash: string) => {
-                return fedimint.validateEcash(ecash, activeFederationId!)
-            },
-            [activeFederationId],
-        ),
+        validateEcash: useCallback((ecash: string) => {
+            return fedimint.validateEcash(ecash!)
+        }, []),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
                 return fedimint.uploadBackupFile(

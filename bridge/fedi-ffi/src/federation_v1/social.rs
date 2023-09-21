@@ -11,7 +11,8 @@ use fedi_social_client::common::{
     VerificationDocument,
 };
 use fedi_social_client::config::FediSocialClientConfig;
-use fedimint_core::api::{DynFederationApi, FederationApiExt, FederationResult, IFederationApi};
+use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IFederationApi};
+use fedimint_core::config::FederationId;
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
@@ -21,6 +22,7 @@ use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use secp256k1::Secp256k1;
 use serde::{Deserialize, Serialize};
+use v1_rocksdb::BridgeDbPrefix;
 
 // TODO: Actually implement. Use some bip39 crate instead?
 #[derive(Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq, Clone)]
@@ -92,14 +94,14 @@ impl RecoveryFile {
 
 pub struct SocialBackup {
     /// Secret derived from the `root_secret` for this module / functionality
-    /// (level == 1)
+    /// (level == 2)
     pub module_secret: DerivableSecret,
 
     pub module_id: ModuleInstanceId,
 
     pub config: fedi_social_client::config::FediSocialClientConfig,
 
-    pub api: DynFederationApi,
+    pub api: DynModuleApi,
 }
 
 impl SocialBackup {
@@ -171,7 +173,8 @@ impl SocialBackup {
     }
 
     fn get_backup_secret_static(module_secret: &DerivableSecret) -> DerivableSecret {
-        assert_eq!(module_secret.level(), 1);
+        // level 1 is client.external_secret(), then we derive a key from that making it level 2
+        assert_eq!(module_secret.level(), 2);
         module_secret.child_key(SOCIAL_RECOVERY_BACKUP_SNAPSHOT_TYPE_CHILD_ID)
     }
 
@@ -185,7 +188,7 @@ impl SocialBackup {
 }
 
 /// The state of recovery, that can be serialized and stored
-#[derive(Encodable, Decodable, Clone, Debug)]
+#[derive(Encodable, Decodable, Clone, Debug, Serialize, Deserialize)]
 pub struct SocialRecoveryState {
     signing_sk: SerdeEncodable<secp256k1::SecretKey>,
     encryption_key: [u8; 32],
@@ -213,7 +216,7 @@ pub struct SocialRecovery {
     state: SocialRecoveryState,
     config: FediSocialClientConfig,
     module_id: ModuleInstanceId,
-    api: DynFederationApi,
+    api: DynModuleApi,
 }
 
 impl SocialRecovery {
@@ -221,7 +224,7 @@ impl SocialRecovery {
     pub fn new_start(
         module_id: ModuleInstanceId,
         config: FediSocialClientConfig,
-        api: DynFederationApi,
+        api: DynModuleApi,
         recovery_file: RecoveryFile,
     ) -> anyhow::Result<Self> {
         recovery_file.verification_document.verify_integrity()?;
@@ -239,7 +242,7 @@ impl SocialRecovery {
     pub fn new_continue(
         module_id: ModuleInstanceId,
         config: FediSocialClientConfig,
-        api: DynFederationApi,
+        api: DynModuleApi,
         state: SocialRecoveryState,
     ) -> Self {
         Self {
@@ -306,14 +309,13 @@ impl SocialRecovery {
             .api
             .request_raw(
                 peer_id,
-                &format!("module_{}_decryption_share", self.module_id),
+                "decryption_share",
                 &[ApiRequestErased::new(
-                    &(self
-                        .state
+                    self.state
                         .signing_sk
                         .0
                         .x_only_public_key(secp256k1::SECP256K1)
-                        .0),
+                        .0,
                 )
                 .to_json()],
             )
@@ -379,11 +381,11 @@ impl SocialRecovery {
 pub struct SocialVerification {
     peer_id: PeerId,
     module_id: ModuleInstanceId,
-    api: DynFederationApi,
+    api: DynModuleApi,
 }
 
 impl SocialVerification {
-    pub fn new(module_id: ModuleInstanceId, api: DynFederationApi, peer_id: PeerId) -> Self {
+    pub fn new(module_id: ModuleInstanceId, api: DynModuleApi, peer_id: PeerId) -> Self {
         Self {
             peer_id,
             api,
@@ -399,8 +401,8 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("module_{}_get_verification", self.module_id),
-                &[ApiRequestErased::new(&(id)).to_json()],
+                "get_verification",
+                &[ApiRequestErased::new(id).to_json()],
             )
             .await?;
 
@@ -418,8 +420,8 @@ impl SocialVerification {
             .api
             .request_raw(
                 self.peer_id,
-                &format!("module_{}_approve_recovery", self.module_id),
-                &[ApiRequestErased::new(&(id, admin_password)).to_json()],
+                "approve_recovery",
+                &[ApiRequestErased::new((id, admin_password)).to_json()],
             )
             .await?;
 
@@ -455,25 +457,40 @@ where
     /// Upload social recovery backup for mint to safekeep
     async fn social_backup(
         &self,
-        module_id: ModuleInstanceId,
+        _module_id: ModuleInstanceId,
         request: &SignedBackupRequest,
     ) -> FederationResult<()> {
-        self.request_current_consensus(
-            format!("module_{module_id}_backup"),
-            ApiRequestErased::new(request),
-        )
-        .await
+        self.request_current_consensus("backup".into(), ApiRequestErased::new(request))
+            .await
     }
 
     async fn social_recovery(
         &self,
-        module_id: ModuleInstanceId,
+        _module_id: ModuleInstanceId,
         request: &SignedRecoveryRequest,
     ) -> FederationResult<()> {
-        self.request_current_consensus(
-            format!("module_{module_id}_recover"),
-            ApiRequestErased::new(request),
-        )
-        .await
+        self.request_current_consensus("recover".into(), ApiRequestErased::new(request))
+            .await
     }
+}
+
+// These two keys are defined in this crate using prefixes defined in v1-rocksdb
+// because they use values from this crate which v1-rocksdb cannot import
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct SocialRecoveryStateKey(pub FederationId);
+
+impl fedimint_core::db::DatabaseRecord for SocialRecoveryStateKey {
+    const DB_PREFIX: u8 = BridgeDbPrefix::SocialRecoveryState as u8;
+    type Key = Self;
+    type Value = SocialRecoveryState;
+}
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct SocialRecoveryIdKey(pub FederationId);
+
+impl fedimint_core::db::DatabaseRecord for SocialRecoveryIdKey {
+    const DB_PREFIX: u8 = BridgeDbPrefix::SocialRecoveryId as u8;
+    type Key = Self;
+    type Value = RecoveryId;
 }

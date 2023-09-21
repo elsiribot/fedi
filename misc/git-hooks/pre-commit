@@ -97,7 +97,7 @@ function check_eof() {
   set -eo pipefail
 
   errors=""
-  for path in $(echo "$git_ls_nonbinary_files" | grep -v -E '.*\.(ods|svg|plist)' | grep -v 'ui/.yarn'); do
+  for path in $(echo "$git_ls_nonbinary_files" | grep -v -E '.*\.(ods|svg|plist)' | grep -v 'ui/.yarn' | grep -v 'bridge/fixtures/'); do
 
     # extra branches for clarity
     if [ ! -s "$path" ]; then
@@ -122,7 +122,7 @@ export -f check_eof
 function trailing_space_check(){
   set -eo pipefail
 
-  for path in $(echo "$git_ls_nonbinary_files" | grep -v -E '.*\.(ods|svg|plist)' | grep -v 'ui/.yarn'); do
+  for path in $(echo "$git_ls_nonbinary_files" | grep -v -E '.*\.(ods|svg|plist)' | grep -v 'ui/.yarn' | grep -v 'bridge/fixtures/'); do
 
     if git diff --check --cached; then
       echo "Trailing whitespace detected. Please remove them before committing."

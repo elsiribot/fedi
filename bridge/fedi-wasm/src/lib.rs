@@ -1,4 +1,5 @@
 use fediffi::bridge::Bridge;
+use fediffi::event::IEventSink;
 use std::cell::RefCell;
 use std::sync::Arc;
 use storage::WasmStorage;
@@ -18,7 +19,7 @@ extern "C" {
     fn event(this: &EventSink, event_type: String, body: String);
 }
 
-impl fediffi::event::IEventSink for EventSink {
+impl IEventSink for EventSink {
     fn event(&self, event_type: String, body: String) {
         self.event(event_type, body)
     }
@@ -42,7 +43,8 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
             return;
         }
     };
-    let bridge = match fediffi::fedimint_initialize_async(storage, Arc::new(event_sink)).await {
+    let bridge = match fediffi::rpc::fedimint_initialize_async(storage, Arc::new(event_sink)).await
+    {
         Ok(bridge) => bridge,
         Err(e) => {
             error!("Failed to initialize the bridge: {:?}", e);
@@ -57,5 +59,5 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
     let bridge = BRIDGE
         .with(|bridge| bridge.borrow().clone())
         .expect("bridge not set"); // TODO: improve error
-    fediffi::fedimint_rpc_async(bridge, method, payload).await
+    fediffi::rpc::fedimint_rpc_async(bridge, method, payload).await
 }

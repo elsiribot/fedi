@@ -9,6 +9,8 @@ echo "-----------------"
 
 # re-build bridge bindings for android
 yarn build-bridge-android
+# nix develop .#cross --command yarn build-bridge-android
 
 # launch android production flavor in debug mode
+# nix develop .#cross --command npx react-native run-android --active-arch-only --variant=ProductionDebug --verbose
 nix develop .#cross --command npx react-native run-android --active-arch-only --mode=ProductionDebug --verbose

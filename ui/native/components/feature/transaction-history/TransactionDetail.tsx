@@ -141,16 +141,16 @@ const TransactionDetail = ({
                         </Pressable>
                     </View>
                 )}
-                {txn.lnPayState && (
+                {txn.lnState && (
                     <View style={styles(theme).detailItem}>
                         <Text>{t('words.status')}</Text>
                         <Text>
-                            {txn.lnPayState.type === 'WaitingForRefund' &&
+                            {txn.lnState.type === 'WaitingForRefund' &&
                                 t('feature.send.refund-in-block', {
-                                    block: txn.lnPayState.block_height,
+                                    block: txn.lnState.block_height,
                                 })}
-                            {txn.lnPayState.type !== 'WaitingForRefund' &&
-                                `${txn.lnPayState.type}`}
+                            {txn.lnState.type !== 'WaitingForRefund' &&
+                                `${txn.lnState.type}`}
                         </Text>
                     </View>
                 )}
@@ -163,6 +163,7 @@ const TransactionDetail = ({
                                 5,
                             )}
                         </Text>
+                        lightning:
                     </View>
                 )}
                 <Divider />

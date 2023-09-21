@@ -13,11 +13,6 @@ export interface TransactionEvent {
     transaction: Transaction
 }
 
-export interface ValidateEcashResponse {
-    amount: MSats
-    valid: boolean
-}
-
 export interface LnurlSignedMessage {
     signature: string
     pubkey: string
@@ -32,8 +27,8 @@ export interface Invoice {
 }
 
 export interface LightningGateway {
-    mintPubKey: string
     nodePubKey: string
+    gatewayId: null | string
     api: string
     active: boolean
 }
@@ -60,10 +55,6 @@ export interface BitcoinTransactionDetails {
     incomingStatus: IncomingBitcoinTransactionStatus | null
 }
 
-export interface OfflineTransactionDetails {
-    claimed: boolean
-}
-
 export type LnPayState =
     | { type: 'Created' }
     | { type: 'Canceled' }
@@ -76,21 +67,23 @@ export type LnPayState =
     | { type: 'Refunded' }
     | { type: 'Failed' }
 
+export type LnReceiveState =
+    | { type: 'Created' }
+    | { type: 'WaitingForPayment'; invoice: string }
+    | { type: 'Canceled' }
+    | { type: 'Funded' }
+    | { type: 'AwaitingFunds' }
+    | { type: 'Claimed' }
+
 export interface Transaction {
     id: string
     createdAt: number
     direction: TransactionDirection
     amount: MSats
     notes: string
-    lnPayState: LnPayState | null
-    bitcoin: BitcoinTransactionDetails | null
+    lnState: LnPayState | LnReceiveState | null
     lightning: LightningTransactionDetails | null
-    offline: OfflineTransactionDetails | null
-}
-
-export enum AddressOrInvoice {
-    address = 'address',
-    invoice = 'invoice',
+    bitcoin: BitcoinTransactionDetails | null
 }
 
 export interface SocialRecoveryQrCode {
@@ -180,12 +173,13 @@ export enum Network {
 export interface Federation {
     id: string
     name: string
-    connectInfo: string
+    inviteCode: string
     nodes: NodeMap
     balance: MSats
     socialRecoveryActive: boolean
     meta: ClientConfigMetadata
     network: Network
+    version: number
 }
 
 export type SeedWords = string[]
@@ -228,16 +222,10 @@ export type SocialRecoveryEvent = {
     remaining: number
 }
 
-export type RecoveryFileCreationEvent =
-    | { type: 'progress'; percentComplete: number }
-    | { type: 'failed'; errorCode: string }
-    | { type: 'complete' }
-
 // Map of event type name -> event data
 export interface FedimintBridgeEventMap {
     log: LogEvent
     federation: FederationEvent
     transaction: TransactionEvent
     socialRecovery: SocialRecoveryEvent
-    recoveryFileCreation: RecoveryFileCreationEvent
 }

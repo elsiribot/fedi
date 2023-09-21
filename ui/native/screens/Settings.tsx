@@ -156,7 +156,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
     const showSocialRecovery =
-        activeFederation && shouldShowSocialRecovery(activeFederation.meta)
+        activeFederation && shouldShowSocialRecovery(activeFederation)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -191,7 +191,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         label={t('feature.federations.invite-members')}
                         onPress={() => {
                             navigation.navigate('FederationInvite', {
-                                inviteLink: activeFederation.connectInfo,
+                                inviteLink: activeFederation.inviteCode,
                             })
                         }}
                     />

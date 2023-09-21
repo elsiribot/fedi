@@ -1,0 +1,21 @@
+use std::time::Duration;
+
+pub const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
+pub const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(15);
+pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
+pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
+pub const LNURL_CHILD_ID: u64 = 11;
+pub const XMPP_CHILD_ID: u64 = 10;
+pub const XMPP_PASSWORD: u64 = 0;
+pub const XMPP_KEYPAIR_SEED: u64 = 1;
+pub const NOSTR_CHILD_ID: u64 = 12;
+
+// Backup twice per day
+pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
+
+// Fedi file path
+pub const FEDI_FILE_PATH: &str = "./fedi_file.json";
+
+// Operation types in fedimint client
+pub const LIGHTNING_OPERATION_TYPE: &str = "ln";
+pub const MINT_OPERATION_TYPE: &str = "mint";

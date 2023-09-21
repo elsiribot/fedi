@@ -46,7 +46,7 @@ export function parseUserInput<T extends TFunction>(
             parseBip21(raw, fedimint),
             parseFediUri(raw),
             parseFedimintInvite(raw),
-            parseFedimintEcash(raw),
+            parseFedimintEcash(raw, fedimint),
         ]
 
         // Return the first parser to come back with a non-falsy value.
@@ -399,11 +399,15 @@ function parseFedimintInvite(raw: string): ParsedFederationInvite | undefined {
     }
 }
 
-function parseFedimintEcash(raw: string): ParsedFedimintEcash | undefined {
-    // Fedimint ecash
-    // TODO: Proper validation
-    if (raw.startsWith('AAAAAAAA')) {
+async function parseFedimintEcash(
+    raw: string,
+    fedimint: FedimintBridge,
+): Promise<ParsedFedimintEcash | undefined> {
+    try {
+        await fedimint.validateEcash(raw)
         return { type: ParserDataType.FedimintEcash, data: { token: raw } }
+    } catch {
+        // no-op
     }
 }
 

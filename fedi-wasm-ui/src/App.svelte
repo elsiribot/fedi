@@ -42,7 +42,7 @@
         mnemonic = (await rpc.getMnemonic({federationId: fedName})).join(" ");
       } else {
         console.log(FEDERATION_CONNECT_STRING);
-        const fed = await rpc.joinFederation({connectString: FEDERATION_CONNECT_STRING});
+        const fed = await rpc.joinFederation({inviteCode: FEDERATION_CONNECT_STRING});
         fedName = fed.id;
         joined = true;
       }

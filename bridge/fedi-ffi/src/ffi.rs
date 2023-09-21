@@ -1,15 +1,15 @@
-use crate::bridge::Bridge;
-use crate::event::IEventSink as EventSink;
-use crate::logging;
-use crate::storage::IStorage;
-use crate::FedimintError;
-use crate::{fedimint_initialize_async, fedimint_rpc_async};
+use super::bridge::Bridge;
+/// This file contains the bindings to used by React Native app via Uniffi
+use super::event::IEventSink as EventSink;
+use super::logging;
+use super::rpc::FedimintError;
+use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 
 use anyhow::Context;
 use async_trait::async_trait;
-use fedimint_core::config::FederationId;
-use fedimint_core::db::{Database, IDatabase};
-use fedimint_core::module::registry::ModuleDecoderRegistry;
+use fedimint_core::db::IDatabase;
+use fedimint_core_v0::db::Database as DatabaseV0;
+use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -17,86 +17,22 @@ use tracing::{error, info};
 
 use std::path::{Path, PathBuf};
 
+use super::storage::IStorage;
+
 lazy_static! {
+    // Global Tokio runtime
     pub static ref RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("failed to build runtime");
+    // Global bridge object used to handle RPC commands
     static ref BRIDGE: Arc<Mutex<Option<Arc<Bridge>>>> = Arc::new(Mutex::new(None));
 }
 
 uniffi_macros::include_scaffolding!("fedi");
 
-#[derive(Clone)]
-pub struct PathBasedStorage {
-    data_dir: PathBuf,
-    global_db: Database,
-}
-
-impl PathBasedStorage {
-    pub async fn new(data_dir: PathBuf) -> anyhow::Result<Self> {
-        // using .gdb instead to .db to avoid collision with federation named `global`
-        let db_path = data_dir.join("global.gdb");
-
-        let db = fedimint_rocksdb::RocksDb::open(db_path)?;
-        let db = Database::new(db, ModuleDecoderRegistry::from_iter([]));
-        Ok(Self {
-            data_dir,
-            global_db: db,
-        })
-    }
-}
-
-#[async_trait]
-impl IStorage for PathBasedStorage {
-    async fn global_db(&self) -> anyhow::Result<Database> {
-        Ok(self.global_db.clone())
-    }
-
-    async fn federation_db(&self, id: &FederationId) -> anyhow::Result<Box<dyn IDatabase>> {
-        let db_path = self.data_dir.join(&format!("{id}.db"));
-        let db = fedimint_rocksdb::RocksDb::open(db_path)?;
-        Ok(Box::new(db))
-    }
-
-    async fn delete_federation_db(&self, id: &FederationId) -> anyhow::Result<()> {
-        let db_path = self.data_dir.join(&format!("{id}.db"));
-        std::fs::remove_dir_all(db_path).context("delete federation db")?;
-        // FIXME: do this so we can make sure we don't have any locks remaining
-        // let db_opts = Options::default();
-        // rocksdb::DB::destroy(&db_opts, db_path)?;
-        Ok(())
-    }
-
-    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
-        if path.is_absolute() {
-            Ok(tokio::fs::read(path).await?)
-        } else {
-            let path = self.data_dir.join(path);
-            Ok(tokio::fs::read(path).await?)
-        }
-    }
-
-    async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
-        let path = if path.is_absolute() {
-            path.to_owned()
-        } else {
-            self.data_dir.join(path)
-        };
-        // tokio::fs::write is bad, creates a second copy of data
-        Ok(tokio::task::spawn_blocking(move || std::fs::write(path, data)).await??)
-    }
-
-    fn platform_path(&self, path: &Path) -> PathBuf {
-        if path.is_absolute() {
-            path.to_owned()
-        } else {
-            self.data_dir.join(path)
-        }
-    }
-}
-
-// TODO: send error message
+/// Synchronous method to instantiate a global bridge object which is required for RPC to work. The app
+/// calls this method on load.
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
     RUNTIME.block_on(async {
         // return if bridge already is initialized
@@ -128,6 +64,8 @@ pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<
         info!("bridge initialized");
     })
 }
+
+/// Synchronous method to execute an RPC command
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     RUNTIME.block_on(async move {
         let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
@@ -137,12 +75,97 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
     })
 }
 
+/// Returns the names of events we send from Rust to React Native
 pub fn fedimint_get_supported_events() -> Vec<String> {
-    return vec![
+    vec![
         String::from("federation"),
         String::from("transaction"),
-        String::from("socialRecovery"),
-        String::from("recoveryFileCreation"),
         String::from("log"),
-    ];
+    ]
+}
+
+#[derive(Clone)]
+pub struct PathBasedStorage {
+    data_dir: PathBuf,
+    global_db: DatabaseV0,
+}
+
+impl PathBasedStorage {
+    pub async fn new(data_dir: PathBuf) -> anyhow::Result<Self> {
+        // using .gdb instead to .db to avoid collision with federation named `global`
+        let db_path = data_dir.join("global.gdb");
+
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_path)?;
+        let db = DatabaseV0::new(db, ModuleDecoderRegistryV0::from_iter([]));
+        Ok(Self {
+            data_dir,
+            global_db: db,
+        })
+    }
+}
+
+#[async_trait]
+impl IStorage for PathBasedStorage {
+    async fn global_database_v0(&self) -> anyhow::Result<DatabaseV0> {
+        Ok(self.global_db.clone())
+    }
+
+    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
+        let db_name = self.data_dir.join(format!("{db_name}.db"));
+        let db = fedimint_rocksdb::RocksDb::open(db_name)?;
+        Ok(Box::new(db))
+    }
+
+    async fn federation_idb_v0(
+        &self,
+        // FIXME: we don't really need the v0 type here ...
+        id: &fedimint_core_v0::config::FederationId,
+    ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>> {
+        let db_name = self.data_dir.join(format!("{id}.db"));
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
+        Ok(Box::new(db))
+    }
+
+    async fn federation_database_v0(
+        &self,
+        id: &fedimint_core_v0::config::FederationId,
+    ) -> anyhow::Result<fedimint_core_v0::db::Database> {
+        let db_name = self.data_dir.join(format!("{id}.db"));
+        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
+        let registry = fedimint_core_v0::module::registry::ModuleDecoderRegistry::from_iter([]);
+        Ok(fedimint_core_v0::db::Database::new(db, registry))
+    }
+
+    async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()> {
+        let db_name = self.data_dir.join(format!("{db_name}.db"));
+        std::fs::remove_dir_all(db_name).context("delete federation db")?;
+        Ok(())
+    }
+
+    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
+        if path.is_absolute() {
+            Ok(tokio::fs::read(path).await?)
+        } else {
+            let path = self.data_dir.join(path);
+            Ok(tokio::fs::read(path).await?)
+        }
+    }
+
+    async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
+        let path = if path.is_absolute() {
+            path.to_owned()
+        } else {
+            self.data_dir.join(path)
+        };
+        // tokio::fs::write is bad, creates a second copy of data
+        Ok(tokio::task::spawn_blocking(move || std::fs::write(path, data)).await??)
+    }
+
+    fn platform_path(&self, path: &Path) -> PathBuf {
+        if path.is_absolute() {
+            path.to_owned()
+        } else {
+            self.data_dir.join(path)
+        }
+    }
 }

@@ -88,18 +88,19 @@ const DeveloperSettings: React.FC<Props> = () => {
                 setIsLoading(false)
                 setGateways(_gateways)
             } catch (e) {
-                toast?.show('Failed to fetch gateways', 3000)
+                toast?.show(t('errors.failed-to-fetch-gateways'), 3000)
             }
         }
 
         getGatewaysList()
-    }, [toast, listGateways])
+    }, [toast, listGateways, t])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
-            await switchGateway(gateway.nodePubKey)
+            // v0 federation gateways use nodePubKey, v1 use gatewayId which isn't present for v0
+            await switchGateway(gateway.gatewayId || gateway.nodePubKey)
         } catch (e) {
-            toast?.show('Failed to switch gateway', 3000)
+            toast?.show(t('errors.failed-to-switch-gateways'), 3000)
         }
         const updatedGateways = gateways.map((gw: LightningGateway) => {
             gw.active = gateway.nodePubKey === gw.nodePubKey

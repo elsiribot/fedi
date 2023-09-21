@@ -7,6 +7,7 @@ import { PWAMetaTags } from '../components/PWAMetaTags'
 import { Template } from '../components/Template'
 import { ToastManager } from '../components/ToastManager'
 import { RouteStateProvider } from '../context/RouteStateContext'
+import { fedimint } from '../lib/bridge'
 import { store, initializeWebStore } from '../state/store'
 import { globalStyles } from '../styles'
 
@@ -16,6 +17,15 @@ const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
     // Initialize redux store behavior
     useEffect(() => {
         initializeWebStore()
+    }, [])
+
+    // Watch for incoming payments when we're rendering a lightning invoice
+    useEffect(() => {
+        console.info('setting up logging')
+        const unsubscribe = fedimint.addListener('log', event => {
+            console.info('log', event)
+        })
+        return () => unsubscribe()
     }, [])
 
     return (

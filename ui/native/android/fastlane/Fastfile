@@ -257,6 +257,44 @@ platform :android do
     upload_beta_build_bitcoin_ekasi
   end
 
+  # Multi-bridge internal testing
+  desc "Build a new APK to release (Bravo)"
+  lane :build_bravo_apk do
+    gradle(
+      task: 'assemble',
+      flavor: 'bravo',
+      build_type: 'Release'
+    )
+  end
+  
+  desc "Build a new app bundle to release (Bravo)"
+  lane :build_bravo  do
+    gradle(
+      task: 'bundle',
+      flavor: 'bravo',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Upload the latest build to internal track (Bitcoin Ekasi)"
+  lane :upload_internal_build_bravo  do
+    upload_to_play_store(
+      track: 'internal',
+      package_name: 'com.fedi.bravo',
+      aab: './app/build/outputs/bundle/bravoRelease/app-bravo-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new internal build (Bitcoin Ekasi)"
+  lane :internal_bravo do
+    build_bravo 
+    upload_internal_build_bravo 
+  end
+
   # desc "Deploy a new version to the Google Play"
   # lane :deploy do
   #   gradle(task: "clean assembleRelease")

@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex as StdMutex};
 use tracing_subscriber::fmt::MakeWriter;
+use tracing_subscriber::prelude::*;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 thread_local! {
@@ -41,13 +42,13 @@ impl<'a, T: 'a + Write> MakeWriter<'a> for MemMakeWriter<T> {
 
 pub fn init() {
     set_panic_hook();
-    tracing_subscriber::fmt()
+    let log_buffer_layer = tracing_subscriber::fmt::layer()
         .json()
-        .with_env_filter(tracing_subscriber::EnvFilter::new(
-            "info,fediffi=debug,fedimint_client=trace,fedimint_core::api=trace",
-        ))
         .with_writer(MemMakeWriter(LOG_BUFFER.with(Arc::clone)))
-        .without_time()
+        .without_time();
+    tracing_subscriber::registry()
+        .with(log_buffer_layer)
+        .with(tracing_wasm::WASMLayer::new(Default::default()))
         .init();
 }
 

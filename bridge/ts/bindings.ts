@@ -31,8 +31,6 @@ export type ErrorCode =
 export type Event =
   | { Federation: { event: FedimintFederation } }
   | { Transaction: { event: TransactionEvent } }
-  | { SocialRecovery: { event: SocialRecoveryEvent } }
-  | { RecoveryFileCreation: { event: RecoveryFileCreationEvent } }
   | { Log: { event: LogEvent } };
 
 export type FederationId = Opaque<string, "FederationId">;
@@ -44,8 +42,7 @@ export interface FediConfig {
 export interface FedimintFederation {
   id: FederationId;
   name: string;
-  network: string;
-  connectInfo: string;
+  inviteCode: any;
   nodes: Array<{ url: string; name: string }>;
   balance: Amount;
   socialRecoveryActive: boolean;
@@ -76,8 +73,17 @@ export interface LogEvent {
   log: string;
 }
 
-export interface OfflineTransactionDetails {
-  claimed: boolean;
+export type RpcAmount = Opaque<number, "fedimint_core::Amount">;
+
+export interface RpcFederation {
+  balance: RpcAmount;
+  id: RpcFederationId;
+  network: string;
+  name: string;
+  inviteCode: string | null;
+  meta: Record<string, string>;
+  socialRecoveryActive: boolean;
+  nodes: Array<{ url: string; name: string }>;
 }
 
 export interface PayInvoiceResponse {
@@ -87,10 +93,6 @@ export interface PayInvoiceResponse {
 export type PeerId = number;
 
 export type PublicKey = Opaque<string, "PublicKey">;
-
-export interface RecoveryFileCreationEvent {
-  federationId: FederationId;
-}
 
 export type RecoveryId = Opaque<string, "RecoveryId">;
 
@@ -113,27 +115,24 @@ export interface RpcMethods {
     null
   ];
   joinFederation: [
-    { connectString: string },
+    { inviteCode: string },
     {
       id: FederationId;
       name: string;
-      network: string;
-      connectInfo: string;
-      nodes: Array<{ url: string; name: string }>;
-      balance: Amount;
+      inviteCode: string | null;
+      meta: Record<string, string>;
       socialRecoveryActive: boolean;
       meta: Record<string, string>;
     }
   ];
+  leaveFederation: [{ federationId: RpcFederationId }, null];
   listFederations: [
     {},
     Array<{
       id: FederationId;
       name: string;
-      network: string;
-      connectInfo: string;
-      nodes: Array<{ url: string; name: string }>;
-      balance: Amount;
+      inviteCode: string | null;
+      meta: Record<string, string>;
       socialRecoveryActive: boolean;
       meta: Record<string, string>;
     }>
@@ -220,9 +219,9 @@ export interface RpcMethods {
     },
     null
   ];
-  lnurlSignMessage: [
-    { message: string; federationId: FederationId },
-    { signature: string; pubkey: PublicKey }
+  signLnurlMessage: [
+    { message: string; federationId: RpcFederationId },
+    { signature: string; pubkey: RpcPublicKey }
   ];
   xmppCredentials: [
     { federationId: FederationId },

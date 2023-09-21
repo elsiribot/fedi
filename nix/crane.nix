@@ -14,11 +14,20 @@ rec {
 
   # command line arguments that will be imported even
   # in the shell
-  commonEnvs = {
+  commonEnvsShell = {
     LIBCLANG_PATH = "${pkgs.libclang.lib}/lib/";
     ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
     PROTOC = "${pkgs.protobuf}/bin/protoc";
     PROTOC_INCLUDE = "${pkgs.protobuf}/include";
+  };
+
+  # placeholder we use to avoid actually needing to detect hash via runnning `git`
+  # 012345... for easy recognizability (in case something went wrong),
+  # rest randomized to avoid accidentally overwritting innocent bytes in the binary
+  gitHashPlaceholderValue = "01234569abcdef7afa1d2683a099c7af48a523c1";
+
+  commonEnvs = commonEnvsShell // {
+    FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
   };
 
   commonArgsBase = {
@@ -80,14 +89,6 @@ rec {
     inherit src;
   };
 
-  commonArgsCargoLock = cargoLock: commonArgsBase // {
-    cargoVendorDir = craneLib.vendorCargoDeps {
-      inherit src cargoLock;
-    };
-
-    inherit src cargoLock;
-  };
-
   commonArgsDepsOnly = commonArgsBase // {
     cargoVendorDir = craneLib.vendorCargoDeps {
       inherit src;
@@ -98,26 +99,10 @@ rec {
       inherit src;
 
       extraDummyScript = ''
+        # temporary workaround: https://github.com/ipetkov/crane/issues/312#issuecomment-1601827484
+        rm -f $(find $out | grep bin/crane-dummy/main.rs)
+
         cp -ar ${../.cargo} --no-target-directory $out/.cargo
-      '';
-    };
-  };
-
-  commonArgsDepsOnlyCargoLock = cargoLock: commonArgsBase // {
-    cargoVendorDir = craneLib.vendorCargoDeps {
-      inherit src;
-      cargoLock = cargoLock;
-    };
-    # copy over the linker/ar wrapper scripts which by default would get
-    # stripped by crane
-    dummySrc = craneLib.mkDummySrc {
-      inherit src;
-
-      cargoLock = cargoLock;
-
-      extraDummyScript = ''
-        cp -ar ${../.cargo} --no-target-directory $out/.cargo
-        cp -a ${../Cargo.wasm32.lock} $out/
       '';
     };
   };
@@ -233,18 +218,11 @@ rec {
     doCheck = false;
   });
 
-  testBridge = craneLib.mkCargoDerivation (commonCliTestArgs // {
-    pname = "${commonCliTestArgs.pname}-bridge";
-    version = "0.0.1";
-    cargoArtifacts = workspaceBuild;
-    buildPhaseCargoCommand = "patchShebangs ./scripts ; ./scripts/test-bridge.sh";
-  });
-
   # Compile a group of packages together
   #
   # This unifies their cargo features and avoids building common dependencies multiple
   # times, but will produce a derivation with all listed packages.
-  pkgsBuild = { name, pkgs, defaultBin ? null, cargoLock ? null }:
+  pkgsBuild = { name, pkgs, defaultBin ? null }:
     let
       pname =
         if target == null then
@@ -254,22 +232,21 @@ rec {
       ;
       # "--package x --package y" args passed to cargo
       pkgsArgs = lib.strings.concatStringsSep " " (lib.mapAttrsToList (name: value: "--package ${name}") pkgs);
-      deps = (craneLib.buildDepsOnly ((if cargoLock != null then (commonArgsDepsOnlyCargoLock cargoLock) else commonArgsDepsOnly) // {
+      deps = craneLib.buildDepsOnly (commonArgsDepsOnly // {
         inherit pname;
         version = "0.0.1";
         # workaround: on wasm, we can't compile all deps, so narrow dependency build
         # to ones used by the client package only
         buildPhaseCargoCommand = "cargo build --profile $CARGO_PROFILE ${pkgsArgs}";
         doCheck = false;
-        inherit cargoLock;
 
         preBuild = ''
           patchShebangs .cargo/
         '' + (if target != null then target.extraEnvs else "");
-      }));
+      });
 
     in
-    craneLib.buildPackage ((if cargoLock != null then (commonArgsCargoLock cargoLock) else commonArgs) // {
+    craneLib.buildPackage (commonArgs // {
       inherit pname;
       version = "0.0.1";
       cargoArtifacts = deps;

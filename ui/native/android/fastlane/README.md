@@ -223,6 +223,38 @@ Upload the latest build to beta track (Bitcoin Ekasi)
 
 Submit a new beta build (Bitcoin Ekasi)
 
+### android build_bravo_apk
+
+```sh
+[bundle exec] fastlane android build_bravo_apk
+```
+
+Build a new APK to release (Bravo)
+
+### android build_bravo
+
+```sh
+[bundle exec] fastlane android build_bravo
+```
+
+Build a new app bundle to release (Bravo)
+
+### android upload_internal_build_bravo
+
+```sh
+[bundle exec] fastlane android upload_internal_build_bravo
+```
+
+Upload the latest build to internal track (Bitcoin Ekasi)
+
+### android internal_bravo
+
+```sh
+[bundle exec] fastlane android internal_bravo
+```
+
+Submit a new internal build (Bitcoin Ekasi)
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
