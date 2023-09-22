@@ -14,15 +14,18 @@ export const FediModTiles: React.FC = () => {
     return (
         <Container>
             {fediMods.map(fediMod => {
-                const image = FEDIMOD_IMAGES[fediMod.id]
+                const image = fediMod.imageUrl || FEDIMOD_IMAGES[fediMod.id]
                 return (
                     <FediModTile
                         key={fediMod.id}
                         href={fediMod.url}
                         target="_blank"
                         rel="noopener noreferrer">
-                        {image ? (
+                        {typeof image === 'string' ? (
+                            <FediModIcon src={image} alt="" />
+                        ) : image ? (
                             <FediModIcon
+                                as={Image}
                                 src={image}
                                 alt=""
                                 width={48}
@@ -78,7 +81,7 @@ const FediModTile = styled('a', {
     },
 })
 
-const FediModIcon = styled(Image, {
+const FediModIcon = styled('img', {
     width: 48,
     height: 48,
     borderRadius: 12,
