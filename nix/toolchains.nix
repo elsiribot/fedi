@@ -186,8 +186,8 @@ let
   ]);
 
   fenixToolchainCrossAll = with fenix.packages.${system}; combine ([
-    stable.cargo
-    stable.rustc
+    fenixToolchain
+    fenixToolchainRustfmt
   ] ++ (lib.attrsets.mapAttrsToList
     (attr: target: targets.${target.name}.stable.rust-std)
     crossTargets));
