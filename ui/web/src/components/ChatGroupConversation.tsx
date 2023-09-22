@@ -21,6 +21,7 @@ import { ChatEmptyState } from './ChatEmptyState'
 import { CopyInput } from './CopyInput'
 import { Dialog } from './Dialog'
 import { IconButton } from './IconButton'
+import * as Layout from './Layout'
 import { QRCode } from './QRCode'
 
 interface Props {
@@ -102,15 +103,21 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                             open={isDialogOpen}
                             onOpenChange={setIsDialogOpen}
                             title={t('feature.chat.invite-to-group')}>
-                            <QRWrapper>
-                                <QRCode data={link} />
-                            </QRWrapper>
-                            <CopyInput
-                                value={link}
-                                onCopyMessage={t(
-                                    'feature.chat.copied-group-invite-code',
-                                )}
-                            />
+                            <Layout.Root>
+                                <Layout.Content centered>
+                                    <QRWrapper>
+                                        <QRCode data={link} />
+                                    </QRWrapper>
+                                </Layout.Content>
+                                <Layout.Actions>
+                                    <CopyInput
+                                        value={link}
+                                        onCopyMessage={t(
+                                            'feature.chat.copied-group-invite-code',
+                                        )}
+                                    />
+                                </Layout.Actions>
+                            </Layout.Root>
                         </Dialog>
                     </>
                 )
@@ -120,6 +127,6 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
 }
 
 const QRWrapper = styled('div', {
-    maxWidth: 300,
-    margin: '0 auto 24px',
+    width: '100%',
+    margin: '12px auto 0',
 })
