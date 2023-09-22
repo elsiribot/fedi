@@ -24,7 +24,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
         if (!showOfflineWallet) return []
         return [
             {
-                label: t('feature.send.send-bitcoin-offline'),
+                label: t('feature.send.send-offline'),
                 icon: 'Offline',
                 onPress: () => navigate('SendOfflineAmount'),
             },

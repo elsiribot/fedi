@@ -261,7 +261,8 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             justifyContent: 'space-evenly',
-            padding: theme.spacing.xl,
+            padding: theme.spacing.lg,
+            paddingTop: 0,
         },
         profileHeader: {
             alignItems: 'center',

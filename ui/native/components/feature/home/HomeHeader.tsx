@@ -61,7 +61,7 @@ const styles = (theme: Theme) =>
         },
         rightContainer: {
             flexDirection: 'row',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'flex-end',
         },
     })

@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({
                 onPress={() => navigation.goBack()}
                 hitSlop={5}
                 style={{
-                    padding: theme.spacing.sm,
+                    paddingVertical: theme.spacing.sm,
                 }}>
                 <SvgImage name="ChevronLeft" />
             </Pressable>

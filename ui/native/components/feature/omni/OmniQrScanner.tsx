@@ -50,6 +50,7 @@ const styles = (theme: Theme) =>
             width: '100%',
             borderRadius: 20,
             overflow: 'hidden',
+            backgroundColor: theme.colors.extraLightGrey,
         },
         memberSearch: {
             width: '100%',

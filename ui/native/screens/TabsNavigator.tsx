@@ -19,12 +19,14 @@ import {
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
+import {
+    useIsChatSupported,
+    usePopupFederationInfo,
+} from '@fedi/common/hooks/federation'
 import {
     refreshFederationsMetadata,
     selectActiveFederation,
     selectAllChatMessages,
-    selectChatConnectionOptions,
     selectChatLastSeenMessageId,
 } from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
@@ -56,7 +58,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const [offline] = useState(false)
     const { toast } = useEnvironmentContext().state
-    const connectionOptions = useAppSelector(selectChatConnectionOptions)
+    const canChat = useIsChatSupported()
     const lastSeenMessageId = useAppSelector(selectChatLastSeenMessageId)
     const messages = useAppSelector(selectAllChatMessages)
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -118,7 +120,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                             case 'Home':
                                 return <Pressable {...props} />
                             case 'Chat':
-                                if (connectionOptions) {
+                                if (canChat) {
                                     return <Pressable {...props} />
                                 } else {
                                     return (

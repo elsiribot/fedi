@@ -50,12 +50,14 @@ const styles = (theme: Theme) =>
         container: {
             alignItems: 'center',
             justifyContent: 'flex-start',
+            paddingTop: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.lg,
         },
         cardContainer: {
             backgroundColor: theme.colors.orange,
             borderRadius: theme.borders.defaultRadius,
-            padding: theme.spacing.sm,
-            width: '88%',
+            paddingVertical: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
             minHeight: theme.sizes.walletCardHeight,
         },
         cardWrapper: {

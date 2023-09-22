@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useChatMemberSearch } from '@fedi/common/hooks/chat'
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import {
     selectChatMembersWithHistory,
     selectRecentChatMembers,
@@ -30,18 +31,21 @@ interface Props {
     onInput(data: string): void
     actions: OmniInputAction[]
     canLnurlPay?: boolean
+    canLnurlWithdraw?: boolean
 }
 
 export const OmniMemberSearch: React.FC<Props> = ({
     actions,
     onInput,
     canLnurlPay,
+    canLnurlWithdraw,
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const membersWithHistory = useAppSelector(selectChatMembersWithHistory)
     const recentMembers = useAppSelector(selectRecentChatMembers)
+    const canChat = useIsChatSupported()
     const [isFocused, setIsFocused] = useState(false)
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(membersWithHistory)
@@ -69,7 +73,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
             <SafeAreaView
                 edges={['left', 'right', 'bottom']}
                 style={style.defaultContainer}>
-                {recentMembers.length > 0 && (
+                {canChat && recentMembers.length > 0 && (
                     <View>
                         <Text small medium style={style.recentMembersLabel}>
                             {t('words.people')}
@@ -111,16 +115,24 @@ export const OmniMemberSearch: React.FC<Props> = ({
             keyboardVerticalOffset={insets.top + 40}
             style={style.container}>
             <SafeAreaView edges={['left', 'right']} style={style.controls}>
-                <Text>{t('words.to').toLowerCase()}:</Text>
+                <Text>
+                    {(canLnurlWithdraw
+                        ? t('words.from')
+                        : t('words.to')
+                    ).toLowerCase()}
+                    :
+                </Text>
                 <Input
                     containerStyle={style.inputContainerOuter}
                     inputContainerStyle={style.inputContainerInner}
                     style={style.input}
                     value={query}
                     placeholder={t(
-                        canLnurlPay
-                            ? 'feature.omni.search-placeholder-username-or-ln'
-                            : 'feature.omni.search-placeholder-username',
+                        canChat
+                            ? canLnurlPay
+                                ? 'feature.omni.search-placeholder-username-or-ln'
+                                : 'feature.omni.search-placeholder-username'
+                            : 'feature.omni.search-placeholder-ln-address',
                     )}
                     onChangeText={setQuery}
                     onFocus={() => setIsFocused(true)}

@@ -21,8 +21,11 @@ const Balance: React.FC<Props> = ({ balance }: Props) => {
     if (balance !== null) {
         const amountInSats = amountUtils.msatToSat(balance)
         return (
-            <View>
-                <Text h2 medium style={styles(theme).balanceText}>
+            <View style={styles(theme).container}>
+                <Text
+                    h2
+                    medium
+                    style={[styles(theme).balanceText, styles(theme).topText]}>
                     {`${convertSatsToFormattedFiat(amountInSats)}`}
                 </Text>
                 <Text caption medium style={styles(theme).balanceText}>
@@ -39,10 +42,16 @@ const Balance: React.FC<Props> = ({ balance }: Props) => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            height: 60,
+        },
         balanceText: {
             textAlign: 'center',
             color: theme.colors.secondary,
             marginBottom: theme.spacing.xs,
+        },
+        topText: {
+            lineHeight: 32,
         },
     })
 

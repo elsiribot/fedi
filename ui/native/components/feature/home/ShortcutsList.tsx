@@ -86,7 +86,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            width: '88%',
+            width: '100%',
             marginVertical: theme.spacing.xl,
         },
         buffer: {

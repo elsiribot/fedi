@@ -23,6 +23,7 @@
         "fedimint": "Fedimint",
         "fedimods": "FediMods",
         "fee": "Fee",
+        "from": "From",
         "general": "General",
         "group": "Group",
         "home": "Home",
@@ -289,8 +290,9 @@
         "omni": {
             "action-enter-username": "Enter Username",
             "action-enter-username-or-ln": "Enter Username / Lightning Address",
-            "action-paste": "Paste from clipboard",
-            "action-scan": "Scan QR code",
+            "action-enter-ln-address": "Enter lightning address",
+            "action-paste": "Paste",
+            "action-scan": "Scan QR",
             "action-upload": "Upload QR image",
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
@@ -303,6 +305,7 @@
             "search-no-results": "No users match “{{query}}”",
             "search-placeholder-username": "Enter a username",
             "search-placeholder-username-or-ln": "Enter a username or lightning address",
+            "search-placeholder-ln-address": "Enter a lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
@@ -361,6 +364,7 @@
             "receive-bitcoin-offline": "Receive bitcoin offline",
             "request-bitcoin": "Request bitcoin",
             "request-sats": "Request {{amount}} SATS",
+            "request-via-lightning": "Request via lightning",
             "withdraw-from-domain": "Withdraw from {{domain}}",
             "you-received": "You received"
         },
@@ -442,6 +446,7 @@
             "scan-qr-code": "Scan a Lightning QR Code",
             "send-bitcoin": "Send bitcoin",
             "send-bitcoin-offline": "Send bitcoin offline",
+            "send-offline": "Send offline",
             "send-sats": "Send {{amount}} SATS",
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
