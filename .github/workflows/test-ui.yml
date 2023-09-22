@@ -22,7 +22,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v3
               with:
-                  node-version: '16.18.X'
+                  node-version: '18.14.X'
                   cache: 'yarn'
                   cache-dependency-path: ui/yarn.lock
             - name: Install dependencies
