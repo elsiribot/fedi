@@ -1,35 +1,21 @@
-use anyhow::bail;
-use fediffi::{storage::IStorage, translate::Translate};
-use fedimint_core::{
-    apply, async_trait_maybe_send,
-    config::FederationId,
-    db::{Database, IDatabase},
-    module::registry::ModuleDecoderRegistry,
-};
-use rexie::TransactionMode;
+use fediffi::storage::IStorage;
+use fedimint_core::{apply, async_trait_maybe_send, db::IDatabase};
+
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex as StdMutex},
+    sync::Mutex as StdMutex,
 };
-use wasm_bindgen::{JsCast, JsValue};
 
-use crate::db::{rexie_to_anyhow, MemAndIndexedDb};
+use crate::db::MemAndIndexedDb;
 
 pub struct WasmStorage {
-    rexie_files: Arc<rexie::Rexie>,
     federation: StdMutex<HashMap<String, MemAndIndexedDb>>,
 }
 
 impl WasmStorage {
     pub async fn new() -> anyhow::Result<Self> {
-        let rexie_files = rexie::Rexie::builder("files")
-            .add_object_store(rexie::ObjectStore::new("default"))
-            .build()
-            .await
-            .map_err(rexie_to_anyhow)?;
         Ok(Self {
-            rexie_files: Arc::new(rexie_files),
             federation: StdMutex::new(HashMap::new()),
         })
     }
@@ -78,13 +64,13 @@ impl IStorage for WasmStorage {
         db.delete().await?;
         Ok(())
     }
-    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
+    async fn read_file(&self, _path: &Path) -> anyhow::Result<Vec<u8>> {
         todo!()
     }
-    async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
+    async fn write_file(&self, _path: &Path, _data: Vec<u8>) -> anyhow::Result<()> {
         todo!()
     }
-    fn platform_path(&self, path: &Path) -> PathBuf {
+    fn platform_path(&self, _path: &Path) -> PathBuf {
         todo!()
     }
 }
