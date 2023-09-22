@@ -832,17 +832,7 @@ impl FederationV1 {
 
     /// Get social verification client for a guardian
     pub async fn social_verification(&self, peer_id: PeerId) -> Result<SocialVerification> {
-        let client_config = self.decoded_config().await?;
-        let (module_id, _cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        Ok(SocialVerification::new(
-            module_id,
-            self.social_api(),
-            peer_id,
-        ))
+        Ok(SocialVerification::new(self.social_api(), peer_id))
     }
 
     /// Upload social recovery recovery file to federation given a recovery video

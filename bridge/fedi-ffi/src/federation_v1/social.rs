@@ -380,17 +380,12 @@ impl SocialRecovery {
 
 pub struct SocialVerification {
     peer_id: PeerId,
-    module_id: ModuleInstanceId,
     api: DynModuleApi,
 }
 
 impl SocialVerification {
-    pub fn new(module_id: ModuleInstanceId, api: DynModuleApi, peer_id: PeerId) -> Self {
-        Self {
-            peer_id,
-            api,
-            module_id,
-        }
+    pub fn new(api: DynModuleApi, peer_id: PeerId) -> Self {
+        Self { peer_id, api }
     }
 
     pub async fn download_verification_doc(
