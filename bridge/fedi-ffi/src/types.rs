@@ -15,7 +15,6 @@ use super::{
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
-#[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcAmount(
     #[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount,
@@ -39,7 +38,6 @@ pub struct RpcFederation {
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, TS)]
-#[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationId(
     #[ts(type = "Opaque<string, 'FederationId'>")] pub fedimint_core::config::FederationId,
@@ -211,7 +209,6 @@ impl FediBackupMetadata {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
-#[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcRecoveryId(
     #[ts(type = "Opaque<string, 'RecoveryId'>")] pub fedi_social_client::common::RecoveryId,
@@ -233,12 +230,10 @@ pub struct SocialRecoveryApproval {
 }
 
 #[derive(Debug, Eq, Ord, PartialOrd, PartialEq, Serialize, Deserialize, Clone, Copy, TS)]
-#[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcPeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
-#[serde(transparent)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcPublicKey(
     #[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::secp256k1::PublicKey,
