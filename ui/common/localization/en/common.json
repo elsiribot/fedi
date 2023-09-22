@@ -241,15 +241,15 @@
             "select-or-start": "Select a chat, or start a new chat",
             "send-a-message-to": "Send a message to {{name}}",
             "show-history-to-new-members": "Show history to new members",
-            "they-requested-payment": "{{name}} requested {{amount}} {{unit}} {{memo}}",
-            "they-sent-payment": "{{name}} sent you {{amount}} {{unit}} {{memo}}",
+            "they-requested-payment": "{{name}} requested {{fiat}} ({{amount}} {{unit}}) {{memo}}",
+            "they-sent-payment": "{{name}} sent you {{fiat}} ({{amount}} {{unit}}) {{memo}}",
             "try-inviting-someone": "Try inviting someone.",
             "type-to-search-members": "Type to search members in this group",
             "unknown-member": "Unknown member",
             "view-group": "View group",
             "view-shared-media": "View shared media",
-            "you-requested-payment": "You requested {{amount}} {{unit}} {{memo}}",
-            "you-sent-payment": "You sent {{amount}} {{unit}} {{memo}}"
+            "you-requested-payment": "You requested {{fiat}} ({{amount}} {{unit}}) {{memo}}",
+            "you-sent-payment": "You sent {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
         "federations": {
             "add-federation": "Add a Federation",

@@ -240,15 +240,15 @@
             "select-or-start": "Selecciona un chat o comienza uno nuevo",
             "send-a-message-to": "Enviar un mensaje a {{name}}",
             "show-history-to-new-members": "Mostrar historial a nuevos miembros",
-            "they-requested-payment": "{{name}} ha solicitado {{amount}} {{unit}} {{memo}}",
-            "they-sent-payment": "{{name}} te envió {{amount}} {{unit}} {{memo}}",
+            "they-requested-payment": "{{name}} ha solicitado {{fiat}} ({{amount}} {{unit}}) {{memo}}",
+            "they-sent-payment": "{{name}} te envió {{fiat}} ({{amount}} {{unit}}) {{memo}}",
             "try-inviting-someone": "Intenta invitar a alguien.",
             "type-to-search-members": "Escribe para buscar miembros en este grupo",
             "unknown-member": "Miembro desconocido",
             "view-group": "Ver grupo",
             "view-shared-media": "Ver archivos compartidos",
-            "you-requested-payment": "Has solicitado {{amount}} {{unit}} {{memo}}",
-            "you-sent-payment": "Enviaste {{amount}} {{unit}} {{memo}}"
+            "you-requested-payment": "Has solicitado {{fiat}} ({{amount}} {{unit}}) {{memo}}",
+            "you-sent-payment": "Enviaste {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
         "federations": {
             "add-federation": "Añadir una Federación",

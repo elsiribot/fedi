@@ -1,7 +1,11 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import {
+    selectAuthenticatedMember,
+    selectBtcExchangeRate,
+    selectCurrency,
+} from '@fedi/common/redux'
 import { ChatMessage } from '@fedi/common/types'
 import { makePaymentText } from '@fedi/common/utils/chat'
 
@@ -20,13 +24,21 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
 }: PaymentMessageProps) => {
     const { t } = useTranslation()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const { sentTo, payment } = message
+    const currency = useAppSelector(selectCurrency)
+    const exchangeRate = useAppSelector(selectBtcExchangeRate)
 
+    const { sentTo, payment } = message
     const messageSentTo = sentTo || ''
     const paymentRecipient = payment?.recipient || ''
     const me = authenticatedMember?.id || ''
 
-    const paymentText = makePaymentText(t, message, authenticatedMember)
+    const paymentText = makePaymentText(
+        t,
+        message,
+        authenticatedMember,
+        currency,
+        exchangeRate,
+    )
 
     if (messageSentTo === me && paymentRecipient === me) {
         return (

@@ -3,7 +3,11 @@ import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import {
+    selectAuthenticatedMember,
+    selectBtcExchangeRate,
+    selectCurrency,
+} from '@fedi/common/redux'
 import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makePaymentText } from '@fedi/common/utils/chat'
@@ -22,13 +26,21 @@ type ChatTileProps = {
 const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
     const { theme } = useTheme()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const currency = useAppSelector(selectCurrency)
+    const exchangeRate = useAppSelector(selectBtcExchangeRate)
 
     const { latestMessage, hasNewMessages } = chat
     const previewTextWeight = hasNewMessages ? { medium: true } : {}
 
     let previewMessage = latestMessage?.content
     if (latestMessage?.payment) {
-        previewMessage = makePaymentText(t, latestMessage, authenticatedMember)
+        previewMessage = makePaymentText(
+            t,
+            latestMessage,
+            authenticatedMember,
+            currency,
+            exchangeRate,
+        )
     }
 
     return (
