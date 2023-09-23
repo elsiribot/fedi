@@ -9,6 +9,7 @@ import {
     shouldShowInviteCode,
     getSupportedFeatures,
     shouldShowOnchainDeposits,
+    shouldShowJoinFederation,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -24,6 +25,12 @@ export function useIsInviteSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
     return shouldShowInviteCode(activeFederation.meta)
+}
+
+export function useIsJoinFederationSupported() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    return shouldShowJoinFederation(activeFederation.meta)
 }
 
 export function useIsSocialRecoverySupported() {

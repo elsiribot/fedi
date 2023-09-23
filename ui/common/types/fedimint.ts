@@ -122,6 +122,7 @@ export enum SupportedFeature {
     fixed_exchange_rate = 'fixed_exchange_rate',
     chat_server_domain = 'chat_server_domain',
     invite_codes_disabled = 'invite_codes_disabled',
+    new_members_disabled = 'new_members_disabled',
     social_recovery_disabled = 'social_recovery_disabled',
     offline_wallet_disabled = 'offline_wallet_disabled',
     onchain_deposits_disabled = 'onchain_deposits_disabled',
@@ -146,6 +147,7 @@ export interface ClientConfigMetadata {
     // will need to refactor these:
     // 1. switch to boolean true/false
     invite_codes_disabled?: string
+    new_members_disabled?: string
     social_recovery_disabled?: string
     offline_wallet_disabled?: string
     onchain_deposits_disabled?: string

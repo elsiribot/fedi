@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
+import { useIsJoinFederationSupported } from '@fedi/common/hooks/federation'
 import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
 
 import { FederationLogo } from '../../ui/FederationLogo'
@@ -17,6 +18,7 @@ type Props = {
 const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const showJoinFederation = useIsJoinFederationSupported()
     const [joinAs, setJoinAs] = useState<'returningMember' | 'newMember'>()
     const [showTerms, setShowTerms] = useState<boolean>(false)
 
@@ -72,33 +74,43 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                 </ScrollView>
             </Card>
             <View style={styles(theme).buttonsContainer}>
-                <Button
-                    fullWidth
-                    type="clear"
-                    title={t('feature.onboarding.join-returning-member')}
-                    onPress={() => {
-                        if (federation.meta?.tos_url) {
-                            setJoinAs('returningMember')
-                            setShowTerms(true)
-                        } else {
-                            onJoin('returningMember')
-                        }
-                    }}
-                    containerStyle={styles(theme).button}
-                />
-                <Button
-                    fullWidth
-                    title={t('feature.onboarding.join-new-member')}
-                    onPress={() => {
-                        if (federation.meta?.tos_url) {
-                            setJoinAs('newMember')
-                            setShowTerms(true)
-                        } else {
-                            onJoin('newMember')
-                        }
-                    }}
-                    containerStyle={styles(theme).button}
-                />
+                {showJoinFederation ? (
+                    <>
+                        <Button
+                            fullWidth
+                            type="clear"
+                            title={t(
+                                'feature.onboarding.join-returning-member',
+                            )}
+                            onPress={() => {
+                                if (federation.meta?.tos_url) {
+                                    setJoinAs('returningMember')
+                                    setShowTerms(true)
+                                } else {
+                                    onJoin('returningMember')
+                                }
+                            }}
+                            containerStyle={styles(theme).button}
+                        />
+                        <Button
+                            fullWidth
+                            title={t('feature.onboarding.join-new-member')}
+                            onPress={() => {
+                                if (federation.meta?.tos_url) {
+                                    setJoinAs('newMember')
+                                    setShowTerms(true)
+                                } else {
+                                    onJoin('newMember')
+                                }
+                            }}
+                            containerStyle={styles(theme).button}
+                        />
+                    </>
+                ) : (
+                    <Text caption style={styles(theme).disabledNotice}>
+                        {t('feature.onboarding.new-users-disabled-notice')}
+                    </Text>
+                )}
             </View>
         </View>
     )
@@ -120,10 +132,15 @@ const styles = (theme: Theme) =>
             width: '100%',
             alignItems: 'center',
         },
+        disabledNotice: {
+            color: theme.colors.red,
+            textAlign: 'center',
+            width: '100%',
+            marginVertical: theme.sizes.md,
+        },
         roundedCardContainer: {
             marginTop: 'auto',
             borderRadius: theme.borders.defaultRadius,
-            width: '100%',
             marginHorizontal: 0,
             padding: theme.spacing.xl,
             maxHeight: '60%',
