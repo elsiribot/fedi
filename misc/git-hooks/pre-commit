@@ -2,10 +2,9 @@
 
 set -eo pipefail
 
-if [ -z "${IN_NIX_SHELL:-}" ]; then
-  >&2 echo "Workaround: restart in 'nix develop' shell"
-  exec nix develop .#lint --command "$0" "$@"
-fi
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+$REPO_ROOT/scripts/enforce-nix-lint.sh
 
 # https://stackoverflow.com/a/72183258/134409
 # this hangs in CI (no tty?)

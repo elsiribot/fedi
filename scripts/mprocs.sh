@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-if [[ -z "${IN_NIX_SHELL:-}" ]]; then
-  echo "Run "nix develop" first"
-  exit 1
-fi
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+$REPO_ROOT/scripts/enforce-nix.sh
 
 FM_TEST_DIR="$TMP/fm-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 4 || true)"
 export FM_TEST_DIR
