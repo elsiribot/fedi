@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
-import { useIsJoinFederationSupported } from '@fedi/common/hooks/federation'
 import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
+import { shouldShowJoinFederation } from '@fedi/common/utils/FederationUtils'
 
 import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
@@ -18,9 +18,9 @@ type Props = {
 const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const showJoinFederation = useIsJoinFederationSupported()
     const [joinAs, setJoinAs] = useState<'returningMember' | 'newMember'>()
     const [showTerms, setShowTerms] = useState<boolean>(false)
+    const showJoinFederation = shouldShowJoinFederation(federation.meta)
 
     if (showTerms) {
         return (
