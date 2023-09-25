@@ -249,7 +249,8 @@ impl FederationV0 {
         invoice: Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
         let fed = self.clone();
-        self.task_group
+        let _ = self
+            .task_group
             .clone()
             .spawn("subscribe invoice", move |_| async move {
                 let mut updates = fed
@@ -383,7 +384,8 @@ impl FederationV0 {
             "ln" => match operation.meta() {
                 LightningMeta::Pay { invoice, .. } => {
                     let fed = self.clone();
-                    self.task_group
+                    let _ = self
+                        .task_group
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
                             // FIXME: what happens if it fails?
@@ -396,7 +398,8 @@ impl FederationV0 {
                 }
                 LightningMeta::Receive { invoice, .. } => {
                     let fed = self.clone();
-                    self.task_group
+                    let _ = self
+                        .task_group
                         .clone()
                         .spawn("subscribe_to_ln_receive", move |_| async move {
                             // FIXME: what happens if it fails?
@@ -415,7 +418,8 @@ impl FederationV0 {
                     }
                     MintMetaVariants::Reissuance { .. } => {
                         let fed = self.clone();
-                        self.task_group
+                        let _ = self
+                            .task_group
                             .clone()
                             .spawn("subscribe_to_ecash_reissue", move |_| async move {
                                 // FIXME: what happens if it fails?
@@ -475,7 +479,8 @@ impl FederationV0 {
     /// Start background task to listen for balance updates and emit "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
-        self.task_group
+        let _ = self
+            .task_group
             .spawn(
                 format!("{:?} balance subscription", federation.federation_name()),
                 |_| async move {
@@ -726,7 +731,8 @@ impl FederationV0 {
     /// Background task which does a backup with the federation twice per day
     async fn poll_scheduled_backups(&mut self) {
         let federation = self.clone();
-        self.task_group
+        let _ = self
+            .task_group
             .spawn(
                 format!("{:?} scheduled backups", federation.federation_name()),
                 |handle| async move {
@@ -751,7 +757,8 @@ impl FederationV0 {
     /// FederationV1 doesn't have this method because balance subscriptions should be reliable.
     async fn poll_balance(&mut self) {
         let federation = self.clone();
-        self.task_group
+        let _ = self
+            .task_group
             .spawn(
                 format!("{:?} balance poller", federation.federation_name()),
                 |task_handle| async move {

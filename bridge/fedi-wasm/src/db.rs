@@ -5,8 +5,6 @@ use std::sync::Arc;
 use anyhow::Result;
 use fedimint_core::{apply, async_trait_maybe_send};
 use futures::stream;
-use futures::FutureExt;
-use futures::StreamExt;
 
 use fedimint_core::db::{
     IDatabase, IDatabaseTransaction, IDatabaseTransactionOps, ISingleUseDatabaseTransaction,
@@ -112,7 +110,10 @@ impl IDatabase for MemAndIndexedDb {
             num_savepoint_operations: 0,
         };
 
-        memtx.set_tx_savepoint().await;
+        memtx
+            .set_tx_savepoint()
+            .await
+            .expect("MemTransaction never fails");
         Box::new(SingleUseDatabaseTransaction::new(memtx))
     }
 }
@@ -132,7 +133,10 @@ impl fedimint_core_v0::db::IDatabase for MemAndIndexedDb {
             num_savepoint_operations: 0,
         };
 
-        memtx.set_tx_savepoint().await;
+        memtx
+            .set_tx_savepoint()
+            .await
+            .expect("MemTransaction never fails");
         Box::new(fedimint_core_v0::db::SingleUseDatabaseTransaction::new(
             memtx,
         ))
@@ -170,7 +174,7 @@ impl<'a> IDatabaseTransactionOps<'a> for MemTransaction<'a> {
     }
 
     async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
-        let mut data = self
+        let data = self
             .tx_data
             .range::<_, Vec<u8>>((key_prefix.to_vec())..)
             .take_while(|(key, _)| key.starts_with(key_prefix))
@@ -181,14 +185,14 @@ impl<'a> IDatabaseTransactionOps<'a> for MemTransaction<'a> {
     }
 
     async fn raw_remove_by_prefix(&mut self, key_prefix: &[u8]) -> anyhow::Result<()> {
-        let mut keys = self
+        let keys = self
             .tx_data
             .range::<_, Vec<u8>>((key_prefix.to_vec())..)
             .take_while(|(key, _)| key.starts_with(key_prefix))
             .map(|(key, _)| key.clone())
             .collect::<Vec<_>>();
         for key in keys.iter() {
-            let ret = self.tx_data.remove(&key.to_vec());
+            let _ret = self.tx_data.remove(&key.to_vec());
             self.operations
                 .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
                     key: key.to_vec(),
@@ -306,7 +310,7 @@ impl<'a> fedimint_core_v0::db::IDatabaseTransaction<'a> for MemTransaction<'a> {
     }
 
     async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
-        let mut data = self
+        let data = self
             .tx_data
             .range::<_, Vec<u8>>((key_prefix.to_vec())..)
             .take_while(|(key, _)| key.starts_with(key_prefix))
