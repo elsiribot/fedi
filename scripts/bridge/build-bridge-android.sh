@@ -3,12 +3,10 @@
 # exit on failure
 set -e
 
-if [ -z "${FEDI_CROSS_DEV_SHELL:-}" ] ; then
-  >&2 echo "This command is meant to run in a .#cross shell"
-  exit 1
-fi
-
 REPO_ROOT=$(git rev-parse --show-toplevel)
+
+$REPO_ROOT/scripts/enforce-nix.sh
+
 TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 BRIDGE_ROOT=$REPO_ROOT/bridge
 cd $BRIDGE_ROOT

@@ -28,6 +28,6 @@ jobs:
 
             - name: Build bridge
               run: |
-                  nix develop .#cross --command just build-bridge
+                  nix develop --command just build-bridge
 
             # TODO: Upload bridge artifacts somewhere that other workflows can use to download
