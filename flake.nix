@@ -254,7 +254,6 @@
 
             });
 
-          cross = crossDevShell;
           # nix develop .#xcode is used for running commands that depend on an
           # existing underlying Xcode installation that cannot be nixified
           xcode = crossDevShell.overrideAttrs (prev: {
