@@ -19,7 +19,7 @@ use reqwest::Url;
 use tokio::io::AsyncWriteExt;
 use tracing::{debug, info};
 
-use crate::common::{refill_cli_wallet_if_needed, try_cli_get_notes_string};
+use crate::common::{refill_cli_mutinynet_wallet_if_needed, try_cli_get_notes_string};
 
 pub mod common;
 pub mod lnd_gw_monitoring;
@@ -228,7 +228,7 @@ async fn run_mutinynet_load_test(args: MutinynetLoadTestArgs) -> anyhow::Result<
     const REFILL_WALLET_TIMEOUT: Duration = Duration::from_secs(60);
     timeout(
         REFILL_WALLET_TIMEOUT,
-        refill_cli_wallet_if_needed(notes_amount_required, args.minimum_amount_refill),
+        refill_cli_mutinynet_wallet_if_needed(notes_amount_required, args.minimum_amount_refill),
     )
     .await
     .context("Timeout while refilling the wallet")??;

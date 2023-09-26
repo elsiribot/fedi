@@ -17,7 +17,7 @@ use serde_with::{serde_as, DurationMilliSeconds};
 use tracing::{debug, info, log::warn};
 
 use crate::common::{
-    build_client, gateway_pay_invoice, get_note_summary, refill_cli_wallet_if_needed,
+    build_client, gateway_pay_invoice, get_note_summary, refill_cli_mutinynet_wallet_if_needed,
     reissue_notes, remint_denomination, try_cli_get_notes, try_mutinynet_faucet_create_invoice,
 };
 
@@ -99,7 +99,10 @@ pub async fn check_mutinynet(
                 const REFILL_WALLET_TIMEOUT: Duration = Duration::from_secs(60);
                 timeout(
                     REFILL_WALLET_TIMEOUT,
-                    refill_cli_wallet_if_needed(notes_amount_required, MINIMUM_AMOUNT_TO_REFILL),
+                    refill_cli_mutinynet_wallet_if_needed(
+                        notes_amount_required,
+                        MINIMUM_AMOUNT_TO_REFILL,
+                    ),
                 )
                 .await
                 .context("Timeout while refilling the wallet")??;
