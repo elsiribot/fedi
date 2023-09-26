@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "devops-cli",
     "fedimintd",
     "fedimint-cli",
     "fedi-social-common",
@@ -12,6 +13,7 @@ members = [
     "bridge/v0-rocksdb",
 ]
 default-members = [
+    "devops-cli",
     "fedimintd",
     "fedimint-cli",
     "fedi-social-common",
