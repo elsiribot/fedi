@@ -24,13 +24,14 @@ import {
     usePopupFederationInfo,
 } from '@fedi/common/hooks/federation'
 import {
-    refreshFederationsMetadata,
+    refreshFederations,
     selectActiveFederation,
     selectAllChatMessages,
     selectChatLastSeenMessageId,
 } from '@fedi/common/redux'
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
+import { fedimint } from '../bridge'
 import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
@@ -86,7 +87,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     appStateRef.current.match(/inactive|background/) &&
                     nextAppState === 'active'
                 ) {
-                    dispatch(refreshFederationsMetadata())
+                    dispatch(refreshFederations(fedimint))
                 }
                 appStateRef.current = nextAppState
             },
