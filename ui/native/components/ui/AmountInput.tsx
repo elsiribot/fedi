@@ -145,8 +145,7 @@ const AmountInput: React.FC<Props> = ({
                     <Text
                         style={style.secondaryAmountText}
                         medium
-                        numberOfLines={1}
-                        adjustsFontSizeToFit>
+                        numberOfLines={1}>
                         {secondaryAmountText}
                     </Text>
                     {!readOnly && (
