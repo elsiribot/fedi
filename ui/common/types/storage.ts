@@ -71,6 +71,11 @@ export interface StoredStateV4 extends Omit<StoredStateV3, 'version' | 'chat'> {
     >
 }
 
+export interface StoredStateV5 extends Omit<StoredStateV4, 'version'> {
+    version: 5
+    externalMeta: Record<string, Federation['meta'] | undefined>
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -78,9 +83,10 @@ export type AnyStoredState =
     | StoredStateV2
     | StoredStateV3
     | StoredStateV4
+    | StoredStateV5
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV4
+export type LatestStoredState = StoredStateV5
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

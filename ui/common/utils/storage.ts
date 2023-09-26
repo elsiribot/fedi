@@ -19,11 +19,12 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 4,
+        version: 5,
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
+        externalMeta: state.federation.externalMeta,
         customFediMods: state.federation.customFediMods,
         chat: Object.entries(state.chat).reduce<LatestStoredState['chat']>(
             (stored, [federationId, chatState]) => {
@@ -212,6 +213,15 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 4,
             chat: newChat,
+        }
+    }
+
+    // Version 4 -> 5
+    if (migrationState.version === 4) {
+        migrationState = {
+            ...migrationState,
+            version: 5,
+            externalMeta: {},
         }
     }
 
