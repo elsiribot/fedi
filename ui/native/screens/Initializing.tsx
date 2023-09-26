@@ -47,7 +47,7 @@ const Initializing: React.FC<Props> = () => {
         if (activeFederationId && federations.length === 0) {
             initializeFederations()
         }
-    }, [dispatch, activeFederationId, federations.length, federations])
+    }, [dispatch, activeFederationId, federations.length])
 
     // once federation is active, determine where to navigate
     useEffect(() => {

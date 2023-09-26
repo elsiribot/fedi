@@ -27,20 +27,38 @@ const fetchExternalMetadata = async (
     externalUrl: string,
     onBackgroundSuccess?: (externalMeta: ExternalMetaJson) => void,
 ): Promise<ExternalMetaJson | undefined> => {
-    const attemptFetch = async () => {
+    const attemptFetch = async (timeout?: number) => {
+        let controller: AbortController | undefined
+        let timeoutId: ReturnType<typeof setTimeout> | undefined
+        if (timeout) {
+            controller = new AbortController()
+            timeoutId = setTimeout(() => {
+                console.info(`Metadata fetch timed out after ${timeout}ms`)
+                controller?.abort()
+            }, timeout)
+        }
         console.info('Fetching metadata from', externalUrl)
-        const response = await fetch(externalUrl, { cache: 'no-cache' })
+        const response = await fetch(externalUrl, {
+            cache: 'no-cache',
+            signal: controller?.signal,
+        })
         const metaJson = await response.json()
         console.info(`Found metadata at ${externalUrl}`, Object.keys(metaJson))
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+        }
         return metaJson
     }
 
     try {
-        const res = await attemptFetch()
+        // If provided an onBackgroundSuccess, abort the initial fetch after
+        // two seconds and try again shortly with no abort timer. Otherwise
+        // allow the initial and only request to run for as long as it takes.
+        const res = await attemptFetch(onBackgroundSuccess ? 2000 : undefined)
         return res
     } catch (err) {
         if (!onBackgroundSuccess) return
-        let retryDelay = 3000
+        let retryDelay = 1000
         const retryInBackground = async () => {
             try {
                 await new Promise(resolve => setTimeout(resolve, retryDelay))
