@@ -14,97 +14,110 @@ import {
     FederationPreview,
 } from '../types'
 
-/**
- * Given a federations with meta containing an external URL, attempt to fetch
- * external meta. If the first attempt fails, resolve quickly and attempt
- * retries in the background every 3 seconds
- */
-const fetchMetadataFromExternalUrl = async (
-    federation: Pick<Federation, 'meta' | 'id'>,
-    onBackgroundSuccess?: (meta: Federation['meta']) => void | undefined,
-    delay = 3000, // Delay between retries in milliseconds
-): Promise<Federation['meta']> => {
-    const externalUrl = federation.meta?.meta_external_url
-    if (!externalUrl) {
-        return federation.meta
-    }
+type ExternalMetaJson = Record<string, Federation['meta'] | undefined>
 
+/**
+ * Given a URL, attempt to fetch external metadata. Returns a promise
+ * that resolves with the initial attempt to fetch external metadata. If the fetch
+ * fails for any reason, returns undefined instead of throwing. If passed an
+ * optional callback, will continue to attempt fetches in the background with
+ * an increasing backoff and emit to the callback on success.
+ */
+const fetchExternalMetadata = async (
+    externalUrl: string,
+    onBackgroundSuccess?: (externalMeta: ExternalMetaJson) => void,
+): Promise<ExternalMetaJson | undefined> => {
     const attemptFetch = async () => {
         console.info('Fetching metadata from', externalUrl)
         const response = await fetch(externalUrl, { cache: 'no-cache' })
         const metaJson = await response.json()
-        console.info(
-            `Found metadata at ${externalUrl}. Checking for matching federation key...`,
-            Object.keys(metaJson),
-        )
-        if (metaJson[federation.id]) {
-            console.info(
-                `Found federation key ${federation.id}. Overriding other meta fields with external data...`,
-            )
-            return metaJson[federation.id]
-        }
-        throw new Error('Key not found')
-    }
-
-    const retryInBackground = async (): Promise<Federation['meta']> => {
-        try {
-            return await attemptFetch()
-        } catch (error) {
-            console.error('Failed to fetch metadata from external url', error)
-            console.info(`Retrying in ${delay / 1000} seconds...`)
-            await new Promise(resolve => setTimeout(resolve, delay))
-            return retryInBackground() // Recursive call
-        }
+        console.info(`Found metadata at ${externalUrl}`, Object.keys(metaJson))
+        return metaJson
     }
 
     try {
-        // Wait for either the fetch to succeed or throw
-        return await attemptFetch()
-    } catch (error) {
-        if (onBackgroundSuccess) {
-            // If the fetch fails, start the retries in the background
-            retryInBackground().then(meta => {
-                // Update the federation metadata when the background fetch succeeds
-                // using the provided callback
-                console.info(`Background fetch succeeded for ${federation.id}`)
+        const res = await attemptFetch()
+        return res
+    } catch (err) {
+        if (!onBackgroundSuccess) return
+        let retryDelay = 3000
+        const retryInBackground = async () => {
+            try {
+                await new Promise(resolve => setTimeout(resolve, retryDelay))
+                const meta = await attemptFetch()
                 onBackgroundSuccess(meta)
-            })
+            } catch (error) {
+                console.error(
+                    'Failed to fetch metadata from external url',
+                    error,
+                )
+                retryDelay += 3000
+                console.info(
+                    `Retrying fetch metadata in ${
+                        retryDelay / 1000
+                    } seconds...`,
+                )
+                retryInBackground() // Recursive call
+            }
         }
-        return federation.meta // Return existing metadata immediately
+        retryInBackground()
     }
 }
 
 /**
- * Given a list of federations, return the federations with updated meta fields
- * from an external URL. If the first attempt fails, the onBackgroundSuccess
- * callback can be provided to handle retries in the background
+ * Runs `fetchFederationExternalMetadata` on a list of federations and assembles
+ * the results as a map of federation id -> meta. Optional callback is called with
+ * (federationId, meta).
  */
-export const applyExternalMetadataToFederations = (
-    federations: Federation[],
-    onBackgroundSuccess?: (federation: Federation) => void,
-) => {
-    return Promise.all(
-        federations.map(async federation => {
-            const meta = await fetchMetadataFromExternalUrl(
-                federation,
-                onBackgroundSuccess
-                    ? (metaFetchedInBackground: Federation['meta']) => {
-                          onBackgroundSuccess({
-                              ...federation,
-                              name:
-                                  metaFetchedInBackground.federation_name ||
-                                  federation.name,
-                              meta: metaFetchedInBackground,
-                          })
-                      }
-                    : undefined,
-            )
-            return {
-                ...federation,
-                name: meta.federation_name || federation.name,
-                meta,
+export const fetchFederationsExternalMetadata = (
+    federations: Pick<Federation, 'id' | 'meta'>[],
+    onBackgroundSuccess?: (
+        federationId: Federation['id'],
+        meta: Federation['meta'],
+    ) => void,
+): Promise<ExternalMetaJson> => {
+    // Collect & dedpulicate external meta URLs
+    const externalUrls = federations
+        .map(f => f.meta.meta_external_url)
+        .filter((url, idx, arr): url is string =>
+            Boolean(url && arr.indexOf(url) === idx),
+        )
+
+    // Given an external meta, return a list of federation id -> meta for all matching federations
+    const getFederationMetaEntries = (externalMeta: ExternalMetaJson) => {
+        const entries: [Federation['id'], Federation['meta']][] = []
+        for (const federation of federations) {
+            const fedMeta = externalMeta[federation.id]
+            if (fedMeta) {
+                entries.push([federation.id, fedMeta])
             }
-        }),
+        }
+        return entries
+    }
+
+    // When results come in in the background, hit the callback for relevant federations
+    const handleBackgroundSuccess = onBackgroundSuccess
+        ? (externalMeta: ExternalMetaJson) => {
+              const entries = getFederationMetaEntries(externalMeta)
+              entries.forEach(([id, meta]) => onBackgroundSuccess(id, meta))
+          }
+        : undefined
+
+    // Assemble all the promises and return the first pass of results. If they
+    // provided onBackgroundSuccess, we'll call those as they come in.
+    return Promise.all(
+        externalUrls.map(async url =>
+            fetchExternalMetadata(url, handleBackgroundSuccess),
+        ),
+    ).then(results =>
+        results.reduce<ExternalMetaJson>((prev, extMeta) => {
+            if (!extMeta) return prev
+            const entries = getFederationMetaEntries(extMeta)
+            for (const entry of entries) {
+                prev[entry[0]] = entry[1]
+            }
+            return prev
+        }, {}),
     )
 }
 
@@ -380,10 +393,10 @@ export async function getFederationPreview(
                 }
                 if (data.id === 0) {
                     id = data.result.client_config.federation_id
-                    meta = await fetchMetadataFromExternalUrl({
-                        id,
-                        meta: data.result.client_config.meta,
-                    })
+                    const extMeta = await fetchFederationsExternalMetadata([
+                        { id, meta: data.result.client_config.meta },
+                    ])
+                    meta = extMeta[id] || data.result.client_config.meta
                     name =
                         meta.federation_name ||
                         data.result.client_config.meta.federation_name ||
