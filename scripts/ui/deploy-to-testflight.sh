@@ -19,17 +19,7 @@ fi
 
 echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 
-if [[ -n "${IN_NIX_SHELL:-}" ]]; then
-  echo "Running fastlane beta_ci in Nix shell..."
-  fastlane beta_ci --verbose
-else
-  # Check if fastlane is installed
-  if command -v fastlane &> /dev/null; then
-    fastlane beta --verbose
-  else
-    echo "fastlane not found! Install it first: https://docs.fastlane.tools/getting-started/ios/setup/"
-  fi
-fi
+nix develop .#xcode --command fastlane beta_ci --verbose
 
 echo "Build complete!"
 

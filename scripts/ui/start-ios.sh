@@ -51,32 +51,20 @@ fi
 # Extract the device ID
 FEDI_DEVICE_ID=$(echo "$selectedDevice" | sed -n -E 's/.*\(([^)]+)\).*/\1/p')
 
-
 cd $REPO_ROOT/ui/native
 echo "Building & installing ios app bundle"
-
-# Launch on selected ios device
 run_ios_result=0
-# iOS dev builds don't work in nix yet...
-# But if you run `npx react-native run-ios`` in a non-nix shell
-# just one time it should succeed... then iOS dev builds will work fine in mprocs
-nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID || {
-    echo -e "\n\x1B[31;1m======================================================"
-    echo "   iOS dev builds don't work in nix yet... if you see the following error in the logs above:"
-    echo "   "
-    echo "   ld: unknown option: -Xlinker"
-    echo "   "
-    echo "   then you should be able to run the command below in a non-nix shell and it should succeed."
-    echo "   Note the command includes removing the Xcode DerivedData folder (assuming default location on MacOS) which is required."
-    echo "   Then come back here and restart the iOS shell and iOS dev builds will work fine in mprocs"
-    echo -e "======================================================"
-    echo -e "\x1B[32;1m======================================================"
-    echo "   sudo rm -rf ~/Library/Developer/Xcode/DerivedData && cd $REPO_ROOT/ui/native && npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID"
-    echo -e "======================================================"
-    echo -e "\x1B[31;1m======================================================"
-    echo "   if that still doesn't work. Be sure to follow the React Native docs for environment setup and try again:"
+# Launch on selected ios device...
+nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64 --udid $FEDI_DEVICE_ID|| {
+    echo -e "\n\x1B[31;1m"
+    echo "Something went wrong..."
+    echo "Try deleting DerivedData for a clean build directory and try again..."
+    echo -e "\x1B[32;1m"
+    echo "sudo rm -Rf ~/Library/Developer/Xcode/DerivedData"
+    echo -e "\x1B[31;1m"
+    echo "   if that still doesn't work. Be sure to follow the React Native docs for environment setup and try again..."
     echo "   https://reactnative.dev/docs/environment-setup"
-    echo -e "======================================================\x1B[0m"
+    echo -e "\x1B[0m"
     run_ios_result=1
 }
 
