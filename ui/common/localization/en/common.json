@@ -329,6 +329,7 @@
             "i-do-not-accept": "I do not accept",
             "join-new-member": "Join as a new member",
             "join-returning-member": "I am a returning member",
+            "new-users-disabled-notice": "Sorry, this federation is not accepting new users",
             "nice-to-meet-you": "Nice to meet you, {{username}}",
             "simple-and-private": "Simple and private",
             "terms-and-conditions": "Terms & Conditions",
