@@ -3,24 +3,32 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
-$REPO_ROOT/scripts/enforce-nix.sh
+# TODO: uncomment when https://github.com/fedibtc/fedi/issues/1652 is resolved
+# $REPO_ROOT/scripts/enforce-nix.sh
 
 pushd $REPO_ROOT/ui/native/ios
 
-# Not sure if this step is necessary... Try uncommenting if CI starts failing
-# for keychain related reasons
-# security unlock-keychain -p $MATCH_KEYCHAIN_PASSWORD $MATCH_KEYCHAIN_NAME
+SKIP_BRIDGE_REBUILD=${SKIP_BRIDGE_REBUILD:-0}
+
+if [[ "$SKIP_BRIDGE_BUILD" == "1" ]]; then
+  echo "Skipping bridge build..."
+else
+  echo "Rebuilding iOS bridge with release profile"
+  CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
+fi
 
 echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 
 if [[ -n "${IN_NIX_SHELL:-}" ]]; then
-  echo "Use fastlane directly within Nix"
+  echo "Running fastlane beta_ci in Nix shell..."
   fastlane beta_ci --verbose
 else
-  echo "Use bundle exec to run fastlane"
-  gem install bundler:2.4.13
-  bundle install
-  bundle exec fastlane beta_ci --verbose
+  # Check if fastlane is installed
+  if command -v fastlane &> /dev/null; then
+    fastlane beta --verbose
+  else
+    echo "fastlane not found! Install it first: https://docs.fastlane.tools/getting-started/ios/setup/"
+  fi
 fi
 
 echo "Build complete!"

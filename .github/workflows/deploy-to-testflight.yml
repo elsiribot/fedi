@@ -47,8 +47,9 @@ jobs:
                   MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
                   MATCH_PASSWORD: 'fedibtc'
+              # Consider: should we have a separate build step in Github Actions?
               run: |
-                  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
+                  nix develop .#xcode env SKIP_BRIDGE_BUILD=1 --command ./scripts/ui/deploy-to-testflight.sh
               continue-on-error: true
 
             # This is temporary until we can run xcodebuild successfully within Nix

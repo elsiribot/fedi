@@ -78,7 +78,7 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build Android bridge artifacts
-              run: nix develop --ignore-environment .#cross --command env HOME="$HOME" CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-android ./scripts/bridge/build-bridge-android.sh
+              run: nix develop --ignore-environment --command env HOME="$HOME" CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-android ./scripts/bridge/build-bridge-android.sh
 
     build-ios:
         name: 'Build - macos'
@@ -141,8 +141,3 @@ jobs:
             - name: Dev shell
               if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
               run: nix build -L .#devShells.${{ matrix.system }}.default
-
-            - name: Cross shell
-              if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
-              run: |
-                  nix build -L .#devShells.${{ matrix.system }}.cross

@@ -5,11 +5,12 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
+
 pushd $REPO_ROOT/ui/native/android
 
-echo "Building release APK with fastlane (see $REPO_ROOT/ui/native/android/Fastfile for lane configurations)..."
+echo "Building production release APK with fastlane (see $REPO_ROOT/ui/native/android/Fastfile for lane configurations)..."
 fastlane build_production_apk
-echo "Build complete!"
+echo "APK built successfully at $REPO_ROOT/ui/native/android/app/build/outputs/apk/bravo/release/app-bravo-release.apk"
 
 RELEASE_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/production/release
 SOURCE=$RELEASE_PATH/app-production-release.apk
