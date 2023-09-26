@@ -5,6 +5,7 @@ import {
     PayloadAction,
 } from '@reduxjs/toolkit'
 import isEqual from 'lodash/isEqual'
+import omit from 'lodash/omit'
 
 import { authenticateChat, CommonState } from '.'
 import type {
@@ -17,11 +18,11 @@ import type {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
-    applyExternalMetadataToFederations,
     getFederationGroupChats,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
     getFederationFediMods,
+    fetchFederationsExternalMetadata,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
@@ -32,6 +33,10 @@ const initialState = {
     federations: [] as Federation[],
     activeFederationId: null as string | null,
     authenticatedGuardian: null as Guardian | null,
+    externalMeta: {} as Record<
+        Federation['id'],
+        Federation['meta'] | undefined
+    >,
     customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
 }
 
@@ -53,14 +58,6 @@ export const federationSlice = createSlice({
                 const updatedFederation = {
                     ...federation,
                     ...action.payload,
-                    // TODO: this is needed to make sure metadata from bridge doesn't
-                    // overwrite externally fetched metadata, but still should
-                    // be refactored because the meta_external_url will never update
-                    // if it does need to be changed and fetch from somewhere else
-                    meta: {
-                        ...action.payload.meta,
-                        ...federation.meta,
-                    },
                 }
                 return isEqual(federation, updatedFederation)
                     ? federation
@@ -69,6 +66,27 @@ export const federationSlice = createSlice({
         },
         setActiveFederationId(state, action: PayloadAction<string | null>) {
             state.activeFederationId = action.payload
+        },
+        updateExternalMeta(
+            state,
+            action: PayloadAction<FederationState['externalMeta']>,
+        ) {
+            state.externalMeta = {
+                ...state.externalMeta,
+                ...action.payload,
+            }
+        },
+        setFederationExternalMeta(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                meta: Federation['meta'] | undefined
+            }>,
+        ) {
+            const { federationId, meta } = action.payload
+            state.externalMeta = isEqual(meta, state.externalMeta[federationId])
+                ? state.externalMeta
+                : { ...state.externalMeta, [federationId]: meta }
         },
         changeAuthenticatedGuardian(
             state,
@@ -104,6 +122,7 @@ export const federationSlice = createSlice({
     extraReducers: builder => {
         builder.addCase(leaveFederation.fulfilled, (state, action) => {
             const { federationId } = action.meta.arg
+            // Remove from federations
             state.federations = state.federations.filter(
                 fed => fed.id !== federationId,
             )
@@ -112,12 +131,17 @@ export const federationSlice = createSlice({
             } else if (state.activeFederationId === federationId) {
                 state.activeFederationId = state.federations[0]?.id
             }
+            // Clean up external meta entry
+            if (state.externalMeta[federationId]) {
+                state.externalMeta = omit(state.externalMeta, federationId)
+            }
         })
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.activeFederationId = action.payload.activeFederationId
             state.authenticatedGuardian = action.payload.authenticatedGuardian
+            state.externalMeta = action.payload.externalMeta
             state.customFediMods = action.payload.customFediMods || {}
         })
     },
@@ -129,6 +153,8 @@ export const {
     setFederations,
     updateFederation,
     setActiveFederationId,
+    updateExternalMeta,
+    setFederationExternalMeta,
     changeAuthenticatedGuardian,
     addCustomFediMod,
     removeCustomFediMod,
@@ -136,40 +162,22 @@ export const {
 
 /*** Async thunk actions */
 
-export const refreshFederationsMetadata = createAsyncThunk<
-    void,
-    void,
-    { state: CommonState }
->(
-    'federation/refreshFederationsMetadata',
-    async (_, { getState, dispatch }) => {
-        const federations = getState().federation.federations
-        console.info('refreshFederationsMetadata')
-        const federationsWithMeta = await applyExternalMetadataToFederations(
-            federations,
-            federationWithMeta => {
-                dispatch(updateFederation(federationWithMeta))
-            },
-        )
-        dispatch(setFederations(federationsWithMeta))
-    },
-)
-
 export const refreshFederations = createAsyncThunk<
     Federation[],
     FedimintBridge,
     { state: CommonState }
->('federation/refreshFederations', async (fedimint, { dispatch }) => {
+>('federation/refreshFederations', async (fedimint, { dispatch, getState }) => {
     const federations = await fedimint.listFederations()
     console.info('refreshFederations', 'federations', federations)
-    const federationsWithMeta = await applyExternalMetadataToFederations(
+    const externalMeta = await fetchFederationsExternalMetadata(
         federations,
-        federationWithMeta => {
-            dispatch(updateFederation(federationWithMeta))
+        (federationId, meta) => {
+            dispatch(setFederationExternalMeta({ federationId, meta }))
         },
     )
-    dispatch(setFederations(federationsWithMeta))
-    return federations
+    dispatch(updateExternalMeta(externalMeta))
+    dispatch(setFederations(federations))
+    return selectFederations(getState())
 })
 
 export const joinFederation = createAsyncThunk<
@@ -181,26 +189,19 @@ export const joinFederation = createAsyncThunk<
     async ({ fedimint, code }, { dispatch, getState }) => {
         const federation = await fedimint.joinFederation(code)
 
+        // TODO: Run this check _before_ fedimint.joinFederation. Need a bridge
+        // method for getting federationId from invite code.
         const existingFederations = getState().federation.federations
         if (existingFederations.find(f => f.id === federation.id)) {
             throw new Error('errors.you-have-already-joined')
         }
 
-        const federations = await fedimint.listFederations()
-        if (federations.length > 0) {
-            const federationsWithMeta =
-                await applyExternalMetadataToFederations(
-                    federations,
-                    federationWithMeta => {
-                        dispatch(updateFederation(federationWithMeta))
-                    },
-                )
-            dispatch(setFederations(federationsWithMeta))
-            dispatch(setActiveFederationId(federation.id))
-        } else {
-            throw new Error('Bridge reported no federations')
-        }
-        return federation
+        await dispatch(refreshFederations(fedimint))
+        dispatch(setActiveFederationId(federation.id))
+
+        const activeFederation = selectActiveFederation(getState())
+        if (!activeFederation) throw new Error('errors.unknown-error')
+        return activeFederation
     },
 )
 
@@ -266,14 +267,31 @@ export const recoverFromMnemonic = createAsyncThunk<
 
 /*** Selectors ***/
 
-export const selectActiveFederation = (s: CommonState) => {
-    const { federations, activeFederationId } = s.federation
-    return activeFederationId
-        ? federations.find(f => f.id === activeFederationId)
-        : federations[0]
-}
+export const selectFederations = createSelector(
+    (s: CommonState) => s.federation.federations,
+    (s: CommonState) => s.federation.externalMeta,
+    (federations, externalMeta) =>
+        federations.map(f => {
+            const meta = externalMeta[f.id]
+            if (!meta) {
+                return f
+            }
+            return {
+                ...f,
+                meta,
+                name: meta.federation_name || f.name,
+            }
+        }),
+)
 
-export const selectFederations = (s: CommonState) => s.federation.federations
+export const selectActiveFederation = createSelector(
+    selectFederations,
+    (s: CommonState) => s.federation.activeFederationId,
+    (federations, activeFederationId) =>
+        activeFederationId
+            ? federations.find(f => f.id === activeFederationId)
+            : federations[0],
+)
 
 export const selectFederationMetadata = createSelector(
     selectActiveFederation,
