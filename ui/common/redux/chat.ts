@@ -16,6 +16,7 @@ import {
     CommonState,
     selectActiveFederation,
     selectFederationMetadata,
+    selectFederations,
 } from '.'
 import {
     Chat,
@@ -576,7 +577,7 @@ export const connectChat = createAsyncThunk<
         // Assemble all necessary state for starting chat, throw if we are missing anything.
         const state = getState()
         const chatState = state.chat[federationId]
-        const federation = state.federation.federations.find(
+        const federation = selectFederations(state).find(
             f => f.id === federationId,
         )
 

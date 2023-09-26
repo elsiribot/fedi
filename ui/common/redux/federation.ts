@@ -191,7 +191,7 @@ export const joinFederation = createAsyncThunk<
 
         // TODO: Run this check _before_ fedimint.joinFederation. Need a bridge
         // method for getting federationId from invite code.
-        const existingFederations = getState().federation.federations
+        const existingFederations = selectFederations(getState())
         if (existingFederations.find(f => f.id === federation.id)) {
             throw new Error('errors.you-have-already-joined')
         }
