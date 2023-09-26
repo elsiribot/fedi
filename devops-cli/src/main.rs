@@ -319,7 +319,7 @@ async fn edit_meta_json(args: EditMetaJsonArgs) -> anyhow::Result<()> {
     let op = remote_cp(
         &args.remote_file_args.ssh_args,
         &args.remote_file_args.remote_path,
-        &Path::new(&backup_remote_path),
+        Path::new(&backup_remote_path),
     )
     .await?;
     if !op.status.success() {
@@ -390,7 +390,7 @@ fn list_federations(
             }
         })
         .collect::<Vec<_>>();
-    info.sort_by(|a, b| a.1.cmp(&b.1));
+    info.sort_by(|a, b| a.1.cmp(b.1));
 
     for (federation_id, name) in info {
         println!(
@@ -626,7 +626,7 @@ fn duplicate_existing(
     let DuplicateExistingSubCommand::As(as_command_args) = args.command;
     let existing_federation_config = get_federation_config(config, &args.existing_reference)?;
     let mut new_federation = existing_federation_config.clone();
-    if federation_ids_for_name(config, &as_command_args.new_reference.federation_name).len() > 0 {
+    if !federation_ids_for_name(config, &as_command_args.new_reference.federation_name).is_empty() {
         bail!(
             "Federation with name {} already exists, pick another name or renaming existing one",
             as_command_args.new_reference.federation_name
@@ -666,7 +666,7 @@ fn get_federation_config<'a>(
                 let federation_id = ids[0];
                 info!("  Federation {federation_name:?} has id {federation_id:?}");
                 federation_id
-            } else if ids.len() == 0 {
+            } else if ids.is_empty() {
                 bail!("No federation with name {federation_name} found");
             } else {
                 bail!(
