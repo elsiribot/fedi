@@ -3,8 +3,7 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
-# TODO: uncomment when https://github.com/fedibtc/fedi/issues/1652 is resolved
-# $REPO_ROOT/scripts/enforce-nix.sh
+$REPO_ROOT/scripts/enforce-nix.sh
 
 pushd $REPO_ROOT/ui/native/ios
 
