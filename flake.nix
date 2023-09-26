@@ -277,6 +277,11 @@
               # CocoaPods requires the terminal to be using UTF-8 encoding.
               export LC_ALL=en_US.UTF-8
               export LANG=en_US.UTF-8
+
+              # LD envs are needed because xcodebuild is confused and tries
+              # to use ld instead of clang for linking the bridge binary
+              export LD=/usr/bin/clang
+              export LD_FOR_TARGET=/usr/bin/clang
             '';
           });
           v0 = fedi-v0.devShells.${system}.default.overrideAttrs (prev: {
