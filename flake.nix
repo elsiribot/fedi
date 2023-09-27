@@ -74,6 +74,7 @@
               "Cargo.toml"
               "Cargo.lock"
               ".cargo"
+              ".config"
               "bridge"
               "fedimintd"
               "fedimint-cli"
