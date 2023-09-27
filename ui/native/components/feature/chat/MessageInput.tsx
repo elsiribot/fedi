@@ -12,11 +12,9 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { selectWebsocketIsHealthy } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
 
@@ -34,7 +32,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const insets = useSafeAreaInsets()
 
     const { toast } = useEnvironmentContext().state
-    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
@@ -65,10 +62,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const handleSend = async () => {
         if (!messageText) return
-        if (websocketIsHealthy === false) {
-            toast?.show(t('errors.chat-connection-unhealthy'), 5000)
-            return
-        }
         setIsSending(true)
         try {
             await onMessageSubmitted(messageText)
@@ -128,7 +121,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     name="SendArrowUpCircle"
                     size={SvgImageSize.md}
                     color={
-                        websocketIsHealthy && !isSending
+                        !isSending
                             ? theme.colors.blue
                             : theme.colors.primaryVeryLight
                     }
