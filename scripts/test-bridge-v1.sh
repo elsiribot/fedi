@@ -31,6 +31,5 @@ FM_INVITE_CODE=$(cat $FM_DATA_DIR/invite-code)
 export FM_INVITE_CODE
 
 echo "## Running tests"
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi "$@" -- --test-threads=1
-
+cargo nextest  run --locked --all-targets ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
 echo "## Tests Passed"

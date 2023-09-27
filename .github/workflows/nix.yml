@@ -64,7 +64,7 @@ jobs:
 
             - name: Test bridge
               # TODO: turn this into a nix derivation
-              run: ./scripts/test-bridge-all.sh
+              run: nix build -L .#bridgeTests
 
     build-android:
         name: 'Build - android'

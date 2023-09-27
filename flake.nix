@@ -234,6 +234,7 @@
             # straight from Fedimint, without any modifications
             gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
             fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
+            bridgeTests = craneLibBuildNative.bridgeTests;
           } // rustPackagesFinal;
 
         devShells = fmLib.devShells // {
