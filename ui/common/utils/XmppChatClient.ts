@@ -959,9 +959,9 @@ export class XmppChatClientManager {
     async destroyClient(federationId: string) {
         const client = this.clients[federationId]
         if (client) {
+            delete this.clients[federationId]
             client.removeAllListeners()
             await client.stop()
-            delete this.clients[federationId]
         }
     }
 }

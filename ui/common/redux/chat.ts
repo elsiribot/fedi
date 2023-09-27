@@ -729,6 +729,7 @@ export const connectChat = createAsyncThunk<
         if (client?.xmpp && client?.xmpp?.status !== 'offline') {
             console.warn(
                 `Chat connection attempt already in progress for ${federationId}...`,
+                { status: client.xmpp.status },
             )
             return
         } else {
