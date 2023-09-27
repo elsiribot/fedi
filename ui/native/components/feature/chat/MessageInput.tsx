@@ -2,6 +2,7 @@ import { Input, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+    Insets,
     Keyboard,
     KeyboardEvent,
     Platform,
@@ -9,8 +10,10 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { selectWebsocketIsHealthy } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
@@ -18,7 +21,7 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
 
 type MessageInputProps = {
-    onMessageSubmitted: (message: string) => void
+    onMessageSubmitted: (message: string) => Promise<void>
     memberId?: string | undefined
 }
 
@@ -28,6 +31,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
 
     const { toast } = useEnvironmentContext().state
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
@@ -36,6 +40,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         theme.sizes.minMessageInputHeight,
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+    const [isSending, setIsSending] = useState(false)
 
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(
@@ -58,10 +63,30 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [])
 
+    const handleSend = async () => {
+        if (!messageText) return
+        if (websocketIsHealthy === false) {
+            toast?.show(t('errors.chat-connection-unhealthy'), 5000)
+            return
+        }
+        setIsSending(true)
+        try {
+            await onMessageSubmitted(messageText)
+            setMessageText('')
+        } catch (err) {
+            toast?.show(
+                formatErrorMessage(t, err, 'errors.chat-unavailable'),
+                5000,
+            )
+        }
+        setIsSending(false)
+    }
+
+    const style = styles(theme, insets)
     return (
         <View
             style={[
-                styles(theme).container,
+                style.container,
                 keyboardHeight > 0 && Platform.OS === 'ios'
                     ? { paddingBottom: keyboardHeight + theme.spacing.lg }
                     : {},
@@ -88,37 +113,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         )
                     }
                 }}
-                containerStyle={[
-                    styles(theme).textInputOuter,
-                    { height: inputHeight },
-                ]}
-                inputContainerStyle={styles(theme).textInputInner}
+                containerStyle={[style.textInputOuter, { height: inputHeight }]}
+                inputContainerStyle={style.textInputInner}
+                inputStyle={isSending ? style.textInputDisabled : undefined}
                 multiline
                 numberOfLines={3}
                 blurOnSubmit={false}
             />
             <Pressable
-                style={[
-                    styles(theme).sendButton,
-                    keyboardHeight > 0 && Platform.OS === 'ios'
-                        ? { bottom: keyboardHeight + theme.spacing.lg + 6 }
-                        : {},
-                ]}
-                onPress={() => {
-                    if (websocketIsHealthy === false) {
-                        toast?.show(t('errors.chat-connection-unhealthy'), 5000)
-                        return
-                    }
-                    if (messageText) {
-                        onMessageSubmitted(messageText)
-                        setMessageText('')
-                    }
-                }}>
+                style={style.sendButton}
+                onPress={handleSend}
+                disabled={isSending}>
                 <SvgImage
                     name="SendArrowUpCircle"
                     size={SvgImageSize.md}
                     color={
-                        websocketIsHealthy
+                        websocketIsHealthy && !isSending
                             ? theme.colors.blue
                             : theme.colors.primaryVeryLight
                     }
@@ -128,7 +138,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: Insets) =>
     StyleSheet.create({
         container: {
             width: '100%',
@@ -138,14 +148,14 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.secondary,
             borderTopColor: theme.colors.primaryVeryLight,
             borderTopWidth: 1,
-            paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.md,
+            paddingTop: theme.spacing.md,
+            paddingLeft: theme.spacing.lg + (insets.left || 0),
+            paddingRight: theme.spacing.lg + (insets.right || 0),
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom || 0),
             position: 'relative',
         },
         sendButton: {
-            position: 'absolute',
-            right: theme.spacing.xl,
-            bottom: theme.spacing.lg + 4,
+            marginBottom: theme.spacing.sm,
         },
         sendIcon: {
             height: theme.sizes.md,
@@ -166,6 +176,9 @@ const styles = (theme: Theme) =>
             flex: 1,
             borderWidth: 0,
             backgroundColor: theme.colors.white,
+        },
+        textInputDisabled: {
+            color: theme.colors.grey,
         },
     })
 
