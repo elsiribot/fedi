@@ -653,7 +653,7 @@
 				CODE_SIGN_ENTITLEMENTS = FediReactNative/FediReactNative.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 178;
+				CURRENT_PROJECT_VERSION = 179;
 				DEVELOPMENT_TEAM = 4JUZY29459;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = FediReactNative/Info.plist;
@@ -689,7 +689,7 @@
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 178;
+				CURRENT_PROJECT_VERSION = 179;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4JUZY29459;
 				FRAMEWORK_SEARCH_PATHS = (
