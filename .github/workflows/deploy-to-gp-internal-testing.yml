@@ -10,7 +10,7 @@ on:
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
-        runs-on: buildjet-8vcpu-ubuntu-2204
+        runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3

@@ -10,7 +10,7 @@ on:
 jobs:
     release-android:
         name: Build bridge binaries for both iOS and Android
-        runs-on: buildjet-16vcpu-ubuntu-2204
+        runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2

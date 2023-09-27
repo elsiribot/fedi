@@ -14,7 +14,7 @@ on:
 jobs:
     release-android:
         name: Build Android APK and publish in GitHub draft release
-        runs-on: buildjet-4vcpu-ubuntu-2204
+        runs-on: [self-hosted, linux]
         outputs:
             commit-to-deploy: ${{ steps.versioning.outputs.COMMIT_TO_DEPLOY }}
         steps:

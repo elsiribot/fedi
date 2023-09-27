@@ -5,7 +5,7 @@ on:
 jobs:
     release-android-bravo:
         name: Build Android APK and upload to GitHub draft release
-        runs-on: buildjet-16vcpu-ubuntu-2204
+        runs-on: [self-hosted, linux]
         outputs:
             commit-to-deploy: ${{ steps.versioning.outputs.COMMIT_TO_DEPLOY }}
         steps:
