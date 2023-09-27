@@ -1,7 +1,10 @@
 import React from 'react'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
-import type { ChatMessage as ChatMessageType } from '@fedi/common/types'
+import {
+    ChatMessageStatus,
+    ChatMessage as ChatMessageType,
+} from '@fedi/common/types'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
@@ -14,8 +17,9 @@ interface Props {
 export const ChatMessage: React.FC<Props> = ({ message }) => {
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
-    const { payment } = message
+    const { payment, status } = message
     const isMe = message.sentBy === authenticatedMember?.id
+    const isQueued = status === ChatMessageStatus.queued
 
     let content: React.ReactNode = message.content
     let isPayment = false
@@ -25,7 +29,7 @@ export const ChatMessage: React.FC<Props> = ({ message }) => {
     }
 
     return (
-        <MessageContent isMe={isMe} isPayment={isPayment}>
+        <MessageContent isMe={isMe} isPayment={isPayment} isQueued={isQueued}>
             {content}
         </MessageContent>
     )
@@ -40,6 +44,7 @@ const MessageContent = styled('div', {
     lineHeight: '20px',
     wordWrap: 'break-word',
     borderRadius: 12,
+    transition: 'opacity 100ms ease',
 
     variants: {
         isMe: {
@@ -54,6 +59,11 @@ const MessageContent = styled('div', {
         },
         isPayment: {
             true: {},
+        },
+        isQueued: {
+            true: {
+                opacity: 0.5,
+            },
         },
     },
     compoundVariants: [
