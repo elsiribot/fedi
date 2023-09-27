@@ -51,8 +51,8 @@ const Receive: React.FC<Props> = () => {
                 }}
                 customActions={[
                     {
-                        label: t('feature.receive.request-via-lightning'),
-                        icon: 'QrLightning',
+                        label: t('feature.receive.add-amount'),
+                        icon: 'Plus',
                         onPress: () => navigation.navigate('ReceiveLightning'),
                     },
                 ]}

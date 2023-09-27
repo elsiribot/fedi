@@ -358,6 +358,7 @@
             "ending-in": "Ending in <bold>{{time}}</bold>"
         },
         "receive": {
+            "add-amount": "Add an amount",
             "awaiting-withdrawal-from": "Awaiting withdrawal from {{domain}}...",
             "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
             "bitcoin-request": "Bitcoin request",
