@@ -292,6 +292,13 @@
             ]
             ++ prev.nativeBuildInputs;
           });
+          # tool for managing pwa deployment
+          vercel = crossDevShell.overrideAttrs (prev: {
+            nativeBuildInputs = prev.nativeBuildInputs
+              ++ [
+              pkgs.nodePackages_latest.vercel
+            ];
+          });
         };
       });
 

@@ -9,7 +9,7 @@ on:
 jobs:
     bump-version:
         name: Update version to match release branch
-        runs-on: buildjet-2vcpu-ubuntu-2204
+        runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
               uses: actions/checkout@v2
