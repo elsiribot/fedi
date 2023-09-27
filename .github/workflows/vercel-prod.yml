@@ -8,6 +8,7 @@ on:
             - master
         paths:
             - .github/workflows/vercel-prod.yml
+            - scripts/ci/vercel-prod.sh
             - ui/web/**
             - ui/common/**
 jobs:
