@@ -38,6 +38,7 @@ rec {
       gcc
       openssl
       pkg-config
+      cargo-nextest
       perl
       pkgs.llvmPackages.bintools
       rocksdb
@@ -119,20 +120,31 @@ rec {
 
   workspaceDeps = craneLib.buildDepsOnly (commonArgsDepsOnly // {
     version = "0.0.1";
-    buildPhaseCargoCommand = "cargo doc --locked --profile $CARGO_PROFILE ; cargo check --locked --profile $CARGO_PROFILE --all-targets ; cargo build --locked --profile $CARGO_PROFILE --all-targets";
+    buildPhaseCargoCommand = "cargo check --locked --profile $CARGO_PROFILE --all-targets ; cargo build --locked --profile $CARGO_PROFILE --all-targets";
     doCheck = false;
   });
 
   workspaceBuild = craneLib.cargoBuild (commonArgs // {
     version = "0.0.1";
     cargoArtifacts = workspaceDeps;
-    cargoExtraArgs = "--locked";
+    cargoExtraArgs = "--locked --all-targets";
     doCheck = false;
   });
 
   workspaceTest = craneLib.cargoTest (commonArgs // {
     version = "0.0.1";
     cargoArtifacts = workspaceDeps;
+  });
+
+  bridgeTests = craneLib.mkCargoDerivation (commonArgs // {
+    pname = "${commonArgs.pname}-bridge-test";
+    version = "0.0.1";
+    cargoArtifacts = workspaceBuild;
+    buildPhaseCargoCommand = ''
+      patchShebangs ./scripts
+      export FM_CARGO_DENY_COMPILATION=1
+      ./scripts/test-bridge-v1.sh
+    '';
   });
 
   workspaceTestDoc = craneLib.cargoTest (commonArgs // {

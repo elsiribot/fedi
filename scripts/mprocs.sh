@@ -4,8 +4,16 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
-FM_TEST_DIR="$TMP/fm-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 4 || true)"
+
+if [[ "${TMP:-}" == *"/nix-shell."* ]]; then
+  FM_TEST_DIR="${2-$TMP}/fm-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 4 || true)"
+else
+  FM_TEST_DIR="${2-"$(mktemp --tmpdir -d XXXXX)"}"
+fi
+
 export FM_TEST_DIR
+export FM_LOGS_DIR="$FM_TEST_DIR/logs"
+
 export FM_FED_SIZE=4
 export FM_PID_FILE="$FM_TEST_DIR/.pid"
 export FM_LOGS_DIR="$FM_TEST_DIR/logs"

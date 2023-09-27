@@ -30,10 +30,11 @@ trap kill_devimint EXIT
 echo "Running in temporary directory $FM_TEST_DIR"
 
 # symlink logs to local gitignored directory so they're easier to find
-rm target/logs || true
+mkdir target
+rm -f target/logs
 echo $FM_LOGS_DIR
 ln -s $FM_LOGS_DIR target/logs || true
-rm target/test || true
+rm -f target/test
 ln -s $FM_LOGS_DIR target/test || true
 
 devimint dev-fed &
@@ -57,6 +58,6 @@ fedimint-cli ng reissue $ECASH
 
 echo "## Running tests"
 # for now, just run all tests starting with `test_multi`
-cargo test ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi "$@" -- --test-threads=1
+cargo nextest  run --locked--all-targets ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
 
 echo "## Tests Passed"
