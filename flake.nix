@@ -1,12 +1,7 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
       url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=dpc/rel-a06-r2&rev=9a203166be7af0925a49a61a74a97ef94d2d8a46";
@@ -21,7 +16,7 @@
     };
     android-nixpkgs = {
       url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
     fs-dir-cache = {
@@ -30,11 +25,11 @@
 
     fenix = {
       url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, flake-compat, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0, fenix }:
+  outputs = { self, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0, fenix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
@@ -47,6 +42,37 @@
             (final: prev: {
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               convco = pkgs-unstable.convco;
+
+              # mold wrapper from https://discourse.nixos.org/t/using-mold-as-linker-prevents-libraries-from-being-found/18530/5
+              mold =
+                let
+                  bintools-wrapper = "${nixpkgs}/pkgs/build-support/bintools-wrapper";
+                in
+                prev.symlinkJoin {
+                  name = "mold";
+                  paths = [ prev.mold ];
+                  nativeBuildInputs = [ prev.makeWrapper ];
+                  suffixSalt = lib.replaceStrings [ "-" "." ] [ "_" "_" ] prev.targetPlatform.config;
+                  postBuild = ''
+                    for bin in ${prev.mold}/bin/*; do
+                      rm $out/bin/"$(basename "$bin")"
+
+                      export prog="$bin"
+                      substituteAll "${bintools-wrapper}/ld-wrapper.sh" $out/bin/"$(basename "$bin")"
+                      chmod +x $out/bin/"$(basename "$bin")"
+
+                      mkdir -p $out/nix-support
+                      substituteAll "${bintools-wrapper}/add-flags.sh" $out/nix-support/add-flags.sh
+                      substituteAll "${bintools-wrapper}/add-hardening.sh" $out/nix-support/add-hardening.sh
+                      substituteAll "${bintools-wrapper}/../wrapper-common/utils.bash" $out/nix-support/utils.bash
+                    done
+                  '';
+                };
+
+              # Note: we are using cargo-nextest from pkgs-unstable because it has some fixes we need
+              # Note: shell script adding DYLD_FALLBACK_LIBRARY_PATH because of: https://github.com/nextest-rs/nextest/issues/962
+              cargo-nextest = pkgs.writeShellScriptBin "cargo-nextest" "exec env DYLD_FALLBACK_LIBRARY_PATH=\"$(dirname $(which rustc))/../lib\" ${pkgs-unstable.cargo-nextest}/bin/cargo-nextest \"$@\"";
+
             })
           ];
         };
@@ -104,7 +130,7 @@
         ;
 
         craneLibBuildNative = import ./nix/crane.nix {
-          inherit pkgs pkgs-kitman lib advisory-db fedimint-build fedimint-pkgs clightning-dev;
+          inherit pkgs pkgs-kitman lib advisory-db fedimint-build fedimint-pkgs clightning-dev fedi-v0;
           src = rustSrc;
           craneLib = craneLibNative;
           profile = "release";
@@ -115,7 +141,7 @@
             (name: target:
               import ./nix/crane.nix
                 {
-                  inherit pkgs pkgs-kitman lib advisory-db target fedimint-build fedimint-pkgs clightning-dev;
+                  inherit pkgs pkgs-kitman lib advisory-db target fedimint-build fedimint-pkgs clightning-dev fedi-v0;
                   src = rustSrc;
                   craneLib = craneLibCross.${name};
                   profile = "release";
@@ -154,7 +180,8 @@
             };
           };
 
-          testBridge = craneLibBuildNative.testBridge;
+          testBridgeV0 = craneLibBuildNative.testBridgeV0;
+          testBridgeV1 = craneLibBuildNative.testBridgeV1;
         };
 
         # rust packages outputs with git hash replaced
@@ -198,6 +225,7 @@
               pkgs.git
               pkgs.fs-dir-cache
               pkgs.convco
+              pkgs.cargo-nextest
             ]
             ++ [
               pkgs.git
@@ -258,6 +286,7 @@
                 convco
                 moreutils-ts
                 nix
+                cargo-nextest
               ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
                 semgrep
               ];

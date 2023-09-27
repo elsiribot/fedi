@@ -16,6 +16,7 @@ source scripts/build.sh ""
 echo "Running in temporary directory $FM_TEST_DIR"
 
 # symlink logs to local gitignored directory so they're easier to find
+mkdir -p target
 rm target/logs || true
 ln -s $FM_LOGS_DIR target/logs || true
 rm target/test || true
@@ -30,6 +31,7 @@ devimint wait
 FM_INVITE_CODE=$(cat $FM_DATA_DIR/invite-code)
 export FM_INVITE_CODE
 
-echo "## Running tests"
-cargo nextest  run --locked --all-targets ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
+echo "## Running v1 bridge tests"
+echo "fedimintd: $(fedimintd version-hash)"
+cargo nextest run -v --locked ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
 echo "## Tests Passed"

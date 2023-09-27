@@ -30,9 +30,10 @@ trap kill_devimint EXIT
 echo "Running in temporary directory $FM_TEST_DIR"
 
 # symlink logs to local gitignored directory so they're easier to find
-mkdir target
-rm -f target/logs
+mkdir -p target
 echo $FM_LOGS_DIR
+
+rm -f target/logs
 ln -s $FM_LOGS_DIR target/logs || true
 rm -f target/test
 ln -s $FM_LOGS_DIR target/test || true
@@ -56,8 +57,9 @@ echo Funding ClientNG
 ECASH=$($FM_MINT_CLIENT spend 20000000 | jq -e -r '.note')
 fedimint-cli ng reissue $ECASH
 
-echo "## Running tests"
-# for now, just run all tests starting with `test_multi`
-cargo nextest  run --locked--all-targets ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
+echo "## Running v0 bridge tests"
+echo "fedimintd: $(fedimintd version-hash)"
+# for now, just run all tests starting with 'test_multi'
+cargo nextest run --locked  ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
 
 echo "## Tests Passed"

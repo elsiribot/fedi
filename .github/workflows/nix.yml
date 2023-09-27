@@ -63,8 +63,9 @@ jobs:
               run: nix build -L .#devops-cli
 
             - name: Test bridge
-              # TODO: turn this into a nix derivation
-              run: nix build -L .#bridgeTests
+              run: |
+                nix build -L .#testBridgeV1
+                nix build -L .#testBridgeV0
 
     build-android:
         name: 'Build - android'
