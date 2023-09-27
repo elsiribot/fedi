@@ -33,6 +33,7 @@ import {
     Federation,
     ChatRole,
     ChatAffiliation,
+    ChatMessageStatus,
 } from '../types'
 import encryptionUtils from '../utils/EncryptionUtils'
 import {
@@ -41,7 +42,7 @@ import {
     makeChatServerOptions,
 } from '../utils/FederationUtils'
 import { XmppMemberRole } from '../utils/XmlUtils'
-import { XmppChatClientManager } from '../utils/XmppChatClient'
+import { XmppChatClient, XmppChatClientManager } from '../utils/XmppChatClient'
 import {
     getChatInfoFromMessage,
     getLatestMessage,
@@ -662,7 +663,7 @@ export const connectChat = createAsyncThunk<
 
         // On connection, update various states
         client.on('online', async () => {
-            console.debug('online')
+            console.debug('xmpp client online')
             // Establish healthy websocket state
             dispatch(
                 setWebsocketIsHealthy({
@@ -703,6 +704,9 @@ export const connectChat = createAsyncThunk<
                     }),
                 )
             })
+
+            // Send any previously queued messages
+            dispatch(sendQueuedMessages({ fedimint, federationId }))
 
             // Fix authenticatedMember if it has the wrong id or public key
             const jid = client.xmpp?.jid?.toString().split('/')[0]
@@ -1006,7 +1010,7 @@ export const sendDirectMessage = createAsyncThunk<
         throw new Error('errors.chat-unavailable')
     }
 
-    // Construct and send message
+    // Construct the message object
     const sentAt = Date.now() / 1000
     if (payment) {
         payment = { ...payment, updatedAt: sentAt }
@@ -1019,14 +1023,25 @@ export const sendDirectMessage = createAsyncThunk<
         sentBy: authenticatedMember.id,
         sentTo: recipientId,
     }
-    await client.sendDirectMessage(
-        recipientId,
-        recipientPubkey,
-        message,
-        encryptionKeys,
-        false,
-    )
-    return message
+    let status: ChatMessageStatus
+
+    // Attempt to send, update status of message
+    try {
+        await client.sendDirectMessage(
+            recipientId,
+            recipientPubkey,
+            message,
+            encryptionKeys,
+            false,
+        )
+        status = ChatMessageStatus.sent
+    } catch (err) {
+        // TODO: Determine recoverable error that should mark the message as queued
+        // versus an unrecoverable message that should be ChatMessageStatus.failed
+        status = ChatMessageStatus.queued
+        console.warn('Failed to send message, queueing it to retry later')
+    }
+    return { ...message, status }
 })
 
 export const sendGroupMessage = createAsyncThunk<
@@ -1050,7 +1065,7 @@ export const sendGroupMessage = createAsyncThunk<
             id: groupId,
         }
 
-        // Construct and send message
+        // Construct the message object for sending
         const message: ChatMessage = {
             content,
             id: uuidv4(),
@@ -1058,8 +1073,19 @@ export const sendGroupMessage = createAsyncThunk<
             sentBy: authenticatedMember.id,
             sentIn: groupId,
         }
-        await client.sendGroupMessage(group, message)
-        return message
+        let status: ChatMessageStatus
+
+        // Attempt to send, update status of message
+        try {
+            await client.sendGroupMessage(group, message)
+            status = ChatMessageStatus.sent
+        } catch (err) {
+            // TODO: Determine recoverable error that should mark the message as queued
+            // versus an unrecoverable message that should be ChatMessageStatus.failed
+            status = ChatMessageStatus.queued
+            console.warn('Failed to send message, queueing it to retry later')
+        }
+        return { ...message, status }
     },
 )
 
@@ -1104,15 +1130,11 @@ export const updateChatPayment = createAsyncThunk<
         const client = xmppChatClientManager.getClient(federationId)
 
         // Get the recipient's pubkey, fetch it if we don't have it
-        const recipientMember = chatState?.membersSeen.find(
-            m => m.id === recipientId,
+        const recipientPubkey = await getOrFetchMemberPubkey(
+            chatState,
+            client,
+            recipientId,
         )
-        let recipientPubkey: string
-        if (recipientMember?.publicKeyHex) {
-            recipientPubkey = recipientMember?.publicKeyHex
-        } else {
-            recipientPubkey = await client.fetchMemberPublicKey(recipientId)
-        }
 
         // Get or fetch credentials
         const { encryptionKeys } = await getOrFetchCredentials(
@@ -1199,6 +1221,95 @@ export const updateChatPayment = createAsyncThunk<
     },
 )
 
+export const sendQueuedMessages = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        federationId: string
+    },
+    { state: CommonState }
+>(
+    'chat/sendQueuedMessages',
+    async ({ fedimint, federationId }, { dispatch, getState }) => {
+        // Gather up any queued messages, return if we have none
+        const queuedMessages = getState().chat[federationId]?.messages.filter(
+            m => m.status === ChatMessageStatus.queued,
+        )
+        if (!queuedMessages?.length) return
+        console.info(
+            `Attempting to send ${queuedMessages.length} queued messages`,
+        )
+
+        // Get or fetch credentials for encryption
+        const { encryptionKeys } = await getOrFetchCredentials(
+            fedimint,
+            federationId,
+            getState(),
+            dispatch,
+        )
+
+        // Process queued messages linearly, not all at once, to ensure they're
+        // received in the intended order. Make sure to re-run any state dependent
+        // functions inside the for loop rather than outside, as state can change
+        // while messages are re-sending.
+        for (const msg of queuedMessages) {
+            // Grab the client and make sure we're still online, otherwise just
+            // break out since it won't send anyway
+            const client = xmppChatClientManager.getClient(federationId)
+            if (client.xmpp.status !== 'online') break
+
+            // Attempt resending the message
+            const { sentIn, sentTo } = msg
+            const updatedMsg = {
+                ...msg,
+                sentAt: Date.now() / 1000,
+            }
+            try {
+                if (sentIn) {
+                    // Resend to groups
+                    const group = getState().chat[federationId]?.groups.find(
+                        g => g.id === sentIn,
+                    ) || {
+                        id: sentIn,
+                    }
+                    await client.sendGroupMessage(group, updatedMsg)
+                } else if (sentTo) {
+                    // Resend to user
+                    const recipientPubkey = await getOrFetchMemberPubkey(
+                        getState().chat[federationId],
+                        client,
+                        sentTo,
+                    )
+                    await client.sendDirectMessage(
+                        sentTo,
+                        recipientPubkey,
+                        updatedMsg,
+                        encryptionKeys,
+                        false,
+                    )
+                } else {
+                    // Should never happen
+                    throw new Error('No sentIn or sentTo')
+                }
+                dispatch(
+                    addChatMessage({
+                        federationId,
+                        message: {
+                            ...msg,
+                            status: ChatMessageStatus.sent,
+                        },
+                    }),
+                )
+            } catch (err) {
+                // TODO: Determine recoverable error that should leave the message as queued
+                // for a future attempt, versus an unrecoverable message that should
+                // update the message to ChatMessageStatus.failed
+                console.warn('Failed to send queued message', err)
+            }
+        }
+    },
+)
+
 // Async thunk utility functions
 
 async function getOrFetchCredentials(
@@ -1221,6 +1332,19 @@ async function getOrFetchCredentials(
         encryptionKeys = res.encryptionKeys
     }
     return { credentials, encryptionKeys }
+}
+
+async function getOrFetchMemberPubkey(
+    chatState: FederationChatState | undefined,
+    client: XmppChatClient,
+    memberId: string,
+) {
+    const member = chatState?.membersSeen.find(m => m.id === memberId)
+    if (member?.publicKeyHex) {
+        return member.publicKeyHex
+    } else {
+        return await client.fetchMemberPublicKey(memberId)
+    }
 }
 
 /*** Selectors ***/
