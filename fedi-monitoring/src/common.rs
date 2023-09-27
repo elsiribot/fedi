@@ -31,7 +31,7 @@ use lightning_invoice::Invoice;
 
 use tracing::{debug, info};
 
-pub async fn refill_cli_wallet_if_needed(
+pub async fn refill_cli_mutinynet_wallet_if_needed(
     notes_amount_required: Amount,
     minimum_amount_refill: Amount,
 ) -> anyhow::Result<()> {
@@ -117,26 +117,13 @@ pub async fn mutinynet_faucet_pay_invoice(invoice: &Invoice) -> anyhow::Result<S
     Ok(preimage.into())
 }
 
-pub async fn cli_get_notes_raw(amount: &Amount) -> anyhow::Result<serde_json::Value> {
-    // TODO: use the new client when it's ready.
-    // For instance, when https://github.com/fedimint/fedimint/issues/2567 is solved
-    cmd!(FedimintCli, "fetch").out_string().await?;
-    let msats_to_get = amount.msats;
-    let notes = cmd!(FedimintCli, "spend", "{msats_to_get}")
-        .out_json()
-        .await?["note"]
-        .clone();
-    Ok(notes)
-}
-
 pub async fn cli_get_notes_string(amount: &Amount) -> anyhow::Result<String> {
-    cmd!(FedimintCli, "fetch").out_string().await?;
-    let notes = cli_get_notes_raw(amount)
-        .await?
+    cmd!(FedimintCli, "spend", amount.msats.to_string())
+        .out_json()
+        .await?["notes"]
         .as_str()
         .map(ToOwned::to_owned)
-        .ok_or_else(|| anyhow!("no note returned"))?;
-    Ok(notes)
+        .context("missing notes output")
 }
 
 pub async fn try_cli_get_notes_string(amount: &Amount, tries: usize) -> anyhow::Result<String> {
@@ -153,14 +140,13 @@ pub async fn try_cli_get_notes_string(amount: &Amount, tries: usize) -> anyhow::
 }
 
 pub async fn cli_get_notes(amount: &Amount) -> anyhow::Result<OOBNotes> {
-    cmd!(FedimintCli, "fetch").out_string().await?;
-    let notes = cli_get_notes_raw(amount)
-        .await?
+    cmd!(FedimintCli, "spend", amount.msats.to_string())
+        .out_json()
+        .await?["notes"]
         .as_str()
         .map(OOBNotes::from_str)
         .transpose()?
-        .ok_or_else(|| anyhow!("no note returned"))?;
-    Ok(notes)
+        .context("missing notes output")
 }
 
 pub async fn try_cli_get_notes(amount: &Amount, tries: usize) -> anyhow::Result<OOBNotes> {
@@ -177,10 +163,10 @@ pub async fn try_cli_get_notes(amount: &Amount, tries: usize) -> anyhow::Result<
 }
 
 pub async fn cli_get_total_amount() -> anyhow::Result<Amount> {
-    cmd!(FedimintCli, "info").out_json().await?["total_amount"]
+    cmd!(FedimintCli, "info").out_json().await?["total_amount_msat"]
         .as_u64()
         .map(Amount::from_msats)
-        .ok_or_else(|| anyhow!("no total_amount returned"))
+        .ok_or_else(|| anyhow!("no total_amount_msat returned"))
 }
 
 pub async fn cli_generate_invoice(amount: &Amount) -> anyhow::Result<Invoice> {
