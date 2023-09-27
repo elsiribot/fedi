@@ -59,7 +59,7 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
         )
     }
     if (messageSentTo !== me && paymentRecipient !== me) {
-        return <OutgoingPushPayment text={paymentText} />
+        return <OutgoingPushPayment message={message} text={paymentText} />
     }
     if (messageSentTo !== me && paymentRecipient === me) {
         return (
