@@ -164,19 +164,11 @@ jobs:
                 include:
                     - on: linux
                       runs-on: [self-hosted, linux]
-                      needs: precheck
-                      if: >
-                          needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
-                          needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
                       build-in-pr: true
                       timeout: 30
                       system: x86_64-linux
                     - host: macos
                       runs-on: [self-hosted, macos]
-                      needs: precheck
-                      if: >
-                          needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
-                          needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
                       os: macOS
                       build-in-pr: true
                       timeout: 45
@@ -185,10 +177,6 @@ jobs:
         name: 'Dev shells - ${{ matrix.host }}'
         runs-on: ${{ matrix.runs-on }}
         timeout-minutes: ${{ matrix.timeout }}
-        needs: precheck
-        if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
-            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
 
         steps:
             - uses: actions/checkout@v3
