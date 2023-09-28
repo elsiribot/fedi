@@ -18,8 +18,18 @@ jobs:
         name: 'Check for non-UI file changes'
         runs-on: [self-hosted, linux]
         outputs:
+            IS_PUSH_TO_MASTER: ${{ steps.check-event.outputs.IS_PUSH_TO_MASTER }}
             HAS_NON_UI_CHANGES: ${{ steps.check-changes.outputs.HAS_NON_UI_CHANGES }}
         steps:
+            - name: Determine event type
+              id: check-event
+              run: |
+                  IS_PUSH_TO_MASTER=0
+                  if [[ "${{ github.event_name }}" == 'push' && \
+                      "${{ github.ref }}" == 'refs/heads/master' ]]; then
+                    IS_PUSH_TO_MASTER=1
+                  fi
+                  echo "IS_PUSH_TO_MASTER=$IS_PUSH_TO_MASTER" >> $GITHUB_OUTPUT
             - name: Check out code
               uses: actions/checkout@v3
               with:
@@ -30,10 +40,10 @@ jobs:
               run: |
                   git fetch origin ${{ github.event.pull_request.head.sha }} 
                   FILES_CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
-                  HAS_NON_UI_CHANGES=false
+                  HAS_NON_UI_CHANGES=0
                   for file in $FILES_CHANGED; do
                     if [[ ! $file == ui/* ]]; then
-                      HAS_NON_UI_CHANGES=true
+                      HAS_NON_UI_CHANGES=1
                       break
                     fi
                   done
@@ -43,8 +53,8 @@ jobs:
         name: 'Lint'
         needs: precheck
         if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == 'true' ||
-            "${{ github.event_name }}" != "pull_request"
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, linux]
         timeout-minutes: 5
         steps:
@@ -66,8 +76,8 @@ jobs:
         name: 'Build - linux'
         needs: precheck
         if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == 'true' ||
-            "${{ github.event_name }}" != "pull_request"
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
@@ -105,8 +115,8 @@ jobs:
         name: 'Build - android'
         needs: precheck
         if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == 'true' ||
-            "${{ github.event_name }}" != "pull_request"
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
@@ -126,8 +136,8 @@ jobs:
         name: 'Build - macos'
         needs: precheck
         if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == 'true' ||
-            "${{ github.event_name }}" != "pull_request"
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, macos]
         timeout-minutes: 60
         steps:
@@ -146,10 +156,6 @@ jobs:
               run: nix develop .#xcode --command env HOME="$HOME" CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-ios ./scripts/bridge/build-bridge-ios.sh
 
     shell:
-        needs: precheck
-        if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == 'true' ||
-            "${{ github.event_name }}" != "pull_request"
         strategy:
             matrix:
                 host:
@@ -158,11 +164,19 @@ jobs:
                 include:
                     - on: linux
                       runs-on: [self-hosted, linux]
+                      needs: precheck
+                      if: >
+                          needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+                          needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
                       build-in-pr: true
                       timeout: 30
                       system: x86_64-linux
                     - host: macos
                       runs-on: [self-hosted, macos]
+                      needs: precheck
+                      if: >
+                          needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+                          needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
                       os: macOS
                       build-in-pr: true
                       timeout: 45
@@ -171,6 +185,10 @@ jobs:
         name: 'Dev shells - ${{ matrix.host }}'
         runs-on: ${{ matrix.runs-on }}
         timeout-minutes: ${{ matrix.timeout }}
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
 
         steps:
             - uses: actions/checkout@v3
