@@ -1,4 +1,7 @@
-{ pkgs, pkgs-kitman, lib, advisory-db, src, craneLib, target ? null, profile, fedimint-build, fedimint-pkgs, clightning-dev }:
+{ pkgs, pkgs-kitman, lib, advisory-db, src, craneLib, target ? null, profile, fedimint-build, fedimint-pkgs, clightning-dev, fedi-v0 }:
+let
+  system = pkgs.system;
+in
 rec {
   cargo-llvm-cov = craneLib.buildPackage rec {
     pname = "cargo-llvm-cov";
@@ -120,14 +123,14 @@ rec {
 
   workspaceDeps = craneLib.buildDepsOnly (commonArgsDepsOnly // {
     version = "0.0.1";
-    buildPhaseCargoCommand = "cargo check --locked --profile $CARGO_PROFILE --all-targets ; cargo build --locked --profile $CARGO_PROFILE --all-targets";
+    buildPhaseCargoCommand = "cargo check --locked --profile $CARGO_PROFILE; cargo build --locked --profile $CARGO_PROFILE";
     doCheck = false;
   });
 
-  workspaceBuild = craneLib.cargoBuild (commonArgs // {
+  workspaceBuild = craneLib.mkCargoDerivation (commonArgs // {
     version = "0.0.1";
     cargoArtifacts = workspaceDeps;
-    cargoExtraArgs = "--locked --all-targets";
+    buildPhaseCargoCommand = "cargo nextest run --no-run --locked --cargo-profile $CARGO_PROFILE --profile $CARGO_PROFILE; cargoWithProfile build --locked;";
     doCheck = false;
   });
 
@@ -136,8 +139,8 @@ rec {
     cargoArtifacts = workspaceDeps;
   });
 
-  bridgeTests = craneLib.mkCargoDerivation (commonArgs // {
-    pname = "${commonArgs.pname}-bridge-test";
+  testBridgeV1 = craneLib.mkCargoDerivation (commonArgs // {
+    pname = "${commonArgs.pname}-test-bridge-v1";
     version = "0.0.1";
     cargoArtifacts = workspaceBuild;
     buildPhaseCargoCommand = ''
@@ -147,6 +150,17 @@ rec {
     '';
   });
 
+  testBridgeV0 = craneLib.mkCargoDerivation (commonArgs // {
+    pname = "${commonArgs.pname}-test-bridge-v0";
+    version = "0.0.1";
+    cargoArtifacts = workspaceBuild;
+    buildPhaseCargoCommand = ''
+      patchShebangs ./scripts
+      export FM_CARGO_DENY_COMPILATION=1
+      export PATH="${fedi-v0.packages.${system}.fedi-fedimint-pkgs}/bin:${fedi-v0.inputs.fedimint-build.packages.${system}.devimint}/bin:$PATH"
+      ./scripts/test-bridge-v0.sh
+    '';
+  });
   workspaceTestDoc = craneLib.cargoTest (commonArgs // {
     version = "0.0.1";
     cargoTestExtraArgs = "--doc";
