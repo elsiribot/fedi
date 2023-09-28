@@ -8,29 +8,26 @@ on:
         paths:
             - 'ui/**'
 
-defaults:
-    run:
-        working-directory: ui
-
 jobs:
     run:
         name: Check code & run tests
         runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
-              uses: actions/checkout@v2
-            - name: Setup Node
-              uses: actions/setup-node@v3
+              uses: actions/checkout@v3
+
+            - uses: cachix/install-nix-action@v20
               with:
-                  node-version: '18.14.X'
-                  cache: 'yarn'
-                  cache-dependency-path: ui/yarn.lock
-            - name: Install dependencies
-              run: yarn install
-            - name: Check for Prettier, ESLint, + Typescript errors
-              run: yarn lint
-            - name: Run tests with Jest
-              run: yarn test
+                  nix_path: nixpkgs=channel:nixos-23.05
+
+            - uses: cachix/cachix-action@v12
+              with:
+                  name: fedibtc
+                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+            - name: Run test suite
+              run: nix develop -c ./scripts/ci/test-ui.sh
+
             # TODO: These steps depend on the bridge so to avoid waiting too
             # long for this CI check we skip them for now
             # - name: Run React Native Detox tests with Regtest federation (Android only)
