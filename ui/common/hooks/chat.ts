@@ -121,8 +121,8 @@ export function usePublishNotificationToken(
         // Can't publish if no federation is selected
         if (!activeFederationId) return
 
-        // Can't publish if we don't have a token
-        if (!pushNotificationToken) return
+        // Don't set the token if we already have one
+        if (pushNotificationToken) return
 
         getDeviceToken()
             .then(token => {
