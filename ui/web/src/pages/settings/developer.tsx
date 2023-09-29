@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
     changeAuthenticatedGuardian,
@@ -26,6 +27,7 @@ import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
 function DeveloperPage() {
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedGuardian = useAppSelector(
@@ -204,9 +206,9 @@ function DeveloperPage() {
                             )}
                         </Setting>
                         <Setting>
-                            <Text>Transaction history</Text>
+                            <Text>{t('words.wallet')}</Text>
                             <Button onClick={handleDownloadTxHistory}>
-                                Export CSV
+                                {t('feature.developer.export-transactions-csv')}
                             </Button>
                         </Setting>
                         <Setting>

@@ -382,9 +382,9 @@ const DeveloperSettings: React.FC<Props> = () => {
                     </View>
                 )}
             </SettingsSection>
-            <SettingsSection title="Transaction history">
+            <SettingsSection title={t('words.wallet')}>
                 <Button
-                    title="Export CSV"
+                    title={t('feature.developer.export-transactions-csv')}
                     containerStyle={styles(theme).buttonContainer}
                     onPress={shareTxCsv}
                 />
