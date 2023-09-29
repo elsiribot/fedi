@@ -19,6 +19,11 @@
       inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
+    flakebox = {
+      url = "github:rustshop/flakebox?rev=c9210f4ac3654f92c2af0ed656e3035695ed9019";
+      # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
+    };
+
     fs-dir-cache = {
       url = "github:dpc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
     };
@@ -29,19 +34,25 @@
     };
   };
 
-  outputs = { self, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0, fenix }:
+  outputs = { self, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0, fenix, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
         };
+        pkgs-kitman = import fedimint-build.inputs.nixpkgs-kitman {
+          inherit system;
+        };
+
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
             (final: prev: {
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               convco = pkgs-unstable.convco;
+
+              esplora = pkgs-kitman.esplora;
 
               # mold wrapper from https://discourse.nixos.org/t/using-mold-as-linker-prevents-libraries-from-being-found/18530/5
               mold =
@@ -76,9 +87,12 @@
             })
           ];
         };
-        pkgs-kitman = import fedimint-build.inputs.nixpkgs-kitman {
-          inherit system;
+
+
+        flakeboxPackages = import nix/flakebox.nix {
+          inherit pkgs flakebox fedi-v0 fedimint-build fedimint-pkgs clightning-dev;
         };
+
         fmLib = fedimint-build.lib.${system};
         crane = fedimint-build.inputs.crane;
         advisory-db = fedimint-build.inputs.advisory-db;
@@ -265,6 +279,8 @@
             fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
             bridgeTests = craneLibBuildNative.bridgeTests;
           } // rustPackagesFinal;
+
+        legacyPackages = flakeboxPackages;
 
         devShells = fmLib.devShells // {
           default = crossDevShell;
