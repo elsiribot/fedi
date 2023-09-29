@@ -7,6 +7,7 @@ import {
 } from '@xmpp/client'
 import type { Status as XmppStatus } from '@xmpp/connection'
 import debug from '@xmpp/debug'
+import { JID } from '@xmpp/jid'
 import StanzaError from '@xmpp/middleware/lib/StanzaError'
 import parse from '@xmpp/xml/lib/parse'
 import EventEmitter from 'events'
@@ -47,7 +48,7 @@ import { jidToId } from './chat'
 
 interface XmppChatClientEventMap {
     status: XmppStatus
-    online: string
+    online: JID
     message: ChatMessage
     memberSeen: ChatMember
     group: ChatGroup
@@ -79,6 +80,7 @@ export class XmppChatClient {
 
         this.xmpp.on('status', this.handleStatus)
         this.xmpp.on('online', this.handleOnline)
+        this.xmpp.on('element', this.handleElement)
         this.xmpp.on('stanza', this.handleStanza)
         this.xmpp.on('error', this.handleError)
         return this.xmpp.start().catch(this.handleError)
@@ -603,9 +605,28 @@ export class XmppChatClient {
         this.emit('status', status)
     }
 
-    private handleOnline = (address: string) => {
+    private handleOnline = (address: JID) => {
         this.xmpp.send(xml('presence'))
         this.emit('online', address)
+    }
+
+    private handleElement = (element: Element) => {
+        try {
+            // this package does not fire the online event when a session is resumed
+            // https://github.com/xmppjs/xmpp.js/tree/main/packages/stream-management
+            // we need to wait a split second because this library does
+            // not restore the JID until just after the resumed stanza is received
+            if (element.is('resumed')) {
+                const interval = setInterval(() => {
+                    if (this.xmpp.jid) {
+                        clearInterval(interval)
+                        this.handleOnline(this.xmpp.jid)
+                    }
+                }, 10)
+            }
+        } catch (err) {
+            console.error('Error parsing XMPP element', element, err)
+        }
     }
 
     private handleStanza = (stanza: Element) => {
