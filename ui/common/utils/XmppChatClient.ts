@@ -620,6 +620,7 @@ export class XmppChatClient {
                 const interval = setInterval(() => {
                     if (this.xmpp.jid) {
                         clearInterval(interval)
+                        this.handleStatus('online')
                         this.handleOnline(this.xmpp.jid)
                     }
                 }, 10)
