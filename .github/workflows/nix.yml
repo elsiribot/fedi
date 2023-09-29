@@ -91,7 +91,7 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build fedi-fedimint-pkgs
-              run: nix build -L .#fedi-fedimint-pkgs
+              run: nix build -L .#ci.fedi-fedimint-pkgs
 
             - name: Build fedi-wasm
               run: nix build -L .#fedi-wasm

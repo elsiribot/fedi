@@ -31,7 +31,11 @@ echo "Running in temporary directory $FM_TEST_DIR"
 
 # symlink logs to local gitignored directory so they're easier to find
 mkdir -p target
-echo $FM_LOGS_DIR
+echo "FM_LOGS_DIR: $FM_LOGS_DIR"
+echo "FM_TEST_DIR: $FM_TEST_DIR"
+
+mkdir -p "$FM_LOGS_DIR"
+mkdir -p "$FM_TEST_DIR"
 
 rm -f target/logs
 ln -s $FM_LOGS_DIR target/logs || true
@@ -41,9 +45,10 @@ ln -s $FM_LOGS_DIR target/test || true
 devimint dev-fed &
 DEVIMINT_PID=$!
 eval "$(devimint env)"
+
 devimint wait
 
-FM_INVITE_CODE=$(cat $FM_DATA_DIR/client-connect)
+FM_INVITE_CODE=$(cat $FM_TEST_DIR/cfg/client-connect)
 export FM_INVITE_CODE
 
 echo Funding fedimint-cli wallet ...
