@@ -380,8 +380,8 @@ export async function getFederationPreview(
             let meta: FederationPreview['meta']
             let consensusVersion: FederationPreview['consensusVersion']
             let apiVersion: FederationPreview['apiVersion']
-            ws.addEventListener('error', () => {
-                reject()
+            ws.addEventListener('error', err => {
+                reject(err)
             })
             // Immediately send messages on open, responses come in message listener
             ws.addEventListener('open', () => {
