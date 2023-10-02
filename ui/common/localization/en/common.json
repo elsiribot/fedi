@@ -452,6 +452,9 @@
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
             "you-sent": "You sent"
+        },
+        "developer": {
+            "export-transactions-csv": "Export transactions CSV"
         }
     }
 }

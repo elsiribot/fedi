@@ -14,8 +14,47 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+    precheck:
+        name: 'Check for non-UI file changes'
+        runs-on: [self-hosted, linux]
+        outputs:
+            IS_PUSH_TO_MASTER: ${{ steps.check-event.outputs.IS_PUSH_TO_MASTER }}
+            HAS_NON_UI_CHANGES: ${{ steps.check-changes.outputs.HAS_NON_UI_CHANGES }}
+        steps:
+            - name: Determine event type
+              id: check-event
+              run: |
+                  IS_PUSH_TO_MASTER=0
+                  if [[ "${{ github.event_name }}" == 'push' && \
+                      "${{ github.ref }}" == 'refs/heads/master' ]]; then
+                    IS_PUSH_TO_MASTER=1
+                  fi
+                  echo "IS_PUSH_TO_MASTER=$IS_PUSH_TO_MASTER" >> $GITHUB_OUTPUT
+            - name: Check out code
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.base.ref }}
+                  fetch-depth: 1
+            - name: Check for changes outside 'ui/**'
+              id: check-changes
+              run: |
+                  git fetch origin ${{ github.event.pull_request.head.sha }} 
+                  FILES_CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+                  HAS_NON_UI_CHANGES=0
+                  for file in $FILES_CHANGED; do
+                    if [[ ! $file == ui/* ]]; then
+                      HAS_NON_UI_CHANGES=1
+                      break
+                    fi
+                  done
+                  echo "HAS_NON_UI_CHANGES=$HAS_NON_UI_CHANGES" >> $GITHUB_OUTPUT
+
     lint:
         name: 'Lint'
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, linux]
         timeout-minutes: 5
         steps:
@@ -35,6 +74,10 @@ jobs:
 
     build-linux:
         name: 'Build - linux'
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
@@ -48,7 +91,7 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build fedi-fedimint-pkgs
-              run: nix build -L .#fedi-fedimint-pkgs
+              run: nix build -L .#ci.fedi-fedimint-pkgs
 
             - name: Build fedi-wasm
               run: nix build -L .#fedi-wasm
@@ -62,14 +105,37 @@ jobs:
             - name: Build devops-cli
               run: nix build -L .#devops-cli
 
+    # all the Linux Nix derivations that are based on the whole workspace
+    build-linux-workspace:
+        name: 'Build - linux workspace'
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
+        runs-on: [self-hosted, linux]
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@v3
+            - uses: cachix/install-nix-action@v20
+              with:
+                  nix_path: nixpkgs=channel:nixos-22.05
+            - uses: cachix/cachix-action@v12
+              with:
+                  name: fedibtc
+                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
             - name: Test bridge
               run: |
-                nix build -L .#testBridgeV1
-                # broken ATM
-                # nix build -L .#testBridgeV0
+                  nix build -L .#ci.testBridgeV1
+                  # broken ATM
+                  # nix build -L .#ci.testBridgeV0
 
     build-android:
         name: 'Build - android'
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
@@ -87,6 +153,10 @@ jobs:
 
     build-ios:
         name: 'Build - macos'
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         runs-on: [self-hosted, macos]
         timeout-minutes: 60
         steps:
