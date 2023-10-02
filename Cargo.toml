@@ -141,6 +141,7 @@ threshold_crypto = { opt-level = 3 }
 [profile.ci]
 inherits = "dev"
 debug = 1
+incremental = false
 
 # Workaround: https://github.com/rust-lang/cargo/issues/12457 which causes
 #             https://github.com/ipetkov/crane/issues/370
