@@ -6,7 +6,7 @@ use bitcoin::secp256k1;
 use chrono::{DateTime, Utc};
 
 use fedimint_core::{
-    config::ClientConfig,
+    api::InviteCode,
     task::{timeout, RwLock},
     Amount,
 };
@@ -79,12 +79,12 @@ pub enum CheckResult {
 }
 
 pub async fn check_mutinynet(
-    cfg: ClientConfig,
+    invite_code: InviteCode,
     gateway_public_key: Option<secp256k1::PublicKey>,
     state: Arc<RwLock<CheckState>>,
 ) -> anyhow::Result<()> {
     let interval_time = CHECK_INTERVAL_TIME;
-    let client = build_client(&cfg).await?;
+    let client = build_client(invite_code).await?;
     if let Some(gateway_public_key) = &gateway_public_key {
         client.set_active_gateway(gateway_public_key).await?;
     }

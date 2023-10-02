@@ -7,7 +7,8 @@ use clap::{arg, Args, Parser, Subcommand};
 use common::{parse_node_pub_key, try_mutinynet_faucet_create_invoice};
 
 use fedimint_core::{
-    config::{load_from_file, FederationId},
+    api::InviteCode,
+    config::FederationId,
     task::{timeout, RwLock},
     Amount,
 };
@@ -35,8 +36,8 @@ struct Opts {
 #[derive(Subcommand, Clone)]
 enum CliCommand {
     MutinynetMonitoring {
-        #[arg(long, help = "Path of the client config.json")]
-        client_config: PathBuf,
+        #[arg(long, help = "Invite code to join the federation")]
+        invite_code: InviteCode,
 
         #[arg(
             long,
@@ -170,16 +171,15 @@ async fn main() -> anyhow::Result<()> {
     let check_state = Arc::new(RwLock::new(CheckState::default()));
     match opts.command {
         CliCommand::MutinynetMonitoring {
-            client_config,
+            invite_code,
             gateway_public_key,
             bind,
         } => {
-            let cfg = load_from_file(&client_config)?;
             let gateway_public_key = gateway_public_key
                 .map(|g| parse_node_pub_key(&g))
                 .transpose()?;
             let daemon = tokio::spawn(check_mutinynet(
-                cfg,
+                invite_code,
                 gateway_public_key,
                 Arc::clone(&check_state),
             ));

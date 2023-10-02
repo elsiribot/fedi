@@ -16,7 +16,7 @@ use fedimint_client::{
     ClientBuilder,
 };
 use fedimint_core::{
-    config::ClientConfig,
+    api::InviteCode,
     core::IntoDynInstance,
     module::{CommonModuleInit, __reexports::serde_json},
     Amount, OutPoint, TieredSummary,
@@ -192,14 +192,14 @@ pub async fn cli_wait_invoice(invoice: &Invoice) -> anyhow::Result<String> {
     Ok(txid)
 }
 
-pub async fn build_client(cfg: &ClientConfig) -> anyhow::Result<Client> {
+pub async fn build_client(invite_code: InviteCode) -> anyhow::Result<Client> {
     let mut client_builder = ClientBuilder::default();
     client_builder.with_module(MintClientGen);
     client_builder.with_module(LightningClientGen);
     // FIXME: do we want to inject bitcoin client at all?
     client_builder.with_module(WalletClientGen(None));
     client_builder.with_primary_module(1);
-    client_builder.with_config(cfg.clone());
+    client_builder.with_invite_code(invite_code);
     let db = fedimint_core::db::mem_impl::MemDatabase::new();
     client_builder.with_database(db);
     let client = client_builder.build::<PlainRootSecretStrategy>().await?;

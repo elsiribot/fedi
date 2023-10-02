@@ -5,14 +5,13 @@ edition = "2021"
 
 [dependencies]
 
-fedimint-client = { workspace = true}
-fedimint-core = { workspace = true}
-fedimint-ln-client = { workspace = true}
-fedimint-logging = { workspace = true}
-fedimint-mint-client = { workspace = true}
-fedimint-wallet-client = { workspace = true}
-ln-gateway = { workspace = true}
-
+fedimint-client = { workspace = true }
+fedimint-core = { workspace = true }
+fedimint-ln-client = { workspace = true }
+fedimint-logging = { workspace = true }
+fedimint-mint-client = { workspace = true }
+fedimint-wallet-client = { workspace = true }
+ln-gateway = { workspace = true }
 
 
 anyhow = "1"
