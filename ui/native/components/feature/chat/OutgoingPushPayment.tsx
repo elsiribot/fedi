@@ -3,17 +3,30 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { ChatMessage, ChatPaymentStatus } from '../../../types'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { SvgImageName } from '../../ui/SvgImage'
 
 type OutgoingPushPaymentProps = {
+    message: ChatMessage
     text: string
 }
 
 const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
+    message,
     text,
 }: OutgoingPushPaymentProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+
+    let iconName: SvgImageName | undefined
+    let statusText: string
+    if (message.payment?.status === ChatPaymentStatus.paid) {
+        iconName = 'Check'
+        statusText = t('words.paid')
+    } else {
+        statusText = t('words.pending')
+    }
 
     return (
         <View style={styles(theme).container}>
@@ -22,13 +35,15 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
             </Text>
             <View style={styles(theme).actionsContainer}>
                 <View style={styles(theme).statusContainer}>
-                    <SvgImage
-                        name="Check"
-                        size={SvgImageSize.xs}
-                        color={theme.colors.secondary}
-                    />
+                    {iconName && (
+                        <SvgImage
+                            name={iconName}
+                            size={SvgImageSize.xs}
+                            color={theme.colors.secondary}
+                        />
+                    )}
                     <Text medium caption style={styles(theme).statusText}>
-                        {t('words.paid')}
+                        {statusText}
                     </Text>
                 </View>
             </View>

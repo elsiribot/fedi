@@ -37,14 +37,25 @@ export interface ChatWithLatestMessage extends Chat {
     hasNewMessages: boolean
 }
 
+export enum ChatMessageStatus {
+    sent, // 0
+    failed, // 1
+    queued, // 2
+}
+
 export interface ChatMessage {
     id: string
     content: string
     sentAt: number
     sentBy: ChatMember['id']
+    /** Only present on group messages */
     sentIn?: ChatGroup['id']
+    /** Only present on direct messages */
     sentTo?: ChatMember['id']
+    /** Only present on chat payment messages */
     payment?: ChatPayment
+    /** Only present locally on messages sent from us */
+    status?: ChatMessageStatus
 }
 
 export interface ChatPayment {

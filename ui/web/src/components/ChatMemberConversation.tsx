@@ -41,7 +41,11 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
 
     // If we don't have info about this member, attempt to fetch a pubkey for them
     useEffect(() => {
-        if (member || !federationId || !isChatOnline) return
+        if (!isChatOnline) {
+            setIsLoading(false)
+            return
+        }
+        if (member || !federationId) return
         setIsLoading(true)
         dispatch(fetchChatMember({ federationId, memberId }))
             .catch(() => {

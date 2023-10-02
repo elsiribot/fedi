@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
-import { selectChatMember, selectWebsocketIsHealthy } from '@fedi/common/redux'
+import { selectChatMember } from '@fedi/common/redux'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
@@ -24,17 +24,11 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
     const { toast } = useEnvironmentContext().state
     const member = useAppSelector(s => selectChatMember(s, memberId))
 
-    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
-
     return (
         <Pressable
             onPress={() => {
                 if (!member) {
                     toast?.show(t('errors.chat-member-not-found'), 4000)
-                    return
-                }
-                if (websocketIsHealthy === false) {
-                    toast?.show(t('errors.chat-connection-unhealthy'), 4000)
                     return
                 }
                 navigation.navigate('ChatWallet', {
@@ -49,7 +43,7 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
                 }}
                 size={SvgImageSize.md}
                 color={
-                    websocketIsHealthy && member
+                    member
                         ? theme.colors.primary
                         : theme.colors.primaryVeryLight
                 }

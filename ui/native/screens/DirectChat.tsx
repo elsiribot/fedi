@@ -19,7 +19,6 @@ import { makeMessageGroups } from '@fedi/common/utils/chat'
 import { fedimint } from '../bridge'
 import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -49,7 +48,6 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
-    const { toast } = useEnvironmentContext().state
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const { member, isFetchingMember } = useChatMember(memberId)
 
@@ -69,20 +67,17 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         async (messageText: string) => {
             // If the memberId is not stored, then we have failed to fetch the pubkey
             // and cannot send messages
-            if (member) {
-                await dispatch(
-                    sendDirectMessage({
-                        fedimint,
-                        federationId: activeFederationId as string,
-                        recipientId: memberId,
-                        content: messageText,
-                    }),
-                ).unwrap()
-            } else {
-                toast?.show(t('errors.chat-member-not-found'), 4000)
-            }
+            if (!member) throw new Error('errors.chat-member-not-found')
+            await dispatch(
+                sendDirectMessage({
+                    fedimint,
+                    federationId: activeFederationId as string,
+                    recipientId: memberId,
+                    content: messageText,
+                }),
+            ).unwrap()
         },
-        [activeFederationId, dispatch, member, memberId, t, toast],
+        [activeFederationId, dispatch, member, memberId],
     )
 
     let content: React.ReactNode
