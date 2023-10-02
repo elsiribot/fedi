@@ -48,7 +48,14 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 setFederationPreview(fed)
             } catch (err) {
                 console.error(err)
-                toast?.show(t('errors.invalid-federation-code'), 5000)
+                toast?.show(
+                    formatErrorMessage(
+                        t,
+                        err,
+                        'errors.invalid-federation-code',
+                    ),
+                    5000,
+                )
             }
             setIsFetchingPreview(false)
         },
