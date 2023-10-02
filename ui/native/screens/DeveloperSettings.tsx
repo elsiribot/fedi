@@ -37,7 +37,14 @@ import {
     LightningGateway,
     SupportedCurrency,
 } from '@fedi/common/types'
+import {
+    makeBase64CSVUri,
+    makeCSVFilename,
+    makeTransactionHistoryCSV,
+} from '@fedi/common/utils/csv'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
+import { fedimint } from '../bridge'
 import { AddCustomFediModDialog } from '../components/feature/developer-settings/AddCustomFediModDialog'
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
@@ -115,6 +122,24 @@ const DeveloperSettings: React.FC<Props> = () => {
             // FIXME: this needs file:// prefix ... should do this with a util?
             url: `file://${RNFS.DocumentDirectoryPath}/fedi.log`,
         })
+    }
+
+    const shareTxCsv = async () => {
+        try {
+            if (!activeFederation) throw new Error('No active federation')
+            const transactions = await fedimint.listTransactions(
+                activeFederation.id,
+            )
+            await Share.open({
+                filename: makeCSVFilename(
+                    `transactions-${activeFederation.name}`,
+                ),
+                type: 'text/csv',
+                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
+            })
+        } catch (err) {
+            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+        }
     }
 
     const removeFediMod = (fediModId: string) => {
@@ -356,6 +381,13 @@ const DeveloperSettings: React.FC<Props> = () => {
                         />
                     </View>
                 )}
+            </SettingsSection>
+            <SettingsSection title={t('words.wallet')}>
+                <Button
+                    title={t('feature.developer.export-transactions-csv')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={shareTxCsv}
+                />
             </SettingsSection>
             <SettingsSection title="Danger zone">
                 <Button

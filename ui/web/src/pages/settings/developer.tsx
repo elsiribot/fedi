@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
     changeAuthenticatedGuardian,
@@ -9,6 +10,11 @@ import {
     setLastFetchedMessageId,
 } from '@fedi/common/redux'
 import { LightningGateway } from '@fedi/common/types'
+import {
+    makeTransactionHistoryCSV,
+    makeBase64CSVUri,
+    makeCSVFilename,
+} from '@fedi/common/utils/csv'
 
 import { Button } from '../../components/Button'
 import { ContentBlock } from '../../components/ContentBlock'
@@ -16,11 +22,12 @@ import { Input } from '../../components/Input'
 import * as Layout from '../../components/Layout'
 import { RadioGroup } from '../../components/RadioGroup'
 import { Text } from '../../components/Text'
-import { useAppDispatch, useAppSelector } from '../../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
 function DeveloperPage() {
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedGuardian = useAppSelector(
@@ -28,9 +35,32 @@ function DeveloperPage() {
     )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianPassword, setGuardianPassword] = useState('')
+    const { showErrorToast } = useToast()
 
     const federationId = activeFederation?.id
     const federationNodes = activeFederation?.nodes
+
+    /* TX history */
+
+    const handleDownloadTxHistory = useCallback(async () => {
+        try {
+            if (!activeFederation) throw new Error('No active federation')
+            const transactions = await fedimint.listTransactions(
+                activeFederation.id,
+            )
+            // To download a CSV, create a fake link and click it
+            const hiddenElement = document.createElement('a')
+            hiddenElement.href = makeBase64CSVUri(
+                makeTransactionHistoryCSV(transactions),
+            )
+            hiddenElement.download = makeCSVFilename(
+                `transactions-${activeFederation.name}`,
+            )
+            hiddenElement.click()
+        } catch (err) {
+            showErrorToast(err, 'errors.unknown-error')
+        }
+    }, [showErrorToast, activeFederation])
 
     /* Lightning gateways */
 
@@ -174,6 +204,12 @@ function DeveloperPage() {
                                     </Button>
                                 </>
                             )}
+                        </Setting>
+                        <Setting>
+                            <Text>{t('words.wallet')}</Text>
+                            <Button onClick={handleDownloadTxHistory}>
+                                {t('feature.developer.export-transactions-csv')}
+                            </Button>
                         </Setting>
                         <Setting>
                             <Text>Chat storage</Text>

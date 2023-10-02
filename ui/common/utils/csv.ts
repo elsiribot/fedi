@@ -1,0 +1,67 @@
+import { Transaction } from '../types'
+
+type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
+
+export function makeTransactionHistoryCSV(txs: Transaction[]) {
+    const sortedTxs = txs.sort((a, b) => a.createdAt - b.createdAt)
+    return makeCSV(sortedTxs, [
+        {
+            name: 'ID',
+            getValue: tx => tx.id,
+        },
+        {
+            name: 'Created at',
+            getValue: tx => new Date(tx.createdAt * 1000).toISOString(),
+        },
+        {
+            name: 'Direction',
+            getValue: tx => tx.direction,
+        },
+        {
+            name: 'Type',
+            getValue: tx =>
+                tx.bitcoin ? 'on-chain' : tx.lightning ? 'lightning' : 'ecash',
+        },
+        {
+            name: 'Amount (msats)',
+            getValue: tx => tx.amount,
+        },
+        {
+            name: 'Notes',
+            getValue: tx => tx.notes,
+        },
+    ])
+}
+
+/**
+ * Given a list of items and column definitions, make a multi-line CSV string.
+ */
+function makeCSV<T>(items: T[], columns: CSVColumns<T>): string {
+    let csv = columns.map(column => column.name).join(',')
+    items.forEach(item => {
+        csv += `\r\n`
+        columns.forEach((column, idx) => {
+            if (idx !== 0) csv += ','
+            csv += column.getValue(item)
+        })
+    })
+    return csv
+}
+
+/**
+ * Given a string CSV, convert it to a base64 data URI.
+ */
+export function makeBase64CSVUri(csv: string) {
+    return `data:text/csv;base64,${Buffer.from(csv, 'utf8').toString('base64')}`
+}
+
+/**
+ * Given a string, convert it to something that can be used as a filename.
+ * E.g. "My federation name" -> "my-federation-name.csv"
+ */
+export function makeCSVFilename(name: string) {
+    return `${name
+        .toLowerCase()
+        .replace(/\s/g, '-')
+        .replace(/[^a-zA-Z0-9-]/g, '')}.csv`
+}
