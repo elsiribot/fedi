@@ -56,6 +56,7 @@ const SettingsHeader: React.FC<{}> = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            paddingTop: theme.spacing.md,
             paddingBottom: theme.spacing.lg,
         },
         rightContainer: {
