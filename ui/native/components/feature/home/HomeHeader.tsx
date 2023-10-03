@@ -36,10 +36,10 @@ const HomeHeader: React.FC = () => {
             headerRight={
                 showOfflineWallet && (
                     <Pressable
-                        onPress={() => navigation.navigate('OmniScanner')}
+                        onPress={() => navigation.navigate('Settings')}
                         hitSlop={5}
                         style={style.iconContainer}>
-                        <SvgImage name="OmniScan" />
+                        <SvgImage name="Cog" />
                     </Pressable>
                 )
             }
