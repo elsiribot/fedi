@@ -49,12 +49,11 @@ pub async fn refill_cli_mutinynet_wallet_if_needed(
 pub async fn cli_refill_wallet_with_mutinynet_faucet(amount: Amount) -> anyhow::Result<Amount> {
     let amount = max(amount, Amount::from_msats(1_000));
     let amount = min(amount, Amount::from_msats(10_000_000));
-    let invoice = cli_generate_invoice(&amount).await?;
+    let (invoice, operation_id) = cli_generate_invoice(&amount).await?;
     debug!("Generated invoice: {invoice}");
     let preimage = mutinynet_faucet_pay_invoice(&invoice).await?;
     debug!("Got preimage: {preimage}");
-    let txid = cli_wait_invoice(&invoice).await?;
-    debug!("Got txid: {txid}");
+    cli_wait_invoice(&operation_id).await?;
     Ok(amount)
 }
 
@@ -166,30 +165,33 @@ pub async fn cli_get_total_amount() -> anyhow::Result<Amount> {
     cmd!(FedimintCli, "info").out_json().await?["total_amount_msat"]
         .as_u64()
         .map(Amount::from_msats)
-        .ok_or_else(|| anyhow!("no total_amount_msat returned"))
+        .context("no total_amount_msat returned")
 }
 
-pub async fn cli_generate_invoice(amount: &Amount) -> anyhow::Result<Invoice> {
+pub async fn cli_generate_invoice(amount: &Amount) -> anyhow::Result<(Invoice, OperationId)> {
     let msats = amount.msats;
-    let invoice = cmd!(FedimintCli, "ln-invoice", "--amount", "{msats}")
+    let result = cmd!(FedimintCli, "ln-invoice", "--amount", "{msats}")
         .out_json()
-        .await?["invoice"]
+        .await?;
+    let invoice = result["invoice"]
         .as_str()
         .map(Invoice::from_str)
         .transpose()?
-        .ok_or_else(|| anyhow!("no invoice returned"))?;
-    Ok(invoice)
+        .context("no invoice returned")?;
+    let operation_id = result["operation_id"]
+        .as_str()
+        .map(OperationId::from_str)
+        .transpose()?
+        .context("no operation_id returned")?;
+    Ok((invoice, operation_id))
 }
 
-pub async fn cli_wait_invoice(invoice: &Invoice) -> anyhow::Result<String> {
-    let txid = cmd!(FedimintCli, "wait-invoice", "{invoice}")
+pub async fn cli_wait_invoice(operation_id: &OperationId) -> anyhow::Result<()> {
+    let result = cmd!(FedimintCli, "wait-invoice", "{operation_id}")
         .out_json()
-        .await?["paid_in_tx"]["txid"]
-        .as_str()
-        .map(ToOwned::to_owned)
-        .ok_or_else(|| anyhow!("no transaction found"))?;
-    cmd!(FedimintCli, "fetch").out_string().await?;
-    Ok(txid)
+        .await?;
+    debug!("wait-invoice result: {result}");
+    Ok(())
 }
 
 pub async fn build_client(invite_code: InviteCode) -> anyhow::Result<Client> {
