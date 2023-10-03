@@ -11,6 +11,7 @@ import { useMonitorChatConnection } from '@fedi/common/hooks/chat'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
+import SettingsHeader from './components/feature/admin/SettingsHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
@@ -48,7 +49,6 @@ import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOff
 import SendHeader from './components/feature/send/SendHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
-import SvgImage from './components/ui/SvgImage'
 import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BroadcastAdminsList from './screens/BroadcastAdminsList'
@@ -79,7 +79,6 @@ import JoinFederation from './screens/JoinFederation'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
-import OmniScanner from './screens/OmniScanner'
 import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
 import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -99,6 +98,7 @@ import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import SendSuccess from './screens/SendSuccess'
+import Settings from './screens/Settings'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
@@ -618,19 +618,12 @@ const MainNavigator = () => {
                                     header: () => <SelectedFederationHeader />,
                                 })}
                             />
-                            {/* Omni scanner */}
+                            {/* Settings */}
                             <Stack.Screen
-                                name="OmniScanner"
-                                component={OmniScanner}
+                                name="Settings"
+                                component={Settings}
                                 options={() => ({
-                                    header: () => (
-                                        <Header
-                                            backButton
-                                            headerCenter={
-                                                <SvgImage name="OmniScan" />
-                                            }
-                                        />
-                                    ),
+                                    header: () => <SettingsHeader />,
                                 })}
                             />
                             {/* Developer-only */}
