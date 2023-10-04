@@ -250,26 +250,7 @@
               export LD=/usr/bin/clang
               export LD_FOR_TARGET=/usr/bin/clang
 
-              # This will not work in `nix build`, but should for `nix develop`
-              # See https://github.com/svanderburg/nix-xcodeenvtests for explanation of limitations
-              export CC_x86_64_apple_ios="/usr/bin/clang"
-              export CXX_x86_64_apple_ios="/usr/bin/clang++"
-              export LD_x86_64_apple_ios="/usr/bin/cc"
-              export CC_x86_64_apple_ios_sim="/usr/bin/clang"
-              export CXX_x86_64_apple_ios_sim="/usr/bin/clang++"
-              export LD_x86_64_apple_ios_sim="/usr/bin/cc"
-              export CC_x86_64_apple_darwin="/usr/bin/clang"
-              export CXX_x86_64_apple_darwin="/usr/bin/clang++"
-              export LD_x86_64_apple_darwin="/usr/bin/cc"
-              export CC_aarch64_apple_ios="/usr/bin/clang"
-              export CXX_aarch64_apple_ios="/usr/bin/clang++"
-              export LD_aarch64_apple_ios="/usr/bin/cc"
-              export CC_aarch64_apple_ios_sim="/usr/bin/clang"
-              export CXX_aarch64_apple_ios_sim="/usr/bin/clang++"
-              export LD_aarch64_apple_ios_sim="/usr/bin/cc"
-              export CC_aarch64_apple_darwin="/usr/bin/clang"
-              export CXX_aarch64_apple_darwin="/usr/bin/clang++"
-              export LD_aarch64_apple_darwin="/usr/bin/cc"
+              export LLVM_CONFIG_PATH=""
             '';
           });
           v0 = fedi-v0.devShells.${system}.default.overrideAttrs (prev: {
