@@ -15,3 +15,6 @@ procs:
     ios:
         shell: bash scripts/ui/start-ios.sh
         stop: SIGKILL
+    bridge:
+        shell: bash scripts/bridge/rebuild.sh
+        stop: SIGKILL
