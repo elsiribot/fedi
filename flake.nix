@@ -197,9 +197,6 @@
               pkgs.perl
             ];
 
-          buildInputs = lib.optionals (!pkgs.stdenv.isDarwin) [
-            pkgs.glibc_multi.dev
-          ];
           FEDI_CROSS_DEV_SHELL = "1";
           shellHook = ''
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
@@ -232,13 +229,12 @@
           # nix develop .#xcode is used for running commands that depend on an
           # existing underlying Xcode installation that cannot be nixified
           xcode = crossDevShell.overrideAttrs (prev: {
-            nativeBuildInputs = prev.nativeBuildInputs
-              ++ lib.optionals stdenv.isDarwin [
+            nativeBuildInputs = lib.optionals stdenv.isDarwin [
               pkgs.bundler
               pkgs.cocoapods
               xcode-wrapper
               pkgs.fs-dir-cache
-            ];
+            ] ++ prev.nativeBuildInputs;
             shellHook = prev.shellHook
               + ''
               # CocoaPods requires the terminal to be using UTF-8 encoding.
