@@ -1,3 +1,4 @@
+import { useFlipper } from '@react-navigation/devtools'
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import {
     NavigationContainer,
@@ -736,6 +737,9 @@ const linking: NavigationLinkingConfig = {
 const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
+
+    // Expose navigation to flipper dev tooling
+    useFlipper(navigation)
 
     // Makes sure we always have a healthy XMPP websocket for chat
     useXmppHealthCheck()

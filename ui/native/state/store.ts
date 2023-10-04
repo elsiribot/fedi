@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { configureStore } from '@reduxjs/toolkit'
+import { Middleware, configureStore } from '@reduxjs/toolkit'
 
 import {
     commonMiddleware,
@@ -10,8 +10,17 @@ import { checkForLegacyChatMigrations } from '@fedi/native/utils/migration'
 
 import { fedimint } from '../bridge'
 
+const nativeMiddleware: Middleware[] = []
+if (__DEV__) {
+    const createDebugger = require('redux-flipper').default
+    nativeMiddleware.push(createDebugger())
+}
+
 export const store = configureStore({
-    middleware: commonMiddleware,
+    middleware: getDefaultMiddleware => [
+        ...commonMiddleware(getDefaultMiddleware),
+        ...nativeMiddleware,
+    ],
     reducer: {
         ...commonReducers,
     },
