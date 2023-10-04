@@ -88,6 +88,7 @@ fi
 source $REPO_ROOT/scripts/ui/dev-setup.sh
 
 # export these so mprocs scripts can see them
+export SKIP_BRIDGE_BUILD
 export SKIP_PWA_BUILD
 export SKIP_ANDROID_BUILD
 export SKIP_IOS_BUILD
