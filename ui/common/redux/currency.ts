@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState, selectFederationMetadata } from '.'
 import { SupportedCurrency } from '../types'
@@ -102,13 +102,16 @@ export const selectBtcExchangeRate = (s: CommonState) => {
             return exchangeRate
         }
     }
+
+    const eurPrice = s.currency.prices[SupportedCurrency.EUR] || 0
+
     // Special case for the CFA franc which is a fixed 650x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CFA) {
-        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
+        exchangeRate = eurPrice * 650
     }
     // Special case for CZK which is a fixed 23.5x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CZK) {
-        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
+        exchangeRate = eurPrice * 23.5
     }
 
     return exchangeRate
