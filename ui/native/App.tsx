@@ -25,29 +25,32 @@ import theme from './styles/theme'
 
 const App = () => {
     const { t } = useTranslation()
-    const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
-
-    async function onInitializeBridge() {
-        console.info(
-            'initializing connection to federation',
-            RNFS.DocumentDirectoryPath,
-        )
-        const start = Date.now()
-        await initializeBridge(RNFS.DocumentDirectoryPath)
-        setBridgeIsReady(true)
-        const stop = Date.now()
-        console.info('initialized:', stop - start, 'ms OS:', Platform.OS)
-    }
+    const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(true)
 
     async function requestPushNotificationPermissions() {
         await notifee.requestPermission()
     }
 
-    // Initialize redux store
-    useEffect(() => initializeNativeStore(), [])
-
+    // Initialize bridge
     useEffect(() => {
+        async function onInitializeBridge() {
+            console.info(
+                'initializing connection to federation',
+                RNFS.DocumentDirectoryPath,
+            )
+            const start = Date.now()
+            await initializeBridge(RNFS.DocumentDirectoryPath)
+            setBridgeIsReady(true)
+            const stop = Date.now()
+            console.info('initialized:', stop - start, 'ms OS:', Platform.OS)
+        }
         onInitializeBridge()
+    }, [])
+
+    // Initialize redux store
+    useEffect(() => {
+        const unsubscribe = initializeNativeStore()
+        return unsubscribe
     }, [])
 
     useEffect(() => {

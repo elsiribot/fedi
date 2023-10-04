@@ -16,10 +16,11 @@ const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
 
     // Initialize redux store behavior
     useEffect(() => {
-        initializeWebStore()
+        const unsubscribe = initializeWebStore()
+        return unsubscribe
     }, [])
 
-    // Watch for incoming payments when we're rendering a lightning invoice
+    // Initialize bridge logger
     useEffect(() => {
         console.info('setting up logging')
         const unsubscribe = fedimint.addListener('log', event => {

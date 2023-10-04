@@ -1,4 +1,4 @@
-import { createListenerMiddleware } from '@reduxjs/toolkit'
+import { UnsubscribeListener, createListenerMiddleware } from '@reduxjs/toolkit'
 import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMiddleware'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
@@ -49,10 +49,11 @@ export function initializeCommonStore(
     storage: StorageApi,
 ) {
     // Immediately start watching BTC/USD prices
+    // TODO: provide unsubscribe for this
     dispatch(watchPrices())
 
     // Update federation on bridge events
-    fedimint.addListener('federation', event => {
+    const unsubscribeFederation = fedimint.addListener('federation', event => {
         // If they have an external meta configured, exclude name and meta from update
         const federation: Partial<Federation> = { ...event }
         if (event.meta.meta_external_url) {
@@ -64,8 +65,9 @@ export function initializeCommonStore(
 
     // Load state from local storage, then start listener that syncs to storage
     // on changes to stored state after it's been loaded.
+    let unsubscribeStorage: UnsubscribeListener = () => null
     dispatch(loadFromStorage({ storage })).then(() => {
-        listenerMiddleware.startListening({
+        unsubscribeStorage = listenerMiddleware.startListening({
             predicate: (_action, currentState, previousState) => {
                 return hasStorageStateChanged(currentState, previousState)
             },
@@ -81,4 +83,9 @@ export function initializeCommonStore(
             },
         })
     })
+
+    return () => {
+        unsubscribeFederation()
+        unsubscribeStorage()
+    }
 }
