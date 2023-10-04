@@ -65,9 +65,17 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
 
             <View style={styles(theme).rightContainer}>
                 <Text style={styles(theme).rightAlignedText}>
-                    {`${amountUtils.formatNumber(
+                    {/* TODO: Remove this workaround when we get the amount from the bridge */}
+                    {/* {`${amountUtils.formatNumber(
                         amountUtils.msatToSat(txn.amount),
-                    )} ${t('words.sats').toUpperCase()}`}
+                    )} ${t('words.sats').toUpperCase()}`} */}
+                    {txn.bitcoin &&
+                    txn.amount === 0 &&
+                    txn.direction === TransactionDirection.receive
+                        ? `onchain`
+                        : `${amountUtils.formatNumber(
+                              amountUtils.msatToSat(txn.amount),
+                          )} ${t('words.sats').toUpperCase()}`}
                 </Text>
                 <Text
                     small

@@ -11,11 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import {
-    IncomingBitcoinTransactionStatus,
-    Transaction,
-    TransactionDirection,
-} from '@fedi/common/types'
+import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
@@ -91,17 +87,19 @@ const TransactionDetail = ({
                 color={theme.colors.orange}
             />
             <Text>{renderStatus()}</Text>
-            <Text h2>{`${amountUtils.formatNumber(
-                amountUtils.msatToSat(txn.amount),
-            )} ${t('words.sats')}`}</Text>
+            {txn.amount !== 0 && (
+                <Text h2>{`${amountUtils.formatNumber(
+                    amountUtils.msatToSat(txn.amount),
+                )} ${t('words.sats')}`}</Text>
+            )}
             <View style={styles(theme).detailItemsContainer}>
                 <Divider />
-                {txn.bitcoin?.incomingStatus && (
+                {txn.bitcoin && (
                     <View>
                         <View style={styles(theme).detailItem}>
                             <Text>{`${t('words.status')}`}</Text>
-                            {txn.bitcoin?.incomingStatus ===
-                            IncomingBitcoinTransactionStatus.complete ? (
+                            {/* TODO: Add other pending states for seen, confirming, etc */}
+                            {txn.onchainState?.type === 'Claimed' ? (
                                 <Text>{`${t('words.complete')}`}</Text>
                             ) : (
                                 <Text>
@@ -134,7 +132,6 @@ const TransactionDetail = ({
                         )}`}</Text>
                     </View>
                 )}
-                <Divider />
                 {txn.lightning && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.lightning-request')}`}</Text>
@@ -169,16 +166,42 @@ const TransactionDetail = ({
                         </Text>
                     </View>
                 )}
-                {txn.bitcoin && (
+                {txn.bitcoin?.address && (
+                    <View style={styles(theme).detailItem}>
+                        <Text>{`${t('words.to')}`}</Text>
+                        <Pressable
+                            style={styles(theme).detailItem}
+                            onPress={() => {
+                                Clipboard.setString(txn.bitcoin?.address!)
+                                toast?.show(t('phrases.copied-bitcoin-address'))
+                            }}>
+                            <Text>
+                                {stringUtils.truncateMiddleOfString(
+                                    txn.bitcoin.address,
+                                    5,
+                                )}
+                            </Text>
+                            <SvgImage name="Copy" size={SvgImageSize.sm} />
+                        </Pressable>
+                    </View>
+                )}
+                {txn.bitcoin?.txid && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
-                        <Text>
-                            {stringUtils.truncateMiddleOfString(
-                                txn.bitcoin.txid,
-                                5,
-                            )}
-                        </Text>
-                        lightning:
+                        <Pressable
+                            style={styles(theme).detailItem}
+                            onPress={() => {
+                                Clipboard.setString(txn.bitcoin?.txid!)
+                                toast?.show(t('phrases.copied-transaction-id'))
+                            }}>
+                            <Text>
+                                {stringUtils.truncateMiddleOfString(
+                                    txn.bitcoin.txid,
+                                    5,
+                                )}
+                            </Text>
+                            <SvgImage name="Copy" size={SvgImageSize.sm} />
+                        </Pressable>
                     </View>
                 )}
                 <Divider />
