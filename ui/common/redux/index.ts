@@ -4,10 +4,11 @@ import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
 import { Federation, StorageApi } from '../types'
+import { bitfinexPriceOracle } from '../utils/BitfinexPriceOracle'
 import { FedimintBridge } from '../utils/fedimint'
 import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
-import { currencySlice, watchPrices } from './currency'
+import { currencySlice, updateBtcFiatPrice } from './currency'
 import { environmentSlice } from './environment'
 import { federationSlice } from './federation'
 import { updateFederation } from './federation'
@@ -48,9 +49,11 @@ export function initializeCommonStore(
     fedimint: FedimintBridge,
     storage: StorageApi,
 ) {
-    // Immediately start watching BTC/USD prices
-    // TODO: provide unsubscribe for this
-    dispatch(watchPrices())
+    // Start watching BTC prices for supported currencies
+    bitfinexPriceOracle.start()
+    const unsubscribePrices = bitfinexPriceOracle.subscribe(update => {
+        dispatch(updateBtcFiatPrice(update))
+    })
 
     // Update federation on bridge events
     const unsubscribeFederation = fedimint.addListener('federation', event => {
@@ -85,6 +88,7 @@ export function initializeCommonStore(
     })
 
     return () => {
+        unsubscribePrices()
         unsubscribeFederation()
         unsubscribeStorage()
     }
