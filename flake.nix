@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=5bdbc23f528f936d9023b6cc208897ee353ecde4";
+      url = "github:rustshop/flakebox?rev=6aa6808d330880dd1cb6d26f6cd9546fb164e7e9";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -245,8 +245,6 @@
               # to use ld instead of clang for linking the bridge binary
               export LD=/usr/bin/clang
               export LD_FOR_TARGET=/usr/bin/clang
-
-              export LLVM_CONFIG_PATH=""
             '';
           });
           v0 = fedi-v0.devShells.${system}.default.overrideAttrs (prev: {
