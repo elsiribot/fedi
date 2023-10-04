@@ -1170,9 +1170,11 @@ name = "devops-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bitcoin",
  "chrono",
  "chrono-tz",
  "clap 4.3.24",
+ "futures",
  "serde",
  "serde_json",
  "tempfile",
