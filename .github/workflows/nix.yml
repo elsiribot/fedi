@@ -94,16 +94,16 @@ jobs:
               run: nix build -L .#ci.fedi-fedimint-pkgs
 
             - name: Build fedi-wasm
-              run: nix build -L .#fedi-wasm
+              run: nix build -L .#wasm32-unknown.ci.fedi-wasm
 
             - name: Build gateway-pkgs
               run: nix build -L .#gateway-pkgs
 
             - name: Build fedi-monitoring
-              run: nix build -L .#fedi-monitoring
+              run: nix build -L .#ci.fedi-monitoring
 
             - name: Build devops-cli
-              run: nix build -L .#devops-cli
+              run: nix build -L .#ci.devops-cli
 
     # all the Linux Nix derivations that are based on the whole workspace
     build-linux-workspace:

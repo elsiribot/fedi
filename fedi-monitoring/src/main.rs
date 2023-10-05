@@ -1,17 +1,19 @@
-use std::{cmp::max, net::SocketAddr, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
+use std::cmp::max;
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{bail, Context};
-use axum::{routing::get, Router};
-
+use axum::routing::get;
+use axum::Router;
 use clap::{arg, Args, Parser, Subcommand};
 use common::{parse_node_pub_key, try_mutinynet_faucet_create_invoice};
-
-use fedimint_core::{
-    config::{load_from_file, FederationId},
-    task::{timeout, RwLock},
-    Amount,
-};
-
+use fedimint_core::api::InviteCode;
+use fedimint_core::config::FederationId;
+use fedimint_core::task::{timeout, RwLock};
+use fedimint_core::Amount;
 use ln_gateway::rpc::rpc_client::GatewayRpcClient;
 use lnd_gw_monitoring::{check_lnd_gateway, LndGatewaysState};
 use mutinynet_gw_monitoring::{check_mutinynet, get_status, CheckState};
@@ -35,8 +37,8 @@ struct Opts {
 #[derive(Subcommand, Clone)]
 enum CliCommand {
     MutinynetMonitoring {
-        #[arg(long, help = "Path of the client config.json")]
-        client_config: PathBuf,
+        #[arg(long, help = "Invite code to join the federation")]
+        invite_code: InviteCode,
 
         #[arg(
             long,
@@ -170,16 +172,15 @@ async fn main() -> anyhow::Result<()> {
     let check_state = Arc::new(RwLock::new(CheckState::default()));
     match opts.command {
         CliCommand::MutinynetMonitoring {
-            client_config,
+            invite_code,
             gateway_public_key,
             bind,
         } => {
-            let cfg = load_from_file(&client_config)?;
             let gateway_public_key = gateway_public_key
                 .map(|g| parse_node_pub_key(&g))
                 .transpose()?;
             let daemon = tokio::spawn(check_mutinynet(
-                cfg,
+                invite_code,
                 gateway_public_key,
                 Arc::clone(&check_state),
             ));

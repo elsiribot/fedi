@@ -1,8 +1,9 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useHasBottomTabsNavigation } from '../../../utils/hooks'
 import QrCodeScanner from '../scan/QrCodeScanner'
 import { OmniActions } from './OmniActions'
 import { OmniInputAction } from './OmniInput'
@@ -19,12 +20,15 @@ export const OmniQrScanner: React.FC<Props> = ({
     isProcessing,
 }) => {
     const { theme } = useTheme()
-    const style = styles(theme)
+    const insets = useSafeAreaInsets()
+    const hasBottomTabs = useHasBottomTabsNavigation()
+    const style = styles(
+        theme,
+        hasBottomTabs ? { ...insets, bottom: 0 } : insets,
+    )
 
     return (
-        <SafeAreaView
-            edges={['bottom', 'left', 'right']}
-            style={style.container}>
+        <View style={style.container}>
             <View style={style.scanner}>
                 <QrCodeScanner
                     processing={isProcessing}
@@ -32,18 +36,20 @@ export const OmniQrScanner: React.FC<Props> = ({
                 />
             </View>
             <OmniActions actions={actions} />
-        </SafeAreaView>
+        </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             flexDirection: 'column',
             gap: theme.spacing.lg,
-            padding: theme.spacing.lg,
-            paddingBottom: 0,
+            paddingTop: theme.spacing.lg,
+            paddingLeft: theme.spacing.lg + (insets.left || 0),
+            paddingRight: theme.spacing.lg + (insets.right || 0),
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom || 0),
         },
         scanner: {
             flex: 1,

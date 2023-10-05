@@ -46,6 +46,7 @@ export function OmniInput<
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const canChat = useIsChatSupported()
+    const [inputMethod, setInputMethod] = useState<'scan' | 'search'>('scan')
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
@@ -61,9 +62,6 @@ export function OmniInput<
     const canMemberSearch = canChat
         ? expectedInputTypes.includes(ParserDataType.FediChatMember as T)
         : canLnurlPay
-    const [inputMethod, setInputMethod] = useState<'scan' | 'search'>(
-        canMemberSearch ? 'search' : 'scan',
-    )
 
     const parseInput = useCallback(
         async (input: string) => {

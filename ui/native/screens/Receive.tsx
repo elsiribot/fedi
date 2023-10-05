@@ -1,3 +1,8 @@
+/**
+ * This screen is currently unused, users are taken directly to `ReceiveLightning`
+ * instead. This is left for posterity for the moment, but if we stick with the
+ * decision not to use the OmniInput for receive, this screen can be removed.
+ */
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'

@@ -32,7 +32,6 @@ import {
 import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import { fedimint } from '../bridge'
-import SettingsHeader from '../components/feature/admin/SettingsHeader'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
@@ -46,7 +45,7 @@ import {
 } from '../types/navigation'
 import ChatScreen from './ChatScreen'
 import Home from './Home'
-import Settings from './Settings'
+import OmniScanner from './OmniScanner'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
@@ -143,7 +142,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                         />
                                     )
                                 }
-                            case 'Settings':
+                            case 'OmniScanner':
                                 return <Pressable {...props} />
                             default:
                                 return null
@@ -181,10 +180,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                         }
                                     />
                                 )
-                            case 'Settings':
+                            case 'OmniScanner':
                                 return (
                                     <SvgImage
-                                        name={focused ? 'CogFilled' : 'Cog'}
+                                        name={'Scan'}
                                         containerStyle={
                                             styles(theme, insets)
                                                 .tabBarIconContainer
@@ -239,11 +238,11 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     })}
                 />
                 <Tab.Screen
-                    name="Settings"
-                    component={Settings}
+                    name="OmniScanner"
+                    component={OmniScanner}
                     options={() => ({
-                        title: t('words.settings'),
-                        header: () => <SettingsHeader />,
+                        title: t('words.scan'),
+                        headerShown: false,
                     })}
                 />
             </Tab.Navigator>

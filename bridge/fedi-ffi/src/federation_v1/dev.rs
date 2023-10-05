@@ -1,8 +1,13 @@
-/// This file contains some utilities for overriding `127.0.0.1` making it possible to run devimint on host machine and connect to it from Android emulator
+/// This file contains some utilities for overriding `127.0.0.1` making it
+/// possible to run devimint on host machine and connect to it from Android
+/// emulator
 use std::str::FromStr;
 
-use fedimint_core::{api::InviteCode, config::ClientConfig, db::DatabaseTransaction};
-use fedimint_ln_client::{db::LightningGatewayKey, LightningGateway};
+use fedimint_core::api::InviteCode;
+use fedimint_core::config::ClientConfig;
+use fedimint_core::db::DatabaseTransaction;
+use fedimint_ln_client::db::LightningGatewayKey;
+use fedimint_ln_client::LightningGateway;
 use tracing::info;
 use url::Url;
 
@@ -38,7 +43,8 @@ pub async fn override_localhost_gateway(
 ) {
     gateway.api = override_localhost(&gateway.api);
     // uncomment this hack to trigger outgoing payments in refund case
-    // gateway.api = Url::from_str(&gateway.api.to_string().replace("http", "https")).unwrap();
+    // gateway.api = Url::from_str(&gateway.api.to_string().replace("http",
+    // "https")).unwrap();
     dbtx.insert_entry(&LightningGatewayKey, gateway).await;
     dbtx.commit_tx().await;
 }

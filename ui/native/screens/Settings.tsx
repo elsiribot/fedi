@@ -1,4 +1,4 @@
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -27,15 +27,9 @@ import {
     useEnvironmentContext,
 } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import type {
-    RootStackParamList,
-    TabsNavigatorParamList,
-} from '../types/navigation'
+import type { RootStackParamList } from '../types/navigation'
 
-export type Props = BottomTabScreenProps<
-    TabsNavigatorParamList & RootStackParamList,
-    'Settings'
->
+export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 
 const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()

@@ -1,14 +1,16 @@
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
 use fedimint_core::db::IDatabase;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
     /// Database to store all federation joined
     async fn global_database_v0(&self) -> anyhow::Result<fedimint_core_v0::db::Database>;
-    // Dpc proposed alternative: open_federation_db(federation_id) which just tries each version in descending order
+    // Dpc proposed alternative: open_federation_db(federation_id) which just tries
+    // each version in descending order
     async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>>;
     /// FIXME: can I get rid of this?
     async fn federation_database_v0(

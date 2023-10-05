@@ -173,7 +173,8 @@ impl SocialBackup {
     }
 
     fn get_backup_secret_static(module_secret: &DerivableSecret) -> DerivableSecret {
-        // level 1 is client.external_secret(), then we derive a key from that making it level 2
+        // level 1 is client.external_secret(), then we derive a key from that making it
+        // level 2
         assert_eq!(module_secret.level(), 2);
         module_secret.child_key(SOCIAL_RECOVERY_BACKUP_SNAPSHOT_TYPE_CHILD_ID)
     }

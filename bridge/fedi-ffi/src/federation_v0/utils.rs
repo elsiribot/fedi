@@ -1,8 +1,6 @@
-use fedimint_core_v0::{
-    encoding::{Decodable, Encodable},
-    module::registry::ModuleDecoderRegistry,
-    TieredMulti,
-};
+use fedimint_core_v0::encoding::{Decodable, Encodable};
+use fedimint_core_v0::module::registry::ModuleDecoderRegistry;
+use fedimint_core_v0::TieredMulti;
 use fedimint_mint_client_v0::SpendableNote;
 
 // FIXME: copied from fedimint-cli which we don't want to take as a dependency
