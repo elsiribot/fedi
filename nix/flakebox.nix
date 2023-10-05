@@ -1,9 +1,6 @@
-{ pkgs, flakebox, fedi-v0, fedimint-build, fedimint-pkgs, clightning-dev }:
+{ pkgs, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, clightning-dev, toolchains }:
 let
   system = pkgs.system;
-  flakeboxLib = flakebox.lib.${system} {
-    # customizations will go here in the future
-  };
 
   rustSrcDirs = [
     "Cargo.toml"
@@ -20,16 +17,22 @@ let
     "devops-cli"
   ];
 
+  root = builtins.path {
+    name = "fedi";
+    path = ./..;
+  };
+
   # filter (roughly) only files&directories that Rust build needs to make
   # caching easier for Nix/crane
   rustSrc =
     flakeboxLib.filter.filterSubdirs {
-      root = ../.;
+      inherit root;
       dirs = rustSrcDirs;
     };
+
   rustTestSrc =
     flakeboxLib.filter.filterSubdirs {
-      root = ../.;
+      inherit root;
       dirs = rustSrcDirs ++ [
         # bridge test script
         "scripts"
@@ -37,7 +40,7 @@ let
       ];
     };
 in
-(flakeboxLib.buildOutputs { }) (craneLib':
+(flakeboxLib.craneMultiBuild { inherit toolchains; }) (craneLib':
 let
   # placeholder we use to avoid actually needing to detect hash via runnning `git`
   # 012345... for easy recognizability (in case something went wrong),
@@ -45,47 +48,27 @@ let
   gitHashPlaceholderValue = "01234569abcdef7afa1d2683a099c7af48a523c1";
 
   commonEnvsShell = {
-    LIBCLANG_PATH = "${pkgs.libclang.lib}/lib/";
-    ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
     PROTOC = "${pkgs.protobuf}/bin/protoc";
     PROTOC_INCLUDE = "${pkgs.protobuf}/include";
+    ROCKSDB_COMPILE = "true";
   };
 
   craneLib =
-    (craneLib'.overrideArgs' (craneLib: prev: ({
+    craneLib'.overrideArgs ({
       pname = "fedi";
       version = "0.1.0";
-      nativeBuildInputs = (prev.nativeBuildInputs or [ ]) ++ builtins.attrValues {
+      nativeBuildInputs = builtins.attrValues {
         inherit (pkgs) clang mold pkg-config;
         inherit (pkgs) cargo-nextest;
+        inherit (pkgs) perl;
       };
-      buildInputs = (prev.buildInputs or [ ]) ++ builtins.attrValues {
-        inherit (pkgs) openssl;
-      };
+      buildInputs = builtins.attrValues
+        {
+          inherit (pkgs) openssl;
+        };
       src = rustSrc;
       FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
-    } // commonEnvsShell))).overrideArgsDepsOnly'
-      (craneLib: prev: {
-        # copy over the linker/ar wrapper scripts which by default would get
-        # stripped by crane
-
-        cargoVendorDir = craneLib.vendorCargoDeps {
-          src = rustSrc;
-        };
-
-        dummySrc = craneLib.mkDummySrc {
-          src = rustSrc;
-
-          extraDummyScript = ''
-            # temporary workaround: https://github.com/ipetkov/crane/issues/312#issuecomment-1601827484
-            find $out
-            rm -f $(find $out | grep bin/crane-dummy/main.rs)
-
-            cp -ar ${../.cargo} --no-target-directory $out/.cargo
-          '';
-        };
-        src = null;
-      });
+    } // commonEnvsShell);
 in
 rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
@@ -103,10 +86,25 @@ rec {
       "fedi-fedimint-cli"
     ];
   };
+
   fedi-wasm = craneLib.buildPackageGroup {
-    pname = "fedi-fedimint-pkgs";
+    pname = "fedi-wasm";
     packages = [
       "fedi-wasm"
+    ];
+  };
+
+  fedi-monitoring = craneLib.buildPackageGroup {
+    name = "fedi-monitoring";
+    packages = [
+      "fedi-monitoring"
+    ];
+  };
+
+  devops-cli = craneLib.buildPackageGroup {
+    name = "devops-cli";
+    packages = [
+      "devops-cli"
     ];
   };
 
@@ -157,4 +155,5 @@ rec {
     '';
   };
 
+  inherit commonEnvsShell;
 })
