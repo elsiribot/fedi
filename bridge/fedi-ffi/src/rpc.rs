@@ -708,6 +708,33 @@ mod tests {
         Ok(())
     }
 
+    async fn bitcoin_cli_send_to_address(address: &str, amount: &str) -> anyhow::Result<()> {
+        cmd!(
+            "bitcoin-cli",
+            "-regtest",
+            "-rpcuser=bitcoin",
+            "-rpcpassword=bitcoin",
+            "sendtoaddress",
+            address,
+            amount,
+        )
+        .run()
+        .await?;
+
+        cmd!(
+            "bitcoin-cli",
+            "-regtest",
+            "-rpcuser=bitcoin",
+            "-rpcpassword=bitcoin",
+            "-generate",
+            "11"
+        )
+        .run()
+        .await?;
+
+        Ok(())
+    }
+
     async fn cln_pay_invoice(invoice_string: &str) -> anyhow::Result<()> {
         let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
         cmd!(
@@ -909,6 +936,25 @@ mod tests {
         assert_eq!(
             federation.get_balance().await,
             fedimint_core::Amount::from_msats(0)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_on_chain() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        let address =
+            generateAddress(bridge.clone(), RpcFederationId(federation.federation_id())).await?;
+        bitcoin_cli_send_to_address(&address, "0.1").await?;
+
+        // TODO: do something smarter than sleep
+        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+
+        assert_eq!(
+            federation.get_balance().await,
+            fedimint_core::Amount::from_sats(10_000_000)
         );
 
         Ok(())
