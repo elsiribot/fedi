@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=1e8353fdb8cf90cc8d02f785ef0bb6d2ba66f02f";
+      url = "github:rustshop/flakebox?rev=59fa4de798ef9d019d0be689e7b5c57353deffb9";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -49,6 +49,16 @@
               convco = pkgs-unstable.convco;
 
               esplora = pkgs-kitman.esplora;
+
+              mprocs = prev.mprocs.overrideAttrs (final: prev: {
+                patches = prev.patches ++ [
+                  (builtins.fetchurl {
+                    url = "https://github.com/pvolok/mprocs/pull/88.patch";
+                    name = "clipboard-fix.patch";
+                    sha256 = "sha256-9dx1vaEQ6kD66M+vsJLIq1FK+nEObuXSi3cmpSZuQWk=";
+                  })
+                ];
+              });
 
               # mold wrapper from https://discourse.nixos.org/t/using-mold-as-linker-prevents-libraries-from-being-found/18530/5
               mold =
@@ -200,6 +210,7 @@
               pkgs.ruby
               pkgs.perl
               pkgs.pkg-config
+              pkgs.mprocs
             ];
 
           buildInputs = [ pkgs.openssl ];
