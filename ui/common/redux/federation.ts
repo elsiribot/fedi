@@ -52,17 +52,21 @@ export const federationSlice = createSlice({
             state.federations = action.payload
         },
         updateFederation(state, action: PayloadAction<Partial<Federation>>) {
-            state.federations = state.federations.map(federation => {
+            // Only update the array if there were meaningful changes to the federation
+            let hasUpdates = false
+            const updatedFederations = state.federations.map(federation => {
                 if (action.payload.id !== federation.id) return federation
 
                 const updatedFederation = {
                     ...federation,
                     ...action.payload,
                 }
-                return isEqual(federation, updatedFederation)
-                    ? federation
-                    : updatedFederation
+                hasUpdates = !isEqual(federation, updatedFederation)
+                return updatedFederation
             })
+            if (hasUpdates) {
+                state.federations = updatedFederations
+            }
         },
         setActiveFederationId(state, action: PayloadAction<string | null>) {
             state.activeFederationId = action.payload
