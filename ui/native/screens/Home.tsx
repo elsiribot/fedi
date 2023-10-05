@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import StabilityWallet from '../components/feature/stabilitypool/StabilityWallet'
 import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
 import type {
     RootStackParamList,
@@ -36,6 +37,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             ) : (
                 <>
                     <BitcoinWallet offline={offline} />
+                    <StabilityWallet />
                     <ErrorBoundary fallback={null}>
                         <ShortcutsList />
                     </ErrorBoundary>

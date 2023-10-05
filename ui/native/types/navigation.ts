@@ -94,6 +94,14 @@ export type RootStackParamList = {
     Settings: undefined
     FediModBrowser: { fediMod: FediMod }
     Splash: undefined
+    StabilityConfirmDeposit: undefined
+    StabilityConfirmWithdraw: undefined
+    StabilityDeposit: undefined
+    StabilityDepositInitiated: undefined
+    StabilityHistory: undefined
+    StabilityHome: undefined
+    StabilityWithdraw: undefined
+    StabilityWithdrawInitiated: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined

@@ -13,6 +13,7 @@ const HEX_COLORS = {
     keyboardGrey: '#E8EAED',
     red: '#E00A00',
     white: '#FFFFFF',
+    offWhite: '#ECF7F7',
     black: '#000000',
     night: '#0B1013',
     blue: '#0277F2',
