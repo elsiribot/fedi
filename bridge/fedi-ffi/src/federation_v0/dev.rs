@@ -1,10 +1,13 @@
-/// This file contains some utilities for overriding `127.0.0.1` making it possible to run devimint on host machine and connect to it from Android emulator
+/// This file contains some utilities for overriding `127.0.0.1` making it
+/// possible to run devimint on host machine and connect to it from Android
+/// emulator
 use std::str::FromStr;
 
-use fedimint_core_v0::{
-    api::WsClientConnectInfo as InviteCode, config::ClientConfig, db::DatabaseTransaction,
-};
-use fedimint_ln_client_v0::{db::LightningGatewayKey, LightningGateway};
+use fedimint_core_v0::api::WsClientConnectInfo as InviteCode;
+use fedimint_core_v0::config::ClientConfig;
+use fedimint_core_v0::db::DatabaseTransaction;
+use fedimint_ln_client_v0::db::LightningGatewayKey;
+use fedimint_ln_client_v0::LightningGateway;
 use tracing::info;
 use url::Url;
 

@@ -4,9 +4,8 @@ use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 use ts_rs::TS;
 
-use crate::types::RpcTransaction;
-
 use super::types::{RpcFederation, RpcFederationId, SocialRecoveryApproval};
+use crate::types::RpcTransaction;
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]

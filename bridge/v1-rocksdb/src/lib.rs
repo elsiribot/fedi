@@ -1,11 +1,9 @@
 use std::time::SystemTime;
 
 use fedimint_client::sm::OperationId;
-use fedimint_core::{
-    config::FederationId,
-    encoding::{Decodable, Encodable},
-    impl_db_lookup, impl_db_record,
-};
+use fedimint_core::config::FederationId;
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::{impl_db_lookup, impl_db_record};
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {

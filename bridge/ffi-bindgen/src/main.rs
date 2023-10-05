@@ -1,7 +1,8 @@
-use camino::Utf8Path;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+
+use camino::Utf8Path;
 use structopt::StructOpt;
 
 #[derive(Debug, Eq, PartialEq)]

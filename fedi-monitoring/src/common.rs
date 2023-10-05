@@ -1,26 +1,20 @@
-use std::{
-    cmp::{max, min},
-    collections::HashMap,
-    ffi::OsStr,
-    str::FromStr,
-    time::Duration,
-};
+use std::cmp::{max, min};
+use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::str::FromStr;
+use std::time::Duration;
 
-use crate::cmd;
 use anyhow::{anyhow, bail, Context};
-
 use bitcoin::secp256k1;
-
-use fedimint_client::{
-    secret::PlainRootSecretStrategy, sm::OperationId, transaction::TransactionBuilder, Client,
-    ClientBuilder,
-};
-use fedimint_core::{
-    api::InviteCode,
-    core::IntoDynInstance,
-    module::{CommonModuleInit, __reexports::serde_json},
-    Amount, OutPoint, TieredSummary,
-};
+use fedimint_client::secret::PlainRootSecretStrategy;
+use fedimint_client::sm::OperationId;
+use fedimint_client::transaction::TransactionBuilder;
+use fedimint_client::{Client, ClientBuilder};
+use fedimint_core::api::InviteCode;
+use fedimint_core::core::IntoDynInstance;
+use fedimint_core::module::CommonModuleInit;
+use fedimint_core::module::__reexports::serde_json;
+use fedimint_core::{Amount, OutPoint, TieredSummary};
 use fedimint_ln_client::{LightningClientExt, LightningClientGen, LnPayState, PayType};
 use fedimint_mint_client::{
     MintClientExt, MintClientGen, MintClientModule, MintCommonGen, OOBNotes,
@@ -28,8 +22,9 @@ use fedimint_mint_client::{
 use fedimint_wallet_client::WalletClientGen;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
-
 use tracing::{debug, info};
+
+use crate::cmd;
 
 pub async fn refill_cli_mutinynet_wallet_if_needed(
     notes_amount_required: Amount,

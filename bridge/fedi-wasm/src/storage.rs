@@ -1,11 +1,10 @@
-use fediffi::storage::IStorage;
-use fedimint_core::{apply, async_trait_maybe_send, db::IDatabase};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex as StdMutex;
 
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-    sync::Mutex as StdMutex,
-};
+use fediffi::storage::IStorage;
+use fedimint_core::db::IDatabase;
+use fedimint_core::{apply, async_trait_maybe_send};
 
 use crate::db::MemAndIndexedDb;
 

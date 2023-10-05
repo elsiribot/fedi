@@ -1,29 +1,31 @@
 mod dev;
 pub mod social;
 
-use std::{
-    collections::HashMap, default::Default, str::FromStr, sync::Arc, time::Duration,
-    time::SystemTime,
-};
+use std::collections::HashMap;
+use std::default::Default;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use ::serde::{Deserialize, Serialize};
-use anyhow::{anyhow, bail, Context};
-use bitcoin::{
-    secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey},
-    Network,
+use anyhow::{anyhow, bail, Context, Result};
+use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
+use bitcoin::Network;
+use fedi_social_client::common::VerificationDocument;
+use fedi_social_client::{FediSocialClientInit, RecoveryId};
+use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::backup::Metadata;
+use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::oplog::OperationLogEntry;
+use fedimint_client::sm::OperationId;
+use fedimint_client::{Client, ClientBuilder, ClientSecret};
+use fedimint_core::api::{
+    DynModuleApi, GlobalFederationApi, IGlobalFederationApi, InviteCode, WsFederationApi,
 };
-use fedi_social_client::{common::VerificationDocument, FediSocialClientInit, RecoveryId};
-use fedimint_client::{
-    backup::Metadata, db::ChronologicalOperationLogKey, oplog::OperationLogEntry, sm::OperationId,
-    ClientBuilder, ClientSecret,
-};
-use fedimint_core::{
-    api::{DynModuleApi, GlobalFederationApi, IGlobalFederationApi},
-    config::FederationId,
-    db::IDatabase,
-    task::timeout,
-    Amount, PeerId,
-};
+use fedimint_core::config::{ClientConfig, FederationId};
+use fedimint_core::db::{DatabaseTransaction, IDatabase};
+use fedimint_core::task::{timeout, TaskGroup};
+use fedimint_core::{Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     network_to_currency, InternalPayState, LightningClientExt, LightningClientGen,
@@ -33,8 +35,7 @@ use fedimint_mint_client::{
     MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants, OOBNotes,
     ReissueExternalNotesState,
 };
-use fedimint_wallet_client::WalletClientGen;
-use fedimint_wallet_client::WalletClientModule;
+use fedimint_wallet_client::{WalletClientGen, WalletClientModule};
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use tokio::sync::Mutex;
@@ -44,52 +45,33 @@ use v1_rocksdb::{
     XmppUsernameKey,
 };
 
-use crate::{
-    constants::{
-        BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID,
-        REISSUE_ECASH_TIMEOUT,
-    },
-    federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID,
-    types::{
-        EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr,
-    },
-    utils::{display_currency, required_threashold_of, to_unix_time, unix_now},
+use self::dev::{
+    override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
-
-use self::{
-    dev::{
-        override_localhost_client_config, override_localhost_gateway,
-        override_localhost_invite_code,
-    },
-    social::{
-        RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryIdKey, SocialRecoveryState,
-        SocialRecoveryStateKey, SocialVerification, UserSeedPhrase,
-    },
+use self::social::{
+    RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryIdKey, SocialRecoveryState,
+    SocialRecoveryStateKey, SocialVerification, UserSeedPhrase,
 };
-
-use super::{
-    constants::{
-        LNURL_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, SHUTDOWN_TIMEOUT, XMPP_CHILD_ID,
-        XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
-    },
-    event::EventSink,
-    types::{
-        federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
-        RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcRecoveryId,
-        RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
-    },
+use super::constants::{
+    LNURL_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, SHUTDOWN_TIMEOUT, XMPP_CHILD_ID,
+    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
-use super::{
-    event::{Event, TypedEventExt},
-    storage::Storage,
+use super::event::{Event, EventSink, TypedEventExt};
+use super::storage::Storage;
+use super::types::{
+    federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
+    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcRecoveryId,
+    RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
 };
-use anyhow::Result;
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_core::api::{InviteCode, WsFederationApi};
-use fedimint_core::config::ClientConfig;
-use fedimint_core::{db::DatabaseTransaction, task::TaskGroup};
-
-use fedimint_client::Client;
+use crate::constants::{
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID,
+    REISSUE_ECASH_TIMEOUT,
+};
+use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
+use crate::types::{
+    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr,
+};
+use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediConfig {
@@ -142,7 +124,8 @@ impl FederationV1 {
         client_builder
     }
 
-    /// Constructor which starts a bunch of async tasks and ensures username is saved to db (e.g. after recovery)
+    /// Constructor which starts a bunch of async tasks and ensures username is
+    /// saved to db (e.g. after recovery)
     pub async fn new(ng: Arc<Client>, event_sink: EventSink, task_group: TaskGroup) -> Self {
         let mut federation = Self {
             client: ng,
@@ -185,8 +168,8 @@ impl FederationV1 {
         .await)
     }
 
-    /// Download federation configs using an invite code. Save client config to correct
-    /// database with Storage.
+    /// Download federation configs using an invite code. Save client config to
+    /// correct database with Storage.
     pub async fn join(
         invite_code_string: String,
         storage: &Storage,
@@ -232,7 +215,8 @@ impl FederationV1 {
         wallet.get_network()
     }
 
-    /// Return federation name from meta, or take first 8 characters of federation ID
+    /// Return federation name from meta, or take first 8 characters of
+    /// federation ID
     pub fn federation_name(&self) -> String {
         self.client
             .get_meta("federation_name")
@@ -554,7 +538,8 @@ impl FederationV1 {
         .context("Lightning payment failed ... awaiting refund")?
     }
 
-    /// Start background task to listen for balance updates and emit "federation" events when one is observed
+    /// Start background task to listen for balance updates and emit
+    /// "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
         let _ = self
@@ -649,7 +634,8 @@ impl FederationV1 {
     }
 
     /// Generate ecash
-    /// FIXME: might be better to return a typed object here and serialize at RPC layer
+    /// FIXME: might be better to return a typed object here and serialize at
+    /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
         let (_, notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
         let notes = if amount != notes.total_amount() {
@@ -699,7 +685,8 @@ impl FederationV1 {
         Ok(())
     }
 
-    /// Extract username (and potentially more in future) from recovered metadata and save it to database
+    /// Extract username (and potentially more in future) from recovered
+    /// metadata and save it to database
     pub async fn save_restored_metadata(&self, metadata: Metadata) -> Result<()> {
         if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
             if let Some(username) = fedi_backup_metadata.username {
@@ -820,7 +807,8 @@ impl FederationV1 {
         ))
     }
 
-    /// Attempt to continue a previous social recovery session by loading state from DB
+    /// Attempt to continue a previous social recovery session by loading state
+    /// from DB
     pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
         let mut dbtx = self.dbtx().await;
         let state = dbtx
@@ -835,7 +823,8 @@ impl FederationV1 {
         Ok(SocialVerification::new(self.social_api(), peer_id))
     }
 
-    /// Upload social recovery recovery file to federation given a recovery video
+    /// Upload social recovery recovery file to federation given a recovery
+    /// video
     pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
         let verification_doc = VerificationDocument::from_raw(&video_file);
 
@@ -853,8 +842,9 @@ impl FederationV1 {
     }
 
     /// Start a new social recovery session if one doesn't exist already
-    /// FIXME: This will lead to bugs because if someone gets stuck inside a session there will be no way to exist
-    /// Also won't be able to do simulataneous recoveries in 2 federations.
+    /// FIXME: This will lead to bugs because if someone gets stuck inside a
+    /// session there will be no way to exist Also won't be able to do
+    /// simulataneous recoveries in 2 federations.
     pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
         let recovery_client = match self.social_recovery_continue().await {
             Ok(recovery_client) => recovery_client,
@@ -966,7 +956,8 @@ impl FederationV1 {
         Ok((approvals, remaining))
     }
 
-    /// Attempt to recovery mnemonic from recovery shares available for download from the federation
+    /// Attempt to recovery mnemonic from recovery shares available for download
+    /// from the federation
     pub async fn social_recovery_combine_shares(&self) -> Result<bip39::Mnemonic> {
         let recovery_client = self.social_recovery_continue().await?;
         let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
@@ -1011,8 +1002,8 @@ impl FederationV1 {
         Ok(format!("{}", sig))
     }
 
-    /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
-    /// after recovering wallet.
+    /// Returns an XMPP password derived from client secret. This enables
+    /// recovery of XMPP account after recovering wallet.
     pub async fn get_xmpp_credentials(&self) -> RpcXmppCredentials {
         let root_secret = self.root_secret();
         let xmpp_secret = root_secret.child_key(ChildId(XMPP_CHILD_ID));
@@ -1042,8 +1033,8 @@ impl FederationV1 {
             }
         };
 
-        // FIXME: this potentially prevents race conditions, but degrades recovery for federations without chat
-        // Username is present
+        // FIXME: this potentially prevents race conditions, but degrades recovery for
+        // federations without chat Username is present
         if self.get_xmpp_username().await.is_none() {
             return Ok(());
         }
@@ -1098,8 +1089,9 @@ impl FederationV1 {
             return Some(outcome);
         }
 
-        // If no cached outcomes, consume the stream to get the outcome and populate client's cache in future
-        // This is only useful for outgoing lightning payments which fail due to timeout and nothing is subscribed to them
+        // If no cached outcomes, consume the stream to get the outcome and populate
+        // client's cache in future This is only useful for outgoing lightning
+        // payments which fail due to timeout and nothing is subscribed to them
         let mut updates = match self.client.subscribe_ln_pay(operation_id).await {
             // Assuming this was internal pay
             Err(_) => return None,
@@ -1265,8 +1257,8 @@ impl FederationV1 {
         dbtx.commit_tx().await;
     }
 
-    /// Get social recovery Id from the DB. This is used to generate the recovery QR.
-    /// FIXME: just put this in social recovery state
+    /// Get social recovery Id from the DB. This is used to generate the
+    /// recovery QR. FIXME: just put this in social recovery state
     pub async fn get_social_recovery_id(&self) -> Option<RecoveryId> {
         self.dbtx()
             .await
@@ -1274,7 +1266,8 @@ impl FederationV1 {
             .await
     }
 
-    /// Save social recovery ID to the DB. This is used to generate the recovery QR.
+    /// Save social recovery ID to the DB. This is used to generate the recovery
+    /// QR.
     pub async fn save_social_recovery_id(&self, state: &RecoveryId) {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&SocialRecoveryIdKey(self.federation_id()), state)

@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=6aa6808d330880dd1cb6d26f6cd9546fb164e7e9";
+      url = "github:rustshop/flakebox?rev=06f83406285d3cda57139213566038596030721c";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -107,6 +107,13 @@
           config = {
             # we have our own weird CI workflows
             github.ci.enable = false;
+            just.rules = {
+              custom = {
+                content = ./justfile.fedi;
+              };
+            };
+            typos.pre-commit.enable = false;
+            git.pre-commit.trailing_newline = false;
           };
         };
 
@@ -178,9 +185,7 @@
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-pkgs
-              pkgs.git
               pkgs.fs-dir-cache
-              pkgs.convco
               pkgs.cargo-nextest
               pkgs.curl # wasm build needs it for some reason
               pkgs.wasm-pack
@@ -193,9 +198,11 @@
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
-              pkgs.fs-dir-cache
               pkgs.perl
+              pkgs.pkg-config
             ];
+
+          buildInputs = [ pkgs.openssl ];
 
           FEDI_CROSS_DEV_SHELL = "1";
           shellHook = ''

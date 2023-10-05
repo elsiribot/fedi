@@ -1,6 +1,5 @@
-pub use fedi_social_common::*;
-
 use fedi_social_common::config::FediSocialClientConfig;
+pub use fedi_social_common::*;
 use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::module::init::ClientModuleInit;
 use fedimint_client::module::ClientModule;

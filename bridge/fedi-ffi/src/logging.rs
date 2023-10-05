@@ -1,18 +1,18 @@
 // Stop complaining about unused variables due to cfg macros
 #![allow(unused)]
-use std::{
-    collections::BTreeMap,
-    io,
-    path::Path,
-    str::FromStr,
-    sync::{Arc, Mutex},
-    time::SystemTime,
-};
+use std::collections::BTreeMap;
+use std::io;
+use std::path::Path;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
 
 use anyhow::Context;
 use tracing::metadata::LevelFilter;
 use tracing_serde::AsSerde;
-use tracing_subscriber::{layer::SubscriberExt, prelude::*, EnvFilter, Layer};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{EnvFilter, Layer};
 
 use super::event::{Event, EventSink, TypedEventExt};
 
@@ -95,7 +95,8 @@ pub fn init_logging(
     //         .with_filter(tracing_subscriber::filter::LevelFilter::INFO),
     //     )
     //     .try_init()
-    //     .unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
+    //     .unwrap_or_else(|error| tracing::info!("Error installing logger: {}",
+    // error));
 
     // running tests on a mac
     #[cfg(test)]
