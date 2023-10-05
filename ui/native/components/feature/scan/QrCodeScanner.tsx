@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import {
     areFramesComplete,
@@ -21,6 +22,7 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
     const { theme } = useTheme()
     const [frames, setFrames] = useState<FrameState | null>(null)
     const [progress, setProgress] = useState(0)
+    const isFocused = useIsFocused()
     const cameraRef = useRef<Camera>(null)
     const previousDataRef = useRef<string | null>(null)
     const previousDataTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -70,16 +72,18 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
     const style = styles(theme)
     return (
         <View style={style.container}>
-            <Camera
-                style={style.camera}
-                ref={cameraRef}
-                cameraType={CameraType.Back}
-                flashMode="auto"
-                scanBarcode={true}
-                onReadCode={(event: any) =>
-                    handleScan(event?.nativeEvent?.codeStringValue)
-                }
-            />
+            {isFocused && (
+                <Camera
+                    style={style.camera}
+                    ref={cameraRef}
+                    cameraType={CameraType.Back}
+                    flashMode="auto"
+                    scanBarcode={true}
+                    onReadCode={(event: any) =>
+                        handleScan(event?.nativeEvent?.codeStringValue)
+                    }
+                />
+            )}
             {processing && <View style={style.processingCover} />}
             {Boolean(progress) && (
                 <View style={style.progressContainer}>

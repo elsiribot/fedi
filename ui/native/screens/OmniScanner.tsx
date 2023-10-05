@@ -1,10 +1,13 @@
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { StyleSheet, View } from 'react-native'
 
 import { OmniInput } from '../components/feature/omni/OmniInput'
-import { RootStackParamList } from '../types/navigation'
+import { RootStackParamList, TabsNavigatorParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'OmniScanner'>
+export type Props = BottomTabScreenProps<
+    TabsNavigatorParamList & RootStackParamList,
+    'OmniScanner'
+>
 
 const OmniScanner: React.FC<Props> = () => {
     const style = styles()

@@ -21,6 +21,7 @@ import {
 import { encodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import { useAppSelector } from '../../../state/hooks'
+import { useHasBottomTabsNavigation } from '../../../utils/hooks'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 import SvgImage from '../../ui/SvgImage'
 import { OmniActions } from './OmniActions'
@@ -43,6 +44,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
+    const hasTabs = useHasBottomTabsNavigation()
     const membersWithHistory = useAppSelector(selectChatMembersWithHistory)
     const recentMembers = useAppSelector(selectRecentChatMembers)
     const canChat = useIsChatSupported()
@@ -71,7 +73,9 @@ export const OmniMemberSearch: React.FC<Props> = ({
     } else {
         content = (
             <SafeAreaView
-                edges={['left', 'right', 'bottom']}
+                edges={
+                    hasTabs ? ['left', 'right'] : ['left', 'right', 'bottom']
+                }
                 style={style.defaultContainer}>
                 {canChat && recentMembers.length > 0 && (
                     <View>
