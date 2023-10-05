@@ -1,9 +1,5 @@
-use super::bridge::Bridge;
-/// This file contains the bindings to used by React Native app via Uniffi
-use super::event::IEventSink as EventSink;
-use super::logging;
-use super::rpc::FedimintError;
-use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -11,12 +7,14 @@ use fedimint_core::db::IDatabase;
 use fedimint_core_v0::db::Database as DatabaseV0;
 use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
 use lazy_static::lazy_static;
-use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
-use std::path::{Path, PathBuf};
-
+use super::bridge::Bridge;
+/// This file contains the bindings to used by React Native app via Uniffi
+use super::event::IEventSink as EventSink;
+use super::logging;
+use super::rpc::{fedimint_initialize_async, fedimint_rpc_async, FedimintError};
 use super::storage::IStorage;
 
 lazy_static! {
@@ -31,8 +29,8 @@ lazy_static! {
 
 uniffi_macros::include_scaffolding!("fedi");
 
-/// Synchronous method to instantiate a global bridge object which is required for RPC to work. The app
-/// calls this method on load.
+/// Synchronous method to instantiate a global bridge object which is required
+/// for RPC to work. The app calls this method on load.
 pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
     RUNTIME.block_on(async {
         // return if bridge already is initialized

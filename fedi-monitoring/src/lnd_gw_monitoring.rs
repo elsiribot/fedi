@@ -1,35 +1,26 @@
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    io::Write,
-    sync::Arc,
-    time::Duration,
-};
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::Write;
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
-use axum::{http::StatusCode, Json};
+use axum::http::StatusCode;
+use axum::Json;
 use chrono::{DateTime, Utc};
-
-use fedimint_core::{
-    config::FederationId,
-    task::{timeout, RwLock},
-    Amount,
-};
-
+use fedimint_core::config::FederationId;
+use fedimint_core::task::{timeout, RwLock};
+use fedimint_core::Amount;
 use futures::TryFutureExt;
 use ln_gateway::rpc::rpc_client::GatewayRpcClient;
 use prometheus::{Encoder, Opts, Registry, TextEncoder};
 use serde::Serialize;
 use serde_with::{serde_as, DurationMilliSeconds};
-use tonic_lnd::lnrpc::GetInfoRequest;
-use tonic_lnd::lnrpc::WalletBalanceRequest;
-use tonic_lnd::{
-    lnrpc::{ListChannelsRequest, NodeInfoRequest},
-    LndClient,
+use tonic_lnd::lnrpc::{
+    GetInfoRequest, ListChannelsRequest, ListPeersRequest, NodeInfoRequest, WalletBalanceRequest,
 };
-
-use tonic_lnd::lnrpc::ListPeersRequest;
-
-use tracing::{info, log::warn};
+use tonic_lnd::LndClient;
+use tracing::info;
+use tracing::log::warn;
 
 use crate::MonitorLndGatewaysLimitsArgs;
 
@@ -93,8 +84,8 @@ pub struct ChannelInfo {
     pub active: bool,
     pub alias: String,
     ///The unique channel ID for the channel. The first 3 bytes are the block
-    ///height, the next 3 the index within the block, and the last 2 bytes are the
-    ///output index for the channel.
+    ///height, the next 3 the index within the block, and the last 2 bytes are
+    /// the output index for the channel.
     pub chan_id: u64,
     /// The total amount of funds held in this channel
     pub capacity: Amount,
@@ -102,7 +93,8 @@ pub struct ChannelInfo {
     pub local_balance: Amount,
     /// The counterparty's current balance in this channel
     pub remote_balance: Amount,
-    ///The quantity of active, uncleared HTLCs currently pending within the channel.
+    ///The quantity of active, uncleared HTLCs currently pending within the
+    /// channel.
     pub pending_htlcs_count: usize,
 
     pub local_chan_reserve: Amount,

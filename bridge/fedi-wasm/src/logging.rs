@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex as StdMutex};
+
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::prelude::*;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -11,7 +12,8 @@ thread_local! {
 fn set_panic_hook() {
     std::panic::set_hook(Box::new(|p| {
         let buffer = LOG_BUFFER.with(Arc::clone);
-        // the error case should never happen but still avoid a double panic => abort here
+        // the error case should never happen but still avoid a double panic => abort
+        // here
         if let Ok(mut buffer) = buffer.lock() {
             // Add the panic info to the buffer, so it shows in future get_info calls.
             buffer.extend_from_slice(&p.to_string().into_bytes());

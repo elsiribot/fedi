@@ -1,20 +1,20 @@
-use std::{collections::VecDeque, sync::Arc, time::Duration};
+use std::collections::VecDeque;
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{bail, Context};
-use axum::{http::StatusCode, Json};
+use axum::http::StatusCode;
+use axum::Json;
 use bitcoin::secp256k1;
 use chrono::{DateTime, Utc};
-
-use fedimint_core::{
-    api::InviteCode,
-    task::{timeout, RwLock},
-    Amount,
-};
+use fedimint_core::api::InviteCode;
+use fedimint_core::task::{timeout, RwLock};
+use fedimint_core::Amount;
 use fedimint_ln_client::LightningClientExt;
-
 use serde::Serialize;
 use serde_with::{serde_as, DurationMilliSeconds};
-use tracing::{debug, info, log::warn};
+use tracing::log::warn;
+use tracing::{debug, info};
 
 use crate::common::{
     build_client, gateway_pay_invoice, get_note_summary, refill_cli_mutinynet_wallet_if_needed,
@@ -38,7 +38,8 @@ const CHECK_INTERVAL_TIME: Duration = Duration::from_secs(5 * 60);
 const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(4 * 60);
 const GENERATE_INVOICE_TIMEOUT: Duration = Duration::from_secs(45);
 
-/// How many times to retry operations like `get_notes` or `create_invoice` before considering it failed
+/// How many times to retry operations like `get_notes` or `create_invoice`
+/// before considering it failed
 const RETRIES_ON_OPERATIONS: usize = 10;
 
 #[derive(Debug, Clone, Serialize)]

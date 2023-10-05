@@ -3,17 +3,15 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use anyhow::Result;
-use fedimint_core::{apply, async_trait_maybe_send};
-use futures::stream;
-
 use fedimint_core::db::{
     IDatabase, IDatabaseTransaction, IDatabaseTransactionOps, ISingleUseDatabaseTransaction,
     PrefixStream, SingleUseDatabaseTransaction,
 };
-use tokio::sync::Mutex;
-
+use fedimint_core::{apply, async_trait_maybe_send};
+use futures::stream;
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
+use tokio::sync::Mutex;
 use wasm_bindgen::JsCast;
 
 pub fn rexie_to_anyhow(e: rexie::Error) -> anyhow::Error {
@@ -389,9 +387,10 @@ impl<'a> fedimint_core_v0::db::IDatabaseTransaction<'a> for MemTransaction<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use fedimint_core::module::registry::ModuleDecoderRegistry;
     use wasm_bindgen_test::wasm_bindgen_test;
+
+    use super::*;
 
     macro_rules! db_test {
         ($name:ident) => {

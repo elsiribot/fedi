@@ -1,4 +1,19 @@
 #![allow(non_snake_case)]
+use std::path::PathBuf;
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
+
+use anyhow::{bail, Context};
+use bitcoin::secp256k1::Message;
+use futures::Future;
+use lightning_invoice::Invoice;
+use macro_rules_attribute::macro_rules_derive;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+pub use tokio;
+use tracing::{error, info, instrument};
+
 use super::bridge::Bridge;
 use super::error::ErrorCode;
 use super::event::{EventSink, SocialRecoveryEvent};
@@ -9,17 +24,6 @@ use super::types::{
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
-use anyhow::{bail, Context};
-use bitcoin::secp256k1::Message;
-use futures::Future;
-use lightning_invoice::Invoice;
-use macro_rules_attribute::macro_rules_derive;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::json;
-use std::path::PathBuf;
-use std::sync::{atomic::AtomicU64, Arc};
-pub use tokio;
-use tracing::{error, info, instrument};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -459,7 +463,7 @@ mod tests {
 
     use std::path::{Path, PathBuf};
     use std::str::FromStr;
-    use std::sync::Once;
+    use std::sync::{Once, RwLock};
     use std::time::{Duration, UNIX_EPOCH};
 
     use anyhow::bail;
@@ -468,13 +472,11 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::Amount;
     use fedimint_logging::TracingSetup;
-    use std::sync::RwLock;
 
+    use super::*;
     use crate::bridge::MultiFederation;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
-
-    use super::*;
 
     struct FakeEventSink {
         pub events: Arc<RwLock<Vec<(String, String)>>>,
@@ -553,7 +555,8 @@ mod tests {
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        // FIXME; make a fedimint_cli helper ... just need to figure out how to pass the args
+        // FIXME; make a fedimint_cli helper ... just need to figure out how to pass the
+        // args
         let ecash_string = match federation {
             MultiFederation::V0(_) => cmd!(
                 "fedimint-cli",
@@ -606,7 +609,8 @@ mod tests {
         federation: Arc<MultiFederation>,
     ) -> anyhow::Result<()> {
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        // FIXME; make a fedimint_cli helper ... just need to figure out how to pass the args
+        // FIXME; make a fedimint_cli helper ... just need to figure out how to pass the
+        // args
         match *federation {
             MultiFederation::V0(_) => {
                 cmd!(
@@ -704,7 +708,8 @@ mod tests {
         });
 
         let event_sink = Arc::new(FakeEventSink::new());
-        // This fixture contains a "datadir" with 1 global database and one federations database (fedi alpha mutinynet)
+        // This fixture contains a "datadir" with 1 global database and one federations
+        // database (fedi alpha mutinynet)
         let data_dir = create_data_dir();
         let fixture_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
@@ -932,10 +937,12 @@ mod tests {
                 .count()
         );
 
-        // Member combines decryption shares, loading recovered mnemonic back into their db
+        // Member combines decryption shares, loading recovered mnemonic back into their
+        // db
         completeSocialRecovery(bridge.clone(), federation_id).await?;
 
-        // Check backups match (TODO: how can I make sure that they're equal b/c nothing happened?)
+        // Check backups match (TODO: how can I make sure that they're equal b/c nothing
+        // happened?)
         let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id).await?;
         assert_eq!(initial_words, final_words);
 

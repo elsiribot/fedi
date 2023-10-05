@@ -1,18 +1,19 @@
-use std::{cmp::max, net::SocketAddr, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
+use std::cmp::max;
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{bail, Context};
-use axum::{routing::get, Router};
-
+use axum::routing::get;
+use axum::Router;
 use clap::{arg, Args, Parser, Subcommand};
 use common::{parse_node_pub_key, try_mutinynet_faucet_create_invoice};
-
-use fedimint_core::{
-    api::InviteCode,
-    config::FederationId,
-    task::{timeout, RwLock},
-    Amount,
-};
-
+use fedimint_core::api::InviteCode;
+use fedimint_core::config::FederationId;
+use fedimint_core::task::{timeout, RwLock};
+use fedimint_core::Amount;
 use ln_gateway::rpc::rpc_client::GatewayRpcClient;
 use lnd_gw_monitoring::{check_lnd_gateway, LndGatewaysState};
 use mutinynet_gw_monitoring::{check_mutinynet, get_status, CheckState};

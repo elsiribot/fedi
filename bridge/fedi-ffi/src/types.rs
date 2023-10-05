@@ -1,18 +1,20 @@
-use std::{collections::BTreeMap, time::Duration};
+use std::collections::BTreeMap;
+use std::time::Duration;
 
 use anyhow::anyhow;
-use bitcoin::{secp256k1::ecdsa::Signature, Network};
+use bitcoin::secp256k1::ecdsa::Signature;
+use bitcoin::Network;
 use fedimint_core::config::PeerUrl;
-use fedimint_ln_client::{
-    pay::GatewayPayError, receive::LightningReceiveError, LnPayState, LnReceiveState,
-};
+use fedimint_ln_client::pay::GatewayPayError;
+use fedimint_ln_client::receive::LightningReceiveError;
+use fedimint_ln_client::{LnPayState, LnReceiveState};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::{
-    bridge::MultiFederation, federation_v0::FederationV0, federation_v1::FederationV1,
-    translate::Translate,
-};
+use super::bridge::MultiFederation;
+use super::federation_v0::FederationV0;
+use super::federation_v1::FederationV1;
+use super::translate::Translate;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
@@ -125,7 +127,8 @@ pub fn hacky_lightning_invoice_fee(
     invoice
         .amount_milli_satoshis()
         .map(|msat| {
-            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
+            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded
+                                                          // 1% fee
         })
         .ok_or(anyhow!("Invoice missing amount"))
 }
@@ -196,7 +199,8 @@ pub enum RpcLightningGateway {
 
 #[derive(Serialize, Deserialize)]
 pub struct FediBackupMetadata {
-    // TODO: would be nice to rename this to xmpp_username but would need to basically migrate the backups
+    // TODO: would be nice to rename this to xmpp_username but would need to basically migrate the
+    // backups
     pub username: Option<String>,
 }
 

@@ -4,9 +4,12 @@ use anyhow::{anyhow, bail, Context};
 use clap::{Args, Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::{io::AsyncWriteExt, process::Command};
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command;
 use tracing::info;
-use tracing_subscriber::{filter::LevelFilter, fmt, prelude::*, EnvFilter};
+use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{fmt, EnvFilter};
 
 const SITES_KEY: &str = "sites";
 const DEFAULT_GROUP_CHATS_KEY: &str = "default_group_chats";

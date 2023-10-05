@@ -1,7 +1,8 @@
-use fediffi::bridge::Bridge;
-use fediffi::event::IEventSink;
 use std::cell::RefCell;
 use std::sync::Arc;
+
+use fediffi::bridge::Bridge;
+use fediffi::event::IEventSink;
 use storage::WasmStorage;
 use tracing::error;
 use wasm_bindgen::prelude::*;
