@@ -956,8 +956,12 @@ impl FederationV0 {
         dbtx.commit_tx().await;
     }
 
-    pub async fn get_invite_code(&self) -> Option<String> {
-        self.dbtx().await.get_value(&InviteCodeKey).await
+    pub async fn get_invite_code(&self) -> String {
+        self.dbtx()
+            .await
+            .get_value(&InviteCodeKey)
+            .await
+            .expect("invite code must be present")
     }
 
     async fn update_ln_pay_states(&self, operation_id: OperationId, ln_pay_state: LnPayState) {

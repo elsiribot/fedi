@@ -29,7 +29,7 @@ pub struct RpcFederation {
     #[ts(type = "string")]
     pub network: Network,
     pub name: String,
-    pub invite_code: Option<String>,
+    pub invite_code: String,
     pub meta: BTreeMap<String, String>,
     pub social_recovery_active: bool,
     #[ts(type = "Record<string, {url: string, name: string}>")]

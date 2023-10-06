@@ -727,7 +727,6 @@ mod tests {
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
         let federation = &federations[0];
-        assert!(federation.invite_code.is_some());
         let xmpp_credentials = xmppCredentials(bridge, federation.id).await?;
         assert_eq!(Some("hotrod77".to_string()), xmpp_credentials.username);
         Ok(())
@@ -747,7 +746,7 @@ mod tests {
         let rpc_federation_id = RpcFederationId(federation.federation_id());
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
-        assert_eq!(Some(env_invite_code.clone()), federations[0].invite_code);
+        assert_eq!(env_invite_code.clone(), federations[0].invite_code);
 
         // leaveFederation works
         leaveFederation(bridge.clone(), rpc_federation_id).await?;

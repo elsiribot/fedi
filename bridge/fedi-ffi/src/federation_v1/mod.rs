@@ -1246,8 +1246,12 @@ impl FederationV1 {
         dbtx.commit_tx().await;
     }
 
-    pub async fn get_invite_code(&self) -> Option<String> {
-        self.dbtx().await.get_value(&InviteCodeKey).await
+    pub async fn get_invite_code(&self) -> String {
+        self.dbtx()
+            .await
+            .get_value(&InviteCodeKey)
+            .await
+            .expect("invite code must exist")
     }
 
     pub async fn save_social_recovery_state(&self, state: &SocialRecoveryState) {
