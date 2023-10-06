@@ -8,14 +8,10 @@ import {
 } from '../utils/FederationUtils'
 import { loadFromStorage } from './storage'
 
-type FiatPriceMap = {
-    [currency in SupportedCurrency]: number
-}
-
 /*** Initial State ***/
 
 const initialState = {
-    prices: {} as FiatPriceMap,
+    prices: {} as Partial<Record<SupportedCurrency, number>>,
     selectedFiatCurrency: null as SupportedCurrency | null,
     socketErrors: 0,
 }
@@ -55,6 +51,7 @@ export const currencySlice = createSlice({
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.selectedFiatCurrency = action.payload.currency
+            state.prices = action.payload.btcExchangeRates
         })
     },
 })
