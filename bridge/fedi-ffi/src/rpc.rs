@@ -151,6 +151,14 @@ async fn switchGateway(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn generateAddress(
+    _bridge: Arc<Bridge>,
+    _federation_id: RpcFederationId,
+) -> anyhow::Result<String> {
+    bail!("not implemented")
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn payAddress(
     _bridge: Arc<Bridge>,
     _federation_id: RpcFederationId,
@@ -409,6 +417,7 @@ rpc_methods!(RpcMethods {
     listGateways,
     switchGateway,
     // On-Chain
+    generateAddress,
     payAddress,
     // Ecash
     generateEcash,

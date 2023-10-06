@@ -64,12 +64,12 @@ use super::types::{
     RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
 };
 use crate::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID,
-    REISSUE_ECASH_TIMEOUT,
+    BACKUP_FREQUENCY, MINT_OPERATION_TYPE, NOSTR_CHILD_ID, REISSUE_ECASH_TIMEOUT,
 };
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, SocialRecoveryQr,
+    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, RpcTransactionDirection,
+    SocialRecoveryQr,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -291,7 +291,7 @@ impl FederationV1 {
                                 amount: RpcAmount(Amount {
                                     msats: invoice.amount_milli_satoshis().unwrap(),
                                 }),
-                                direction: "receive".to_string(),
+                                direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 ln_state: RpcLnState::from_ln_recv_state(Some(update)),
                                 lightning: Some(RpcLightningDetails {
@@ -1136,7 +1136,7 @@ impl FederationV1 {
                                 amount: RpcAmount(Amount {
                                     msats: invoice.amount_milli_satoshis().unwrap(),
                                 }),
-                                direction: "send".to_string(),
+                                direction: RpcTransactionDirection::Send,
                                 notes,
                                 ln_state: RpcLnState::from_ln_pay_state(
                                     self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
@@ -1153,7 +1153,7 @@ impl FederationV1 {
                                 amount: RpcAmount(Amount {
                                     msats: invoice.amount_milli_satoshis().unwrap(),
                                 }),
-                                direction: "receive".to_string(),
+                                direction: RpcTransactionDirection::Receive,
                                 notes,
                                 ln_state: RpcLnState::from_ln_recv_state(
                                     op.1.outcome::<LnReceiveState>(),
@@ -1177,7 +1177,7 @@ impl FederationV1 {
                                             id: op.0.operation_id.to_string(),
                                             created_at: to_unix_time(op.0.creation_time)
                                                 .expect("unix time should exist"),
-                                            direction: "receive".to_string(),
+                                            direction: RpcTransactionDirection::Receive,
                                             notes,
                                             ln_state: None,
                                             amount: RpcAmount(mint_meta.amount),
@@ -1193,7 +1193,7 @@ impl FederationV1 {
                                     id: op.0.operation_id.to_string(),
                                     created_at: to_unix_time(op.0.creation_time)
                                         .expect("unix time should exist"),
-                                    direction: "send".to_string(),
+                                    direction: RpcTransactionDirection::Send,
                                     notes,
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),

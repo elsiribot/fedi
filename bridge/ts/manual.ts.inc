@@ -1,3 +1,5 @@
+import { MSats } from './units'
+
 export type RpcMethodNames = keyof RpcMethods;
 export type RpcPayload<M extends RpcMethodNames> = RpcMethods[M][0];
 export type RpcResponse<M extends RpcMethodNames> = RpcMethods[M][1];

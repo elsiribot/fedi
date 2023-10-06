@@ -205,7 +205,9 @@
               pkgs.gnused
               pkgs.yarn
               pkgs.nodejs
+              pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
+              pkgs.nodePackages.typescript-language-server
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby

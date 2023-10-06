@@ -1,4 +1,5 @@
 export * from './chat'
+export * as bindings from './bindings'
 export * from './fedimint'
 export * from './storage'
 export * from './toast'

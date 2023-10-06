@@ -33,10 +33,11 @@ pub struct SocialRecoveryEvent {
 
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
+#[ts(rename_all = "camelCase")]
 pub enum Event {
-    Transaction { event: TransactionEvent },
-    Log { event: LogEvent },
-    Federation { event: RpcFederation },
+    Transaction(TransactionEvent),
+    Log(LogEvent),
+    Federation(RpcFederation),
 }
 
 impl Event {
@@ -44,20 +45,16 @@ impl Event {
         federation_id: fedimint_core::config::FederationId,
         transaction: RpcTransaction,
     ) -> Self {
-        Self::Transaction {
-            event: TransactionEvent {
-                federation_id: RpcFederationId(federation_id),
-                transaction,
-            },
-        }
+        Self::Transaction(TransactionEvent {
+            federation_id: RpcFederationId(federation_id),
+            transaction,
+        })
     }
     pub fn log(log: String) -> Self {
-        Self::Log {
-            event: LogEvent { log },
-        }
+        Self::Log(LogEvent { log })
     }
     pub async fn federation(federation: RpcFederation) -> Self {
-        Self::Federation { event: federation }
+        Self::Federation(federation)
     }
 }
 
@@ -78,15 +75,15 @@ pub type EventSink = Arc<dyn IEventSink>;
 pub trait TypedEventExt: IEventSink {
     fn typed_event(&self, event: &Event) {
         match event {
-            Event::Log { event } => {
+            Event::Log(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "log".into(), body);
             }
-            Event::Transaction { event } => {
+            Event::Transaction(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "transaction".into(), body);
             }
-            Event::Federation { event } => {
+            Event::Federation(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "federation".into(), body);
             }

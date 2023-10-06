@@ -63,7 +63,9 @@ use super::types::{
 use crate::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
 };
-use crate::types::{EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction};
+use crate::types::{
+    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, RpcTransactionDirection,
+};
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -276,7 +278,7 @@ impl FederationV0 {
                                     }
                                     .translate(),
                                 ),
-                                direction: "receive".to_string(),
+                                direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 // FIXME: map v0 to v1 states on best effort basis
                                 // ln_state: RpcLnState::from_ln_recv_state(Some(update)),
@@ -839,7 +841,7 @@ impl FederationV0 {
                                 }
                                 .translate(),
                             ),
-                            direction: "send".to_string(),
+                            direction: RpcTransactionDirection::Send,
                             notes,
                             ln_state: RpcLnState::from_ln_pay_state(
                                 self.get_ln_pay_outcome(op.0.operation_id, op.1)
@@ -861,7 +863,7 @@ impl FederationV0 {
                                 }
                                 .translate(),
                             ),
-                            direction: "receive".to_string(),
+                            direction: RpcTransactionDirection::Receive,
                             notes,
                             ln_state: RpcLnState::from_ln_recv_state(
                                 op.1.outcome::<LnReceiveState>().translate(),
@@ -885,7 +887,7 @@ impl FederationV0 {
                                         id: op.0.operation_id.to_string(),
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
-                                        direction: "receive".to_string(),
+                                        direction: RpcTransactionDirection::Receive,
                                         notes,
                                         ln_state: None,
                                         amount: RpcAmount(mint_meta.amount.translate()),
@@ -901,7 +903,7 @@ impl FederationV0 {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                direction: "send".to_string(),
+                                direction: RpcTransactionDirection::Send,
                                 notes,
                                 ln_state: None,
                                 amount: RpcAmount(requested_amount.translate()),

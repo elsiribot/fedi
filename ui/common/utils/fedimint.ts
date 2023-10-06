@@ -1,17 +1,9 @@
 import type {
-    Transaction,
     FedimintBridgeEventMap,
-    Federation,
-    Invoice,
-    XmppCredentials,
-    RecoveredUsername,
-    SeedWords,
     MSats,
     Sats,
-    LightningGateway,
-    LnurlSignedMessage,
-    SocialRecoveryEvent,
-    SocialRecoveryQrCode,
+    Transaction,
+    bindings,
 } from '../types'
 
 export class FedimintBridge {
@@ -22,10 +14,14 @@ export class FedimintBridge {
         ) => Promise<T>,
     ) {}
 
+    async rpcTyped<M extends bindings.RpcMethodNames, R extends bindings.RpcResponse<M>>(method: M, payload: bindings.RpcPayload<M>): Promise<R> {
+        return await this.rpc(method, payload);
+    }
+
     /*** RPC METHODS ***/
 
     async listTransactions(federationId: string) {
-        return this.rpc<Transaction[]>('listTransactions', { federationId })
+        return this.rpcTyped<'listTransactions', Transaction[]>('listTransactions', { federationId })
     }
 
     async updateTransactionNotes(
@@ -33,7 +29,7 @@ export class FedimintBridge {
         notes: string,
         federationId: string,
     ) {
-        return this.rpc('updateTransactionNotes', {
+        return this.rpcTyped('updateTransactionNotes', {
             federationId,
             transactionId,
             notes,
@@ -41,15 +37,15 @@ export class FedimintBridge {
     }
 
     async joinFederation(inviteCode: string) {
-        return this.rpc<Federation>('joinFederation', { inviteCode })
+        return this.rpcTyped('joinFederation', { inviteCode })
     }
 
     async leaveFederation(federationId: string) {
-        return this.rpc('leaveFederation', { federationId })
+        return this.rpcTyped('leaveFederation', { federationId })
     }
 
     async listFederations() {
-        return this.rpc<Federation[]>('listFederations', {})
+        return this.rpcTyped('listFederations', {})
     }
 
     async generateInvoice(
@@ -57,7 +53,7 @@ export class FedimintBridge {
         description: string,
         federationId: string,
     ) {
-        return this.rpc<string>('generateInvoice', {
+        return this.rpcTyped('generateInvoice', {
             amount,
             description,
             federationId,
@@ -65,21 +61,22 @@ export class FedimintBridge {
     }
 
     async decodeInvoice(invoice: string) {
-        return this.rpc<Invoice>('decodeInvoice', { invoice })
+        return this.rpcTyped('decodeInvoice', { invoice })
     }
 
     async payInvoice(invoice: string, federationId: string) {
-        return this.rpc<{ preimage: string }>('payInvoice', {
+        return this.rpcTyped('payInvoice', {
             invoice,
             federationId,
         })
     }
 
     async generateAddress(federationId: string) {
-        return this.rpc<string>('generateAddress', { federationId })
+        return this.rpcTyped('generateAddress', { federationId })
     }
 
     async payAddress(address: string, sats: Sats, federationId: string) {
+        // FIXME: sats must be bigint
         return this.rpc<string>('payAddress', {
             address,
             sats,
@@ -87,66 +84,66 @@ export class FedimintBridge {
         })
     }
 
-    async generateEcash(amount: number, federationId: string) {
-        return this.rpc<string>('generateEcash', { federationId, amount })
+    async generateEcash(amount: MSats, federationId: string) {
+        return this.rpcTyped('generateEcash', { federationId, amount })
     }
 
     async receiveEcash(ecash: string, federationId: string) {
-        return this.rpc<MSats>('receiveEcash', {
+        return this.rpcTyped('receiveEcash', {
             federationId,
             ecash,
         })
     }
 
     async validateEcash(ecash: string) {
-        return this.rpc<MSats>('validateEcash', {
+        return this.rpcTyped('validateEcash', {
             ecash,
         })
     }
 
     async signLnurlMessage(message: string, federationId: string) {
-        return this.rpc<LnurlSignedMessage>('signLnurlMessage', {
+        return this.rpcTyped('signLnurlMessage', {
             message,
             federationId,
         })
     }
 
     async getNostrPubKey(federationId: string) {
-        return this.rpc<string>('getNostrPubKey', { federationId })
+        return this.rpcTyped('getNostrPubKey', { federationId })
     }
 
     async signNostrEvent(eventHash: string, federationId: string) {
-        return this.rpc<string>('signNostrEvent', {
+        return this.rpcTyped('signNostrEvent', {
             eventHash,
             federationId,
         })
     }
 
     async getXmppCredentials(federationId: string) {
-        return this.rpc<XmppCredentials>('xmppCredentials', { federationId })
+        return this.rpcTyped('xmppCredentials', { federationId })
     }
 
     async backupXmppUsername(username: string, federationId: string) {
-        return this.rpc('backupXmppUsername', { username, federationId })
+        return this.rpcTyped('backupXmppUsername', { username, federationId })
     }
 
     async listGateways(federationId: string) {
-        return this.rpc<LightningGateway[]>('listGateways', { federationId })
+        return this.rpcTyped('listGateways', { federationId })
     }
 
-    async switchGateway(gatewayId: string, federationId: string) {
-        return this.rpc('switchGateway', {
+    async switchGateway(gatewayId: bindings.RpcPublicKey, federationId: string) {
+        return this.rpcTyped('switchGateway', {
             federationId,
             gatewayId,
         })
     }
 
     async getMnemonic(federationId: string) {
-        return this.rpc<SeedWords>('getMnemonic', { federationId })
+        return this.rpcTyped('getMnemonic', { federationId })
     }
 
     async recoverFromMnemonic(mnemonic: string[], federationId: string) {
-        return this.rpc<RecoveredUsername>('recoverFromMnemonic', {
+        return this.rpcTyped('recoverFromMnemonic', {
             mnemonic,
             federationId,
         })
@@ -159,24 +156,24 @@ export class FedimintBridge {
     async uploadBackupFile(videoFilePath: string, federationId: string) {
         // FIXME: for some reason rust can't read the file if it has `file://` prefix ...
         videoFilePath = videoFilePath.replace('file://', '')
-        return this.rpc('uploadBackupFile', { federationId, videoFilePath })
+        return this.rpcTyped('uploadBackupFile', { federationId, videoFilePath })
     }
 
     async locateRecoveryFile(federationId: string) {
-        return this.rpc<string>('locateRecoveryFile', { federationId })
+        return this.rpcTyped('locateRecoveryFile', { federationId })
     }
 
     async validateRecoveryFile(path: string, federationId: string) {
         console.debug('backup file path', path)
-        return this.rpc<boolean>('validateRecoveryFile', { federationId, path })
+        return this.rpcTyped('validateRecoveryFile', { federationId, path })
     }
 
     async recoveryQr(federationId: string) {
-        return this.rpc<SocialRecoveryQrCode>('recoveryQr', { federationId })
+        return this.rpcTyped('recoveryQr', { federationId })
     }
 
     async socialRecoveryApprovals(federationId: string) {
-        return this.rpc<SocialRecoveryEvent>('socialRecoveryApprovals', {
+        return this.rpcTyped('socialRecoveryApprovals', {
             federationId,
         })
     }
@@ -208,7 +205,7 @@ export class FedimintBridge {
         password: string,
         federationId: string,
     ) {
-        return this.rpc('approveSocialRecoveryRequest', {
+        return this.rpcTyped('approveSocialRecoveryRequest', {
             recoveryId,
             peerId,
             password,
@@ -220,7 +217,7 @@ export class FedimintBridge {
         recoveryId: string,
         federationId: string,
     ) {
-        return this.rpc<string | null>(
+        return this.rpcTyped(
             'socialRecoveryDownloadVerificationDoc',
             {
                 federationId,
@@ -230,7 +227,7 @@ export class FedimintBridge {
     }
 
     async completeSocialRecovery(federationId: string) {
-        return this.rpc<RecoveredUsername>('completeSocialRecovery', {
+        return this.rpcTyped('completeSocialRecovery', {
             federationId,
         })
     }
