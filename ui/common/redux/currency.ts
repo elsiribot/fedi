@@ -186,13 +186,16 @@ export const selectBtcExchangeRate = (s: CommonState) => {
             return exchangeRate
         }
     }
-    // Special case for the CFA franc which is a fixed 650x the EUR price
+
+    const eurPrice = s.currency.prices[SupportedCurrency.EUR] || 0
+
+    // Special case for the CFA franc which is a fixed 660x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CFA) {
-        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
+        exchangeRate = eurPrice * 660
     }
-    // Special case for CZK which is a fixed 23.5x the EUR price
+    // Special case for CZK which is a fixed 24.5x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CZK) {
-        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
+        exchangeRate = eurPrice * 24.5
     }
 
     return exchangeRate
