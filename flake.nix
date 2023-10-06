@@ -211,6 +211,7 @@
               pkgs.perl
               pkgs.pkg-config
               pkgs.mprocs
+              pkgs.bitcoind
             ];
 
           buildInputs = [ pkgs.openssl ];
