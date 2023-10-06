@@ -21,3 +21,4 @@ stability-pool-common = { path = "../stability-pool-common" }
 thiserror = "1.0.48"
 rand = "0.8"
 itertools = "0.11.0"
+tokio = "1.23"

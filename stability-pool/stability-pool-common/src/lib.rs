@@ -12,8 +12,6 @@ use serde::{Deserialize, Serialize};
 pub mod config;
 use config::StabilityPoolClientConfig;
 
-pub mod oracle;
-
 pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
 pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
 

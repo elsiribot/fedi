@@ -5379,19 +5379,11 @@ dependencies = [
 name = "stability-pool-common"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "async-trait",
  "bitcoin",
- "erased-serde",
  "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?rev=9a203166be7af0925a49a61a74a97ef94d2d8a46)",
- "futures",
- "reqwest",
  "secp256k1-zkp",
  "serde",
  "serde_json",
- "strum",
- "strum_macros",
- "tokio",
  "tracing",
 ]
 
@@ -5415,6 +5407,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "thiserror",
+ "tokio",
  "tracing",
 ]
 

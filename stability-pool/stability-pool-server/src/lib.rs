@@ -1,5 +1,6 @@
 pub mod api;
 pub mod db;
+pub mod oracle;
 use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::time::SystemTime;
 
@@ -11,7 +12,6 @@ use common::config::{
     StabilityPoolConfigConsensus, StabilityPoolConfigLocal, StabilityPoolConfigPrivate,
     StabilityPoolGenParams,
 };
-use common::oracle::{AggregateOracle, MockOracle, Oracle};
 use common::{
     CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek, SeekMetadata,
     StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
@@ -41,6 +41,7 @@ use fedimint_core::task::{MaybeSend, TaskGroup};
 use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
+use oracle::{AggregateOracle, MockOracle, Oracle};
 use rand::seq::IteratorRandom;
 pub use stability_pool_common as common;
 use tracing::info;
