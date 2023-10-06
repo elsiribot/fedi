@@ -60,6 +60,12 @@
                 ];
               });
 
+              clightning = prev.clightning.overrideAttrs (oldAttrs: {
+                configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+              } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+                NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
+              });
+
               # mold wrapper from https://discourse.nixos.org/t/using-mold-as-linker-prevents-libraries-from-being-found/18530/5
               mold =
                 let
@@ -147,16 +153,11 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs flakeboxLib fedi-v0 fedimint-build fedimint-pkgs clightning-dev toolchains;
+          inherit pkgs flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
         };
 
         fmLib = fedimint-build.lib.${system};
 
-        clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
-          configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
-        });
 
         lib = pkgs.lib;
         stdenv = pkgs.stdenv;
@@ -212,6 +213,9 @@
               pkgs.pkg-config
               pkgs.mprocs
               pkgs.bitcoind
+              pkgs.electrs
+              pkgs.clightning
+              pkgs.lnd
             ];
 
           buildInputs = [ pkgs.openssl ];
