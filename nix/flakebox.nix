@@ -1,4 +1,4 @@
-{ pkgs, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, clightning-dev, toolchains }:
+{ pkgs, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains }:
 let
   system = pkgs.system;
 
@@ -121,7 +121,7 @@ rec {
     cmd = ''
       patchShebangs ./scripts
       export FM_CARGO_DENY_COMPILATION=1
-      export PATH="${pkgs.which}/bin:${pkgs.bitcoind}/bin:${pkgs.electrs}/bin:${clightning-dev}/bin:${pkgs.esplora}/bin:${pkgs.lnd}/bin:$PATH"
+      export PATH="${pkgs.which}/bin:${pkgs.bitcoind}/bin:${pkgs.electrs}/bin:${pkgs.clightning}/bin:${pkgs.esplora}/bin:${pkgs.lnd}/bin:$PATH"
 
       for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
          which $i
@@ -146,7 +146,7 @@ rec {
     cmd = ''
       patchShebangs ./scripts
       export FM_CARGO_DENY_COMPILATION=1
-      export PATH="${pkgs.which}/bin:${pkgs.bitcoind}/bin:${pkgs.electrs}/bin:${clightning-dev}/bin:${pkgs.esplora}/bin:${pkgs.lnd}/bin:$PATH"
+      export PATH="${pkgs.which}/bin:${pkgs.bitcoind}/bin:${pkgs.electrs}/bin:${pkgs.clightning}/bin:${pkgs.esplora}/bin:${pkgs.lnd}/bin:$PATH"
 
       for i in fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet distributedgen ; do
          which $i
