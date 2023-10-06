@@ -1398,6 +1398,7 @@ dependencies = [
  "ring",
  "serde",
  "serde_json",
+ "stability-pool-client",
  "tempfile",
  "thiserror",
  "threshold_crypto",

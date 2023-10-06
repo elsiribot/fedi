@@ -38,6 +38,7 @@ use fedimint_mint_client::{
 use fedimint_wallet_client::{WalletClientGen, WalletClientModule};
 use futures::StreamExt;
 use lightning_invoice::Invoice;
+use stability_pool_client::StabilityPoolClientGen;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -102,6 +103,7 @@ impl FederationV1 {
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen(None));
         client_builder.with_module(FediSocialClientInit);
+        client_builder.with_module(StabilityPoolClientGen);
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_dyn_database(db);
@@ -118,6 +120,7 @@ impl FederationV1 {
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen(None));
         client_builder.with_module(FediSocialClientInit);
+        client_builder.with_module(StabilityPoolClientGen);
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_old_client_database(old_client);
