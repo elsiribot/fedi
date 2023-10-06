@@ -1,8 +1,7 @@
 import { MSats, MsatsString } from './units'
-import { LogEvent, RpcFederation, RpcInvoice, RpcLightningGateway, RpcResponse, SocialRecoveryEvent, RpcTransaction } from './bindings'
-
-export type Invoice = RpcInvoice
-export type LightningGateway = RpcLightningGateway
+import { LogEvent, RpcFederation, RpcInvoice, RpcLightningGateway, RpcResponse, SocialRecoveryEvent, RpcTransaction, SocialRecoveryApproval } from './bindings'
+export type { SocialRecoveryEvent, SocialRecoveryApproval as GuardianApproval, RpcInvoice as Invoice, RpcLightningGateway as LightningGateway };
+export type SocialRecoveryQrCode = RpcResponse<'recoveryQr'>
 
 export enum TransactionDirection {
     send = 'send',
@@ -107,7 +106,7 @@ export enum Network {
     regtest = 'regtest',
 }
 
-export type Federation = RpcFederation & { meta: ClientConfigMetadata }
+export type Federation = RpcFederation & { meta: ClientConfigMetadata, network: Network }
 
 export type SeedWords = RpcResponse<'getMnemonic'>
 

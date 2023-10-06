@@ -38,7 +38,7 @@ export interface RpcFederation {
     id: RpcFederationId
     network: string
     name: string
-    inviteCode: string | null
+    inviteCode: string
     meta: Record<string, string>
     socialRecoveryActive: boolean
     nodes: Record<string, { url: string; name: string }>
@@ -102,7 +102,7 @@ export interface RpcMethods {
             id: RpcFederationId
             network: string
             name: string
-            inviteCode: string | null
+            inviteCode: string
             meta: Record<string, string>
             socialRecoveryActive: boolean
             nodes: Record<string, { url: string; name: string }>
@@ -117,7 +117,7 @@ export interface RpcMethods {
             id: RpcFederationId
             network: string
             name: string
-            inviteCode: string | null
+            inviteCode: string
             meta: Record<string, string>
             socialRecoveryActive: boolean
             nodes: Record<string, { url: string; name: string }>

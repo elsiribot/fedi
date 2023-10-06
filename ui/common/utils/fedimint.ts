@@ -1,4 +1,5 @@
 import type {
+    Federation,
     FedimintBridgeEventMap,
     MSats,
     Sats,
@@ -45,7 +46,7 @@ export class FedimintBridge {
     }
 
     async listFederations() {
-        return this.rpcTyped('listFederations', {})
+        return this.rpcTyped<'listFederations', Federation[]>('listFederations', {})
     }
 
     async generateInvoice(

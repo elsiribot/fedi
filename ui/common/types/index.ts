@@ -1,4 +1,5 @@
 export * from './chat'
+export type { SocialRecoveryEvent } from './bindings'
 export * as bindings from './bindings'
 export * from './fedimint'
 export * from './storage'

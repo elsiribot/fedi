@@ -45,7 +45,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         amount: 0 as MSats,
         description: '',
         invoice: '',
-        fee: null,
+        fee: 0 as MSats,
     })
 
     const decodeUri = useCallback(() => {
