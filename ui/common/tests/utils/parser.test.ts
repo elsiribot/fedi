@@ -17,7 +17,7 @@ const simpleBolt11Invoice: Invoice = {
     amount: 100000 as MSats,
     description: '',
     invoice: simpleBolt11,
-    fee: null,
+    fee: 0 as MSats,
 }
 const simpleBolt11Data = {
     bolt11: simpleBolt11,
@@ -34,7 +34,7 @@ const complexBolt11Invoice: Invoice = {
     amount: 2000000 as MSats,
     description: 'fiatjaf: money',
     invoice: complexBolt11,
-    fee: null,
+    fee: 0 as MSats,
 }
 const complexBolt11Data = {
     bolt11: complexBolt11,
