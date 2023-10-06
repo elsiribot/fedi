@@ -214,6 +214,7 @@
               pkgs.mprocs
               pkgs.bitcoind
               pkgs.electrs
+              pkgs.esplora
               pkgs.clightning
               pkgs.lnd
             ];
