@@ -8,14 +8,10 @@ import {
 } from '../utils/FederationUtils'
 import { loadFromStorage } from './storage'
 
-type FiatPriceMap = {
-    [currency in SupportedCurrency]: number
-}
-
 /*** Initial State ***/
 
 const initialState = {
-    prices: {} as FiatPriceMap,
+    prices: {} as Partial<Record<SupportedCurrency, number>>,
     selectedFiatCurrency: null as SupportedCurrency | null,
     socketErrors: 0,
 }
@@ -55,6 +51,7 @@ export const currencySlice = createSlice({
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.selectedFiatCurrency = action.payload.currency
+            state.prices = action.payload.btcExchangeRates
         })
     },
 })
@@ -189,13 +186,16 @@ export const selectBtcExchangeRate = (s: CommonState) => {
             return exchangeRate
         }
     }
-    // Special case for the CFA franc which is a fixed 650x the EUR price
+
+    const eurPrice = s.currency.prices[SupportedCurrency.EUR] || 0
+
+    // Special case for the CFA franc which is a fixed 660x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CFA) {
-        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 650
+        exchangeRate = eurPrice * 660
     }
-    // Special case for CZK which is a fixed 23.5x the EUR price
+    // Special case for CZK which is a fixed 24.5x the EUR price
     if (selectedFiatCurrency === SupportedCurrency.CZK) {
-        exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
+        exchangeRate = eurPrice * 24.5
     }
     // Special case for INR which is a fixed 83x the USD price
     if (selectedFiatCurrency === SupportedCurrency.INR) {

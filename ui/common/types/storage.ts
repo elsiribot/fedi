@@ -76,6 +76,11 @@ export interface StoredStateV5 extends Omit<StoredStateV4, 'version'> {
     externalMeta: Record<string, Federation['meta'] | undefined>
 }
 
+export interface StoredStateV6 extends Omit<StoredStateV5, 'version'> {
+    version: 6
+    btcExchangeRates: Partial<Record<SupportedCurrency, number>>
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -84,9 +89,10 @@ export type AnyStoredState =
     | StoredStateV3
     | StoredStateV4
     | StoredStateV5
+    | StoredStateV6
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV5
+export type LatestStoredState = StoredStateV6
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
