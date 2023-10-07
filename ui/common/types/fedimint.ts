@@ -49,6 +49,7 @@ export enum SupportedCurrency {
     EUR = 'EUR',
     CFA = 'CFA',
     CZK = 'CZK',
+    INR = 'INR',
 }
 
 export enum SupportedFeature {

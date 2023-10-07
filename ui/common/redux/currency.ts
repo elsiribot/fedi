@@ -197,6 +197,10 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     if (selectedFiatCurrency === SupportedCurrency.CZK) {
         exchangeRate = s.currency.prices[SupportedCurrency.EUR] * 23.5
     }
+    // Special case for INR which is a fixed 83x the USD price
+    if (selectedFiatCurrency === SupportedCurrency.INR) {
+        exchangeRate = s.currency.prices[SupportedCurrency.USD] * 83
+    }
 
     return exchangeRate
 }
