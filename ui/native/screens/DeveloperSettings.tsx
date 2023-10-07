@@ -105,7 +105,9 @@ const DeveloperSettings: React.FC<Props> = () => {
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
             // v0 federation gateways use nodePubKey, v1 use gatewayId which isn't present for v0
-            await switchGateway(gateway.gatewayId || gateway.nodePubKey)
+            await switchGateway(
+                'gatewayId' in gateway ? gateway.gatewayId : gateway.nodePubKey,
+            )
         } catch (e) {
             toast?.show(t('errors.failed-to-switch-gateways'), 3000)
         }
@@ -258,42 +260,21 @@ const DeveloperSettings: React.FC<Props> = () => {
                 />
             </SettingsSection>
             <SettingsSection title="Change your currency">
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>{'USD'}</Text>
-                    }
-                    checked={selectedFiatCurrency === SupportedCurrency.USD}
-                    onPress={() =>
-                        reduxDispatch(
-                            changeSelectedFiatCurrency(SupportedCurrency.USD),
-                        )
-                    }
-                    containerStyle={styles(theme).checkboxContainer}
-                />
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>{'EUR'}</Text>
-                    }
-                    checked={selectedFiatCurrency === SupportedCurrency.EUR}
-                    onPress={() =>
-                        reduxDispatch(
-                            changeSelectedFiatCurrency(SupportedCurrency.EUR),
-                        )
-                    }
-                    containerStyle={styles(theme).checkboxContainer}
-                />
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>{'CFA'}</Text>
-                    }
-                    checked={selectedFiatCurrency === SupportedCurrency.CFA}
-                    onPress={() =>
-                        reduxDispatch(
-                            changeSelectedFiatCurrency(SupportedCurrency.CFA),
-                        )
-                    }
-                    containerStyle={styles(theme).checkboxContainer}
-                />
+                {Object.values(SupportedCurrency).map(currency => (
+                    <CheckBox
+                        key={currency}
+                        title={
+                            <Text style={styles(theme).checkboxText}>
+                                {currency}
+                            </Text>
+                        }
+                        checked={selectedFiatCurrency === currency}
+                        onPress={() =>
+                            reduxDispatch(changeSelectedFiatCurrency(currency))
+                        }
+                        containerStyle={styles(theme).checkboxContainer}
+                    />
+                ))}
             </SettingsSection>
             <SettingsSection title="Change your lightning gateway">
                 {gateways.map((gw: LightningGateway, index: number) => (

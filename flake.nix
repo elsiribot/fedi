@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=06f83406285d3cda57139213566038596030721c";
+      url = "github:rustshop/flakebox?rev=68dfce33a6f918fb3e1628faf82e55fde3d50208";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -49,6 +49,22 @@
               convco = pkgs-unstable.convco;
 
               esplora = pkgs-kitman.esplora;
+
+              mprocs = prev.mprocs.overrideAttrs (final: prev: {
+                patches = prev.patches ++ [
+                  (builtins.fetchurl {
+                    url = "https://github.com/pvolok/mprocs/pull/88.patch";
+                    name = "clipboard-fix.patch";
+                    sha256 = "sha256-9dx1vaEQ6kD66M+vsJLIq1FK+nEObuXSi3cmpSZuQWk=";
+                  })
+                ];
+              });
+
+              clightning = prev.clightning.overrideAttrs (oldAttrs: {
+                configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+              } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+                NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
+              });
 
               # mold wrapper from https://discourse.nixos.org/t/using-mold-as-linker-prevents-libraries-from-being-found/18530/5
               mold =
@@ -137,16 +153,11 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs flakeboxLib fedi-v0 fedimint-build fedimint-pkgs clightning-dev toolchains;
+          inherit pkgs flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
         };
 
         fmLib = fedimint-build.lib.${system};
 
-        clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
-          configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
-        });
 
         lib = pkgs.lib;
         stdenv = pkgs.stdenv;
@@ -194,12 +205,20 @@
               pkgs.gnused
               pkgs.yarn
               pkgs.nodejs
+              pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
+              pkgs.nodePackages.typescript-language-server
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
               pkgs.perl
               pkgs.pkg-config
+              pkgs.mprocs
+              pkgs.bitcoind
+              pkgs.electrs
+              pkgs.esplora
+              pkgs.clightning
+              pkgs.lnd
             ];
 
           buildInputs = [ pkgs.openssl ];

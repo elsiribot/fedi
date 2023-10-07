@@ -24,7 +24,13 @@ fi
 export FLAKEBOX_GIT_LS
 FLAKEBOX_GIT_LS="$(git ls-files)"
 export FLAKEBOX_GIT_LS_TEXT
-FLAKEBOX_GIT_LS_TEXT="$(echo "$FLAKEBOX_GIT_LS" | grep -v -E "^db/|\.(png|ods|jpg|jpeg|woff2|keystore|wasm|ttf|jar|ico)\$")"
+FLAKEBOX_GIT_LS_TEXT="$(echo "$FLAKEBOX_GIT_LS" | grep -v -E "\.(png|ods|jpg|jpeg|woff2|keystore|wasm|ttf|jar|ico|gif)\$")"
+
+
+function check_nothing() {
+  true
+}
+export -f check_nothing
 
 function check_cargo_fmt() {
     set -euo pipefail
@@ -100,7 +106,7 @@ export -f check_shellcheck
 function check_trailing_whitespace() {
     set -euo pipefail
 
-    if ! git diff --check ; then
+    if ! git diff --check HEAD ; then
       echo "Trailing whitespace detected. Please remove them before committing."
       return 1
     fi
@@ -117,5 +123,4 @@ parallel \
     check_semgrep \
     check_shellcheck \
     check_trailing_whitespace \
-    # newline for the last \ to work
-
+  check_nothing
