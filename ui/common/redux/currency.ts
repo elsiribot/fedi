@@ -187,6 +187,7 @@ export const selectBtcExchangeRate = (s: CommonState) => {
         }
     }
 
+    const usdPrice = s.currency.prices[SupportedCurrency.USD] || 0
     const eurPrice = s.currency.prices[SupportedCurrency.EUR] || 0
 
     // Special case for the CFA franc which is a fixed 660x the EUR price
@@ -199,7 +200,7 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     }
     // Special case for INR which is a fixed 83x the USD price
     if (selectedFiatCurrency === SupportedCurrency.INR) {
-        exchangeRate = s.currency.prices[SupportedCurrency.USD] * 83
+        exchangeRate = usdPrice * 83
     }
 
     return exchangeRate
