@@ -15,18 +15,66 @@ use config::StabilityPoolClientConfig;
 pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
 pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
 
+/// Withdrawing unlocked funds from the stability pool is technically just a
+/// fedimint transaction where the input comes from the stability pool module
+/// and the output comes from the e-cash module.
+///
+/// A user's holdings inside the stability pool are distributed into 3
+/// categories:
+/// 1. Idle balance: these are funds that were recovered by canceling auto
+///    renewal. They can be freely withdrawn.
+/// 2. Staged balance: the sum of any staged seeks or provides that have not
+///    been locked yet. They can be freely withdrawn.
+/// 3. Locked balance: the sum of any locked seeks or provides. This is not a
+///    realized amount, meaning it can fluctuate until the end of the cycle,
+///    when the locks are settled and paid out. This amount cannot be withdrawn,
+///    and the user must stage a cancellation so that when the cycle ends, a %
+///    (could be 100%) of the final payout is moved to idle balance instead of
+///    being re-staged and then re-locked.
+///
+/// The `amount` specified in the `StabilityPoolInput` must be less than or
+/// equal to the user's total unlocked balance, which is defined as the sum of
+/// idle balance and staged balance.
 #[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
 pub struct StabilityPoolInput {
     pub account: XOnlyPublicKey,
     pub amount: Amount,
 }
 
+/// Depositing funds into the stability pool is technically just a fedimint
+/// transaction where the input comes from the e-cash module and the outputs
+/// come from the stability pool module and the e-cash module (in case of any
+/// change).
 #[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
 pub struct StabilityPoolOutput {
     pub account: XOnlyPublicKey,
     pub intended_action: IntendedAction,
 }
 
+/// The user's intention behind the deposit must be specified using the
+/// `IntendedAction` enum out of the following 4 options:
+/// 1. `Seek`: means deposit the specified msat amount for staging a seek. A
+///    seek is accepted iff the user does NOT already have staged provides,
+///    locked provides, or staged cancellation. Seeks are assigned
+///    auto-incrementing sequences by the guardians.
+/// 2. `Provide`: means deposit the specified msat amount for staging a provide
+///    with the specified min fee rate (in PPB). A provide is accepted iff the
+///    user does NOT already have staged seeks, locked seeks, or staged
+///    cancellation. Provides are assigned auto-incrementing sequences by the
+///    guardians.
+/// 3. `CancelRenewal`: means stage a cancellation for the specified %
+///    (expressed in basis points) of the user's locked funds. This means that
+///    when the current cycle ends, the specified portion of the user's position
+///    is not auto-renewed, and is instead moved to their "idle balance" within
+///    the stability pool, waiting to be claimed by them later in a transaction.
+///    A % unit is used as it works for both seeks and provides (since provider
+///    doesn't know either the msats or the $ value that they will receive when
+///    the current cycle ends). A cancellation is accepted iff the user does NOT
+///    have any staged seeks or provides or staged cancellation AND has at least
+///    one locked seek or provide (but not both).
+/// 4. `UndoCancelRenewal`: means cancel any staged cancellation because the
+///    user changed their mind. Naturally the user must have a staged
+///    cancellation.
 #[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
 pub enum IntendedAction {
     Seek(Seek),
@@ -64,6 +112,21 @@ pub struct StagedProvide {
 #[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
 pub struct StabilityPoolOutputOutcome;
 
+/// The stability pool's contribution to consensus is minimal and contains only
+/// the data needed to progress from one cycle to the next. The philosophy here
+/// is to only include the bare minimum needed so that everything else can be
+/// deterministically calculated by each guardian.
+///
+/// Guardians use the cycle duration (which is part of the consensus
+/// configuration) to realize when the next cycle needs to begin. At that
+/// moment, they query the oracle to get the latest BTC/USD
+/// price, and propose a new consensus item using their system clock and the
+/// index of the next cycle.
+///
+/// When other guardians receive these proposals and consensus items, they wait
+/// to see a threshold number of votes before actually processing the cycle
+/// turnover. Both the start time and the start price for the
+/// turnover are obtained from median values among the votes.
 #[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
 pub struct StabilityPoolConsensusItem {
     pub next_cycle_index: u64,
