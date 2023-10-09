@@ -9,12 +9,13 @@ module.exports = function (api) {
         ],
     ]
 
+    // We also need to handle `export * from` from TypeScript since we're not using ts-jest
+    plugins.push('@babel/plugin-proposal-export-namespace-from')
+
     if (process?.env?.JEST_WORKER_ID) {
         // we are inside jest functional tests, don't use react-native-quick-crypto
         // so we can fallback to NodeJS
         api.cache.never()
-        // We also need to handle `export * from` from TypeScript since we're not using ts-jest
-        plugins.push('@babel/plugin-proposal-export-namespace-from')
     } else {
         // we are inside RN, so we need to provide react-native-quick-crypto aliases
         plugins.unshift([
