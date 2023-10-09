@@ -12,15 +12,57 @@ use stability_pool_common::{
 #[repr(u8)]
 #[derive(Clone, Debug)]
 pub enum DbKeyPrefix {
+    /// User account => idle (neither staged nor locked) balance in msats.
+    /// Idle balance is produced from locks that are cancelled during cycle
+    /// turnover.
     IdleBalance = 0x01,
+
+    /// User account => list of staged seeks.
+    /// A staged seek is the equivalent of a "pending" deposit, waiting to be
+    /// matched at the next cycle turnover.
     StagedSeeks,
+
+    /// User account => list of staged provides.
+    /// A staged provide is the equivalent of a "pending" deposit, waiting to be
+    /// matched at the next cycle turnover.
     StagedProvides,
+
+    /// User account => staged cancellation in BPS.
+    /// If a staged cancellation exists for a user, the corresponding BPS of
+    /// their locked balance gets unlocked at the next cycle turnover. This
+    /// unlocked balance becomes idle balance.
     StagedCancellation,
+
+    /// The currently ongoing system cycle containing the cycle index, start
+    /// time and price, as well as the list of locked seeks and provides.
     CurrentCycle,
+
+    /// Cycle index => cycle data.
+    /// A mapping of all the past cycles keyed by the cycle index. During cycle
+    /// turnover, the current (ending) cycle gets written here.
     PastCycle,
+
+    /// An incrementing, nonce-like identifier assigned to all incoming seek
+    /// requests. This sequence is used to prioritize seeks in a
+    /// first-come-first-server fashion.
     StagedSeekSequence,
+
+    /// An incrementing, nonce-like identifier assigned to all incoming provide
+    /// requests. This sequence is used to prioritize provides in a
+    /// first-come-first-server fashion. Provides with lower fees will
+    /// always have higher priority when matching, but if two provides have
+    /// the same fees, lower sequence wins.
     StagedProvideSequence,
+
+    /// (Cycle index, peer ID) => consensus item.
+    /// A mapping where a peer's vote for the next cycle is recorded. When a
+    /// threshold number of votes is received, cycle turnover happens.
     CycleChangeVote,
+
+    /// Sequence => seek metadata.
+    /// Relevant history pertaining to the seek for client tracking purposes.
+    /// Contains information such as initial value in sats and cents,
+    /// withdrawn amounts in sats and cents, as well as fees debited so far.
     SeekMetadata,
 }
 
