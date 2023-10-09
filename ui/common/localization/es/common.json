@@ -342,8 +342,8 @@
         },
         "popup": {
             "ended": "Terminado",
-            "ended-description": "Esta federación temporal <bold>finalizó el {{date}}</bold>. Los saldos restantes se donaron a una causa benéfica.",
-            "ending-description": "Esta federación temporario <bold>finalizará el {{date}}</bold>. Cualquier saldo restante en la federación después del {{date}} se donará a Haima Ostrava, Clínica de Medicina Infantil, Departamento de Hematología Pediátrica y Hematooncología.",
+            "ended-description": "Esta federación emergente finalizó el {{date}}.",
+            "ending-description": "Esta federación emergente finalizará el {{date}}. Todos los saldos restantes en la federación después del {{date}} serán inaccesibles.",
             "ending-in": "Termina en <bold>{{time}}</bold>"
         },
         "receive": {
