@@ -1,0 +1,14 @@
+[package]
+name = "stability-pool-common"
+version = "0.1.0"
+authors = ["The Stability Pool Developers"]
+description = "stability pool module for fedimint"
+edition = "2021"
+
+[dependencies]
+fedimint-core = { workspace = true }
+serde = { version = "1.0.149", features = [ "derive" ] }
+bitcoin = { version = "0.29.2", features = [ "rand", "serde"] }
+tracing ="0.1.37"
+secp256k1-zkp = { version = "0.7.0", features = ["serde", "bitcoin_hashes" ] }
+serde_json = { version = "1" }
