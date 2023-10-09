@@ -208,6 +208,7 @@
               pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
               pkgs.nodePackages.typescript-language-server
+              pkgs.llvmPackages_14.clang
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
