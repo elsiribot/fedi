@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail};
 use async_stream::stream;
-use async_trait::async_trait;
 use bitcoin::KeyPair;
 use common::config::StabilityPoolClientConfig;
 use common::{
@@ -76,7 +75,7 @@ pub struct StabilityPoolClientModule {
     key: KeyPair,
 }
 
-#[async_trait]
+#[apply(async_trait_maybe_send!)]
 impl ClientModule for StabilityPoolClientModule {
     type Common = StabilityPoolModuleTypes;
     type ModuleStateMachineContext = ();
