@@ -1,18 +1,20 @@
 use std::collections::BTreeMap;
 
+use async_trait::async_trait;
 use common::common::{SignedRecoveryRequest, VerificationDocument};
+use common::config::{
+    FediSocialClientConfig, FediSocialConfig, FediSocialConfigLocal, FediSocialConsensusConfig,
+    FediSocialGenParams, FediSocialPrivateConfig,
+};
+use common::db::{
+    BackupKeyPrefix, DbKeyPrefix, DecryptionShareId, DecryptionSharePrefix, RecoveryPrefix,
+    UsedDoubleEncryptedData, UsedDoubleEncryptedDataPrefix,
+};
 use common::{
     FediSocialCommonGen, FediSocialConsensusItem, FediSocialInput, FediSocialModuleTypes,
     FediSocialOutputOutcome,
 };
 pub use fedi_social_common as common;
-
-use async_trait::async_trait;
-use common::config::{
-    FediSocialClientConfig, FediSocialConfigLocal, FediSocialConsensusConfig, FediSocialGenParams,
-    FediSocialPrivateConfig,
-};
-use common::db::DbKeyPrefix;
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
@@ -38,11 +40,6 @@ use tracing::{debug, info};
 use crate::common::{
     BackupId, BackupRequest, EncryptedRecoveryShare, RecoveryId, RecoveryRequest,
     SignedBackupRequest,
-};
-use common::config::FediSocialConfig;
-use common::db::{
-    BackupKeyPrefix, DecryptionShareId, DecryptionSharePrefix, RecoveryPrefix,
-    UsedDoubleEncryptedData, UsedDoubleEncryptedDataPrefix,
 };
 
 #[derive(Clone, Debug)]

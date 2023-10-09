@@ -56,7 +56,11 @@ const Header: React.FC<HeaderProps> = ({
         leftComponent = (
             <Pressable
                 testID="HeaderBackButton"
-                onPress={() => navigation.goBack()}
+                onPress={() =>
+                    navigation.canGoBack()
+                        ? navigation.goBack()
+                        : navigation.navigate('TabsNavigator')
+                }
                 hitSlop={5}
                 style={{
                     paddingVertical: theme.spacing.sm,

@@ -1,24 +1,24 @@
-use std::{collections::BTreeMap, time::Duration};
+use std::collections::BTreeMap;
+use std::time::Duration;
 
 use anyhow::anyhow;
-use bitcoin::{secp256k1::ecdsa::Signature, Network};
+use bitcoin::secp256k1::ecdsa::Signature;
+use bitcoin::Network;
 use fedimint_core::config::PeerUrl;
-use fedimint_ln_client::{
-    pay::GatewayPayError, receive::LightningReceiveError, LnPayState, LnReceiveState,
-};
+use fedimint_ln_client::pay::GatewayPayError;
+use fedimint_ln_client::receive::LightningReceiveError;
+use fedimint_ln_client::{LnPayState, LnReceiveState};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::{
-    bridge::MultiFederation, federation_v0::FederationV0, federation_v1::FederationV1,
-    translate::Translate,
-};
+use super::bridge::MultiFederation;
+use super::federation_v0::FederationV0;
+use super::federation_v1::FederationV1;
+use super::translate::Translate;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcAmount(
-    #[ts(type = "Opaque<number, 'fedimint_core::Amount'>")] pub fedimint_core::Amount,
-);
+pub struct RpcAmount(#[ts(type = "MSats")] pub fedimint_core::Amount);
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -29,19 +29,17 @@ pub struct RpcFederation {
     #[ts(type = "string")]
     pub network: Network,
     pub name: String,
-    pub invite_code: Option<String>,
+    pub invite_code: String,
     pub meta: BTreeMap<String, String>,
     pub social_recovery_active: bool,
-    #[ts(type = "Array<{url: string, name: string}>")]
+    #[ts(type = "Record<string, {url: string, name: string}>")]
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
     pub version: u32,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcFederationId(
-    #[ts(type = "Opaque<string, 'FederationId'>")] pub fedimint_core::config::FederationId,
-);
+pub struct RpcFederationId(#[ts(type = "string")] pub fedimint_core::config::FederationId);
 
 pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
     let balance = RpcAmount(federation.get_balance().await.translate());
@@ -125,7 +123,8 @@ pub fn hacky_lightning_invoice_fee(
     invoice
         .amount_milli_satoshis()
         .map(|msat| {
-            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded 1% fee
+            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded
+                                                          // 1% fee
         })
         .ok_or(anyhow!("Invoice missing amount"))
 }
@@ -179,7 +178,7 @@ pub struct RpcLightningGatewayV1 {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcLightningGatewayV0 {
     pub node_pub_key: RpcPublicKey,
-    #[ts(type = "Opaque<string, 'XOnlyPublicKey'>")]
+    #[ts(type = "string")]
     pub mint_pub_key: bitcoin::secp256k1::XOnlyPublicKey,
     pub api: String, // TODO: url::Ur;
     pub active: bool,
@@ -196,7 +195,8 @@ pub enum RpcLightningGateway {
 
 #[derive(Serialize, Deserialize)]
 pub struct FediBackupMetadata {
-    // TODO: would be nice to rename this to xmpp_username but would need to basically migrate the backups
+    // TODO: would be nice to rename this to xmpp_username but would need to basically migrate the
+    // backups
     pub username: Option<String>,
 }
 
@@ -210,9 +210,7 @@ impl FediBackupMetadata {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcRecoveryId(
-    #[ts(type = "Opaque<string, 'RecoveryId'>")] pub fedi_social_client::common::RecoveryId,
-);
+pub struct RpcRecoveryId(#[ts(type = "string")] pub fedi_social_client::common::RecoveryId);
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -235,9 +233,7 @@ pub struct RpcPeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcPublicKey(
-    #[ts(type = "Opaque<string, 'PublicKey'>")] pub bitcoin::secp256k1::PublicKey,
-);
+pub struct RpcPublicKey(#[ts(type = "string")] pub bitcoin::secp256k1::PublicKey);
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -248,6 +244,14 @@ pub struct RpcSignedLnurlMessage {
     pub pubkey: RpcPublicKey,
 }
 
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcTransactionDirection {
+    Receive,
+    Send,
+}
+
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
@@ -256,7 +260,7 @@ pub struct RpcTransaction {
     #[ts(type = "number")]
     pub created_at: u64,
     pub amount: RpcAmount,
-    pub direction: String,
+    pub direction: RpcTransactionDirection,
     pub notes: String,
     pub ln_state: Option<RpcLnState>,
     pub lightning: Option<RpcLightningDetails>,

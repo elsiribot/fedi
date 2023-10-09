@@ -1,37 +1,7 @@
 import { MSats, MsatsString } from './units'
-
-export type LogEvent = {
-    log: string
-}
-
-export type FederationEvent = Federation
-
-export type RecoveredUsername = string | null
-
-export interface TransactionEvent {
-    federationId: string
-    transaction: Transaction
-}
-
-export interface LnurlSignedMessage {
-    signature: string
-    pubkey: string
-}
-
-export interface Invoice {
-    paymentHash: string
-    amount: MSats
-    description: string
-    invoice: string
-    fee: null | MSats
-}
-
-export interface LightningGateway {
-    nodePubKey: string
-    gatewayId: null | string
-    api: string
-    active: boolean
-}
+import { LogEvent, RpcFederation, RpcInvoice, RpcLightningGateway, RpcResponse, SocialRecoveryEvent, RpcTransaction, SocialRecoveryApproval } from './bindings'
+export type { SocialRecoveryEvent, SocialRecoveryApproval as GuardianApproval, RpcInvoice as Invoice, RpcLightningGateway as LightningGateway };
+export type SocialRecoveryQrCode = RpcResponse<'recoveryQr'>
 
 export enum TransactionDirection {
     send = 'send',
@@ -43,51 +13,15 @@ export enum IncomingBitcoinTransactionStatus {
     complete = 'complete',
 }
 
-export interface LightningTransactionDetails {
-    invoice: string
-    fee: MSats | null
-}
-
-export interface BitcoinTransactionDetails {
+export interface MockBitcoinTransactionDetails {
     address: string
     txid: string
     fee: MSats | null
     incomingStatus: IncomingBitcoinTransactionStatus | null
 }
 
-export type LnPayState =
-    | { type: 'Created' }
-    | { type: 'Canceled' }
-    | { type: 'Funded' }
-    // skipped gateway_error
-    | { type: 'WaitingForRefund'; block_height: number }
-    | { type: 'AwaitingChange' }
-    | { type: 'Success'; preimage: string }
-    // skipped gateway_error
-    | { type: 'Refunded' }
-    | { type: 'Failed' }
-
-export type LnReceiveState =
-    | { type: 'Created' }
-    | { type: 'WaitingForPayment'; invoice: string }
-    | { type: 'Canceled' }
-    | { type: 'Funded' }
-    | { type: 'AwaitingFunds' }
-    | { type: 'Claimed' }
-
-export interface Transaction {
-    id: string
-    createdAt: number
-    direction: TransactionDirection
-    amount: MSats
-    notes: string
-    lnState: LnPayState | LnReceiveState | null
-    lightning: LightningTransactionDetails | null
-    bitcoin: BitcoinTransactionDetails | null
-}
-
-export interface SocialRecoveryQrCode {
-    recoveryId: string
+export type Transaction = RpcTransaction & {
+    bitcoin: MockBitcoinTransactionDetails
 }
 
 export interface Node {
@@ -115,6 +49,7 @@ export enum SupportedCurrency {
     EUR = 'EUR',
     CFA = 'CFA',
     CZK = 'CZK',
+    INR = 'INR',
 }
 
 export enum SupportedFeature {
@@ -172,19 +107,9 @@ export enum Network {
     regtest = 'regtest',
 }
 
-export interface Federation {
-    id: string
-    name: string
-    inviteCode: string
-    nodes: NodeMap
-    balance: MSats
-    socialRecoveryActive: boolean
-    meta: ClientConfigMetadata
-    network: Network
-    version: number
-}
+export type Federation = RpcFederation & { meta: ClientConfigMetadata, network: Network }
 
-export type SeedWords = string[]
+export type SeedWords = RpcResponse<'getMnemonic'>
 
 export interface FediMod {
     id: string
@@ -213,19 +138,15 @@ export interface FederationPreview {
  * Mocked-out social backup and recovery events
  */
 
-export type GuardianApproval = {
-    guardianName: string
-    approved: boolean
-}
+export type FederationEvent = Federation
 
-export type SocialRecoveryEvent = {
+export interface TransactionEvent {
     federationId: string
-    approvals: GuardianApproval[]
-    remaining: number
+    transaction: Transaction
 }
 
 // Map of event type name -> event data
-export interface FedimintBridgeEventMap {
+export type FedimintBridgeEventMap = {
     log: LogEvent
     federation: FederationEvent
     transaction: TransactionEvent

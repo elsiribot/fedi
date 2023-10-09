@@ -1,16 +1,8 @@
-use crate::error::ErrorCode;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::Arc;
 
-use super::event::{EventSink, SocialRecoveryEvent};
-use super::federation_v1::social::RecoveryFile;
-use super::federation_v1::FederationV1;
-use super::storage::Storage;
-use super::types::{
-    multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
-    RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
-    RpcSignedLnurlMessage, RpcTransaction, RpcXmppCredentials, SocialRecoveryApproval,
-    SocialRecoveryQr,
-};
-use super::{federation_v0::FederationV0, translate::Translate};
 use anyhow::{anyhow, bail, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::XOnlyPublicKey;
@@ -27,15 +19,25 @@ use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use rand::distributions::{Alphanumeric, DistString};
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
-use tracing::error;
-use tracing::info;
+use tracing::{error, info};
 use v0_rocksdb::{
     JoinedFederationV0, JoinedFederationV1, JoinedFederationsV0Prefix, JoinedFederationsV1Prefix,
 };
+
+use super::event::{EventSink, SocialRecoveryEvent};
+use super::federation_v0::FederationV0;
+use super::federation_v1::social::RecoveryFile;
+use super::federation_v1::FederationV1;
+use super::storage::Storage;
+use super::translate::Translate;
+use super::types::{
+    multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
+    RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
+    RpcSignedLnurlMessage, RpcTransaction, RpcXmppCredentials, SocialRecoveryApproval,
+    SocialRecoveryQr,
+};
+use crate::error::ErrorCode;
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -281,7 +283,9 @@ impl MultiFederation {
     }
 }
 
-/// This is instantiated once as a global. When RPC commands come in, this struct is used as a router to look up the federation and handle the RPC command using it.
+/// This is instantiated once as a global. When RPC commands come in, this
+/// struct is used as a router to look up the federation and handle the RPC
+/// command using it.
 pub struct Bridge {
     pub storage: Storage,
     pub federations: Arc<Mutex<HashMap<FederationId, Arc<MultiFederation>>>>,
@@ -353,7 +357,8 @@ impl Bridge {
 
     /// Joins federation from invite code
     ///
-    /// Federation ID saved to global database, new rocksdb database created for it, and it is saved to local hashmap by ID
+    /// Federation ID saved to global database, new rocksdb database created for
+    /// it, and it is saved to local hashmap by ID
     pub async fn join_federation(&self, invite_code: String) -> Result<RpcFederation> {
         // FIXME: this is kinda unreliable
         match self.join_federation_v1(invite_code.clone()).await {
@@ -639,7 +644,8 @@ impl Bridge {
 
     pub async fn recovery_qr(&self, federation_id: RpcFederationId) -> Result<SocialRecoveryQr> {
         let multi = self.get_multi(&federation_id.0).await?;
-        // Get the recovery file from disk (React Native and handle_upload_backup_file put it there)
+        // Get the recovery file from disk (React Native and handle_upload_backup_file
+        // put it there)
         let recovery_file_bytes = self.storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
         let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
         // Upload verification document if none exists.

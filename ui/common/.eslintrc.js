@@ -9,5 +9,5 @@ module.exports = {
     ],
     parser: '@typescript-eslint/parser',
     plugins: ['@typescript-eslint'],
-    ignorePatterns: ['dist', 'wasm/*.js'],
+    ignorePatterns: ['dist', 'wasm/*.js', 'types/bindings.ts'],
 }

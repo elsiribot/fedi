@@ -14,13 +14,9 @@
     fedi-v0 = {
       url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=master&rev=3502c58bdf37e9abf32615d3ba14b1a109922554";
     };
-    android-nixpkgs = {
-      url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
-      inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
-    };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=c9210f4ac3654f92c2af0ed656e3035695ed9019";
+      url = "github:rustshop/flakebox?rev=68dfce33a6f918fb3e1628faf82e55fde3d50208";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -28,13 +24,13 @@
       url = "github:dpc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
     };
 
-    fenix = {
-      url = "github:nix-community/fenix";
+    android-nixpkgs = {
+      url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
       inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, android-nixpkgs, fs-dir-cache, fedi-v0, fenix, flakebox }:
+  outputs = { self, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, fs-dir-cache, android-nixpkgs, fedi-v0, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgs = fedimint-build.inputs.nixpkgs;
@@ -53,6 +49,22 @@
               convco = pkgs-unstable.convco;
 
               esplora = pkgs-kitman.esplora;
+
+              mprocs = prev.mprocs.overrideAttrs (final: prev: {
+                patches = prev.patches ++ [
+                  (builtins.fetchurl {
+                    url = "https://github.com/pvolok/mprocs/pull/88.patch";
+                    name = "clipboard-fix.patch";
+                    sha256 = "sha256-9dx1vaEQ6kD66M+vsJLIq1FK+nEObuXSi3cmpSZuQWk=";
+                  })
+                ];
+              });
+
+              clightning = prev.clightning.overrideAttrs (oldAttrs: {
+                configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+              } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+                NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
+              });
 
               # mold wrapper from https://discourse.nixos.org/t/using-mold-as-linker-prevents-libraries-from-being-found/18530/5
               mold =
@@ -88,123 +100,72 @@
           ];
         };
 
+        androidSdk =
+          android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
+            cmdline-tools-latest
+            build-tools-30-0-3
+            build-tools-32-0-0
+            build-tools-33-0-0
+            platform-tools
+            platforms-android-31
+            platforms-android-33
+            emulator
+            ndk-bundle
+            ndk-23-1-7779620
+            cmake-3-22-1
+            patcher-v4
+            tools
+          ]);
 
-        flakeboxPackages = import nix/flakebox.nix {
-          inherit pkgs flakebox fedi-v0 fedimint-build fedimint-pkgs clightning-dev;
+
+        flakeboxLib = flakebox.lib.${system} {
+          # customizations will go here in the future
+          config = {
+            # we have our own weird CI workflows
+            github.ci.enable = false;
+            just.rules = {
+              custom = {
+                content = ./justfile.fedi;
+              };
+            };
+            typos.pre-commit.enable = false;
+            git.pre-commit.trailing_newline = false;
+          };
+        };
+
+        toolchains = (pkgs.lib.getAttrs [
+          "default"
+          "aarch64-android"
+          "x86_64-android"
+          "arm-android"
+          "armv7-android"
+          "wasm32-unknown"
+          "aarch64-ios"
+          "aarch64-ios-sim"
+          "x86_64-ios"
+        ]
+          (flakeboxLib.mkStdFenixToolchains {
+            inherit androidSdk;
+          })
+        );
+        toolchain = flakeboxLib.mkFenixMultiToolchain {
+          inherit toolchains;
+        };
+
+        craneMultiBuild = import nix/flakebox.nix {
+          inherit pkgs flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
         };
 
         fmLib = fedimint-build.lib.${system};
-        crane = fedimint-build.inputs.crane;
-        advisory-db = fedimint-build.inputs.advisory-db;
 
-        clightning-dev = pkgs.clightning.overrideAttrs (oldAttrs: {
-          configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-          NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
-        });
-
-        filterSubdirs = import ./nix/filterSubdirs.nix { inherit lib; };
-
-        # filter (roughly) only files&directories that Rust build needs to make
-        # caching easier for Nix/crane
-        rustSrc =
-          filterSubdirs {
-            root = ./.;
-            dirs = [
-              "Cargo.toml"
-              "Cargo.lock"
-              ".cargo"
-              ".config"
-              "bridge"
-              "fedimintd"
-              "fedimint-cli"
-              "fedi-social-client"
-              "fedi-social-common"
-              "fedi-social-server"
-              "fedi-monitoring"
-              "devops-cli"
-              # bridge test script
-              "scripts"
-              "misc"
-            ];
-          };
 
         lib = pkgs.lib;
         stdenv = pkgs.stdenv;
 
-        toolchains = import ./nix/toolchains.nix {
-          inherit pkgs lib system stdenv fenix android-nixpkgs;
+        replaceGitHash = name: package: fmLib.replaceGitHash {
+          # FIXME: don't hard-code this. But I don't know how to get it from craneLib
+          inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
         };
-
-        craneLibNative = crane.lib.${system}.overrideToolchain toolchains.fenixToolchain;
-
-        craneLibCross = builtins.mapAttrs
-          (name: target: crane.lib.${system}.overrideToolchain toolchains.fenixToolchainCross.${name})
-          toolchains.crossTargets
-        ;
-
-        craneLibBuildNative = import ./nix/crane.nix {
-          inherit pkgs pkgs-kitman lib advisory-db fedimint-build fedimint-pkgs clightning-dev fedi-v0;
-          src = rustSrc;
-          craneLib = craneLibNative;
-          profile = "release";
-        };
-
-        craneLibBuildCross =
-          builtins.mapAttrs
-            (name: target:
-              import ./nix/crane.nix
-                {
-                  inherit pkgs pkgs-kitman lib advisory-db target fedimint-build fedimint-pkgs clightning-dev fedi-v0;
-                  src = rustSrc;
-                  craneLib = craneLibCross.${name};
-                  profile = "release";
-                }
-            )
-            toolchains.crossTargets;
-
-        # outputs that build a particular Rust package
-        rustPackages = {
-          fedi-fedimint-pkgs = craneLibBuildNative.pkgsBuild {
-            name = "fedi-fedimint-pkgs";
-            pkgs = {
-              fedi-fedimintd = { };
-              fedi-fedimint-cli = { };
-            };
-          };
-
-          fedi-wasm = craneLibBuildCross."wasm32-unknown-unknown".pkgsBuild {
-            name = "fedi-wasm";
-            pkgs = {
-              fedi-wasm = { };
-            };
-          };
-
-          fedi-monitoring = craneLibBuildNative.pkgsBuild {
-            name = "fedi-monitoring";
-            pkgs = {
-              fedi-monitoring = { };
-            };
-          };
-
-          devops-cli = craneLibBuildNative.pkgsBuild {
-            name = "devops-cli";
-            pkgs = {
-              devops-cli = { };
-            };
-          };
-
-          testBridgeV0 = craneLibBuildNative.testBridgeV0;
-          testBridgeV1 = craneLibBuildNative.testBridgeV1;
-        };
-
-        # rust packages outputs with git hash replaced
-        rustPackagesFinal = builtins.mapAttrs
-          (name: package: fmLib.replaceGitHash {
-            # FIXME: don't hard-code this. But I don't know how to get it from craneLib
-            inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
-          })
-          rustPackages;
 
         # this symlinks binaries needed to run xcode-specific commands assuming
         # xcode is already installed on the machine (can't be nixified normally)
@@ -228,21 +189,15 @@
           '';
         };
 
-        crossDevShell = fmLib.devShells.cross.overrideAttrs (prev: {
+        crossDevShell = flakeboxLib.mkDevShell (craneMultiBuild.commonEnvsShell // {
+          inherit toolchain;
           nativeBuildInputs =
             [
-              (pkgs.hiPrio toolchains.fenixToolchainCrossAll)
-            ] ++ [
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               fedimint-pkgs.packages.${system}.fedimint-pkgs
-              pkgs.git
               pkgs.fs-dir-cache
-              pkgs.convco
               pkgs.cargo-nextest
-            ]
-            ++ [
-              pkgs.git
               pkgs.curl # wasm build needs it for some reason
               pkgs.wasm-pack
               pkgs.wasm-bindgen-cli
@@ -250,75 +205,62 @@
               pkgs.gnused
               pkgs.yarn
               pkgs.nodejs
+              pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
+              pkgs.nodePackages.typescript-language-server
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
-              pkgs.fs-dir-cache
-            ]
-            ++ prev.nativeBuildInputs;
-          ANDROID_SDK_ROOT = "${toolchains.androidSdk}/share/android-sdk/";
-          ANDROID_HOME = "${toolchains.androidSdk}/share/android-sdk/";
+              pkgs.perl
+              pkgs.pkg-config
+              pkgs.mprocs
+              pkgs.bitcoind
+              pkgs.electrs
+              pkgs.esplora
+              pkgs.clightning
+              pkgs.lnd
+            ];
+
+          buildInputs = [ pkgs.openssl ];
+
           FEDI_CROSS_DEV_SHELL = "1";
-          shellHook = prev.shellHook
-            + toolchains.wasm32CrossEnvVars
-            + toolchains.iosCrossEnvVars
-            + toolchains.androidCrossEnvVars
-            + ''
-            export PATH=$PATH:${toolchains.androidSdk}/bin
+          shellHook = ''
+            export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
             alias emulator="emulator -avd phone"
           '';
         });
       in
       {
-        packages =
-          {
-            # straight from Fedimint, without any modifications
-            gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
-            fedi-fedimint-pkgs = rustPackages.fedi-fedimint-pkgs;
-            bridgeTests = craneLibBuildNative.bridgeTests;
-          } // rustPackagesFinal;
+        packages = {
+          # straight from Fedimint, without any modifications
+          gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
 
-        legacyPackages = flakeboxPackages;
+          fedi-fedimint-pkgs = replaceGitHash "fedi-fedimint-pkgs" craneMultiBuild.fedi-fedimint-pkgs;
+          fedi-monitoring = craneMultiBuild.fedi-monitoring;
+          fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
+          devops-cli = craneMultiBuild.fedi-monitoring;
+        };
+
+        legacyPackages = craneMultiBuild;
 
         devShells = fmLib.devShells // {
           default = crossDevShell;
           # TODO: this is overriden just to fix semgrep on MacOS,
           # which will be fixed upstream as well. Then this whole section
           # can be removed
-          lint = fmLib.devShells.lint.overrideAttrs (prev:
-            let
-              moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
-            in
-            {
-              nativeBuildInputs = with pkgs; [
-                toolchains.fenixToolchainCargoFmt
-                nixpkgs-fmt
-                shellcheck
-                git
-                parallel
-                typos
-                convco
-                moreutils-ts
-                nix
-                cargo-nextest
-              ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-                semgrep
-              ];
-
-            });
+          lint = flakeboxLib.mkDevShell
+            { };
 
           # nix develop .#xcode is used for running commands that depend on an
           # existing underlying Xcode installation that cannot be nixified
           xcode = crossDevShell.overrideAttrs (prev: {
-            nativeBuildInputs = prev.nativeBuildInputs
-              ++ lib.optionals stdenv.isDarwin [
+            nativeBuildInputs = lib.optionals stdenv.isDarwin [
               pkgs.bundler
               pkgs.cocoapods
               xcode-wrapper
               pkgs.fs-dir-cache
-            ];
+            ] ++ prev.nativeBuildInputs;
             shellHook = prev.shellHook
               + ''
               # CocoaPods requires the terminal to be using UTF-8 encoding.

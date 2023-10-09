@@ -38,7 +38,7 @@ export type MainNavigatorDrawerParamList = {
 export type TabsNavigatorParamList = {
     Chat: undefined
     Home: { offline: boolean }
-    Settings: undefined
+    OmniScanner: undefined
 }
 export type RootStackParamList = {
     AddBroadcastAdmin: { groupId: string }
@@ -91,6 +91,7 @@ export type RootStackParamList = {
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
     SendSuccess: { amount: MSats; unit: string }
+    Settings: undefined
     FediModBrowser: { fediMod: FediMod }
     Splash: undefined
     StartPersonalBackup: undefined
@@ -106,5 +107,4 @@ export type RootStackParamList = {
     TabsNavigator: undefined
     Transactions: undefined
     DeveloperSettings: undefined
-    OmniScanner: undefined
 }

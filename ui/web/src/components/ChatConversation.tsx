@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
@@ -77,13 +77,12 @@ export const ChatConversation: React.FC<Props> = ({
             try {
                 await onSendMessage(value)
                 setValue('')
-                requestAnimationFrame(() => inputRef.current?.focus())
             } catch (err) {
                 toast.showErrorToast(err, 'errors.chat-connection-unhealthy')
             }
             setIsSending(false)
         },
-        [onSendMessage, value, toast, inputRef],
+        [onSendMessage, value, toast],
     )
 
     const handleInputKeyDown = useCallback(
@@ -95,6 +94,14 @@ export const ChatConversation: React.FC<Props> = ({
         },
         [handleSend],
     )
+
+    // Re-focus input after it had been disabled
+    const inputDisabled = isSending || isReadOnly
+    useEffect(() => {
+        if (!inputDisabled) {
+            inputRef.current?.focus()
+        }
+    }, [inputDisabled])
 
     return (
         <Layout.Root>
@@ -224,6 +231,7 @@ const SendButton = styled('button', {
 
     '&:disabled': {
         color: theme.colors.lightGrey,
+        pointerEvents: 'none',
     },
 
     '&:hover, &:focus': {

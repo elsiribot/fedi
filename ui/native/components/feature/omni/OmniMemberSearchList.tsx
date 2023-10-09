@@ -21,6 +21,7 @@ import { isValidInternetIdentifier } from '@fedi/common/utils/validation'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { ChatMember } from '../../../types'
+import { useHasBottomTabsNavigation } from '../../../utils/hooks'
 import { OmniMemberSearchItem } from './OmniMemberSearchItem'
 
 export type OmniMemberSearchListItemType =
@@ -46,6 +47,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
+    const hasBottomTabs = useHasBottomTabsNavigation()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederation)?.id
     const chatDomain = useAppSelector(selectChatConnectionOptions)?.domain
@@ -153,7 +155,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         t,
     ])
 
-    const style = styles(theme, insets)
+    const style = styles(theme, hasBottomTabs ? {} : insets)
     return (
         <SectionList
             sections={searchResultsSections}

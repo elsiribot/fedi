@@ -9,6 +9,9 @@ module.exports = function (api) {
         ],
     ]
 
+    // We also need to handle `export * from` from TypeScript since we're not using ts-jest
+    plugins.push('@babel/plugin-proposal-export-namespace-from')
+
     if (process?.env?.JEST_WORKER_ID) {
         // we are inside jest functional tests, don't use react-native-quick-crypto
         // so we can fallback to NodeJS

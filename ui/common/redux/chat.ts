@@ -827,22 +827,33 @@ export const fetchChatHistory = createAsyncThunk<
 
     // Keep requesting until we're totally caught up
     let caughtUp = false
+    let hasErrored = false
     while (!caughtUp) {
-        const nextLastFetchedMessageId = await client.fetchMessageHistory(
-            null,
-            {
-                limit: '10',
-                after: lastFetchedMessageId || undefined,
-            },
-        )
-        if (
-            !nextLastFetchedMessageId ||
-            nextLastFetchedMessageId === lastFetchedMessageId
-        ) {
-            caughtUp = true
-            break
+        try {
+            const nextLastFetchedMessageId = await client.fetchMessageHistory(
+                null,
+                {
+                    limit: '10',
+                    after: lastFetchedMessageId || undefined,
+                },
+            )
+            if (
+                !nextLastFetchedMessageId ||
+                nextLastFetchedMessageId === lastFetchedMessageId
+            ) {
+                caughtUp = true
+                break
+            }
+            lastFetchedMessageId = nextLastFetchedMessageId
+        } catch (err) {
+            // If it failed, assume there's something wrong with our lastFetchedMessageId
+            // and try again. Only try again once per message history fetch to avoid
+            // infinite retries.
+            if (!hasErrored && lastFetchedMessageId) {
+                hasErrored = true
+                lastFetchedMessageId = null
+            }
         }
-        lastFetchedMessageId = nextLastFetchedMessageId
     }
 
     return lastFetchedMessageId

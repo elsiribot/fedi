@@ -19,9 +19,10 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 5,
+        version: 6,
         language: state.environment.language,
         currency: state.currency.selectedFiatCurrency,
+        btcExchangeRates: state.currency.prices,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
         externalMeta: state.federation.externalMeta,
@@ -222,6 +223,15 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 5,
             externalMeta: {},
+        }
+    }
+
+    // Version 5 -> 6
+    if (migrationState.version === 5) {
+        migrationState = {
+            ...migrationState,
+            version: 6,
+            btcExchangeRates: {},
         }
     }
 

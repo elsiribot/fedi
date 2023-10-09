@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider as ReduxProvider } from 'react-redux'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { selectFederations } from '@fedi/common/redux'
 import { TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -75,8 +76,16 @@ const App = () => {
                 if (
                     event.transaction.direction === TransactionDirection.receive
                 ) {
+                    const federations = selectFederations(store.getState())
+                    const federation = federations.find(
+                        f => f.id === event.federationId,
+                    )
                     await notifee.displayNotification({
-                        title: t('phrases.transaction-received'),
+                        title: federation
+                            ? `${federation.name}: ${t(
+                                  'phrases.transaction-received',
+                              )}`
+                            : t('phrases.transaction-received'),
                         body: `${amountUtils.formatNumber(
                             amountUtils.msatToSat(event.transaction.amount),
                         )} ${t('words.sats')}`,

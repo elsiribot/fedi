@@ -2,22 +2,32 @@ mod dev;
 mod utils;
 
 use std::collections::HashMap;
+use std::default::Default;
+use std::str::FromStr;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use std::{default::Default, str::FromStr, sync::Arc};
 
+use anyhow::{bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
 use bitcoin::Network;
+use fedimint_bip39_v0::Bip39RootSecretStrategy;
 use fedimint_client_v0::backup::Metadata;
 use fedimint_client_v0::db::ChronologicalOperationLogKey;
 use fedimint_client_v0::sm::OperationId;
-use fedimint_client_v0::{get_client_root_secret, ClientBuilder, ClientSecret, OperationLogEntry};
-use fedimint_core_v0::task::timeout;
-use fedimint_core_v0::{api::GlobalFederationApi, config::FederationId, db::IDatabase};
+use fedimint_client_v0::{
+    get_client_root_secret, Client, ClientBuilder, ClientSecret, OperationLogEntry,
+};
+use fedimint_core_v0::api::{
+    GlobalFederationApi, WsClientConnectInfo as InviteCode, WsFederationApi,
+};
+use fedimint_core_v0::config::{ClientConfig, FederationId};
+use fedimint_core_v0::db::{DatabaseTransaction, IDatabase};
+use fedimint_core_v0::task::{timeout, TaskGroup};
 use fedimint_core_v0::{Amount, TieredMulti};
 use fedimint_derive_secret_v0::{ChildId, DerivableSecret};
 use fedimint_ln_client_v0::{
-    network_to_currency, LightningClientGen, LightningClientModule, LightningMeta, LnPayState,
-    LnReceiveState,
+    network_to_currency, LightningClientExt, LightningClientGen, LightningClientModule,
+    LightningMeta, LnPayState, LnReceiveState,
 };
 use fedimint_mint_client_v0::{
     MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants,
@@ -29,14 +39,10 @@ use lightning_invoice::Invoice;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
-use v0_rocksdb::TransactionNotesKey;
-use v0_rocksdb::{FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, XmppUsernameKey};
-
-use crate::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
+use v0_rocksdb::{
+    FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
+    XmppUsernameKey,
 };
-use crate::types::{EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction};
-use crate::utils::{display_currency, to_unix_time, unix_now};
 
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
@@ -46,8 +52,7 @@ use super::constants::{
     LNURL_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, SHUTDOWN_TIMEOUT, XMPP_CHILD_ID,
     XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
-use super::event::EventSink;
-use super::event::{Event, TypedEventExt};
+use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
 use super::translate::Translate;
 use super::types::{
@@ -55,14 +60,13 @@ use super::types::{
     RpcLightningGatewayV0, RpcPayInvoiceResponse, RpcPublicKey, RpcSignedLnurlMessage,
     RpcXmppCredentials,
 };
-use anyhow::{bail, Context, Result};
-use fedimint_bip39_v0::Bip39RootSecretStrategy;
-use fedimint_core_v0::api::{WsClientConnectInfo as InviteCode, WsFederationApi};
-use fedimint_core_v0::config::ClientConfig;
-use fedimint_core_v0::{db::DatabaseTransaction, task::TaskGroup};
-use fedimint_ln_client_v0::LightningClientExt;
-
-use fedimint_client_v0::Client;
+use crate::constants::{
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
+};
+use crate::types::{
+    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, RpcTransactionDirection,
+};
+use crate::utils::{display_currency, to_unix_time, unix_now};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediConfig {
@@ -106,7 +110,8 @@ impl FederationV0 {
         client_builder
     }
 
-    /// Constructor which starts a bunch of async tasks and ensures username is saved to db (e.g. after recovery)
+    /// Constructor which starts a bunch of async tasks and ensures username is
+    /// saved to db (e.g. after recovery)
     pub async fn new(ng: Arc<Client>, event_sink: EventSink, task_group: TaskGroup) -> Self {
         let mut federation = Self {
             client: ng,
@@ -153,8 +158,8 @@ impl FederationV0 {
         .await)
     }
 
-    /// Download federation configs using an invite code. Save client config to correct
-    /// database with Storage.
+    /// Download federation configs using an invite code. Save client config to
+    /// correct database with Storage.
     pub async fn join(
         invite_code_string: String,
         storage: &Storage,
@@ -189,7 +194,8 @@ impl FederationV0 {
         self.client.federation_id()
     }
 
-    /// Return federation name from meta, or take first 8 characters of federation ID
+    /// Return federation name from meta, or take first 8 characters of
+    /// federation ID
     pub fn federation_name(&self) -> String {
         self.client
             .get_meta("federation_name")
@@ -272,7 +278,7 @@ impl FederationV0 {
                                     }
                                     .translate(),
                                 ),
-                                direction: "receive".to_string(),
+                                direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 // FIXME: map v0 to v1 states on best effort basis
                                 // ln_state: RpcLnState::from_ln_recv_state(Some(update)),
@@ -476,7 +482,8 @@ impl FederationV0 {
         }
     }
 
-    /// Start background task to listen for balance updates and emit "federation" events when one is observed
+    /// Start background task to listen for balance updates and emit
+    /// "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
         let _ = self
@@ -572,7 +579,8 @@ impl FederationV0 {
     }
 
     /// Generate ecash
-    /// FIXME: might be better to return a typed object here and serialize at RPC layer
+    /// FIXME: might be better to return a typed object here and serialize at
+    /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
         let (_, notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
         let notes = if amount != notes.total_amount() {
@@ -622,7 +630,8 @@ impl FederationV0 {
         Ok(())
     }
 
-    /// Extract username (and potentially more in future) from recovered metadata and save it to database
+    /// Extract username (and potentially more in future) from recovered
+    /// metadata and save it to database
     pub async fn save_restored_metadata(&self, metadata: Metadata) -> Result<()> {
         if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
             if let Some(username) = fedi_backup_metadata.username {
@@ -683,8 +692,8 @@ impl FederationV0 {
         }
     }
 
-    /// Returns an XMPP password derived from client secret. This enables recovery of XMPP account
-    /// after recovering wallet.
+    /// Returns an XMPP password derived from client secret. This enables
+    /// recovery of XMPP account after recovering wallet.
     pub async fn get_xmpp_credentials(&self) -> RpcXmppCredentials {
         let root_secret = self.root_secret().await;
         let xmpp_secret = root_secret.child_key(ChildId(XMPP_CHILD_ID));
@@ -714,8 +723,8 @@ impl FederationV0 {
             }
         };
 
-        // FIXME: this potentially prevents race conditions, but degrades recovery for federations without chat
-        // Username is present
+        // FIXME: this potentially prevents race conditions, but degrades recovery for
+        // federations without chat Username is present
         if self.get_xmpp_username().await.is_none() {
             return Ok(());
         }
@@ -753,8 +762,9 @@ impl FederationV0 {
 
     /// Send balance update every 5 seconds
     ///
-    /// This is only necessary because balance subscriptions were unreliable for the v0 client.
-    /// FederationV1 doesn't have this method because balance subscriptions should be reliable.
+    /// This is only necessary because balance subscriptions were unreliable for
+    /// the v0 client. FederationV1 doesn't have this method because balance
+    /// subscriptions should be reliable.
     async fn poll_balance(&mut self) {
         let federation = self.clone();
         let _ = self
@@ -791,8 +801,9 @@ impl FederationV0 {
             return Some(outcome);
         }
 
-        // If no cached outcomes, consume the stream to get the outcome and populate client's cache in future
-        // This is only useful for outgoing lightning payments which fail due to timeout and nothing is subscribed to them
+        // If no cached outcomes, consume the stream to get the outcome and populate
+        // client's cache in future This is only useful for outgoing lightning
+        // payments which fail due to timeout and nothing is subscribed to them
         let mut updates = match self.client.subscribe_ln_pay_updates(operation_id).await {
             // Assuming this was internal pay
             Err(_) => return None,
@@ -830,7 +841,7 @@ impl FederationV0 {
                                 }
                                 .translate(),
                             ),
-                            direction: "send".to_string(),
+                            direction: RpcTransactionDirection::Send,
                             notes,
                             ln_state: RpcLnState::from_ln_pay_state(
                                 self.get_ln_pay_outcome(op.0.operation_id, op.1)
@@ -852,7 +863,7 @@ impl FederationV0 {
                                 }
                                 .translate(),
                             ),
-                            direction: "receive".to_string(),
+                            direction: RpcTransactionDirection::Receive,
                             notes,
                             ln_state: RpcLnState::from_ln_recv_state(
                                 op.1.outcome::<LnReceiveState>().translate(),
@@ -876,7 +887,7 @@ impl FederationV0 {
                                         id: op.0.operation_id.to_string(),
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
-                                        direction: "receive".to_string(),
+                                        direction: RpcTransactionDirection::Receive,
                                         notes,
                                         ln_state: None,
                                         amount: RpcAmount(mint_meta.amount.translate()),
@@ -892,7 +903,7 @@ impl FederationV0 {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                direction: "send".to_string(),
+                                direction: RpcTransactionDirection::Send,
                                 notes,
                                 ln_state: None,
                                 amount: RpcAmount(requested_amount.translate()),
@@ -945,8 +956,12 @@ impl FederationV0 {
         dbtx.commit_tx().await;
     }
 
-    pub async fn get_invite_code(&self) -> Option<String> {
-        self.dbtx().await.get_value(&InviteCodeKey).await
+    pub async fn get_invite_code(&self) -> String {
+        self.dbtx()
+            .await
+            .get_value(&InviteCodeKey)
+            .await
+            .expect("invite code must be present")
     }
 
     async fn update_ln_pay_states(&self, operation_id: OperationId, ln_pay_state: LnPayState) {
