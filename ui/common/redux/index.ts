@@ -1,13 +1,14 @@
-import { createListenerMiddleware } from '@reduxjs/toolkit'
+import { UnsubscribeListener, createListenerMiddleware } from '@reduxjs/toolkit'
 import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMiddleware'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
 import { Federation, StorageApi } from '../types'
+import { bitfinexPriceOracle } from '../utils/BitfinexPriceOracle'
 import { FedimintBridge } from '../utils/fedimint'
 import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
-import { currencySlice, watchPrices } from './currency'
+import { currencySlice, updateBtcFiatPrice } from './currency'
 import { environmentSlice } from './environment'
 import { federationSlice } from './federation'
 import { updateFederation } from './federation'
@@ -48,11 +49,14 @@ export function initializeCommonStore(
     fedimint: FedimintBridge,
     storage: StorageApi,
 ) {
-    // Immediately start watching BTC/USD prices
-    dispatch(watchPrices())
+    // Start watching BTC prices for supported currencies
+    bitfinexPriceOracle.start()
+    const unsubscribePrices = bitfinexPriceOracle.subscribe(update => {
+        dispatch(updateBtcFiatPrice(update))
+    })
 
     // Update federation on bridge events
-    fedimint.addListener('federation', event => {
+    const unsubscribeFederation = fedimint.addListener('federation', event => {
         // If they have an external meta configured, exclude name and meta from update
         const federation: Partial<Federation> = { ...event }
         if (event.meta.meta_external_url) {
@@ -64,8 +68,9 @@ export function initializeCommonStore(
 
     // Load state from local storage, then start listener that syncs to storage
     // on changes to stored state after it's been loaded.
+    let unsubscribeStorage: UnsubscribeListener = () => null
     dispatch(loadFromStorage({ storage })).then(() => {
-        listenerMiddleware.startListening({
+        unsubscribeStorage = listenerMiddleware.startListening({
             predicate: (_action, currentState, previousState) => {
                 return hasStorageStateChanged(currentState, previousState)
             },
@@ -81,4 +86,10 @@ export function initializeCommonStore(
             },
         })
     })
+
+    return () => {
+        unsubscribePrices()
+        unsubscribeFederation()
+        unsubscribeStorage()
+    }
 }

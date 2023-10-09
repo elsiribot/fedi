@@ -28,7 +28,11 @@ const asyncLocalStorage = {
 
 export function initializeWebStore() {
     // Common initialization behavior
-    initializeCommonStore(store.dispatch, fedimint, asyncLocalStorage)
+    const unsubscribe = initializeCommonStore(
+        store.dispatch,
+        fedimint,
+        asyncLocalStorage,
+    )
 
     // Initialize i18n, change language on store updates
     const initialLanguage = selectLanguage(store.getState())
@@ -39,6 +43,8 @@ export function initializeWebStore() {
             i18n.changeLanguage(detectedLanguage)
         })
     }
+
+    return unsubscribe
 }
 
 // Handle hot-reloading reducers.
