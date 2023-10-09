@@ -23,7 +23,11 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeNativeStore() {
     // Common initialization behavior
-    initializeCommonStore(store.dispatch, fedimint, AsyncStorage)
+    const unsubscribe = initializeCommonStore(
+        store.dispatch,
+        fedimint,
+        AsyncStorage,
+    )
 
     // DELETEME: This logic is only needed to check for legacy chat data and
     // migrate it to the reduxified chat data structure. We can remove this
@@ -39,4 +43,9 @@ export function initializeNativeStore() {
             checkForLegacyChatMigrations(store)
         }
     }, 1000)
+
+    return () => {
+        unsubscribe()
+        clearInterval(storageMonitor)
+    }
 }
