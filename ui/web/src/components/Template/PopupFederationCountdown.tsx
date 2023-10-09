@@ -63,12 +63,14 @@ export const PopupFederationCountdown: React.FC = () => {
                         {countdownI18nText}
                     </CountdownPill>
                     <Text>
-                        <Trans
-                            t={t}
-                            i18nKey="feature.popup.ending-description"
-                            values={{ date: popupInfo.endsAtText }}
-                            components={{ bold: <strong /> }}
-                        />
+                        {popupInfo.countdownMessage || (
+                            <Trans
+                                t={t}
+                                i18nKey="feature.popup.ending-description"
+                                values={{ date: popupInfo.endsAtText }}
+                                components={{ bold: <strong /> }}
+                            />
+                        )}
                     </Text>
                     <Button
                         width="full"
