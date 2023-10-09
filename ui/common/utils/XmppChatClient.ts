@@ -169,6 +169,7 @@ export class XmppChatClient {
             if (lastMessageId) return lastMessageId
         } catch (err) {
             console.error('fetchMessageHistory', err)
+            throw new Error('errors.unknown-error')
         }
         return null
     }
