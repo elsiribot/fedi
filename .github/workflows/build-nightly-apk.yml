@@ -1,6 +1,8 @@
 name: Upload Fedi Nightly APK to GitHub
 on:
     workflow_dispatch:
+    schedule:
+        - cron: '0 5 * * *'
 
 jobs:
     release-android-nightly:
