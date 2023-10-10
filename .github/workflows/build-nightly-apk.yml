@@ -51,24 +51,22 @@ jobs:
                   draft: true
                   files: ${{ steps.versioning.outputs.APK_PATH }}
 
-    # TODO: Implement these if we want to deploy this flavor
-    # to the app stores
-    # call-deployment-workflow:
-    #     name: Trigger deployment to Google Play for Internal Testing
-    #     needs: release-android-nightly
-    #     uses: ./.github/workflows/deploy-to-gp-internal-testing-nightly.yml
-    #     secrets: inherit
-    #     with:
-    #         commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}
-    #     if: >-
-    #         startsWith(github.ref, 'refs/heads/release/')
+    call-deployment-workflow:
+        name: Trigger deployment to Google Play for Internal Testing
+        needs: release-android-nightly
+        uses: ./.github/workflows/deploy-to-gp-internal-testing-nightly.yml
+        secrets: inherit
+        with:
+            commit-to-deploy: ${{ needs.release-android-nightly.outputs.commit-to-deploy }}
+        if: >-
+            startsWith(github.ref, 'refs/heads/release/')
 
-    # call-deployment-workflow-testflight:
-    #     name: Trigger deployment to TestFlight
-    #     needs: release-android-nightly
-    #     uses: ./.github/workflows/deploy-to-testflight-nightly.yml
-    #     secrets: inherit
-    #     with:
-    #         commit-to-deploy: ${{ needs.release-android.outputs.commit-to-deploy }}
-    #     if: >-
-    #         startsWith(github.ref, 'refs/heads/release/')
+    call-deployment-workflow-testflight:
+        name: Trigger deployment to TestFlight
+        needs: release-android-nightly
+        uses: ./.github/workflows/deploy-to-testflight-nightly.yml
+        secrets: inherit
+        with:
+            commit-to-deploy: ${{ needs.release-android-nightly.outputs.commit-to-deploy }}
+        if: >-
+            startsWith(github.ref, 'refs/heads/release/')
