@@ -169,6 +169,10 @@ android {
             dimension "env"
             applicationIdSuffix ".bravo"
         }
+        nightly {
+            dimension "env"
+            applicationIdSuffix ".nightly"
+        }
         production {
             dimension "env"
         }

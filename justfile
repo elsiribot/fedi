@@ -126,9 +126,10 @@ run-dev-ui mode="default":
 install-xcode:
   ./scripts/install-xcode.sh
 
-# (TEMPORARY) builds APK for a variant of the android app (Fedi Bravo) that can connect to old prague-era federations AND new ones tracking fedimint master
-build-bravo-apk:
-  ./scripts/build-bravo-apk.sh
+# Builds an APK for a variant of the android app (Fedi Nightly) meant for
+# nightly dev builds
+build-nightly-apk:
+  ./scripts/ui/build-nightly-apk.sh
 
 
 # run `semgrep`

@@ -245,7 +245,7 @@ Build a new app bundle to release (Bravo)
 [bundle exec] fastlane android upload_internal_build_bravo
 ```
 
-Upload the latest build to internal track (Bitcoin Ekasi)
+Upload the latest build to internal track (Bravo)
 
 ### android internal_bravo
 
@@ -253,7 +253,39 @@ Upload the latest build to internal track (Bitcoin Ekasi)
 [bundle exec] fastlane android internal_bravo
 ```
 
-Submit a new internal build (Bitcoin Ekasi)
+Submit a new internal build (Bravo)
+
+### android build_nightly_apk
+
+```sh
+[bundle exec] fastlane android build_nightly_apk
+```
+
+Build a new APK to release (Nightly)
+
+### android build_nightly
+
+```sh
+[bundle exec] fastlane android build_nightly
+```
+
+Build a new app bundle to release (Nightly)
+
+### android upload_internal_build_nightly
+
+```sh
+[bundle exec] fastlane android upload_internal_build_nightly
+```
+
+Upload the latest build to internal track (Nightly)
+
+### android internal_nightly
+
+```sh
+[bundle exec] fastlane android internal_nightly
+```
+
+Submit a new internal build (Nightly)
 
 ----
 
