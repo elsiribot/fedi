@@ -1721,4 +1721,14 @@ impl FederationV1 {
             }
         }
     }
+
+    /// Stability Pool
+
+    /// Get user's stability pool account info
+    pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
+        self.client
+            .account_info()
+            .await
+            .context("Error when fetching account info")
+    }
 }
