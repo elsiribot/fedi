@@ -41,6 +41,11 @@ export interface RpcBalanceInfo {
     tiers: Record<string, number>
 }
 
+export interface RpcEcashInfo {
+    amount: RpcAmount
+    federationId: RpcFederationId | null
+}
+
 export type RpcFederationId = string
 
 export interface RpcFederation {
@@ -178,7 +183,10 @@ export interface RpcMethods {
         string,
     ]
     receiveEcash: [{ federationId: RpcFederationId; ecash: string }, MSats]
-    validateEcash: [{ ecash: string }, MSats]
+    validateEcash: [
+        { ecash: string },
+        { amount: RpcAmount; federationId: RpcFederationId | null },
+    ]
     listTransactions: [
         { federationId: RpcFederationId },
         Array<{

@@ -67,8 +67,8 @@ use super::types::{
 };
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, RpcBalanceInfo, RpcLightningDetails, RpcLnState, RpcTransaction,
-    RpcTransactionDirection, SocialRecoveryQr,
+    EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcFederationId, RpcLightningDetails,
+    RpcLnState, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -626,8 +626,12 @@ impl FederationV1 {
         Ok(amt)
     }
 
-    pub fn validate_ecash(ecash: String) -> Result<Amount> {
-        OOBNotes::from_str(&ecash).map(|n| n.total_amount())
+    pub fn validate_ecash(ecash: String) -> Result<RpcEcashInfo> {
+        let oob = OOBNotes::from_str(&ecash)?;
+        Ok(RpcEcashInfo {
+            amount: RpcAmount(oob.total_amount()),
+            federation_id: Some(RpcFederationId(oob.federation_id)),
+        })
     }
 
     pub async fn subscribe_to_ecash_reissue(&self, operation_id: OperationId) -> Result<()> {

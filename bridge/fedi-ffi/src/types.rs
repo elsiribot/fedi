@@ -109,6 +109,14 @@ pub async fn multi_federation_to_rpc_federation(multi: &MultiFederation) -> RpcF
 #[derive(Clone, Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub struct RpcEcashInfo {
+    pub amount: RpcAmount,
+    pub federation_id: Option<RpcFederationId>,
+}
+
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct RpcInvoice {
     pub payment_hash: String,
     pub amount: RpcAmount,

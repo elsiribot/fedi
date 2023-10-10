@@ -64,8 +64,8 @@ use crate::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
 };
 use crate::types::{
-    EcashReceiveMetadata, RpcBalanceInfo, RpcLightningDetails, RpcLnState, RpcTransaction,
-    RpcTransactionDirection,
+    EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcLightningDetails, RpcLnState,
+    RpcTransaction, RpcTransactionDirection,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -570,9 +570,12 @@ impl FederationV0 {
         Ok(amt)
     }
 
-    pub fn validate_ecash(ecash: String) -> Result<Amount> {
+    pub fn validate_ecash(ecash: String) -> Result<RpcEcashInfo> {
         let ecash = parse_ecash(&ecash)?;
-        Ok(ecash.total_amount())
+        Ok(RpcEcashInfo {
+            amount: RpcAmount(ecash.total_amount().translate()),
+            federation_id: None,
+        })
     }
 
     pub async fn subscribe_to_ecash_reissue(&self, operation_id: OperationId) -> Result<()> {

@@ -26,7 +26,7 @@ use super::types::{
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
-use crate::types::RpcBalanceInfo;
+use crate::types::{RpcBalanceInfo, RpcEcashInfo};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -205,7 +205,7 @@ async fn receiveEcash(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn validateEcash(bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcAmount> {
+async fn validateEcash(bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcEcashInfo> {
     bridge.validate_ecash(ecash).await
 }
 

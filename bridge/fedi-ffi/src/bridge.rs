@@ -38,7 +38,7 @@ use super::types::{
     SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
-use crate::types::RpcBalanceInfo;
+use crate::types::{RpcBalanceInfo, RpcEcashInfo};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -552,13 +552,13 @@ impl Bridge {
         multi.receive_ecash(ecash).await.map(RpcAmount)
     }
 
-    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcAmount> {
+    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
         // Attempt v1 deserialization
-        if let Ok(amount) = FederationV1::validate_ecash(ecash.clone()) {
-            return Ok(RpcAmount(amount));
+        if let Ok(info) = FederationV1::validate_ecash(ecash.clone()) {
+            return Ok(info);
         }
         // Attempt v0 deserialization
-        FederationV0::validate_ecash(ecash).map(|amt| RpcAmount(amt.translate()))
+        FederationV0::validate_ecash(ecash)
     }
 
     pub async fn generate_ecash(
