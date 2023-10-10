@@ -520,7 +520,7 @@ impl FederationV0 {
                 |_| async move {
                     let mut updates = federation.client.subscribe_balance_changes().await;
                     while (updates.next().await).is_some() {
-                        federation.send_federation_event().await;
+                        federation.send_balance_event().await;
                     }
                 },
             )
@@ -532,10 +532,18 @@ impl FederationV0 {
         self.event_sink.typed_event(&event);
     }
 
-    /// Send whenever the balance or social recovery state changes
+    /// Send whenever balance changes
+    pub async fn send_balance_event(&self) {
+        self.event_sink.typed_event(&Event::balance(
+            self.federation_id().translate(),
+            self.get_balance().await.translate(),
+        ));
+    }
+
+    /// Send whenever social recovery state changes
     pub async fn send_federation_event(&self) {
         let rpc_federation = federation_v0_to_rpc_federation(&Arc::new(self.clone())).await;
-        let event = Event::federation(rpc_federation).await;
+        let event = Event::federation(rpc_federation);
         self.event_sink.typed_event(&event);
     }
 

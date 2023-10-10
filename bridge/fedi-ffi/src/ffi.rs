@@ -99,6 +99,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
 /// Returns the names of events we send from Rust to React Native
 pub fn fedimint_get_supported_events() -> Vec<String> {
     vec![
+        String::from("balance"),
         String::from("federation"),
         String::from("transaction"),
         String::from("log"),
