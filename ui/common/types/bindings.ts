@@ -37,6 +37,10 @@ export interface PanicEvent {
 
 export type RpcAmount = MSats
 
+export interface RpcBalanceInfo {
+    tiers: Record<string, number>
+}
+
 export type RpcFederationId = string
 
 export interface RpcFederation {
@@ -164,6 +168,10 @@ export interface RpcMethods {
     payAddress: [
         { federationId: RpcFederationId; address: string; sats: bigint },
         string,
+    ]
+    balanceInfo: [
+        { federationId: RpcFederationId },
+        { tiers: Record<string, number> },
     ]
     generateEcash: [
         { federationId: RpcFederationId; amount: RpcAmount },

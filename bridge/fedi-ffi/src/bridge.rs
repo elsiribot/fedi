@@ -38,6 +38,7 @@ use super::types::{
     SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
+use crate::types::RpcBalanceInfo;
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -107,6 +108,13 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.get_balance().await.translate(),
             Self::V1(v1) => v1.get_balance().await,
+        }
+    }
+
+    pub async fn balance_info(&self) -> RpcBalanceInfo {
+        match self {
+            Self::V0(v0) => v0.balance_info().await,
+            Self::V1(v1) => v1.balance_info().await,
         }
     }
 
@@ -486,6 +494,13 @@ impl Bridge {
 
         dbtx.commit_tx().await;
         Ok(())
+    }
+
+    pub async fn balance_info(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> anyhow::Result<RpcBalanceInfo> {
+        Ok(self.get_multi(&federation_id.0).await?.balance_info().await)
     }
 
     pub async fn generate_invoice(

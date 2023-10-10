@@ -64,7 +64,8 @@ use crate::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
 };
 use crate::types::{
-    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, RpcTransactionDirection,
+    EcashReceiveMetadata, RpcBalanceInfo, RpcLightningDetails, RpcLnState, RpcTransaction,
+    RpcTransactionDirection,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -214,10 +215,24 @@ impl FederationV0 {
 
     /// Fetch balance
     pub async fn get_balance(&self) -> fedimint_core_v0::Amount {
+        self.wallet_summary().await.total_amount()
+    }
+
+    pub async fn balance_info(&self) -> RpcBalanceInfo {
+        let summary = self.wallet_summary().await;
+        RpcBalanceInfo {
+            tiers: summary
+                .iter()
+                .map(|(tier, count)| (tier.msats, count))
+                .collect(),
+        }
+    }
+
+    async fn wallet_summary(&self) -> fedimint_core_v0::TieredSummary {
         let (mint_client, _) = self
             .client
             .get_first_module::<MintClientModule>(&fedimint_mint_client_v0::KIND);
-        let summary = mint_client
+        mint_client
             .get_wallet_summary(
                 &mut self
                     .client
@@ -226,8 +241,7 @@ impl FederationV0 {
                     .await
                     .with_module_prefix(1),
             )
-            .await;
-        summary.total_amount()
+            .await
     }
 
     /// Generate lightning invoice

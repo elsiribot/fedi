@@ -67,8 +67,8 @@ use super::types::{
 };
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, RpcLightningDetails, RpcLnState, RpcTransaction, RpcTransactionDirection,
-    SocialRecoveryQr,
+    EcashReceiveMetadata, RpcBalanceInfo, RpcLightningDetails, RpcLnState, RpcTransaction,
+    RpcTransactionDirection, SocialRecoveryQr,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -231,10 +231,24 @@ impl FederationV1 {
 
     /// Fetch balance
     pub async fn get_balance(&self) -> Amount {
+        self.wallet_summary().await.total_amount()
+    }
+
+    pub async fn balance_info(&self) -> RpcBalanceInfo {
+        let summary = self.wallet_summary().await;
+        RpcBalanceInfo {
+            tiers: summary
+                .iter()
+                .map(|(tier, count)| (tier.msats, count))
+                .collect(),
+        }
+    }
+
+    async fn wallet_summary(&self) -> fedimint_core::TieredSummary {
         let (mint_client, _) = self
             .client
             .get_first_module::<MintClientModule>(&fedimint_mint_client::KIND);
-        let summary = mint_client
+        mint_client
             .get_wallet_summary(
                 &mut self
                     .client
@@ -243,8 +257,7 @@ impl FederationV1 {
                     .await
                     .with_module_prefix(1),
             )
-            .await;
-        summary.total_amount()
+            .await
     }
 
     /// Generate lightning invoice
