@@ -1,4 +1,4 @@
-name: Deploy to TestFlight
+name: Deploy to TestFlight (Fedi Nightly)
 on:
     workflow_dispatch:
     workflow_call:
@@ -10,7 +10,7 @@ on:
 jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
-        runs-on: [self-hosted, macos]
+        runs-on: [self-hosted, macos, x64]
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3
