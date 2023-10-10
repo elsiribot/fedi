@@ -41,7 +41,8 @@ use fedimint_wallet_client::{
 };
 use futures::StreamExt;
 use lightning_invoice::Invoice;
-use stability_pool_client::StabilityPoolClientGen;
+use stability_pool_client::common::AccountInfo;
+use stability_pool_client::{StabilityPoolClientExt, StabilityPoolClientGen};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -1593,5 +1594,15 @@ impl FederationV1 {
                 .expect("incorrect type to get_operation_state")
                 .clone(),
         )
+    }
+
+    /// Stability Pool
+
+    /// Get user's stability pool account info
+    pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
+        self.client
+            .account_info()
+            .await
+            .context("Error when fetching account info")
     }
 }

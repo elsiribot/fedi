@@ -23,6 +23,8 @@ pub enum ErrorCode {
     Panic,
     #[error("Not supported for this version of federation")]
     NotSupportedInVersion,
+    #[error("Stability pool module not supported for this version of federation")]
+    StabilityPoolNotSupported,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

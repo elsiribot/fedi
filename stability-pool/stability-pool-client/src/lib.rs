@@ -29,7 +29,7 @@ use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, Transaction
 use futures::StreamExt;
 use secp256k1_zkp::Secp256k1;
 use serde::{Deserialize, Serialize};
-use stability_pool_common as common;
+pub use stability_pool_common as common;
 use tracing::info;
 
 #[derive(Debug, Clone)]

@@ -19,6 +19,7 @@ use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use rand::distributions::{Alphanumeric, DistString};
+use stability_pool_client::common::AccountInfo;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 use v0_rocksdb::{
@@ -34,8 +35,8 @@ use super::translate::Translate;
 use super::types::{
     multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
-    RpcSignedLnurlMessage, RpcTransaction, RpcXmppCredentials, SocialRecoveryApproval,
-    SocialRecoveryQr,
+    RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
+    SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
 use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse};
@@ -308,6 +309,13 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => v1.sign_nostr_event(event_hash).await,
+        }
+    }
+
+    pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
+            Self::V1(v1) => v1.stability_pool_account_info().await,
         }
     }
 }
@@ -824,5 +832,16 @@ impl Bridge {
     ) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.sign_nostr_event(event_hash).await
+    }
+
+    pub async fn stability_pool_account_info(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<RpcStabilityPoolAccountInfo> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_account_info()
+            .await
+            .map(|info| info.into())
     }
 }

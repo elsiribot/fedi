@@ -10,12 +10,14 @@ use fedimint_ln_client::receive::LightningReceiveError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
 use serde::{Deserialize, Serialize};
+use stability_pool_client::common::AccountInfo;
 use ts_rs::TS;
 
 use super::bridge::MultiFederation;
 use super::federation_v0::FederationV0;
 use super::federation_v1::FederationV1;
 use super::translate::Translate;
+use super::utils::to_unix_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
@@ -562,4 +564,56 @@ pub struct RpcXmppCredentials {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EcashReceiveMetadata {
     pub internal: bool,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcStabilityPoolAccountInfo {
+    pub idle_balance: RpcAmount,
+    pub staged_seeks: Vec<RpcAmount>,
+    pub staged_cancellation: Option<u32>,
+    pub locked_seeks: Vec<RpcLockedSeek>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcLockedSeek {
+    pub initial_amount: RpcAmount,
+    #[ts(type = "number")]
+    pub initial_amount_cents: u64,
+    pub withdrawn_amount: RpcAmount,
+    #[ts(type = "number")]
+    pub withdrawn_amount_cents: u64,
+    pub fees_paid_so_far: RpcAmount,
+    #[ts(type = "number")]
+    pub first_lock_start_time: u64,
+}
+
+impl From<AccountInfo> for RpcStabilityPoolAccountInfo {
+    fn from(value: AccountInfo) -> Self {
+        RpcStabilityPoolAccountInfo {
+            idle_balance: RpcAmount(value.idle_balance),
+            staged_seeks: value
+                .staged_seeks
+                .into_iter()
+                .map(|s| RpcAmount(s.seek.0))
+                .collect(),
+            staged_cancellation: value.staged_cancellation.map(|c| c.bps),
+            locked_seeks: value
+                .locked_seeks
+                .into_iter()
+                .map(|l| RpcLockedSeek {
+                    initial_amount: RpcAmount(l.metadata.initial_amount),
+                    initial_amount_cents: l.metadata.initial_amount_cents,
+                    withdrawn_amount: RpcAmount(l.metadata.withdrawn_amount),
+                    withdrawn_amount_cents: l.metadata.withdrawn_amount_cents,
+                    fees_paid_so_far: RpcAmount(l.metadata.fees_paid_so_far),
+                    first_lock_start_time: to_unix_time(l.metadata.first_lock_start_time)
+                        .expect("Lock start time must be valid"),
+                })
+                .collect(),
+        }
+    }
 }

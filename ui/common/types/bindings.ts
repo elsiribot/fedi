@@ -27,6 +27,7 @@ export type ErrorCode =
     | 'nostrNotSupported'
     | 'panic'
     | 'notSupportedInVersion'
+    | 'stabilityPoolNotSupported'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -126,6 +127,15 @@ export type RpcLnReceiveState =
     | { type: 'claimed' }
 
 export type RpcLnState = RpcLnPayState | RpcLnReceiveState
+
+export interface RpcLockedSeek {
+    initialAmount: RpcAmount
+    initialAmountCents: number
+    withdrawnAmount: RpcAmount
+    withdrawnAmountCents: number
+    feesPaidSoFar: RpcAmount
+    firstLockStartTime: number
+}
 
 export interface RpcMethods {
     joinFederation: [
@@ -282,6 +292,15 @@ export interface RpcMethods {
         { eventHash: string; federationId: RpcFederationId },
         string,
     ]
+    stabilityPoolAccountInfo: [
+        { federationId: RpcFederationId },
+        {
+            idleBalance: RpcAmount
+            stagedSeeks: Array<RpcAmount>
+            stagedCancellation: number | null
+            lockedSeeks: Array<RpcLockedSeek>
+        },
+    ]
 }
 
 export type RpcOnchainDepositState =
@@ -327,7 +346,12 @@ export interface RpcSignedLnurlMessage {
     pubkey: RpcPublicKey
 }
 
-export type RpcTransactionDirection = 'receive' | 'send'
+export interface RpcStabilityPoolAccountInfo {
+    idleBalance: RpcAmount
+    stagedSeeks: Array<RpcAmount>
+    stagedCancellation: number | null
+    lockedSeeks: Array<RpcLockedSeek>
+}
 
 export interface RpcTransaction {
     id: string
@@ -341,6 +365,8 @@ export interface RpcTransaction {
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
 }
+
+export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string

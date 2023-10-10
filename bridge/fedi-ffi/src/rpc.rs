@@ -22,7 +22,7 @@ use super::storage::Storage;
 use super::types::{
     RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway,
     RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
-    RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
+    RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
@@ -382,6 +382,14 @@ async fn signNostrEvent(
     bridge.sign_nostr_event(federation_id, event_hash).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolAccountInfo(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<RpcStabilityPoolAccountInfo> {
+    bridge.stability_pool_account_info(federation_id).await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -475,6 +483,8 @@ rpc_methods!(RpcMethods {
     // Nostr
     getNostrPubKey,
     signNostrEvent,
+    // Stability Pool
+    stabilityPoolAccountInfo,
 });
 
 #[instrument(
@@ -1121,6 +1131,26 @@ mod tests {
         let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id).await?;
         assert_eq!(initial_words, final_words);
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_stability_pool() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // Stability pool not supported for v0 federations.
+        if let MultiFederation::V0(_) = *federation {
+            return Ok(());
+        }
+
+        // Test default account info state
+        let account_info = bridge
+            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert!(account_info.staged_seeks.is_empty());
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
         Ok(())
     }
 }

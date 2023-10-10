@@ -3,6 +3,7 @@ set -ex
 
 pkill -9 fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet || true
 
+export INCLUDE_STABILITY_POOL=1
 export RUST_BACKTRACE=full
 
 # kill everything on exit
