@@ -15,6 +15,10 @@ let
     "fedi-social-server"
     "fedi-monitoring"
     "devops-cli"
+    "stability-pool/stability-pool-client"
+    "stability-pool/stability-pool-common"
+    "stability-pool/stability-pool-server"
+    "stability-pool/stability-pool-tests"
   ];
 
   root = builtins.path {

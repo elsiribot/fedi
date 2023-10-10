@@ -31,12 +31,14 @@ export const PopupFederationOver: React.FC = () => {
                         <Text variant="h2">{activeFederation.name}</Text>
                         <Ended>{t('feature.popup.ended')}</Ended>
                         <Text css={{ marginBottom: 24 }}>
-                            <Trans
-                                t={t}
-                                i18nKey="feature.popup.ended-description"
-                                values={{ date: popupInfo.endsAtText }}
-                                components={{ bold: <strong /> }}
-                            />
+                            {popupInfo.endedMessage || (
+                                <Trans
+                                    t={t}
+                                    i18nKey="feature.popup.ended-description"
+                                    values={{ date: popupInfo.endsAtText }}
+                                    components={{ bold: <strong /> }}
+                                />
+                            )}
                         </Text>
                     </Container>
                 </Layout.Content>

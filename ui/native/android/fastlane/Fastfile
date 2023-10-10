@@ -276,7 +276,7 @@ platform :android do
     )
   end
 
-  desc "Upload the latest build to internal track (Bitcoin Ekasi)"
+  desc "Upload the latest build to internal track (Bravo)"
   lane :upload_internal_build_bravo  do
     upload_to_play_store(
       track: 'internal',
@@ -289,10 +289,48 @@ platform :android do
     )
   end
 
-  desc "Submit a new internal build (Bitcoin Ekasi)"
+  desc "Submit a new internal build (Bravo)"
   lane :internal_bravo do
     build_bravo 
     upload_internal_build_bravo 
+  end
+
+  # For nightly dev builds
+  desc "Build a new APK to release (Nightly)"
+  lane :build_nightly_apk do
+    gradle(
+      task: 'assemble',
+      flavor: 'nightly',
+      build_type: 'Release'
+    )
+  end
+  
+  desc "Build a new app bundle to release (Nightly)"
+  lane :build_nightly  do
+    gradle(
+      task: 'bundle',
+      flavor: 'nightly',
+      build_type: 'Release'
+    )
+  end
+
+  desc "Upload the latest build to internal track (Nightly)"
+  lane :upload_internal_build_nightly  do
+    upload_to_play_store(
+      track: 'internal',
+      package_name: 'com.fedi.nightly',
+      aab: './app/build/outputs/bundle/nightlyRelease/app-nightly-release.aab',
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Submit a new internal build (Nightly)"
+  lane :internal_nightly do
+    build_nightly
+    upload_internal_build_nightly 
   end
 
   # desc "Deploy a new version to the Google Play"

@@ -38,6 +38,7 @@ use fedimint_mint_client::{
 use fedimint_wallet_client::{WalletClientGen, WalletClientModule};
 use futures::StreamExt;
 use lightning_invoice::Invoice;
+use stability_pool_client::StabilityPoolClientGen;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -53,8 +54,9 @@ use self::social::{
     SocialRecoveryStateKey, SocialVerification, UserSeedPhrase,
 };
 use super::constants::{
-    LNURL_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, SHUTDOWN_TIMEOUT, XMPP_CHILD_ID,
-    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
+    NOSTR_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, SHUTDOWN_TIMEOUT,
+    XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
@@ -62,9 +64,6 @@ use super::types::{
     federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
     RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcRecoveryId,
     RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
-};
-use crate::constants::{
-    BACKUP_FREQUENCY, MINT_OPERATION_TYPE, NOSTR_CHILD_ID, REISSUE_ECASH_TIMEOUT,
 };
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
@@ -102,6 +101,7 @@ impl FederationV1 {
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen(None));
         client_builder.with_module(FediSocialClientInit);
+        client_builder.with_module(StabilityPoolClientGen);
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_dyn_database(db);
@@ -118,6 +118,7 @@ impl FederationV1 {
         client_builder.with_module(LightningClientGen);
         client_builder.with_module(WalletClientGen(None));
         client_builder.with_module(FediSocialClientInit);
+        client_builder.with_module(StabilityPoolClientGen);
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_old_client_database(old_client);

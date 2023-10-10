@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=68dfce33a6f918fb3e1628faf82e55fde3d50208";
+      url = "github:rustshop/flakebox?rev=042c3707a61560616dfd9b279ce81361c91d34ed";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -208,6 +208,7 @@
               pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
               pkgs.nodePackages.typescript-language-server
+              pkgs.llvmPackages_14.clang
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
