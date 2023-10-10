@@ -842,6 +842,47 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn test_ecash_overissue() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // receive ecash
+        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
+        let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
+        receiveEcash(
+            bridge.clone(),
+            RpcFederationId(federation.federation_id()),
+            ecash,
+        )
+        .await?;
+
+        // check balance
+        assert_eq!(
+            federation.get_balance().await,
+            fedimint_core::Amount::from_msats(10000)
+        );
+
+        let count = 100;
+        for _ in 0..count {
+            generateEcash(
+                bridge.clone(),
+                RpcFederationId(federation.federation_id()),
+                RpcAmount(fedimint_core::Amount::from_msats(
+                    ecash_receive_amount.msats / count,
+                )),
+            )
+            .await
+            .context("generateEcash")?;
+        }
+        // check balance
+        assert_eq!(
+            federation.get_balance().await,
+            fedimint_core::Amount::from_msats(0)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
