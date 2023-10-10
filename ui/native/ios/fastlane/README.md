@@ -39,6 +39,22 @@ Push a new beta build to TestFlight
 
 Create a release build
 
+### ios beta_nightly_ci
+
+```sh
+[bundle exec] fastlane ios beta_nightly_ci
+```
+
+Push a new beta build to TestFlight from CI (Fedi Nightly)
+
+### ios beta_nightly
+
+```sh
+[bundle exec] fastlane ios beta_nightly
+```
+
+Push a new beta build to TestFlight (Fedi Nightly)
+
 ### ios check_appstore_certs
 
 ```sh
@@ -46,6 +62,14 @@ Create a release build
 ```
 
 Check for signing certificates
+
+### ios check_appstore_certs_nightly
+
+```sh
+[bundle exec] fastlane ios check_appstore_certs_nightly
+```
+
+Check for signing certificates (Fedi Nightly)
 
 ----
 
