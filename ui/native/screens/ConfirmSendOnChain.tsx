@@ -5,12 +5,12 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { useBalanceDisplay } from '@fedi/common/hooks/amount'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useBridge } from '../state/hooks'
 import { Btc, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -23,7 +23,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const balanceDisplay = useBalanceDisplay(t)
     const { payAddress } = useBridge()
     const { bitcoinUri } = route.params
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -63,13 +63,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Text caption>
-                {`${t('words.balance')}: `}
-                {`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(activeFederation?.balance!),
-                )} `}
-                {`${t('words.sats').toUpperCase()}`}
-            </Text>
+            <Text caption>{balanceDisplay}</Text>
             <View style={styles(theme).detailsContainer}>
                 <Input
                     onChangeText={onChangeText as (_: string) => any}
