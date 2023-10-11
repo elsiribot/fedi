@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=042c3707a61560616dfd9b279ce81361c91d34ed";
+      url = "github:rustshop/flakebox?rev=864d0e81ac196abe71e17210376a3f23fc3c5fd1";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
@@ -133,17 +133,19 @@
           };
         };
 
-        toolchains = (pkgs.lib.getAttrs [
-          "default"
-          "aarch64-android"
-          "x86_64-android"
-          "arm-android"
-          "armv7-android"
-          "wasm32-unknown"
-          "aarch64-ios"
-          "aarch64-ios-sim"
-          "x86_64-ios"
-        ]
+        toolchains = (pkgs.lib.getAttrs
+          ([
+            "default"
+            "aarch64-android"
+            "x86_64-android"
+            "arm-android"
+            "armv7-android"
+            "wasm32-unknown"
+          ] ++ lib.optionals pkgs.stdenv.isDarwin [
+            "aarch64-ios"
+            "aarch64-ios-sim"
+            "x86_64-ios"
+          ])
           (flakeboxLib.mkStdFenixToolchains {
             inherit androidSdk;
           })
