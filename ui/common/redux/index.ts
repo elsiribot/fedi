@@ -14,12 +14,14 @@ import { federationSlice } from './federation'
 import { updateFederation } from './federation'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
+import { walletSlice } from './wallet'
 
 export * from './chat'
 export * from './currency'
 export * from './environment'
 export * from './federation'
 export * from './toast'
+export * from './wallet'
 
 export const commonReducers = {
     chat: chatSlice.reducer,
@@ -28,6 +30,7 @@ export const commonReducers = {
     federation: federationSlice.reducer,
     storage: storageSlice.reducer,
     toast: toastSlice.reducer,
+    wallet: walletSlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers
