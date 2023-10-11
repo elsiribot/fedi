@@ -11,7 +11,14 @@ import { checkForLegacyChatMigrations } from '@fedi/native/utils/migration'
 import { fedimint } from '../bridge'
 
 export const store = configureStore({
-    middleware: commonMiddleware,
+    middleware: getDefaultMiddleware => {
+        const middleware = commonMiddleware(getDefaultMiddleware)
+        if (__DEV__) {
+            const createDebugger = require('redux-flipper').default
+            middleware.push(createDebugger())
+        }
+        return middleware
+    },
     reducer: {
         ...commonReducers,
     },
