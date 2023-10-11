@@ -1,5 +1,5 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
-import { ButtonProps, createTheme, lightColors } from '@rneui/themed'
+import { ButtonProps, Theme, createTheme, lightColors } from '@rneui/themed'
 import { Dimensions, ViewStyle } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 
@@ -25,6 +25,65 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
     }
     return defaultBackground
 }
+
+const themeDefaults = {
+    percentages: {
+        shortcutTileWidth: '33%',
+    },
+    sizes: {
+        ...fediTheme.sizes,
+        adminProfileCircle: 90,
+        walletCardHeight: 200,
+        defaultHoloGradient: 32,
+        holoGuidanceCircle: 180,
+        progressBarHeight: 6,
+        progressCircleThickness: 5,
+        progressCircle: dimensions.height * 0.25,
+        progressInnerCircle: dimensions.height * 0.25 - 10,
+        maxMessageWidth: dimensions.width * 0.75,
+        minMessageInputHeight: 48,
+        maxMessageInputHeight: 120,
+        recordButtonOuter: 68,
+        recordButtonInner: 56,
+        socialBackupCameraWidth: dimensions.width * 0.9,
+        socialBackupCameraHeight: dimensions.height * 0.4,
+        splashImageSize: 360,
+        splashLogoHeight: 32,
+        splashLogoWidth: 120,
+        stabilityPoolCircleThickness: 2,
+        stabilityPoolCircle: dimensions.width * 0.9,
+        unreadIndicatorSize: 10,
+    },
+    spacing: {
+        ...fediTheme.spacing,
+    },
+    borders: {
+        defaultRadius: 16,
+        qrCodeRadius: 20,
+        fediModTileRadius: 12,
+        progressBarRadius: 4,
+    },
+    styles: {
+        h100w100: {
+            height: '100%',
+            width: '100%',
+        },
+        text: {
+            color: colors.primary,
+            fontSize: fediTheme.fontSizes.body,
+            fontWeight: fediTheme.fontWeights.normal,
+            fontFamily: 'AlbertSans-Regular',
+        },
+        avatarText: {
+            color: colors.white,
+            fontSize: 15,
+            fontWeight: fediTheme.fontWeights.bold,
+            letterSpacing: -1,
+            // TODO: import this font
+            // fontFamily: 'Martian Mono',
+        },
+    },
+} as const
 
 const theme = createTheme({
     ...NavigationDefaultTheme,
@@ -75,10 +134,7 @@ const theme = createTheme({
             // Don't allow titles to get insane font size multipliers
             maxFontSizeMultiplier: props.h1 ? 1.4 : props.h2 ? 1.8 : undefined,
             style: {
-                color: colors.primary,
-                fontSize: fediTheme.fontSizes.body,
-                fontWeight: fediTheme.fontWeights.normal,
-                fontFamily: 'AlbertSans-Regular',
+                ...themeDefaults.styles?.text,
                 // Use fontFamily for bolding effects because the fontWeight
                 // value only has 2 distinct variants in AlbertSans-Regular
                 // whereas the design calls for a 3rd distinct variant (medium)
@@ -169,48 +225,7 @@ const theme = createTheme({
     colors: {
         ...colors,
     },
-    percentages: {
-        shortcutTileWidth: '33%',
-    },
-    sizes: {
-        ...fediTheme.sizes,
-        adminProfileCircle: 90,
-        walletCardHeight: 200,
-        defaultHoloGradient: 32,
-        holoGuidanceCircle: 180,
-        progressBarHeight: 6,
-        progressCircleThickness: 5,
-        progressCircle: dimensions.height * 0.25,
-        progressInnerCircle: dimensions.height * 0.25 - 10,
-        maxMessageWidth: dimensions.width * 0.75,
-        minMessageInputHeight: 48,
-        maxMessageInputHeight: 120,
-        recordButtonOuter: 68,
-        recordButtonInner: 56,
-        socialBackupCameraWidth: dimensions.width * 0.9,
-        socialBackupCameraHeight: dimensions.height * 0.4,
-        splashImageSize: 360,
-        splashLogoHeight: 32,
-        splashLogoWidth: 120,
-        stabilityPoolCircleThickness: 2,
-        stabilityPoolCircle: dimensions.width * 0.9,
-        unreadIndicatorSize: 10,
-    },
-    spacing: {
-        ...fediTheme.spacing,
-    },
-    borders: {
-        defaultRadius: 16,
-        qrCodeRadius: 20,
-        fediModTileRadius: 12,
-        progressBarRadius: 4,
-    },
-    styles: {
-        h100w100: {
-            height: '100%',
-            width: '100%',
-        },
-    },
+    ...themeDefaults,
 })
 
 export default theme

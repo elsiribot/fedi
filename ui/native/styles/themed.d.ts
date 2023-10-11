@@ -1,5 +1,5 @@
 import '@rneui/themed'
-import { DimensionValue, ViewStyle } from 'react-native'
+import { DimensionValue, TextStyle, ViewStyle } from 'react-native'
 
 // This declaration is required to combine the Theme type
 // from @react-naviation/native with the @rneui/themed Theme type
@@ -42,7 +42,7 @@ declare module '@rneui/themed' {
             [key: string]: number
         }
         styles: {
-            [key: string]: ViewStyle
+            [key: string]: ViewStyle | TextStyle
         }
         borders: {
             defaultRadius: number
