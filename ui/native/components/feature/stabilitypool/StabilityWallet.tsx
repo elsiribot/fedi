@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import type { Theme } from '@rneui/themed'
+import { Avatar, Theme } from '@rneui/themed'
 import { Card, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
@@ -8,7 +8,7 @@ import { selectCurrency } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 
 const StabilityWallet: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -16,22 +16,24 @@ const StabilityWallet: React.FC<{}> = () => {
     const stabilityPoolBalance = 0
     const selectedCurrency = useAppSelector(selectCurrency)
 
+    const style = styles(theme)
+
     return (
-        <Card
-            containerStyle={styles(theme).container}
-            wrapperStyle={styles(theme).cardWrapper}>
+        <Card containerStyle={style.container} wrapperStyle={style.cardWrapper}>
             <Pressable
-                style={styles(theme).titleContainer}
+                style={style.titleContainer}
                 onPress={() => navigation.navigate('StabilityHome')}>
-                <SvgImage
-                    name="BitcoinCircle"
-                    size={SvgImageSize.md}
-                    color={theme.colors.primary}
+                <Avatar
+                    size={theme.sizes.md}
+                    rounded
+                    title="USD"
+                    titleStyle={style.currencyAvatarTitle}
+                    containerStyle={style.currencyAvatar}
                 />
-                <Text bold style={styles(theme).titleText}>
+                <Text bold style={style.titleText}>
                     {`${selectedCurrency}`}
                 </Text>
-                <Text medium style={styles(theme).balanceText}>
+                <Text medium style={style.balanceText}>
                     {`${stabilityPoolBalance} ${selectedCurrency}`}
                 </Text>
                 <SvgImage name="ChevronRight" color={theme.colors.primary} />
@@ -62,6 +64,12 @@ const styles = (theme: Theme) =>
             flex: 1,
             justifyContent: 'space-between',
             gap: theme.spacing.lg,
+        },
+        currencyAvatar: {
+            backgroundColor: theme.colors.green,
+        },
+        currencyAvatarTitle: {
+            ...theme.styles.avatarText,
         },
         titleContainer: {
             textAlign: 'left',
