@@ -390,6 +390,17 @@ async fn stabilityPoolAccountInfo(
     bridge.stability_pool_account_info(federation_id).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolDepositToSeek(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    amount: RpcAmount,
+) -> anyhow::Result<()> {
+    bridge
+        .stability_pool_deposit_to_seek(federation_id, amount)
+        .await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -485,6 +496,7 @@ rpc_methods!(RpcMethods {
     signNostrEvent,
     // Stability Pool
     stabilityPoolAccountInfo,
+    stabilityPoolDepositToSeek,
 });
 
 #[instrument(
@@ -524,6 +536,7 @@ mod tests {
 
     use super::*;
     use crate::bridge::MultiFederation;
+    use crate::constants::STABILITY_POOL_OPERATION_TYPE;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
 
@@ -1149,6 +1162,39 @@ mod tests {
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert!(account_info.staged_seeks.is_empty());
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
+
+        // Receive some ecash first
+        let initial_balance = Amount::from_msats(500_000);
+        let ecash = cli_generate_ecash(initial_balance, &federation).await?;
+        federation.receive_ecash(ecash).await?;
+
+        // Deposit to seek and verify account info
+        let amount_to_deposit = Amount::from_msats(initial_balance.msats / 2);
+        bridge
+            .stability_pool_deposit_to_seek(
+                RpcFederationId(federation.federation_id()),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+        loop {
+            // Wait until deposit operation succeeds
+            if bridge
+                .event_sink
+                .num_events_of_type("stabilityPoolDeposit".into())
+                != 0
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
+        let account_info = bridge
+            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
         assert!(account_info.staged_cancellation.is_none());
         assert!(account_info.locked_seeks.is_empty());
         Ok(())

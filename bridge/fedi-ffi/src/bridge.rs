@@ -318,6 +318,13 @@ impl MultiFederation {
             Self::V1(v1) => v1.stability_pool_account_info().await,
         }
     }
+
+    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<()> {
+        match self {
+            MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
+            MultiFederation::V1(v1) => v1.stability_pool_deposit_to_seek(amount).await,
+        }
+    }
 }
 
 /// This is instantiated once as a global. When RPC commands come in, this
@@ -843,5 +850,16 @@ impl Bridge {
             .stability_pool_account_info()
             .await
             .map(|info| info.into())
+    }
+
+    pub async fn stability_pool_deposit_to_seek(
+        &self,
+        federation_id: RpcFederationId,
+        amount: RpcAmount,
+    ) -> Result<()> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_deposit_to_seek(amount.0)
+            .await
     }
 }

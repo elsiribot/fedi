@@ -46,6 +46,22 @@ pub struct BalanceEvent {
     pub balance: RpcAmount,
 }
 
+#[derive(Serialize, Debug, TS)]
+#[ts(export, export_to = "target/bindings/")]
+#[ts(rename_all = "camelCase")]
+pub struct StabilityPoolEvent {
+    pub federation_id: RpcFederationId,
+    pub state: StabilityPoolOperationState,
+}
+
+#[derive(Serialize, Debug, TS)]
+#[ts(export, export_to = "target/bindings/")]
+#[ts(rename_all = "camelCase")]
+pub enum StabilityPoolOperationState {
+    Success,
+    Failure(String),
+}
+
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
@@ -55,6 +71,7 @@ pub enum Event {
     Federation(RpcFederation),
     Balance(BalanceEvent),
     Panic(PanicEvent),
+    StabilityPoolDeposit(StabilityPoolEvent),
 }
 
 impl Event {
@@ -73,7 +90,6 @@ impl Event {
     pub fn federation(federation: RpcFederation) -> Self {
         Self::Federation(federation)
     }
-
     pub fn balance(
         federation_id: fedimint_core::config::FederationId,
         balance: fedimint_core::Amount,
@@ -81,6 +97,15 @@ impl Event {
         Self::Balance(BalanceEvent {
             federation_id: RpcFederationId(federation_id),
             balance: RpcAmount(balance),
+        })
+    }
+    pub fn stability_pool_deposit(
+        federation_id: fedimint_core::config::FederationId,
+        state: StabilityPoolOperationState,
+    ) -> Self {
+        Self::StabilityPoolDeposit(StabilityPoolEvent {
+            federation_id: RpcFederationId(federation_id),
+            state,
         })
     }
 }
@@ -121,6 +146,10 @@ pub trait TypedEventExt: IEventSink {
             Event::Panic(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "panic".into(), body);
+            }
+            Event::StabilityPoolDeposit(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "stabilityPoolDeposit".into(), body);
             }
         };
     }

@@ -35,6 +35,7 @@ export type Event =
     | { federation: RpcFederation }
     | { balance: BalanceEvent }
     | { panic: PanicEvent }
+    | { stabilityPoolDeposit: StabilityPoolEvent }
 
 export interface LogEvent {
     log: string
@@ -301,6 +302,10 @@ export interface RpcMethods {
             lockedSeeks: Array<RpcLockedSeek>
         },
     ]
+    stabilityPoolDepositToSeek: [
+        { federationId: RpcFederationId; amount: RpcAmount },
+        null,
+    ]
 }
 
 export type RpcOnchainDepositState =
@@ -384,6 +389,13 @@ export interface SocialRecoveryEvent {
     approvals: Array<SocialRecoveryApproval>
     remaining: number
 }
+
+export interface StabilityPoolEvent {
+    federationId: RpcFederationId
+    state: StabilityPoolOperationState
+}
+
+export type StabilityPoolOperationState = 'success' | { failure: string }
 
 export interface TransactionEvent {
     federationId: RpcFederationId
