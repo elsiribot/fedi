@@ -42,7 +42,9 @@ use fedimint_wallet_client::{
 use futures::{Future, StreamExt};
 use lightning_invoice::Invoice;
 use stability_pool_client::common::AccountInfo;
-use stability_pool_client::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
+use stability_pool_client::{
+    StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolDepositState, StabilityPoolMeta,
+};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -63,7 +65,7 @@ use super::constants::{
     STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
     XMPP_PASSWORD,
 };
-use super::event::{Event, EventSink, TypedEventExt};
+use super::event::{Event, EventSink, StabilityPoolOperationState, TypedEventExt};
 use super::storage::Storage;
 use super::types::{
     federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
@@ -1730,5 +1732,63 @@ impl FederationV1 {
             .account_info()
             .await
             .context("Error when fetching account info")
+    }
+
+    /// Deposit the given amount of msats into the stability pool
+    /// with the intention of seeking. Once the fedimint transaction
+    /// is accepted, the deposit is staged (pending). When the next
+    /// cycle turnover occurs, staged seeks are processed in order
+    /// to produce locks.
+    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<()> {
+        let operation_id = self.client.deposit_to_seek(amount).await?;
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn("subscribe_stability_pool_deposit", move |_| async move {
+                fed.subscribe_stability_pool_deposit(operation_id).await;
+            })
+            .await;
+        Ok(())
+    }
+
+    async fn subscribe_stability_pool_deposit(&self, operation_id: OperationId) {
+        let Ok(updates) = self
+            .client
+            .subscribe_deposit_or_renewal_operation(operation_id)
+            .await
+        else {
+            self.event_sink.typed_event(&Event::stability_pool_deposit(
+                self.federation_id(),
+                StabilityPoolOperationState::Failure("Unable to subscribe".to_string()),
+            ));
+            return;
+        };
+
+        let mut updates = updates.into_stream();
+
+        while let Some(update) = updates.next().await {
+            match update {
+                StabilityPoolDepositState::TxRejected(_) => {
+                    self.event_sink.typed_event(&Event::stability_pool_deposit(
+                        self.federation_id(),
+                        StabilityPoolOperationState::Failure("Deposit TX rejected".to_string()),
+                    ));
+                    return;
+                }
+                StabilityPoolDepositState::PrimaryOutputError(_) => {
+                    self.event_sink.typed_event(&Event::stability_pool_deposit(
+                        self.federation_id(),
+                        StabilityPoolOperationState::Failure("Change output error".to_string()),
+                    ));
+                    return;
+                }
+                _ => info!("Update: {:?}", update),
+            }
+        }
+
+        self.event_sink.typed_event(&Event::stability_pool_deposit(
+            self.federation_id(),
+            StabilityPoolOperationState::Success,
+        ))
     }
 }

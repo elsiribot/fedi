@@ -549,6 +549,7 @@ mod tests {
 
     use super::*;
     use crate::bridge::MultiFederation;
+    use crate::constants::STABILITY_POOL_OPERATION_TYPE;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
 
