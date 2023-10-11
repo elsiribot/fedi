@@ -21,7 +21,9 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const [index, setIndex] = useState(0)
     const [unit] = useState('sats')
 
-    const frames = useMemo(() => dataToFrames(ecash), [ecash])
+    const frames = useMemo(() => {
+        return dataToFrames(Buffer.from(ecash, 'base64'))
+    }, [ecash])
 
     // show new qr every 100ms
     useEffect(() => {

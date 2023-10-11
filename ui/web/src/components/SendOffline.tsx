@@ -57,7 +57,7 @@ export const SendOffline: React.FC<Props> = ({
             )
             onEcashGenerated()
             setOfflinePayment(ecash)
-            setQrFrames(dataToFrames(ecash))
+            setQrFrames(dataToFrames(Buffer.from(ecash, 'base64')))
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
