@@ -11,6 +11,7 @@ const initialState = {
     fedimodDebugMode: false,
     nostrEnabled: false,
     language: null as string | null,
+    amountInputType: undefined as 'sats' | 'fiat' | undefined,
 }
 
 export type EnvironmentState = typeof initialState
@@ -30,6 +31,12 @@ export const environmentSlice = createSlice({
         setNostrEnabled(state, action: PayloadAction<boolean>) {
             state.nostrEnabled = action.payload
         },
+        setAmountInputType(
+            state,
+            action: PayloadAction<EnvironmentState['amountInputType']>,
+        ) {
+            state.amountInputType = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -39,14 +46,21 @@ export const environmentSlice = createSlice({
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.language = action.payload.language
+            if (action.payload.amountInputType) {
+                state.amountInputType = action.payload.amountInputType
+            }
         })
     },
 })
 
 /*** Basic actions ***/
 
-export const { setDeveloperMode, setFediModDebugMode, setNostrEnabled } =
-    environmentSlice.actions
+export const {
+    setDeveloperMode,
+    setFediModDebugMode,
+    setNostrEnabled,
+    setAmountInputType,
+} = environmentSlice.actions
 
 /*** Async thunk actions ***/
 
@@ -65,7 +79,9 @@ export const selectDeveloperMode = (s: CommonState) =>
 export const selectFediModDebugMode = (s: CommonState) =>
     s.environment.fedimodDebugMode
 
-export const selectNostrEnabled = (s: CommonState) =>
-    s.environment.nostrEnabled
+export const selectNostrEnabled = (s: CommonState) => s.environment.nostrEnabled
 
 export const selectLanguage = (s: CommonState) => s.environment.language
+
+export const selectAmountInputType = (s: CommonState) =>
+    s.environment.amountInputType

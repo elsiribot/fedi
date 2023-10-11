@@ -7,6 +7,8 @@ import {
     selectMaxReceiveAmount,
     selectFederationMetadata,
     selectFederationBalance,
+    selectAmountInputType,
+    setAmountInputType,
 } from '../redux'
 import {
     Btc,
@@ -17,7 +19,7 @@ import {
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
-import { useCommonSelector } from './redux'
+import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
 interface RequestAmountArgs {
@@ -50,15 +52,19 @@ export function useAmountInput(
     minimumAmount?: Sats | null,
     maximumAmount?: Sats | null,
 ) {
+    const dispatch = useCommonDispatch()
     const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
     const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
     const currency = useCommonSelector(selectCurrency)
-
-    // If the federation has a default currency set, isFiat starts as true
     const federationMetadata = useCommonSelector(selectFederationMetadata)
-    const shouldDefaultToFiat =
-        getFederationDefaultCurrency(federationMetadata) !== null ? true : false
-    const [isFiat, setIsFiat] = useState<boolean>(shouldDefaultToFiat)
+    const defaultAmountInputType = useCommonSelector(selectAmountInputType)
+
+    // If the user has changed amount input type before, default to that.
+    // Otherwise default to whether or not the federation dictates a currency type.
+    const shouldDefaultToFiat = defaultAmountInputType
+        ? defaultAmountInputType === 'fiat'
+        : !!getFederationDefaultCurrency(federationMetadata)
+    const [isFiat, _setIsFiat] = useState<boolean>(shouldDefaultToFiat)
 
     const [satsValue, setSatsValue] = useState<string>(
         amountUtils.formatSats(amount),
@@ -69,6 +75,14 @@ export function useAmountInput(
             currency,
             { noSymbol: true },
         ),
+    )
+
+    const setIsFiat = useCallback(
+        (value: boolean) => {
+            _setIsFiat(value)
+            dispatch(setAmountInputType(value ? 'fiat' : 'sats'))
+        },
+        [dispatch],
     )
 
     const clampSats = useCallback((value: number) => {
