@@ -7,6 +7,14 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
+import {
+    selectStableBalance,
+    selectStableBalancePending,
+    selectStableCurrency,
+} from '@fedi/common/redux'
+import { makePendingBalanceText } from '@fedi/common/utils/stabilitypool'
+
+import { useAppSelector } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'StabilityHome'>
@@ -15,6 +23,9 @@ const StabilityHome: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
+    const stableBalance = useAppSelector(selectStableBalance)
+    const stableCurrency = useAppSelector(selectStableCurrency)
+    const stableBalancePending = useAppSelector(selectStableBalancePending)
 
     const style = styles(theme)
 
@@ -23,11 +34,29 @@ const StabilityHome: React.FC<Props> = () => {
             <View style={style.balanceContainer}>
                 <Progress.Circle
                     progress={1}
-                    color={theme.colors.primaryVeryLight}
+                    color={
+                        stableBalance > 0
+                            ? theme.colors.green
+                            : theme.colors.primaryVeryLight
+                    }
                     thickness={theme.sizes.stabilityPoolCircleThickness}
                     size={theme.sizes.stabilityPoolCircle}
                     borderWidth={1}
                 />
+                <View style={style.balanceTextContainer}>
+                    <Text h1 h1Style={style.balanceText}>
+                        {`${stableBalance} ${stableCurrency}`}
+                    </Text>
+                    {stableBalancePending !== 0 && (
+                        <Text small style={style.balancePendingText}>
+                            {makePendingBalanceText(
+                                t,
+                                stableBalancePending,
+                                stableCurrency,
+                            )}
+                        </Text>
+                    )}
+                </View>
             </View>
             <View style={style.buttonContainer}>
                 <Button
@@ -66,6 +95,17 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             marginTop: 'auto',
+        },
+        balanceTextContainer: {
+            position: 'absolute',
+            flexDirection: 'column',
+            alignItems: 'center',
+        },
+        balanceText: {
+            flex: 1,
+        },
+        balancePendingText: {
+            flex: 1,
         },
         buttonContainer: {
             width: '100%',

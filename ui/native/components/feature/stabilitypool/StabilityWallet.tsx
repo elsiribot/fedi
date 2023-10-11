@@ -4,7 +4,7 @@ import { Card, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { selectCurrency } from '@fedi/common/redux'
+import { selectStableBalance, selectStableCurrency } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -13,8 +13,8 @@ import SvgImage from '../../ui/SvgImage'
 const StabilityWallet: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const stabilityPoolBalance = 0
-    const selectedCurrency = useAppSelector(selectCurrency)
+    const stableBalance = useAppSelector(selectStableBalance)
+    const stableCurrency = useAppSelector(selectStableCurrency)
 
     const style = styles(theme)
 
@@ -29,15 +29,15 @@ const StabilityWallet: React.FC<{}> = () => {
                     <Avatar
                         size={theme.sizes.md}
                         rounded
-                        title="USD"
+                        title={stableCurrency}
                         titleStyle={style.currencyAvatarTitle}
                         containerStyle={style.currencyAvatar}
                     />
                     <Text bold style={style.titleText}>
-                        {`${selectedCurrency}`}
+                        {`${stableCurrency}`}
                     </Text>
                     <Text medium style={style.balanceText}>
-                        {`${stabilityPoolBalance} ${selectedCurrency}`}
+                        {`${stableBalance} ${stableCurrency}`}
                     </Text>
                     <SvgImage
                         name="ChevronRight"

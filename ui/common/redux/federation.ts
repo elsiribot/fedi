@@ -8,13 +8,14 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 
 import { authenticateChat, CommonState } from '.'
-import type {
+import {
     Federation,
     Guardian,
     MSats,
     Sats,
     SeedWords,
     FediMod,
+    SupportedCurrency,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -393,3 +394,14 @@ export const selectFederationGroupChats = createSelector(
     selectFederationMetadata,
     getFederationGroupChats,
 )
+
+// TODO: decide where to put these...
+export const selectStableBalance = (_: CommonState) => {
+    return 100
+}
+export const selectStableCurrency = (_: CommonState): SupportedCurrency => {
+    return SupportedCurrency.USD
+}
+export const selectStableBalancePending = (_: CommonState) => {
+    return -50
+}

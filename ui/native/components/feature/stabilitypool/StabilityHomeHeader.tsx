@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { selectCurrency } from '@fedi/common/redux'
+import { selectStableCurrency } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -15,14 +15,14 @@ const StabilityHomeHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const selectedCurrency = useAppSelector(selectCurrency)
+    const stableCurrency = useAppSelector(selectStableCurrency)
 
     const style = styles(theme)
     return (
         <Header
             backButton
             headerCenter={
-                <Text bold>{`${selectedCurrency} ${t('words.balance')}`}</Text>
+                <Text bold>{`${stableCurrency} ${t('words.balance')}`}</Text>
             }
             headerRight={
                 <Pressable
