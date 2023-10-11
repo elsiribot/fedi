@@ -1,3 +1,4 @@
+import { getEncoding } from 'istextorbinary'
 import type QrScanner from 'qr-scanner'
 import {
     areFramesComplete,
@@ -48,8 +49,13 @@ export const QRScanner: React.FC<Props> = ({ processing, onScan }) => {
                     result.data,
                 )
                 if (areFramesComplete(newFrames)) {
+                    // Convert the data to a string. If it's binary encoded, convert as base64.
+                    const frameData = framesToData(newFrames)
+                    const strData = frameData.toString(
+                        getEncoding(frameData) === 'binary' ? 'base64' : 'utf8',
+                    )
                     onScanRef.current({
-                        data: framesToData(newFrames).toString(),
+                        data: strData,
                         cornerPoints: result.cornerPoints,
                     })
                 }
