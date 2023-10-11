@@ -16,7 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=864d0e81ac196abe71e17210376a3f23fc3c5fd1";
+      url = "github:rustshop/flakebox?rev=a837aa4a2c9587313890ae2d0d4799dccb009c2f";
       # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
     };
 
