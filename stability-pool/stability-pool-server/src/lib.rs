@@ -154,8 +154,12 @@ impl ServerModuleInit for StabilityPoolGen {
         &self,
         config: &ServerModuleConsensusConfig,
     ) -> anyhow::Result<StabilityPoolClientConfig> {
-        let _config = StabilityPoolConfigConsensus::from_erased(config)?;
-        Ok(StabilityPoolClientConfig)
+        let config = StabilityPoolConfigConsensus::from_erased(config)?;
+        Ok(StabilityPoolClientConfig {
+            min_allowed_seek: config.min_allowed_seek,
+            max_allowed_provide_fee_rate_ppb: config.max_allowed_provide_fee_rate_ppb,
+            min_allowed_cancellation_bps: config.min_allowed_cancellation_bps,
+        })
     }
 
     async fn dump_database(

@@ -71,7 +71,11 @@ pub struct StabilityPoolConfigConsensus {
 pub struct StabilityPoolConfigPrivate;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable, Hash)]
-pub struct StabilityPoolClientConfig;
+pub struct StabilityPoolClientConfig {
+    pub min_allowed_seek: Amount,
+    pub max_allowed_provide_fee_rate_ppb: u64,
+    pub min_allowed_cancellation_bps: u32,
+}
 
 impl std::fmt::Display for StabilityPoolClientConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
