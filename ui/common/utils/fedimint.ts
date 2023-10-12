@@ -15,14 +15,20 @@ export class FedimintBridge {
         ) => Promise<T>,
     ) {}
 
-    async rpcTyped<M extends bindings.RpcMethodNames, R extends bindings.RpcResponse<M>>(method: M, payload: bindings.RpcPayload<M>): Promise<R> {
-        return await this.rpc(method, payload);
+    async rpcTyped<
+        M extends bindings.RpcMethodNames,
+        R extends bindings.RpcResponse<M>,
+    >(method: M, payload: bindings.RpcPayload<M>): Promise<R> {
+        return await this.rpc(method, payload)
     }
 
     /*** RPC METHODS ***/
 
     async listTransactions(federationId: string) {
-        return this.rpcTyped<'listTransactions', Transaction[]>('listTransactions', { federationId })
+        return this.rpcTyped<'listTransactions', Transaction[]>(
+            'listTransactions',
+            { federationId },
+        )
     }
 
     async updateTransactionNotes(
@@ -46,7 +52,10 @@ export class FedimintBridge {
     }
 
     async listFederations() {
-        return this.rpcTyped<'listFederations', Federation[]>('listFederations', {})
+        return this.rpcTyped<'listFederations', Federation[]>(
+            'listFederations',
+            {},
+        )
     }
 
     async generateInvoice(
@@ -132,7 +141,10 @@ export class FedimintBridge {
         return this.rpcTyped('listGateways', { federationId })
     }
 
-    async switchGateway(gatewayId: bindings.RpcPublicKey, federationId: string) {
+    async switchGateway(
+        gatewayId: bindings.RpcPublicKey,
+        federationId: string,
+    ) {
         return this.rpcTyped('switchGateway', {
             federationId,
             gatewayId,
@@ -157,7 +169,10 @@ export class FedimintBridge {
     async uploadBackupFile(videoFilePath: string, federationId: string) {
         // FIXME: for some reason rust can't read the file if it has `file://` prefix ...
         videoFilePath = videoFilePath.replace('file://', '')
-        return this.rpcTyped('uploadBackupFile', { federationId, videoFilePath })
+        return this.rpcTyped('uploadBackupFile', {
+            federationId,
+            videoFilePath,
+        })
     }
 
     async locateRecoveryFile(federationId: string) {
@@ -218,13 +233,10 @@ export class FedimintBridge {
         recoveryId: string,
         federationId: string,
     ) {
-        return this.rpcTyped(
-            'socialRecoveryDownloadVerificationDoc',
-            {
-                federationId,
-                recoveryId,
-            },
-        )
+        return this.rpcTyped('socialRecoveryDownloadVerificationDoc', {
+            federationId,
+            recoveryId,
+        })
     }
 
     async completeSocialRecovery(federationId: string) {
