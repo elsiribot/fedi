@@ -1,14 +1,15 @@
+use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use async_trait::async_trait;
 use fedimint_core::db::IDatabase;
 use fedimint_core_v0::db::Database as DatabaseV0;
 use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::info;
 
 use super::bridge::Bridge;
 /// This file contains the bindings to used by React Native app via Uniffi
@@ -16,6 +17,8 @@ use super::event::IEventSink as EventSink;
 use super::logging;
 use super::rpc::{fedimint_initialize_async, fedimint_rpc_async, FedimintError};
 use super::storage::IStorage;
+use crate::error::ErrorCode;
+use crate::rpc::{self, rpc_error};
 
 lazy_static! {
     // Global Tokio runtime
@@ -29,48 +32,67 @@ lazy_static! {
 
 uniffi_macros::include_scaffolding!("fedi");
 
-/// Synchronous method to instantiate a global bridge object which is required
+pub fn fedimint_initialize(
+    data_dir: String,
+    log_level: String,
+    event_sink: Box<dyn EventSink>,
+) -> String {
+    let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        RUNTIME.block_on(fedimint_initialize_inner(data_dir, log_level, event_sink))
+    }));
+    match value {
+        Ok(Ok(())) => String::from("{}"),
+        Ok(Err(e)) => rpc_error(&e),
+        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+    }
+}
+
+/// Method to instantiate a global bridge object which is required
 /// for RPC to work. The app calls this method on load.
-pub fn fedimint_initialize(data_dir: String, log_level: String, event_sink: Box<dyn EventSink>) {
-    RUNTIME.block_on(async {
-        // return if bridge already is initialized
-        if BRIDGE.lock().await.is_some() {
-            error!("bridge is already initialized");
-            return;
+pub async fn fedimint_initialize_inner(
+    data_dir: String,
+    log_level: String,
+    event_sink: Box<dyn EventSink>,
+) -> anyhow::Result<()> {
+    // return if bridge already is initialized
+    if BRIDGE.lock().await.is_some() {
+        bail!("bridge is already initialized");
+    }
+    let event_sink: Arc<dyn EventSink> = event_sink.into();
+    std::panic::set_hook(Box::new({
+        let event_sink = event_sink.clone();
+        move |info| {
+            rpc::panic_hook(info, &*event_sink);
         }
-        let event_sink: Arc<dyn EventSink> = event_sink.into();
-        let data_dir: PathBuf = data_dir.into();
-        if let Err(e) = logging::init_logging(&data_dir, event_sink.clone(), &log_level) {
-            error!("Failed to initialize logging: {:?}", e);
-            return;
-        }
-        let storage = match PathBasedStorage::new(data_dir).await {
-            Ok(storage) => Arc::new(storage),
-            Err(e) => {
-                error!("Failed to initialize storage {:?}", e);
-                return;
-            }
-        };
-        let bridge = match fedimint_initialize_async(storage, event_sink).await {
-            Ok(bridge) => bridge,
-            Err(e) => {
-                error!("Failed to initialize the bridge: {:?}", e);
-                return;
-            }
-        };
-        *BRIDGE.lock().await = Some(bridge);
-        info!("bridge initialized");
-    })
+    }));
+    let data_dir: PathBuf = data_dir.into();
+    logging::init_logging(&data_dir, event_sink.clone(), &log_level)
+        .context("Failed to initialize logging")?;
+    let storage = PathBasedStorage::new(data_dir)
+        .await
+        .context("Failed to initialize storage")?;
+    let bridge = fedimint_initialize_async(Arc::new(storage), event_sink)
+        .await
+        .context("Failed to initialize bridge")?;
+    *BRIDGE.lock().await = Some(bridge);
+    info!("bridge initialized");
+    Ok(())
 }
 
 /// Synchronous method to execute an RPC command
 pub fn fedimint_rpc(method: String, payload: String) -> String {
-    RUNTIME.block_on(async move {
-        let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
-            return r#"{"error": "bridge not initialzied"}"#.to_owned();
-        };
-        fedimint_rpc_async(bridge, method, payload).await
-    })
+    let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        RUNTIME.block_on(async move {
+            let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
+                return r#"{"error": "bridge not initialzied"}"#.to_owned();
+            };
+            fedimint_rpc_async(bridge, method, payload).await
+        })
+    }));
+    match value {
+        Ok(value) => value,
+        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+    }
 }
 
 /// Returns the names of events we send from Rust to React Native
@@ -79,6 +101,7 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
         String::from("federation"),
         String::from("transaction"),
         String::from("log"),
+        String::from("panic"),
     ]
 }
 

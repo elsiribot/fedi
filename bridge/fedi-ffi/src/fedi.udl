@@ -4,7 +4,7 @@ enum FedimintError {
 };
 
 namespace fedi {
-  void fedimint_initialize(string data_dir, string log_level, EventSink event_sink);
+  string fedimint_initialize(string data_dir, string log_level, EventSink event_sink);
 
   string fedimint_rpc(string method, string payload);
 

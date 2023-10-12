@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex as StdMutex};
 
+use fediffi::event::IEventSink;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::prelude::*;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -9,18 +10,10 @@ thread_local! {
     static LOG_BUFFER: Arc<StdMutex<Vec<u8>>> = Arc::new(StdMutex::new(Vec::new()));
 }
 
-fn set_panic_hook() {
-    std::panic::set_hook(Box::new(|p| {
-        let buffer = LOG_BUFFER.with(Arc::clone);
-        // the error case should never happen but still avoid a double panic => abort
-        // here
-        if let Ok(mut buffer) = buffer.lock() {
-            // Add the panic info to the buffer, so it shows in future get_info calls.
-            buffer.extend_from_slice(&p.to_string().into_bytes());
-            buffer.push(b'\n');
-        }
-
-        console_error_panic_hook::hook(p);
+fn set_panic_hook(event_sink: Arc<dyn IEventSink>) {
+    std::panic::set_hook(Box::new(move |info| {
+        fediffi::rpc::panic_hook(info, &*event_sink);
+        console_error_panic_hook::hook(info);
     }));
 }
 
@@ -42,8 +35,8 @@ impl<'a, T: 'a + Write> MakeWriter<'a> for MemMakeWriter<T> {
     }
 }
 
-pub fn init() {
-    set_panic_hook();
+pub fn init(event_sink: Arc<dyn IEventSink>) {
+    set_panic_hook(event_sink);
     let log_buffer_layer = tracing_subscriber::fmt::layer()
         .json()
         .with_writer(MemMakeWriter(LOG_BUFFER.with(Arc::clone)))

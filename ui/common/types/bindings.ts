@@ -19,14 +19,20 @@ export type ErrorCode =
     | 'invalidMnemonic'
     | 'socialRecoveryNotSupported'
     | 'nostrNotSupported'
+    | 'panic'
 
 export type Event =
     | { transaction: TransactionEvent }
     | { log: LogEvent }
     | { federation: RpcFederation }
+    | { panic: PanicEvent }
 
 export interface LogEvent {
     log: string
+}
+
+export interface PanicEvent {
+    message: string
 }
 
 export type RpcAmount = MSats

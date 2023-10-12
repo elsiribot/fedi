@@ -31,8 +31,9 @@ thread_local! {
 }
 
 #[wasm_bindgen]
-pub async fn fedimint_initialize(event_sink: EventSink) {
-    logging::init();
+pub async fn fedimint_initialize(event_sink: EventSink) -> String {
+    let event_sink = Arc::new(event_sink);
+    logging::init(event_sink.clone());
     if BRIDGE.with(|b| b.borrow().is_some()) {
         error!("bridge is already initialized");
         return;
@@ -44,8 +45,7 @@ pub async fn fedimint_initialize(event_sink: EventSink) {
             return;
         }
     };
-    let bridge = match fediffi::rpc::fedimint_initialize_async(storage, Arc::new(event_sink)).await
-    {
+    let bridge = match fediffi::rpc::fedimint_initialize_async(storage, event_sink).await {
         Ok(bridge) => bridge,
         Err(e) => {
             error!("Failed to initialize the bridge: {:?}", e);

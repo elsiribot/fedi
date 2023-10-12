@@ -31,6 +31,13 @@ pub struct SocialRecoveryEvent {
     pub remaining: usize,
 }
 
+#[derive(Serialize, Clone, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct PanicEvent {
+    pub message: String,
+}
+
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
@@ -38,6 +45,7 @@ pub enum Event {
     Transaction(TransactionEvent),
     Log(LogEvent),
     Federation(RpcFederation),
+    Panic(PanicEvent),
 }
 
 impl Event {
@@ -86,6 +94,10 @@ pub trait TypedEventExt: IEventSink {
             Event::Federation(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "federation".into(), body);
+            }
+            Event::Panic(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "panic".into(), body);
             }
         };
     }
