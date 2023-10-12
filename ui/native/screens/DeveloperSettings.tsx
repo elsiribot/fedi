@@ -10,7 +10,6 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 
 import {
@@ -57,6 +56,7 @@ import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
+import { shareLogs } from '../utils/share'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -118,12 +118,8 @@ const DeveloperSettings: React.FC<Props> = () => {
         setGateways(updatedGateways)
     }
 
-    const shareLogs = async () => {
-        await Share.open({
-            title: 'Fedi logs',
-            // FIXME: this needs file:// prefix ... should do this with a util?
-            url: `file://${RNFS.DocumentDirectoryPath}/fedi.log`,
-        })
+    const handleShareLogs = async () => {
+        await shareLogs()
     }
 
     const shareTxCsv = async () => {
@@ -166,11 +162,9 @@ const DeveloperSettings: React.FC<Props> = () => {
                 <Text
                     style={styles(theme).version}>{`Version ${version}`}</Text>
                 <Button
-                    title="Share logs"
+                    title={t('feature.developer.share-logs')}
                     containerStyle={styles(theme).buttonContainer}
-                    onPress={() => {
-                        shareLogs()
-                    }}
+                    onPress={handleShareLogs}
                 />
             </SettingsSection>
             <SettingsSection title={t('feature.fedimods.custom-fedimods')}>
