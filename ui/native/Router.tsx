@@ -60,6 +60,7 @@ import Header from './components/ui/Header'
 import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BroadcastAdminsList from './screens/BroadcastAdminsList'
+import CameraPermission from './screens/CameraPermission'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
@@ -697,6 +698,14 @@ const MainNavigator = () => {
                                 component={StabilityWithdrawInitiated}
                                 options={() => ({
                                     header: () => <WithdrawInitiatedHeader />,
+                                })}
+                            />
+                            {/* Permission screens */}
+                            <Stack.Screen
+                                name="CameraPermission"
+                                component={CameraPermission}
+                                options={() => ({
+                                    header: () => <Header backButton />,
                                 })}
                             />
                             {/* Developer-only */}
