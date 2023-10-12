@@ -79,6 +79,7 @@ export enum SupportedFeature {
     onchain_deposits_disabled = 'onchain_deposits_disabled',
     max_balance_msats = 'max_balance_msats',
     max_invoice_msats = 'max_invoice_msats',
+    nostr_enabled = 'nostr_enabled',
 }
 
 export interface ClientConfigMetadata {

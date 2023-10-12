@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { selectActiveFederation } from '../redux'
+import { selectActiveFederation, selectNostrEnabled } from '../redux'
 import { SupportedFeature } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
@@ -9,6 +9,7 @@ import {
     shouldShowInviteCode,
     getSupportedFeatures,
     shouldShowOnchainDeposits,
+    shouldEnableNostr,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -42,6 +43,14 @@ export function useIsOnchainDepositSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
     return shouldShowOnchainDeposits(activeFederation.meta)
+}
+
+export function useIsNostrEnabled() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    const isNostrEnabled = useCommonSelector(selectNostrEnabled)
+    if (isNostrEnabled) return true
+    if (!activeFederation) return false
+    return shouldEnableNostr(activeFederation)
 }
 
 export function usePopupFederationInfo() {

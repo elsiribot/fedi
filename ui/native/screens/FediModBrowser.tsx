@@ -11,11 +11,11 @@ import {
     UnsupportedMethodError,
 } from 'webln'
 
+import { useIsNostrEnabled } from '@fedi/common/hooks/federation'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectFediModDebugMode,
-    selectNostrEnabled,
 } from '@fedi/common/redux'
 import {
     Invoice,
@@ -56,7 +56,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
-    const nostrEnabled = useAppSelector(selectNostrEnabled)
+    const nostrEnabled = useIsNostrEnabled()
     const { toast } = useEnvironmentContext().state
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const overlayResolveRef = useRef<
