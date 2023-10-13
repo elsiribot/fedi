@@ -2,7 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 
 import { CommonState, selectActiveFederation } from '.'
 import { Federation, SupportedCurrency } from '../types'
-import { RpcStabilityPoolAccountInfo } from '../types/bindings'
+import { RpcAmount, RpcStabilityPoolAccountInfo } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 
 type FederationPayloadAction<T = object> = PayloadAction<
@@ -118,6 +118,28 @@ export const refreshStabilityPoolAccountInfo = createAsyncThunk<
             }),
         )
         return accountInfo
+    },
+)
+
+export const increaseStableBalance = createAsyncThunk<
+    Promise<boolean>,
+    { fedimint: FedimintBridge; amount: RpcAmount },
+    { state: CommonState }
+>(
+    'wallet/increaseStableBalance',
+    async ({ fedimint, amount }, { getState }) => {
+        try {
+            const state = getState()
+            const activeFederationId = selectActiveFederation(state)?.id
+            if (!activeFederationId) throw new Error('No active federation')
+            await fedimint.stabilityPoolDepositToSeek(
+                amount,
+                activeFederationId,
+            )
+            return true
+        } catch (error) {
+            return false
+        }
     },
 )
 

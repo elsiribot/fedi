@@ -6,7 +6,7 @@ import type {
     Transaction,
     bindings,
 } from '../types'
-import { RpcStabilityPoolAccountInfo } from '../types/bindings'
+import { RpcAmount, RpcStabilityPoolAccountInfo } from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/fedimint')
@@ -27,6 +27,13 @@ export class FedimintBridge {
     }
 
     /*** RPC METHODS ***/
+
+    async stabilityPoolDepositToSeek(amount: RpcAmount, federationId: string) {
+        return this.rpcTyped<'stabilityPoolDepositToSeek', null>(
+            'stabilityPoolDepositToSeek',
+            { amount, federationId },
+        )
+    }
 
     async stabilityPoolAccountInfo(federationId: string) {
         return this.rpcTyped<
