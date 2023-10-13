@@ -57,7 +57,14 @@ export function useAmountInput(
     const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
     const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
     const currency = useCommonSelector(selectCurrency)
-    const shouldDefaultToFiat = useShouldDefaultToFiat()
+    const federationMetadata = useCommonSelector(selectFederationMetadata)
+    const defaultAmountInputType = useCommonSelector(selectAmountInputType)
+
+    // If the user has changed amount input type before, default to that.
+    // Otherwise default to whether or not the federation dictates a currency type.
+    const shouldDefaultToFiat = defaultAmountInputType
+        ? defaultAmountInputType === 'fiat'
+        : !!getFederationDefaultCurrency(federationMetadata)
 
     const [isFiat, _setIsFiat] = useState<boolean>(shouldDefaultToFiat)
 
@@ -391,40 +398,21 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
 }
 
 /**
- * Determines whether or not the amount input should default to fiat or sats.
- */
-export function useShouldDefaultToFiat() {
-    const federationMetadata = useCommonSelector(selectFederationMetadata)
-    const defaultAmountInputType = useCommonSelector(selectAmountInputType)
-
-    // If the user has changed amount input type before, default to that.
-    // Otherwise default to whether or not the federation dictates a currency type.
-    return defaultAmountInputType
-        ? defaultAmountInputType === 'fiat'
-        : !!getFederationDefaultCurrency(federationMetadata)
-}
-
-/**
- * Provides a string displaying the balance as both fiat and sat, changing their
- * order based on which we think the user would prefer to denominate in.
+ * Provides a string displaying the balance as both fiat and sat.
  */
 export function useBalanceDisplay(t: TFunction) {
     const balance = useCommonSelector(selectFederationBalance)
     const currency = useCommonSelector(selectCurrency)
     const btcExchangeRate = useCommonSelector(selectBtcExchangeRate)
-    const isFiatPrimary = useShouldDefaultToFiat()
 
-    const satString = `${amountUtils.formatNumber(
-        amountUtils.msatToSat(balance),
-    )} ${t('words.sats').toUpperCase()}`
     const fiatString = `${amountUtils.formatFiat(
         amountUtils.msatToBtc(balance) * btcExchangeRate,
         currency,
         { noSymbol: true },
     )} ${currency}`
+    const satString = `${amountUtils.formatNumber(
+        amountUtils.msatToSat(balance),
+    )} ${t('words.sats').toUpperCase()}`
 
-    const primary = isFiatPrimary ? fiatString : satString
-    const secondary = isFiatPrimary ? satString : fiatString
-
-    return `${t('words.balance')}: ${primary} (${secondary})`
+    return `${t('words.balance')}: ${fiatString} (${satString})`
 }
