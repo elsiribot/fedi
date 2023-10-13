@@ -10,19 +10,16 @@ use common::{
     AccountInfo, CancelRenewal, IntendedAction, Provide, Seek, StabilityPoolCommonGen,
     StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
 };
-use fedimint_client::derivable_secret::DerivableSecret;
-use fedimint_client::module::init::ClientModuleInit;
+use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
+use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
 use fedimint_client::transaction::{
     ClientInput, ClientOutput, TransactionBuilder, TxSubmissionError,
 };
 use fedimint_client::{Client, DynGlobalClientContext};
-use fedimint_core::api::{DynGlobalApi, DynModuleApi, FederationApiExt, FederationError};
-use fedimint_core::config::FederationId;
+use fedimint_core::api::{FederationApiExt, FederationError};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
-use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ExtendsCommonModuleInit, ModuleCommon,
@@ -46,20 +43,13 @@ impl ExtendsCommonModuleInit for StabilityPoolClientGen {
 impl ClientModuleInit for StabilityPoolClientGen {
     type Module = StabilityPoolClientModule;
 
-    async fn init(
-        &self,
-        _federation_id: FederationId,
-        cfg: StabilityPoolClientConfig,
-        _db: Database,
-        _api_version: ApiVersion,
-        module_root_secret: DerivableSecret,
-        _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
-        _api: DynGlobalApi,
-        _module_api: DynModuleApi,
-    ) -> anyhow::Result<Self::Module> {
+    async fn init(&self, args: &ClientModuleInitArgs<Self>) -> anyhow::Result<Self::Module> {
         Ok(StabilityPoolClientModule {
-            _cfg: cfg,
-            key: module_root_secret.to_secp_key(&Secp256k1::new()),
+            _cfg: args.cfg().to_owned(),
+            key: args
+                .module_root_secret()
+                .to_owned()
+                .to_secp_key(&Secp256k1::new()),
         })
     }
 

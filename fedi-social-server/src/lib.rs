@@ -20,15 +20,15 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{Database, DatabaseVersion, ModuleDatabaseTransaction};
+use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     api_endpoint, ApiEndpoint, ApiError, ConsensusProposal, CoreConsensusVersion,
     ExtendsCommonModuleInit, InputMeta, ModuleCommon, ModuleConsensusVersion, ModuleError,
-    PeerHandle, ServerModuleInit, SupportedModuleApiVersions, TransactionItemAmount,
+    PeerHandle, ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions,
+    TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::task::TaskGroup;
 use fedimint_core::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
 use fedimint_server::config::distributedgen::{PeerHandleOps, ThresholdKeys};
 use futures::stream::StreamExt;
@@ -62,14 +62,9 @@ impl ServerModuleInit for FediSocialGen {
         SupportedModuleApiVersions::from_raw(1, 0, &[(0, 0)])
     }
 
-    async fn init(
-        &self,
-        cfg: ServerModuleConfig,
-        _db: Database,
-        _task_group: &mut TaskGroup,
-    ) -> anyhow::Result<DynServerModule> {
+    async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
         Ok(FediSocial {
-            cfg: cfg.to_typed()?,
+            cfg: args.cfg().to_typed()?,
         }
         .into())
     }

@@ -1,14 +1,9 @@
-use fedi_social_common::config::FediSocialClientConfig;
 pub use fedi_social_common::*;
-use fedimint_client::derivable_secret::DerivableSecret;
-use fedimint_client::module::init::ClientModuleInit;
+use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::ClientModule;
-use fedimint_client::sm::{DynState, ModuleNotifier, OperationId, State, StateTransition};
+use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
-use fedimint_core::api::{DynGlobalApi, DynModuleApi};
-use fedimint_core::config::FederationId;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
-use fedimint_core::db::Database;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
@@ -29,17 +24,7 @@ impl ClientModuleInit for FediSocialClientInit {
             .expect("no version conficts")
     }
 
-    async fn init(
-        &self,
-        _federation_id: FederationId,
-        _cfg: FediSocialClientConfig,
-        _db: Database,
-        _api_version: ApiVersion,
-        _module_root_secret: DerivableSecret,
-        _notifier: ModuleNotifier<DynGlobalClientContext, <Self::Module as ClientModule>::States>,
-        _api: DynGlobalApi,
-        _module_api: DynModuleApi,
-    ) -> anyhow::Result<Self::Module> {
+    async fn init(&self, _args: &ClientModuleInitArgs<Self>) -> anyhow::Result<Self::Module> {
         Ok(FediSocialClientModule {})
     }
 }
