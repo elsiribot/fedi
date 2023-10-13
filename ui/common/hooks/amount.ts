@@ -10,10 +10,12 @@ import {
     selectFederationBalance,
     selectAmountInputType,
     setAmountInputType,
+    selectActiveFederation,
 } from '../redux'
 import {
     Btc,
     Invoice,
+    MSats,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     Sats,
@@ -42,6 +44,41 @@ const numpadButtons = [
 ] as const
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
+
+/**
+ * Provides state for rendering a balance amount in fiat and sats.
+ */
+export function useBalance() {
+    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
+    const currency = useCommonSelector(selectCurrency)
+    const balance =
+        useCommonSelector(selectActiveFederation)?.balance || (0 as MSats)
+
+    const satsBalance = amountUtils.formatSats(amountUtils.msatToSat(balance))
+    const fiatBalance = amountUtils.formatFiat(
+        amountUtils.msatToFiat(balance, btcToFiatRate),
+        currency,
+        { noSymbol: true },
+    )
+    const fiatBalanceWithSymbol = amountUtils.formatFiat(
+        amountUtils.msatToFiat(balance, btcToFiatRate),
+        currency,
+    )
+
+    const currencySymbol = useMemo(
+        () => amountUtils.getCurrencySymbol(currency),
+        [currency],
+    )
+
+    return {
+        satsBalance,
+        satsBalanceWithSymbol: `${satsBalance} SATS`,
+        fiatBalance,
+        fiatBalanceWithSymbol,
+        currency,
+        currencySymbol,
+    }
+}
 
 /**
  * Provides state, callbacks, and misc information for rendering an amount
