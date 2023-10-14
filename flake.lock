@@ -614,19 +614,19 @@
         "nixpkgs-unstable": "nixpkgs-unstable_4"
       },
       "locked": {
-        "lastModified": 1697232528,
-        "narHash": "sha256-A7APnXmD55NfqXvY82X5Pzpf87ov/akeIFwIBwNMkv4=",
-        "ref": "shaurya947/rel-a06-r3",
-        "rev": "9ed84b8e9a5baf252bb560c24dd2cc673532d056",
-        "revCount": 5045,
+        "lastModified": 1697229632,
+        "narHash": "sha256-M4heNBRnyzuadMLLa+tHPLNKDmVm3KlAW1FLDVg6be0=",
+        "ref": "releases/v0.1",
+        "rev": "7ec251a6e5ab61fe90310d01bdcb32915029605c",
+        "revCount": 5038,
         "type": "git",
-        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
+        "url": "https://github.com/fedimint/fedimint.git"
       },
       "original": {
-        "ref": "shaurya947/rel-a06-r3",
-        "rev": "9ed84b8e9a5baf252bb560c24dd2cc673532d056",
+        "ref": "releases/v0.1",
+        "rev": "7ec251a6e5ab61fe90310d01bdcb32915029605c",
         "type": "git",
-        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
+        "url": "https://github.com/fedimint/fedimint.git"
       }
     },
     "fedimint-pkgs": {
@@ -670,19 +670,19 @@
         "nixpkgs-unstable": "nixpkgs-unstable_5"
       },
       "locked": {
-        "lastModified": 1697232528,
-        "narHash": "sha256-A7APnXmD55NfqXvY82X5Pzpf87ov/akeIFwIBwNMkv4=",
-        "ref": "shaurya947/rel-a06-r3",
-        "rev": "9ed84b8e9a5baf252bb560c24dd2cc673532d056",
-        "revCount": 5045,
+        "lastModified": 1697229632,
+        "narHash": "sha256-M4heNBRnyzuadMLLa+tHPLNKDmVm3KlAW1FLDVg6be0=",
+        "ref": "releases/v0.1",
+        "rev": "7ec251a6e5ab61fe90310d01bdcb32915029605c",
+        "revCount": 5038,
         "type": "git",
-        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
+        "url": "https://github.com/fedimint/fedimint.git"
       },
       "original": {
-        "ref": "shaurya947/rel-a06-r3",
-        "rev": "9ed84b8e9a5baf252bb560c24dd2cc673532d056",
+        "ref": "releases/v0.1",
+        "rev": "7ec251a6e5ab61fe90310d01bdcb32915029605c",
         "type": "git",
-        "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
+        "url": "https://github.com/fedimint/fedimint.git"
       }
     },
     "fenix": {
