@@ -27,8 +27,8 @@ pub fn override_localhost_invite_code(invite_code: &mut InviteCode) {
 }
 
 pub fn override_localhost_client_config(client_config: &mut ClientConfig) {
-    let endpoints = client_config.api_endpoints.clone();
-    client_config.api_endpoints = endpoints
+    let endpoints = client_config.global.api_endpoints.clone();
+    client_config.global.api_endpoints = endpoints
         .into_iter()
         .map(|(peer_id, mut peer_url)| {
             peer_url.url = override_localhost(&peer_url.url);

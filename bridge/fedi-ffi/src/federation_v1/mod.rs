@@ -926,6 +926,7 @@ impl FederationV1 {
             .client
             .get_config()
             .clone()
+            .global
             .api_endpoints
             .into_iter()
             .map(|(peer_id, endpoint)| (endpoint.name, peer_id))

@@ -29,15 +29,15 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{Database, DatabaseVersion, ModuleDatabaseTransaction};
+use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, ConsensusProposal, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta,
     IntoModuleError, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit,
-    SupportedModuleApiVersions, TransactionItemAmount,
+    ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::task::{MaybeSend, TaskGroup};
+use fedimint_core::task::MaybeSend;
 use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
@@ -72,13 +72,8 @@ impl ServerModuleInit for StabilityPoolGen {
         SupportedModuleApiVersions::from_raw(1, 0, &[(0, 0)])
     }
 
-    async fn init(
-        &self,
-        cfg: ServerModuleConfig,
-        _db: Database,
-        _task_group: &mut TaskGroup,
-    ) -> anyhow::Result<DynServerModule> {
-        Ok(StabilityPool::new(cfg.to_typed()?).into())
+    async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
+        Ok(StabilityPool::new(args.cfg().to_typed()?).into())
     }
 
     fn trusted_dealer_gen(

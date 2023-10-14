@@ -55,24 +55,24 @@ threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
 
 # NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
 # NOTE: To use local fedimint depenencies, comment out the "paths" section in .cargo/config.toml
-fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-cli = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-build = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-core = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-server = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-derive-secret = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-mint-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-wallet-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-ln-client = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-client-legacy = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-aead = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-bip39 = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-tbs = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-fedimint-logging = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-devimint = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
-ln-gateway = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", rev = "9a203166be7af0925a49a61a74a97ef94d2d8a46" }
+fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-cli = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-derive-secret = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-client-legacy = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-aead = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-bip39 = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+tbs = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+fedimint-logging = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+devimint = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
+ln-gateway = { git = "https://github.com/fedimint/fedimint", rev = "7ec251a6e5ab61fe90310d01bdcb32915029605c" }
 
 # Uncomment these to use local fedimint v1
 # fedimintd = { path = "../fedimint/fedimintd"}
