@@ -179,7 +179,6 @@ jobs:
             matrix:
                 host:
                     - linux
-                    - macos-x64
                     - macos-arm64
                 include:
                     - on: linux
@@ -187,12 +186,6 @@ jobs:
                       build-in-pr: true
                       timeout: 30
                       system: x86_64-linux
-                    - host: macos-x64
-                      runs-on: [self-hosted, macos, x64]
-                      os: macOS
-                      build-in-pr: true
-                      timeout: 45
-                      system: x86_64-darwin
                     - host: macos-arm64
                       runs-on: [self-hosted, macos, arm64]
                       os: macOS
