@@ -148,7 +148,6 @@
           ])
           (flakeboxLib.mkStdFenixToolchains {
             inherit androidSdk;
-            useMold = false;
           })
         );
         toolchain = flakeboxLib.mkFenixMultiToolchain {
