@@ -1440,6 +1440,28 @@ impl FederationV1 {
                                 })
                             }
                         },
+                        STABILITY_POOL_OPERATION_TYPE => match op.1.meta() {
+                            StabilityPoolMeta::Output { .. } => Some(RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
+                                amount: RpcAmount(Amount { msats: 0 }),
+                                direction: RpcTransactionDirection::Send,
+                                notes: "stability pool".to_string(),
+                                ln_state: None,
+                                lightning: None,
+                            }),
+                            StabilityPoolMeta::Input { .. } => Some(RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
+                                amount: RpcAmount(Amount { msats: 0 }),
+                                direction: RpcTransactionDirection::Send,
+                                notes: "stability pool".to_string(),
+                                ln_state: None,
+                                lightning: None,
+                            }),
+                        },
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintMeta = op.1.meta();
                             match mint_meta.variant {
