@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
 import { useRequestForm, useBalance } from '@fedi/common/hooks/amount'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
@@ -40,9 +39,8 @@ const StabilityDeposit: React.FC<Props> = () => {
         if (amount > maximumAmount || amount < minimumAmount) {
             return
         }
-        const amountToDeposit = amountUtils.satToMsat(amount)
         navigation.navigate('StabilityConfirmDeposit', {
-            amount: amountToDeposit,
+            amount,
         })
         Keyboard.dismiss()
     }

@@ -4,13 +4,15 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
     FederationPreview,
+    MSats,
     ParsedBolt11,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
+    Sats,
     Transaction,
 } from '@fedi/common/types'
 
-import { BtcLnUri, MSats, FediMod } from '.'
+import { BtcLnUri, FediMod } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
@@ -94,10 +96,10 @@ export type RootStackParamList = {
     Settings: undefined
     FediModBrowser: { fediMod: FediMod }
     Splash: undefined
-    StabilityConfirmDeposit: { amount: MSats }
+    StabilityConfirmDeposit: { amount: Sats }
     StabilityConfirmWithdraw: undefined
     StabilityDeposit: undefined
-    StabilityDepositInitiated: { amount: MSats }
+    StabilityDepositInitiated: { amount: Sats }
     StabilityHistory: undefined
     StabilityHome: undefined
     StabilityWithdraw: undefined
