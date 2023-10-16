@@ -228,6 +228,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                 </View>
             </SettingsSection>
             <SettingsSection title="Change your language">
+                {/* TODO: Change to iterating over array of languages */}
                 <CheckBox
                     title={
                         <Text style={styles(theme).checkboxText}>
@@ -256,6 +257,16 @@ const DeveloperSettings: React.FC<Props> = () => {
                     }
                     checked={selectedLanguage === 'fr'}
                     onPress={() => setSelectedLanguage('fr')}
+                    containerStyle={styles(theme).checkboxContainer}
+                />
+                <CheckBox
+                    title={
+                        <Text style={styles(theme).checkboxText}>
+                            {'Indonesian'}
+                        </Text>
+                    }
+                    checked={selectedLanguage === 'id'}
+                    onPress={() => setSelectedLanguage('id')}
                     containerStyle={styles(theme).checkboxContainer}
                 />
             </SettingsSection>

@@ -252,6 +252,9 @@
             "you-requested-payment": "You requested {{fiat}} ({{amount}} {{unit}}) {{memo}}",
             "you-sent-payment": "You sent {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
+        "developer": {
+            "export-transactions-csv": "Export transactions CSV"
+        },
         "federations": {
             "add-federation": "Add a Federation",
             "camera-access-information": "To join a Federation, you will need to allow Fedi access to your camera to scan the Federation invite code",
@@ -289,9 +292,9 @@
             "wants-to-pay-you": "{{fediMod}} wants to pay you"
         },
         "omni": {
+            "action-enter-ln-address": "Enter lightning address",
             "action-enter-username": "Enter Username",
             "action-enter-username-or-ln": "Enter Username / Lightning Address",
-            "action-enter-ln-address": "Enter lightning address",
             "action-paste": "Paste",
             "action-scan": "Scan QR",
             "action-upload": "Upload QR image",
@@ -304,9 +307,9 @@
             "confirm-website-url": "This is a website url, do you want to open this in your browser?",
             "search-no-history-header": "No history with user",
             "search-no-results": "No users match “{{query}}”",
+            "search-placeholder-ln-address": "Enter a lightning address",
             "search-placeholder-username": "Enter a username",
             "search-placeholder-username-or-ln": "Enter a username or lightning address",
-            "search-placeholder-ln-address": "Enter a lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
@@ -453,9 +456,6 @@
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
             "you-sent": "You sent"
-        },
-        "developer": {
-            "export-transactions-csv": "Export transactions CSV"
         }
     }
 }
