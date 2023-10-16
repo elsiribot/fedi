@@ -37,6 +37,7 @@ const themeDefaults = {
         ...fediTheme.sizes,
         adminProfileCircle: 90,
         walletCardHeight: 200,
+        detailItemHeight: 52,
         defaultHoloGradient: 32,
         holoGuidanceCircle: 180,
         holoCircleSize: 328,
@@ -161,6 +162,7 @@ const theme = createTheme({
                     : {}),
                 ...(props.small ? { fontSize: fediTheme.fontSizes.small } : {}),
                 ...(props.tiny ? { fontSize: fediTheme.fontSizes.tiny } : {}),
+                ...(props.color ? { color: props.color } : {}),
             },
             h1Style: {
                 fontSize: 32,
