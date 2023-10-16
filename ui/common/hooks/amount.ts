@@ -80,6 +80,34 @@ export function useBalance() {
     }
 }
 
+export const useBtcFiatPrice = () => {
+    const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
+
+    return {
+        convertSatsToFiat: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToFiat(sats, exchangeRate)
+            },
+            [exchangeRate],
+        ),
+        convertSatsToFiatString: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToFiatString(sats, exchangeRate)
+            },
+            [exchangeRate],
+        ),
+        convertSatsToFormattedFiat: useCallback(
+            (sats: Sats) => {
+                const amount = amountUtils.satToFiat(sats, exchangeRate)
+
+                return amountUtils.formatFiat(amount, selectedFiatCurrency)
+            },
+            [exchangeRate, selectedFiatCurrency],
+        ),
+    }
+}
+
 /**
  * Provides state, callbacks, and misc information for rendering an amount
  * input that allows entry in both fiat and sats.

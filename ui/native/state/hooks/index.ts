@@ -13,12 +13,8 @@ import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
     ensureHealthyXmppStream,
     selectActiveFederationId,
-    selectBtcExchangeRate,
     selectChatXmppClient,
-    selectCurrency,
 } from '@fedi/common/redux'
-import { SupportedCurrency } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
@@ -40,45 +36,6 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
         ref.current = value
     })
     return ref.current
-}
-
-export const useBtcFiatPrice = () => {
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const exchangeRate: number = useAppSelector(selectBtcExchangeRate)
-
-    return {
-        convertSatsToFiat: useCallback(
-            (sats: Sats) => {
-                return amountUtils.satToFiat(sats, exchangeRate)
-            },
-            [exchangeRate],
-        ),
-        convertSatsToFiatString: useCallback(
-            (sats: Sats) => {
-                return amountUtils.satToFiatString(sats, exchangeRate)
-            },
-            [exchangeRate],
-        ),
-        convertSatsToFormattedFiat: useCallback(
-            (sats: Sats) => {
-                const amount = amountUtils.satToFiatString(sats, exchangeRate)
-
-                let currencySymbol
-                switch (selectedFiatCurrency) {
-                    case SupportedCurrency.USD:
-                        currencySymbol = `$`
-                        break
-                    case SupportedCurrency.EUR:
-                        currencySymbol = `€`
-                        break
-                    default:
-                        currencySymbol = `${selectedFiatCurrency} `
-                }
-                return `${currencySymbol}${amount}`
-            },
-            [exchangeRate, selectedFiatCurrency],
-        ),
-    }
 }
 
 export const useBridge = () => {
