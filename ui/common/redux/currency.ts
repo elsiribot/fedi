@@ -115,6 +115,10 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     if (selectedFiatCurrency === SupportedCurrency.INR) {
         exchangeRate = usdPrice * 83
     }
+    // Special case for IDR which is a fixed 15700x the USD price
+    if (selectedFiatCurrency === SupportedCurrency.IDR) {
+        exchangeRate = usdPrice * 15700
+    }
 
     return exchangeRate
 }
