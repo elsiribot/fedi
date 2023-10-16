@@ -1,10 +1,14 @@
 use std::cell::RefCell;
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use anyhow::Context;
 use fediffi::bridge::Bridge;
+use fediffi::error::ErrorCode;
 use fediffi::event::IEventSink;
+use fediffi::rpc::rpc_error;
+use futures::FutureExt;
 use storage::WasmStorage;
-use tracing::error;
 use wasm_bindgen::prelude::*;
 
 mod db;
@@ -32,33 +36,47 @@ thread_local! {
 
 #[wasm_bindgen]
 pub async fn fedimint_initialize(event_sink: EventSink) -> String {
+    let value = AssertUnwindSafe(fedimint_initialize_inner(event_sink))
+        .catch_unwind()
+        .await;
+    match value {
+        Ok(Ok(())) => String::from("{}"),
+        Ok(Err(e)) => rpc_error(&e),
+        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+    }
+}
+
+pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<()> {
     let event_sink = Arc::new(event_sink);
     logging::init(event_sink.clone());
     if BRIDGE.with(|b| b.borrow().is_some()) {
-        error!("bridge is already initialized");
-        return;
+        anyhow::bail!("bridge is already initialized");
     }
-    let storage = match WasmStorage::new().await {
-        Ok(storage) => Arc::new(storage),
-        Err(e) => {
-            error!("Failed to initialize storage {:?}", e);
-            return;
-        }
-    };
-    let bridge = match fediffi::rpc::fedimint_initialize_async(storage, event_sink).await {
-        Ok(bridge) => bridge,
-        Err(e) => {
-            error!("Failed to initialize the bridge: {:?}", e);
-            return;
-        }
-    };
+    let storage = WasmStorage::new()
+        .await
+        .context("Failed to initialize storage")?;
+
+    let bridge = fediffi::rpc::fedimint_initialize_async(Arc::new(storage), event_sink.clone())
+        .await
+        .context("Failed to initialize the bridge")?;
+
     BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
+    Ok(())
 }
 
 #[wasm_bindgen]
 pub async fn fedimint_rpc(method: String, payload: String) -> String {
-    let bridge = BRIDGE
-        .with(|bridge| bridge.borrow().clone())
-        .expect("bridge not set"); // TODO: improve error
-    fediffi::rpc::fedimint_rpc_async(bridge, method, payload).await
+    let value = AssertUnwindSafe(async move {
+        let Some(bridge) = BRIDGE.with(|b| b.borrow().clone()) else {
+            return r#"{"error": "bridge not initialzied"}"#.to_owned();
+        };
+        fediffi::rpc::fedimint_rpc_async(bridge, method, payload).await
+    })
+    .catch_unwind()
+    .await;
+
+    match value {
+        Ok(value) => value,
+        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+    }
 }
