@@ -109,6 +109,8 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
         String::from("transaction"),
         String::from("log"),
         String::from("panic"),
+        String::from("stabilityPoolDeposit"),
+        String::from("stabilityPoolWithdraw"),
     ]
 }
 
