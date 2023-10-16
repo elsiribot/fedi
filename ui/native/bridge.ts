@@ -36,9 +36,10 @@ export async function initializeBridge(dataDir: string) {
     )
 
     const logLevel = 'info'
-    const err = await FedimintFfi.initialize(dataDir, logLevel)
-    if (err?.message) {
-        console.error('FedimintFfi.initialize', err)
-        throw new Error(err.message)
+    const result = await FedimintFfi.initialize(dataDir, logLevel)
+    const resultJson = JSON.parse(result)
+    if (resultJson.error !== undefined) {
+        console.error('FedimintFfi.initialize', resultJson.error)
+        throw new Error(resultJson.error)
     }
 }
