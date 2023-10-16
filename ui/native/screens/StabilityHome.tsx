@@ -24,8 +24,8 @@ const StabilityHome: React.FC<Props> = () => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
-    const stableCurrency = useAppSelector(selectStableCurrency)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
+    const selectedCurrency = useAppSelector(selectCurrency)
 
     const style = styles(theme)
 
@@ -52,7 +52,7 @@ const StabilityHome: React.FC<Props> = () => {
                             {makePendingBalanceText(
                                 t,
                                 stableBalancePending,
-                                stableCurrency,
+                                selectedCurrency,
                             )}
                         </Text>
                     )}

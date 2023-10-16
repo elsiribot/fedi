@@ -2,20 +2,20 @@ import { Text } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectStableCurrency } from '@fedi/common/redux'
+import { selectCurrency } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import Header from '../../ui/Header'
 
 const StabilityHistoryHeader: React.FC<{}> = () => {
     const { t } = useTranslation()
-    const stableCurrency = useAppSelector(selectStableCurrency)
+    const selectedCurrency = useAppSelector(selectCurrency)
 
     return (
         <Header
             backButton
             headerCenter={
-                <Text bold>{`${stableCurrency} ${t('words.history')}`}</Text>
+                <Text bold>{`${selectedCurrency} ${t('words.history')}`}</Text>
             }
         />
     )
