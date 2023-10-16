@@ -43,7 +43,8 @@ use futures::StreamExt;
 use lightning_invoice::Invoice;
 use stability_pool_client::common::AccountInfo;
 use stability_pool_client::{
-    StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolDepositState,
+    StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolDepositState, StabilityPoolMeta,
+    StabilityPoolWithdrawalState,
 };
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
@@ -568,13 +569,48 @@ impl FederationV1 {
             }
             STABILITY_POOL_OPERATION_TYPE => {
                 let fed = self.clone();
-                let _ = self
-                    .task_group
-                    .clone()
-                    .spawn("subscribe_stability_pool_deposit", move |_| async move {
-                        fed.subscribe_stability_pool_deposit(operation_id).await
-                    })
-                    .await;
+                match operation.meta::<StabilityPoolMeta>() {
+                    StabilityPoolMeta::Output {
+                        is_cancellation_operation: false,
+                        ..
+                    } => {
+                        self.task_group
+                            .clone()
+                            .spawn("subscribe_stability_pool_deposit", move |_| async move {
+                                fed.event_sink.typed_event(&Event::stability_pool_deposit(
+                                    fed.federation_id(),
+                                    match fed.subscribe_stability_pool_deposit(operation_id).await {
+                                        Ok(_) => StabilityPoolOperationState::Success,
+                                        Err(e) => {
+                                            StabilityPoolOperationState::Failure(e.to_string())
+                                        }
+                                    },
+                                ));
+                            })
+                            .await;
+                    }
+                    StabilityPoolMeta::Output {
+                        is_cancellation_operation: true,
+                        ..
+                    }
+                    | StabilityPoolMeta::Input { .. } => {
+                        self.task_group
+                            .clone()
+                            .spawn("subscribe_stability_pool_withdraw", move |_| async move {
+                                fed.event_sink.typed_event(&Event::stability_pool_withdraw(
+                                    fed.federation_id(),
+                                    match fed.subscribe_stability_pool_withdraw(operation_id).await
+                                    {
+                                        Ok(_) => StabilityPoolOperationState::Success,
+                                        Err(e) => {
+                                            StabilityPoolOperationState::Failure(e.to_string())
+                                        }
+                                    },
+                                ));
+                            })
+                            .await;
+                    }
+                }
             }
             // FIXME: should I return an error or just log something?
             _ => {
@@ -1630,50 +1666,105 @@ impl FederationV1 {
         self.task_group
             .clone()
             .spawn("subscribe_stability_pool_deposit", move |_| async move {
-                fed.subscribe_stability_pool_deposit(operation_id).await;
+                fed.event_sink.typed_event(&Event::stability_pool_deposit(
+                    fed.federation_id(),
+                    match fed.subscribe_stability_pool_deposit(operation_id).await {
+                        Ok(_) => StabilityPoolOperationState::Success,
+                        Err(e) => StabilityPoolOperationState::Failure(e.to_string()),
+                    },
+                ));
             })
             .await;
         Ok(())
     }
 
-    async fn subscribe_stability_pool_deposit(&self, operation_id: OperationId) {
+    async fn subscribe_stability_pool_deposit(&self, operation_id: OperationId) -> Result<()> {
         let Ok(updates) = self
             .client
             .subscribe_deposit_or_renewal_operation(operation_id)
             .await
         else {
-            self.event_sink.typed_event(&Event::stability_pool_deposit(
-                self.federation_id(),
-                StabilityPoolOperationState::Failure("Unable to subscribe".to_string()),
-            ));
-            return;
+            bail!("Unable to subscribe");
         };
 
         let mut updates = updates.into_stream();
 
         while let Some(update) = updates.next().await {
             match update {
-                StabilityPoolDepositState::TxRejected(_) => {
-                    self.event_sink.typed_event(&Event::stability_pool_deposit(
-                        self.federation_id(),
-                        StabilityPoolOperationState::Failure("Deposit TX rejected".to_string()),
-                    ));
-                    return;
+                StabilityPoolDepositState::TxRejected(e) => {
+                    bail!("TX rejected: {e}");
                 }
-                StabilityPoolDepositState::PrimaryOutputError(_) => {
-                    self.event_sink.typed_event(&Event::stability_pool_deposit(
-                        self.federation_id(),
-                        StabilityPoolOperationState::Failure("Change output error".to_string()),
-                    ));
-                    return;
+                StabilityPoolDepositState::PrimaryOutputError(e) => {
+                    bail!("Change output error: {e}");
                 }
                 _ => info!("Update: {:?}", update),
             }
         }
 
-        self.event_sink.typed_event(&Event::stability_pool_deposit(
-            self.federation_id(),
-            StabilityPoolOperationState::Success,
-        ))
+        Ok(())
+    }
+
+    /// Withdraw both unlocked and locked balances, by implicitly waiting for
+    /// cycle turnover for the locked balances to be freed up.
+    /// `unlocked_amount` is extracted from staged seeks (pending deposits).
+    /// `locked_bps` is extracted from locked seeks (completed deposits). The
+    /// overall operation only completes when both parts have completed.
+    /// Note that we can't delay withdrawing staged balance under the hood
+    /// as it may otherwise become locked. Instead we focus on the overall
+    /// operation lifecycle as far as UX is concerned.
+    pub async fn stability_pool_withdraw(
+        &self,
+        unlocked_amount: Amount,
+        locked_bps: u32,
+    ) -> Result<()> {
+        let (operation_id, _) = self.client.withdraw(unlocked_amount, locked_bps).await?;
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn("subscribe_stability_pool_withdraw", move |_| async move {
+                fed.event_sink.typed_event(&Event::stability_pool_withdraw(
+                    fed.federation_id(),
+                    match fed.subscribe_stability_pool_withdraw(operation_id).await {
+                        Ok(_) => StabilityPoolOperationState::Success,
+                        Err(e) => StabilityPoolOperationState::Failure(e.to_string()),
+                    },
+                ));
+            })
+            .await;
+        Ok(())
+    }
+
+    async fn subscribe_stability_pool_withdraw(
+        &self,
+        operation_id: OperationId,
+    ) -> anyhow::Result<()> {
+        let Ok(updates) = self.client.subscribe_withdraw(operation_id).await else {
+            bail!("Unable to subscribe");
+        };
+
+        let mut updates = updates.into_stream();
+
+        while let Some(update) = updates.next().await {
+            match update {
+                StabilityPoolWithdrawalState::TxRejected(e) => {
+                    bail!("TX rejected: {e}")
+                }
+                StabilityPoolWithdrawalState::PrimaryOutputError(e) => {
+                    bail!("Primary output error: {e}")
+                }
+                StabilityPoolWithdrawalState::CancellationSubmissionFailure(e) => {
+                    bail!("Cancellation submission failure: {e}")
+                }
+                StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e) => {
+                    bail!("Await cycle turnover error: {e}")
+                }
+                StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e) => {
+                    bail!("Withdraw idle submission failure: {e}")
+                }
+                _ => info!("Update: {:?}", update),
+            }
+        }
+
+        Ok(())
     }
 }

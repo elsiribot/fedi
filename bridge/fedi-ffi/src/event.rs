@@ -72,6 +72,7 @@ pub enum Event {
     Balance(BalanceEvent),
     Panic(PanicEvent),
     StabilityPoolDeposit(StabilityPoolEvent),
+    StabilityPoolWithdraw(StabilityPoolEvent),
 }
 
 impl Event {
@@ -104,6 +105,16 @@ impl Event {
         state: StabilityPoolOperationState,
     ) -> Self {
         Self::StabilityPoolDeposit(StabilityPoolEvent {
+            federation_id: RpcFederationId(federation_id),
+            state,
+        })
+    }
+
+    pub fn stability_pool_withdraw(
+        federation_id: fedimint_core::config::FederationId,
+        state: StabilityPoolOperationState,
+    ) -> Self {
+        Self::StabilityPoolWithdraw(StabilityPoolEvent {
             federation_id: RpcFederationId(federation_id),
             state,
         })
@@ -150,6 +161,10 @@ pub trait TypedEventExt: IEventSink {
             Event::StabilityPoolDeposit(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "stabilityPoolDeposit".into(), body);
+            }
+            Event::StabilityPoolWithdraw(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "stabilityPoolWithdraw".into(), body);
             }
         };
     }

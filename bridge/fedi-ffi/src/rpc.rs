@@ -401,6 +401,18 @@ async fn stabilityPoolDepositToSeek(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolWithdraw(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    unlocked_amount: RpcAmount,
+    locked_bps: u32,
+) -> anyhow::Result<()> {
+    bridge
+        .stability_pool_withdraw(federation_id, unlocked_amount, locked_bps)
+        .await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -497,6 +509,7 @@ rpc_methods!(RpcMethods {
     // Stability Pool
     stabilityPoolAccountInfo,
     stabilityPoolDepositToSeek,
+    stabilityPoolWithdraw
 });
 
 #[instrument(
@@ -536,7 +549,6 @@ mod tests {
 
     use super::*;
     use crate::bridge::MultiFederation;
-    use crate::constants::STABILITY_POOL_OPERATION_TYPE;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
 
@@ -1195,6 +1207,38 @@ mod tests {
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
+
+        // Withdraw and verify account info
+        let amount_to_withdraw = Amount::from_msats(amount_to_deposit.msats / 2);
+        bridge
+            .stability_pool_withdraw(
+                RpcFederationId(federation.federation_id()),
+                RpcAmount(amount_to_withdraw),
+                0, // nothing locked that can be withdrawn
+            )
+            .await?;
+        loop {
+            // Wait until deposit operation succeeds
+            if bridge
+                .event_sink
+                .num_events_of_type("stabilityPoolWithdraw".into())
+                != 0
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
+        let account_info = bridge
+            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(
+            account_info.staged_seeks[0].0.msats,
+            amount_to_deposit.msats / 2
+        );
         assert!(account_info.staged_cancellation.is_none());
         assert!(account_info.locked_seeks.is_empty());
         Ok(())

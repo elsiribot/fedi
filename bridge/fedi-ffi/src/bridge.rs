@@ -325,6 +325,20 @@ impl MultiFederation {
             MultiFederation::V1(v1) => v1.stability_pool_deposit_to_seek(amount).await,
         }
     }
+
+    pub async fn stability_pool_withdraw(
+        &self,
+        unlocked_amount: Amount,
+        locked_bps: u32,
+    ) -> Result<()> {
+        match self {
+            MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
+            MultiFederation::V1(v1) => {
+                v1.stability_pool_withdraw(unlocked_amount, locked_bps)
+                    .await
+            }
+        }
+    }
 }
 
 /// This is instantiated once as a global. When RPC commands come in, this
@@ -860,6 +874,18 @@ impl Bridge {
         self.get_multi(&federation_id.0)
             .await?
             .stability_pool_deposit_to_seek(amount.0)
+            .await
+    }
+
+    pub async fn stability_pool_withdraw(
+        &self,
+        federation_id: RpcFederationId,
+        unlocked_amount: RpcAmount,
+        locked_bps: u32,
+    ) -> Result<()> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_withdraw(unlocked_amount.0, locked_bps)
             .await
     }
 }

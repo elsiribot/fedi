@@ -238,6 +238,7 @@ pub enum StabilityPoolMeta {
     Output {
         outpoint: OutPoint,
         change_outpoint: Option<OutPoint>,
+        is_cancellation_operation: bool,
     },
     Input {
         outpoint: OutPoint,
@@ -369,6 +370,7 @@ impl StabilityPoolClientExt for Client {
             StabilityPoolMeta::Output {
                 outpoint,
                 change_outpoint,
+                ..
             } => (outpoint, change_outpoint),
             _ => bail!("Operation is not of type deposit/cancel-auto-renewal/undo-cancellation"),
         };
@@ -591,7 +593,7 @@ async fn submit_tx_with_intended_action(
     let output = ClientOutput {
         output: StabilityPoolOutput {
             account: stability_pool.key.x_only_public_key().0,
-            intended_action,
+            intended_action: intended_action.clone(),
         },
         state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachine>::new()),
     };
@@ -599,6 +601,10 @@ async fn submit_tx_with_intended_action(
     let output_meta_gen = |txid, change_outpoint| StabilityPoolMeta::Output {
         outpoint: OutPoint { txid, out_idx: 0 },
         change_outpoint,
+        is_cancellation_operation: match intended_action {
+            IntendedAction::CancelRenewal(_) => true,
+            _ => false,
+        },
     };
     let transaction_id = client
         .finalize_and_submit_transaction(
