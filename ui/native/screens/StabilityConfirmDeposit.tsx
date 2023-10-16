@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Avatar, Divider, Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
@@ -22,9 +21,8 @@ export type Props = NativeStackScreenProps<
     'StabilityConfirmDeposit'
 >
 
-const StabilityConfirmDeposit: React.FC<Props> = ({ route }) => {
+const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
-    const navigation = useNavigation()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const { amount } = route.params
@@ -50,7 +48,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route }) => {
                     amount: amountToDeposit,
                 }),
             ).unwrap()
-            navigation.navigate('StabilityDepositInitiated', {
+            navigation.replace('StabilityDepositInitiated', {
                 amount,
             })
         } catch (error) {

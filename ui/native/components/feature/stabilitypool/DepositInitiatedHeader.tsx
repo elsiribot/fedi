@@ -9,7 +9,6 @@ const DepositInitiatedHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            backButton
             headerCenter={
                 <Text bold>{t('feature.stabilitypool.deposit-intiated')}</Text>
             }
