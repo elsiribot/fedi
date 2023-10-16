@@ -1,6 +1,6 @@
-use core::time::Duration;
 use std::ffi;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail};
 use async_stream::stream;
@@ -275,6 +275,8 @@ impl State for StabilityPoolStateMachine {
 pub trait StabilityPoolClientExt {
     async fn account_info(&self) -> anyhow::Result<AccountInfo, FederationError>;
 
+    async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError>;
+
     async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId>;
 
     async fn deposit_to_provide(
@@ -335,6 +337,17 @@ impl StabilityPoolClientExt for Client {
             .request_current_consensus(
                 "account_info".to_string(),
                 ApiRequestErased::new(stability_pool.key.x_only_public_key().0),
+            )
+            .await
+    }
+
+    async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError> {
+        let (_, instance) = self.get_first_module::<StabilityPoolClientModule>(&common::KIND);
+        instance
+            .api
+            .request_current_consensus(
+                "next_cycle_start_time".to_string(),
+                ApiRequestErased::default(),
             )
             .await
     }
@@ -517,16 +530,27 @@ impl StabilityPoolClientExt for Client {
                         },
                     }
 
-                    let idle_balance = loop {
-                        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+                    let next_cycle_start_time = loop {
+                        match client.next_cycle_start_time().await {
+                            Ok(start_time_secs) => break start_time_secs,
+                            Err(_) => fedimint_core::task::sleep(Duration::from_secs(60)).await,
+                        }
+                    };
 
+                    match SystemTime::now().duration_since(UNIX_EPOCH) {
+                        Ok(curr_time) => fedimint_core::task::sleep(
+                            Duration::from_secs(next_cycle_start_time - curr_time.as_secs())
+                        ).await,
+                        Err(e) => {
+                            yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
+                            return
+                        },
+                    }
+
+                    let idle_balance = loop {
                         match client.account_info().await {
                             Ok(AccountInfo { idle_balance, .. }) if idle_balance > Amount::ZERO => break idle_balance,
-                            Err(e) => {
-                                yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
-                                return
-                            }
-                            _ => ()
+                            _ => fedimint_core::task::sleep(Duration::from_secs(60)).await
                         }
                     };
 
