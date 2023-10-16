@@ -1,5 +1,5 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
-import { ButtonProps, Theme, createTheme, lightColors } from '@rneui/themed'
+import { ButtonProps, createTheme, lightColors } from '@rneui/themed'
 import { Dimensions, ViewStyle } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 
@@ -19,7 +19,10 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
     if (
         props.type ||
         props.color ||
-        (props.buttonStyle as ViewStyle)?.backgroundColor
+        // buttonStyle could be an array... find the backgroundColor
+        (Array.isArray(props.buttonStyle)
+            ? (props.buttonStyle as ViewStyle[]).find(s => s.backgroundColor)
+            : (props.buttonStyle as ViewStyle)?.backgroundColor)
     ) {
         defaultBackground = false
     }
