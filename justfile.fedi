@@ -1,4 +1,9 @@
 
+# workaround: https://github.com/casey/just/issues/1669
+[private]
+default-fedi:
+  just default
+
 check-wasm:
   nix develop -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
