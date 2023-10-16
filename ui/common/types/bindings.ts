@@ -323,6 +323,14 @@ export interface RpcMethods {
         },
         string,
     ]
+    stabilityPoolWithdraw: [
+        {
+            federationId: RpcFederationId
+            unlockedAmount: RpcAmount
+            lockedBps: number
+        },
+        null,
+    ]
 }
 
 export type RpcOnchainDepositState =
