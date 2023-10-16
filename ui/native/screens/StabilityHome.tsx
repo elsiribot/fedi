@@ -7,14 +7,17 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
+import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import {
+    selectCurrency,
     selectStableBalance,
     selectStableBalancePending,
-    selectStableCurrency,
 } from '@fedi/common/redux'
+import { MSats } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makePendingBalanceText } from '@fedi/common/utils/stabilitypool'
 
-import { useAppSelector } from '../state/hooks'
+import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'StabilityHome'>
@@ -26,6 +29,19 @@ const StabilityHome: React.FC<Props> = () => {
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
     const selectedCurrency = useAppSelector(selectCurrency)
+
+    const stableBalanceSats = amountUtils.msatToSat(stableBalance as MSats)
+    const { convertSatsToFiat, convertSatsToFormattedFiat } = useBtcFiatPrice()
+    const formattedStableBalance = convertSatsToFormattedFiat(stableBalanceSats)
+
+    const stableBalancePendingSats = amountUtils.msatToSat(
+        stableBalancePending as MSats,
+    )
+    const formattedStableBalancePending = convertSatsToFiat(
+        stableBalancePendingSats,
+    )
+
+    useStabilityPool()
 
     const style = styles(theme)
 
@@ -45,13 +61,13 @@ const StabilityHome: React.FC<Props> = () => {
                 />
                 <View style={style.balanceTextContainer}>
                     <Text h1 h1Style={style.balanceText}>
-                        {`${stableBalance} ${stableCurrency}`}
+                        {`${formattedStableBalance}`}
                     </Text>
                     {stableBalancePending !== 0 && (
                         <Text small style={style.balancePendingText}>
                             {makePendingBalanceText(
                                 t,
-                                stableBalancePending,
+                                formattedStableBalancePending,
                                 selectedCurrency,
                             )}
                         </Text>
@@ -70,13 +86,14 @@ const StabilityHome: React.FC<Props> = () => {
                 />
                 <Button
                     containerStyle={[style.button]}
-                    disabled={stableBalance === 0}
                     onPress={() => navigation.navigate('StabilityWithdraw')}
                     title={
                         <Text medium caption style={style.buttonText}>
                             {t('words.withdraw')}
                         </Text>
                     }
+                    // TOOD: implement withdrawals
+                    disabled={stableBalance === 0 || true}
                 />
             </View>
         </View>

@@ -26,6 +26,7 @@ import {
     usePopupFederationInfo,
 } from '@fedi/common/hooks/federation'
 import {
+    refreshActiveStabilityPool,
     refreshFederations,
     selectActiveFederation,
     selectAllChatMessages,
@@ -95,6 +96,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     nextAppState === 'active'
                 ) {
                     dispatch(refreshFederations(fedimint))
+                    dispatch(refreshActiveStabilityPool({ fedimint }))
                 }
                 appStateRef.current = nextAppState
             },

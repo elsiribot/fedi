@@ -1,23 +1,27 @@
 import { useNavigation } from '@react-navigation/native'
 import { Avatar, Theme } from '@rneui/themed'
 import { Card, Text, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { selectStableBalance, selectStableCurrency } from '@fedi/common/redux'
+import { selectCurrency } from '@fedi/common/redux'
 
-import { useAppSelector } from '../../../state/hooks'
+import { useAppSelector, useStabilityPool } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage from '../../ui/SvgImage'
 
 const StabilityWallet: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const stableBalance = useAppSelector(selectStableBalance)
-    const stableCurrency = useAppSelector(selectStableCurrency)
+    const selectedCurrency = useAppSelector(selectCurrency)
+    const { formattedStableBalance, refreshBalance } = useStabilityPool()
+
+    // Make sure we have a fresh balance on initial render
+    useEffect(() => {
+        refreshBalance()
+    }, [refreshBalance])
 
     const style = styles(theme)
-
     return (
         <Pressable
             style={style.container}
@@ -29,15 +33,15 @@ const StabilityWallet: React.FC<{}> = () => {
                     <Avatar
                         size={theme.sizes.md}
                         rounded
-                        title={stableCurrency}
+                        title={selectedCurrency}
                         titleStyle={style.currencyAvatarTitle}
                         containerStyle={style.currencyAvatar}
                     />
                     <Text bold style={style.titleText}>
-                        {`${stableCurrency}`}
+                        {`${selectedCurrency}`}
                     </Text>
                     <Text medium style={style.balanceText}>
-                        {`${stableBalance} ${stableCurrency}`}
+                        {`${formattedStableBalance}`}
                     </Text>
                     <SvgImage
                         name="ChevronRight"

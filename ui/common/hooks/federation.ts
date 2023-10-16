@@ -37,6 +37,13 @@ export function useIsSocialRecoverySupported() {
     return shouldShowSocialRecovery(activeFederation)
 }
 
+export function useIsStabilityPoolSupported() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    // TODO: check client config
+    return true
+}
+
 export function useIsOfflineWalletSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false

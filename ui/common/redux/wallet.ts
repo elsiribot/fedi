@@ -1,8 +1,17 @@
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
+import {
+    createSlice,
+    PayloadAction,
+    createAsyncThunk,
+    createSelector,
+} from '@reduxjs/toolkit'
 
 import { CommonState, selectActiveFederation } from '.'
-import { Federation, SupportedCurrency } from '../types'
-import { RpcAmount, RpcStabilityPoolAccountInfo } from '../types/bindings'
+import { Federation } from '../types'
+import {
+    RpcAmount,
+    RpcLockedSeek,
+    RpcStabilityPoolAccountInfo,
+} from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 
 type FederationPayloadAction<T = object> = PayloadAction<
@@ -12,9 +21,6 @@ type FederationPayloadAction<T = object> = PayloadAction<
 /*** Initial State ***/
 
 const initialFederationWalletState = {
-    stableCurrency: SupportedCurrency.USD as SupportedCurrency,
-    stableBalance: 0 as number,
-    stableBalancePending: 0 as number,
     stabilityPoolAccountInfo: null as RpcStabilityPoolAccountInfo | null,
 }
 type FederationWalletState = typeof initialFederationWalletState
@@ -61,7 +67,7 @@ export const walletSlice = createSlice({
     },
     extraReducers: builder => {
         builder.addCase(
-            refreshStabilityPoolAccountInfo.fulfilled,
+            fetchStabilityPoolAccountInfo.fulfilled,
             (state, action) => {
                 const { federationId } = action.meta.arg
                 const federation = getFederationWalletState(state, federationId)
@@ -71,23 +77,6 @@ export const walletSlice = createSlice({
                 }
             },
         )
-
-        // builder.addCase(loadFromStorage.fulfilled, (state, action) => {
-        //     if (!action.payload) return
-        //     Object.entries(action.payload.wallet).forEach(
-        //         ([federationId, walletState]) => {
-        //             if (!walletState) return
-        //             const prevWalletState = getFederationWalletState(
-        //                 state,
-        //                 federationId,
-        //             )
-        //             state[federationId] = {
-        //                 ...prevWalletState,
-        //                 stableBalance: walletState.stableBalance,
-        //             }
-        //         },
-        //     )
-        // })
     },
 })
 
@@ -101,12 +90,12 @@ export const {
 
 /*** Async thunk actions ***/
 
-export const refreshStabilityPoolAccountInfo = createAsyncThunk<
+export const fetchStabilityPoolAccountInfo = createAsyncThunk<
     RpcStabilityPoolAccountInfo,
     { fedimint: FedimintBridge; federationId: string },
     { state: CommonState }
 >(
-    'wallet/refreshStabilityPoolAccountInfo',
+    'wallet/fetchStabilityPoolAccountInfo',
     async ({ fedimint, federationId }, { dispatch }) => {
         const accountInfo = await fedimint.stabilityPoolAccountInfo(
             federationId,
@@ -118,6 +107,26 @@ export const refreshStabilityPoolAccountInfo = createAsyncThunk<
             }),
         )
         return accountInfo
+    },
+)
+
+export const refreshActiveStabilityPool = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>(
+    'wallet/refreshActiveStabilityPool',
+    async ({ fedimint }, { dispatch, getState }) => {
+        const state = getState()
+        const federationId = state.federation.activeFederationId
+        if (!federationId) throw new Error('errors.unknown-error')
+
+        await dispatch(
+            fetchStabilityPoolAccountInfo({
+                fedimint,
+                federationId,
+            }),
+        ).unwrap()
     },
 )
 
@@ -146,13 +155,59 @@ export const increaseStableBalance = createAsyncThunk<
 /*** Selectors ***/
 
 const selectFederationWalletState = (s: CommonState) =>
-    getFederationWalletState(s.wallet, selectActiveFederation(s)?.id || '')
+    getFederationWalletState(s.wallet, s.federation.activeFederationId || '')
 
-export const selectStableBalance = (s: CommonState) =>
-    selectFederationWalletState(s).stableBalance
+export const selectStabilityPoolAccountInfo = (s: CommonState) =>
+    selectFederationWalletState(s).stabilityPoolAccountInfo
 
-export const selectStableCurrency = (s: CommonState) =>
-    selectFederationWalletState(s).stableCurrency
+export const selectStableBalance = createSelector(
+    selectStabilityPoolAccountInfo,
+    stabilityPoolAccountInfo => {
+        if (!stabilityPoolAccountInfo) return 0
 
-export const selectStableBalancePending = (s: CommonState) =>
-    selectFederationWalletState(s).stableBalancePending
+        let stableBalance = 0
+        const { lockedSeeks, stagedCancellation } = stabilityPoolAccountInfo
+
+        stableBalance = lockedSeeks.reduce(
+            (result: number, ls: RpcLockedSeek) => {
+                const { initialAmount, withdrawnAmount, feesPaidSoFar } = ls
+                // withdrawnAmount should never be higher than initialAmount?
+                if (initialAmount - withdrawnAmount > 0) {
+                    result += initialAmount - withdrawnAmount - feesPaidSoFar
+                }
+                return result
+            },
+            0,
+        )
+
+        if (stagedCancellation) stableBalance -= stagedCancellation
+
+        return stableBalance
+    },
+)
+
+export const selectStableBalancePending = createSelector(
+    selectStabilityPoolAccountInfo,
+    stabilityPoolAccountInfo => {
+        if (!stabilityPoolAccountInfo) return 0
+
+        let stableBalancePending = 0
+        const { stagedSeeks } = stabilityPoolAccountInfo
+
+        stableBalancePending = stagedSeeks.reduce(
+            (result: number, ss: RpcAmount) => result + ss,
+            0,
+        )
+
+        return stableBalancePending
+    },
+)
+
+export const selectStabilityTransactionHistory = createSelector(
+    selectStabilityPoolAccountInfo,
+    stabilityPoolAccountInfo => {
+        if (!stabilityPoolAccountInfo) return []
+
+        return []
+    },
+)

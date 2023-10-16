@@ -1,4 +1,5 @@
 import messaging from '@react-native-firebase/messaging'
+import { useNavigation } from '@react-navigation/native'
 import {
     MutableRefObject,
     useCallback,
@@ -9,15 +10,20 @@ import {
 import { AppStateStatus, AppState as RNAppState } from 'react-native'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
+import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
     ensureHealthyXmppStream,
     selectActiveFederationId,
+    refreshActiveStabilityPool,
     selectChatXmppClient,
+    selectStableBalance,
 } from '@fedi/common/redux'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
+import { NavigationHook } from '../../types/navigation'
 import type { AppDispatch, AppState } from '../store'
 
 /**
@@ -250,4 +256,41 @@ export const useXmppPushNotifications = async () => {
         return () => messaging().getToken()
     }, [])
     usePublishNotificationToken(getDeviceToken)
+}
+
+// This hook provides a stability pool function
+// to makes sure to regularly refresh the account balance
+export const useStabilityPool = () => {
+    const dispatch = useAppDispatch()
+    const navigation = useNavigation<NavigationHook>()
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
+    const stableBalance = useAppSelector(selectStableBalance)
+
+    const refreshBalance = useCallback(() => {
+        dispatch(
+            refreshActiveStabilityPool({
+                fedimint,
+            }),
+        )
+    }, [dispatch])
+
+    // Refreshes the active stability pool when the navigator
+    // finishes transitioning onto the current screen
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('transitionEnd', e => {
+            if (!e.data.closing) {
+                refreshBalance()
+            }
+        })
+
+        return unsubscribe
+    }, [refreshBalance, navigation])
+
+    const satsValue = amountUtils.msatToSat(stableBalance as MSats)
+    const formattedStableBalance = convertSatsToFormattedFiat(satsValue)
+
+    return {
+        refreshBalance,
+        formattedStableBalance,
+    }
 }
