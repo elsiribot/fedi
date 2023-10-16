@@ -36,6 +36,7 @@ export type Event =
     | { balance: BalanceEvent }
     | { panic: PanicEvent }
     | { stabilityPoolDeposit: StabilityPoolEvent }
+    | { stabilityPoolWithdraw: StabilityPoolEvent }
 
 export interface LogEvent {
     log: string
@@ -312,6 +313,14 @@ export interface RpcMethods {
     ]
     stabilityPoolDepositToSeek: [
         { federationId: RpcFederationId; amount: RpcAmount },
+        null,
+    ]
+    stabilityPoolWithdraw: [
+        {
+            federationId: RpcFederationId
+            unlockedAmount: RpcAmount
+            lockedBps: number
+        },
         null,
     ]
 }
