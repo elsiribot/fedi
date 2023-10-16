@@ -73,6 +73,7 @@ export interface RpcFederation {
     socialRecoveryActive: boolean
     nodes: Record<string, { url: string; name: string }>
     version: number
+    clientConfig: RpcJsonClientConfig | null
 }
 
 export interface RpcGenerateEcashResponse {
@@ -86,6 +87,11 @@ export interface RpcInvoice {
     fee: RpcAmount
     description: string
     invoice: string
+}
+
+export interface RpcJsonClientConfig {
+    global: unknown
+    modules: Record<string, unknown>
 }
 
 export interface RpcLightningDetails {
@@ -151,6 +157,7 @@ export interface RpcMethods {
             socialRecoveryActive: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
+            clientConfig: RpcJsonClientConfig | null
         },
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]
@@ -166,6 +173,7 @@ export interface RpcMethods {
             socialRecoveryActive: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
+            clientConfig: RpcJsonClientConfig | null
         }>,
     ]
     generateInvoice: [

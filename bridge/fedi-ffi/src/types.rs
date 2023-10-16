@@ -4,7 +4,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
 use bitcoin::Network;
-use fedimint_core::config::PeerUrl;
+use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::receive::LightningReceiveError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
@@ -38,6 +38,17 @@ pub struct RpcFederation {
     #[ts(type = "Record<string, {url: string, name: string}>")]
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
     pub version: u32,
+    pub client_config: Option<RpcJsonClientConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcJsonClientConfig {
+    #[ts(type = "unknown")]
+    global: GlobalClientConfig,
+    #[ts(type = "Record<string, unknown>")]
+    modules: BTreeMap<u16, JsonWithKind>,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, TS)]
@@ -70,6 +81,7 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
         nodes,
         social_recovery_active,
         version: 0,
+        client_config: None,
     }
 }
 
@@ -89,6 +101,7 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
         .collect();
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    let client_config_json = federation.client.get_config_json();
     RpcFederation {
         balance,
         id,
@@ -99,6 +112,10 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         nodes,
         social_recovery_active,
         version: 1,
+        client_config: Some(RpcJsonClientConfig {
+            global: client_config_json.global,
+            modules: client_config_json.modules,
+        }),
     }
 }
 
