@@ -16,8 +16,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=a837aa4a2c9587313890ae2d0d4799dccb009c2f";
-      # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
+      url = "github:rustshop/flakebox?rev=0c5dd9ee8398b344a3afe34fc24455bc768210b8";
     };
 
     fs-dir-cache = {
@@ -123,11 +122,9 @@
           config = {
             # we have our own weird CI workflows
             github.ci.enable = false;
-            just.rules = {
-              custom = {
-                content = ./justfile.fedi;
-              };
-            };
+            just.includePaths = [
+              "justfile.fedi"
+            ];
             typos.pre-commit.enable = false;
             git.pre-commit.trailing_newline = false;
           };
