@@ -107,9 +107,14 @@ const AmountInput: React.FC<Props> = ({
                             verb:
                                 verb?.toLowerCase() ||
                                 t('words.send').toLowerCase(),
-                            amount: `${amountUtils.formatSats(
-                                validation.amount,
-                            )} ${t('words.sats')}`,
+                            amount: lockToFiat
+                                ? amountUtils.formatFiat(
+                                      validation.fiatValue,
+                                      currency,
+                                  )
+                                : `${amountUtils.formatSats(
+                                      validation.amount,
+                                  )} ${t('words.sats')}`,
                         }}
                         components={{
                             suggestion: (

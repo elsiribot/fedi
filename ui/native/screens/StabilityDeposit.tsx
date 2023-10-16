@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
-import { useRequestForm, useBalance } from '@fedi/common/hooks/amount'
+import { useBalance, useSendForm } from '@fedi/common/hooks/amount'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
@@ -26,7 +26,7 @@ const StabilityDeposit: React.FC<Props> = () => {
         setInputAmount: setAmount,
         minimumAmount,
         maximumAmount,
-    } = useRequestForm({})
+    } = useSendForm({})
     const { fiatBalanceWithSymbol } = useBalance()
     const [submitAttempts, setSubmitAttempts] = useState(0)
 

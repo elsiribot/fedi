@@ -10,7 +10,6 @@ import {
     selectFederationBalance,
     selectAmountInputType,
     setAmountInputType,
-    selectActiveFederation,
     selectUsdExchangeRate,
 } from '../redux'
 import {
@@ -53,8 +52,7 @@ export type NumpadButtonValue = (typeof numpadButtons)[number]
 export function useBalance() {
     const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
     const currency = useCommonSelector(selectCurrency)
-    const balance =
-        useCommonSelector(selectActiveFederation)?.balance || (0 as MSats)
+    const balance = useCommonSelector(selectFederationBalance) as MSats
 
     const satsBalance = amountUtils.formatSats(amountUtils.msatToSat(balance))
     const fiatBalance = amountUtils.formatFiat(
@@ -243,6 +241,10 @@ export function useAmountInput(
             return {
                 i18nKey: 'errors.invalid-amount-max',
                 amount: maximumAmount,
+                fiatValue: amountUtils.satToFiat(
+                    maximumAmount,
+                    btcToFiatRateRef.current,
+                ),
                 onlyShowOnSubmit: false,
             } as const
         }
@@ -250,10 +252,14 @@ export function useAmountInput(
             return {
                 i18nKey: 'errors.invalid-amount-min',
                 amount: minimumAmount,
+                fiatValue: amountUtils.satToFiat(
+                    minimumAmount,
+                    btcToFiatRateRef.current,
+                ),
                 onlyShowOnSubmit: true,
             } as const
         }
-    }, [amount, minimumAmount, maximumAmount])
+    }, [amount, btcToFiatRateRef, minimumAmount, maximumAmount])
 
     return {
         isFiat,
