@@ -11,6 +11,7 @@ import {
     selectAmountInputType,
     setAmountInputType,
     selectActiveFederation,
+    selectUsdExchangeRate,
 } from '../redux'
 import {
     Btc,
@@ -19,6 +20,7 @@ import {
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     Sats,
+    SupportedCurrency,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
@@ -83,6 +85,7 @@ export function useBalance() {
 export const useBtcFiatPrice = () => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
+    const usdExchangeRate: number = useCommonSelector(selectUsdExchangeRate)
 
     return {
         convertSatsToFiat: useCallback(
@@ -104,6 +107,14 @@ export const useBtcFiatPrice = () => {
                 return amountUtils.formatFiat(amount, selectedFiatCurrency)
             },
             [exchangeRate, selectedFiatCurrency],
+        ),
+        convertSatsToFormattedUsd: useCallback(
+            (sats: Sats) => {
+                const amount = amountUtils.satToFiat(sats, usdExchangeRate)
+
+                return amountUtils.formatFiat(amount, SupportedCurrency.USD)
+            },
+            [usdExchangeRate],
         ),
     }
 }

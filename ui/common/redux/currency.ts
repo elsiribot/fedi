@@ -78,6 +78,10 @@ export const selectCurrency = (s: CommonState) => {
     return SupportedCurrency.USD
 }
 
+export const selectUsdExchangeRate = (s: CommonState) => {
+    return s.currency.prices[SupportedCurrency.USD] || 0
+}
+
 export const selectBtcExchangeRate = (s: CommonState) => {
     const selectedFiatCurrency = selectCurrency(s)
     const metadata = selectFederationMetadata(s)
