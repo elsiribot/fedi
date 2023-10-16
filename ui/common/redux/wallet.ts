@@ -14,7 +14,7 @@ type FederationPayloadAction<T = object> = PayloadAction<
 const initialFederationWalletState = {
     stableCurrency: SupportedCurrency.USD as SupportedCurrency,
     stableBalance: 0 as number,
-    stableBalancePending: -50 as number,
+    stableBalancePending: 0 as number,
     stabilityPoolAccountInfo: null as RpcStabilityPoolAccountInfo | null,
 }
 type FederationWalletState = typeof initialFederationWalletState

@@ -70,6 +70,7 @@ const StabilityHome: React.FC<Props> = () => {
                 />
                 <Button
                     containerStyle={[style.button]}
+                    disabled={stableBalance === 0}
                     onPress={() => navigation.navigate('StabilityWithdraw')}
                     title={
                         <Text medium caption style={style.buttonText}>
