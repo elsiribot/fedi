@@ -1,5 +1,6 @@
 {
   inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
@@ -16,8 +17,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=a837aa4a2c9587313890ae2d0d4799dccb009c2f";
-      # inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
+      url = "github:rustshop/flakebox?rev=0652369242476cdd798a1eda8578e6030ad84a3c";
     };
 
     fs-dir-cache = {
@@ -30,10 +30,9 @@
     };
   };
 
-  outputs = { self, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, fs-dir-cache, android-nixpkgs, fedi-v0, flakebox }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, fs-dir-cache, android-nixpkgs, fedi-v0, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        nixpkgs = fedimint-build.inputs.nixpkgs;
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
         };
@@ -123,11 +122,9 @@
           config = {
             # we have our own weird CI workflows
             github.ci.enable = false;
-            just.rules = {
-              custom = {
-                content = ./justfile.fedi;
-              };
-            };
+            just.includePaths = [
+              "justfile.fedi"
+            ];
             typos.pre-commit.enable = false;
             git.pre-commit.trailing_newline = false;
           };
@@ -155,7 +152,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
         };
 
         fmLib = fedimint-build.lib.${system};
@@ -191,7 +188,7 @@
           '';
         };
 
-        crossDevShell = flakeboxLib.mkDevShell (craneMultiBuild.commonEnvsShell // {
+        crossDevShell = flakeboxLib.mkDevShell (craneMultiBuild.commonEnvsShell // craneMultiBuild.commonEnvsShellRocksdbLink // {
           inherit toolchain;
           nativeBuildInputs =
             [
@@ -231,6 +228,11 @@
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
             alias emulator="emulator -avd phone"
+
+            # hijack cargo for our evil purposes
+            export CARGO_ORIG_BIN="$(${pkgs.which}/bin/which cargo)"
+            git_root="$(git rev-parse --show-toplevel)"
+            export PATH="''${git_root}/nix/cargo-wrapper/:$PATH"
           '';
         });
       in

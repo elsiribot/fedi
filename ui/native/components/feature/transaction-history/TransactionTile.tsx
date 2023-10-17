@@ -18,6 +18,23 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
+    const renderStatus = () => {
+        if (txn.direction === TransactionDirection.send) {
+            return t('words.sent')
+        }
+        // lnState types are not clean yet but make sure to at least
+        // show pending for unpaid, newly generated LN invoices
+        if (!txn.lnState) return `${t('phrases.receive-pending')}`
+        switch (txn.lnState.type) {
+            case 'waitingForPayment':
+                return t('words.pending')
+            case 'claimed':
+                return t('words.received')
+            default:
+                return t('words.received')
+        }
+    }
+
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
@@ -36,13 +53,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 />
             </View>
             <View style={styles(theme).centerContainer}>
-                <Text>
-                    {`${
-                        txn.direction === TransactionDirection.send
-                            ? t('words.sent')
-                            : t('words.received')
-                    }`}
-                </Text>
+                <Text>{renderStatus()}</Text>
                 <Text small numberOfLines={1}>
                     {txn.notes}
                 </Text>

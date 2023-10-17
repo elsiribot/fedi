@@ -156,12 +156,12 @@ export const AmountInput: React.FC<Props> = ({
         onClick: useCallback(
             (ev: React.MouseEvent) => {
                 if (readOnly) return
-                setIsFiat(is => !is)
+                setIsFiat(!isFiat)
                 if (!isSmall) {
                     ev.currentTarget.querySelector('input')?.focus()
                 }
             },
-            [readOnly, setIsFiat, isSmall],
+            [readOnly, setIsFiat, isSmall, isFiat],
         ),
     }
     const inactiveInputProps = {

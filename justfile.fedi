@@ -1,4 +1,9 @@
 
+# workaround: https://github.com/casey/just/issues/1669
+[private]
+default-fedi:
+  just default
+
 check-wasm:
   nix develop -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
@@ -45,13 +50,26 @@ build-ui-deps:
 build-production-apk:
   nix develop --command ./scripts/ui/build-production-apk.sh
 
-# generates a signed xcode release archive and uploads to testflight
-deploy-to-testflight:
-  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
+# Builds an APK for a variant of the android app (Fedi Nightly) meant for
+# nightly dev builds
+build-nightly-apk:
+  ./scripts/ui/build-nightly-apk.sh
 
 # generates a standard production release AAB for @fedi/native and uploads it to the Google Play Internal Testing track
 deploy-to-google-play:
   nix develop --command ./scripts/ui/deploy-to-google-play.sh
+
+# generates an iOS application archive
+build-production-ipa:
+  nix develop .#xcode --command ./scripts/ui/build-production-ipa.sh
+
+# generates an iOS application archive (Fedi Nightly)
+build-nightly-ipa:
+  nix develop .#xcode --command ./scripts/ui/build-nightly-ipa.sh
+
+# generates a signed xcode release archive and uploads to testflight
+deploy-to-testflight:
+  nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
 
 # bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
@@ -68,8 +86,3 @@ run-dev-ui mode="default":
 # installs the xcodes tool and installs a version of Xcode.app
 install-xcode:
   ./scripts/install-xcode.sh
-
-# Builds an APK for a variant of the android app (Fedi Nightly) meant for
-# nightly dev builds
-build-nightly-apk:
-  ./scripts/ui/build-nightly-apk.sh

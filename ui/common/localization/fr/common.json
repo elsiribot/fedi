@@ -23,6 +23,7 @@
         "fedimint": "Fedimint",
         "fedimods": "FediMods",
         "fee": "Frais",
+        "from": "Depuis",
         "general": "Général",
         "group": "Groupe",
         "home": "Accueil",
@@ -56,6 +57,7 @@
         "retry": "Recommencez",
         "sats": "sats",
         "save": "Sauvegarder",
+        "scan": "Analyse",
         "send": "Envoyer",
         "sent": "Envoyé",
         "settings": "Paramètres",
@@ -250,6 +252,9 @@
             "you-requested-payment": "Vous avez demandé {{fiat}} ({{amount}} {{unit}}) {{memo}}",
             "you-sent-payment": "Vous avez envoyé {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
+        "developer": {
+            "export-transactions-csv": "Exporter les transactions CSV"
+        },
         "federations": {
             "add-federation": "Ajouter une Fédération",
             "camera-access-information": "Pour rejoindre une Fédération, vous devez autoriser Fedi à accéder à votre caméra pour scanner le code d'invitation de la Fédération",
@@ -287,6 +292,7 @@
             "wants-to-pay-you": "{{fedimod}} souhaite vous payer"
         },
         "omni": {
+            "action-enter-ln-address": "Entrez l'adresse Lightning",
             "action-enter-username": "Saisissez votre nom d'utilisateur",
             "action-enter-username-or-ln": "Entrez le nom d'utilisateur / l'adresse Lightning",
             "action-paste": "Coller depuis le presse-papiers",
@@ -301,6 +307,7 @@
             "confirm-website-url": "Il s'agit d'une URL de site Web, voulez-vous l'ouvrir dans votre navigateur ?",
             "search-no-history-header": "Aucun historique avec l'utilisateur",
             "search-no-results": "Aucun utilisateur ne correspond à \"{{query}}\"",
+            "search-placeholder-ln-address": "Entrez une adresse Lightning",
             "search-placeholder-username": "Entrez un nom d'utilisateur",
             "search-placeholder-username-or-ln": "Entrez un nom d'utilisateur ou une adresse Lightning",
             "unsupported-bolt12": "Les offres BOLT 12 ne sont pas encore prises en charge. Désolé!",
@@ -326,6 +333,7 @@
             "i-do-not-accept": "je n'accepte pas",
             "join-new-member": "Rejoindre en tant que nouveau membre",
             "join-returning-member": "Je suis un membre de retour",
+            "new-users-disabled-notice": "Désolé, cette fédération n'accepte pas de nouveaux utilisateurs",
             "nice-to-meet-you": "Ravi de vous rencontrer, {{username}}",
             "simple-and-private": "Simple et privé",
             "terms-and-conditions": "Conditions & Conditions",
@@ -342,8 +350,8 @@
         },
         "popup": {
             "ended": "Terminé",
-            "ended-description": "Cette fédération pop-up <bold>s'est terminée {{date}}</bold>.",
-            "ending-description": "Cette fédération contextuelle <bold>se terminera {{date}}</bold>. Tous les soldes restants dans la fédération après le {{date}} seront inaccessibles.",
+            "ended-description": "Cette fédération temporaire a <bold>terminé {{date}}</bold>.",
+            "ending-description": "Cette fédération temporaire <bold>prendra fin {{date}}</bold>. Les fonds restants seront gérés à la discrétion des tuteurs.",
             "ending-in": "Se terminant par <bold>{{time}}</bold>"
         },
         "receive": {
@@ -361,6 +369,7 @@
             "receive-bitcoin-offline": "Recevoir des bitcoins hors ligne",
             "request-bitcoin": "Demander des bitcoins",
             "request-sats": "Demander {{amount}} SATS",
+            "request-via-lightning": "Demande via Lightning",
             "withdraw-from-domain": "Se retirer de {{domain}}",
             "you-received": "Vous avez reçu"
         },
@@ -442,6 +451,7 @@
             "scan-qr-code": "Scan a Lightning QR Code",
             "send-bitcoin": "Send bitcoin",
             "send-bitcoin-offline": "Send bitcoin offline",
+            "send-offline": "Envoyer hors ligne",
             "send-sats": "Envoyer {{amount}} SATS",
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",

@@ -10,7 +10,7 @@ on:
 jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
-        runs-on: [self-hosted, macos, x64]
+        runs-on: [self-hosted, macos, arm64]
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3

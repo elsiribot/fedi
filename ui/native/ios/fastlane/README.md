@@ -31,13 +31,21 @@ Push a new beta build to TestFlight from CI
 
 Push a new beta build to TestFlight
 
-### ios build_release
+### ios build
 
 ```sh
-[bundle exec] fastlane ios build_release
+[bundle exec] fastlane ios build
 ```
 
 Create a release build
+
+### ios build_nightly
+
+```sh
+[bundle exec] fastlane ios build_nightly
+```
+
+Create a release build (Fedi Nightly)
 
 ### ios beta_nightly_ci
 

@@ -54,6 +54,23 @@ const TransactionDetail = ({
 
     const txnFee = txn.bitcoin?.fee || txn.lightning?.fee || null
 
+    const renderStatus = () => {
+        if (txn.direction === TransactionDirection.send) {
+            return t('feature.send.you-sent')
+        }
+        // lnState types are not clean yet but make sure to at least
+        // show pending for unpaid, newly generated LN invoices
+        if (!txn.lnState) return `${t('phrases.receive-pending')}`
+        switch (txn.lnState.type) {
+            case 'waitingForPayment':
+                return t('words.pending')
+            case 'claimed':
+                return t('feature.receive.you-received')
+            default:
+                return t('feature.receive.you-received')
+        }
+    }
+
     return (
         <Pressable style={styles(theme).container} onPress={Keyboard.dismiss}>
             <TouchableOpacity
@@ -69,13 +86,7 @@ const TransactionDetail = ({
                 size={SvgImageSize.lg}
                 color={theme.colors.orange}
             />
-            <Text>
-                {`${
-                    txn.direction === TransactionDirection.send
-                        ? t('feature.send.you-sent')
-                        : t('feature.receive.you-received')
-                }`}
-            </Text>
+            <Text>{renderStatus()}</Text>
             <Text h2>{`${amountUtils.formatNumber(
                 amountUtils.msatToSat(txn.amount),
             )} ${t('words.sats')}`}</Text>

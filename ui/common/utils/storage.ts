@@ -21,6 +21,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
         version: 6,
         language: state.environment.language,
+        amountInputType: state.environment.amountInputType,
         currency: state.currency.selectedFiatCurrency,
         btcExchangeRates: state.currency.prices,
         activeFederationId: state.federation.activeFederationId,
@@ -75,10 +76,13 @@ export function hasStorageStateChanged(
     // two storage objects and deeply comparing them, so it's worth the effort to keep
     // up to date since this will be called on _every_ state change.
     const keysetsToCheck = [
-        ['currency', 'selectedFiatCurrency'],
         ['environment', 'language'],
+        ['environment', 'amountInputType'],
+        ['currency', 'selectedFiatCurrency'],
+        ['currency', 'prices'],
         ['federation', 'activeFederationId'],
         ['federation', 'authenticatedGuardian'],
+        ['federation', 'externalMeta'],
         ['federation', 'customFediMods'],
     ]
 

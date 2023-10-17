@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
+    useBalanceDisplay,
     useMinMaxRequestAmount,
     useMinMaxSendAmount,
 } from '@fedi/common/hooks/amount'
@@ -44,8 +45,8 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [submitType, setSubmitType] = useState<'send' | 'request'>()
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
+    const balanceDisplay = useBalanceDisplay(t)
 
-    const balance = activeFederation?.balance
     const federationId = activeFederation?.id
 
     useEffect(() => {
@@ -131,8 +132,6 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         setIsSending(false)
     }, [sendPaymentMessage, amount, requestMinMax])
 
-    if (balance === undefined) return null
-
     const inputMinMax =
         submitType === 'send'
             ? sendMinMax
@@ -142,11 +141,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <Balance>
-                {t('words.balance')}:{' '}
-                {amountUtils.formatNumber(amountUtils.msatToSat(balance))}{' '}
-                {t('words.sats')}
-            </Balance>
+            <Balance>{balanceDisplay}</Balance>
             <AmountContainer>
                 {open && (
                     <AmountInput
