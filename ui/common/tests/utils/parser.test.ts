@@ -323,7 +323,7 @@ describe('parseUserInput', () => {
         },
         validateEcash: async (ecash: string) => {
             if (ecash === simpleV0Ecash) {
-                return 1
+                return { amount: 1 }
             }
             throw Error('Failed to parse')
         },

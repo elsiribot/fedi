@@ -35,7 +35,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     useEffect(() => {
         validateEcash(ecash)
-            .then(amt => setAmount(amt))
+            .then(({ amount: amt }) => setAmount(amt))
             .catch(() => {
                 setError(new Error('errors.invalid-ecash-token'))
             })
