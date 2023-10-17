@@ -1,6 +1,7 @@
-{ pkgs, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains }:
 let
   system = pkgs.system;
+  lib = pkgs.lib;
 
   rustSrcDirs = [
     "Cargo.toml"
@@ -54,11 +55,48 @@ let
   commonEnvsShell = {
     PROTOC = "${pkgs.protobuf}/bin/protoc";
     PROTOC_INCLUDE = "${pkgs.protobuf}/include";
-    ROCKSDB_COMPILE = "true";
   };
+  commonEnvsShellRocksdbLink =
+    let
+      target_underscores = lib.strings.replaceStrings [ "-" ] [ "_" ] pkgs.stdenv.buildPlatform.config;
+    in
+    {
+      ROCKSDB_STATIC = "true";
+      ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+      SNAPPY_LIB_DIR = "${pkgs.snappy}/lib/";
+      "ROCKSDB_${target_underscores}_STATIC" = "true";
+      "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
+      "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.snappy}/lib/";
+    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+      # TODO: could we used the android-nixpkgs toolchain instead of another one?
+      ROCKSDB_aarch64_linux_android_STATIC = "true";
+      ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.rocksdb}/lib/";
+      SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.snappy}/lib/";
+
+      # BROKEN
+      # error: "No timer implementation for this platform"
+      # ROCKSDB_armv7_linux_androideabi_STATIC = "true";
+      # ROCKSDB_armv7_linux_androideabi_LIB_DIR = "${pkgs-unstable.pkgsCross.armv7a-android-prebuilt.rocksdb}/lib/";
+      # SNAPPY_armv7_linux_androideabi_LIB_DIR = "${pkgs-unstable.pkgsCross.armv7a-android-prebuilt.snappy}/lib/";
+
+      # x86-64-linux-android doesn't have a toolchain in nixpkgs
+    } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+      # broken: fails to compile with:
+      # `linux-headers-android-common> sh: line 1: gcc: command not found`
+      # ROCKSDB_aarch64_linux_android_STATIC = "true";
+      # ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android.rocksdb}/lib/";
+      # SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android.snappy}/lib/";
+
+      # requires downloading Xcode manually and adding to /nix/store
+      # then running with `env NIXPKGS_ALLOW_UNFREE=1 nix develop -L --impure`
+      # maybe we could live with it?
+      # ROCKSDB_aarch64_apple_ios_STATIC = "true";
+      # ROCKSDB_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.rocksdb}/lib/";
+      # SNAPPY_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.snappy}/lib/";
+    };
 
   craneLib =
-    craneLib'.overrideArgs ({
+    (craneLib'.overrideArgs ({
       pname = "fedi";
       version = "0.1.0";
       nativeBuildInputs = builtins.attrValues {
@@ -66,13 +104,15 @@ let
         inherit (pkgs) cargo-nextest;
         inherit (pkgs) perl;
       };
-      buildInputs = builtins.attrValues
-        {
-          inherit (pkgs) openssl;
-        };
+      buildInputs = builtins.attrValues {
+        inherit (pkgs) openssl;
+      };
       src = rustSrc;
       FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
-    } // commonEnvsShell);
+    } // commonEnvsShell)).overrideArgs'' (craneLib: args:
+      # TODO: should we compile from scratch from vendored source for release builds? (allegedly better perf)
+      # pkgs.lib.optionalAttrs (builtins.elem (craneLib.cargoProfile or "") [ "dev" "ci" ]) commonEnvsShellRocksdbLink);
+      commonEnvsShellRocksdbLink);
 in
 rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
@@ -160,4 +200,5 @@ rec {
   };
 
   inherit commonEnvsShell;
+  inherit commonEnvsShellRocksdbLink;
 })

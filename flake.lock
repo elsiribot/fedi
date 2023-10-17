@@ -1357,17 +1357,17 @@
         "systems": "systems_12"
       },
       "locked": {
-        "lastModified": 1697438976,
-        "narHash": "sha256-wReUPx1nz7CXRutSdGWWGLqAsL8bE+7+ecApT4SMwAE=",
+        "lastModified": 1697516909,
+        "narHash": "sha256-n+/2Ucy9aXrcwEBO3nsHXEqMRvWHraXj728Q+IjuZ6k=",
         "owner": "rustshop",
         "repo": "flakebox",
-        "rev": "0c5dd9ee8398b344a3afe34fc24455bc768210b8",
+        "rev": "0652369242476cdd798a1eda8578e6030ad84a3c",
         "type": "github"
       },
       "original": {
         "owner": "rustshop",
         "repo": "flakebox",
-        "rev": "0c5dd9ee8398b344a3afe34fc24455bc768210b8",
+        "rev": "0652369242476cdd798a1eda8578e6030ad84a3c",
         "type": "github"
       }
     },
@@ -1571,11 +1571,11 @@
     },
     "nixpkgs-unstable_7": {
       "locked": {
-        "lastModified": 1695644571,
-        "narHash": "sha256-asS9dCCdlt1lPq0DLwkVBbVoEKuEuz+Zi3DG7pR/RxA=",
+        "lastModified": 1697059129,
+        "narHash": "sha256-9NJcFF9CEYPvHJ5ckE8kvINvI84SZZ87PvqMbH6pro0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6500b4580c2a1f3d0f980d32d285739d8e156d92",
+        "rev": "5e4c2ada4fcd54b99d56d7bd62f384511a7e2593",
         "type": "github"
       },
       "original": {
@@ -1624,6 +1624,22 @@
         "owner": "NixOS",
         "repo": "nixpkgs",
         "rev": "b30c68669df77d981ce4aefd6b9d378563f6fc4e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-23.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_13": {
+      "locked": {
+        "lastModified": 1697226376,
+        "narHash": "sha256-cumLLb1QOUtWieUnLGqo+ylNt3+fU8Lcv5Zl+tYbRUE=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "898cb2064b6e98b8c5499f37e81adbdf2925f7c5",
         "type": "github"
       },
       "original": {
@@ -1770,6 +1786,7 @@
         "flake-utils": "flake-utils_16",
         "flakebox": "flakebox",
         "fs-dir-cache": "fs-dir-cache",
+        "nixpkgs": "nixpkgs_13",
         "nixpkgs-unstable": "nixpkgs-unstable_7"
       }
     },
