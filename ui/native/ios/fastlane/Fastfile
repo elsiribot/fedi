@@ -62,13 +62,26 @@ platform :ios do
   end
   
   desc "Create a release build"
-  lane :build_release do
+  lane :build do
     build_app(
       workspace: "FediReactNative.xcworkspace",
       scheme: "FediReactNative",
       export_options: {
         provisioningProfiles: {
           "org.fedi.alpha" => "match AppStore org.fedi.alpha"
+        }
+      }
+    )
+  end
+  
+  desc "Create a release build (Fedi Nightly)"
+  lane :build_nightly do
+    build_app(
+      workspace: "FediReactNative.xcworkspace",
+      scheme: "FediNightly",
+      export_options: {
+        provisioningProfiles: {
+          "org.fedi.nightly" => "match AppStore org.fedi.nightly"
         }
       }
     )
