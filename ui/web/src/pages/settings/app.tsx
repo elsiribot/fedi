@@ -37,6 +37,10 @@ function AppSettings() {
                 label: 'French',
                 value: 'fr',
             },
+            {
+                label: 'Indonesian',
+                value: 'id',
+            },
         ],
         [],
     )
