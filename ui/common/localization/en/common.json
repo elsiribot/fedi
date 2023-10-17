@@ -350,8 +350,8 @@
         },
         "popup": {
             "ended": "Ended",
-            "ended-description": "This pop-up Federation <bold>ended {{date}}</bold>.",
-            "ending-description": "This pop-up federation <bold>will end {{date}}</bold>. All balances left in the federation after {{date}} will be inaccessible.",
+            "ended-description": "This temporary federation has <bold>ended {{date}}</bold>.",
+            "ending-description": "This temporary federation <bold>will end {{date}}</bold>. The remaining funds will be managed at the discretion of the guardians.",
             "ending-in": "Ending in <bold>{{time}}</bold>"
         },
         "receive": {
