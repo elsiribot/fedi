@@ -1,4 +1,3 @@
-import { getEncoding } from 'istextorbinary'
 import type QrScanner from 'qr-scanner'
 import {
     areFramesComplete,
@@ -13,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { getBufferEncoding } from '@fedi/common/utils/istextorbinary'
 
 import { styled, theme } from '../styles'
 import { CircularLoader } from './CircularLoader'
@@ -52,7 +52,9 @@ export const QRScanner: React.FC<Props> = ({ processing, onScan }) => {
                     // Convert the data to a string. If it's binary encoded, convert as base64.
                     const frameData = framesToData(newFrames)
                     const strData = frameData.toString(
-                        getEncoding(frameData) === 'binary' ? 'base64' : 'utf8',
+                        getBufferEncoding(frameData) === 'binary'
+                            ? 'base64'
+                            : 'utf8',
                     )
                     onScanRef.current({
                         data: strData,

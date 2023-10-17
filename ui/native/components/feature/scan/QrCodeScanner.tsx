@@ -1,6 +1,5 @@
 import { useIsFocused } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { getEncoding } from 'istextorbinary'
 import {
     areFramesComplete,
     framesToData,
@@ -13,6 +12,7 @@ import { StyleSheet, Vibration, View } from 'react-native'
 import { Camera, CameraType } from 'react-native-camera-kit'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
+import { getBufferEncoding } from '@fedi/common/utils/istextorbinary'
 
 type Props = {
     processing?: boolean
@@ -58,7 +58,9 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
                 // Convert the data to a string. If it's binary encoded, convert as base64.
                 const frameData = framesToData(newFrames)
                 const strData = frameData.toString(
-                    getEncoding(frameData) === 'binary' ? 'base64' : 'utf8',
+                    getBufferEncoding(frameData) === 'binary'
+                        ? 'base64'
+                        : 'utf8',
                 )
                 handleDetected(strData)
                 // Reset frames & progress after short delay
