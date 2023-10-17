@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import OfflineIcon from '@fedi/common/assets/svgs/offline.svg'
+import { useBalanceDisplay } from '@fedi/common/hooks/amount'
 import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { selectActiveFederation } from '@fedi/common/redux'
@@ -57,6 +58,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const containerRef = useRef<HTMLDivElement | null>(null)
     const isOfflineWalletSupported = useIsOfflineWalletSupported()
     const isSmall = useMediaQuery(config.media.sm)
+    const balanceDisplay = useBalanceDisplay(t)
 
     // Reset modal on close and open
     useEffect(() => {
@@ -197,9 +199,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     ? 'feature.send.send-bitcoin-offline'
                     : 'feature.send.send-bitcoin',
             )}
-            description={`${t('words.balance')}: ${amountUtils.formatNumber(
-                amountUtils.msatToSat(balance),
-            )} ${t('words.sats')}`}
+            description={balanceDisplay}
             open={open}
             disableClose={isCloseDisabled}
             onOpenChange={onOpenChange}>

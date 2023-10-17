@@ -79,6 +79,7 @@ export interface StoredStateV5 extends Omit<StoredStateV4, 'version'> {
 export interface StoredStateV6 extends Omit<StoredStateV5, 'version'> {
     version: 6
     btcExchangeRates: Partial<Record<SupportedCurrency, number>>
+    amountInputType?: 'sats' | 'fiat'
 }
 
 /*** Union of all past shapes of stored state ***/

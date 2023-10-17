@@ -4,11 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { Insets, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { selectActiveFederation } from '@fedi/common/redux'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { useBalanceDisplay } from '@fedi/common/hooks/amount'
 import { hexToRgba } from '@fedi/common/utils/color'
 
-import { useAppSelector } from '../../state/hooks'
 import AmountInput, { Props as AmountInputProps } from './AmountInput'
 import KeyboardAwareWrapper from './KeyboardAwareWrapper'
 
@@ -27,20 +25,16 @@ export const AmountScreen: React.FC<Props> = ({
     const { theme } = useTheme()
     const { height } = useWindowDimensions()
     const insets = useSafeAreaInsets()
-    const balance = useAppSelector(selectActiveFederation)?.balance
+    const balanceDisplay = useBalanceDisplay(t)
 
     const style = styles(theme, insets, height)
 
     return (
         <KeyboardAwareWrapper>
             <View style={style.container}>
-                {showBalance && typeof balance === 'number' && (
+                {showBalance && (
                     <Text caption style={style.balance}>
-                        {`${t('words.balance')}: `}
-                        {`${amountUtils.formatNumber(
-                            amountUtils.msatToSat(balance),
-                        )} `}
-                        {`${t('words.sats').toUpperCase()}`}
+                        {balanceDisplay}
                     </Text>
                 )}
                 <AmountInput {...amountInputProps} />

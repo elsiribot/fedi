@@ -307,7 +307,7 @@ export const selectFederationMetadata = createSelector(
 export const selectFederationBalance = createSelector(
     selectActiveFederation,
     activeFederation => {
-        return activeFederation ? activeFederation.balance : 0
+        return activeFederation ? activeFederation.balance : (0 as MSats)
     },
 )
 
