@@ -350,8 +350,8 @@
         },
         "popup": {
             "ended": "Terminé",
-            "ended-description": "Cette fédération pop-up <bold>s'est terminée {{date}}</bold>.",
-            "ending-description": "Cette fédération contextuelle <bold>se terminera {{date}}</bold>. Tous les soldes restants dans la fédération après le {{date}} seront inaccessibles.",
+            "ended-description": "Cette fédération temporaire a <bold>terminé {{date}}</bold>.",
+            "ending-description": "Cette fédération temporaire <bold>prendra fin {{date}}</bold>. Les fonds restants seront gérés à la discrétion des tuteurs.",
             "ending-in": "Se terminant par <bold>{{time}}</bold>"
         },
         "receive": {

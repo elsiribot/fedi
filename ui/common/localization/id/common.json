@@ -350,8 +350,8 @@
         },
         "popup": {
             "ended": "Berakhir",
-            "ended-description": "Federasi pop-up ini <bold>berakhir {{date}}</bold>.",
-            "ending-description": "Federasi pop-up ini <bold>akan berakhir pada {{date}}</bold>. Semua saldo yang tersisa di federasi setelah {{date}} tidak akan dapat diakses.",
+            "ended-description": "Federasi sementara ini telah <bold>berakhir {{date}}</bold>.",
+            "ending-description": "Federasi sementara ini <bold>akan berakhir pada {{date}}</bold>. Sisa dana akan dikelola berdasarkan kebijaksanaan wali.",
             "ending-in": "Berakhir pada <bold>{{time}}</bold>"
         },
         "receive": {
