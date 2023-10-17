@@ -17,9 +17,11 @@ export type ErrorCode =
     | 'badRequest'
     | 'invalidInvoice'
     | 'invalidMnemonic'
+    | 'ecashCancelFailed'
     | 'socialRecoveryNotSupported'
     | 'nostrNotSupported'
     | 'panic'
+    | 'notSupportedInVersion'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -187,6 +189,7 @@ export interface RpcMethods {
         { ecash: string },
         { amount: RpcAmount; federationId: RpcFederationId | null },
     ]
+    cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null]
     listTransactions: [
         { federationId: RpcFederationId },
         Array<{

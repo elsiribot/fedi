@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::XOnlyPublicKey;
 use fedi_social_client::RecoveryId;
@@ -132,6 +132,15 @@ impl MultiFederation {
         }
     }
 
+    pub async fn cancel_ecash(&self, ecash: String) -> Result<()> {
+        match self {
+            Self::V0(_) => bail!(ErrorCode::NotSupportedInVersion),
+            Self::V1(v1) => {
+                v1.cancel_ecash(ecash.parse().context(ErrorCode::BadRequest)?)
+                    .await
+            }
+        }
+    }
     pub async fn get_mnemonic_words(&self) -> Vec<String> {
         match self {
             Self::V0(v0) => v0.get_mnemonic_words().await,
@@ -568,6 +577,11 @@ impl Bridge {
     ) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.generate_ecash(amount.0).await
+    }
+
+    pub async fn cancel_ecash(&self, federation_id: RpcFederationId, ecash: String) -> Result<()> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.cancel_ecash(ecash).await
     }
 
     pub async fn get_mnemonic_words(&self, federation_id: RpcFederationId) -> Result<Vec<String>> {

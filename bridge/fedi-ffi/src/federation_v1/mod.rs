@@ -32,8 +32,8 @@ use fedimint_ln_client::{
     LightningClientModule, LightningMeta, LnPayState, LnReceiveState, PayType,
 };
 use fedimint_mint_client::{
-    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants, OOBNotes,
-    ReissueExternalNotesState,
+    spendable_notes_to_operation_id, MintClientExt, MintClientGen, MintClientModule, MintMeta,
+    MintMetaVariants, OOBNotes, ReissueExternalNotesState,
 };
 use fedimint_wallet_client::{WalletClientGen, WalletClientModule};
 use futures::StreamExt;
@@ -65,6 +65,7 @@ use super::types::{
     RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcRecoveryId,
     RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
 };
+use crate::error::ErrorCode;
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcFederationId, RpcLightningDetails,
@@ -670,6 +671,31 @@ impl FederationV1 {
             notes
         };
         Ok(notes.to_string())
+    }
+
+    pub async fn cancel_ecash(&self, ecash: OOBNotes) -> Result<()> {
+        let op_id = spendable_notes_to_operation_id(&ecash.notes);
+        // NOTE: try_cancel_spend_notes itself is not presisted across restarts.
+        // it uses inmemory channel.
+        self.client.try_cancel_spend_notes(op_id).await;
+        let mut updates = self
+            .client
+            .subscribe_spend_notes(op_id)
+            .await?
+            .into_stream();
+        while let Some(update) = updates.next().await {
+            match update {
+                fedimint_mint_client::SpendOOBState::Created => {}
+                fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {}
+                fedimint_mint_client::SpendOOBState::UserCanceledSuccess => return Ok(()),
+                fedimint_mint_client::SpendOOBState::UserCanceledFailure
+                | fedimint_mint_client::SpendOOBState::Success => {
+                    anyhow::bail!(ErrorCode::EcashCancelFailed)
+                }
+                fedimint_mint_client::SpendOOBState::Refunded => return Ok(()),
+            }
+        }
+        Ok(())
     }
 
     /// Get client root secret
