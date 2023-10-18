@@ -17,6 +17,7 @@ use fedimint_core::Amount;
 use ln_gateway::rpc::rpc_client::GatewayRpcClient;
 use lnd_gw_monitoring::{check_lnd_gateway, LndGatewaysState};
 use mutinynet_gw_monitoring::{check_mutinynet, get_status, CheckState};
+use price_feed::PriceFeedState;
 use reqwest::Url;
 use tokio::io::AsyncWriteExt;
 use tracing::{debug, info};
@@ -26,6 +27,7 @@ use crate::common::{refill_cli_mutinynet_wallet_if_needed, try_cli_get_notes_str
 pub mod common;
 pub mod lnd_gw_monitoring;
 pub mod mutinynet_gw_monitoring;
+pub mod price_feed;
 
 #[derive(Parser, Clone)]
 #[command(version)]
@@ -53,12 +55,14 @@ enum CliCommand {
         )]
         bind: String,
     },
-    #[command(about = "Monitor gateways connected to LND nodes")]
-    RunMutinynetLoadTest(MutinynetLoadTestArgs),
     #[command(
         about = "This is just a wrapper to run the load test on mutinynet. It could be a bash script, but rust is better"
     )]
+    RunMutinynetLoadTest(MutinynetLoadTestArgs),
+    #[command(about = "Monitor gateways connected to LND nodes")]
     MonitorLndGateways(MonitorLndGatewaysArgs),
+    #[command(about = "Fiat price for BTC and between fiat currencies")]
+    PriceFeed(PriceFeedArgs),
 }
 
 #[derive(Clone, Args)]
@@ -165,6 +169,12 @@ struct MonitorLndGatewaysArgs {
     limits_args: MonitorLndGatewaysLimitsArgs,
 }
 
+#[derive(Clone, Args)]
+struct PriceFeedArgs {
+    #[arg(long, default_value = "[::]:3002", help = "Address to bind/listen to")]
+    bind: String,
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     fedimint_logging::TracingSetup::default().init()?;
@@ -196,6 +206,7 @@ async fn main() -> anyhow::Result<()> {
         }
         CliCommand::RunMutinynetLoadTest(args) => run_mutinynet_load_test(args).await?,
         CliCommand::MonitorLndGateways(args) => monitor_lnd_gateways(args).await?,
+        CliCommand::PriceFeed(args) => run_price_feed(args).await?,
     }
 
     Ok(())
@@ -365,4 +376,20 @@ pub fn source_password(rpcpassword: &str) -> String {
             password.to_owned()
         }
     }
+}
+
+async fn run_price_feed(args: PriceFeedArgs) -> anyhow::Result<()> {
+    let state = Arc::new(RwLock::new(PriceFeedState::default()));
+    let daemon = tokio::spawn(price_feed::monitor::monitor_prices(Arc::clone(&state)));
+    let app = Router::new()
+        .route("/state", get(price_feed::api::get_full_state))
+        .route("/latest", get(price_feed::api::get_latest_prices))
+        .with_state(state);
+
+    let addr = SocketAddr::from_str(&args.bind)?;
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
+    daemon.await??;
+    Ok(())
 }
