@@ -5,8 +5,10 @@ import { StyleSheet, View } from 'react-native'
 
 import { updateChatPayment } from '@fedi/common/redux'
 import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../../../bridge'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -148,19 +150,26 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
     const activeFederationId = useAppSelector(
         s => s.federation.activeFederationId,
     )
+    const { toast } = useEnvironmentContext().state
+    const { t } = useTranslation()
 
     const cancelPayment = async () => {
         try {
+            if (!activeFederationId) throw new Error()
             await dispatch(
                 updateChatPayment({
                     fedimint,
-                    federationId: activeFederationId as string,
+                    federationId: activeFederationId,
                     messageId: message.id,
                     action: 'cancel',
                 }),
             ).unwrap()
         } catch (error) {
             console.error(error)
+            toast?.show(
+                formatErrorMessage(t, error, 'errors.unknown-error'),
+                3000,
+            )
         }
     }
 
