@@ -1202,8 +1202,7 @@ export const updateChatPayment = createAsyncThunk<
                 // Redeem the token back for ourselves to avoid it being otherwise claimed
                 const { token } = payment
                 if (token) {
-                    // TODO: Replace with cancel method? Receiving your own can be weird.
-                    await fedimint.receiveEcash(token, federationId)
+                    await fedimint.cancelEcash(token, federationId)
                 }
                 paymentUpdates.token = null
                 paymentUpdates.status = ChatPaymentStatus.canceled
