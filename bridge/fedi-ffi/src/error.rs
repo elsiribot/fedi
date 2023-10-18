@@ -17,6 +17,8 @@ pub enum ErrorCode {
     SocialRecoveryNotSupported,
     #[error("Nostr events not supported for this version of federation")]
     NostrNotSupported,
+    #[error("Bridge panicked")]
+    Panic,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

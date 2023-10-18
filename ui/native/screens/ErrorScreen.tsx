@@ -1,18 +1,28 @@
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { ErrorFallbackProps } from '@fedi/common/components/ErrorBoundary'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import { version } from '../package.json'
+import { shareLogs } from '../utils/share'
 
-export const ErrorScreen: React.FC<ErrorFallbackProps> = ({ error }) => {
+type Props = Pick<ErrorFallbackProps, 'error'>
+
+export const ErrorScreen: React.FC<Props> = ({ error }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const style = styles(theme)
+
+    const handleShareLogs = async () => {
+        await shareLogs()
+    }
+
+    const stack: Error['stack'] = (error as any)?.stack
 
     return (
         <SafeAreaView style={style.container}>
@@ -20,11 +30,22 @@ export const ErrorScreen: React.FC<ErrorFallbackProps> = ({ error }) => {
             <Text h2 style={style.title}>
                 {t('errors.please-force-quit-the-app')}
             </Text>
-            <View style={style.messageContainer}>
+            <ScrollView
+                style={style.messageContainer}
+                contentContainerStyle={style.messageContent}>
                 <Text style={style.message}>
-                    {formatErrorMessage(t, error, 'errors.unknown-error')}
+                    {stack ||
+                        formatErrorMessage(t, error, 'errors.unknown-error')}
                 </Text>
-            </View>
+            </ScrollView>
+            <Button
+                fullWidth
+                onPress={handleShareLogs}
+                title={t('feature.developer.share-logs')}
+            />
+            <Text caption style={style.version}>
+                Version {version}
+            </Text>
         </SafeAreaView>
     )
 }
@@ -33,25 +54,31 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
+            gap: theme.spacing.lg,
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
+            backgroundColor: theme.colors.background,
         },
         title: {
-            marginTop: theme.spacing.xl,
-            marginBottom: theme.spacing.sm,
             textAlign: 'center',
         },
         messageContainer: {
             width: '100%',
             marginTop: theme.spacing.md,
-            padding: theme.spacing.md,
             borderRadius: 8,
             borderWidth: 1,
             borderColor: `rgba(0, 0, 0, 0.12)`,
             backgroundColor: `rgba(0, 0, 0, 0.04)`,
         },
+        messageContent: {
+            padding: theme.spacing.md,
+        },
         message: {
             color: theme.colors.red,
+        },
+        version: {
+            color: theme.colors.grey,
+            textAlign: 'center',
         },
     })

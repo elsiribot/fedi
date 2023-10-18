@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex as StdMutex};
 
+use fediffi::event::IEventSink;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::prelude::*;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -10,17 +11,17 @@ thread_local! {
 }
 
 fn set_panic_hook() {
-    std::panic::set_hook(Box::new(|p| {
+    std::panic::set_hook(Box::new(move |info| {
         let buffer = LOG_BUFFER.with(Arc::clone);
         // the error case should never happen but still avoid a double panic => abort
         // here
         if let Ok(mut buffer) = buffer.lock() {
             // Add the panic info to the buffer, so it shows in future get_info calls.
-            buffer.extend_from_slice(&p.to_string().into_bytes());
+            buffer.extend_from_slice(&info.to_string().into_bytes());
             buffer.push(b'\n');
         }
 
-        console_error_panic_hook::hook(p);
+        console_error_panic_hook::hook(info);
     }));
 }
 
@@ -42,7 +43,7 @@ impl<'a, T: 'a + Write> MakeWriter<'a> for MemMakeWriter<T> {
     }
 }
 
-pub fn init() {
+pub fn init(event_sink: Arc<dyn IEventSink>) {
     set_panic_hook();
     let log_buffer_layer = tracing_subscriber::fmt::layer()
         .json()

@@ -7,6 +7,7 @@ import {
     SocialRecoveryEvent,
     RpcTransaction,
     SocialRecoveryApproval,
+    PanicEvent,
 } from './bindings'
 import { MSats, MsatsString } from './units'
 
@@ -171,4 +172,5 @@ export type FedimintBridgeEventMap = {
     federation: FederationEvent
     transaction: TransactionEvent
     socialRecovery: SocialRecoveryEvent
+    panic: PanicEvent
 }

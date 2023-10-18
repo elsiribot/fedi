@@ -27,6 +27,7 @@ import theme from './styles/theme'
 const App = () => {
     const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(true)
+    const [bridgeError, setBridgeError] = useState<unknown>()
 
     async function requestPushNotificationPermissions() {
         await notifee.requestPermission()
@@ -40,7 +41,12 @@ const App = () => {
                 RNFS.DocumentDirectoryPath,
             )
             const start = Date.now()
-            await initializeBridge(RNFS.DocumentDirectoryPath)
+            try {
+                await initializeBridge(RNFS.DocumentDirectoryPath)
+            } catch (err) {
+                setBridgeError(err)
+                return
+            }
             setBridgeIsReady(true)
             const stop = Date.now()
             console.info('initialized:', stop - start, 'ms OS:', Platform.OS)
@@ -101,11 +107,18 @@ const App = () => {
             },
         )
 
+        // Initialize panic listener
+        const unsubscribePanic = fedimint.addListener('panic', event => {
+            console.error('bridge panic', event)
+            setBridgeError(event)
+        })
+
         requestPushNotificationPermissions()
 
         return () => {
             unsubscribeLog()
             unsubscribeTransaction()
+            unsubscribePanic()
         }
     }, [t])
 
@@ -116,6 +129,16 @@ const App = () => {
 
         return unsubscribe
     }, [])
+
+    if (bridgeError) {
+        return (
+            <SafeAreaProvider>
+                <ThemeProvider theme={theme}>
+                    <ErrorScreen error={bridgeError} />
+                </ThemeProvider>
+            </SafeAreaProvider>
+        )
+    }
 
     return (
         <SafeAreaProvider>
