@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
 use bitcoin::Network;
 use fedimint_bip39_v0::Bip39RootSecretStrategy;
@@ -82,6 +82,7 @@ pub struct FederationV0 {
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub ln_pay_states: Arc<Mutex<HashMap<OperationId, LnPayState>>>,
+    pub oob_spend_states: Arc<Mutex<HashMap<OperationId, SpendOOBState>>>,
 }
 
 impl FederationV0 {
@@ -120,6 +121,7 @@ impl FederationV0 {
             event_sink,
             task_group,
             ln_pay_states: Default::default(),
+            oob_spend_states: Default::default(),
         };
         federation.subscribe_balance_updates().await;
         // FIXME: this breaks backup and recovery test
@@ -644,19 +646,24 @@ impl FederationV0 {
             .subscribe_spend_notes_updates(op_id)
             .await?
             .into_stream();
+        let mut err = None;
         while let Some(update) = updates.next().await {
+            self.update_oob_spend_state(op_id, update.clone()).await;
             match update {
+                // TODO: intermediate states
                 fedimint_mint_client_v0::SpendOOBState::Created => {}
                 fedimint_mint_client_v0::SpendOOBState::UserCanceledProcessing => {}
-                fedimint_mint_client_v0::SpendOOBState::UserCanceledSuccess => {
-                    return Ok(());
-                }
+                fedimint_mint_client_v0::SpendOOBState::UserCanceledSuccess => {}
+                fedimint_mint_client_v0::SpendOOBState::Success => {}
+                fedimint_mint_client_v0::SpendOOBState::Refunded => {}
                 fedimint_mint_client_v0::SpendOOBState::UserCanceledFailure => {
-                    anyhow::bail!(ErrorCode::EcashCancelFailed)
+                    err = Some(anyhow!(ErrorCode::EcashCancelFailed));
                 }
-                fedimint_mint_client_v0::SpendOOBState::Success => return Ok(()),
-                fedimint_mint_client_v0::SpendOOBState::Refunded => return Ok(()),
             }
+        }
+
+        if let Some(err) = err {
+            return Err(err);
         }
         Ok(())
     }
@@ -880,6 +887,42 @@ impl FederationV0 {
         last_state
     }
 
+    pub async fn get_oob_spend_outcome(
+        &self,
+        operation_id: OperationId,
+        log_entry: OperationLogEntry,
+    ) -> Option<SpendOOBState> {
+        let outcome = log_entry.outcome::<SpendOOBState>();
+
+        // Return client's cached outcome if we find it
+        if let Some(outcome) = outcome {
+            return Some(outcome);
+        }
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self.get_oob_spend_state(&operation_id).await {
+            return Some(outcome);
+        }
+
+        // If no cached outcomes, consume the stream to get the outcome and populate
+        // client's cache in future This is only useful for outgoing lightning
+        // payments which fail due to timeout and nothing is subscribed to them
+        let mut updates = match self
+            .client
+            .subscribe_spend_notes_updates(operation_id)
+            .await
+        {
+            Err(_) => return None,
+            Ok(stream) => stream.into_stream(),
+        };
+
+        let mut last_state = None;
+        while let Some(update) = updates.next().await {
+            tracing::info!("update {:?}", update);
+            last_state = Some(update);
+        }
+        last_state
+    }
+
     /// Return all transactions in DB
     pub async fn list_transactions(&self, limit: usize) -> Vec<RpcTransaction> {
         let futures = self.client.get_operations(limit).await.into_iter().map(
@@ -973,9 +1016,9 @@ impl FederationV0 {
                                 ln_state: None,
                                 amount: RpcAmount(requested_amount.translate()),
                                 lightning: None,
-                                oob_state: op
-                                    .1
-                                    .outcome::<SpendOOBState>()
+                                oob_state: self
+                                    .get_oob_spend_outcome(op.0.operation_id, op.1)
+                                    .await
                                     .map(RpcOOBState::from_spend_v0),
                             }),
                         }
@@ -1041,5 +1084,15 @@ impl FederationV0 {
     async fn get_ln_pay_state(&self, operation_id: &OperationId) -> Option<LnPayState> {
         let ln_pay_states = self.ln_pay_states.lock().await;
         ln_pay_states.get(operation_id).cloned()
+    }
+
+    async fn update_oob_spend_state(&self, operation_id: OperationId, state: SpendOOBState) {
+        let mut oob_spend_states = self.oob_spend_states.lock().await;
+        oob_spend_states.insert(operation_id, state);
+    }
+
+    async fn get_oob_spend_state(&self, operation_id: &OperationId) -> Option<SpendOOBState> {
+        let oob_spend_states = self.oob_spend_states.lock().await;
+        oob_spend_states.get(operation_id).cloned()
     }
 }
