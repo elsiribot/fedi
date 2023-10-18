@@ -43,13 +43,13 @@ async function run() {
         const translatedText = row[2].trim().replace(/""/g, '"')
         if (!key.includes('.')) {
             console.debug(`Skipping "${row}", looks like the header of the CSV`)
+            continue
         }
         if (!translatedText) {
             console.debug(`Skipping "${key}", translated text column is empty`)
+            continue
         }
-        if (key && translatedText) {
-            set(langJson, key, translatedText)
-        }
+        set(langJson, key, translatedText)
     }
 
     // Write the new JSON to the language JSON file
