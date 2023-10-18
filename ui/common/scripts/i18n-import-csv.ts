@@ -78,7 +78,7 @@ function parseCsv(csvText: string): string[][] {
             } else if (char === '"' && !insideQuotes) {
                 insideQuotes = true
             } else if (char === '"' && insideQuotes) {
-                if (i === row.length - 1 || row[i + 1] === ',') {
+                if (i === row.length - 2 || row[i + 1] === ',') {
                     columns.push(currentColumn)
                     currentColumn = ''
                     insideQuotes = false
