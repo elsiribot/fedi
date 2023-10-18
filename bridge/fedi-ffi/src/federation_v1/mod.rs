@@ -33,7 +33,7 @@ use fedimint_ln_client::{
 };
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientExt, MintClientGen, MintClientModule, MintMeta,
-    MintMetaVariants, OOBNotes, ReissueExternalNotesState,
+    MintMetaVariants, OOBNotes, ReissueExternalNotesState, SpendOOBState,
 };
 use fedimint_wallet_client::{WalletClientGen, WalletClientModule};
 use futures::StreamExt;
@@ -440,7 +440,15 @@ impl FederationV1 {
                 let meta = operation.meta::<MintMeta>();
                 match meta.variant {
                     MintMetaVariants::SpendOOB { .. } => {
-                        debug!("can't subscribe to mint spend updates");
+                        let fed = self.clone();
+                        let _ = self
+                            .task_group
+                            .clone()
+                            .spawn("subscribe_oob_spend", move |_| async move {
+                                // FIXME: what happens if it fails?
+                                fed.subscribe_oob_spend(operation_id).await
+                            })
+                            .await;
                     }
                     MintMetaVariants::Reissuance { .. } => {
                         let fed = self.clone();
@@ -678,6 +686,11 @@ impl FederationV1 {
         // NOTE: try_cancel_spend_notes itself is not presisted across restarts.
         // it uses inmemory channel.
         self.client.try_cancel_spend_notes(op_id).await;
+        self.subscribe_oob_spend(op_id).await?;
+        Ok(())
+    }
+
+    async fn subscribe_oob_spend(&self, op_id: OperationId) -> Result<(), anyhow::Error> {
         let mut updates = self
             .client
             .subscribe_spend_notes(op_id)
@@ -687,11 +700,14 @@ impl FederationV1 {
             match update {
                 fedimint_mint_client::SpendOOBState::Created => {}
                 fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {}
-                fedimint_mint_client::SpendOOBState::UserCanceledSuccess => return Ok(()),
-                fedimint_mint_client::SpendOOBState::UserCanceledFailure
-                | fedimint_mint_client::SpendOOBState::Success => {
+                fedimint_mint_client::SpendOOBState::UserCanceledSuccess => {
+                    self.send_transaction_event();
+                    return Ok(());
+                }
+                fedimint_mint_client::SpendOOBState::UserCanceledFailure => {
                     anyhow::bail!(ErrorCode::EcashCancelFailed)
                 }
+                fedimint_mint_client::SpendOOBState::Success => return Ok(()),
                 fedimint_mint_client::SpendOOBState::Refunded => return Ok(()),
             }
         }
@@ -1190,6 +1206,7 @@ impl FederationV1 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
+                                oob_state: None,
                             }),
                             LightningMeta::Receive { invoice, .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
@@ -1207,6 +1224,7 @@ impl FederationV1 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
+                                oob_state: None,
                             }),
                         },
                         MINT_OPERATION_TYPE => {
@@ -1227,6 +1245,7 @@ impl FederationV1 {
                                             ln_state: None,
                                             amount: RpcAmount(mint_meta.amount),
                                             lightning: None,
+                                            oob_state: None,
                                         })
                                     } else {
                                         None
@@ -1243,6 +1262,10 @@ impl FederationV1 {
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),
                                     lightning: None,
+                                    oob_state: op
+                                        .1
+                                        .outcome::<SpendOOBState>()
+                                        .map(crate::types::RpcOOBState::from_spend_v1),
                                 }),
                             }
                         }

@@ -281,6 +281,7 @@ pub struct RpcTransaction {
     pub notes: String,
     pub ln_state: Option<RpcLnState>,
     pub lightning: Option<RpcLightningDetails>,
+    pub oob_state: Option<RpcOOBState>,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -375,6 +376,46 @@ pub enum RpcLnReceiveState {
     Funded,
     AwaitingFunds,
     Claimed,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOOBState {
+    Spend(RpcOOBSpendState),
+}
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOOBSpendState {
+    Created,
+    UserCanceledProcessing,
+    UserCanceledSuccess,
+    UserCanceledFailure,
+    Refunded,
+    Success,
+}
+
+impl RpcOOBState {
+    pub fn from_spend_v1(state: fedimint_mint_client::SpendOOBState) -> Self {
+        let state = match state {
+            fedimint_mint_client::SpendOOBState::Created => RpcOOBSpendState::Created,
+            fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {
+                RpcOOBSpendState::UserCanceledProcessing
+            }
+            fedimint_mint_client::SpendOOBState::UserCanceledSuccess => {
+                RpcOOBSpendState::UserCanceledSuccess
+            }
+            fedimint_mint_client::SpendOOBState::UserCanceledFailure => {
+                RpcOOBSpendState::UserCanceledFailure
+            }
+            fedimint_mint_client::SpendOOBState::Success => RpcOOBSpendState::UserCanceledSuccess,
+            fedimint_mint_client::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
+        };
+        Self::Spend(state)
+    }
 }
 
 #[derive(Debug, Serialize, TS)]
