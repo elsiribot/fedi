@@ -14,7 +14,7 @@ use fedimint_core::{Amount, PeerId};
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_mint_client::MintClientExt;
-use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
+use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
 use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
@@ -134,7 +134,10 @@ impl MultiFederation {
 
     pub async fn cancel_ecash(&self, ecash: String) -> Result<()> {
         match self {
-            Self::V0(_) => bail!(ErrorCode::NotSupportedInVersion),
+            Self::V0(v0) => {
+                let ecash = parse_ecash(&ecash).context(ErrorCode::BadRequest)?;
+                v0.cancel_ecash(ecash).await
+            }
             Self::V1(v1) => {
                 v1.cancel_ecash(ecash.parse().context(ErrorCode::BadRequest)?)
                     .await

@@ -30,15 +30,15 @@ use fedimint_ln_client_v0::{
     LightningMeta, LnPayState, LnReceiveState,
 };
 use fedimint_mint_client_v0::{
-    MintClientExt, MintClientGen, MintClientModule, MintMeta, MintMetaVariants,
-    ReissueExternalNotesState,
+    spendable_notes_to_operation_id, MintClientExt, MintClientGen, MintClientModule, MintMeta,
+    MintMetaVariants, ReissueExternalNotesState, SpendOOBState,
 };
 use fedimint_wallet_client_v0::{WalletClientExt, WalletClientGen};
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 use v0_rocksdb::{
     FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
     XmppUsernameKey,
@@ -63,9 +63,10 @@ use super::types::{
 use crate::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, REISSUE_ECASH_TIMEOUT,
 };
+use crate::error::ErrorCode;
 use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcLightningDetails, RpcLnState,
-    RpcTransaction, RpcTransactionDirection,
+    RpcOOBState, RpcTransaction, RpcTransactionDirection,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -301,6 +302,7 @@ impl FederationV0 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
+                                oob_state: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -434,7 +436,15 @@ impl FederationV0 {
                 let meta = operation.meta::<MintMeta>();
                 match meta.variant {
                     MintMetaVariants::SpendOOB { .. } => {
-                        debug!("can't subscribe to mint spend updates");
+                        let fed = self.clone();
+                        let _ = self
+                            .task_group
+                            .clone()
+                            .spawn("subscribe_oob_spend", move |_| async move {
+                                // FIXME: what happens if it fails?
+                                fed.subscribe_oob_spend(operation_id).await
+                            })
+                            .await;
                     }
                     MintMetaVariants::Reissuance { .. } => {
                         let fed = self.clone();
@@ -614,6 +624,41 @@ impl FederationV0 {
             notes
         };
         Ok(serialize_ecash(&notes))
+    }
+
+    pub async fn cancel_ecash(
+        &self,
+        ecash: TieredMulti<fedimint_mint_client_v0::SpendableNote>,
+    ) -> Result<()> {
+        let op_id = spendable_notes_to_operation_id(&ecash);
+        // NOTE: try_cancel_spend_notes itself is not presisted across restarts.
+        // it uses inmemory channel.
+        self.client.try_cancel_spend_notes(op_id).await;
+        self.subscribe_oob_spend(op_id).await?;
+        Ok(())
+    }
+
+    async fn subscribe_oob_spend(&self, op_id: OperationId) -> Result<(), anyhow::Error> {
+        let mut updates = self
+            .client
+            .subscribe_spend_notes_updates(op_id)
+            .await?
+            .into_stream();
+        while let Some(update) = updates.next().await {
+            match update {
+                fedimint_mint_client_v0::SpendOOBState::Created => {}
+                fedimint_mint_client_v0::SpendOOBState::UserCanceledProcessing => {}
+                fedimint_mint_client_v0::SpendOOBState::UserCanceledSuccess => {
+                    return Ok(());
+                }
+                fedimint_mint_client_v0::SpendOOBState::UserCanceledFailure => {
+                    anyhow::bail!(ErrorCode::EcashCancelFailed)
+                }
+                fedimint_mint_client_v0::SpendOOBState::Success => return Ok(()),
+                fedimint_mint_client_v0::SpendOOBState::Refunded => return Ok(()),
+            }
+        }
+        Ok(())
     }
 
     /// Get client root secret
@@ -869,6 +914,7 @@ impl FederationV0 {
                                 invoice: invoice.to_string(),
                                 fee: None, // TODO: to be implemented on the fedimint side
                             }),
+                            oob_state: None,
                         }),
                         LightningMeta::Receive { invoice, .. } => Some(RpcTransaction {
                             id: op.0.operation_id.to_string(),
@@ -889,6 +935,7 @@ impl FederationV0 {
                                 invoice: invoice.to_string(),
                                 fee: None, // TODO: to be implemented on the fedimint side
                             }),
+                            oob_state: None,
                         }),
                     },
                     MINT_OPERATION_TYPE => {
@@ -909,6 +956,7 @@ impl FederationV0 {
                                         ln_state: None,
                                         amount: RpcAmount(mint_meta.amount.translate()),
                                         lightning: None,
+                                        oob_state: None,
                                     })
                                 } else {
                                     None
@@ -925,6 +973,10 @@ impl FederationV0 {
                                 ln_state: None,
                                 amount: RpcAmount(requested_amount.translate()),
                                 lightning: None,
+                                oob_state: op
+                                    .1
+                                    .outcome::<SpendOOBState>()
+                                    .map(RpcOOBState::from_spend_v0),
                             }),
                         }
                     }

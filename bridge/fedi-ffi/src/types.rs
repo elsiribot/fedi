@@ -416,6 +416,25 @@ impl RpcOOBState {
         };
         Self::Spend(state)
     }
+    pub fn from_spend_v0(state: fedimint_mint_client_v0::SpendOOBState) -> Self {
+        let state = match state {
+            fedimint_mint_client_v0::SpendOOBState::Created => RpcOOBSpendState::Created,
+            fedimint_mint_client_v0::SpendOOBState::UserCanceledProcessing => {
+                RpcOOBSpendState::UserCanceledProcessing
+            }
+            fedimint_mint_client_v0::SpendOOBState::UserCanceledSuccess => {
+                RpcOOBSpendState::UserCanceledSuccess
+            }
+            fedimint_mint_client_v0::SpendOOBState::UserCanceledFailure => {
+                RpcOOBSpendState::UserCanceledFailure
+            }
+            fedimint_mint_client_v0::SpendOOBState::Success => {
+                RpcOOBSpendState::UserCanceledSuccess
+            }
+            fedimint_mint_client_v0::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
+        };
+        Self::Spend(state)
+    }
 }
 
 #[derive(Debug, Serialize, TS)]

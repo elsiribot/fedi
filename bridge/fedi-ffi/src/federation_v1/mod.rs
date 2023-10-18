@@ -313,6 +313,7 @@ impl FederationV1 {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
+                                oob_state: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -701,7 +702,6 @@ impl FederationV1 {
                 fedimint_mint_client::SpendOOBState::Created => {}
                 fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {}
                 fedimint_mint_client::SpendOOBState::UserCanceledSuccess => {
-                    self.send_transaction_event();
                     return Ok(());
                 }
                 fedimint_mint_client::SpendOOBState::UserCanceledFailure => {
