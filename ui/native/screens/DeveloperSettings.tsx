@@ -68,7 +68,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { t, i18n } = useTranslation()
     const { listGateways, switchGateway } = useBridge()
     const { toast } = useEnvironmentContext().state
-    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>(
         i18n.language,
     )
@@ -89,14 +89,14 @@ const DeveloperSettings: React.FC<Props> = () => {
 
     useEffect(() => {
         const getGatewaysList = async () => {
+            setIsLoadingGateways(true)
             try {
-                setIsLoading(true)
                 const _gateways = await listGateways()
-                setIsLoading(false)
                 setGateways(_gateways)
             } catch (e) {
                 toast?.show(t('errors.failed-to-fetch-gateways'), 3000)
             }
+            setIsLoadingGateways(false)
         }
 
         getGatewaysList()
@@ -159,7 +159,6 @@ const DeveloperSettings: React.FC<Props> = () => {
         i18n.changeLanguage(selectedLanguage)
     }, [i18n, selectedLanguage])
 
-    if (isLoading) return <ActivityIndicator />
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <SettingsSection title="App info">
@@ -288,6 +287,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                 ))}
             </SettingsSection>
             <SettingsSection title="Change your lightning gateway">
+                {isLoadingGateways && <ActivityIndicator />}
                 {gateways.map((gw: LightningGateway, index: number) => (
                     <View key={gw.nodePubKey}>
                         <CheckBox
