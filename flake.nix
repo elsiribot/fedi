@@ -219,6 +219,8 @@
               pkgs.esplora
               pkgs.clightning
               pkgs.lnd
+
+              androidSdk
             ];
 
           buildInputs = [ pkgs.openssl ];
