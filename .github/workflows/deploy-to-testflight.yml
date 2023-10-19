@@ -49,6 +49,7 @@ jobs:
                   MATCH_PASSWORD: 'fedibtc'
                   # Consider: should we even have separate steps above for this?
                   SKIP_BRIDGE_BUILD: 1
+                  SKIP_UI_DEPS_BUILD: 1
                   SKIP_POD_INSTALL: 1
               run: |
                   ./scripts/ui/deploy-to-testflight.sh

@@ -40,6 +40,9 @@ jobs:
             - name: Build APK
               env:
                   APK_PATH: ${{ steps.versioning.outputs.APK_PATH }}
+                  # Consider: should we even have separate steps above for this?
+                  SKIP_BRIDGE_BUILD: 1
+                  SKIP_UI_DEPS_BUILD: 1
               run: nix develop --command ./scripts/ui/build-nightly-apk.sh
 
             - name: Create draft GitHub release with APK

@@ -47,7 +47,9 @@ jobs:
                   MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
                   MATCH_PASSWORD: 'fedibtc'
-                  # Consider: should we have a separate bridge build step above?
+                  # Consider: should we even have separate steps above for this?
                   SKIP_BRIDGE_BUILD: 1
+                  SKIP_UI_DEPS_BUILD: 1
+                  SKIP_POD_INSTALL: 1
               run: |
                   ./scripts/ui/deploy-to-testflight.sh
