@@ -75,8 +75,8 @@ pub struct GatewayData {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct GatewayInfoSummary {
-    pub lightning_pub_key: String,
-    pub lightning_alias: String,
+    pub lightning_pub_key: Option<String>,
+    pub lightning_alias: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

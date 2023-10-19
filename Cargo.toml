@@ -23,8 +23,7 @@ default-members = [
     "fedi-social-common",
     "fedi-social-server",
     "fedi-social-client",
-    # FIXME
-    # "fedi-monitoring",
+    "fedi-monitoring",
     "bridge/fedi-ffi",
     "bridge/ffi-bindgen",
     "stability-pool/stability-pool-client",
