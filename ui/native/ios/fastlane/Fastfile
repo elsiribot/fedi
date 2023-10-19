@@ -45,7 +45,6 @@ platform :ios do
   
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    increment_build_number(xcodeproj: "FediReactNative.xcodeproj")
     build_app(
       workspace: "FediReactNative.xcworkspace",
       scheme: "FediReactNative",
@@ -116,7 +115,6 @@ platform :ios do
   
   desc "Push a new beta build to TestFlight (Fedi Nightly)"
   lane :beta_nightly do
-    increment_build_number(xcodeproj: "FediReactNative.xcodeproj")
     build_app(
       workspace: "FediReactNative.xcworkspace",
       scheme: "FediNightly",
