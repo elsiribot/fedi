@@ -2,30 +2,76 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    Alert,
+    ImageBackground,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 
-import { selectChatGroup, selectChatGroupAffiliation } from '@fedi/common/redux'
+import {
+    leaveChatGroup,
+    selectActiveFederation,
+    selectChatGroup,
+    selectChatGroupAffiliation,
+} from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatAffiliation } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 
 const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
+    const federationId = useAppSelector(selectActiveFederation)?.id
     const myAffiliation = useAppSelector(s =>
         selectChatGroupAffiliation(s, groupId),
     )
     const [broadcastOnly] = useState<boolean>(group?.broadcastOnly || false)
+
+    const askLeaveGroup = () => {
+        const leaveGroup = async () => {
+            // Immediately navigate and replace navigation stack on leave
+            // attempt, otherwise pressing the back button or useEffects in
+            // backgrounded screens may attempt to re-join the group right
+            // after we leave it.
+            try {
+                if (!federationId) throw new Error()
+                navigation.replace('TabsNavigator')
+                await dispatch(
+                    leaveChatGroup({ federationId, groupId }),
+                ).unwrap()
+            } catch (err) {
+                toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            }
+        }
+
+        Alert.alert(
+            t('feature.chat.leave-group'),
+            t('feature.chat.leave-group-confirmation'),
+            [
+                {
+                    text: t('words.cancel'),
+                },
+                {
+                    text: t('words.yes'),
+                    onPress: () => leaveGroup(),
+                },
+            ],
+        )
+    }
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -60,10 +106,9 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     }}
                 />
                 <SettingsItem
-                    disabled
                     image={<SvgImage name="LeaveRoom" />}
                     label={t('feature.chat.leave-group')}
-                    onPress={() => console.info('not implemented')}
+                    onPress={askLeaveGroup}
                 />
                 <SettingsItem
                     image={<SvgImage name="SpeakerPhone" />}

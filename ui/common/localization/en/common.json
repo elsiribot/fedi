@@ -229,6 +229,7 @@
             "invite-to-group": "Invite to group",
             "join-a-group": "Join a group",
             "leave-group": "Leave group",
+            "leave-group-confirmation": "Are you sure you want to leave the group? All group message history will be lost.",
             "member-not-found": "Could not find a member with the username '{{username}}'",
             "money-changing": "Money Changing",
             "money-changing-message-preview": "Could someone please help me get in touch with a guardian...",
