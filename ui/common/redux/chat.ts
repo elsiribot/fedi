@@ -9,6 +9,7 @@ import {
 } from '@reduxjs/toolkit'
 import { xml } from '@xmpp/client'
 import isEqual from 'lodash/isEqual'
+import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -408,6 +409,29 @@ export const chatSlice = createSlice({
                 'membersSeen',
                 action.payload,
             )
+        })
+
+        builder.addCase(leaveChatGroup.fulfilled, (state, action) => {
+            const { federationId, groupId } = action.meta.arg
+            const chatState = getFederationChatState(state, federationId)
+            const groups = chatState.groups.filter(g => g.id !== groupId)
+            const messages = chatState.messages.filter(
+                m => m.sentIn !== groupId,
+            )
+            const groupAffiliations = omit(chatState.groupAffiliations, groupId)
+            const groupRoles = omit(chatState.groupRoles, groupId)
+            const lastReadMessageIds = omit(
+                chatState.lastReadMessageIds,
+                groupId,
+            )
+            state[federationId] = {
+                ...chatState,
+                messages,
+                groups,
+                groupAffiliations,
+                groupRoles,
+                lastReadMessageIds,
+            }
         })
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
@@ -917,6 +941,15 @@ export const createChatGroup = createAsyncThunk<
     const client = xmppChatClientManager.getClient(federationId)
     const group = await client.createGroup(id, name, broadcastOnly)
     return group
+})
+
+export const leaveChatGroup = createAsyncThunk<
+    void,
+    { federationId: string; groupId: string },
+    { state: CommonState }
+>('chat/leaveChatGroup', async ({ federationId, groupId }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    await client.leaveGroup(groupId)
 })
 
 export const configureChatGroup = createAsyncThunk<
