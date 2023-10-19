@@ -43,13 +43,13 @@ async function run() {
         const translatedText = row[2].trim().replace(/""/g, '"')
         if (!key.includes('.')) {
             console.debug(`Skipping "${row}", looks like the header of the CSV`)
+            continue
         }
         if (!translatedText) {
             console.debug(`Skipping "${key}", translated text column is empty`)
+            continue
         }
-        if (key && translatedText) {
-            set(langJson, key, translatedText)
-        }
+        set(langJson, key, translatedText)
     }
 
     // Write the new JSON to the language JSON file
@@ -78,7 +78,7 @@ function parseCsv(csvText: string): string[][] {
             } else if (char === '"' && !insideQuotes) {
                 insideQuotes = true
             } else if (char === '"' && insideQuotes) {
-                if (i === row.length - 1 || row[i + 1] === ',') {
+                if (i === row.length - 2 || row[i + 1] === ',') {
                     columns.push(currentColumn)
                     currentColumn = ''
                     insideQuotes = false
