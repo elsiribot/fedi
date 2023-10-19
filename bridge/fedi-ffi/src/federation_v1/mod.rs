@@ -17,7 +17,7 @@ use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
-use fedimint_client::oplog::OperationLogEntry;
+use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::OperationId;
 use fedimint_client::{Client, ClientBuilder, ClientSecret};
 use fedimint_core::api::{
@@ -25,7 +25,7 @@ use fedimint_core::api::{
 };
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::db::{DatabaseTransaction, IDatabase};
-use fedimint_core::task::{timeout, TaskGroup};
+use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::{Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
@@ -39,13 +39,10 @@ use fedimint_mint_client::{
 use fedimint_wallet_client::{
     DepositState, WalletClientExt, WalletClientGen, WalletClientModule, WalletOperationMeta,
 };
-use futures::StreamExt;
+use futures::{Future, StreamExt};
 use lightning_invoice::Invoice;
 use stability_pool_client::common::AccountInfo;
-use stability_pool_client::{
-    StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolDepositState, StabilityPoolMeta,
-    StabilityPoolWithdrawalState,
-};
+use stability_pool_client::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -66,7 +63,7 @@ use super::constants::{
     STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
     XMPP_PASSWORD,
 };
-use super::event::{Event, EventSink, StabilityPoolOperationState, TypedEventExt};
+use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
 use super::types::{
     federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
@@ -577,15 +574,14 @@ impl FederationV1 {
                         self.task_group
                             .clone()
                             .spawn("subscribe_stability_pool_deposit", move |_| async move {
-                                fed.event_sink.typed_event(&Event::stability_pool_deposit(
-                                    fed.federation_id(),
-                                    match fed.subscribe_stability_pool_deposit(operation_id).await {
-                                        Ok(_) => StabilityPoolOperationState::Success,
-                                        Err(e) => {
-                                            StabilityPoolOperationState::Failure(e.to_string())
-                                        }
+                                fed.subscribe_client_operation(
+                                    fed.client
+                                        .subscribe_deposit_or_renewal_operation(operation_id),
+                                    |state| {
+                                        Event::stability_pool_deposit(fed.federation_id(), state)
                                     },
-                                ));
+                                )
+                                .await
                             })
                             .await;
                     }
@@ -597,16 +593,13 @@ impl FederationV1 {
                         self.task_group
                             .clone()
                             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
-                                fed.event_sink.typed_event(&Event::stability_pool_withdraw(
-                                    fed.federation_id(),
-                                    match fed.subscribe_stability_pool_withdraw(operation_id).await
-                                    {
-                                        Ok(_) => StabilityPoolOperationState::Success,
-                                        Err(e) => {
-                                            StabilityPoolOperationState::Failure(e.to_string())
-                                        }
+                                fed.subscribe_client_operation(
+                                    fed.client.subscribe_withdraw(operation_id),
+                                    |state| {
+                                        Event::stability_pool_withdrawal(fed.federation_id(), state)
                                     },
-                                ));
+                                )
+                                .await
                             })
                             .await;
                     }
@@ -1666,41 +1659,14 @@ impl FederationV1 {
         self.task_group
             .clone()
             .spawn("subscribe_stability_pool_deposit", move |_| async move {
-                fed.event_sink.typed_event(&Event::stability_pool_deposit(
-                    fed.federation_id(),
-                    match fed.subscribe_stability_pool_deposit(operation_id).await {
-                        Ok(_) => StabilityPoolOperationState::Success,
-                        Err(e) => StabilityPoolOperationState::Failure(e.to_string()),
-                    },
-                ));
+                fed.subscribe_client_operation(
+                    fed.client
+                        .subscribe_deposit_or_renewal_operation(operation_id),
+                    |state| Event::stability_pool_deposit(fed.federation_id(), state),
+                )
+                .await
             })
             .await;
-        Ok(())
-    }
-
-    async fn subscribe_stability_pool_deposit(&self, operation_id: OperationId) -> Result<()> {
-        let Ok(updates) = self
-            .client
-            .subscribe_deposit_or_renewal_operation(operation_id)
-            .await
-        else {
-            bail!("Unable to subscribe");
-        };
-
-        let mut updates = updates.into_stream();
-
-        while let Some(update) = updates.next().await {
-            match update {
-                StabilityPoolDepositState::TxRejected(e) => {
-                    bail!("TX rejected: {e}");
-                }
-                StabilityPoolDepositState::PrimaryOutputError(e) => {
-                    bail!("Change output error: {e}");
-                }
-                _ => info!("Update: {:?}", update),
-            }
-        }
-
         Ok(())
     }
 
@@ -1722,49 +1688,27 @@ impl FederationV1 {
         self.task_group
             .clone()
             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
-                fed.event_sink.typed_event(&Event::stability_pool_withdraw(
-                    fed.federation_id(),
-                    match fed.subscribe_stability_pool_withdraw(operation_id).await {
-                        Ok(_) => StabilityPoolOperationState::Success,
-                        Err(e) => StabilityPoolOperationState::Failure(e.to_string()),
-                    },
-                ));
+                fed.subscribe_client_operation(
+                    fed.client.subscribe_withdraw(operation_id),
+                    |state| Event::stability_pool_withdrawal(fed.federation_id(), state),
+                )
+                .await
             })
             .await;
         Ok(())
     }
 
-    async fn subscribe_stability_pool_withdraw(
-        &self,
-        operation_id: OperationId,
-    ) -> anyhow::Result<()> {
-        let Ok(updates) = self.client.subscribe_withdraw(operation_id).await else {
-            bail!("Unable to subscribe");
-        };
-
-        let mut updates = updates.into_stream();
-
-        while let Some(update) = updates.next().await {
-            match update {
-                StabilityPoolWithdrawalState::TxRejected(e) => {
-                    bail!("TX rejected: {e}")
-                }
-                StabilityPoolWithdrawalState::PrimaryOutputError(e) => {
-                    bail!("Primary output error: {e}")
-                }
-                StabilityPoolWithdrawalState::CancellationSubmissionFailure(e) => {
-                    bail!("Cancellation submission failure: {e}")
-                }
-                StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e) => {
-                    bail!("Await cycle turnover error: {e}")
-                }
-                StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e) => {
-                    bail!("Withdraw idle submission failure: {e}")
-                }
-                _ => info!("Update: {:?}", update),
+    async fn subscribe_client_operation<S, E, U>(&self, stream_gen: S, event_gen: E)
+    where
+        S: Future<Output = Result<UpdateStreamOrOutcome<U>>>,
+        E: Fn(U) -> Event,
+        U: MaybeSend + MaybeSync + 'static,
+    {
+        if let Ok(update_stream) = stream_gen.await {
+            let mut updates = update_stream.into_stream();
+            while let Some(state) = updates.next().await {
+                self.event_sink.typed_event(&event_gen(state))
             }
         }
-
-        Ok(())
     }
 }

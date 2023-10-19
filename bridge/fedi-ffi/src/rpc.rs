@@ -1223,7 +1223,7 @@ mod tests {
             // Wait until deposit operation succeeds
             if bridge
                 .event_sink
-                .num_events_of_type("stabilityPoolWithdraw".into())
+                .num_events_of_type("stabilityPoolWithdrawal".into())
                 != 0
             {
                 break;

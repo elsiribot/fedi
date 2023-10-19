@@ -49,17 +49,46 @@ pub struct BalanceEvent {
 #[derive(Serialize, Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
-pub struct StabilityPoolEvent {
+pub struct StabilityPoolDepositEvent {
     pub federation_id: RpcFederationId,
-    pub state: StabilityPoolOperationState,
+    pub state: StabilityPoolDepositState,
 }
 
 #[derive(Serialize, Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
-pub enum StabilityPoolOperationState {
+pub enum StabilityPoolDepositState {
+    Initiated,
+    TxAccepted,
+    TxRejected(String),
+    PrimaryOutputError(String),
     Success,
-    Failure(String),
+}
+
+#[derive(Serialize, Debug, TS)]
+#[ts(export, export_to = "target/bindings/")]
+#[ts(rename_all = "camelCase")]
+pub struct StabilityPoolWithdrawalEvent {
+    pub federation_id: RpcFederationId,
+    pub state: StabilityPoolWithdrawalState,
+}
+
+#[derive(Serialize, Debug, TS)]
+#[ts(export, export_to = "target/bindings/")]
+#[ts(rename_all = "camelCase")]
+pub enum StabilityPoolWithdrawalState {
+    WithdrawUnlockedInitiated,
+    TxRejected(String),
+    WithdrawUnlockedAccepted,
+    PrimaryOutputError(String),
+    Success,
+    CancellationSubmissionFailure(String),
+    CancellationInitiated,
+    CancellationAccepted,
+    AwaitCycleTurnoverError(String),
+    WithdrawIdleSubmissionFailure(String),
+    WithdrawIdleInitiated,
+    WithdrawIdleAccepted,
 }
 
 #[derive(Debug, TS)]
@@ -71,8 +100,8 @@ pub enum Event {
     Federation(RpcFederation),
     Balance(BalanceEvent),
     Panic(PanicEvent),
-    StabilityPoolDeposit(StabilityPoolEvent),
-    StabilityPoolWithdraw(StabilityPoolEvent),
+    StabilityPoolDeposit(StabilityPoolDepositEvent),
+    StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent),
 }
 
 impl Event {
@@ -102,21 +131,50 @@ impl Event {
     }
     pub fn stability_pool_deposit(
         federation_id: fedimint_core::config::FederationId,
-        state: StabilityPoolOperationState,
+        state: stability_pool_client::StabilityPoolDepositState,
     ) -> Self {
-        Self::StabilityPoolDeposit(StabilityPoolEvent {
+        Self::StabilityPoolDeposit(StabilityPoolDepositEvent {
             federation_id: RpcFederationId(federation_id),
-            state,
+            state: match state {
+                stability_pool_client::StabilityPoolDepositState::Initiated => {
+                    StabilityPoolDepositState::Initiated
+                }
+                stability_pool_client::StabilityPoolDepositState::TxAccepted => {
+                    StabilityPoolDepositState::TxAccepted
+                }
+                stability_pool_client::StabilityPoolDepositState::TxRejected(e) => {
+                    StabilityPoolDepositState::TxRejected(e.to_string())
+                }
+                stability_pool_client::StabilityPoolDepositState::PrimaryOutputError(e) => {
+                    StabilityPoolDepositState::PrimaryOutputError(e.to_string())
+                }
+                stability_pool_client::StabilityPoolDepositState::Success => {
+                    StabilityPoolDepositState::Success
+                }
+            },
         })
     }
 
-    pub fn stability_pool_withdraw(
+    pub fn stability_pool_withdrawal(
         federation_id: fedimint_core::config::FederationId,
-        state: StabilityPoolOperationState,
+        state: stability_pool_client::StabilityPoolWithdrawalState,
     ) -> Self {
-        Self::StabilityPoolWithdraw(StabilityPoolEvent {
+        Self::StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent {
             federation_id: RpcFederationId(federation_id),
-            state,
+            state: match state {
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedInitiated => StabilityPoolWithdrawalState::WithdrawUnlockedInitiated,
+                stability_pool_client::StabilityPoolWithdrawalState::TxRejected(e) => StabilityPoolWithdrawalState::TxRejected(e.to_string()),
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedAccepted => StabilityPoolWithdrawalState::WithdrawUnlockedAccepted,
+                stability_pool_client::StabilityPoolWithdrawalState::PrimaryOutputError(e) => StabilityPoolWithdrawalState::PrimaryOutputError(e),
+                stability_pool_client::StabilityPoolWithdrawalState::Success => StabilityPoolWithdrawalState::Success,
+                stability_pool_client::StabilityPoolWithdrawalState::CancellationSubmissionFailure(e) => StabilityPoolWithdrawalState::CancellationSubmissionFailure(e),
+                stability_pool_client::StabilityPoolWithdrawalState::CancellationInitiated => StabilityPoolWithdrawalState::CancellationInitiated,
+                stability_pool_client::StabilityPoolWithdrawalState::CancellationAccepted => StabilityPoolWithdrawalState::CancellationAccepted,
+                stability_pool_client::StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e) => StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e),
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e) => StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e),
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawIdleInitiated => StabilityPoolWithdrawalState::WithdrawIdleInitiated,
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawIdleAccepted => StabilityPoolWithdrawalState::WithdrawIdleAccepted,
+            },
         })
     }
 }
@@ -162,9 +220,9 @@ pub trait TypedEventExt: IEventSink {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "stabilityPoolDeposit".into(), body);
             }
-            Event::StabilityPoolWithdraw(event) => {
+            Event::StabilityPoolWithdrawal(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                IEventSink::event(self, "stabilityPoolWithdraw".into(), body);
+                IEventSink::event(self, "stabilityPoolWithdrawal".into(), body);
             }
         };
     }

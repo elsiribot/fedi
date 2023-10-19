@@ -36,7 +36,7 @@ export type Event =
     | { balance: BalanceEvent }
     | { panic: PanicEvent }
     | { stabilityPoolDeposit: StabilityPoolEvent }
-    | { stabilityPoolWithdraw: StabilityPoolEvent }
+    | { stabilityPoolWithdrawal: StabilityPoolEvent }
 
 export interface LogEvent {
     log: string
