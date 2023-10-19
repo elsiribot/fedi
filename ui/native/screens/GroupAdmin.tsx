@@ -89,35 +89,6 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     />
                 )}
             </View>
-            <View>
-                <Text style={styles(theme).sectionTitle}>
-                    {t('words.messages')}
-                </Text>
-                <SettingsItem
-                    disabled
-                    image={<SvgImage name="Alarm" />}
-                    label={t('feature.chat.disappearing-messages')}
-                    onPress={() => console.info('not implemented')}
-                />
-                <SettingsItem
-                    disabled
-                    image={<SvgImage name="ChatHistory" />}
-                    label={t('feature.chat.show-history-to-new-members')}
-                    onPress={() => console.info('not implemented')}
-                />
-                <SettingsItem
-                    disabled
-                    image={<SvgImage name="Photo" />}
-                    label={t('feature.chat.view-shared-media')}
-                    onPress={() => console.info('not implemented')}
-                />
-                <SettingsItem
-                    disabled
-                    image={<SvgImage name="Cash" />}
-                    label={t('words.payments')}
-                    onPress={() => console.info('not implemented')}
-                />
-            </View>
         </ScrollView>
     )
 }
