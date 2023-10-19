@@ -254,7 +254,9 @@
             "you-sent-payment": "You sent {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
         "developer": {
-            "export-transactions-csv": "Export transactions CSV"
+            "nightly": "nightly",
+            "export-transactions-csv": "Export transactions CSV",
+            "share-logs": "Share logs"
         },
         "federations": {
             "add-federation": "Add a Federation",
@@ -457,10 +459,6 @@
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
             "you-sent": "You sent"
-        },
-        "developer": {
-            "export-transactions-csv": "Export transactions CSV",
-            "share-logs": "Share logs"
         }
     }
 }

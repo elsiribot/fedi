@@ -54,10 +54,11 @@ if [[ -z $GITHUB_OUTPUT ]]; then
   echo "Not running in CI. Skip saving outputs for Github Actions."
 else
   echo "Saving APK path + version + latest commit as outputs for next steps in job"
-  APK_VERSION="$(npm pkg get version  --ws false | sed 's/"//g')"
-  echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/$FLAVOR/release/app-$FLAVOR-release-${APK_VERSION}.apk" >> $GITHUB_OUTPUT
-  echo "APK_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
+  COMMIT_TO_DEPLOY="$(git rev-parse HEAD)"
   echo "COMMIT_TO_DEPLOY=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+  APK_VERSION="$(npm pkg get version  --ws false | sed 's/"//g')"
+  echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/$FLAVOR/release/app-$FLAVOR-release-${APK_VERSION}-${COMMIT_TO_DEPLOY}.apk" >> $GITHUB_OUTPUT
+  echo "APK_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
 fi
 
 popd
