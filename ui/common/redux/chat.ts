@@ -1694,6 +1694,12 @@ export const selectChatGroupAffiliation = createSelector(
     },
 )
 
+export const selectChatDefaultGroupIds = createSelector(
+    (s: CommonState) => selectActiveFederation(s),
+    activeFederation =>
+        activeFederation ? getFederationGroupChats(activeFederation.meta) : [],
+)
+
 /**
  * Selects the XmppChatClient for the currently active federation.
  * Only returns the client if it is online and ready to send and receive

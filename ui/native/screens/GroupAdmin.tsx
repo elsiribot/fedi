@@ -13,6 +13,7 @@ import {
 import {
     leaveChatGroup,
     selectActiveFederation,
+    selectChatDefaultGroupIds,
     selectChatGroup,
     selectChatGroupAffiliation,
 } from '@fedi/common/redux'
@@ -38,6 +39,9 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const federationId = useAppSelector(selectActiveFederation)?.id
     const myAffiliation = useAppSelector(s =>
         selectChatGroupAffiliation(s, groupId),
+    )
+    const isDefaultGroup = useAppSelector(s =>
+        selectChatDefaultGroupIds(s).includes(groupId),
     )
     const [broadcastOnly] = useState<boolean>(group?.broadcastOnly || false)
 
@@ -109,6 +113,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     image={<SvgImage name="LeaveRoom" />}
                     label={t('feature.chat.leave-group')}
                     onPress={askLeaveGroup}
+                    disabled={isDefaultGroup}
                 />
                 <SettingsItem
                     image={<SvgImage name="SpeakerPhone" />}
