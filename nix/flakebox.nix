@@ -66,14 +66,16 @@ let
       ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
       SNAPPY_LIB_DIR = "${pkgs.pkgsStatic.snappy}/lib/";
       "ROCKSDB_${target_underscores}_STATIC" = "true";
+      "SNAPPY_${target_underscores}_STATIC" = "true";
       "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
       "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
     } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
       # TODO: could we used the android-nixpkgs toolchain instead of another one?
-      ROCKSDB_aarch64_linux_android_STATIC = "true";
-      SNAPPY_aarch64_linux_android_STATIC = "true";
-      ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.rocksdb}/lib/";
-      SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.pkgsStatic.snappy}/lib/";
+      # BROKEN: seems to produce binaries that crash; needs investigation
+      # ROCKSDB_aarch64_linux_android_STATIC = "true";
+      # SNAPPY_aarch64_linux_android_STATIC = "true";
+      # ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.rocksdb}/lib/";
+      # SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.pkgsStatic.snappy}/lib/";
 
       # BROKEN
       # error: "No timer implementation for this platform"
