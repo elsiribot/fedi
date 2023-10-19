@@ -145,11 +145,11 @@ const StabilityTransactionDetail = ({
                     <View style={styles(theme).detailItem}>
                         <Text>{t('words.status')}</Text>
                         <Text>
-                            {txn.lnState.type === 'WaitingForRefund' &&
+                            {txn.lnState.type === 'waitingForRefund' &&
                                 t('feature.send.refund-in-block', {
                                     block: txn.lnState.block_height,
                                 })}
-                            {txn.lnState.type !== 'WaitingForRefund' &&
+                            {txn.lnState.type !== 'waitingForRefund' &&
                                 `${txn.lnState.type}`}
                         </Text>
                     </View>

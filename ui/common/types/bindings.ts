@@ -62,8 +62,6 @@ export interface RpcEcashInfo {
     federationId: RpcFederationId | null
 }
 
-export type RpcFederationId = string
-
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
@@ -81,6 +79,8 @@ export interface RpcGenerateEcashResponse {
     ecash: string
     cancelAt: number
 }
+
+export type RpcFederationId = string
 
 export interface RpcInvoice {
     paymentHash: string

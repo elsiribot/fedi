@@ -23,7 +23,7 @@ const StabilityWithdraw: React.FC<Props> = () => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (_theme: Theme) =>
     StyleSheet.create({
         container: {
             alignItems: 'center',
