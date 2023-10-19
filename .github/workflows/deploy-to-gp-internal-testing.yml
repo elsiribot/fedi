@@ -38,4 +38,8 @@ jobs:
               run: nix develop --command ./scripts/ci/make-play-store-creds.sh
 
             - name: Execute Fastlane command
+              env:
+                  # Consider: should we even have separate steps above for this?
+                  SKIP_BRIDGE_BUILD: 1
+                  SKIP_UI_DEPS_BUILD: 1
               run: nix develop --command ./scripts/ui/deploy-to-google-play.sh

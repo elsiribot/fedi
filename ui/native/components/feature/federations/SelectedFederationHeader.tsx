@@ -1,7 +1,9 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
+import DeviceInfo from 'react-native-device-info'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
@@ -18,6 +20,7 @@ import SvgImage from '../../ui/SvgImage'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
 
 const SelectedFederationHeader: React.FC<{}> = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -56,6 +59,14 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                 <SvgImage name="ChevronRight" size={20} />
             </Pressable>
             {popupInfo && <PopupFederationCountdown />}
+            {/* Display a small UI indicator for Fedi Nightly builds */}
+            {DeviceInfo.getBundleId().includes('nightly') && (
+                <View style={styles(theme).nightly}>
+                    <Text small style={styles(theme).nightlyText}>
+                        {t('feature.developer.nightly')}
+                    </Text>
+                </View>
+            )}
         </SafeAreaView>
     )
 }
@@ -69,6 +80,19 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.sm,
             borderBottomColor: theme.colors.extraLightGrey,
             borderBottomWidth: 1,
+        },
+        nightly: {
+            position: 'absolute',
+            bottom: 0,
+            right: theme.spacing.lg,
+            backgroundColor: theme.colors.primary,
+            paddingHorizontal: theme.spacing.sm,
+            borderTopLeftRadius: 5,
+            borderTopRightRadius: 5,
+        },
+        nightlyText: {
+            fontSize: 10,
+            color: theme.colors.secondary,
         },
         federation: {
             flexDirection: 'row',
