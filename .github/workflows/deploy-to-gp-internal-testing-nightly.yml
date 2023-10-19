@@ -39,7 +39,7 @@ jobs:
 
             - name: Execute Fastlane command
               env:
-                  PRODUCT_FLAVOR: 'nightly'
+                  FLAVOR: 'nightly'
                   # Consider: should we even have separate steps above for this?
                   SKIP_BRIDGE_BUILD: 1
                   SKIP_UI_DEPS_BUILD: 1
