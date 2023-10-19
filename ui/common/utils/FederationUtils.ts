@@ -308,6 +308,14 @@ export const shouldShowOnchainDeposits = (
     return false
 }
 
+export const shouldEnableNostr = (federation: Federation) => {
+    // Nostr RPCs not supported on v0 federations
+    if (federation.version === 0) {
+        return false
+    }
+    return federation.meta?.[SupportedFeature.nostr_enabled] === 'true'
+}
+
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {

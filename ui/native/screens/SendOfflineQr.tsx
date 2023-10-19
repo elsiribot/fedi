@@ -21,7 +21,12 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const [index, setIndex] = useState(0)
     const [unit] = useState('sats')
 
-    const frames = useMemo(() => dataToFrames(ecash), [ecash])
+    const frames = useMemo(() => {
+        // TODO: Convert to buffer from base64 to optimize QR count. Not
+        // backwards compatible, so give it some time.
+        // return dataToFrames(Buffer.from(ecash, 'base64'))
+        return dataToFrames(ecash)
+    }, [ecash])
 
     // show new qr every 100ms
     useEffect(() => {

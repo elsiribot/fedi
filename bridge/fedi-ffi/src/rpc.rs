@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+use std::panic::PanicInfo;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
@@ -24,6 +25,8 @@ use super::types::{
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
+use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
+use crate::types::{RpcBalanceInfo, RpcEcashInfo};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -41,11 +44,16 @@ pub async fn fedimint_initialize_async(
     Ok(Arc::new(bridge))
 }
 
-fn rpc_error(error: &anyhow::Error) -> String {
-    tracing::error!(%error, "rpc_error");
+pub fn rpc_error(error: &anyhow::Error) -> String {
     let code = get_error_code(error);
 
     json!({ "error": error.to_string(), "code": code }).to_string()
+}
+
+pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
+    event_sink.typed_event(&Event::Panic(PanicEvent {
+        message: info.to_string(),
+    }))
 }
 
 use ts_rs::TS;
@@ -98,6 +106,14 @@ async fn leaveFederation(
     federation_id: RpcFederationId,
 ) -> anyhow::Result<()> {
     bridge.leave_federation(&federation_id.0).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn balanceInfo(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<RpcBalanceInfo> {
+    bridge.balance_info(federation_id).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -189,7 +205,7 @@ async fn receiveEcash(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn validateEcash(bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcAmount> {
+async fn validateEcash(bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcEcashInfo> {
     bridge.validate_ecash(ecash).await
 }
 
@@ -420,6 +436,7 @@ rpc_methods!(RpcMethods {
     generateAddress,
     payAddress,
     // Ecash
+    balanceInfo,
     generateEcash,
     receiveEcash,
     validateEcash,
@@ -462,7 +479,10 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
     info!(?payload, "rpc_payload");
 
     let result = RpcMethods::handle(bridge, &method, payload).await;
-    let response = result.unwrap_or_else(|e| rpc_error(&e));
+    let response = result.unwrap_or_else(|error| {
+        error!(%error, "rpc_error");
+        rpc_error(&error)
+    });
     info!(?response, "rpc_response");
     response
 }

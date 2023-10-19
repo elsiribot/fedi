@@ -57,6 +57,9 @@ export const SendOffline: React.FC<Props> = ({
             )
             onEcashGenerated()
             setOfflinePayment(ecash)
+            // TODO: Convert to buffer from base64 to optimize QR count. Not
+            // backwards compatible, so give it some time.
+            // setQrFrames(dataToFrames(Buffer.from(ecash, 'base64')))
             setQrFrames(dataToFrames(ecash))
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')

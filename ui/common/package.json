@@ -10,7 +10,9 @@
         "lint:tsc": "tsc --noEmit",
         "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
         "format": "prettier --write .",
-        "autotranslate": "ts-node ./scripts/autotranslate.ts"
+        "i18n:autotranslate": "ts-node ./scripts/autotranslate.ts",
+        "i18n:export-csv": "ts-node ./scripts/i18n-export-csv.ts",
+        "i18n:import-csv": "ts-node ./scripts/i18n-import-csv.ts"
     },
     "dependencies": {
         "@reduxjs/toolkit": "^1.9.3",

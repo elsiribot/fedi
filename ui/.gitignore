@@ -8,3 +8,5 @@ dist
 .turbo
 
 tsconfig.tsbuildinfo
+
+common/localization/export.csv

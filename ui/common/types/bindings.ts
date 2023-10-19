@@ -19,17 +19,32 @@ export type ErrorCode =
     | 'invalidMnemonic'
     | 'socialRecoveryNotSupported'
     | 'nostrNotSupported'
+    | 'panic'
 
 export type Event =
     | { transaction: TransactionEvent }
     | { log: LogEvent }
     | { federation: RpcFederation }
+    | { panic: PanicEvent }
 
 export interface LogEvent {
     log: string
 }
 
+export interface PanicEvent {
+    message: string
+}
+
 export type RpcAmount = MSats
+
+export interface RpcBalanceInfo {
+    tiers: Record<string, number>
+}
+
+export interface RpcEcashInfo {
+    amount: RpcAmount
+    federationId: RpcFederationId | null
+}
 
 export type RpcFederationId = string
 
@@ -159,12 +174,19 @@ export interface RpcMethods {
         { federationId: RpcFederationId; address: string; sats: bigint },
         string,
     ]
+    balanceInfo: [
+        { federationId: RpcFederationId },
+        { tiers: Record<string, number> },
+    ]
     generateEcash: [
         { federationId: RpcFederationId; amount: RpcAmount },
         string,
     ]
     receiveEcash: [{ federationId: RpcFederationId; ecash: string }, MSats]
-    validateEcash: [{ ecash: string }, MSats]
+    validateEcash: [
+        { ecash: string },
+        { amount: RpcAmount; federationId: RpcFederationId | null },
+    ]
     listTransactions: [
         { federationId: RpcFederationId },
         Array<{

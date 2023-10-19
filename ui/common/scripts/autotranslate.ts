@@ -2,11 +2,12 @@
 import { Translate as GoogleTranslate } from '@google-cloud/translate/build/src/v2'
 import fs from 'fs'
 import { decode, encode } from 'html-entities'
-import jsonStringify from 'json-stable-stringify'
 import get from 'lodash/get'
 import set from 'lodash/set'
 import path from 'path'
 import readline from 'readline'
+
+import { formatLanguageJson } from './i18n-utils'
 
 type LanguageJson = { [key: string]: string | LanguageJson }
 
@@ -148,27 +149,7 @@ async function run() {
         }
 
         const languagePath = path.join(localizationDir, code, 'common.json')
-        const topKeyOrder = ['words', 'phrases', 'errors', 'feature']
-        fs.writeFileSync(
-            languagePath,
-            jsonStringify(json, {
-                space: 4,
-                cmp: (a, b) => {
-                    // Keep top level keys in order
-                    if (
-                        topKeyOrder.includes(a.key) ||
-                        topKeyOrder.includes(b.key)
-                    ) {
-                        return (
-                            topKeyOrder.indexOf(a.key) -
-                            topKeyOrder.indexOf(b.key)
-                        )
-                    }
-                    // Otherwise sort alphabetically
-                    return a.key.localeCompare(b.key)
-                },
-            }) + '\n',
-        )
+        fs.writeFileSync(languagePath, formatLanguageJson(json))
         console.info('Wrote updated language file to', languagePath)
     }
 

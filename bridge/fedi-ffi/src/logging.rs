@@ -53,15 +53,17 @@ pub fn init_logging(
             .json()
             .with_writer(Mutex::new(file));
 
-        let reg = tracing_subscriber::registry()
-            .with(
-                ReactNativeLayer(event_sink)
-                    .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
-            )
-            .with(
-                log_file_layer
-                    .with_filter(EnvFilter::new("info,fedimint_client=debug,fediffi=trace")),
-            );
+        let reg = tracing_subscriber::registry();
+
+        #[cfg(debug_assertions)]
+        let reg = reg.with(
+            ReactNativeLayer(event_sink)
+                .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
+        );
+
+        let reg = reg.with(
+            log_file_layer.with_filter(EnvFilter::new("info,fedimint_client=debug,fediffi=trace")),
+        );
 
         let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
             let time = fedimint_core::time::now()

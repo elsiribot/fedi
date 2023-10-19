@@ -60,14 +60,18 @@ const TransactionDetail = ({
         }
         // lnState types are not clean yet but make sure to at least
         // show pending for unpaid, newly generated LN invoices
-        if (!txn.lnState) return `${t('phrases.receive-pending')}`
-        switch (txn.lnState.type) {
-            case 'waitingForPayment':
-                return t('words.pending')
-            case 'claimed':
-                return t('feature.receive.you-received')
-            default:
-                return t('feature.receive.you-received')
+        if (txn.lightning) {
+            if (!txn.lnState) return `${t('phrases.receive-pending')}`
+            switch (txn.lnState.type) {
+                case 'waitingForPayment':
+                    return t('phrases.receive-pending')
+                case 'claimed':
+                    return t('feature.receive.you-received')
+                default:
+                    return t('phrases.receive-pending')
+            }
+        } else {
+            return t('feature.receive.you-received')
         }
     }
 

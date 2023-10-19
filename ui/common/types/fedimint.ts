@@ -7,6 +7,7 @@ import {
     SocialRecoveryEvent,
     RpcTransaction,
     SocialRecoveryApproval,
+    PanicEvent,
 } from './bindings'
 import { MSats, MsatsString } from './units'
 
@@ -79,6 +80,7 @@ export enum SupportedFeature {
     onchain_deposits_disabled = 'onchain_deposits_disabled',
     max_balance_msats = 'max_balance_msats',
     max_invoice_msats = 'max_invoice_msats',
+    nostr_enabled = 'nostr_enabled',
 }
 
 export interface ClientConfigMetadata {
@@ -170,4 +172,5 @@ export type FedimintBridgeEventMap = {
     federation: FederationEvent
     transaction: TransactionEvent
     socialRecovery: SocialRecoveryEvent
+    panic: PanicEvent
 }

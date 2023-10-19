@@ -38,6 +38,7 @@ use super::types::{
     SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
+use crate::types::{RpcBalanceInfo, RpcEcashInfo};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -107,6 +108,13 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.get_balance().await.translate(),
             Self::V1(v1) => v1.get_balance().await,
+        }
+    }
+
+    pub async fn balance_info(&self) -> RpcBalanceInfo {
+        match self {
+            Self::V0(v0) => v0.balance_info().await,
+            Self::V1(v1) => v1.balance_info().await,
         }
     }
 
@@ -488,6 +496,13 @@ impl Bridge {
         Ok(())
     }
 
+    pub async fn balance_info(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> anyhow::Result<RpcBalanceInfo> {
+        Ok(self.get_multi(&federation_id.0).await?.balance_info().await)
+    }
+
     pub async fn generate_invoice(
         &self,
         federation_id: RpcFederationId,
@@ -537,13 +552,13 @@ impl Bridge {
         multi.receive_ecash(ecash).await.map(RpcAmount)
     }
 
-    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcAmount> {
+    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
         // Attempt v1 deserialization
-        if let Ok(amount) = FederationV1::validate_ecash(ecash.clone()) {
-            return Ok(RpcAmount(amount));
+        if let Ok(info) = FederationV1::validate_ecash(ecash.clone()) {
+            return Ok(info);
         }
         // Attempt v0 deserialization
-        FederationV0::validate_ecash(ecash).map(|amt| RpcAmount(amt.translate()))
+        FederationV0::validate_ecash(ecash)
     }
 
     pub async fn generate_ecash(
