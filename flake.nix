@@ -72,6 +72,52 @@
           ];
         };
 
+        fmLib = fedimint-build.lib.${system};
+
+        # Replace placeholder git hash in a binary
+        #
+        # To avoid impurity, we use a git hash placeholder when building binaries
+        # and then replace them with the real git hash in the binaries themselves.
+        replaceGitHash =
+          let
+            # the hash we will set if the tree is dirty;
+            dirty-hash = "0000000000000000000000000000000000000000";
+          in
+          { name
+          , package
+          , placeholder ? "01234569abcdef7afa1d2683a099c7af48a523c1"
+          , gitHash ? if (self ? rev) then self.rev else dirty-hash
+          }:
+          stdenv.mkDerivation {
+            inherit system;
+            inherit name;
+
+            dontUnpack = true;
+            dontStrip = !pkgs.stdenv.isDarwin;
+
+            installPhase = ''
+              cp -a ${package} $out
+              for path in `find $out -type f -executable`; do
+                # need to use a temporary file not to overwrite source as we are reading it
+                bbe -e 's/${placeholder}/${gitHash}/' $path -o ./tmp || exit 1
+                chmod +w $path
+                # use cat to keep all the original permissions etc as they were
+                cat ./tmp > "$path"
+                chmod -w $path
+              done
+            '';
+
+            buildInputs = [ pkgs.bbe ];
+          };
+
+        # TODO: use this version after updating upstream fedimint to handle `gitHash` argument
+        # replaceGitHash = name: package: fmLib.replaceGitHash {
+        #   # FIXME: don't hard-code this. But I don't know how to get it from craneLib
+        #   inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
+        # gitHash ? if (self ? rev) then self.rev else dirty-hash
+        # };
+
+
         androidSdk =
           android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
             cmdline-tools-latest
@@ -125,19 +171,11 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
         };
-
-        fmLib = fedimint-build.lib.${system};
-
 
         lib = pkgs.lib;
         stdenv = pkgs.stdenv;
-
-        replaceGitHash = name: package: fmLib.replaceGitHash {
-          # FIXME: don't hard-code this. But I don't know how to get it from craneLib
-          inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
-        };
 
         # this symlinks binaries needed to run xcode-specific commands assuming
         # xcode is already installed on the machine (can't be nixified normally)
@@ -216,7 +254,7 @@
           # straight from Fedimint, without any modifications
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
 
-          fedi-fedimint-pkgs = replaceGitHash "fedi-fedimint-pkgs" craneMultiBuild.fedi-fedimint-pkgs;
+          fedi-fedimint-pkgs = craneMultiBuild.fedi-fedimint-pkgs;
           fedi-monitoring = craneMultiBuild.fedi-monitoring;
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
           devops-cli = craneMultiBuild.fedi-monitoring;

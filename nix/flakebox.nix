@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -123,6 +123,12 @@ let
       # TODO: should we compile from scratch from vendored source for release builds? (allegedly better perf)
       # pkgs.lib.optionalAttrs (builtins.elem (craneLib.cargoProfile or "") [ "dev" "ci" ]) commonEnvsShellRocksdbLink);
       commonEnvsShellRocksdbLink);
+
+  fediBuildPackageGroup = args: replaceGitHash {
+    name = args.pname;
+    package =
+      craneLib.buildPackageGroup args;
+  };
 in
 rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
@@ -133,7 +139,7 @@ rec {
     buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
-  fedi-fedimint-pkgs = craneLib.buildPackageGroup {
+  fedi-fedimint-pkgs = fediBuildPackageGroup {
     pname = "fedi-fedimint-pkgs";
     packages = [
       "fedi-fedimintd"
@@ -141,21 +147,21 @@ rec {
     ];
   };
 
-  fedi-wasm = craneLib.buildPackageGroup {
+  fedi-wasm = fediBuildPackageGroup {
     pname = "fedi-wasm";
     packages = [
       "fedi-wasm"
     ];
   };
 
-  fedi-monitoring = craneLib.buildPackageGroup {
+  fedi-monitoring = fediBuildPackageGroup {
     name = "fedi-monitoring";
     packages = [
       "fedi-monitoring"
     ];
   };
 
-  devops-cli = craneLib.buildPackageGroup {
+  devops-cli = fediBuildPackageGroup {
     name = "devops-cli";
     packages = [
       "devops-cli"
