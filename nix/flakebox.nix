@@ -62,13 +62,16 @@ let
     in
     {
       ROCKSDB_STATIC = "true";
-      SNAPPY_STATIC = "true";
       ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
       SNAPPY_LIB_DIR = "${pkgs.pkgsStatic.snappy}/lib/";
+
       "ROCKSDB_${target_underscores}_STATIC" = "true";
-      "SNAPPY_${target_underscores}_STATIC" = "true";
       "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
       "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
+    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+      # macos can't static libraries
+      SNAPPY_STATIC = "true";
+      "SNAPPY_${target_underscores}_STATIC" = "true";
     } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
       # TODO: could we used the android-nixpkgs toolchain instead of another one?
       # BROKEN: seems to produce binaries that crash; needs investigation
