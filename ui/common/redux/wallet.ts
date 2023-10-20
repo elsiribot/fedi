@@ -159,6 +159,29 @@ export const increaseStableBalance = createAsyncThunk<
     },
 )
 
+export const decreaseStableBalance = createAsyncThunk<
+    Promise<boolean>,
+    { fedimint: FedimintBridge; unlockedAmount: RpcAmount; lockedBps: number },
+    { state: CommonState }
+>(
+    'wallet/decreaseStableBalance',
+    async ({ fedimint, unlockedAmount, lockedBps }, { getState }) => {
+        try {
+            const state = getState()
+            const activeFederationId = selectActiveFederation(state)?.id
+            if (!activeFederationId) throw new Error('No active federation')
+            await fedimint.stabilityPoolWithdraw(
+                lockedBps,
+                unlockedAmount,
+                activeFederationId,
+            )
+            return true
+        } catch (error) {
+            return false
+        }
+    },
+)
+
 /*** Selectors ***/
 
 const selectFederationWalletState = (s: CommonState) =>

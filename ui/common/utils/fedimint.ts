@@ -28,6 +28,17 @@ export class FedimintBridge {
 
     /*** RPC METHODS ***/
 
+    async stabilityPoolWithdraw(
+        lockedBps: number,
+        unlockedAmount: RpcAmount,
+        federationId: string,
+    ) {
+        return this.rpcTyped<'stabilityPoolWithdraw', null>(
+            'stabilityPoolWithdraw',
+            { lockedBps, unlockedAmount, federationId },
+        )
+    }
+
     async stabilityPoolDepositToSeek(amount: RpcAmount, federationId: string) {
         return this.rpcTyped<'stabilityPoolDepositToSeek', null>(
             'stabilityPoolDepositToSeek',
