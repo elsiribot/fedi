@@ -35,8 +35,8 @@ export type Event =
     | { federation: RpcFederation }
     | { balance: BalanceEvent }
     | { panic: PanicEvent }
-    | { stabilityPoolDeposit: StabilityPoolEvent }
-    | { stabilityPoolWithdrawal: StabilityPoolEvent }
+    | { stabilityPoolDeposit: StabilityPoolDepositEvent }
+    | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
 
 export interface LogEvent {
     log: string
@@ -407,12 +407,36 @@ export interface SocialRecoveryEvent {
     remaining: number
 }
 
-export interface StabilityPoolEvent {
+export interface StabilityPoolDepositEvent {
     federationId: RpcFederationId
-    state: StabilityPoolOperationState
+    state: StabilityPoolDepositState
 }
 
-export type StabilityPoolOperationState = 'success' | { failure: string }
+export type StabilityPoolDepositState =
+    | 'initiated'
+    | 'txAccepted'
+    | { txRejected: string }
+    | { primaryOutputError: string }
+    | 'success'
+
+export interface StabilityPoolWithdrawalEvent {
+    federationId: RpcFederationId
+    state: StabilityPoolWithdrawalState
+}
+
+export type StabilityPoolWithdrawalState =
+    | 'withdrawUnlockedInitiated'
+    | { txRejected: string }
+    | 'withdrawUnlockedAccepted'
+    | { primaryOutputError: string }
+    | 'success'
+    | { cancellationSubmissionFailure: string }
+    | 'cancellationInitiated'
+    | 'cancellationAccepted'
+    | { awaitCycleTurnoverError: string }
+    | { withdrawIdleSubmissionFailure: string }
+    | 'withdrawIdleInitiated'
+    | 'withdrawIdleAccepted'
 
 export interface TransactionEvent {
     federationId: RpcFederationId
