@@ -81,12 +81,16 @@
         replaceGitHash =
           let
             # the hash we will set if the tree is dirty;
-            dirty-hash = "0000000000000000000000000000000000000000";
+            dirtyHashPrefix = builtins.substring 0 16 self.dirtyRev;
+            dirtyHashSuffix = builtins.substring (40 - 16) 16 self.dirtyRev;
+            # the string needs to be 40 characters, like the original,
+            # so to denote `-dirty` we replace the middle with zeros
+            dirtyHash = "${dirtyHashPrefix}00000000${dirtyHashSuffix}";
           in
           { name
           , package
           , placeholder ? "01234569abcdef7afa1d2683a099c7af48a523c1"
-          , gitHash ? if (self ? rev) then self.rev else dirty-hash
+          , gitHash ? if (self ? rev) then self.rev else dirtyHash
           }:
           stdenv.mkDerivation {
             inherit system;
