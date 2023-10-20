@@ -9,6 +9,7 @@ use fediffi::event::IEventSink;
 use fediffi::rpc::rpc_error;
 use futures::FutureExt;
 use storage::WasmStorage;
+use tracing::warn;
 use wasm_bindgen::prelude::*;
 
 mod db;
@@ -50,7 +51,8 @@ pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<
     let event_sink = Arc::new(event_sink);
     logging::init(event_sink.clone());
     if BRIDGE.with(|b| b.borrow().is_some()) {
-        anyhow::bail!("bridge is already initialized");
+        warn!("bridge is already initialized");
+        return Ok(());
     }
     let storage = WasmStorage::new()
         .await
