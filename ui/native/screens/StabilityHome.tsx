@@ -7,14 +7,10 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import {
-    selectCurrency,
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
-import { MSats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makePendingBalanceText } from '@fedi/common/utils/stabilitypool'
 
 import { useAppSelector, useStabilityPool } from '../state/hooks'
@@ -28,20 +24,9 @@ const StabilityHome: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
-    const selectedCurrency = useAppSelector(selectCurrency)
 
-    const stableBalanceSats = amountUtils.msatToSat(stableBalance as MSats)
-    const { convertSatsToFiat, convertSatsToFormattedFiat } = useBtcFiatPrice()
-    const formattedStableBalance = convertSatsToFormattedFiat(stableBalanceSats)
-
-    const stableBalancePendingSats = amountUtils.msatToSat(
-        stableBalancePending as MSats,
-    )
-    const formattedStableBalancePending = convertSatsToFiat(
-        stableBalancePendingSats,
-    )
-
-    useStabilityPool()
+    const { formattedStableBalance, formattedStableBalancePending } =
+        useStabilityPool()
 
     const style = styles(theme)
 
@@ -67,8 +52,8 @@ const StabilityHome: React.FC<Props> = () => {
                         <Text small style={style.balancePendingText}>
                             {makePendingBalanceText(
                                 t,
+                                stableBalancePending,
                                 formattedStableBalancePending,
-                                selectedCurrency,
                             )}
                         </Text>
                     )}
@@ -92,8 +77,8 @@ const StabilityHome: React.FC<Props> = () => {
                             {t('words.withdraw')}
                         </Text>
                     }
-                    // TOOD: implement withdrawals
-                    disabled={stableBalance === 0 || true}
+                    // TODO: implement withdrawals && compare against minimum withdraw amount
+                    disabled={stableBalance === 0 && stableBalancePending === 0}
                 />
             </View>
         </View>

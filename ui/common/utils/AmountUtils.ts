@@ -9,6 +9,7 @@ import {
     SatsString,
     SupportedCurrency,
     Usd,
+    UsdCents,
     UsdString,
 } from '../types'
 
@@ -206,6 +207,26 @@ class AmountUtils {
                 .replace(new RegExp('\\' + decimalSeparator), '.')
                 .replace(/[^0-9.-]+/g, ''),
         )
+    }
+    /**
+     * Given a number amount in USD cents, convert to a any other fiat
+     * currency with the 2 exchange rates
+     */
+    convertCentsToOtherFiat = (
+        cents: UsdCents,
+        btcUsdRate: number,
+        btcFiatRate: number,
+    ): number => {
+        const usd = Number(
+            (cents / 100).toFixed(AmountUtils.FIAT_MAX_DECIMAL_PLACES),
+        ) as Usd
+        const btc = Number(
+            (usd / btcUsdRate).toFixed(AmountUtils.BTC_MAX_DECIMAL_PLACES),
+        ) as Btc
+        const fiat = Number(
+            (btc * btcFiatRate).toFixed(AmountUtils.FIAT_MAX_DECIMAL_PLACES),
+        )
+        return fiat
     }
 }
 

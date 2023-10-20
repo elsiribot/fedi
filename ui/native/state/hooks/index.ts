@@ -10,14 +10,15 @@ import {
 import { AppStateStatus, AppState as RNAppState } from 'react-native'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
     ensureHealthyXmppStream,
     selectActiveFederationId,
     refreshActiveStabilityPool,
     selectChatXmppClient,
+    selectCurrency,
     selectStableBalance,
+    selectStableBalancePending,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -263,8 +264,9 @@ export const useXmppPushNotifications = async () => {
 export const useStabilityPool = () => {
     const dispatch = useAppDispatch()
     const navigation = useNavigation<NavigationHook>()
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const stableBalance = useAppSelector(selectStableBalance)
+    const stableBalancePending = useAppSelector(selectStableBalancePending)
+    const selectedCurrency = useAppSelector(selectCurrency)
 
     const refreshBalance = useCallback(() => {
         dispatch(
@@ -286,11 +288,18 @@ export const useStabilityPool = () => {
         return unsubscribe
     }, [refreshBalance, navigation])
 
-    const satsValue = amountUtils.msatToSat(stableBalance as MSats)
-    const formattedStableBalance = convertSatsToFormattedFiat(satsValue)
+    const formattedStableBalance = amountUtils.formatFiat(
+        stableBalance,
+        selectedCurrency,
+    )
+    const formattedStableBalancePending = amountUtils.formatFiat(
+        stableBalancePending,
+        selectedCurrency,
+    )
 
     return {
         refreshBalance,
         formattedStableBalance,
+        formattedStableBalancePending,
     }
 }

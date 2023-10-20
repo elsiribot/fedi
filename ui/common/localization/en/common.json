@@ -495,7 +495,7 @@
             "deposit-amount": "Deposit amount",
             "deposit-from": "Deposit from",
             "deposit-intiated": "Deposit initiated",
-            "deposit-pending": "+{{amount}} {{currency}} deposit pending...",
+            "deposit-pending": "+{{amount}} deposit pending...",
             "deposit-time": "Deposit time",
             "details-and-fee": "Details & Fee",
             "enter-deposit-amount": "Enter deposit amount",
@@ -506,7 +506,7 @@
             "withdraw-to": "Withdraw to",
             "withdrawal-amount": "Withdrawal amount",
             "withdrawal-intiated": "Withdrawal initiated",
-            "withdrawal-pending": "-{{amount}} {{currency}} withdrawal pending...",
+            "withdrawal-pending": "-{{amount}} withdrawal pending...",
             "withdrawal-time": "Withdrawal time"
         }
     }

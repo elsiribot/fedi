@@ -5,13 +5,20 @@ import {
     createSelector,
 } from '@reduxjs/toolkit'
 
-import { CommonState, selectActiveFederation } from '.'
-import { Federation } from '../types'
+import {
+    CommonState,
+    selectActiveFederation,
+    selectBtcExchangeRate,
+    selectCurrency,
+    selectUsdExchangeRate,
+} from '.'
+import { Federation, MSats, UsdCents } from '../types'
 import {
     RpcAmount,
     RpcLockedSeek,
     RpcStabilityPoolAccountInfo,
 } from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
 
 type FederationPayloadAction<T = object> = PayloadAction<
@@ -162,7 +169,10 @@ export const selectStabilityPoolAccountInfo = (s: CommonState) =>
 
 export const selectStableBalance = createSelector(
     selectStabilityPoolAccountInfo,
-    stabilityPoolAccountInfo => {
+    selectBtcExchangeRate,
+    selectUsdExchangeRate,
+    selectCurrency,
+    (stabilityPoolAccountInfo, btcExchangeRate, usdExchangeRate) => {
         if (!stabilityPoolAccountInfo) return 0
 
         let stableBalance = 0
@@ -170,16 +180,30 @@ export const selectStableBalance = createSelector(
 
         stableBalance = lockedSeeks.reduce(
             (result: number, ls: RpcLockedSeek) => {
-                const { initialAmount, withdrawnAmount, feesPaidSoFar } = ls
-                // withdrawnAmount should never be higher than initialAmount?
-                if (initialAmount - withdrawnAmount > 0) {
-                    result += initialAmount - withdrawnAmount - feesPaidSoFar
-                }
+                const {
+                    initialAmountCents,
+                    withdrawnAmountCents,
+                    feesPaidSoFar,
+                } = ls
+                const remainingAmountCents = (initialAmountCents -
+                    withdrawnAmountCents) as UsdCents
+                const remainingAmountFiat = amountUtils.convertCentsToOtherFiat(
+                    remainingAmountCents,
+                    usdExchangeRate,
+                    btcExchangeRate,
+                )
+                const feesPaidInFiat = amountUtils.msatToFiat(
+                    feesPaidSoFar,
+                    btcExchangeRate,
+                )
+                result += remainingAmountFiat - feesPaidInFiat
+
                 return result
             },
             0,
         )
 
+        // TODO: refactor after unit is known
         if (stagedCancellation) stableBalance -= stagedCancellation
 
         return stableBalance
@@ -188,7 +212,8 @@ export const selectStableBalance = createSelector(
 
 export const selectStableBalancePending = createSelector(
     selectStabilityPoolAccountInfo,
-    stabilityPoolAccountInfo => {
+    selectBtcExchangeRate,
+    (stabilityPoolAccountInfo, btcExchangeRate) => {
         if (!stabilityPoolAccountInfo) return 0
 
         let stableBalancePending = 0
@@ -198,8 +223,12 @@ export const selectStableBalancePending = createSelector(
             (result: number, ss: RpcAmount) => result + ss,
             0,
         )
+        const stableBalanceFiatValue = amountUtils.msatToFiat(
+            stableBalancePending as MSats,
+            btcExchangeRate,
+        )
 
-        return stableBalancePending
+        return stableBalanceFiatValue
     },
 )
 
