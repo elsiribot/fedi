@@ -17,7 +17,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=0652369242476cdd798a1eda8578e6030ad84a3c";
+      url = "github:rustshop/flakebox?rev=154ffb9d93cbe3f98d9ab5252c1b187e046ab96e";
     };
 
     fs-dir-cache = {
