@@ -155,14 +155,14 @@ rec {
   };
 
   fedi-monitoring = fediBuildPackageGroup {
-    name = "fedi-monitoring";
+    pname = "fedi-monitoring";
     packages = [
       "fedi-monitoring"
     ];
   };
 
   devops-cli = fediBuildPackageGroup {
-    name = "devops-cli";
+    pname = "devops-cli";
     packages = [
       "devops-cli"
     ];
