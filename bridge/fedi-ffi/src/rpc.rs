@@ -1192,10 +1192,11 @@ mod tests {
             .await?;
         loop {
             // Wait until deposit operation succeeds
+            // Initiated -> TxAccepted -> Success
             if bridge
                 .event_sink
                 .num_events_of_type("stabilityPoolDeposit".into())
-                != 0
+                == 3
             {
                 break;
             }
@@ -1220,11 +1221,13 @@ mod tests {
             )
             .await?;
         loop {
-            // Wait until deposit operation succeeds
+            // Wait until withdrawal operation succeeds
+            // WithdrawUnlockedInitiated -> WithdrawUnlockedAccepted ->
+            // Success
             if bridge
                 .event_sink
                 .num_events_of_type("stabilityPoolWithdrawal".into())
-                != 0
+                == 3
             {
                 break;
             }
