@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::XOnlyPublicKey;
 use fedi_social_client::RecoveryId;
@@ -14,7 +14,7 @@ use fedimint_core::{Amount, PeerId};
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_mint_client::MintClientExt;
-use fedimint_mint_client_v0::MintClientExt as MintClientExtV0;
+use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
 use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
@@ -132,6 +132,18 @@ impl MultiFederation {
         }
     }
 
+    pub async fn cancel_ecash(&self, ecash: String) -> Result<()> {
+        match self {
+            Self::V0(v0) => {
+                let ecash = parse_ecash(&ecash).context(ErrorCode::BadRequest)?;
+                v0.cancel_ecash(ecash).await
+            }
+            Self::V1(v1) => {
+                v1.cancel_ecash(ecash.parse().context(ErrorCode::BadRequest)?)
+                    .await
+            }
+        }
+    }
     pub async fn get_mnemonic_words(&self) -> Vec<String> {
         match self {
             Self::V0(v0) => v0.get_mnemonic_words().await,
@@ -568,6 +580,11 @@ impl Bridge {
     ) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.generate_ecash(amount.0).await
+    }
+
+    pub async fn cancel_ecash(&self, federation_id: RpcFederationId, ecash: String) -> Result<()> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.cancel_ecash(ecash).await
     }
 
     pub async fn get_mnemonic_words(&self, federation_id: RpcFederationId) -> Result<Vec<String>> {

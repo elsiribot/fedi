@@ -7,9 +7,9 @@
 export function get_logs(): any;
 /**
 * @param {any} event_sink
-* @returns {Promise<void>}
+* @returns {Promise<string>}
 */
-export function fedimint_initialize(event_sink: any): Promise<void>;
+export function fedimint_initialize(event_sink: any): Promise<string>;
 /**
 * @param {string} method
 * @param {string} payload

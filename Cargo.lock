@@ -1133,26 +1133,27 @@ dependencies = [
 [[package]]
 name = "devimint"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "axum",
  "bitcoincore-rpc",
  "clap 4.3.24",
  "cln-rpc",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-bitcoind",
  "fedimint-cli",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-client-legacy",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
  "fedimint-testing",
- "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimintd",
  "futures",
+ "ln-gateway",
  "nix",
  "rand",
  "serde",
@@ -1354,7 +1355,7 @@ dependencies = [
  "fedi-social-common",
  "fedi-social-server",
  "fedimint-build",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimintd",
  "stability-pool-server",
  "tokio",
@@ -1371,26 +1372,26 @@ dependencies = [
  "bitcoin",
  "devimint",
  "fedi-social-client",
- "fedimint-aead 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-bip39 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-bip39 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-derive-secret 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-rocksdb 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-wallet-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-bip39 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-bip39 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-derive-secret 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-rocksdb 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-wallet-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "hex",
  "lazy_static",
@@ -1427,12 +1428,12 @@ dependencies = [
  "bitcoin",
  "chrono",
  "clap 4.3.24",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "lightning-invoice 0.21.0",
  "ln-gateway",
@@ -1459,8 +1460,8 @@ dependencies = [
  "counter",
  "erased-serde",
  "fedi-social-common",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "hex",
  "impl-tools 0.6.2",
@@ -1472,7 +1473,7 @@ dependencies = [
  "serde",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tracing",
@@ -1488,9 +1489,9 @@ dependencies = [
  "bitcoin_hashes",
  "counter",
  "erased-serde",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "hex",
  "impl-tools 0.6.2",
@@ -1502,7 +1503,7 @@ dependencies = [
  "serde",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "test-log",
  "thiserror",
  "threshold_crypto",
@@ -1521,8 +1522,8 @@ dependencies = [
  "counter",
  "erased-serde",
  "fedi-social-common",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
  "futures",
  "hex",
@@ -1535,7 +1536,7 @@ dependencies = [
  "serde",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "test-log",
  "thiserror",
  "threshold_crypto",
@@ -1551,8 +1552,8 @@ dependencies = [
  "async-trait",
  "console_error_panic_hook",
  "fedi-ffi",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "gloo-file",
  "imbl",
@@ -1570,7 +1571,7 @@ dependencies = [
 [[package]]
 name = "fedimint-aead"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1582,7 +1583,7 @@ dependencies = [
 [[package]]
 name = "fedimint-aead"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1594,29 +1595,29 @@ dependencies = [
 [[package]]
 name = "fedimint-bip39"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "bip39",
- "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "rand",
 ]
 
 [[package]]
 name = "fedimint-bip39"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "bip39",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "rand",
 ]
 
 [[package]]
 name = "fedimint-bitcoind"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1625,8 +1626,8 @@ dependencies = [
  "bitcoincore-rpc",
  "electrum-client",
  "esplora-client 0.5.0",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "lazy_static",
  "rand",
  "serde",
@@ -1637,12 +1638,12 @@ dependencies = [
 [[package]]
 name = "fedimint-build"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 
 [[package]]
 name = "fedimint-cli"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -1650,17 +1651,17 @@ dependencies = [
  "bitcoin_hashes",
  "clap 4.3.24",
  "clap_complete",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-build",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
- "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "lightning-invoice 0.21.0",
  "rand",
@@ -1677,7 +1678,7 @@ dependencies = [
 [[package]]
 name = "fedimint-client"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -1685,10 +1686,10 @@ dependencies = [
  "async-trait",
  "bitcoin",
  "bitcoin_hashes",
- "fedimint-aead 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-derive-secret 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-aead 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-derive-secret 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "itertools 0.10.5",
  "rand",
@@ -1705,7 +1706,7 @@ dependencies = [
 [[package]]
 name = "fedimint-client"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -1713,11 +1714,11 @@ dependencies = [
  "async-trait",
  "bitcoin",
  "bitcoin_hashes",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-build",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "itertools 0.10.5",
  "rand",
@@ -1735,7 +1736,7 @@ dependencies = [
 [[package]]
 name = "fedimint-client-legacy"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1743,17 +1744,17 @@ dependencies = [
  "bincode",
  "bitcoin",
  "bitcoin_hashes",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-wallet-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-wallet-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
- "hkdf 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "hkdf 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "itertools 0.10.5",
  "jsonrpsee-core 0.18.2",
  "jsonrpsee-types 0.18.2",
@@ -1771,7 +1772,7 @@ dependencies = [
  "serde_json",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -1782,7 +1783,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -1793,8 +1794,8 @@ dependencies = [
  "bitcoin_hashes",
  "bitvec",
  "erased-serde",
- "fedimint-derive 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-derive 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "getrandom",
  "gloo-timers",
@@ -1816,7 +1817,7 @@ dependencies = [
  "sha3",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -1829,7 +1830,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -1841,8 +1842,8 @@ dependencies = [
  "bitcoin_hashes",
  "bitvec",
  "erased-serde",
- "fedimint-derive 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-derive 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "getrandom",
  "gloo-timers",
@@ -1864,7 +1865,7 @@ dependencies = [
  "sha3",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -1877,7 +1878,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
@@ -1888,7 +1889,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
@@ -1899,38 +1900,38 @@ dependencies = [
 [[package]]
 name = "fedimint-derive-secret"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "hkdf 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "hkdf 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "ring",
  "secp256k1-zkp",
- "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
 ]
 
 [[package]]
 name = "fedimint-derive-secret"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "hkdf 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "hkdf 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "ring",
  "secp256k1-zkp",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
 ]
 
 [[package]]
 name = "fedimint-dummy-client"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-dummy-common",
  "futures",
  "rand",
@@ -1944,13 +1945,13 @@ dependencies = [
 [[package]]
 name = "fedimint-dummy-common"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "rand",
  "secp256k1",
@@ -1965,7 +1966,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-client"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -1975,11 +1976,11 @@ dependencies = [
  "bitcoin",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-ln-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-wallet-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-wallet-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-ln-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-wallet-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-wallet-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "itertools 0.10.5",
  "lightning 0.0.113",
@@ -2001,7 +2002,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-client"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2011,9 +2012,9 @@ dependencies = [
  "bitcoin",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "itertools 0.10.5",
  "lightning 0.0.113",
@@ -2035,14 +2036,14 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-common"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "async-trait",
  "bincode",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "itertools 0.10.5",
  "lightning 0.0.113",
@@ -2062,7 +2063,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-common"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2071,8 +2072,8 @@ dependencies = [
  "bitcoin",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "itertools 0.10.5",
  "lightning 0.0.113",
@@ -2092,7 +2093,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-server"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2100,8 +2101,8 @@ dependencies = [
  "bitcoin_hashes",
  "erased-serde",
  "fedimint-bitcoind",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-metrics",
  "fedimint-server",
  "futures",
@@ -2124,7 +2125,7 @@ dependencies = [
 [[package]]
 name = "fedimint-logging"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "tracing-subscriber",
@@ -2133,7 +2134,7 @@ dependencies = [
 [[package]]
 name = "fedimint-logging"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "console-subscriber",
@@ -2146,11 +2147,11 @@ dependencies = [
 [[package]]
 name = "fedimint-metrics"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "axum",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "lazy_static",
  "prometheus",
  "tokio",
@@ -2160,7 +2161,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-client"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2170,11 +2171,11 @@ dependencies = [
  "bincode",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-derive-secret 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-mint-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-derive-secret 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-logging 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-mint-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "itertools 0.10.5",
  "rand",
@@ -2185,7 +2186,7 @@ dependencies = [
  "serde_json",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -2195,7 +2196,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-client"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2205,11 +2206,11 @@ dependencies = [
  "bincode",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-derive-secret 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "itertools 0.10.5",
  "rand",
@@ -2220,7 +2221,7 @@ dependencies = [
  "serde_json",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -2230,13 +2231,13 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-common"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "async-trait",
  "bincode",
  "bitcoin_hashes",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "impl-tools 0.8.0",
  "itertools 0.10.5",
@@ -2246,7 +2247,7 @@ dependencies = [
  "serde",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "tbs 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "thiserror",
  "threshold_crypto",
  "tracing",
@@ -2255,13 +2256,13 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-common"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
  "bincode",
  "bitcoin_hashes",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "impl-tools 0.8.0",
  "itertools 0.10.5",
@@ -2271,7 +2272,7 @@ dependencies = [
  "serde",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tracing",
@@ -2280,7 +2281,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-server"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -2288,8 +2289,8 @@ dependencies = [
  "bincode",
  "bitcoin_hashes",
  "erased-serde",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
  "futures",
  "impl-tools 0.8.0",
@@ -2301,7 +2302,7 @@ dependencies = [
  "serde",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tracing",
@@ -2310,11 +2311,11 @@ dependencies = [
 [[package]]
 name = "fedimint-rocksdb"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "async-trait",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "rocksdb",
  "tokio",
@@ -2324,11 +2325,11 @@ dependencies = [
 [[package]]
 name = "fedimint-rocksdb"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "rocksdb",
  "tokio",
@@ -2338,7 +2339,7 @@ dependencies = [
 [[package]]
 name = "fedimint-server"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2346,10 +2347,10 @@ dependencies = [
  "bitcoin",
  "bitcoin_hashes",
  "bytes",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-build",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "hbbft",
  "itertools 0.10.5",
@@ -2362,7 +2363,7 @@ dependencies = [
  "sha3",
  "strum",
  "strum_macros",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -2377,20 +2378,20 @@ dependencies = [
 [[package]]
 name = "fedimint-testing"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
+ "async-stream",
  "async-trait",
  "bitcoin",
  "bitcoincore-rpc",
  "clap 4.3.24",
  "cln-rpc",
  "fedimint-bitcoind",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-client-legacy",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
  "futures",
  "lazy_static",
@@ -2414,15 +2415,15 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-client"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "async-trait",
  "bitcoin",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-wallet-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-wallet-common 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "impl-tools 0.8.0",
  "miniscript",
@@ -2440,7 +2441,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-client"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2449,9 +2450,9 @@ dependencies = [
  "bitcoin",
  "erased-serde",
  "fedimint-bitcoind",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-wallet-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-wallet-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "impl-tools 0.8.0",
  "miniscript",
@@ -2470,13 +2471,13 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-common"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "anyhow",
  "async-trait",
  "bitcoin",
  "erased-serde",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
  "futures",
  "impl-tools 0.8.0",
  "miniscript",
@@ -2494,13 +2495,13 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-common"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
  "bitcoin",
  "erased-serde",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "impl-tools 0.8.0",
  "miniscript",
@@ -2518,16 +2519,16 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-server"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
  "bitcoin",
  "erased-serde",
  "fedimint-bitcoind",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
- "fedimint-wallet-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-wallet-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "impl-tools 0.8.0",
  "miniscript",
@@ -2545,7 +2546,7 @@ dependencies = [
 [[package]]
 name = "fedimintd"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2555,15 +2556,15 @@ dependencies = [
  "bytes",
  "clap 4.3.24",
  "console-subscriber",
- "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-aead 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-bitcoind",
  "fedimint-build",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-ln-server",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-metrics",
  "fedimint-mint-server",
- "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-server",
  "fedimint-wallet-server",
  "futures",
@@ -2581,7 +2582,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha3",
- "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "tbs 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "thiserror",
  "threshold_crypto",
  "tokio",
@@ -3039,7 +3040,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hkdf"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "bitcoin_hashes",
 ]
@@ -3047,7 +3048,7 @@ dependencies = [
 [[package]]
 name = "hkdf"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "bitcoin_hashes",
 ]
@@ -3783,7 +3784,7 @@ checksum = "57bcfdad1b858c2db7c38303a6d2ad4dfaf5eb53dfeb0910128b2c26d6158503"
 [[package]]
 name = "ln-gateway"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -3797,15 +3798,15 @@ dependencies = [
  "cln-plugin",
  "cln-rpc",
  "fedimint-build",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "fedimint-dummy-client",
- "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-ln-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-ln-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-ln-common 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-mint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-rocksdb 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-wallet-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "lightning 0.0.113",
  "lightning-invoice 0.21.0",
@@ -5364,8 +5365,8 @@ dependencies = [
  "async-trait",
  "bitcoin",
  "erased-serde",
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "rand",
  "reqwest",
@@ -5384,7 +5385,7 @@ name = "stability-pool-common"
 version = "0.1.0"
 dependencies = [
  "bitcoin",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "secp256k1-zkp",
  "serde",
  "serde_json",
@@ -5399,7 +5400,7 @@ dependencies = [
  "async-trait",
  "bitcoin",
  "erased-serde",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "futures",
  "itertools 0.11.0",
  "rand",
@@ -5421,8 +5422,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "devimint",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-logging 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
  "tokio",
  "tracing",
 ]
@@ -5551,7 +5552,7 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 [[package]]
 name = "tbs"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05#bd1b849d518d272dc83f0320a3ef08ae9463f0c9"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport#8aead20c0d3376745a366561781213a0f863289e"
 dependencies = [
  "bitcoin_hashes",
  "bls12_381",
@@ -5566,7 +5567,7 @@ dependencies = [
 [[package]]
 name = "tbs"
 version = "0.1.0"
-source = "git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c#7ec251a6e5ab61fe90310d01bdcb32915029605c"
+source = "git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f#67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f"
 dependencies = [
  "bitcoin_hashes",
  "bls12_381",
@@ -6429,16 +6430,16 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 name = "v0-rocksdb"
 version = "0.1.2"
 dependencies = [
- "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
- "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=rel-a05)",
+ "fedimint-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
+ "fedimint-core 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=ma/rel-a05-backport)",
 ]
 
 [[package]]
 name = "v1-rocksdb"
 version = "0.1.2"
 dependencies = [
- "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=7ec251a6e5ab61fe90310d01bdcb32915029605c)",
+ "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f)",
 ]
 
 [[package]]

@@ -218,6 +218,16 @@ async fn listTransactions(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn cancelEcash(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    // TODO: better type
+    ecash: String,
+) -> anyhow::Result<()> {
+    bridge.cancel_ecash(federation_id, ecash).await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn updateTransactionNotes(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
@@ -440,6 +450,7 @@ rpc_methods!(RpcMethods {
     generateEcash,
     receiveEcash,
     validateEcash,
+    cancelEcash,
     // Transactions
     listTransactions,
     updateTransactionNotes,
@@ -899,6 +910,46 @@ mod tests {
             fedimint_core::Amount::from_msats(0)
         );
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_ecash_cancel() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // receive ecash
+        let ecash_receive_amount = fedimint_core::Amount::from_msats(100);
+        let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
+        receiveEcash(
+            bridge.clone(),
+            RpcFederationId(federation.federation_id()),
+            ecash,
+        )
+        .await?;
+
+        // check balance
+        assert_eq!(
+            federation.get_balance().await,
+            fedimint_core::Amount::from_msats(100)
+        );
+
+        // spend ecash
+        let send_ecash = generateEcash(
+            bridge.clone(),
+            RpcFederationId(federation.federation_id()),
+            RpcAmount(ecash_receive_amount),
+        )
+        .await?;
+
+        // cancel too fast doesn't work: https://github.com/fedimint/fedimint/pull/3435
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        let _ = cancelEcash(
+            bridge.clone(),
+            RpcFederationId(federation.federation_id()),
+            send_ecash,
+        )
+        .await?;
         Ok(())
     }
 

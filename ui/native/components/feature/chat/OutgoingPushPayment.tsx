@@ -1,11 +1,16 @@
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Button, ButtonProps, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation, updateChatPayment } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
+
+import { fedimint } from '../../../bridge'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { ChatMessage, ChatPaymentStatus } from '../../../types'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-import { SvgImageName } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type OutgoingPushPaymentProps = {
     message: ChatMessage
@@ -16,16 +21,43 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
     message,
     text,
 }: OutgoingPushPaymentProps) => {
+    const dispatch = useAppDispatch()
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { toast } = useEnvironmentContext().state
+    const federationId = useAppSelector(selectActiveFederation)?.id
 
-    let iconName: SvgImageName | undefined
-    let statusText: string
+    let statusText: string | undefined
+    let statusIcon: SvgImageName | undefined
+    let action: Pick<ButtonProps, 'onPress' | 'title'> | undefined
     if (message.payment?.status === ChatPaymentStatus.paid) {
-        iconName = 'Check'
         statusText = t('words.paid')
+        statusIcon = 'Check'
+    } else if (message.payment?.status === ChatPaymentStatus.canceled) {
+        statusText = t('words.canceled')
     } else {
-        statusText = t('words.pending')
+        action = {
+            title: t('words.cancel'),
+            onPress: async () => {
+                try {
+                    if (!federationId) throw new Error()
+                    await dispatch(
+                        updateChatPayment({
+                            fedimint,
+                            federationId,
+                            messageId: message.id,
+                            action: 'cancel',
+                        }),
+                    ).unwrap()
+                } catch (error) {
+                    console.error(error)
+                    toast?.show(
+                        formatErrorMessage(t, error, 'errors.unknown-error'),
+                        3000,
+                    )
+                }
+            },
+        }
     }
 
     return (
@@ -35,16 +67,34 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
             </Text>
             <View style={styles(theme).actionsContainer}>
                 <View style={styles(theme).statusContainer}>
-                    {iconName && (
+                    {statusIcon && (
                         <SvgImage
-                            name={iconName}
+                            name={statusIcon}
                             size={SvgImageSize.xs}
                             color={theme.colors.secondary}
                         />
                     )}
-                    <Text medium caption style={styles(theme).statusText}>
-                        {statusText}
-                    </Text>
+                    {statusText && (
+                        <Text medium caption style={styles(theme).statusText}>
+                            {statusText}
+                        </Text>
+                    )}
+                    {action && (
+                        <Button
+                            {...action}
+                            size="sm"
+                            color={theme.colors.secondary}
+                            title={
+                                <Text
+                                    medium
+                                    caption
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit>
+                                    {action.title}
+                                </Text>
+                            }
+                        />
+                    )}
                 </View>
             </View>
         </View>

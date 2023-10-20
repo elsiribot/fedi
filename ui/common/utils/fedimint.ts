@@ -111,6 +111,13 @@ export class FedimintBridge {
         })
     }
 
+    async cancelEcash(ecash: string, federationId: string) {
+        return this.rpcTyped('cancelEcash', {
+            ecash,
+            federationId,
+        })
+    }
+
     async signLnurlMessage(message: string, federationId: string) {
         return this.rpcTyped('signLnurlMessage', {
             message,
