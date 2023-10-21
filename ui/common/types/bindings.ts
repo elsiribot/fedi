@@ -17,9 +17,11 @@ export type ErrorCode =
     | 'badRequest'
     | 'invalidInvoice'
     | 'invalidMnemonic'
+    | 'ecashCancelFailed'
     | 'socialRecoveryNotSupported'
     | 'nostrNotSupported'
     | 'panic'
+    | 'notSupportedInVersion'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -46,8 +48,6 @@ export interface RpcEcashInfo {
     federationId: RpcFederationId | null
 }
 
-export type RpcFederationId = string
-
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
@@ -59,6 +59,8 @@ export interface RpcFederation {
     nodes: Record<string, { url: string; name: string }>
     version: number
 }
+
+export type RpcFederationId = string
 
 export interface RpcInvoice {
     paymentHash: string
@@ -187,6 +189,7 @@ export interface RpcMethods {
         { ecash: string },
         { amount: RpcAmount; federationId: RpcFederationId | null },
     ]
+    cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null]
     listTransactions: [
         { federationId: RpcFederationId },
         Array<{
@@ -197,6 +200,7 @@ export interface RpcMethods {
             notes: string
             lnState: RpcLnState | null
             lightning: RpcLightningDetails | null
+            oobState: RpcOOBState | null
         }>,
     ]
     updateTransactionNotes: [
@@ -262,6 +266,16 @@ export interface RpcMethods {
     ]
 }
 
+export type RpcOOBSpendState =
+    | { type: 'created' }
+    | { type: 'userCanceledProcessing' }
+    | { type: 'userCanceledSuccess' }
+    | { type: 'userCanceledFailure' }
+    | { type: 'refunded' }
+    | { type: 'success' }
+
+export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
+
 export interface RpcPayInvoiceResponse {
     preimage: string
 }
@@ -277,8 +291,6 @@ export interface RpcSignedLnurlMessage {
     pubkey: RpcPublicKey
 }
 
-export type RpcTransactionDirection = 'receive' | 'send'
-
 export interface RpcTransaction {
     id: string
     createdAt: number
@@ -287,7 +299,10 @@ export interface RpcTransaction {
     notes: string
     lnState: RpcLnState | null
     lightning: RpcLightningDetails | null
+    oobState: RpcOOBState | null
 }
+
+export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string

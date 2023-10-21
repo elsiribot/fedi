@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -62,13 +62,16 @@ let
     in
     {
       ROCKSDB_STATIC = "true";
-      SNAPPY_STATIC = "true";
       ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
       SNAPPY_LIB_DIR = "${pkgs.pkgsStatic.snappy}/lib/";
+
       "ROCKSDB_${target_underscores}_STATIC" = "true";
-      "SNAPPY_${target_underscores}_STATIC" = "true";
       "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
       "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
+    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+      # macos can't static libraries
+      SNAPPY_STATIC = "true";
+      "SNAPPY_${target_underscores}_STATIC" = "true";
     } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
       # TODO: could we used the android-nixpkgs toolchain instead of another one?
       # BROKEN: seems to produce binaries that crash; needs investigation
@@ -120,6 +123,12 @@ let
       # TODO: should we compile from scratch from vendored source for release builds? (allegedly better perf)
       # pkgs.lib.optionalAttrs (builtins.elem (craneLib.cargoProfile or "") [ "dev" "ci" ]) commonEnvsShellRocksdbLink);
       commonEnvsShellRocksdbLink);
+
+  fediBuildPackageGroup = args: replaceGitHash {
+    name = args.pname;
+    package =
+      craneLib.buildPackageGroup args;
+  };
 in
 rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
@@ -130,7 +139,7 @@ rec {
     buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
-  fedi-fedimint-pkgs = craneLib.buildPackageGroup {
+  fedi-fedimint-pkgs = fediBuildPackageGroup {
     pname = "fedi-fedimint-pkgs";
     packages = [
       "fedi-fedimintd"
@@ -138,22 +147,22 @@ rec {
     ];
   };
 
-  fedi-wasm = craneLib.buildPackageGroup {
+  fedi-wasm = fediBuildPackageGroup {
     pname = "fedi-wasm";
     packages = [
       "fedi-wasm"
     ];
   };
 
-  fedi-monitoring = craneLib.buildPackageGroup {
-    name = "fedi-monitoring";
+  fedi-monitoring = fediBuildPackageGroup {
+    pname = "fedi-monitoring";
     packages = [
       "fedi-monitoring"
     ];
   };
 
-  devops-cli = craneLib.buildPackageGroup {
-    name = "devops-cli";
+  devops-cli = fediBuildPackageGroup {
+    pname = "devops-cli";
     packages = [
       "devops-cli"
     ];

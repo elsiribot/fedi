@@ -2,14 +2,14 @@ use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use async_trait::async_trait;
 use fedimint_core::db::IDatabase;
 use fedimint_core_v0::db::Database as DatabaseV0;
 use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, warn};
 
 use super::bridge::Bridge;
 /// This file contains the bindings to used by React Native app via Uniffi
@@ -56,7 +56,8 @@ pub async fn fedimint_initialize_inner(
 ) -> anyhow::Result<()> {
     // return if bridge already is initialized
     if BRIDGE.lock().await.is_some() {
-        bail!("bridge is already initialized");
+        warn!("bridge is already initialized");
+        return Ok(());
     }
     let event_sink: Arc<dyn EventSink> = event_sink.into();
     std::panic::set_hook(Box::new({

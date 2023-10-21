@@ -5,11 +5,11 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=7ec251a6e5ab61fe90310d01bdcb32915029605c";
+      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=7ec251a6e5ab61fe90310d01bdcb32915029605c";
+      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f";
     };
     # Fedi at consensus version 0. This is used to test bridge against old federations
     fedi-v0 = {
@@ -17,7 +17,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=0652369242476cdd798a1eda8578e6030ad84a3c";
+      url = "github:rustshop/flakebox?rev=154ffb9d93cbe3f98d9ab5252c1b187e046ab96e";
     };
 
     fs-dir-cache = {
@@ -67,10 +67,60 @@
 
               # Note: we are using cargo-nextest from pkgs-unstable because it has some fixes we need
               # Note: shell script adding DYLD_FALLBACK_LIBRARY_PATH because of: https://github.com/nextest-rs/nextest/issues/962
-              cargo-nextest = pkgs.writeShellScriptBin "cargo-nextest" "exec env DYLD_FALLBACK_LIBRARY_PATH=\"$(dirname $(which rustc))/../lib\" ${pkgs-unstable.cargo-nextest}/bin/cargo-nextest \"$@\"";
+              cargo-nextest = pkgs.writeShellScriptBin "cargo-nextest" "exec env DYLD_FALLBACK_LIBRARY_PATH=\"$(dirname $(${pkgs.which}/bin/which rustc))/../lib\" ${pkgs-unstable.cargo-nextest}/bin/cargo-nextest \"$@\"";
             })
           ];
         };
+
+        fmLib = fedimint-build.lib.${system};
+
+        # Replace placeholder git hash in a binary
+        #
+        # To avoid impurity, we use a git hash placeholder when building binaries
+        # and then replace them with the real git hash in the binaries themselves.
+        replaceGitHash =
+          let
+            # the hash we will set if the tree is dirty;
+            dirtyHashPrefix = builtins.substring 0 16 self.dirtyRev;
+            dirtyHashSuffix = builtins.substring (40 - 16) 16 self.dirtyRev;
+            # the string needs to be 40 characters, like the original,
+            # so to denote `-dirty` we replace the middle with zeros
+            dirtyHash = "${dirtyHashPrefix}00000000${dirtyHashSuffix}";
+          in
+          { name
+          , package
+          , placeholder ? "01234569abcdef7afa1d2683a099c7af48a523c1"
+          , gitHash ? if (self ? rev) then self.rev else dirtyHash
+          }:
+          stdenv.mkDerivation {
+            inherit system;
+            inherit name;
+
+            dontUnpack = true;
+            dontStrip = !pkgs.stdenv.isDarwin;
+
+            installPhase = ''
+              cp -a ${package} $out
+              for path in `find $out -type f -executable`; do
+                # need to use a temporary file not to overwrite source as we are reading it
+                bbe -e 's/${placeholder}/${gitHash}/' $path -o ./tmp || exit 1
+                chmod +w $path
+                # use cat to keep all the original permissions etc as they were
+                cat ./tmp > "$path"
+                chmod -w $path
+              done
+            '';
+
+            buildInputs = [ pkgs.bbe ];
+          };
+
+        # TODO: use this version after updating upstream fedimint to handle `gitHash` argument
+        # replaceGitHash = name: package: fmLib.replaceGitHash {
+        #   # FIXME: don't hard-code this. But I don't know how to get it from craneLib
+        #   inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
+        # gitHash ? if (self ? rev) then self.rev else dirty-hash
+        # };
+
 
         androidSdk =
           android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
@@ -125,19 +175,11 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
         };
-
-        fmLib = fedimint-build.lib.${system};
-
 
         lib = pkgs.lib;
         stdenv = pkgs.stdenv;
-
-        replaceGitHash = name: package: fmLib.replaceGitHash {
-          # FIXME: don't hard-code this. But I don't know how to get it from craneLib
-          inherit name package; placeholder = "01234569abcdef7afa1d2683a099c7af48a523c1";
-        };
 
         # this symlinks binaries needed to run xcode-specific commands assuming
         # xcode is already installed on the machine (can't be nixified normally)
@@ -216,7 +258,7 @@
           # straight from Fedimint, without any modifications
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
 
-          fedi-fedimint-pkgs = replaceGitHash "fedi-fedimint-pkgs" craneMultiBuild.fedi-fedimint-pkgs;
+          fedi-fedimint-pkgs = craneMultiBuild.fedi-fedimint-pkgs;
           fedi-monitoring = craneMultiBuild.fedi-monitoring;
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
           devops-cli = craneMultiBuild.fedi-monitoring;

@@ -162,23 +162,16 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
                 )
             }
         } else if (isSentByMe) {
-            // TODO: Enable once we add RPC method for canceling your tokens.
-            // extra = (
-            //     <PaymentButtons>
-            //         <Button
-            //             variant="secondary"
-            //             size="sm"
-            //             onClick={handleCancel}
-            //             loading={isLoading}>
-            //             {t('words.cancel')}
-            //         </Button>
-            //     </PaymentButtons>
-            // )
             extra = (
-                <PaymentResult>
-                    <CircularLoader size="xs" />
-                    <div>{t('words.pending')}...</div>
-                </PaymentResult>
+                <PaymentButtons>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleCancel}
+                        loading={isLoading}>
+                        {t('words.cancel')}
+                    </Button>
+                </PaymentButtons>
             )
         } else if (isSentToMe) {
             extra = (

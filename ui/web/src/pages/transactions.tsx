@@ -30,6 +30,7 @@ const TransactionsPage: React.FC = () => {
         fedimint
             .listTransactions(federationId)
             .then(res => {
+                console.debug('listTransactions res', res)
                 setTransactions(orderBy(res))
             })
             .catch(err => {
