@@ -83,7 +83,13 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
             paymentStatus !== ChatPaymentStatus.accepted
         )
             return
-        handleDispatchPaymentUpdate('receive')
+        // Delay attempt to redeem payment by 250ms to allow for payments that
+        // have been canceled to come through.
+        const timeout = setTimeout(
+            () => handleDispatchPaymentUpdate('receive'),
+            250,
+        )
+        return () => clearTimeout(timeout)
     }, [
         isChatOnline,
         didReceiveFail,
