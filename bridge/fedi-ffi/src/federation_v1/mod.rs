@@ -1426,9 +1426,10 @@ impl FederationV1 {
                                 address,
                                 expires_at,
                             } => {
-                                let onchain_state = RpcOnchainState::from_deposit_state(
-                                    self.get_deposit_outcome(op.0.operation_id, op.1).await,
-                                );
+                                let outcome =
+                                    self.get_deposit_outcome(op.0.operation_id, op.1).await;
+                                let onchain_state =
+                                    RpcOnchainState::from_deposit_state(outcome.clone());
 
                                 Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
@@ -1443,7 +1444,17 @@ impl FederationV1 {
                                             .expect("unix time should exist"),
                                     }),
                                     ln_state: None,
-                                    amount: RpcAmount(Amount::from_msats(0)),
+                                    amount: match outcome {
+                                        Some(
+                                            DepositState::WaitingForConfirmation(data)
+                                            | DepositState::Confirmed(data)
+                                            | DepositState::Claimed(data),
+                                        ) => RpcAmount(Amount::from_sats(
+                                            data.btc_transaction.output[data.out_idx as usize]
+                                                .value,
+                                        )),
+                                        _ => RpcAmount(Amount::ZERO),
+                                    },
                                     lightning: None,
                                     oob_state: None,
                                 })
