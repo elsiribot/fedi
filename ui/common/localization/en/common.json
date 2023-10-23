@@ -506,7 +506,7 @@
             "withdraw-to": "Withdraw to",
             "withdrawal-amount": "Withdrawal amount",
             "withdrawal-intiated": "Withdrawal initiated",
-            "withdrawal-pending": "-{{amount}} withdrawal pending...",
+            "withdrawal-pending": "{{amount}} withdrawal pending...",
             "withdrawal-time": "Withdrawal time"
         }
     }

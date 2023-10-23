@@ -97,13 +97,13 @@ export type RootStackParamList = {
     FediModBrowser: { fediMod: FediMod }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats }
-    StabilityConfirmWithdraw: undefined
+    StabilityConfirmWithdraw: { amount: Sats }
     StabilityDeposit: undefined
     StabilityDepositInitiated: { amount: Sats }
     StabilityHistory: undefined
     StabilityHome: undefined
     StabilityWithdraw: undefined
-    StabilityWithdrawInitiated: undefined
+    StabilityWithdrawInitiated: { amount: Sats }
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined
