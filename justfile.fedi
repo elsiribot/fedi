@@ -73,7 +73,7 @@ deploy-to-testflight:
 
 # bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
-  nix develop --command ./scripts/ui/bump-version-native.sh
+  ./scripts/ui/bump-version-native.sh
 
 # generate typescript bindings for the bridge
 generate-bridge-bindings:
