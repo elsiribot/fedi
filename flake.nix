@@ -5,11 +5,11 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f";
+      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=06aa03372a86e8c5356775c943a68b361057aa8c";
     };
     # we only pick build system stuff here, so we can be more relaxed about updating it
     fedimint-build = {
-      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f";
+      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=06aa03372a86e8c5356775c943a68b361057aa8c";
     };
     # Fedi at consensus version 0. This is used to test bridge against old federations
     fedi-v0 = {

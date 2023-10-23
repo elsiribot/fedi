@@ -614,17 +614,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_4"
       },
       "locked": {
-        "lastModified": 1697649427,
-        "narHash": "sha256-AZKDZq/rTsQByzHqLR1RmoRDVAyjjR/rb9Zg4aJ6cjI=",
+        "lastModified": 1697835593,
+        "narHash": "sha256-9ZDP++XtxhKHnr/Cwj5VHNw1sHY41bBJbh2VsHt7j08=",
         "ref": "releases/v0.1",
-        "rev": "67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f",
-        "revCount": 5047,
+        "rev": "06aa03372a86e8c5356775c943a68b361057aa8c",
+        "revCount": 5057,
         "type": "git",
         "url": "https://github.com/fedimint/fedimint.git"
       },
       "original": {
         "ref": "releases/v0.1",
-        "rev": "67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f",
+        "rev": "06aa03372a86e8c5356775c943a68b361057aa8c",
         "type": "git",
         "url": "https://github.com/fedimint/fedimint.git"
       }
@@ -670,17 +670,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_5"
       },
       "locked": {
-        "lastModified": 1697649427,
-        "narHash": "sha256-AZKDZq/rTsQByzHqLR1RmoRDVAyjjR/rb9Zg4aJ6cjI=",
+        "lastModified": 1697835593,
+        "narHash": "sha256-9ZDP++XtxhKHnr/Cwj5VHNw1sHY41bBJbh2VsHt7j08=",
         "ref": "releases/v0.1",
-        "rev": "67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f",
-        "revCount": 5047,
+        "rev": "06aa03372a86e8c5356775c943a68b361057aa8c",
+        "revCount": 5057,
         "type": "git",
         "url": "https://github.com/fedimint/fedimint.git"
       },
       "original": {
         "ref": "releases/v0.1",
-        "rev": "67919d2e4c5b7934e92cdb2bc9fade40bd7c6a5f",
+        "rev": "06aa03372a86e8c5356775c943a68b361057aa8c",
         "type": "git",
         "url": "https://github.com/fedimint/fedimint.git"
       }
