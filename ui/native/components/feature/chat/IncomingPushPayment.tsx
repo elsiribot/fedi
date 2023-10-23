@@ -32,6 +32,8 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
 
     // Check for valid ecash if found in incoming message
     useEffect(() => {
+        if (!payment?.token) return
+
         const dispatchPaymentUpdate = async () => {
             try {
                 setProcessingRedemption(true)
@@ -48,15 +50,11 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
             }
             setProcessingRedemption(false)
         }
-        // HACK: we just need to give the Rust bridge a split second
-        // to resolve some DB lock to avoid a panic so wait 250ms here
-        let timeout = setTimeout(() => {})
-        if (payment?.token) {
-            timeout = setTimeout(() => dispatchPaymentUpdate(), 250)
-        }
-        return () => {
-            clearTimeout(timeout)
-        }
+
+        // Delay attempt to redeem payment by 250ms to allow for payments that
+        // have been canceled to come through.
+        const timeout = setTimeout(() => dispatchPaymentUpdate(), 250)
+        return () => clearTimeout(timeout)
     }, [activeFederationId, dispatch, message.id, payment?.token])
 
     const renderPaymentStatus = () => {

@@ -624,7 +624,8 @@ export const connectChat = createAsyncThunk<
 
         client.on('message', message => {
             dispatch(addChatMessage({ federationId, message }))
-            // Attempt to redeem payments immediately on receive
+            // Attempt to redeem payments shortly after receive. Give a small
+            // delay to allow for a cancellation to come through first.
             // TODO: Should we notify the user in some way?
             if (
                 message.payment &&
@@ -632,14 +633,28 @@ export const connectChat = createAsyncThunk<
                 message.payment.recipient === authenticatedMember.id &&
                 message.payment.status === ChatPaymentStatus.accepted
             ) {
-                dispatch(
+                console.info(
+                    'Got a payment message, will attempt redeem in 250ms',
+                )
+                setTimeout(() => {
+                    const updatedPayment = getState().chat[
+                        federationId
+                    ]?.messages.find(m => m.id === message.id)?.payment
+                    if (!updatedPayment) return
+                    if (updatedPayment.status !== ChatPaymentStatus.accepted) {
+                        console.info(
+                            `Payment message status changed to ${updatedPayment.status}, cancelling redemption`,
+                        )
+                        return
+                    }
+                    console.info('Attempting to redeem message payment')
                     updateChatPayment({
                         fedimint,
                         federationId,
                         messageId: message.id,
                         action: 'receive',
-                    }),
-                )
+                    })
+                }, 250)
             }
         })
 
