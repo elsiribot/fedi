@@ -36,7 +36,9 @@ use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientExt, MintClientGen, MintClientModule, MintMeta,
     MintMetaVariants, OOBNotes, ReissueExternalNotesState, SpendOOBState,
 };
-use fedimint_wallet_client::{WalletClientGen, WalletClientModule};
+use fedimint_wallet_client::{
+    DepositState, WalletClientExt, WalletClientGen, WalletClientModule, WalletOperationMeta,
+};
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use stability_pool_client::StabilityPoolClientGen;
@@ -57,7 +59,7 @@ use self::social::{
 use super::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
     NOSTR_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, SHUTDOWN_TIMEOUT,
-    XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
@@ -69,8 +71,9 @@ use super::types::{
 use crate::error::ErrorCode;
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcFederationId, RpcLightningDetails,
-    RpcLnState, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
+    EcashReceiveMetadata, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
+    RpcLightningDetails, RpcLnState, RpcOnchainState, RpcTransaction, RpcTransactionDirection,
+    SocialRecoveryQr,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -262,6 +265,17 @@ impl FederationV1 {
             .await
     }
 
+    /// Generate bitcoin address
+    pub async fn generate_address(&self) -> Result<String> {
+        let expires_at = fedimint_core::time::now() + Duration::from_secs(86400 * 365);
+        let (operation_id, address) = self.client.get_deposit_address(expires_at).await?;
+
+        self.subscribe_deposit(operation_id, address.to_string(), expires_at)
+            .await?;
+
+        Ok(address.to_string())
+    }
+
     /// Generate lightning invoice
     pub async fn generate_invoice(
         &self,
@@ -278,6 +292,67 @@ impl FederationV1 {
             .await?;
 
         invoice.try_into()
+    }
+
+    async fn subscribe_deposit(
+        &self,
+        operation_id: OperationId,
+        address: String,
+        expires_at: SystemTime,
+    ) -> Result<()> {
+        let fed = self.clone();
+        let _ = fed
+            .task_group
+            .clone()
+            .spawn("subscribe deposit", move |_| async move {
+                let mut updates = fed
+                    .client
+                    .subscribe_deposit_updates(operation_id)
+                    .await
+                    .unwrap() // FIXME
+                    .into_stream();
+                while let Some(update) = updates.next().await {
+                    info!("Update: {:?}", update);
+                    fed.update_operation_state(operation_id, update.clone())
+                        .await;
+                    let deposit_outcome = update.clone();
+                    match update {
+                        fedimint_wallet_client::DepositState::WaitingForConfirmation(data)
+                        | fedimint_wallet_client::DepositState::Claimed(data) => {
+                            info!("WaitingForConfirmation: {:?}", address);
+                            let onchain_details = Some(RpcBitcoinDetails {
+                                address: address.clone(),
+                                expires_at: to_unix_time(expires_at)
+                                    .expect("unix time should exist"),
+                            });
+                            let transaction = RpcTransaction {
+                                id: operation_id.to_string(),
+                                created_at: unix_now().expect("unix time should exist"),
+                                amount: RpcAmount(Amount::from_sats(
+                                    data.btc_transaction.output[data.out_idx as usize].value,
+                                )),
+                                direction: RpcTransactionDirection::Receive,
+                                notes: "".into(),
+                                onchain_state: RpcOnchainState::from_deposit_state(Some(
+                                    deposit_outcome,
+                                )),
+                                bitcoin: onchain_details,
+                                ln_state: None,
+                                lightning: None,
+                                oob_state: None,
+                            };
+                            info!("send_transaction_event: {:?}", transaction);
+                            fed.send_transaction_event(transaction);
+                        }
+                        fedimint_wallet_client::DepositState::Failed(reason) => {
+                            // FIXME: handle this
+                            error!("Failed to claim on-chain deposit: {reason}");
+                        }
+                        _ => {}
+                    }
+                }
+            });
+        Ok(())
     }
 
     /// Subscribe to state updates for a given lightning invoice
@@ -309,6 +384,8 @@ impl FederationV1 {
                                 }),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
+                                bitcoin: None,
+                                onchain_state: None,
                                 ln_state: RpcLnState::from_ln_recv_state(Some(update)),
                                 lightning: Some(RpcLightningDetails {
                                     invoice: invoice.to_string(),
@@ -462,6 +539,25 @@ impl FederationV1 {
                                 fed.subscribe_to_ecash_reissue(operation_id).await
                             })
                             .await;
+                    }
+                }
+            }
+            WALLET_OPERATION_TYPE => {
+                let meta = operation.meta::<WalletOperationMeta>();
+                match meta {
+                    WalletOperationMeta::Deposit {
+                        address,
+                        expires_at,
+                    } => {
+                        self.subscribe_deposit(operation_id, address.to_string(), expires_at)
+                            .await?;
+                    }
+                    WalletOperationMeta::Withdraw { .. }
+                    | WalletOperationMeta::RbfWithdraw { .. } => {
+                        tracing::debug!(
+                            "Can't subscribe to operation id: {}",
+                            operation.operation_type()
+                        );
                     }
                 }
             }
@@ -1178,6 +1274,38 @@ impl FederationV1 {
         None
     }
 
+    pub async fn get_deposit_outcome(
+        &self,
+        operation_id: OperationId,
+        log_entry: OperationLogEntry,
+    ) -> Option<DepositState> {
+        let outcome = log_entry.outcome::<DepositState>();
+
+        // Return client's cached outcome if we find it
+        if let Some(outcome) = outcome {
+            return Some(outcome);
+        }
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self.get_operation_state(&operation_id).await {
+            return Some(outcome);
+        }
+
+        // If no cached outcomes, consume the stream to get the outcome and populate
+        // client's cache in future This is only useful for outgoing lightning
+        // payments which fail due to timeout and nothing is subscribed to them
+        let mut updates = match self.client.subscribe_deposit_updates(operation_id).await {
+            Err(_) => return None,
+            Ok(stream) => stream.into_stream(),
+        };
+
+        let mut last_state = None;
+        while let Some(update) = updates.next().await {
+            tracing::info!("update {:?}", update);
+            last_state = Some(update);
+        }
+        last_state
+    }
+
     /// Return all transactions via operation log
     pub async fn list_transactions(
         &self,
@@ -1210,6 +1338,8 @@ impl FederationV1 {
                                 }),
                                 direction: RpcTransactionDirection::Send,
                                 notes,
+                                onchain_state: None,
+                                bitcoin: None,
                                 ln_state: RpcLnState::from_ln_pay_state(
                                     self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
                                 ),
@@ -1219,24 +1349,30 @@ impl FederationV1 {
                                 }),
                                 oob_state: None,
                             }),
-                            LightningMeta::Receive { invoice, .. } => Some(RpcTransaction {
-                                id: op.0.operation_id.to_string(),
-                                created_at: to_unix_time(op.0.creation_time)
-                                    .expect("unix time should exist"),
-                                amount: RpcAmount(Amount {
-                                    msats: invoice.amount_milli_satoshis().unwrap(),
-                                }),
-                                direction: RpcTransactionDirection::Receive,
-                                notes,
-                                ln_state: RpcLnState::from_ln_recv_state(
+                            LightningMeta::Receive { invoice, .. } => {
+                                let ln_state = RpcLnState::from_ln_recv_state(
                                     op.1.outcome::<LnReceiveState>(),
-                                ),
-                                lightning: Some(RpcLightningDetails {
-                                    invoice: invoice.to_string(),
-                                    fee: None, // TODO: to be implemented on the fedimint side
-                                }),
-                                oob_state: None,
-                            }),
+                                );
+                                Some(RpcTransaction {
+                                    id: op.0.operation_id.to_string(),
+                                    created_at: to_unix_time(op.0.creation_time)
+                                        .expect("unix time should exist"),
+                                    amount: RpcAmount(Amount {
+                                        msats: invoice.amount_milli_satoshis().unwrap(),
+                                    }),
+                                    direction: RpcTransactionDirection::Receive,
+                                    notes,
+                                    onchain_state: None,
+                                    bitcoin: None,
+                                    ln_state,
+                                    lightning: Some(RpcLightningDetails {
+                                        invoice: invoice.to_string(),
+                                        fee: None, /* TODO: to be implemented on the fedimint
+                                                    * side */
+                                    }),
+                                    oob_state: None,
+                                })
+                            }
                         },
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintMeta = op.1.meta();
@@ -1253,6 +1389,8 @@ impl FederationV1 {
                                                 .expect("unix time should exist"),
                                             direction: RpcTransactionDirection::Receive,
                                             notes,
+                                            onchain_state: None,
+                                            bitcoin: None,
                                             ln_state: None,
                                             amount: RpcAmount(mint_meta.amount),
                                             lightning: None,
@@ -1270,6 +1408,8 @@ impl FederationV1 {
                                         .expect("unix time should exist"),
                                     direction: RpcTransactionDirection::Send,
                                     notes,
+                                    onchain_state: None,
+                                    bitcoin: None,
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),
                                     lightning: None,
@@ -1280,6 +1420,41 @@ impl FederationV1 {
                                 }),
                             }
                         }
+                        WALLET_OPERATION_TYPE => match op.1.meta() {
+                            WalletOperationMeta::Deposit {
+                                address,
+                                expires_at,
+                            } => {
+                                let onchain_state = RpcOnchainState::from_deposit_state(
+                                    self.get_deposit_outcome(op.0.operation_id, op.1).await,
+                                );
+
+                                Some(RpcTransaction {
+                                    id: op.0.operation_id.to_string(),
+                                    created_at: to_unix_time(op.0.creation_time)
+                                        .expect("unix time should exist"),
+                                    direction: RpcTransactionDirection::Receive,
+                                    notes,
+                                    onchain_state: onchain_state.clone(),
+                                    bitcoin: Some(RpcBitcoinDetails {
+                                        address: address.to_string(),
+                                        expires_at: to_unix_time(expires_at)
+                                            .expect("unix time should exist"),
+                                    }),
+                                    ln_state: None,
+                                    amount: RpcAmount(Amount::from_msats(0)),
+                                    lightning: None,
+                                    oob_state: None,
+                                })
+                            }
+                            WalletOperationMeta::Withdraw {
+                                address: _,
+                                amount: _,
+                                fee: _,
+                                change: _,
+                            }
+                            | WalletOperationMeta::RbfWithdraw { rbf: _, change: _ } => None,
+                        },
                         _ => {
                             panic!(
                                 "Found unimplemented for module with operation type = {}",

@@ -168,10 +168,11 @@ async fn switchGateway(
 
 #[macro_rules_derive(rpc_method!)]
 async fn generateAddress(
-    _bridge: Arc<Bridge>,
-    _federation_id: RpcFederationId,
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
 ) -> anyhow::Result<String> {
-    bail!("not implemented")
+    let address = bridge.generate_address(federation_id).await?;
+    Ok(address)
 }
 
 #[macro_rules_derive(rpc_method!)]
