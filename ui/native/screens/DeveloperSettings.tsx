@@ -21,11 +21,13 @@ import {
     selectFederationCustomFediMods,
     selectFediModDebugMode,
     selectNostrEnabled,
+    selectOnchainDepositsEnabled,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
     setFediModDebugMode,
     setNostrEnabled,
+    setOnchainDepositsEnabled,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -79,6 +81,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const customFediMods = useAppSelector(selectFederationCustomFediMods)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const nostrEnabled = useAppSelector(selectNostrEnabled)
+    const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -300,6 +303,26 @@ const DeveloperSettings: React.FC<Props> = () => {
                     </View>
                 ))}
             </SettingsSection>
+            <SettingsSection title={t('words.wallet')}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
+                            {t('feature.receive.enable-onchain-deposits')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={onchainDepositsEnabled}
+                        onValueChange={value => {
+                            reduxDispatch(setOnchainDepositsEnabled(value))
+                        }}
+                    />
+                </View>
+                <Button
+                    title={t('feature.developer.export-transactions-csv')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={shareTxCsv}
+                />
+            </SettingsSection>
             <SettingsSection title="Select a node to simulate Guardian Mode">
                 <CheckBox
                     title={
@@ -367,13 +390,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                         />
                     </View>
                 )}
-            </SettingsSection>
-            <SettingsSection title={t('words.wallet')}>
-                <Button
-                    title={t('feature.developer.export-transactions-csv')}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={shareTxCsv}
-                />
             </SettingsSection>
             <SettingsSection title="Danger zone">
                 <Button

@@ -24,21 +24,7 @@ export enum TransactionDirection {
     receive = 'receive',
 }
 
-export enum IncomingBitcoinTransactionStatus {
-    pending = 'pending',
-    complete = 'complete',
-}
-
-export interface MockBitcoinTransactionDetails {
-    address: string
-    txid: string
-    fee: MSats | null
-    incomingStatus: IncomingBitcoinTransactionStatus | null
-}
-
-export type Transaction = RpcTransaction & {
-    bitcoin: MockBitcoinTransactionDetails
-}
+export type Transaction = RpcTransaction
 
 export interface Node {
     name: string

@@ -10,6 +10,7 @@ const initialState = {
     developerMode: false,
     fedimodDebugMode: false,
     nostrEnabled: false,
+    onchainDepositsEnabled: false,
     language: null as string | null,
     amountInputType: undefined as 'sats' | 'fiat' | undefined,
 }
@@ -37,6 +38,9 @@ export const environmentSlice = createSlice({
         ) {
             state.amountInputType = action.payload
         },
+        setOnchainDepositsEnabled(state, action: PayloadAction<boolean>) {
+            state.onchainDepositsEnabled = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -60,6 +64,7 @@ export const {
     setFediModDebugMode,
     setNostrEnabled,
     setAmountInputType,
+    setOnchainDepositsEnabled,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
@@ -80,6 +85,9 @@ export const selectFediModDebugMode = (s: CommonState) =>
     s.environment.fedimodDebugMode
 
 export const selectNostrEnabled = (s: CommonState) => s.environment.nostrEnabled
+
+export const selectOnchainDepositsEnabled = (s: CommonState) =>
+    s.environment.onchainDepositsEnabled
 
 export const selectLanguage = (s: CommonState) => s.environment.language
 
