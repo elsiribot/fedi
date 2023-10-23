@@ -9,7 +9,7 @@ import {
     SocialRecoveryApproval,
     PanicEvent,
 } from './bindings'
-import { MSats, MsatsString } from './units'
+import { MsatsString } from './units'
 
 export type {
     SocialRecoveryEvent,

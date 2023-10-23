@@ -48,7 +48,7 @@ const TransactionDetail = ({
         refreshTransactions()
     }
 
-    const txnFee = txn.bitcoin?.fee || txn.lightning?.fee || null
+    const txnFee = txn.lightning?.fee || null
 
     const renderStatus = () => {
         if (txn.direction === TransactionDirection.send) {
@@ -69,6 +69,36 @@ const TransactionDetail = ({
         } else {
             return t('feature.receive.you-received')
         }
+    }
+
+    const renderTxId = () => {
+        if (!txn.onchainState || Object.keys(txn.onchainState).includes('txid'))
+            return null
+
+        let txid: string | null = null
+        if (
+            txn.onchainState?.type === 'waitingForConfirmation' ||
+            txn.onchainState?.type === 'confirmed' ||
+            txn.onchainState?.type === 'claimed'
+        ) {
+            txid = txn.onchainState.txid
+        }
+        if (!txid) return null
+
+        return (
+            <View style={styles(theme).detailItem}>
+                <Text>{`${t('phrases.transaction-id')}`}</Text>
+                <Pressable
+                    style={styles(theme).detailItem}
+                    onPress={() => {
+                        Clipboard.setString(txid!)
+                        toast?.show(t('phrases.copied-transaction-id'))
+                    }}>
+                    <Text>{stringUtils.truncateMiddleOfString(txid, 5)}</Text>
+                    <SvgImage name="Copy" size={SvgImageSize.sm} />
+                </Pressable>
+            </View>
+        )
     }
 
     return (
@@ -99,7 +129,7 @@ const TransactionDetail = ({
                         <View style={styles(theme).detailItem}>
                             <Text>{`${t('words.status')}`}</Text>
                             {/* TODO: Add other pending states for seen, confirming, etc */}
-                            {txn.onchainState?.type === 'Claimed' ? (
+                            {txn.onchainState?.type === 'claimed' ? (
                                 <Text>{`${t('words.complete')}`}</Text>
                             ) : (
                                 <Text>
@@ -185,25 +215,7 @@ const TransactionDetail = ({
                         </Pressable>
                     </View>
                 )}
-                {txn.bitcoin?.txid && (
-                    <View style={styles(theme).detailItem}>
-                        <Text>{`${t('phrases.transaction-id')}`}</Text>
-                        <Pressable
-                            style={styles(theme).detailItem}
-                            onPress={() => {
-                                Clipboard.setString(txn.bitcoin?.txid!)
-                                toast?.show(t('phrases.copied-transaction-id'))
-                            }}>
-                            <Text>
-                                {stringUtils.truncateMiddleOfString(
-                                    txn.bitcoin.txid,
-                                    5,
-                                )}
-                            </Text>
-                            <SvgImage name="Copy" size={SvgImageSize.sm} />
-                        </Pressable>
-                    </View>
-                )}
+                {txn.onchainState && renderTxId()}
                 <Divider />
                 <Pressable
                     style={styles(theme).detailItem}
