@@ -317,9 +317,9 @@ impl FederationV1 {
                         .await;
                     let deposit_outcome = update.clone();
                     match update {
-                        fedimint_wallet_client::DepositState::WaitingForConfirmation(data)
-                        | fedimint_wallet_client::DepositState::Claimed(data) => {
-                            info!("WaitingForConfirmation: {:?}", address);
+                        DepositState::WaitingForConfirmation(data)
+                        | DepositState::Claimed(data)
+                        | DepositState::Confirmed(data) => {
                             let onchain_details = Some(RpcBitcoinDetails {
                                 address: address.clone(),
                                 expires_at: to_unix_time(expires_at)
@@ -344,7 +344,7 @@ impl FederationV1 {
                             info!("send_transaction_event: {:?}", transaction);
                             fed.send_transaction_event(transaction);
                         }
-                        fedimint_wallet_client::DepositState::Failed(reason) => {
+                        DepositState::Failed(reason) => {
                             // FIXME: handle this
                             error!("Failed to claim on-chain deposit: {reason}");
                         }
