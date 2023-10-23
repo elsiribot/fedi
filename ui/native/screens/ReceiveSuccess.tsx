@@ -16,18 +16,20 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { tx } = route.params
 
+    const style = styles(theme)
+
     return (
         <Success
             message={
-                <View style={styles(theme).textContainer}>
-                    <Text h2>
+                <View style={style.textContainer}>
+                    <Text h2Style={style.successMessage} h2>
                         {t(
                             tx.bitcoin
                                 ? 'feature.receive.pending-transaction'
                                 : 'feature.receive.you-received',
                         )}
                     </Text>
-                    <Text h2>
+                    <Text h2Style={style.successMessage} h2>
                         {`${amountUtils.formatNumber(
                             amountUtils.msatToSat(tx.amount),
                         )} ${t('words.sats').toUpperCase()}`}
@@ -48,10 +50,6 @@ const styles = (theme: Theme) =>
         },
         successMessage: {
             textAlign: 'center',
-            marginBottom: theme.spacing.md,
-        },
-        fileNameText: {
-            fontWeight: '400',
         },
     })
 
