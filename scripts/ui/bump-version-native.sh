@@ -21,7 +21,6 @@ pushd $REPO_ROOT/ui/native
 
 # Build numbers are timestamp based to ensure they are always
 # increasing. Must be lower than 2,100,000,000 so the scheme is:
-PREFIX="1"
 # Get the last two digits of the year
 YY=$(date +"%y")
 # Get the day of the year, zero-padded
