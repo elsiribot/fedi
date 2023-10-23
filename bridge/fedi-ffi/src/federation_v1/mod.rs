@@ -351,7 +351,8 @@ impl FederationV1 {
                         _ => {}
                     }
                 }
-            });
+            })
+            .await;
         Ok(())
     }
 
