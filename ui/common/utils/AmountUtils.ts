@@ -81,6 +81,20 @@ class AmountUtils {
         const btc = this.satToBtc(sats)
         return btc
     }
+    // For fiat unit conversions returned as number
+    fiatToMsat = (fiat: number, rate: number): MSats => {
+        const btc = this.fiatToBtc(fiat, rate)
+        return this.btcToMsat(btc)
+    }
+    fiatToSat = (fiat: number, rate: number): Sats => {
+        const btc = this.fiatToBtc(fiat, rate)
+        return this.btcToSat(btc)
+    }
+    fiatToBtc = (fiat: number, rate: number): Btc => {
+        return Number(
+            (fiat / rate).toFixed(AmountUtils.BTC_MAX_DECIMAL_PLACES),
+        ) as Btc
+    }
 
     // For BTC unit conversions returned as strings
     msatToSatString = (msats: MSats): SatsString => {
