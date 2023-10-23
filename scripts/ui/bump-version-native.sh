@@ -28,7 +28,7 @@ DDD=$(date +"%j")
 # Get the current time in HHMM format
 HHMM=$(date +"%H%M")
 # Combine to form the build number
-BUILD_NUMBER="${PREFIX}${YY}${DDD}${HHMM}"
+BUILD_NUMBER="${YY}${DDD}${HHMM}"
 
 # if we are building a nightly APK from the master branch in CI...
 # modify the build numbers so the app stores will accept
