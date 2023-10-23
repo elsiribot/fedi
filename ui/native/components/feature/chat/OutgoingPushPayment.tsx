@@ -1,5 +1,5 @@
 import { Button, ButtonProps, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -26,6 +26,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const federationId = useAppSelector(selectActiveFederation)?.id
+    const [isCanceling, setIsCanceling] = useState(false)
 
     let statusText: string | undefined
     let statusIcon: SvgImageName | undefined
@@ -39,6 +40,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
         action = {
             title: t('words.cancel'),
             onPress: async () => {
+                setIsCanceling(true)
                 try {
                     if (!federationId) throw new Error()
                     await dispatch(
@@ -56,6 +58,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
                         3000,
                     )
                 }
+                setIsCanceling(false)
             },
         }
     }
@@ -84,6 +87,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
                             {...action}
                             size="sm"
                             color={theme.colors.secondary}
+                            disabled={isCanceling}
                             title={
                                 <Text
                                     medium
