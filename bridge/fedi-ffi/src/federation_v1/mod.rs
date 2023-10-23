@@ -1307,6 +1307,38 @@ impl FederationV1 {
         last_state
     }
 
+    pub async fn get_deposit_outcome(
+        &self,
+        operation_id: OperationId,
+        log_entry: OperationLogEntry,
+    ) -> Option<DepositState> {
+        let outcome = log_entry.outcome::<DepositState>();
+
+        // Return client's cached outcome if we find it
+        if let Some(outcome) = outcome {
+            return Some(outcome);
+        }
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self.get_operation_state(&operation_id).await {
+            return Some(outcome);
+        }
+
+        // If no cached outcomes, consume the stream to get the outcome and populate
+        // client's cache in future This is only useful for outgoing lightning
+        // payments which fail due to timeout and nothing is subscribed to them
+        let mut updates = match self.client.subscribe_deposit_updates(operation_id).await {
+            Err(_) => return None,
+            Ok(stream) => stream.into_stream(),
+        };
+
+        let mut last_state = None;
+        while let Some(update) = updates.next().await {
+            tracing::info!("update {:?}", update);
+            last_state = Some(update);
+        }
+        last_state
+    }
+
     /// Return all transactions via operation log
     pub async fn list_transactions(
         &self,
