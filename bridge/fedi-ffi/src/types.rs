@@ -55,6 +55,16 @@ pub struct RpcJsonClientConfig {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationId(#[ts(type = "string")] pub fedimint_core::config::FederationId);
 
+#[derive(Debug, TS, Serialize)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_client::sm::OperationId);
+
+impl From<fedimint_client::sm::OperationId> for RpcOperationId {
+    fn from(value: fedimint_client::sm::OperationId) -> Self {
+        Self(value)
+    }
+}
+
 pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
     let balance = RpcAmount(federation.get_balance().await.translate());
     let id = RpcFederationId(federation.federation_id().translate());

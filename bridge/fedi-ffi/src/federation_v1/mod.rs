@@ -578,7 +578,11 @@ impl FederationV1 {
                                     fed.client
                                         .subscribe_deposit_or_renewal_operation(operation_id),
                                     |state| {
-                                        Event::stability_pool_deposit(fed.federation_id(), state)
+                                        Event::stability_pool_deposit(
+                                            fed.federation_id(),
+                                            operation_id,
+                                            state,
+                                        )
                                     },
                                 )
                                 .await
@@ -596,7 +600,11 @@ impl FederationV1 {
                                 fed.subscribe_client_operation(
                                     fed.client.subscribe_withdraw(operation_id),
                                     |state| {
-                                        Event::stability_pool_withdrawal(fed.federation_id(), state)
+                                        Event::stability_pool_withdrawal(
+                                            fed.federation_id(),
+                                            operation_id,
+                                            state,
+                                        )
                                     },
                                 )
                                 .await
@@ -1653,7 +1661,7 @@ impl FederationV1 {
     /// is accepted, the deposit is staged (pending). When the next
     /// cycle turnover occurs, staged seeks are processed in order
     /// to produce locks.
-    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<()> {
+    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
         let operation_id = self.client.deposit_to_seek(amount).await?;
         let fed = self.clone();
         self.task_group
@@ -1662,12 +1670,12 @@ impl FederationV1 {
                 fed.subscribe_client_operation(
                     fed.client
                         .subscribe_deposit_or_renewal_operation(operation_id),
-                    |state| Event::stability_pool_deposit(fed.federation_id(), state),
+                    |state| Event::stability_pool_deposit(fed.federation_id(), operation_id, state),
                 )
                 .await
             })
             .await;
-        Ok(())
+        Ok(operation_id)
     }
 
     /// Withdraw both unlocked and locked balances, by implicitly waiting for
@@ -1682,7 +1690,7 @@ impl FederationV1 {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
-    ) -> Result<()> {
+    ) -> Result<OperationId> {
         let (operation_id, _) = self.client.withdraw(unlocked_amount, locked_bps).await?;
         let fed = self.clone();
         self.task_group
@@ -1690,12 +1698,14 @@ impl FederationV1 {
             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
                 fed.subscribe_client_operation(
                     fed.client.subscribe_withdraw(operation_id),
-                    |state| Event::stability_pool_withdrawal(fed.federation_id(), state),
+                    |state| {
+                        Event::stability_pool_withdrawal(fed.federation_id(), operation_id, state)
+                    },
                 )
                 .await
             })
             .await;
-        Ok(())
+        Ok(operation_id)
     }
 
     async fn subscribe_client_operation<S, E, U>(&self, stream_gen: S, event_gen: E)

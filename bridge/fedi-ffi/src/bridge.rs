@@ -34,9 +34,9 @@ use super::storage::Storage;
 use super::translate::Translate;
 use super::types::{
     multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
-    RpcLightningGateway, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
-    RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
-    SocialRecoveryApproval, SocialRecoveryQr,
+    RpcLightningGateway, RpcOperationId, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey,
+    RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction,
+    RpcXmppCredentials, SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
 use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse};
@@ -319,7 +319,10 @@ impl MultiFederation {
         }
     }
 
-    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<()> {
+    pub async fn stability_pool_deposit_to_seek(
+        &self,
+        amount: Amount,
+    ) -> Result<fedimint_client::sm::OperationId> {
         match self {
             MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
             MultiFederation::V1(v1) => v1.stability_pool_deposit_to_seek(amount).await,
@@ -330,7 +333,7 @@ impl MultiFederation {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
-    ) -> Result<()> {
+    ) -> Result<fedimint_client::sm::OperationId> {
         match self {
             MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
             MultiFederation::V1(v1) => {
@@ -870,11 +873,12 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         amount: RpcAmount,
-    ) -> Result<()> {
+    ) -> Result<RpcOperationId> {
         self.get_multi(&federation_id.0)
             .await?
             .stability_pool_deposit_to_seek(amount.0)
             .await
+            .map(Into::into)
     }
 
     pub async fn stability_pool_withdraw(
@@ -882,10 +886,11 @@ impl Bridge {
         federation_id: RpcFederationId,
         unlocked_amount: RpcAmount,
         locked_bps: u32,
-    ) -> Result<()> {
+    ) -> Result<RpcOperationId> {
         self.get_multi(&federation_id.0)
             .await?
             .stability_pool_withdraw(unlocked_amount.0, locked_bps)
             .await
+            .map(Into::into)
     }
 }

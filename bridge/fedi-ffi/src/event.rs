@@ -4,8 +4,10 @@ use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 use ts_rs::TS;
 
-use super::types::{RpcFederation, RpcFederationId, SocialRecoveryApproval};
-use crate::types::{RpcAmount, RpcTransaction};
+use super::types::{
+    RpcFederation, RpcFederationId, RpcOperationId, RpcTransaction, SocialRecoveryApproval,
+};
+use crate::types::RpcAmount;
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
@@ -51,6 +53,7 @@ pub struct BalanceEvent {
 #[ts(rename_all = "camelCase")]
 pub struct StabilityPoolDepositEvent {
     pub federation_id: RpcFederationId,
+    pub operation_id: RpcOperationId,
     pub state: StabilityPoolDepositState,
 }
 
@@ -70,6 +73,7 @@ pub enum StabilityPoolDepositState {
 #[ts(rename_all = "camelCase")]
 pub struct StabilityPoolWithdrawalEvent {
     pub federation_id: RpcFederationId,
+    pub operation_id: RpcOperationId,
     pub state: StabilityPoolWithdrawalState,
 }
 
@@ -131,10 +135,12 @@ impl Event {
     }
     pub fn stability_pool_deposit(
         federation_id: fedimint_core::config::FederationId,
+        operation_id: fedimint_client::sm::OperationId,
         state: stability_pool_client::StabilityPoolDepositState,
     ) -> Self {
         Self::StabilityPoolDeposit(StabilityPoolDepositEvent {
             federation_id: RpcFederationId(federation_id),
+            operation_id: RpcOperationId(operation_id),
             state: match state {
                 stability_pool_client::StabilityPoolDepositState::Initiated => {
                     StabilityPoolDepositState::Initiated
@@ -157,10 +163,12 @@ impl Event {
 
     pub fn stability_pool_withdrawal(
         federation_id: fedimint_core::config::FederationId,
+        operation_id: fedimint_client::sm::OperationId,
         state: stability_pool_client::StabilityPoolWithdrawalState,
     ) -> Self {
         Self::StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent {
             federation_id: RpcFederationId(federation_id),
+            operation_id: RpcOperationId(operation_id),
             state: match state {
                 stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedInitiated => StabilityPoolWithdrawalState::WithdrawUnlockedInitiated,
                 stability_pool_client::StabilityPoolWithdrawalState::TxRejected(e) => StabilityPoolWithdrawalState::TxRejected(e.to_string()),

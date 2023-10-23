@@ -20,7 +20,7 @@ use super::error::ErrorCode;
 use super::event::{EventSink, SocialRecoveryEvent};
 use super::storage::Storage;
 use super::types::{
-    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway,
+    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway, RpcOperationId,
     RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
     RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
@@ -395,7 +395,7 @@ async fn stabilityPoolDepositToSeek(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
     amount: RpcAmount,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<RpcOperationId> {
     bridge
         .stability_pool_deposit_to_seek(federation_id, amount)
         .await
@@ -407,7 +407,7 @@ async fn stabilityPoolWithdraw(
     federation_id: RpcFederationId,
     unlocked_amount: RpcAmount,
     locked_bps: u32,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<RpcOperationId> {
     bridge
         .stability_pool_withdraw(federation_id, unlocked_amount, locked_bps)
         .await

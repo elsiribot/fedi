@@ -313,7 +313,7 @@ export interface RpcMethods {
     ]
     stabilityPoolDepositToSeek: [
         { federationId: RpcFederationId; amount: RpcAmount },
-        null,
+        string,
     ]
     stabilityPoolWithdraw: [
         {
@@ -321,7 +321,7 @@ export interface RpcMethods {
             unlockedAmount: RpcAmount
             lockedBps: number
         },
-        null,
+        string,
     ]
 }
 
@@ -352,6 +352,7 @@ export type RpcOOBSpendState =
     | { type: 'success' }
 
 export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
+export type RpcOperationId = string
 
 export interface RpcPayInvoiceResponse {
     preimage: string
