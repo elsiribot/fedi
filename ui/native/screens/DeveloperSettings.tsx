@@ -304,6 +304,11 @@ const DeveloperSettings: React.FC<Props> = () => {
                 ))}
             </SettingsSection>
             <SettingsSection title={t('words.wallet')}>
+                <Button
+                    title={t('feature.developer.export-transactions-csv')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={shareTxCsv}
+                />
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>
                         <Text caption style={styles(theme).switchLabel}>
@@ -317,11 +322,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                         }}
                     />
                 </View>
-                <Button
-                    title={t('feature.developer.export-transactions-csv')}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={shareTxCsv}
-                />
             </SettingsSection>
             <SettingsSection title="Select a node to simulate Guardian Mode">
                 <CheckBox
@@ -494,7 +494,7 @@ const SettingsSection: React.FC<{
     const { theme } = useTheme()
     return (
         <View style={styles(theme).section}>
-            <Text caption style={styles(theme).sectionTitle}>
+            <Text bold style={styles(theme).sectionTitle}>
                 {title}
             </Text>
             <View>{children}</View>
@@ -547,6 +547,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+            paddingVertical: theme.spacing.md,
         },
         switchLabelContainer: {
             maxWidth: '70%',
