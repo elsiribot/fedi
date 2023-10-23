@@ -3,6 +3,7 @@
 # exit on failure
 set -e
 
+export FEDI_BRIDGE_REMOTE=1
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh

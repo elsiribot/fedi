@@ -1,0 +1,186 @@
+use std::sync::{Arc, OnceLock};
+use std::thread;
+
+use anyhow::{Context, Result};
+use fedimint_logging::TracingSetup;
+use futures::{Future, SinkExt, StreamExt};
+use serde::{Deserialize, Serialize};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::{mpsc, oneshot, Mutex};
+use tokio_util::codec::{Framed, LinesCodec};
+use tracing::error;
+
+use crate::event::IEventSink;
+use crate::ffi::PathBasedStorage;
+use crate::rpc::{fedimint_initialize_async, fedimint_rpc_async};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Request {
+    pub method: String,
+    pub body: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Response {
+    Reply { body: String },
+    Event { event_type: String, body: String },
+}
+
+pub type PendingResponses = Arc<Mutex<Option<oneshot::Sender<String>>>>;
+
+pub struct Client {
+    pending_response: PendingResponses,
+    tx: mpsc::Sender<Request>,
+}
+
+impl Client {
+    pub async fn new(event_sink: Box<dyn IEventSink>) -> Result<Self> {
+        let connection = TcpStream::connect("127.0.0.1:8080").await?;
+        let mut connection = Framed::new(connection, LinesCodec::new());
+        let event_sink = Arc::new(Mutex::new(event_sink));
+        let pending_response = PendingResponses::default();
+        let (tx, mut rx) = mpsc::channel::<Request>(32);
+
+        let pending_response_cloned = Arc::clone(&pending_response);
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    Some(request) = rx.recv() => {
+                        let request_json = serde_json::to_string(&request).unwrap();
+                        connection.send(request_json).await.unwrap();
+                    },
+                    result = connection.next() => match result {
+                        Some(Ok(line)) => {
+                            match serde_json::from_str(&line) {
+                                Ok(Response::Event { event_type, body }) => {
+                                    let event_sink = event_sink.lock().await;
+                                    event_sink.event(event_type, body);
+                                },
+                                Ok(Response::Reply { body }) => {
+                                    if let Some(responder) = pending_response_cloned.lock().await.take() {
+                                        let _ = responder.send( body );
+                                    } else {
+                                        error!("unknown response");
+                                    }
+                                },
+                                Err(e) => error!("Failed to deserialize response: {}", e),
+                            }
+                        },
+                        Some(Err(e)) => error!("Connection error: {}", e),
+                        None => break,
+                    }
+                }
+            }
+        });
+
+        Ok(Self {
+            pending_response,
+            tx,
+        })
+    }
+
+    pub async fn request(&self, method: String, body: String) -> Result<String> {
+        let (tx, rx) = oneshot::channel();
+        *self.pending_response.lock().await = Some(tx);
+
+        let request = Request { method, body };
+        self.tx.send(request).await?;
+        rx.await.map_err(|e| e.into())
+    }
+}
+
+pub fn tcp_server() -> (
+    mpsc::Sender<Response>,
+    mpsc::Receiver<Request>,
+    impl Future + Send + Sync,
+) {
+    let (response_tx, mut response_rx) = mpsc::channel::<Response>(32);
+    let (request_tx, request_rx) = mpsc::channel::<Request>(32);
+
+    (response_tx, request_rx, async move {
+        let listener = TcpListener::bind("0.0.0.0:8080").await?;
+        println!("Server listening on port 8080");
+
+        while let Ok((socket, _)) = listener.accept().await {
+            let mut framed = Framed::new(socket, LinesCodec::new());
+
+            loop {
+                tokio::select! {
+                    result = framed.next() => {
+                        match result {
+                            Some(Ok(line)) => {
+                                match serde_json::from_str(&line) {
+                                    Ok(req) => {
+                                        request_tx.send(req).await?;
+                                    }
+                                    Err(e) => error!("Error: {}", e),
+                                }
+                            }
+                            Some(Err(e)) => error!("Connection error: {}", e),
+                            None => {
+                                break;
+                            }
+                        }
+                    }
+                    Some(response) = response_rx.recv() => {
+                        let response_json = serde_json::to_string(&response)?;
+                        framed.send(response_json).await?;
+                    }
+                }
+            }
+            error!("Connection closed, waiting for new connection.");
+        }
+        anyhow::Ok(())
+    })
+}
+
+pub async fn init() -> anyhow::Result<()> {
+    TracingSetup::default().init()?;
+    let (response_tx, mut request_rx, server_task) = tcp_server();
+    thread::spawn(move || {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("failed to build tokio runtime");
+        rt.block_on(server_task);
+    });
+    let storage = PathBasedStorage::new("data-dir".into()).await?;
+    impl IEventSink for mpsc::Sender<Response> {
+        fn event(&self, event_type: String, body: String) {
+            tokio::task::block_in_place(|| {
+                self.blocking_send(Response::Event { event_type, body })
+                    .unwrap()
+            });
+        }
+    }
+    let bridge = fedimint_initialize_async(Arc::new(storage), Arc::new(response_tx.clone()))
+        .await
+        .context("fedimint initalize")?;
+
+    while let Some(request) = request_rx.recv().await {
+        let response = fedimint_rpc_async(bridge.clone(), request.method, request.body).await;
+        response_tx
+            .send(Response::Reply { body: response })
+            .await
+            .context("send response")?;
+    }
+    Ok(())
+}
+
+static CLIENT: OnceLock<Client> = OnceLock::new();
+pub async fn fedimint_remote_initialize(event_sink: Box<dyn IEventSink>) -> anyhow::Result<()> {
+    let client = Client::new(event_sink).await?;
+    let _ = CLIENT.set(client);
+    Ok(())
+}
+
+pub async fn fedimint_remote_rpc(method: String, payload: String) -> anyhow::Result<String> {
+    let reply = CLIENT
+        .get()
+        .expect("client not initialized")
+        .request(method, payload)
+        .await
+        .context("rpc failed")?;
+    Ok(reply)
+}
