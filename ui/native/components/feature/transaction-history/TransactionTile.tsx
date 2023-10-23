@@ -34,49 +34,55 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 default:
                     return t('phrases.receive-pending')
             }
+        } else if (txn.bitcoin) {
+            switch (txn.onchainState?.type) {
+                case 'waitingForTransaction':
+                    return t('phrases.receive-pending')
+                case 'claimed':
+                    return t('words.received')
+                default:
+                    return t('phrases.receive-pending')
+            }
         } else {
             return t('words.received')
         }
     }
 
-    console.debug('txn', txn)
+    const style = styles(theme)
 
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
             style={[
-                styles(theme).container,
-                // TODO: Add opacity based on "pending" state for onchain txns
-                // {
-                //     opacity: txn.pending ? 0.6 : 1,
-                // },
+                style.container,
+                txn.bitcoin &&
+                txn.onchainState?.type === 'waitingForTransaction'
+                    ? style.pending
+                    : {},
             ]}>
-            <View style={styles(theme).leftContainer}>
+            <View style={style.leftContainer}>
                 <SvgImage
                     name="BitcoinCircle"
                     color={theme.colors.orange}
                     size={SvgImageSize.md}
                 />
             </View>
-            <View style={styles(theme).centerContainer}>
+            <View style={style.centerContainer}>
                 <Text>{renderStatus()}</Text>
                 <Text small numberOfLines={1}>
                     {txn.notes}
                 </Text>
             </View>
 
-            <View style={styles(theme).rightContainer}>
-                <Text style={styles(theme).rightAlignedText}>
-                    {`${amountUtils.formatNumber(
-                        amountUtils.msatToSat(txn.amount),
-                    )} ${t('words.sats').toUpperCase()}`}
+            <View style={style.rightContainer}>
+                <Text style={style.rightAlignedText}>
+                    {txn.bitcoin && txn.amount === 0
+                        ? t('words.onchain').toLowerCase()
+                        : `${amountUtils.formatNumber(
+                              amountUtils.msatToSat(txn.amount),
+                          )} ${t('words.sats').toUpperCase()}`}
                 </Text>
-                <Text
-                    small
-                    style={[
-                        styles(theme).rightAlignedText,
-                        styles(theme).subText,
-                    ]}>
+                <Text small style={[style.rightAlignedText, style.subText]}>
                     {`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd, h:mmaaa',
@@ -117,6 +123,9 @@ const styles = (theme: Theme) =>
         },
         subText: {
             color: theme.colors.primaryLight,
+        },
+        pending: {
+            opacity: 0.6,
         },
     })
 
