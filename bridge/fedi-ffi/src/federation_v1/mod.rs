@@ -1156,21 +1156,7 @@ impl FederationV1 {
             return Some(outcome);
         }
 
-        // If no cached outcomes, consume the stream to get the outcome and populate
-        // client's cache in future This is only useful for outgoing lightning
-        // payments which fail due to timeout and nothing is subscribed to them
-        let mut updates = match self.client.subscribe_ln_pay(operation_id).await {
-            // Assuming this was internal pay
-            Err(_) => return None,
-            Ok(stream) => stream.into_stream(),
-        };
-
-        let mut last_state = None;
-        while let Some(update) = updates.next().await {
-            tracing::info!("update {:?}", update);
-            last_state = Some(update);
-        }
-        last_state
+        None
     }
 
     pub async fn get_oob_spend_outcome(
@@ -1189,20 +1175,7 @@ impl FederationV1 {
             return Some(outcome);
         }
 
-        // If no cached outcomes, consume the stream to get the outcome and populate
-        // client's cache in future This is only useful for outgoing lightning
-        // payments which fail due to timeout and nothing is subscribed to them
-        let mut updates = match self.client.subscribe_spend_notes(operation_id).await {
-            Err(_) => return None,
-            Ok(stream) => stream.into_stream(),
-        };
-
-        let mut last_state = None;
-        while let Some(update) = updates.next().await {
-            tracing::info!("update {:?}", update);
-            last_state = Some(update);
-        }
-        last_state
+        None
     }
 
     /// Return all transactions via operation log
