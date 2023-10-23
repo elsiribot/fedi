@@ -257,8 +257,9 @@
             "you-sent-payment": "You sent {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
         "developer": {
-            "nightly": "nightly",
+            "developer-mode-activated": "You are now a developer!",
             "export-transactions-csv": "Export transactions CSV",
+            "nightly": "nightly",
             "share-logs": "Share logs"
         },
         "federations": {
